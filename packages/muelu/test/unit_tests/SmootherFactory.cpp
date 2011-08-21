@@ -13,10 +13,7 @@
 
 //TODO from JG: should be tested using a fakeSmoother
 
-namespace {
-
-  using Teuchos::rcp;
-  using Teuchos::RCP;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor_Exception)
   {
@@ -128,7 +125,7 @@ namespace {
 
         RCP<SmootherPrototype>  preSmoo, postSmoo;
         //Check for exception if matrix is not set in Level.
-        //FIXME once Level-template Get< Teuchos::RCP<Operator> >("A") doesn't throw an exception, this must be changed
+        //FIXME once Level-template Get< RCP<Operator> >("A") doesn't throw an exception, this must be changed
         //TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),MueLu::Exceptions::RuntimeError);
         TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),std::logic_error);
 
@@ -148,5 +145,5 @@ namespace {
       }
   }
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 

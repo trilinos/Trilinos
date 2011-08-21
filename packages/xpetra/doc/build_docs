@@ -9,6 +9,7 @@ rm -r html
 # seems to be messing this up.
 
 mkdir html
+cp -pf xpetra.ico html
 
 # Build the documentation
 

@@ -8,10 +8,6 @@ namespace {
 
   using std::string; //?? TODO
 
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-
   //TODO: should go in the Aggregates class
   template <class LocalOrdinal, 
             class GlobalOrdinal,

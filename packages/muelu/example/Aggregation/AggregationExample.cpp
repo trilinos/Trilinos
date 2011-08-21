@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   //cout << *Final_ << endl; sleep(2);
 
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
 
   Final_->describe(*out, Teuchos::VERB_EXTREME);
 

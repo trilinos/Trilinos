@@ -18,7 +18,6 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_AggregationOptions.hpp"
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
@@ -45,9 +44,6 @@
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
- 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -196,7 +192,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
   //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
-  //RCP<Operator> P = coarseLevel->template Get< Teuchos::RCP<Operator> >("P");
+  //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";
   //Utils::Write(fileName,P);
   if (comm->getRank() == 0) {

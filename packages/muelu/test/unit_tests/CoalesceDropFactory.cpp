@@ -7,10 +7,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, Constructor)
   {
@@ -34,5 +31,5 @@ namespace {
     //FIXME how do we verify that this is correct?
   } //Build
 
-}//namespace <anonymous>
+} // namespace MueLuTests
 

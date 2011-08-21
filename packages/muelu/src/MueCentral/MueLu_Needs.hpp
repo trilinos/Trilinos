@@ -4,6 +4,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #define MueLu_cout(minimumVerbLevel)                                    \
@@ -38,7 +39,7 @@ namespace MueLu {
     Teuchos::ParameterList dataTable_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
     //! @name Constructors/Destructors.
@@ -91,8 +92,8 @@ namespace MueLu {
     } //Release
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
-    // Usage: Level->template Get< Teuchos::RCP<Operator> >("A") or
-    //        Level->Get< Teuchos::RCP<Operator> >("A")
+    // Usage: Level->Get< RCP<Operator> >("A") or
+    //        Level->Get< RCP<Operator> >("A")
     template <class T>
     T & Get(const std::string& ename) {
       if (countTable_.isParameter(ename)) {

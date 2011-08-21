@@ -8,10 +8,9 @@
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 
-namespace MueLu {
+#include "MueLu_ConfigDefs.hpp"
 
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
+namespace MueLu {
 
   template <class Scalar    = double,
             class LocalOrdinal  = int, 
@@ -251,7 +250,7 @@ namespace MueLu {
         RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
 
 #ifdef JG_DEBUG
-        RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+        RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
         std::cout << MyPid << ": justWinners(Vector in)=" << *justWinners << std::endl;
         justWinners->describe(*out, Teuchos::VERB_EXTREME);
 #endif
@@ -294,7 +293,7 @@ namespace MueLu {
           }
         //#define JG_DEBUG
 #ifdef JG_DEBUG
-        //            RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+        //            RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
             //->describe(*out, Teuchos::VERB_EXTREME);
 
             // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;

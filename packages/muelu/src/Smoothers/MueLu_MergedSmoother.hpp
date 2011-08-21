@@ -1,6 +1,7 @@
 #ifndef MUELU_MERGED_SMOOTHER_HPP
 #define MUELU_MERGED_SMOOTHER_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -30,7 +31,7 @@ namespace MueLu {
     bool verbose_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
     // UNUSED: typedef vector::size_type size_type;

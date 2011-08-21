@@ -1,10 +1,12 @@
 #ifndef MUELU_PFACTORY_HPP
 #define MUELU_PFACTORY_HPP
 
+#include "Teuchos_VerboseObject.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 
-#include "Teuchos_VerboseObject.hpp"
 #define MueLu_cout(minimumVerbLevel) \
     if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
 
@@ -28,7 +30,7 @@ class PFactory : public Teuchos::VerboseObject<PFactory<Scalar,LocalOrdinal,Glob
 
      bool reUseGraph_;
      bool reUseAggregates_;
-     Teuchos::RCP<Teuchos::FancyOStream> out_;
+     RCP<Teuchos::FancyOStream> out_;
 
   public:
     //! @name Constructors/Destructors.

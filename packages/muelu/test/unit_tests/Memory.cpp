@@ -10,7 +10,8 @@ namespace {
   {
     using namespace MueLu::MemUtils;
 
-    int n = 100000000;
+    //    int n = 100000000;
+    int n = 10000;
 
     out << "version: " << MueLu::Version() << std::endl;
 

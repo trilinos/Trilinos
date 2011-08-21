@@ -1,16 +1,15 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_TestHelpers.hpp"
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Version.hpp"
+
+#include "MueLu_TestHelpers.hpp"
 
 #include "MueLu_Level.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Level, SetCoreData)
   {
@@ -20,18 +19,18 @@ namespace {
 
     Level firstLevel;
     firstLevel.Set("A",A);
-    RCP<Operator> newA = firstLevel.Get< Teuchos::RCP<Operator> >("A");
+    RCP<Operator> newA = firstLevel.Get< RCP<Operator> >("A");
     TEUCHOS_TEST_EQUALITY(newA, A, out, success);
     firstLevel.Set("R", A);
-    TEUCHOS_TEST_EQUALITY(firstLevel.Get< Teuchos::RCP<Operator> >("R"), A, out, success); //TODO from JG: must be tested using another matrix !
+    TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<Operator> >("R"), A, out, success); //TODO from JG: must be tested using another matrix !
     firstLevel.Set("P", A);
-    TEUCHOS_TEST_EQUALITY(firstLevel.Get< Teuchos::RCP<Operator> >("P"), A, out, success);
+    TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<Operator> >("P"), A, out, success);
     firstLevel.SetLevelID(42);
     TEUCHOS_TEST_EQUALITY(firstLevel.GetLevelID(), 42, out, success); //TODO: test default value of LevelID
 
     /*
       RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
-      TEUCHOS_TEST_EQUALITY(firstLevel.Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother"), preSmoo, out, success);
+      TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo, out, success);
       //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, Operator>();
       */
 
@@ -44,5 +43,5 @@ namespace {
       */
   }
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 

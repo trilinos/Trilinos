@@ -19,7 +19,6 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_AggregationOptions.hpp"
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
@@ -44,10 +43,6 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ArrayRCP;
- 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
   RCP<SmootherPrototype> smooProto;

@@ -1,6 +1,7 @@
 #ifndef MUELU_AMESOS2_SMOOTHER_HPP
 #define MUELU_AMESOS2_SMOOTHER_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
@@ -39,7 +40,7 @@ class Level;
     //! pointer to Amesos2 solver object
     RCP<Amesos2::Solver<MAT,MV> > prec_;
     //! matrix operator 
-    Teuchos::RCP<Operator> A_;
+    RCP<Operator> A_;
     //! parameter list that is used by Amesos2 internally
     Teuchos::ParameterList list_;
 
@@ -49,7 +50,7 @@ class Level;
 //     RCP<MultiVector> B_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -97,11 +98,11 @@ class Level;
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "Amesos2Smoother::Setup()" << std::endl;
-      A_ = level.template Get< Teuchos::RCP<Operator> >("A");
+      A_ = level.Get< RCP<Operator> >("A");
 
 // OLD AMESOS2     
-//       X_ = MultiVectorFactory::Build(level.template Get< Teuchos::RCP<Operator> >("R")->getRangeMap(),1);
-//       B_ = MultiVectorFactory::Build(level.template Get< Teuchos::RCP<Operator> >("R")->getRangeMap(),1);
+//       X_ = MultiVectorFactory::Build(level.Get< RCP<Operator> >("R")->getRangeMap(),1);
+//       B_ = MultiVectorFactory::Build(level.Get< RCP<Operator> >("R")->getRangeMap(),1);
 //
       RCP<Tpetra_CrsMatrix>   tA = Utils::Op2NonConstTpetraCrs(A_);
 //       RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV(X_);

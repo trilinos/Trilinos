@@ -1,14 +1,15 @@
 #ifndef MUELU_GENERICPRFACTORY_HPP
 #define MUELU_GENERICPRFACTORY_HPP
 
+#include <iostream>
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Exceptions.hpp"
-
-#include <iostream>
 
 namespace MueLu {
 
@@ -52,7 +53,10 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       else
         PFact_ = rcp(new TentativePFactory());
 
-      RFact_ = RFact;
+      if (RFact != Teuchos::null)
+        RFact_ = RFact;
+      else
+        RFact_ = rcp(new TransPFactory());
 
       PRFactory::reUseAggregates_ = PFact_->ReUseAggregates();
       PRFactory::reUseGraph_      = PFact_->ReUseGraph();
@@ -72,9 +76,9 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     bool Build(Level &fineLevel, Level &coarseLevel) const {
 
       //FIXME what if map is a block map .... I'm pretty sure maxCoarseSize_ will always be point DOFs
-      if (fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap()->getComm()->getRank() == 0)
+      if (fineLevel.Get< RCP<Operator> >("A")->getRowMap()->getComm()->getRank() == 0)
         std::cout << "warning: if map is blocked, this comparison to maxCoarseSize_ will be wrong!" << std::endl;
-      if (fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
+      if (fineLevel.Get< RCP<Operator> >("A")->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
         return false;
       
       //FIXME cache output level here

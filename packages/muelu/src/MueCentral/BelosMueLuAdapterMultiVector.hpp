@@ -4,6 +4,7 @@
 #define BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
 
 #include <Kokkos_NodeTrace.hpp>
+#include <Kokkos_NodeAPIConfigDefs.hpp>
 
 /*! \file BelosXpetraAdapter.hpp
     \brief Provides several interfaces between Belos virtual classes and Xpetra concrete classes.
@@ -11,23 +12,26 @@
 
 // TODO: the assumption is made that the solver, multivector and operator are templated on the same scalar. this will need to be modified.
 
+#include <Teuchos_TestForException.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_DefaultSerialComm.hpp>
+
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 //#include <Xpetra_Operator.hpp>
-#include <Teuchos_TestForException.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_DefaultSerialComm.hpp>
 
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
-#include <Kokkos_NodeAPIConfigDefs.hpp>
 
-namespace Belos {
+//#include "MueLu_ConfigDefs.hpp"
+
+namespace Belos { // should go to Belos or Xpetra?
+
+  using Teuchos::RCP;
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -44,15 +48,15 @@ namespace Belos {
   {
   public:
 #ifdef HAVE_BELOS_XPETRA_TIMERS
-    static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
+    static RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     { 
       return Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(mv.getMap(),numvecs);
     }
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 #ifdef JG_TODO
@@ -61,7 +65,7 @@ namespace Belos {
 #endif //JG_TODO 
     }
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
@@ -87,7 +91,7 @@ namespace Belos {
 #endif //JG_TODO
     }
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     { 
@@ -118,7 +122,7 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 #ifdef JG_TODO
@@ -143,7 +147,7 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneViewNonConst (Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 		       const Teuchos::Range1D& index)
     {
@@ -173,7 +177,7 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
@@ -200,7 +204,7 @@ namespace Belos {
 #endif // JG_TODO
     }
 
-    static Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     {
@@ -252,11 +256,11 @@ namespace Belos {
 #endif
       // create local map
       Teuchos::SerialComm<int> scomm;
-      Teuchos::RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
+      RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), B.numRows(), 0, rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
       // create locally replicated MultiVector with a copy of this data
-      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > B_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,Bvalues,B.stride(),B.numCols());
+      RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > B_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,Bvalues,B.stride(),B.numCols());
       // multiply
       mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, *B_mv, beta);
 
@@ -294,14 +298,14 @@ namespace Belos {
                 strideC  = C.stride();
       Teuchos::SerialComm<int> scomm;
       // create local map with serial comm
-      Teuchos::RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
+      RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), numRowsC, 0, rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
-      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > C_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,numColsC, INIT_TO_ZERO);
+      RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > C_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,numColsC, INIT_TO_ZERO);
       // multiply result into local multivector
       C_mv->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,B,Teuchos::ScalarTraits<Scalar>::zero());
       // get comm
-      Teuchos::RCP< const Teuchos::Comm<int> > pcomm = A.getMap()->getComm();
+      RCP< const Teuchos::Comm<int> > pcomm = A.getMap()->getComm();
       // create arrayview encapsulating the Teuchos::SerialDenseMatrix
       Teuchos::ArrayView<Scalar> C_view(C.values(),strideC*numColsC);
       if (pcomm->getSize() == 1) {
@@ -372,9 +376,9 @@ namespace Belos {
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
-      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
+      RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
       if ((typename std::vector<int>::size_type)A.getNumVectors() > index.size()) {
-        Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
+        RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
         (*mvsub) = (*Asub);
       }
       else {
@@ -439,15 +443,15 @@ namespace Belos {
 			     "'A' input argument.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
-      typedef Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
-      typedef Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
+      typedef RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
+      typedef RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
 
       // View of the relevant column(s) of the target multivector mv.
       // We avoid view creation overhead by only creating a view if
       // the index range is different than [0, (# columns in mv) - 1].
       MV_ptr mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+	mv_view = rcpFromRef (mv); // Non-const, non-owning RCP
       else
 	mv_view = CloneViewNonConst (mv, index);
 
@@ -456,7 +460,7 @@ namespace Belos {
       // the first index.size() columns of A.
       const_MV_ptr A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+	A_view = rcpFromRef (A); // Const, non-owning RCP
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
@@ -519,7 +523,7 @@ namespace Belos {
 	mv = A;
       else
 	{
-	  Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
+	  RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
 	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
 	  *mv_view = A;
 	}

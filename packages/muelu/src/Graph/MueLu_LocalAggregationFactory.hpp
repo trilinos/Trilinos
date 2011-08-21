@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -23,9 +24,6 @@
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 namespace MueLu {
-
-  using Teuchos::ArrayView;
-  using Teuchos::ArrayRCP;
 
   namespace AggOptions {
     /* Options defining how to pick-up the next root node in the local aggregation procedure */
@@ -133,7 +131,7 @@ namespace MueLu {
     //TODO check for reuse of aggregates here
     //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
     //FIXME there ever be more than one graph?
-    Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("LocalAggregationFactory::Build"));
+    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("LocalAggregationFactory::Build"));
     timer->start(true);
 
     currentLevel.Request("Graph");
@@ -185,7 +183,7 @@ private:
     /* Create Aggregation object */
     const std::string name = "Uncoupled";
     my_size_t nAggregates = 0;
-    RCP<Aggregates> aggregates = Teuchos::rcp(new Aggregates(graph, name));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(graph, name));
 
     /* ============================================================= */
     /* aggStat indicates whether this node has been aggreated, and   */
@@ -222,7 +220,7 @@ private:
       } 
     else if ( ordering_ == GRAPH )  /* graph ordering */
       {
-        nodeList = Teuchos::rcp(new MueLu::LinkedList());
+        nodeList = rcp(new MueLu::LinkedList());
         nodeList->Add(0);
       }
 

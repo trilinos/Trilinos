@@ -15,10 +15,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+namespace MueLuTests {
 
 TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 {
@@ -156,8 +153,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
 //   H.SetSmoothers();
 
-//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->template Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
-//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->template Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel", out, success);
+//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->template Get< RCP<SmootherPrototype> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
+//   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->template Get< RCP<SmootherPrototype> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
 #ifdef HAVE_MUELU_IFPACK
   Teuchos::ParameterList  ifpackList;
@@ -167,8 +164,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
   H.SetSmoothers(*smooFactory);
-  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother")->GetType(),"Ifpack: Jacobi", out, success);
-  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother")->GetType(),"Ifpack: Jacobi", out, success);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< RCP<SmootherPrototype> >("PreSmoother")->GetType(),"Ifpack: Jacobi", out, success);
+  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< RCP<SmootherPrototype> >("PostSmoother")->GetType(),"Ifpack: Jacobi", out, success);
 #endif
     }
 } //SetSmoothers
@@ -201,24 +198,24 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
   RCP<SmootherPrototype>  preSmoo,postSmoo;
 
-  preSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
+  preSmoo = levelOne->Get< RCP<SmootherPrototype> >("PreSmoother");
   TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
-  postSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
+  postSmoo = levelOne->Get< RCP<SmootherPrototype> >("PostSmoother");
   TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
-  preSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
+  preSmoo = levelOne->Get< RCP<SmootherPrototype> >("PreSmoother");
   TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
-  postSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
+  postSmoo = levelOne->Get< RCP<SmootherPrototype> >("PostSmoother");
   TEUCHOS_TEST_EQUALITY(postSmoo, Teuchos::null, out, success);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
-  preSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
+  preSmoo = levelOne->Get< RCP<SmootherPrototype> >("PreSmoother");
   TEUCHOS_TEST_EQUALITY(preSmoo, Teuchos::null, out, success);
-  postSmoo = levelOne->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
+  postSmoo = levelOne->Get< RCP<SmootherPrototype> >("PostSmoother");
   TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
 #endif
@@ -227,9 +224,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<Level> levelOne = rcp(new Level() );
@@ -242,7 +236,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   H.SetLevel(levelOne);
 
   H.FullPopulate();
-    }
 } //FullPopulate
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
@@ -276,8 +269,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 #endif
     }
 } //FullPopulate
-
-#include "MueLu_AggregationOptions.hpp"
 
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
@@ -474,10 +465,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
     }
 } //Iterate
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 
 //Note from JG:
-// For UnitTest,  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< Teuchos::RCP<Operator> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
+// For UnitTest,  TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< RCP<Operator> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
 // should be replaced by
-// TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< Teuchos::RCP<Operator> >("PreSmoother"), preSmoother, out, success);
+// TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->Get< RCP<Operator> >("PreSmoother"), preSmoother, out, success);
 // testing if preSmoother->GetType() == "Ifpack: Gauss-Seidel" should be a unit test of the class IfpackSmoother

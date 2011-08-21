@@ -4,7 +4,6 @@
 #include <iostream>
 
 // Teuchos
-#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -17,6 +16,7 @@
 #include "Xpetra_CrsOperator.hpp"
 
 // MueLu
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 
 // Gallery
@@ -28,7 +28,6 @@ namespace MueLu {
   namespace TestHelpers {
     
     using Xpetra::global_size_t;
-    using Teuchos::RCP;
 
     class Parameters {
 
@@ -151,5 +150,28 @@ namespace MueLu {
 
 //TODO: add directly to Teuchos ?
 #include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
+
+
+//
+
+
+//! Namespace for MueLu test classes
+namespace MueLuTests {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::arcp;
+  using Teuchos::arcpFromArrayView;
+  using Teuchos::rcpFromRef;
+  using Teuchos::null;
+  using Teuchos::arcp_reinterpret_cast;
+  using Teuchos::Array;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+  using Teuchos::rcpFromRef;
+
+  using namespace MueLu::TestHelpers;
+}
 
 #endif // ifndef MUELU_TEST_HELPERS_H

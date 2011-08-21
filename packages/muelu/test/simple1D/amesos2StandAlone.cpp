@@ -82,13 +82,11 @@ int main(int argc, char *argv[]) {
 
   using Tpetra::global_size_t;
   using Teuchos::tuple;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   
   std::ostream &out = std::cout;
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
+  RCP<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   size_t myRank = comm->getRank();
@@ -159,7 +157,7 @@ int main(int argc, char *argv[]) {
   }
 
 //   /* Print the solution */
-//   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+//   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
 //   *fos << "Solution :" << std::endl;
 //   X->describe(*fos,Teuchos::VERB_EXTREME);

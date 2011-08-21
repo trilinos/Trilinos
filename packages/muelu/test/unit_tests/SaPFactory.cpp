@@ -7,10 +7,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(SaPFactory, Test0)
   {
@@ -43,5 +40,5 @@ namespace {
   } //GetSetMethods
 
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 

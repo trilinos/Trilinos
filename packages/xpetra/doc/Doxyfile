@@ -32,3 +32,4 @@ EXTRACT_PRIVATE        = YES
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
 GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag
+HTML_HEADER      = header.html

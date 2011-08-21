@@ -12,6 +12,7 @@
 #include "BelosTpetraAdapter.hpp"
 #endif
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Hierarchy.hpp"
 
 #include "BelosMueLuAdapterMultiVector.hpp" // this defines the MultiVecTraits for Xpetra::MultiVector
@@ -51,6 +52,9 @@
 //
 
 namespace Belos { 
+  using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
+
   // TODO: Should this file be moved to Belos ? The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So maybe.
 
   // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
@@ -85,7 +89,7 @@ namespace Belos {
     //@{ 
     
     //! Default constructor
-    MueLuEpetraPrecOp(const Teuchos::RCP<Hierarchy> & H) : Hierarchy_(H) {}
+    MueLuEpetraPrecOp(const RCP<Hierarchy> & H) : Hierarchy_(H) {}
     
     //! Destructor.
     virtual ~MueLuEpetraPrecOp() {};
@@ -108,7 +112,7 @@ namespace Belos {
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
       const Xpetra::EpetraMultiVector eX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector eY(Teuchos::rcpFromRef(y));
+      Xpetra::EpetraMultiVector eY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       eY.putScalar(0.0);
@@ -134,7 +138,7 @@ namespace Belos {
   
   private:
   
-    Teuchos::RCP<Hierarchy> Hierarchy_;
+    RCP<Hierarchy> Hierarchy_;
   };
 #endif
 
@@ -248,7 +252,7 @@ namespace Belos {
     //@{ 
     
     //! Default constructor
-    MueLuOp(const Teuchos::RCP<Operator> & Op) : Op_(Op) {}
+    MueLuOp(const RCP<Operator> & Op) : Op_(Op) {}
     
     //! Destructor.
     virtual ~MueLuOp() {};
@@ -285,8 +289,8 @@ namespace Belos {
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
 
-      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -308,8 +312,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Xpetra::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
+      const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -320,7 +324,7 @@ namespace Belos {
 
   private:
   
-    Teuchos::RCP<Operator> Op_;
+    RCP<Operator> Op_;
   };
 
   //TODO: doc
@@ -345,7 +349,7 @@ namespace Belos {
     //@{ 
     
     //! Default constructor
-    MueLuPrecOp(const Teuchos::RCP<Hierarchy> & H) : Hierarchy_(H) {}
+    MueLuPrecOp(const RCP<Hierarchy> & H) : Hierarchy_(H) {}
     
     //! Destructor.
     virtual ~MueLuPrecOp() {};
@@ -385,8 +389,8 @@ namespace Belos {
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
 
-      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -409,8 +413,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Xpetra::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
+      const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -422,7 +426,7 @@ namespace Belos {
 
   private:
   
-    Teuchos::RCP<Hierarchy> Hierarchy_;
+    RCP<Hierarchy> Hierarchy_;
   };
 
 } // namespace Belos

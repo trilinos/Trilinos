@@ -1,10 +1,11 @@
 #ifndef MUELU_PRFACTORY_HPP
 #define MUELU_PRFACTORY_HPP
 
+#include <iostream>
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Exceptions.hpp"
-
-#include <iostream>
 
 namespace MueLu {
 

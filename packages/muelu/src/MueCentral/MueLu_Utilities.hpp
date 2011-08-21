@@ -1,12 +1,13 @@
 #ifndef MUELU_UTILITIES_HPP
 #define MUELU_UTILITIES_HPP
 
-#include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
+
+#include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -41,9 +42,7 @@
 #endif
 
 namespace MueLu {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
+
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
   using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
   using Xpetra::EpetraMultiVector;
@@ -421,7 +420,7 @@ namespace MueLu {
         }
       }
 
-      Teuchos::RCP< Operator > D = Teuchos::rcp( new CrsOperator(rowmap, 1) );
+      RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
       std::vector<LO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
       //for (size_t i=0; i< A->getNodeNumRows(); ++i) {
@@ -520,7 +519,7 @@ namespace MueLu {
         }
       }
 
-      RCP< Operator > D = Teuchos::rcp( new CrsOperator(rowmap, 1) );
+      RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
       std::vector<GO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
       //for (size_t i=0; i< A->getNodeNumRows(); ++i) {
@@ -933,7 +932,7 @@ public:
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
        RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
-       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+       RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
        RCP<Operator> AAAA = rcp( new CrsOperator(AAA) );
        return AAAA;
 #else
@@ -969,7 +968,6 @@ public:
 
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
-     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      try {
        epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
      }
@@ -979,6 +977,7 @@ public:
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      if (TorE=="tpetra") {
        try {
          tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
@@ -995,7 +994,7 @@ public:
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
        RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
-       RCP<Xpetra::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
+       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC> (AAA) );
        return AAAA;
 #else
@@ -1018,7 +1017,7 @@ public:
        */
        RCP<Epetra_CrsMatrix> rcpA = Utils<SC,LO,GO,NO,LMO>::simple_EpetraTranspose(epetraOp);
        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
-       RCP<Xpetra::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
+       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
        return AAAA;
 //       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;

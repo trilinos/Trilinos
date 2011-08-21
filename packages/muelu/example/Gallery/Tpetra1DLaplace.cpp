@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
 //   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
 //   typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
 //   typedef Tpetra::CrsGraph<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
-//   using Teuchos::RCP;
 //   using Teuchos::tuple;
 
 //   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();

@@ -3,8 +3,10 @@
 
 #include <Teuchos_Describable.hpp>
 
-#include "MueLu_Graph.hpp"
 #include "Xpetra_VectorFactory.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Graph.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -84,8 +86,6 @@ namespace MueLu {
          @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
      */
      void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const {
-       using Teuchos::ArrayRCP;
-
        int myPid = vertex2AggId_->getMap()->getComm()->getRank();
        ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
        ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);

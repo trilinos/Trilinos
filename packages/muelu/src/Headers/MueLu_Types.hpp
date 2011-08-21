@@ -1,3 +1,5 @@
+#include "MueLu_ConfigDefs.hpp"
+
 #ifndef MUELU_TYPES_HPP
 #define MUELU_TYPES_HPP
 namespace MueLu {

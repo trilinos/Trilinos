@@ -9,10 +9,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::rcp;
-  using Teuchos::RCP;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(GenericPRFactory, Constructor_NoArgs)
   {
@@ -72,5 +69,5 @@ namespace {
     TEUCHOS_TEST_EQUALITY( r , true, out, success);
   } //TooCoarse_DoNotBuild
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 

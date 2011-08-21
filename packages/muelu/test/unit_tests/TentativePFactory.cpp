@@ -8,10 +8,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::rcp;
-  using Teuchos::RCP;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(TentativePFactory, Constructor)
   {
@@ -155,5 +152,4 @@ namespace {
   } //MakeTentative
 
 
-}//namespace <anonymous>
-
+}//namespace MeuLuTests

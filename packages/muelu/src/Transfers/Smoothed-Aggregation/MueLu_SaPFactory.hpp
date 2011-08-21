@@ -1,6 +1,8 @@
 #ifndef MUELU_SAPFACTORY_HPP
 #define MUELU_SAPFACTORY_HPP
 
+#include <iostream>
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsOperator.hpp>
@@ -11,14 +13,13 @@
 #include "EpetraExt_MatrixMatrix.h"
 #endif
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_Exceptions.hpp"
-
-#include <iostream>
 
 namespace MueLu {
 
@@ -44,7 +45,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
      CoalesceFact_
      TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 */
-     Teuchos::RCP<PFactory> initialPFact_;
+     RCP<PFactory> initialPFact_;
      std::string diagonalView_;
      bool doQR_;
      Scalar dampingFactor_;
@@ -65,7 +66,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
                    reUsePtent_(false)
                    //, PFactory::reUseGraph_(false), PFactory::reUseAggregates_(false)
     {
-      initialPFact_ = Teuchos::rcp(new TentativePFactory()),
+      initialPFact_ = rcp(new TentativePFactory()),
       PFactory::reUseGraph_=false;
       PFactory::reUseAggregates_=false;
       //Teuchos::OSTab tab(this->out_);
@@ -103,13 +104,13 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
     bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP"));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP"));
       timer->start(true);
 
       RCP<Operator> finalP;
 
       if (reUseP_) {
-        if (coarseLevel.template Get< Teuchos::RCP<Operator> >("P") == Teuchos::null)
+        if (coarseLevel.Get< RCP<Operator> >("P") == Teuchos::null)
           throw(std::runtime_error("SaPFactory: you have asked to reuse P, but it doesn't exist"));
         if (coarseLevel.IsAvailable("Nullspace") == false)
           throw(std::runtime_error("SaPFactory: you have asked to reuse cnull, but it doesn't exist"));
@@ -157,17 +158,17 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       if (dampingFactor_ != 0) {
 
-        Teuchos::RCP<Teuchos::Time> sapTimer;
+        RCP<Teuchos::Time> sapTimer;
         //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
         //sapTimer->start(true);
         //Teuchos::ParameterList matrixList;
-        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
+        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);
         //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
         //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
         //sapTimer->stop();
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        Teuchos::RCP< Operator > Op = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
+        RCP< Operator > Op = fineLevel.Get< RCP<Operator> >("A");
         sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent"));
         sapTimer->start(true);
 
