@@ -85,7 +85,7 @@ public:
     {
       for(size_t c=0; c<Cols(); ++c)
       {
-        Teuchos::RCP<CrsMatrixClass> matblock = CrsMatrixFactory::Build(RangeMap(r), npr, pftype);
+        Teuchos::RCP<CrsMatrixClass> matblock = CrsMatrixFactory::Build(getRangeMap(r), npr, pftype);
         blocks_.push_back(matblock);
       }
     }
@@ -163,7 +163,7 @@ public:
     {
       for (size_t c=0; c<Cols(); ++c)
       {
-        Matrix(r,c)->fillComplete(DomainMap(c),RangeMap(r),os);
+        Matrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
       }
     }
 
@@ -512,7 +512,19 @@ public:
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const MapClass > getRangeMap(size_t i) const
   {
-    return rangemaps_->FullMap(i);
+    return rangemaps_->Map(i);
+  }
+
+  //! Returns map extractor class for range map
+  const RCP<const MapExtractorClass> getRangeMapExtractor()
+  {
+    return rangemaps_;
+  }
+
+  //! Returns map extractor for domain map
+  const RCP<const MapExtractorClass> getDomainMapExtractor()
+  {
+    return domainmaps_;
   }
 
   //@}
@@ -624,10 +636,10 @@ private:
   virtual size_t Cols() const { return domainmaps_->NumMaps(); }
 
   /// range map for given row block
-  const Teuchos::RCP<const MapClass> RangeMap(size_t r) const { return rangemaps_->Map(r); }
+  //const Teuchos::RCP<const MapClass> RangeMap(size_t r) const { return rangemaps_->Map(r); }
 
   /// domain map for given row block
-  const Teuchos::RCP<const MapClass> DomainMap(size_t c) const { return domainmaps_->Map(c); }
+  //const Teuchos::RCP<const MapClass> DomainMap(size_t c) const { return domainmaps_->Map(c); }
 
   //@}
 
