@@ -127,9 +127,6 @@ namespace Xpetra {
     //! Get the library used by this object (Tpetra or Epetra?)
     virtual UnderlyingLib lib() const = 0;
 
-    //! clone Xpetra::Map
-    virtual RCP<Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const = 0;
-
     //@}
 
   }; // Map class

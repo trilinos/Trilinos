@@ -153,9 +153,6 @@ namespace Xpetra {
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return Xpetra::UseTpetra; }
 
-    //! clone Xpetra::EpetraMap
-    virtual RCP<Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const { return Teuchos::rcp(new Xpetra::TpetraMap< LocalOrdinal, GlobalOrdinal, Node>(map_)); };
-
     //! Get the underlying Tpetra map
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & getTpetra_Map() const { return map_; }
 

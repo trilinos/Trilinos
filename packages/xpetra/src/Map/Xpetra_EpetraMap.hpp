@@ -155,9 +155,6 @@ namespace Xpetra {
     //! Get the library used by this object (Epetra or Epetra?)
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
-    //! clone Xpetra::EpetraMap
-    virtual RCP<Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const { return Teuchos::rcp(new Xpetra::EpetraMap(map_)); };
-
     //! Get the underlying Epetra map
     //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
