@@ -283,9 +283,46 @@ namespace MueLu {
                                          bool doFillComplete=true,
                                          bool doOptimizeStorage=true)
   {
-    RCP<BlockedCrsOperator> C;
+    if(transposeA || transposeB)
+      throw(Exceptions::RuntimeError("TwoMatrixMultiply for BlockedCrsOperator not implemented for transposeA==true or transposeB==true"));
 
+    // todo make sure that A and B are filled and completed
 
+    const RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A->getRangeMapExtractor();
+    const RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B->getDomainMapExtractor();
+
+    RCP<BlockedCrsOperator> C = rcp(new BlockedCrsOperator(rgmapextractor,
+                     domapextractor,
+                     33 /* TODO fix me */));
+
+    // loop over all block rows of A
+    for(size_t i=0; i<A->Rows(); ++i)
+    {
+      // loop over all block columns of B
+      for(size_t j=0; j<B->Cols(); ++j)
+      {
+        // empty CrsOperator
+        RCP<Operator> Cij = OperatorFactory::Build(A->getRowMap(i), 33 /* TODO fix me */);
+
+        // loop for calculating entry C_{ij}
+        for(size_t l=0; l<B->Rows(); ++l)
+        {
+          RCP<Operator> temp = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiply
+              (A->getMatrix(i,l), false, B->getMatrix(l,j),false);
+
+          // sum up
+          MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd
+              (temp, false, 1.0, Cij, 1.0);
+        }
+
+        Cij->fillComplete(B->getDomainMap(j), A->getRangeMap(i));
+
+        C->setMatrix(i,j,Cij);
+      }
+    }
+
+    if(doFillComplete)
+      C->fillComplete();  // call default fillComplete for BlockCrsOperator objects
 
     return C;
   } // TwoMatrixMultiply
