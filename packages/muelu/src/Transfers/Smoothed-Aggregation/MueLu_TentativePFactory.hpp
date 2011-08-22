@@ -103,7 +103,7 @@ namespace MueLu {
       fineLevel.Request("Aggregates"); //FIXME until Needs gets fixed
       aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
-      RCP<Operator> Ptent;
+      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent");
       coarseLevel.Release("Ptent");//??
       coarseLevel.Set("P", Ptent);
 
