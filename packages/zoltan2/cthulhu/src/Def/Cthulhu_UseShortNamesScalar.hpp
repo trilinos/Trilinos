@@ -22,6 +22,10 @@ typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVec
 typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
 #endif
 
+#ifdef CTHULHU_BLOCKEDCRSOPERATOR_SHORT
+typedef Cthulhu::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperator;
+#endif
+
 #ifdef CTHULHU_CRSOPERATOR_SHORT
 typedef Cthulhu::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
 #endif
