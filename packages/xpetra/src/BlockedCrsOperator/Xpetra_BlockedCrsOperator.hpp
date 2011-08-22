@@ -163,7 +163,7 @@ public:
     {
       for (size_t c=0; c<Cols(); ++c)
       {
-        Matrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
+        getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
       }
     }
 
@@ -180,7 +180,7 @@ public:
         std::set<GlobalOrdinal> colset;
         for (size_t r=0; r<Rows(); ++r)
         {
-          Teuchos::RCP<const MapClass> colmap = Matrix(r,c)->getColMap();
+          Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
           copy(colmap->getNodeElementList().getRawPtr(),
                colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
                inserter(colset,colset.begin()));
@@ -206,7 +206,7 @@ public:
     global_size_t globalNumRows= 0;
     for (size_t r=0; r<Rows(); ++r)
     {
-      globalNumRows += Matrix(r,0)->getGlobalNumRows();
+      globalNumRows += getMatrix(r,0)->getGlobalNumRows();
     }
     return globalNumRows;
   }
@@ -219,7 +219,7 @@ public:
     global_size_t globalNumCols= 0;
     for (size_t c=0; c<Cols(); ++c)
     {
-      globalNumCols += Matrix(0,c)->getGlobalNumCols();
+      globalNumCols += getMatrix(0,c)->getGlobalNumCols();
     }
     return globalNumCols;
   }
@@ -230,7 +230,7 @@ public:
     global_size_t nodeNumRows= 0;
     for (size_t r=0; r<Rows(); ++r)
     {
-      nodeNumRows += Matrix(r,0)->getNodeNumRows();
+      nodeNumRows += getMatrix(r,0)->getNodeNumRows();
     }
     return nodeNumRows;
   }
@@ -243,7 +243,7 @@ public:
     {
       for(size_t c=0; c<Cols(); ++c)
       {
-        globalNumEntries += Matrix(r,c)->getGlobalNumEntries();
+        globalNumEntries += getMatrix(r,c)->getGlobalNumEntries();
       }
     }
     return globalNumEntries;
@@ -257,7 +257,7 @@ public:
     {
       for(size_t c=0; c<Cols(); ++c)
       {
-        nodeNumEntries += Matrix(r,c)->getNodeNumEntries();
+        nodeNumEntries += getMatrix(r,c)->getNodeNumEntries();
       }
     }
     return nodeNumEntries;
@@ -457,7 +457,7 @@ public:
         for (size_t cblock=0; cblock<Cols(); ++cblock)
         {
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = domainmaps_->ExtractVector(tX,cblock);
-          Teuchos::RCP<CrsMatrixClass> bmat = Matrix(rblock,cblock);
+          Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy);
           rowresult->update(1.0,*rowy,1.0);
         }
@@ -474,7 +474,7 @@ public:
         for (size_t rblock = 0; rblock<Rows(); ++rblock)
         {
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = rangemaps_->ExtractVector(tX,rblock);
-          Teuchos::RCP<CrsMatrixClass> bmat = Matrix(rblock,cblock);
+          Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy,Teuchos::TRANS);
           rowresult->update(1.0,*rowy,1.0);
         }
@@ -567,7 +567,7 @@ public:
       for(size_t c=0; c<Cols(); ++c)
       {
         out << "Block(" << r << "," << c << ")" << endl;
-        Matrix(r,c)->describe(out,verbLevel);
+        getMatrix(r,c)->describe(out,verbLevel);
       }
     }
 
@@ -647,7 +647,7 @@ private:
   //@{
 
   /// return block (r,c)
-  Teuchos::RCP<CrsMatrixClass> Matrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
+  Teuchos::RCP<CrsMatrixClass> getMatrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
 
   //@}
 
