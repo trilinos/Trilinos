@@ -441,10 +441,6 @@ namespace {
     // generate strided maps
     Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcp(new const Epetra_Map(-1, velgidvec.size(), &velgidvec[0], 0, *Comm));
     Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcp(new const Epetra_Map(-1, pregidvec.size(), &pregidvec[0], 0, *Comm));
-    //cout << endl;
-    //cout << "PROC " << Comm->MyPID() << " #of velmap dofs " << velmap->NumMyElements() << endl;
-    //cout << "PROC " << Comm->MyPID() << " #of premap dofs " << premap->NumMyElements() << endl;
-
 
     // generate full map
     const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcp(new const Epetra_Map(-1, fullgidvec.size(), &fullgidvec[0], 0, *Comm));
@@ -515,55 +511,7 @@ namespace {
 
 
 #endif
-#if 0
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Operator<Scalar, LO, GO, Node> Operator;
-    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
-    RCP<const Comm<int> > comm = getDefaultComm();
 
-    const size_t numLocal = 10;
-    const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    RCP<const Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
-     {
-       TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
-
-       // Test of constructor
-       CrsOperator op(map,1);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
-
-       // Test of CreateView
-       TEST_THROW(op.CreateView(op.GetDefaultViewLabel(),op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError); // a
-       op.CreateView("newView",op.getRowMap(),op.getColMap());                                                               // b
-       TEST_THROW(op.CreateView("newView",op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError);                // c
-
-       // Test of SwitchToView
-       // a
-       viewLabel_t viewLabel    = op.GetCurrentViewLabel();
-       viewLabel_t oldViewLabel = op.SwitchToView("newView");
-       TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), "newView");
-       // b
-       TEST_THROW(op.SwitchToView("notAView"), Xpetra::Exceptions::RuntimeError);
-
-       // Test of SwitchToDefaultView()
-       // a
-       viewLabel    = op.GetCurrentViewLabel();
-       oldViewLabel = op.SwitchToDefaultView();
-       TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-
-       // Test of RemoveView()
-       TEST_THROW(op.RemoveView(op.GetDefaultViewLabel()), Xpetra::Exceptions::RuntimeError); // a
-       TEST_THROW(op.RemoveView("notAView"), Xpetra::Exceptions::RuntimeError);               // b
-       op.RemoveView("newView");                                                               // c
-       TEST_THROW(op.RemoveView("newView"), Xpetra::Exceptions::RuntimeError);
-
-       op.fillComplete();
-     }
-#endif
-#endif
   }
 
   //
