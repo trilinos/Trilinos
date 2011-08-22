@@ -591,7 +591,7 @@ public:
 
 
   /// set matrix block
-  void SetMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrixClass>& mat)
+  void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrixClass>& mat)
   {
     // TODO: if filled -> return error
 

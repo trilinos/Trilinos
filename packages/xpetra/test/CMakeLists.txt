@@ -21,4 +21,5 @@ ADD_SUBDIRECTORIES(
 
 # Tests specifically written for Xpetra:
   Operator
+  BlockedCrsOperator
   )
