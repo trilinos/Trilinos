@@ -86,6 +86,18 @@ ELSE()
       TIMEOUT_MINUTES 240
       )
   
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      MPI_DEBUG_GCC461_CASLDEV
+      ctest_linux_nightly_mpi_debug_gcc_4.6.1_casl_dev.cmake
+      TIMEOUT_MINUTES 240
+      )
+  
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      SERIAL_RELEASE461_GCC_CASLDEV
+      ctest_linux_nightly_serial_release_gcc_4.6.1_casl_dev.cmake
+      TIMEOUT_MINUTES 240
+      )
+  
     #
     # Run builds of just CASL add-on packages and LIME components 
     # with the Intel 12.0.4 compiler and submit to the CASL CDash 
