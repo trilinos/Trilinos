@@ -12,6 +12,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_OperatorFactory.hpp>
+#include <Xpetra_BlockedCrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -266,6 +267,28 @@ namespace MueLu {
 
       return C;
     } //TwoMatrixMultiply()
+
+   /*! @brief Helper function to do matrix-matrix multiply "in-place"
+
+     Returns RCP to non-constant Xpetra::BlockedCrsOperator.
+
+     @param A left matrix
+     @param transposeA if true, use the transpose of A
+     @param B right matrix
+     @param transposeB if true, use the transpose of B
+     @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
+   */
+  static RCP<BlockedCrsOperator> TwoMatrixMultiply(RCP<BlockedCrsOperator> const &A, bool transposeA,
+                                         RCP<BlockedCrsOperator> const &B, bool transposeB,
+                                         bool doFillComplete=true,
+                                         bool doOptimizeStorage=true)
+  {
+    RCP<BlockedCrsOperator> C;
+
+
+
+    return C;
+  } // TwoMatrixMultiply
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
