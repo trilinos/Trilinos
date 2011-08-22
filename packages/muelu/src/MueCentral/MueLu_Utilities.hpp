@@ -253,11 +253,14 @@ namespace MueLu {
         
         if (!doOptimizeStorage) {
           Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
-          tpC->fillComplete((transposeB) ? tpB->getRangeMap() : tpB->getDomainMap(),
-                             (transposeA) ? tpA->getDomainMap() : tpA->getRangeMap(),
-                            Tpetra::DoNotOptimizeStorage);
+          C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                          (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                          Xpetra::DoNotOptimizeStorage);
         } else {
-          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,doFillComplete);
+          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
+          C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                          (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                          Xpetra::DoOptimizeStorage);
         }
 #else
         throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
@@ -658,7 +661,7 @@ namespace MueLu {
           AT->insertGlobalValues(gcid,Teuchos::tuple(grid),Teuchos::tuple(vals[j]));
         }
       }
-      AT->fillComplete(A->getRangeMap(),A->getDomainMap());
+      //AT->fillComplete(A->getRangeMap(),A->getDomainMap());
       
       return AT;
     } //simple_Transpose
@@ -686,8 +689,7 @@ namespace MueLu {
           AT->InsertGlobalValues(gcid,1,vals+j,&grid);
         }
       }
-      AT->FillComplete(A->RangeMap(),A->DomainMap());
-      
+     
       return AT;
     } //simple_Transpose
 #endif
@@ -847,9 +849,9 @@ namespace MueLu {
           if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
             throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
           if (doOptimizeStorage)
-            tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoOptimizeStorage);
+            Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),Xpetra::DoOptimizeStorage);
           else
-            tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoNotOptimizeStorage);
+            Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),Xpetra::DoNotOptimizeStorage);
         }
 #else
         throw(Exceptions::RuntimeError("Tpetra"));   
@@ -934,6 +936,7 @@ public:
        RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
        RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
        RCP<Operator> AAAA = rcp( new CrsOperator(AAA) );
+       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
        return AAAA;
 #else
          throw(Exceptions::RuntimeError("Tpetra"));
@@ -996,6 +999,7 @@ public:
        RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
        RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC> (AAA) );
+       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
        return AAAA;
 #else
        throw(Exceptions::RuntimeError("Tpetra"));
@@ -1019,6 +1023,7 @@ public:
        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
        RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
+       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
        return AAAA;
 //       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
 //       return Teuchos::null;
