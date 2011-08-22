@@ -24,4 +24,6 @@
 
 #cmakedefine HAVE_MUELU_BELOS
 
+#cmakedefine HAVE_MUELU_PROFILING
+
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@

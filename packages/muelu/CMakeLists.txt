@@ -14,6 +14,11 @@ PACKAGE(MueLu)
 
 PACKAGE_ADD_DEBUG_OPTION()
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
+  HAVE_${PACKAGE_NAME_UC}_PROFILING
+  "Enable detailed timing and memory profiling of MueLu."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #
