@@ -14,6 +14,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
   SET( CTEST_BUILD_FLAGS "-j8 -i" )
   SET( CTEST_PARALLEL_LEVEL 8 )
+  SET( CTEST_TEST_TYPE Experimental)
 
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
@@ -24,6 +25,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      PyTrilinos TriKota Optika  # We don't have TPLs for these
      Sundance Stokhos # Currently have failures and nor currently needed by CASL
      TrilinosFramework # Has 11 failing tests for some reason so disabling for now
+     CASLRAVEANC CASLRAVEANCKVIPRE Tpetra Kokkos
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
