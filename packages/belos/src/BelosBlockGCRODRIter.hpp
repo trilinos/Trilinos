@@ -361,24 +361,13 @@ namespace Belos{
 		iter_++;
 //KMS
 std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::endl;
-std::cout << "Here are the current residuals" << std::endl;
-{
-	std::vector<MagnitudeType> norms;
-	getNativeResiduals( &norms );
-	for(int jj=0; jj<norms.size(); jj++){
-		std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
-	}
-}
-		//int lclDim = curDim_ + 1;
-
-
 
 		int HFirstCol = curDim_-blockSize_;//First column of H we need view of
 		int HLastCol = HFirstCol + blockSize_-1 ;//last column of H we need a view of
 		int HLastOrthRow = HLastCol;//Last row of H we will put orthog coefficients in
 		int HFirstNormRow = HLastOrthRow + 1;//First row of H where normalization matrix goes
 //KMS
-std::cout << "curDim_ = " << curDim_ << ", HFirstCol = " << HFirstCol << ", HLastCol =  " << HLastCol <<", HLastOrthRow =  " << HLastOrthRow << ", HFirstNormRow =  " << HFirstNormRow << std::endl;		
+//std::cout << "curDim_ = " << curDim_ << ", HFirstCol = " << HFirstCol << ", HLastCol =  " << HLastCol <<", HLastOrthRow =  " << HLastOrthRow << ", HFirstNormRow =  " << HFirstNormRow << std::endl;		
 		// Get next basis indices
 		for(int i = 0; i< blockSize_; i++){
 			curind[i] = curDim_ + i;
@@ -429,17 +418,6 @@ std::cout << "curDim_ = " << curDim_ << ", HFirstCol = " << HFirstCol << ", HLas
 		// Copy over the coefficients to R just in case we run into an error.
 		SDM subR2( Teuchos::View,*R_,(lclIter_+1)*blockSize_,blockSize_,0,HFirstCol);
 		SDM subH2( Teuchos::View,*H_,(lclIter_+1)*blockSize_,blockSize_,0,HFirstCol);
-//KMS
-
-std::cout << "This is subR2 a "<< (lclIter_+1)*blockSize_ << " by " << blockSize_ << " submatrix starting at row "<< 0  << " and column " << HFirstCol << std::endl;
-subR2.print(std::cout);
-std::cout << "This is subH2 a "<< (lclIter_+1)*blockSize_ << " by " << blockSize_ << " submatrix starting at row "<< 0  << " and column " << HFirstCol << std::endl;
-subH2.print(std::cout);
-std::cout << "This is R!" << std::endl;
-R_->print(std::cout);
-std::cout << "This is H!" << std::endl;
-H_->print(std::cout);
-
 		subR2.assign(subH2);
 
 		TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank.");
@@ -554,6 +532,7 @@ H_->print(std::cout);
 		blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                 Teuchos::NON_UNIT_DIAG, curDim_-blockSize_, blockSize_, one,
                 R_->values(), R_->stride(), Y.values(), Y.stride() );
+
       		//
               	//  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
                 //
@@ -562,6 +541,8 @@ H_->print(std::cout);
       		Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
       		MVT::MvTimesMatAddMv( one, *Vjp1, Y, zero, *currentUpdate );
 
+
+
       		//
               	//  Add in portion of update from recycled subspace U; U(:,1:recycledBlocks_)*B*y.
                 //
@@ -569,10 +550,12 @@ H_->print(std::cout);
         		SDM z(recycledBlocks_,blockSize_);
         		SDM subB( Teuchos::View, *B_, recycledBlocks_, curDim_-blockSize_ );
         		z.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, subB, Y, zero );
+
 		        //std::cout << (*U_).MyLength() << " " << (*U_).NumVectors() << " " << subB.numRows() << " " << subB.numCols() << " " << Y.numRows() << " " << Y.numCols()<< " " << curDim_ << " " << recycledBlocks_;	
         		MVT::MvTimesMatAddMv( -one, *U_, z, one, *currentUpdate );
       		}
     	}
+
 
 
     	return currentUpdate;
@@ -645,33 +628,14 @@ H_->print(std::cout);
 			//get a view of the part of R_ effected by these reflections. 
 			Teuchos::RCP< SDM > RblockCopy = rcp(new SDM (Teuchos::Copy, *R_, 2*blockSize_,blockSize_, R_rowStart, R_colStart));
 			Teuchos::RCP< SDM > RblockView = rcp(new SDM (Teuchos::View, *R_, 2*blockSize_,blockSize_, R_rowStart, R_colStart));
-sprintf(filename,"Rtril.mat");
-ofs.open(filename);
-RblockView->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"Houseitril.mat");
-ofs.open(filename);
-House_[i].matlab(ofs);
-ofs.close();
-
 			blas.GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS, 2*blockSize_,blockSize_,2*blockSize_,one,House_[i].values(),House_[i].stride(), RblockCopy->values(),RblockCopy -> stride(), zero, RblockView->values(),RblockView -> stride());
 
-sprintf(filename,"RtrilHousePrev.mat");
-ofs.open(filename);
-RblockView->matlab(ofs);
-ofs.close();
 		}
 
 
 		//Get a view of last 2*blockSize entries of entire block to 
 		//generate new reflections.
 		Rblock = rcp(new SDM (Teuchos::View, *R_, 2*blockSize_,blockSize_, curDim_-blockSize_, curDim_-blockSize_));
-//KMS
-std::ofstream ofs;
-char filename[30];
-
-
 
 		//Calculate and apply the new reflections
 		for(i=0; i<blockSize_; i++){
@@ -680,17 +644,7 @@ char filename[30];
 			//
 			int curcol = (lclIter_ - 1)*blockSize_ + i;//current column of R_
 			int lclCurcol = i;//current column of Rblock
-std::cout << "Current Column = " << curcol << std::endl;
 			ScalarType signDiag = (*R_)(curcol,curcol) / Teuchos::ScalarTraits<ScalarType>::magnitude((*R_)(curcol,curcol));
-sprintf(filename,"Rtril.mat");
-ofs.open(filename);
-Rblock->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"Vtril.mat");
-ofs.open(filename);
-MVT::MvPrint(*V_, ofs);
-ofs.close();
 
                         // Norm of the vector to be reflected.
                         // BLAS returns a ScalarType, but it really should be a magnitude.
@@ -698,10 +652,6 @@ ofs.close();
 			ScalarType alpha = -signDiag*nvs;
 
 			//norm of reflection vector which is just the vector being reflected
-sprintf(filename,"RBlockmodtril.mat");
-ofs.open(filename);
-Rblock->matlab(ofs);
-ofs.close();		//with the first entry modified by alpha
 			//i.e. v = R_(curcol:curcol+blockSize_,curcol))
 			//v_refl = v - alpha*e1
 			//norm(v_refl) = norm(v) + alpha^2 - 2*v*alpha
@@ -722,15 +672,6 @@ ofs.close();		//with the first entry modified by alpha
 			nvs = blas.NRM2(blockSize_+1,v_refl -> values(),1);
 			nvs *= nvs;
 
-sprintf(filename,"RBlockmodtril.mat");
-ofs.open(filename);
-Rblock->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"vreflTril.mat");
-ofs.open(filename);
-v_refl->matlab(ofs);
-ofs.close();
 			//
 			//Apply new reflector to:
 			//1. To subsequent columns of R_ in the current block
@@ -748,75 +689,19 @@ ofs.close();
 				workvec = Teuchos::rcp(new SDV(blockSize_ - i -1));
 				//workvec = Teuchos::rcp(new SDV(2*blockSize_));
 				workmatrix = Teuchos::rcp(new SDM (Teuchos::View, *Rblock, blockSize_+1, blockSize_ - i -1, lclCurcol, lclCurcol +1 ) );
-
-
-
-sprintf(filename,"workMatrixTril.mat");
-ofs.open(filename);
-workmatrix->matlab(ofs);
-ofs.close();
-
-std::cout << "numRows = " << workmatrix->numRows() << std::endl;
-std::cout << "numCols = " << workmatrix->numCols() << std::endl;
-std::cout << "stride = " << workmatrix->stride() << std::endl;
-std::cout << "v_refl length = " << v_refl->length() << std::endl;
-std::cout << "workvec length = " << workvec->length() << std::endl;
-
 				blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix->values(), workmatrix->stride(), v_refl->values(), 1, zero, workvec->values(), 1);
-
-std::cout << "This is a workmatrix view of Rblock" << std::endl;
-workmatrix->print(std::cout);
-std::cout << "This is vrefl" << std::endl;
-v_refl->print(std::cout);
-std::cout << "This is workvec" << std::endl;
-workvec->print(std::cout);
 				blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.*one/nvs, v_refl->values(),1,workvec->values(),1,workmatrix->values(),workmatrix->stride());
-workmatrix->print(std::cout);
 			}
 
-sprintf(filename,"v_reflTril.mat");
-ofs.open(filename);
-v_refl->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"RtrilHouse.mat");
-ofs.open(filename);
-Rblock->matlab(ofs);
-ofs.close();
 
 			//
 			//2.
 			//
 			workvec = Teuchos::rcp(new SDV(2*blockSize_));
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, House_[lclIter_ -1], blockSize_+1, 2*blockSize_, i, 0 ) );
-
-sprintf(filename,"workvecTril.mat");
-ofs.open(filename);
-workvec->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"v_reflTril.mat");
-ofs.open(filename);
-v_refl->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"workMatrixTril.mat");
-ofs.open(filename);
-workmatrix->matlab(ofs);
-ofs.close();
-//exit(1);
 			blas.GEMV(Teuchos::TRANS,workmatrix->numRows(),workmatrix->numCols(),one,workmatrix->values(),workmatrix->stride(), v_refl->values(), 1,zero,workvec->values(),1);
 			blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2*one/nvs, v_refl -> values(),1,workvec->values(),1,workmatrix->values(),(*workmatrix).stride());
 
-sprintf(filename,"HouseTril.mat");
-ofs.open(filename);
-House_[lclIter_ - 1].matlab(ofs);
-ofs.close();
-
-sprintf(filename,"workvecTril.mat");
-ofs.open(filename);
-workvec->matlab(ofs);
-ofs.close();
                         //
                         //3.
                         //
@@ -824,12 +709,6 @@ ofs.close();
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, Z_, blockSize_+1, blockSize_, curcol, 0 ) );
 			blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix-> values(), workmatrix->stride(), v_refl -> values(), 1, zero, workvec->values(), 1);
                         blas.GER((*workmatrix).numRows(),(*workmatrix).numCols(), -2*one/nvs,v_refl -> values(), 1,&((*workvec)[0]),1,(*workmatrix)[0],(*workmatrix).stride());
-
-sprintf(filename,"ZTril.mat");
-ofs.open(filename);
-Z_.matlab(ofs);
-ofs.close();
-
 
 			//
 			//4.
@@ -839,30 +718,7 @@ ofs.close();
 				(*R_)[curcol][curcol+ii] = 0;
 			}
 		}
-sprintf(filename,"HouseTril.mat");
-ofs.open(filename);
-House_[lclIter_].matlab(ofs);
-ofs.close();
 
-sprintf(filename,"RtrilHouse.mat");
-ofs.open(filename);
-Rblock->matlab(ofs);
-ofs.close();
-
-sprintf(filename,"ZTril.mat");
-ofs.open(filename);
-Z_.matlab(ofs);
-ofs.close();
-
-std::cout << "******************This is Z after iteration " << lclIter_ << "**************************" << std::endl;
-Z_.print(std::cout);
-std::cout << "*******************************************************************" << std::endl;
-/*
-std::cout << "******************This is R after iteration " << lclIter_ << "**************************" << std::endl;
-Rblock->print(std::cout);
-std::cout << "*******************************************************************" << std::endl;
-*/
-//exit(1);
 	}
 
 

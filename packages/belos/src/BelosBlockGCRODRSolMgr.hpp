@@ -310,7 +310,7 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     const typename BlockGCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType BlockGCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = 0.0;
 
     template<class ScalarType, class MV, class OP>
-    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 100;
+    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 1000;
 
     template<class ScalarType, class MV, class OP>
     const int BlockGCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 5000;
@@ -319,13 +319,13 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     const bool BlockGCRODRSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
 
     template<class ScalarType, class MV, class OP>
-    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 10;
+    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 100;
 
     template<class ScalarType, class MV, class OP>
     const int BlockGCRODRSolMgr<ScalarType,MV,OP>::blockSize_default_ = 2;
 
     template<class ScalarType, class MV, class OP>
-    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 5;
+    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 25;
  
     template<class ScalarType, class MV, class OP>
     const int BlockGCRODRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Debug;
@@ -715,7 +715,7 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
           	SDM HPtmp( Teuchos::View, *HP_, p+blockSize_, keff );
           	HPtmp.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, *H_, *PPtmp, zero );
 	        // Step #1.5: Perform workspace size query for QR factorization 
-	        // of HP (the worksize will be placed in work_[0])
+	        // of HPprintf(filename,"A11TrilFirstAug.mat");
                 int lwork = -1;
         	tau_.resize(keff);
        		lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
@@ -733,7 +733,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
           	for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
           	lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
           	TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
-
 		// Now we have [Q,R] = qr(H*P)
 
           	// Now compute C = V(:,1:p+blockSize_) * Q
@@ -757,7 +756,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
           	//TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
           	// Step #3: Let U = U * R^{-1}
                 MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
-
 
     }//end else from if(recycledBlocks_ >= p + 1)
     return;
@@ -918,8 +916,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
         	SDM b1( Teuchos::View, *G_, recycledBlocks_+2, 1, 0, recycledBlocks_ );
     		b1.putScalar(zero);
   	}
-
-
     	return;
     }//end buildRecycleSpaceAugKryl definition
 
@@ -970,9 +966,9 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
   	MVT::MvTransMv( one, *Ctmp, *Utmp, A11 );
 
   	// A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
-       	SDM A21( Teuchos::View, A_tmp, m, keff, keff );
-  	index.resize(m);
-  	for (i=0; i < m; i++) { index[i] = i; }
+       	SDM A21( Teuchos::View, A_tmp, m+blockSize_, keff, keff );
+  	index.resize(m+blockSize_);
+  	for (i=0; i < m+blockSize_; i++) { index[i] = i; }
   	Teuchos::RCP<const MV> Vp = MVT::CloneView( *VV, index );
   	MVT::MvTransMv( one, *Vp, *Utmp, A21 );
 
@@ -983,11 +979,7 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
   	// A = G' * A_tmp;
        	SDM A( m2, A_tmp.numCols() );
-
-//KMS
-SDM GGt(GG, Teuchos::TRANS);
-
-  	A.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, GGt, A_tmp, zero );
+  	A.multiply( Teuchos::TRANS, Teuchos::NO_TRANS, one, GG, A_tmp, zero );
 
   	// Compute k smallest harmonic Ritz pairs
        	// SUBROUTINE DGGEVX( BALANC, JOBVL, JOBVR, SENSE, N, A, LDA, B, LDB,
@@ -1037,10 +1029,12 @@ SDM GGt(GG, Teuchos::TRANS);
   	}
 
   	// Select recycledBlocks_ smallest eigenvectors
+
 	for( i=0; i<recycledBlocks_; i++ ) {
 		for( j=0; j<ld; j++ ) {
 			PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
 		}	
+
 	}
 
   	if (xtraVec) { // we need to store one more vector
@@ -1106,7 +1100,6 @@ SDM GGt(GG, Teuchos::TRANS);
 
 	//compute harmRitzMatrix <- H_m^{-H}*E_m
   	lapack.GESV(m, blockSize_, HHt.values(), HHt.stride(), &iperm[0], harmRitzMatrix->values(), harmRitzMatrix->stride(), &info);
-	
 
   	TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 	// Compute H_m + H_m^{-H}*E_m*H_lbl^{H}*H_lbl  
@@ -1129,7 +1122,7 @@ SDM GGt(GG, Teuchos::TRANS);
 
 		//We need to add harmRitzMatrix to the last blockSize_ columns of HH and store the result harmRitzMatrix
 		int harmColIndex, HHColIndex;
-		Htemp = Teuchos::rcp(new SDM(Teuchos::Copy,HH,HH.numRows()-1,HH.numCols()));
+		Htemp = Teuchos::rcp(new SDM(Teuchos::Copy,HH,HH.numRows()-blockSize_,HH.numCols()));
 		for(int i = 0; i<blockSize_; i++){
 
 			harmColIndex = harmRitzMatrix -> numCols() - i -1;
@@ -1142,6 +1135,7 @@ SDM GGt(GG, Teuchos::TRANS);
 	}
 	// Revise to do query for optimal workspace first
 	// Create simple storage for the left eigenvectors, which we don't care about.
+
 	const int ldvl = m;
   	ScalarType* vl = 0;
   	lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wr[0], &wi[0],
@@ -1476,16 +1470,6 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, i
         	else {
           		V_0 = MVT::CloneCopy( *(problem_->getInitPrecResVec()), currIdx );
         	}
-//KMS
-std::ofstream ofs;
-char filename[30];
-
-sprintf(filename,"RHS.mat");
-ofs.open(filename);
-MVT::MvPrint(*(problem_->getRHS()), ofs);
-ofs.close();
-
-
 
                 // Get a matrix to hold the orthonormalization coefficients.
                 Teuchos::RCP<SDM > z_0 =
@@ -1495,10 +1479,6 @@ ofs.close();
  		int rank = ortho_->normalize( *V_0, z_0 );
 		//ADD EXCEPTION IF INITIAL BLOCK IS RANK DEFFICIENT
 		
-sprintf(filename,"InitResidTril.mat");
-ofs.open(filename);
-MVT::MvPrint(*V_0, ofs);
-ofs.close();
 		// Set the new state and initialize the iteration.
 		GmresIterationState<ScalarType,MV> newstate;
 		newstate.V = V_0;
@@ -1510,7 +1490,7 @@ ofs.close();
 
 		try{
 //KMS******************************************************************8
-std::cout << "Here are the current residuals" << std::endl;
+std::cout << "Here are the current residuals before block_gmres" << std::endl;
 {
         std::vector<MagnitudeType> norms;
         block_gmres_iter -> getNativeResiduals( &norms );
@@ -1527,7 +1507,7 @@ std::cout << "Here are the current residuals" << std::endl;
 
 
 //KMS**********************************************************************
-std::cout << "Here are the current residuals" << std::endl;
+std::cout << "Here are the current residuals after block GMRES" << std::endl;
 {
         std::vector<MagnitudeType> norms;
         block_gmres_iter -> getNativeResiduals( &norms );
@@ -1606,11 +1586,6 @@ std::cout << "Here are the current residuals" << std::endl;
 
 
 		problem_->computeCurrPrecResVec( &*R_ );
-//KMS
-sprintf(filename,"BlockResidtril.mat");
-ofs.open(filename);
-MVT::MvPrint(*R_, ofs);
-ofs.close();
 
 		// Get the state.
 		newstate = block_gmres_iter->getState();
@@ -1626,11 +1601,6 @@ ofs.close();
 		// use it for future block recycled GMRES cycles
 		V_ = rcp_const_cast<MV>(newstate.V);
 		newstate.V.release();
-//KMS
-sprintf(filename,"VGMRESTril.mat");
-ofs.open(filename);
-MVT::MvPrint(*V_, ofs);
-ofs.close();		
 		//COMPUTE NEW RECYCLE SPACE SOMEHOW
 		buildRecycleSpaceKryl(keff, block_gmres_iter);
           	printer_->stream(Debug) << "Generated recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
@@ -1638,6 +1608,8 @@ ofs.close();
 		// Return to outer loop if the priming solve 
 		// converged, set the next linear system.
 		if (primeConverged) {
+
+			/*  POSSIBLY INCORRECT CODE WE ARE REPLACING *********************************
 			// Inform the linear problem that we are 
 			// finished with this block linear system.
 			problem_->setCurrLS();
@@ -1655,7 +1627,42 @@ ofs.close();
           		else {
             			currIdx.resize( numRHS2Solve );
           		}
+
+			******************************************************************************/ 
+
+
+			// Inform the linear problem that we are finished with this block linear system.
+         		problem_->setCurrLS();
+
+      			// Update indices for the linear systems to be solved.
+               		startPtr += numCurrRHS;
+      			numRHS2Solve -= numCurrRHS;
+      			if ( numRHS2Solve > 0 ) {
+        			numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+
+        			if ( adaptiveBlockSize_ ) {
+          				blockSize_ = numCurrRHS;
+          				currIdx.resize( numCurrRHS  );
+          				for (int i=0; i<numCurrRHS; ++i)
+          					{ currIdx[i] = startPtr+i; }
+        			}
+        			else {
+          				currIdx.resize( blockSize_ );
+          				for (int i=0; i<numCurrRHS; ++i)
+          					{ currIdx[i] = startPtr+i; }
+          				for (int i=numCurrRHS; i<blockSize_; ++i)
+          					{ currIdx[i] = -1; }
+        			}
+        			// Set the next indices.
+                   		problem_->setLSIndex( currIdx );
+      			}
+      			else {
+        			currIdx.resize( numRHS2Solve );
+      			}
+
 			continue;//Begin solving the next block of RHS's
+
+			
         	}//end if (primeConverged)
 
       	}//end else [if(keff > 0)]
@@ -1701,6 +1708,16 @@ ofs.close();
 		//iterate using block_gcrodr_iter
 		try{	
 			block_gcrodr_iter -> iterate();
+//KMS**********************************************************************
+  std::cout << "Here are the current residuals after a block GCRODR cycle" << std::endl;
+{
+        std::vector<MagnitudeType> norms;
+        block_gcrodr_iter -> getNativeResiduals( &norms );
+        for(int jj=0; jj<norms.size(); jj++){
+                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
+        }
+}
+//************************************************************************8
 
 			///////////////////////////////////////////////////////////////
 			//
@@ -1734,9 +1751,7 @@ ofs.close();
 
 				//update linear problem
 				Teuchos::RCP<MV> update = block_gcrodr_iter->getCurrentUpdate();
-				
 				problem_ -> updateSolution(update, true);
-				
 				buildRecycleSpaceAugKryl(block_gcrodr_iter);
 
 				printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
@@ -1810,6 +1825,7 @@ ofs.close();
      	Teuchos::RCP<MV> update = block_gcrodr_iter->getCurrentUpdate();
      	problem_->updateSolution( update, true );
 
+        /*  POSSIBLY INCORRECT CODE WE ARE REPLACING *********************************
      	// Inform the linear problem that we are finished with this block linear system.
      	problem_->setCurrLS();
 
@@ -1820,6 +1836,36 @@ ofs.close();
 
         	// Set the next indices.
         	problem_->setLSIndex( currIdx );
+      	}
+      	else {
+        	currIdx.resize( numRHS2Solve );
+      	}
+	******************************************************************************/
+
+	// Inform the linear problem that we are finished with this block linear system.
+        problem_->setCurrLS();
+
+      	// Update indices for the linear systems to be solved.
+        startPtr += numCurrRHS;
+      	numRHS2Solve -= numCurrRHS;
+      	if ( numRHS2Solve > 0 ) {
+        	numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+
+        	if ( adaptiveBlockSize_ ) {
+          		blockSize_ = numCurrRHS;
+          		currIdx.resize( numCurrRHS  );
+          		for (int i=0; i<numCurrRHS; ++i)
+          			{ currIdx[i] = startPtr+i; }
+        	}
+        	else {
+          		currIdx.resize( blockSize_ );
+          		for (int i=0; i<numCurrRHS; ++i)
+          			{ currIdx[i] = startPtr+i; }
+          		for (int i=numCurrRHS; i<blockSize_; ++i)
+          			{ currIdx[i] = -1; }
+        		}
+        		// Set the next indices.
+                   	problem_->setLSIndex( currIdx );
       	}
       	else {
         	currIdx.resize( numRHS2Solve );
@@ -1854,3 +1900,19 @@ ofs.close();
      return Converged; // return from BlockGCRODRSolMgr::solve()
    }//end solve()
 }//End Belos Namespace
+
+/*
+
+std::ofstream ofs;
+char filename[30];
+ 
+sprintf(filename,"U5.mat");
+ofs.open(filename);
+MVT::MvPrint(*U_, ofs);
+ofs.close();
+
+sprintf(filename,"GTrilFirstAug.mat");
+ofs.open(filename);
+G_->matlab(ofs);
+ofs.close();
+ */
