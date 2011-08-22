@@ -61,8 +61,8 @@ public:
   typedef device_type::memory_space  memory_space ;
 
   typedef Kokkos::MDArrayView< int , device_type > array_type ;
-  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapRight > map_right_type ;
-  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapLeft > map_left_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapRight , 1 > map_right_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapLeft , 1 > map_left_type ;
 
   enum { NP = 1000 , N1 = 10 , N2 = 20 };
 

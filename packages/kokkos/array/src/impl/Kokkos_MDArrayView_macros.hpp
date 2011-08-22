@@ -59,8 +59,17 @@ public:
 
   typedef MDArrayView< value_type , Serial< HostMemory , mdarray_map > > HostView ;
 
+private:
+
+  enum { Align = Impl::ArrayAlignment< value_type , memory_space >::value };
+
+  typedef Impl::MDArrayIndexMap< memory_space , mdarray_map , Align > IndexMap ;
+
+public:
+
   /*------------------------------------------------------------------*/
-  enum { Contiguous = true };
+
+  enum { Contiguous = IndexMap::Contiguous };
 
   /** \brief  Query rank of the array */
   inline
@@ -230,8 +239,8 @@ public:
 
 private:
 
-  MemoryView< value_type , memory_space >            m_memory ;
-  Impl::MDArrayIndexMap< memory_space , mdarray_map > m_map ;
+  MemoryView< value_type , memory_space >  m_memory ;
+  IndexMap                                 m_map ;
 
   inline
   MDArrayView( const std::string & label ,
@@ -240,8 +249,10 @@ private:
     : m_memory()
     , m_map( nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 )
     {
-      memory_space::allocate_memory_view( m_memory , m_map.size() , label );
-      parallel_for( m_map.size() , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
+      memory_space::allocate_memory_view( m_memory , m_map.allocation_size() , label );
+
+      parallel_for( m_map.allocation_size() , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
+
     }
 
   template< typename V , class D >

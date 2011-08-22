@@ -50,7 +50,8 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class ReduceTraits >
-class ParallelReduce< FunctorType , ReduceTraits , typename ReduceTraits::value_type , DeviceTPI > {
+class ParallelReduce< FunctorType , ReduceTraits ,
+                      typename ReduceTraits::value_type , DeviceTPI > {
 public:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
@@ -243,6 +244,14 @@ public:
     : m_member_functors()
     , result()
     {} 
+
+  ~MultiFunctorParallelReduce()
+  {
+    while ( ! m_member_functors.empty() ) {
+      delete m_member_functors.back();
+      m_member_functors.pop_back();
+    }
+  }
 
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )

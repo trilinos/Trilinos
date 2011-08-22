@@ -57,8 +57,6 @@
 //----------------------------------------------------------------------------
 
 #include <Kokkos_DeviceCuda_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>

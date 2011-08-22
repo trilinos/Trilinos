@@ -42,6 +42,8 @@
 
 #define KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 0
 
+#include <impl/Kokkos_ArrayBounds.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -60,6 +62,13 @@ struct DeviceCudaTraits {
 
   typedef unsigned long
     ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
+};
+
+template< typename ScalarType >
+class ArrayAlignment< ScalarType , DeviceCuda > {
+public:
+  // Align on Warp * Word boundary
+  enum { value = ( DeviceCudaTraits::WarpSize * sizeof(DeviceCuda::size_type) ) / sizeof(ScalarType) };
 };
 
 }

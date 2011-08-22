@@ -58,18 +58,11 @@ public:
   typedef KOKKOS_MACRO_DEVICE_MEMORY  memory_space ;
   typedef memory_space::size_type     size_type ;
 
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type rank() const { return m_rank; }
+  enum { Contiguous = true };
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const
-    {
-      size_type n = m_dims[0] ;
-      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
-      return n ;
-    }
+  size_type rank() const { return m_rank; }
 
   template< typename iType >
   inline
@@ -89,6 +82,24 @@ public:
       dims[i] = m_dims[i] ;
     }
   }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const
+    {
+      size_type n = m_dims[0] ;
+      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
+      return n ;
+    }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const
+    {
+      size_type n = m_dims[0] ;
+      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
+      return n ;
+    }
 
   //------------------------------------
 

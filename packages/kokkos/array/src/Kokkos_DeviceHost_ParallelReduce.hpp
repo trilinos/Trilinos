@@ -195,6 +195,11 @@ public:
 
   value_type result ;
 
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    , result()
+    {}
+
   ~MultiFunctorParallelReduce()
     {
       while ( ! m_member_functors.empty() ) {
@@ -202,11 +207,6 @@ public:
         m_member_functors.pop_back();
       }
     }
-
-  MultiFunctorParallelReduce()
-    : m_member_functors()
-    , result()
-    {}
 
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )

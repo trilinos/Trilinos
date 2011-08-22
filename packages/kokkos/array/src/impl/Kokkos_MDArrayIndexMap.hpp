@@ -48,15 +48,12 @@ enum { MDArrayMaxRank = 8 };
 class MDArrayIndexMapRight ;
 class MDArrayIndexMapLeft ;
 
-template < class MemorySpace , class MDArrayMapOption , unsigned Align = 1 >
+/** \brief  MDArray index space mapping to a block of memory.
+ *          Alignment requirements given by 
+ *          ArrayAlignment< ScalarType , MemorySpace >::value
+ */
+template < class MemorySpace , class MDArrayMapOption , unsigned Align >
 class MDArrayIndexMap ;
-
-/** \brief  Memory alignment requirement for MDArray */
-template < class ScalarType , class MemorySpace >
-class MDArrayIndexMapAlign {
-public:
-  enum { value = 1 };
-};
 
 } // namespace Impl
 } // namespace Kokkos

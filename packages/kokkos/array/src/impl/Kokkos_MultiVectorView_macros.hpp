@@ -60,18 +60,27 @@ public:
 
   typedef MultiVectorView< value_type , DeviceHost > HostView ;
 
-  enum { Contiguous = true };
+private:
+
+  enum { Align = Impl::ArrayAlignment< value_type , memory_space >::value };
+  enum { RankLength = 0 };
+  enum { RankCount  = 1 };
+  enum { RankStride = Align <= 1 ? 0 : 2 };
+
+public:
+
+  enum { Contiguous = Align <= 1 };
 
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type length() const { return m_length ; }
+  size_type length() const { return m_dim[ RankLength ]; }
   
   /** \brief  Query count of vectors */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type count()  const { return m_count ; }
+  size_type count()  const { return m_dim[ RankCount ]; }
   
   /** \brief  Query if NULL view */
   inline
@@ -82,14 +91,16 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const MultiVectorView & rhs ) const
   {
-    return m_ptr_on_device == rhs.m_ptr_on_device && m_count == rhs.m_count ;
+    return m_ptr_on_device == rhs.m_ptr_on_device &&
+           m_dim[ RankCount ] == rhs.m_dim[ RankCount ];
   }
   
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const MultiVectorView & rhs ) const
   {
-    return m_ptr_on_device != rhs.m_ptr_on_device || m_count != rhs.m_count ;
+    return m_ptr_on_device != rhs.m_ptr_on_device ||
+           m_dim[ RankCount ] != rhs.m_dim[ RankCount ];
   }
 
   /** \brief  Because memory is contiguous this is exposed */
@@ -106,7 +117,7 @@ public:
   template< typename iTypeP , typename iTypeV >
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP , const iTypeV & iV ) const
-    { return m_ptr_on_device[ iP + m_length * iV ]; }
+    { return m_ptr_on_device[ iP + m_dim[ RankStride ] * iV ]; }
   
   template< typename iTypeP >
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -120,17 +131,25 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView()
-    : m_memory(), m_ptr_on_device(0), m_length(0), m_count(0) {}
+    : m_memory(), m_ptr_on_device(0)
+    {
+      m_dim[ RankLength ] = 0 ;
+      m_dim[ RankCount ]  = 0 ;
+      m_dim[ RankStride ] = 0 ;
+    }
 
   /** \brief  Construct a view of the array */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView( const MultiVectorView & rhs )
     : m_memory()
-    , m_ptr_on_device( rhs.m_ptr_on_device)
-    , m_length(        rhs.m_length )
-    , m_count(         rhs.m_count )
-    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); }
+    , m_ptr_on_device( rhs.m_ptr_on_device )
+    {
+      m_dim[ RankLength ] = rhs.m_dim[ RankLength ];
+      m_dim[ RankCount ]  = rhs.m_dim[ RankCount ];
+      m_dim[ RankStride ] = rhs.m_dim[ RankStride ];
+      memory_space::assign_memory_view( m_memory , rhs.m_memory );
+    }
 
   /** \brief  Assign to a view of the rhs.
    *          If the old view is the last view
@@ -141,9 +160,10 @@ public:
   MultiVectorView & operator = ( const MultiVectorView & rhs )
     {
       memory_space::assign_memory_view( m_memory , rhs.m_memory );
-      m_ptr_on_device = rhs.m_ptr_on_device ;
-      m_length        = rhs.m_length ;
-      m_count         = rhs.m_count  ;
+      m_ptr_on_device     = rhs.m_ptr_on_device ;
+      m_dim[ RankLength ] = rhs.m_dim[ RankLength ];
+      m_dim[ RankCount ]  = rhs.m_dim[ RankCount ];
+      m_dim[ RankStride ] = rhs.m_dim[ RankStride ];
       return *this ;
     }
   
@@ -156,8 +176,9 @@ public:
     {
       memory_space::clear_memory_view( m_memory );
       m_ptr_on_device = 0 ;
-      m_length        = 0 ;
-      m_count         = 0 ;
+      m_dim[ RankLength ] = 0 ;
+      m_dim[ RankCount ]  = 0 ;
+      m_dim[ RankStride ] = 0 ;
     }
 
   /*------------------------------------------------------------------*/
@@ -167,16 +188,20 @@ public:
   MultiVectorView( const MultiVectorView & rhs , size_type iBeg ,
                                                  size_type iEnd )
     : m_memory()
-    , m_ptr_on_device( iBeg < iEnd && iEnd <= rhs.m_count
-                       ? rhs.m_ptr_on_device + rhs.m_length * iBeg : 0 )
-    , m_length( m_ptr_on_device ? rhs.m_length : 0 )
-    , m_count(  m_ptr_on_device ? iEnd - iBeg : 0 )
+    , m_ptr_on_device( 0 )
     {
-      if ( m_ptr_on_device ) {
+      if ( iBeg < iEnd && iEnd < rhs.m_dim[ RankCount ] ) {
+        m_dim[ RankLength ] = rhs.m_dim[ RankLength ];
+        m_dim[ RankCount ]  = iEnd - iBeg ;
+        m_dim[ RankStride ] = rhs.m_dim[ RankStride ];
+        m_ptr_on_device     = rhs.m_ptr_on_device + m_dim[ RankStride ] * iBeg ;
         memory_space::assign_memory_view( m_memory , rhs.m_memory );
       }
-      else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iEnd , rhs.m_count ) );
+      else {
+        m_dim[ RankLength ] = 0 ;
+        m_dim[ RankCount ]  = 0 ;
+        m_dim[ RankStride ] = 0 ;
+        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iEnd , rhs.m_dim[ RankCount] ) );
       }
     }
 
@@ -184,36 +209,48 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView( const MultiVectorView & rhs , size_type iBeg )
     : m_memory()
-    , m_ptr_on_device( iBeg < rhs.m_count
-                       ? rhs.m_ptr_on_device + rhs.m_length * iBeg : 0 )
-    , m_length( m_ptr_on_device ? rhs.m_length : 0 )
-    , m_count(  m_ptr_on_device ? 1 : 0 )
+    , m_ptr_on_device( 0 )
     {
-      if ( m_ptr_on_device ) {
+      if ( iBeg < rhs.m_dim[ RankCount ] ) {
+        m_dim[ RankLength ] = rhs.m_dim[ RankLength ];
+        m_dim[ RankCount ]  = 1 ;
+        m_dim[ RankStride ] = rhs.m_dim[ RankStride ];
+        m_ptr_on_device     = rhs.m_ptr_on_device + m_dim[ RankStride ] * iBeg ;
         memory_space::assign_memory_view( m_memory , rhs.m_memory );
       }
-      else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iBeg + 1 , rhs.m_count ) );
+      else {
+        m_dim[ RankLength ] = 0 ;
+        m_dim[ RankCount ]  = 0 ;
+        m_dim[ RankStride ] = 0 ;
+        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iBeg + 1 , rhs.m_dim[ RankCount] ) );
       }
     }
 
 private:
 
+  enum { N = 2 + ( Contiguous ? 0 : 1 ) };
+
   MemoryView< value_type , memory_space > m_memory ;
   ValueType * m_ptr_on_device ;
-  size_type   m_length ;
-  size_type   m_count ;
+  size_type   m_dim[ N ];
 
   inline
   MultiVectorView( const std::string & label ,
                    size_type arg_length , size_type arg_count )
     : m_memory()
     , m_ptr_on_device( 0 )
-    , m_length( arg_length )
-    , m_count( arg_count )
     {
-      memory_space::allocate_memory_view( m_memory ,
-                                         arg_length * arg_count , label );
+      m_dim[ RankLength ] = arg_length ;
+      m_dim[ RankCount ]  = arg_count ;
+
+      if ( ! Contiguous ) {
+        m_dim[ RankStride ] = m_dim[ RankLength ];
+        if ( m_dim[ RankStride ] % Align ) {
+          m_dim[ RankStride ] += Align - m_dim[ RankStride ] % Align ;
+        }
+      }
+
+      memory_space::allocate_memory_view( m_memory , m_dim[ RankStride ] * m_dim[ RankCount ] , label );
       m_ptr_on_device = m_memory.ptr_on_device();
     }
 

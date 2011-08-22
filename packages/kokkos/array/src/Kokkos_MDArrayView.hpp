@@ -125,7 +125,7 @@ public:
    *          If contiguous then can get a pointer to the memory.
    */
   enum { Contiguous =
-         Impl::MDArrayIndexMap< memory_space , mdarray_map >::Contiguous };
+         Impl::MDArrayIndexMap< memory_space , mdarray_map , 1 >::Contiguous };
 
   /** \brief  Query rank of the array */
   size_type rank() const { return m_map.rank(); }
@@ -259,8 +259,8 @@ private:
              Impl::SameType< HostMemory , memory_space >::value >::value };
 
 
-  MemoryView< value_type , memory_space >            m_memory ;
-  Impl::MDArrayIndexMap< memory_space , mdarray_map > m_map ;
+  MemoryView< value_type , memory_space >                 m_memory ;
+  Impl::MDArrayIndexMap< memory_space , mdarray_map , 1 > m_map ;
 
   MDArrayView( const std::string & label ,
                size_t nP , size_t n1 , size_t n2 , size_t n3 ,
