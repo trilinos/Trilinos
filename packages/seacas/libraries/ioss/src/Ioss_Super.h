@@ -52,7 +52,9 @@ namespace Ioss {
     Super(const std::string &name, int node_count);
 
     static void make_super(const std::string &type);
-    
+    static void store_topology_pointer(Ioss::Super *superelementTopology);
+    static void delete_topology_pointers();
+
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}
@@ -81,6 +83,7 @@ namespace Ioss {
   private:
     int nodeCount;
     Ioss::ElementVariableType *storageType;
+    static std::vector<Ioss::Super *> topologyPointers;
     Super(const Super&); // Do not implement
   };
 }
