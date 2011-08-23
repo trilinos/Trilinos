@@ -48,21 +48,21 @@ INPUT                  = index.doc groups.doc ../src ../epetra/src ../tpetra/src
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../epetra/example \
-                         ../epetra/example/BlockCG/BlockCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/PseudoBlockCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp \
-                         ../epetra/example/GCRODR/GCRODREpetraExFile.cpp \
-                         ../epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp \
-                         ../epetra/example/RCG/RCGEpetraExFile.cpp \
-                         ../epetra/example/TFQMR/TFQMREpetraExFile.cpp
+EXAMPLE_PATH           = ../epetra/examples \
+                         ../epetra/examples/BlockCG/BlockCGEpetraExFile.cpp \
+                         ../epetra/examples/BlockCG/BlockPrecCGEpetraExFile.cpp \
+                         ../epetra/examples/BlockCG/PseudoBlockCGEpetraExFile.cpp \
+                         ../epetra/examples/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/BlockGmresEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/BlockPrecGmresEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/BlockFlexGmresEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/BlockGmresPolyEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/PseudoBlockGmresEpetraExFile.cpp \
+                         ../epetra/examples/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp \
+                         ../epetra/examples/GCRODR/GCRODREpetraExFile.cpp \
+                         ../epetra/examples/GCRODR/PrecGCRODREpetraExFile.cpp \
+                         ../epetra/examples/RCG/RCGEpetraExFile.cpp \
+                         ../epetra/examples/TFQMR/TFQMREpetraExFile.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = ./images
 ALPHABETICAL_INDEX     = YES
