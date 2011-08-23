@@ -307,7 +307,7 @@ public:
                      Scalar alpha = ScalarTraits<Scalar>::one(),
                      Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
-    return matrixData_->apply(X,Y,mode,alpha,beta);
+    matrixData_->apply(X,Y,mode,alpha,beta);
   }
   
   //! \brief Returns the Map associated with the domain of this operator.
