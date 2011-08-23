@@ -3,6 +3,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
   class Level;
@@ -29,6 +30,17 @@ namespace MueLu {
 
     //@{
     //! @name Build methods.
+
+    //! Build an object with this factory.
+    bool SingleLevelBuild(Level & fineLevel) const {
+      TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "MueLu::TwoLevelFactoryBase::Build(): two Level objects must be provided");
+      return false;
+    }
+
+    //! Build an object with this factory.
+    bool TwoLevelBuild(Level & fineLevel, Level & coarseLevel) const {
+      return Build(fineLevel, coarseLevel);
+    }
 
     //! Build an object with this factory.
     virtual bool Build(Level & fineLevel, Level & coarseLevel) const = 0;
