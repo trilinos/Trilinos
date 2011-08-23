@@ -103,7 +103,7 @@ namespace MueLu {
       fineLevel.Request("Aggregates"); //FIXME until Needs gets fixed
       aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
-      RCP<Operator> Ptent;
+      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent");
       coarseLevel.Release("Ptent");//??
       coarseLevel.Set("P", Ptent);
 
@@ -282,19 +282,17 @@ namespace MueLu {
       // Set up storage for the rows of the local Qs that belong to other processors.
       // FIXME This is inefficient and could be done within the main loop below with std::vector's.
       RCP<const Map> colMap = fineA->getColMap();
-      std::vector<GO> ghostElts;
+      Array<GO> ghostGIDs;
       for (LO j=0; j<numAggs; ++j)
       {
         for (LO k=0; k<aggSizes[j]; ++k) {
           //TODO is the use of Xpetra::global_size_t below correct?
           if (rowMapForPtent->getGlobalElement(aggToRowMap[j][k]) == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid() )
           {
-            ghostElts.push_back(colMap->getGlobalElement(aggToRowMap[j][k]));
+            ghostGIDs.push_back(colMap->getGlobalElement(aggToRowMap[j][k]));
           }
         }
       }
-      Teuchos::ArrayView<GO> ghostGIDs(&ghostElts[0],ghostElts.size());
-
       RCP<const Map > ghostQMap = MapFactory::Build(fineA->getRowMap()->lib(),
                                                     Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                     ghostGIDs,

@@ -5,6 +5,7 @@
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Time.hpp>
+#include "MueLu_config.hpp"
 
 namespace MueLu {
   

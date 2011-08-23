@@ -68,6 +68,7 @@ namespace MueLu {
 #endif
     }
 
+#ifdef HAVE_MUELU_PROFILING
     void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
     {
       double maxTime=0,minTime=0,avgTime=0;
@@ -90,6 +91,12 @@ namespace MueLu {
         std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
       }
     } //ReportTimeAndMemory
+#else
+    void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
+    {
+      return;
+    }
+#endif
     
   } //namespace MemUtils
   
