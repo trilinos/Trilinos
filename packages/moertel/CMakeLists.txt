@@ -19,33 +19,17 @@ PACKAGE(Moertel)
 
 IF(Moertel_ENABLE_Mesh)
 
-  # Exodus is optional, it can be missing, come in through a TPL, or SEACAS
-  IF(TPL_ENABLE_ExodusII)
-    ADD_OPTION_AND_DEFINE(TPL_ENABLE_ExodusII
-      HAVE_MOERTEL_EXODUS
-      "Enable ExodusII reader in Moertel requires ExodusII TPL."
-      OFF )
-    INCLUDE_DIRECTORIES(${TPL_ExodusII_INCLUDE_DIRS})
-    #ELSEIF(Trilinos_ENABLE_SEACAS)
-    #ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_SEACAS
-  ELSEIF(${PACKAGE_NAME}_ENABLE_SEACASExodus)
+  # Exodus is optional, it can be missing or come in through SEACAS
+  IF(${PACKAGE_NAME}_ENABLE_SEACASExodus)
     SET(HAVE_MOERTEL_EXODUS ${${PACKAGE_NAME}_ENABLE_SEACASExodus})
     SET(HAVE_MOERTEL_SEACAS ON)
     INCLUDE_DIRECTORIES(${SEACASExodus_INCLUDE_DIRS})
   ENDIF()
 
-  # Nemesis is optional, it can be missing, come in through a TPL, or SEACAS
+  # Nemesis is optional, it can be missing or come in through SEACAS
   # It is only needed when MPI is enabled, and if Exodus is present
   IF(TPL_ENABLE_MPI AND HAVE_MOERTEL_EXODUS)
-    IF(TPL_ENABLE_Nemesis)
-      ADD_OPTION_AND_DEFINE(TPL_ENABLE_Nemesis
-        HAVE_MOERTEL_NEMESIS
-        "Enable ExodusII/Nemesis reader in Moertel requires Nemesis TPL."
-        OFF )
-      INCLUDE_DIRECTORIES(${TPL_Nemesis_INCLUDE_DIRS})
-	  #ELSEIF(Trilinos_ENABLE_SEACAS)
-	  #ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_SEACAS
-    ELSEIF(${PACKAGE_NAME}_ENABLE_SEACASNemesis)
+    IF(${PACKAGE_NAME}_ENABLE_SEACASNemesis)
       SET(HAVE_MOERTEL_NEMESIS ${${PACKAGE_NAME}_ENABLE_SEACASNemesis})
     ENDIF()
   ENDIF()
