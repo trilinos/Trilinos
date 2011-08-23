@@ -59,7 +59,7 @@ public:
   }
 
   CrsOperator(RCP<CrsMatrix> &matrix)
-    : finalDefaultView_(false)
+    : finalDefaultView_(matrix->isFillComplete())
   {
     // Set matrix data
     matrixData_ = matrix;
