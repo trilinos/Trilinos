@@ -24,7 +24,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      PyTrilinos TriKota Optika  # We don't have TPLs for these
      Sundance Stokhos # Currently have failures and nor currently needed by CASL
      TrilinosFramework # Has 11 failing tests for some reason so disabling for now
-     CASLRAVEANC CASLRAVEANCKVIPRE
+     CASLRAVEANC CASLRAVEANCKVIPRE CASLRAVECoreStore
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
