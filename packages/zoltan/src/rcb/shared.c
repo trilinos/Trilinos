@@ -2064,7 +2064,7 @@ ZOLTAN_ID_PTR current_candidate;
                    ZOLTAN_MALLOC(dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
   if (dindx) {
     int prevpart = -1;
-    /* there are more than one part on this proc. */
+    /* there is more than one part on this proc. */
     /* use dindx to access dots grouped by part */
     for (i = 0; i < dotnum; i++) {
       if (dotpt->Part[dindx[i]] != prevpart) {
@@ -2100,7 +2100,7 @@ ZOLTAN_ID_PTR current_candidate;
   }
 
   ierr = Zoltan_DD_Find(dd, input_gids, NULL, (char*)*candidate_gids, NULL,
-                        num_input, NULL); /* KDD Can proc (last arg) be NULL? */
+                        num_input, NULL); 
 
 End:
 
