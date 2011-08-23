@@ -5,6 +5,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"
 

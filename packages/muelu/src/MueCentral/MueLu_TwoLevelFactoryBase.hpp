@@ -1,12 +1,11 @@
 #ifndef MUELU_TWOLEVELFACTORY_HPP
 #define MUELU_TWOLEVELFACTORY_HPP
 
-#include "Teuchos_VerboseObject.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_FactoryBase.hpp"
 
 namespace MueLu {
+  class Level;
 
   /*!
     @class Base class for factories (e.g., R, P, and A_coarse).
@@ -14,11 +13,9 @@ namespace MueLu {
   */
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class TwoLevelFactoryBase : public Teuchos::VerboseObject<TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > {
+  class TwoLevelFactoryBase : public FactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
-    
-  private:
 
   public:
     //@{ Constructors/Destructors.

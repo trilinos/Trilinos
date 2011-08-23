@@ -9,3 +9,11 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               
 #ifdef MUELU_AGGREGATES_SHORT
 typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
 #endif
+
+#ifdef MUELU_LEVEL_SHORT
+typedef MueLu::Level Level;
+#endif
+
+#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
+typedef MueLu::DefaultFactoryHandlerBase DefaultFactoryHandlerBase;
+#endif

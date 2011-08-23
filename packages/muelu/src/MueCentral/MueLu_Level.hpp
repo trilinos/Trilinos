@@ -5,7 +5,9 @@
 #include <sstream>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_Needs.hpp"
+#include "MueLu_DefaultFactoryHandlerBase.hpp"
 
 namespace MueLu {
 
@@ -20,7 +22,8 @@ namespace MueLu {
   class Level : public Needs {
 
   private: 
-    mutable int levelID_;                  // id number associated with level
+    mutable int levelID_; // id number associated with level
+    RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
 
   protected:
     RCP<Teuchos::FancyOStream> out_;
@@ -33,18 +36,22 @@ namespace MueLu {
       //Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating new uninitialized Level" << std::endl;
     }
 
+    //! Constructor
+    Level(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler), out_(this->getOStream()) { }
+
     //! Copy constructor.
-    Level(Level const &Source) : out_(this->getOStream()) {
-      //Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Copy constructing existing Level" << std::endl;
-      levelID_ = Source.levelID_;
+    explicit Level(const Level& source) {
+      levelID_ = source.levelID_;
+      defaultFactoryHandler_ = source.defaultFactoryHandler_;
     }
+
     //@}
 
     //@{
-    //! @name Build methods
+    //! @name Build methods //TODO: merge with copy constructor?
     //! Builds a new Level object.
-    static RCP<Level> Build(std::ostream &os) {
-      return rcp( new Level() );
+    RCP<Level> Build(std::ostream &os) { //TODO: why ostream in argument?
+      return rcp( new Level(defaultFactoryHandler_) );
     }
     //@}
 
@@ -62,6 +69,12 @@ namespace MueLu {
       levelID_ = i;
     }
 
+    //! Set default factories (used internally by Hierarchy::SetLevel()).
+    // Users should not use this method.
+    void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) {
+      defaultFactoryHandler_ = defaultFactoryHandler;
+    }
+
     //@}
 
     //@{
@@ -69,6 +82,12 @@ namespace MueLu {
 
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
+
+    //! Get default factory.
+    const RCP<FactoryBase> & GetDefaultFactory(const std::string& varname) {
+      TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
+      return defaultFactoryHandler_->GetDefaultFactory(varname);
+    }
 
     //@}
 
@@ -79,5 +98,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_LEVEL_SHORT
-
 #endif //ifndef MUELU_LEVEL_HPP

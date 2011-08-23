@@ -9,9 +9,11 @@
 #include <iostream>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_Exceptions.hpp"
 
 #include "MueLu_LocalAggregationFactory.hpp"
 #include "MueLu_UCAggregationCommHelper.hpp"
@@ -33,7 +35,7 @@ namespace MueLu {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-  class UCAggregationFactory : public Teuchos::Describable {
+  class UCAggregationFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
     //#include "MueLu_UseShortNamesOrdinal.hpp"
 #include "MueLu_UseShortNames.hpp"
 
@@ -97,7 +99,7 @@ namespace MueLu {
     - TODO reuse of aggregates
     - TODO check if called twice (bug TEUCHOS_TEST_EQUALITY)
     */
-    void Build(Level &currentLevel) const
+    bool Build(Level &currentLevel) const
     {
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
@@ -127,6 +129,8 @@ namespace MueLu {
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
+
+      return true;//??
     }
 
     RCP<Aggregates> Build(const Graph& graph) const

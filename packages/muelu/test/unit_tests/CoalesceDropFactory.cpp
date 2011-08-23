@@ -13,8 +13,8 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<CoalesceDropFactory> cdFact = rcp(new CoalesceDropFactory);
-    TEUCHOS_TEST_EQUALITY(cdFact != Teuchos::null, true, out, success);
+    RCP<CoalesceDropFactory> coalesceDropFact = rcp(new CoalesceDropFactory());
+    TEUCHOS_TEST_EQUALITY(coalesceDropFact != Teuchos::null, true, out, success);
 
   } //Constructor
 
@@ -22,12 +22,12 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    CoalesceDropFactory cdFact;
+    CoalesceDropFactory coalesceDropFact;
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
     Level fineLevel;
     fineLevel.Set("A",A);
 
-    cdFact.Build(fineLevel);
+    coalesceDropFact.Build(fineLevel);
     //FIXME how do we verify that this is correct?
   } //Build
 

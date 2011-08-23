@@ -2,10 +2,6 @@
 
 #include <Xpetra_UseShortNamesScalar.hpp>
 
-#ifdef MUELU_LEVEL_SHORT
-typedef MueLu::Level Level;
-#endif
-
 #ifdef MUELU_HIERARCHY_SHORT
 typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>           Hierarchy;
 #endif
@@ -113,3 +109,8 @@ typedef MueLu::UCAggregationFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,Loca
 #ifdef MUELU_LOCALAGGREGATIONFACTORY_SHORT
 typedef MueLu::LocalAggregationFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       LocalAggregationFactory;
 #endif
+
+#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
+typedef MueLu::DefaultFactoryHandler<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       DefaultFactoryHandler;
+#endif
+

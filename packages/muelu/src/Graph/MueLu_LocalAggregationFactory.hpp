@@ -9,11 +9,14 @@
 #include <iostream>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_LinkedList.hpp"
+
+#include "MueLu_Memory.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \

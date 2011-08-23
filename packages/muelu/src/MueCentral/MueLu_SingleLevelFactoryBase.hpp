@@ -1,12 +1,11 @@
 #ifndef MUELU_SINGLELEVELFACTORY_HPP
 #define MUELU_SINGLELEVELFACTORY_HPP
 
-#include "Teuchos_VerboseObject.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_FactoryBase.hpp"
 
 namespace MueLu {
+  class Level;
 
   /*!
     @class Base class for factories (e.g., Aggregation, Smoothers).
@@ -14,7 +13,7 @@ namespace MueLu {
   */
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class SingleLevelFactoryBase : public Teuchos::VerboseObject<SingleLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > {
+  class SingleLevelFactoryBase : public FactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
     

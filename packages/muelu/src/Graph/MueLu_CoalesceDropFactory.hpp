@@ -27,8 +27,6 @@ class CoalesceDropFactory : public Teuchos::Describable {
 
 #include "MueLu_UseShortNames.hpp"
 
-private:
-
 public:
 
   //! @name Constructors/Destructors.
