@@ -662,7 +662,8 @@ namespace MueLu {
 #else
       throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
 #endif
-    } 
+      return;
+    }
 #endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
@@ -670,7 +671,8 @@ namespace MueLu {
     if (tmp_TCrsMtx != Teuchos::null) {
       RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
       Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >::writeSparseFile(fileName,A);
-    } 
+      return;
+    }
 #endif // HAVE_MUELU_TPETRA
 
     throw(Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing"));
@@ -755,7 +757,13 @@ namespace MueLu {
         A->ExtractMyRowView(i,nnz,vals,indices);
         for(int j=0;j<nnz;++j){
           int gcid=colMap.GID(indices[j]);
-          AT->InsertGlobalValues(gcid,1,vals+j,&grid);
+          int rv = AT->InsertGlobalValues(gcid,1,vals+j,&grid);
+          if (rv != 0) {
+            std::ostringstream buf;
+            buf << rv;
+            std::string msg = "Utils::simple_EpetraTranspose: Epetra_CrsMatrix::InsertGlobalValues() returned value of " + buf.str();
+            throw(Exceptions::RuntimeError(msg));
+          }
         }
       }
      
@@ -949,6 +957,11 @@ namespace MueLu {
 
    } //ScaleMatrix()
 
+   static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os) {
+     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(os));
+     return fancy;
+   }
+
   }; // class Utils
 
 /*
@@ -1076,7 +1089,6 @@ public:
      } else {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
        //epetra case
-       /*
        Epetra_RowMatrixTransposer et(&*epetraOp);
        Epetra_CrsMatrix *A;
        int rv = et.CreateTranspose(false,A);
@@ -1086,9 +1098,9 @@ public:
          std::string msg = "Utils::Transpose: Epetra::RowMatrixTransposer returned value of " + buf.str();
          throw(Exceptions::RuntimeError(msg));
        }
+
        RCP<Epetra_CrsMatrix> rcpA(A);
-       */
-       RCP<Epetra_CrsMatrix> rcpA = Utils<SC,LO,GO,NO,LMO>::simple_EpetraTranspose(epetraOp);
+       //RCP<Epetra_CrsMatrix> rcpA = Utils<SC,LO,GO,NO,LMO>::simple_EpetraTranspose(epetraOp);
        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
        RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
