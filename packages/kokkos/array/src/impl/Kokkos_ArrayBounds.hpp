@@ -75,8 +75,8 @@ void multivector_require_range( size_t , size_t , size_t );
 
 //----------------------------------------------------------------------------
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+size_t mdarray_deduce_rank( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
+                            size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
 void mdarray_require_dimension(
   size_t n_rank ,

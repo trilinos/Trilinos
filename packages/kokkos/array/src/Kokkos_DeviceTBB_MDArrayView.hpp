@@ -53,19 +53,24 @@ namespace Impl {
 /*------------------------------------------------------------------------*/
 /** \brief  Copy Host to TBB specialization with same map and contiguous */
 
-template< typename ValueType , class MapOpt >
+template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceTBB ,  MapOpt , true ,
-                       DeviceHost , MapOpt , true >
+                       DeviceTBB ,
+                       Serial< HostMemory , DeviceTBB::mdarray_map > ,
+                       true /* Same memory space */ ,
+                       true /* Same mdarray map */ ,
+                       true /* Contiguous */ >
 {
+private:
+  typedef Serial< HostMemory , DeviceTBB::mdarray_map > device_host ;
 public:
-  typedef MDArrayView< ValueType , DeviceTBB ,  MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTBB , void , void , 0 > functor_type ;
+  typedef MDArrayView< ValueType , DeviceTBB   > dst_type ;
+  typedef MDArrayView< ValueType , device_host > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
+    typedef DeepCopyContiguous< ValueType , DeviceTBB > functor_type ;
+
     parallel_for( dst.size() ,
                   functor_type( dst.m_memory.ptr_on_device() ,
                                 src.m_memory.ptr_on_device() ) );
@@ -74,20 +79,25 @@ public:
 };
 
 
-/** \brief  Copy TBB to Host specialization with same map and contiguou */
-template< typename ValueType , class MapOpt >
+/** \brief  Copy TBB to Host specialization with same map and contiguous */
+template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceTBB ,  MapOpt , true >
+                       Serial< HostMemory , DeviceTBB::mdarray_map > ,
+                       DeviceTBB ,
+                       true /* Same memory space */ ,
+                       true /* Same mdarray map */ ,
+                       true /* Contiguous */ >
 {
+private:
+  typedef Serial< HostMemory , DeviceTBB::mdarray_map > device_host ;
 public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceTBB , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTBB , void , void , 0 > functor_type ;
+  typedef MDArrayView< ValueType , DeviceTBB   > src_type ;
+  typedef MDArrayView< ValueType , device_host > dst_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
+    typedef DeepCopyContiguous< ValueType , DeviceTBB > functor_type ;
+
     parallel_for( dst.size() ,
                   functor_type( dst.m_memory.ptr_on_device() ,
                                 src.m_memory.ptr_on_device() ) );

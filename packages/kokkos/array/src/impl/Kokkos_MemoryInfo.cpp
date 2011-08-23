@@ -53,12 +53,13 @@ void MemoryInfoSet::print( std::ostream & s ) const
       << std::endl ;
 
     for ( ; i != m_set.end() ; ++i ) {
-      s << "  { " << i->m_ptr
-        << " , " << i->m_type->name()
-        << " , \"" << i->m_label << "\""
-        << " , " << i->m_size 
-        << " , " << i->m_count
-        << " }" << std::endl ;
+      const MemoryInfo & m = *i ;
+      s << "  { " << m.m_ptr ;
+      s << " , " << m.m_type->name() ;
+      s << " , \"" << m.m_label << "\"" ;
+      s << " , " << m.m_size ;
+      s << " , " << m.m_count ;
+      s << " }" << std::endl ;
     }
 
     s << std::endl ;

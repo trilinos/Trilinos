@@ -37,12 +37,10 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
-
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
+#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -175,5 +173,4 @@ void multivector_require_equal_dimension(
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
 
