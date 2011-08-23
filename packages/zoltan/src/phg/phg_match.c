@@ -2396,7 +2396,8 @@ static int pmatching_geom (ZZ *zz,
       hgp->geometric_red = 0.1;
   }
   /* Parts are reduced by a factor, result should not be 0 */  
-  local_vtx = (int)(hgp->geometric_red * hg->nVtx);
+  local_vtx = (int)(hgp->geometric_red * (double) hg->nVtx
+                                       / (double) hg->comm->nProc_y);
   sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
   if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
@@ -2467,7 +2468,7 @@ static int pmatching_geom (ZZ *zz,
     hgp->matching = pmatching_agg_ipm;
     sprintf(hgp->redm_str, "agg");
   }
-  if (zz->Proc == 0) printf("KDDKDD GEOM_MATCHING %d %x\n", hg->info, hgp->matching);
+  if (zz->Proc == 0) printf("KDDKDD GEOM_MATCHING %d %d %x\n", hg->info, hgp->geometric_levels, hgp->matching);
 
  End:
   Zoltan_Destroy(&zz2);
