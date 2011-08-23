@@ -48,7 +48,8 @@ public:
   //@{
 
   //! Constructor
-  CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) 
+  CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
   {
     // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype);
@@ -58,6 +59,7 @@ public:
   }
 
   CrsOperator(RCP<CrsMatrix> &matrix)
+    : finalDefaultView_(false)
   {
     // Set matrix data
     matrixData_ = matrix;
@@ -110,9 +112,8 @@ public:
   void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
     matrixData_->fillComplete(domainMap, rangeMap, os);
 
-    // Update default view with the colMap
-    // because colMap can be <tt>null</tt> until fillComplete() is called.
-    Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
+    // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
+    updateDefaultView();
   }
 
   /*! \brief Signal that data entry is complete. 
@@ -132,9 +133,8 @@ public:
   void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage) {
     matrixData_->fillComplete(os);
 
-    // Update default view with the colMap
-    // because colMap can be <tt>null</tt> until fillComplete() is called.
-    Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
+    // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
+    updateDefaultView();
   }
 
   //@}
@@ -230,13 +230,13 @@ public:
     
     \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
   */
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-                                 const ArrayView<LocalOrdinal> &Indices, 
-                                 const ArrayView<Scalar> &Values,
-                                 size_t &NumEntries
-                                 ) const {
-      matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
-    }
+  void getLocalRowCopy(LocalOrdinal LocalRow, 
+                       const ArrayView<LocalOrdinal> &Indices, 
+                       const ArrayView<Scalar> &Values,
+                       size_t &NumEntries
+                       ) const {
+    matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+  }
   
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -302,10 +302,10 @@ public:
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                     Scalar alpha = ScalarTraits<Scalar>::one(),
-                     Scalar beta = ScalarTraits<Scalar>::zero()) const {
+  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+             Scalar alpha = ScalarTraits<Scalar>::one(),
+             Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
     return matrixData_->apply(X,Y,mode,alpha,beta);
   }
@@ -322,6 +322,21 @@ public:
     return matrixData_->getRangeMap();
   }
 
+  //! \brief Returns the Map that describes the column distribution in this matrix.
+  //! This might be <tt>null</tt> until fillComplete() is called.
+  const RCP<const Map> & getColMap() const { return getColMap(Operator::GetCurrentViewLabel()); }
+  
+  //! \brief Returns the Map that describes the column distribution in this matrix.
+  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
+    TEST_FOR_EXCEPTION(Operator::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
+
+    if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
+      std::cout<< "ERR" << std::endl;
+    }
+    updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsOperator::fillComplete(), the default view is updated.
+    return Operator::operatorViewTable_.get(viewLabel)->GetColMap(); 
+  }
+  
   //@}
 
   //! @name Overridden from Teuchos::Describable 
@@ -374,6 +389,21 @@ private:
   }
 
 private:
+
+  // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Operator have to be updated when fillComplete() is called. 
+  // If CrsMatrix::fillComplete() have been used instead of CrsOperator::fillComplete(), the default view is updated when getColMap() is called.
+  void updateDefaultView() const {
+    if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
+      // Update default view with the colMap
+      Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
+      finalDefaultView_ = true;
+    }
+  }
+  // The boolean finalDefaultView_ keep track of the status of the default view (= already updated or not)
+  // See also CrsOperator::updateDefaultView()
+  mutable bool finalDefaultView_;
+
+
   RCP<CrsMatrix> matrixData_;
 
 }; //class Operator

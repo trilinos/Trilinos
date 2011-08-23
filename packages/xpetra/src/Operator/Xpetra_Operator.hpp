@@ -136,20 +136,20 @@ namespace Xpetra {
     //@{ 
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map> getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
+    virtual const RCP<const Map> & getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
+    virtual const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
       TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetRowMap(); 
     }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     //! This might be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map> getColMap() const { return getColMap(GetCurrentViewLabel()); }
+    virtual const RCP<const Map> & getColMap() const { return getColMap(GetCurrentViewLabel()); }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
+    virtual const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
       TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetColMap(); 
     }
