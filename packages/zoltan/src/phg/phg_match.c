@@ -2386,7 +2386,7 @@ static int pmatching_geom (ZZ *zz,
     goto End;
   }
 
-  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "1") == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
