@@ -10,43 +10,43 @@
 
 namespace MueLu {
 
-/*!
-  @class CoalesceDropFactory
-  @brief Factory for creating a graph base on a given matrix.
+  /*!
+    @class CoalesceDropFactory
+    @brief Factory for creating a graph base on a given matrix.
 
-  Factory for creating graphs from matrices with entries selectively dropped.
+    Factory for creating graphs from matrices with entries selectively dropped.
   
-  - TODO This factory is very incomplete.
-  - TODO The Build method simply builds the matrix graph with no dropping.
-  - TODO Derive from TwoLevelFactoryBase so that UCAggregationFactory does not rely on Scalar template.
-         This entails removing Scalar dependence in Level class.
+    - TODO This factory is very incomplete.
+    - TODO The Build method simply builds the matrix graph with no dropping.
+    - TODO Derive from TwoLevelFactoryBase so that UCAggregationFactory does not rely on Scalar template.
+    This entails removing Scalar dependence in Level class.
   
-*/
+  */
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class CoalesceDropFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal, GlobalOrdinal,Node,LocalMatOps> {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class CoalesceDropFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal, GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
-public:
+  public:
 
-  //! @name Constructors/Destructors.
-  //@{
-  CoalesceDropFactory() {};
+    //! @name Constructors/Destructors.
+    //@{
+    CoalesceDropFactory() {}
 
-  //!Destructor
-  virtual ~CoalesceDropFactory() {}
-  //@}
+    //!Destructor
+    virtual ~CoalesceDropFactory() {}
+    //@}
 
-  bool Build(Level &currentLevel) const {
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
-    RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-    currentLevel.Set("Graph",graph);
+    bool Build(Level &currentLevel) const {
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
+      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+      currentLevel.Set("Graph",graph);
 
-    return true;//??
-  } //Build
+      return true;//??
+    } //Build
 
-}; //class CoalesceDropFactory
+  }; //class CoalesceDropFactory
 
 } //namespace MueLu
 

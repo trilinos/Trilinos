@@ -175,7 +175,7 @@ private:
   RCP<CoalesceDropFactory> coalesceDropFact_;
 
   //! user-defined graph label
-  std::string graphName_;
+    std::string graphName_;//TODO unused?
 
   //! @name Aggregation methods.
   //@{
