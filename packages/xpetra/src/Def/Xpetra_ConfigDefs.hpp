@@ -41,16 +41,16 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
-//! %Cthulu namespace
-namespace Cthulu { 
-  // Used in all Cthulu code that explicitly must a type (like a loop index)
+//! %Xpetra namespace
+namespace Xpetra { 
+  // Used in all Xpetra code that explicitly must a type (like a loop index)
   // that is used with the Teuchos::Array[View,RCP] classes.
 
   //! Size type for Teuchos Array objects.
   typedef Teuchos_Ordinal Array_size_type; 
 }
 
-// these make some of the macros in Cthulu_Util.hpp much easier to describe
+// these make some of the macros in Xpetra_Util.hpp much easier to describe
 #ifdef HAVE_XPETRA_THROW_EFFICIENCY_WARNINGS
   #define XPETRA_THROWS_EFFICIENCY_WARNINGS 1
 #else
@@ -94,7 +94,7 @@ namespace Cthulu {
 #include <Teuchos_CommHelpers.hpp>
 #endif
 
-//! Namespace for Cthulu classes and methods
+//! Namespace for Xpetra classes and methods
 namespace Xpetra {
   /** \brief Global size_t object. 
   
@@ -129,7 +129,7 @@ namespace Xpetra {
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
 
-  /*!  \brief Cthulu::Combine Mode enumerable type */
+  /*!  \brief Xpetra::Combine Mode enumerable type */
   /*! 
     If set to Add, existing values will be summed with new values.
 		If set to Insert, new values will be inserted that don't currently exist.
@@ -153,7 +153,7 @@ namespace Xpetra {
     ABSMAX  /*!< TODO: don't exist for Tpetra */
   };
  
-  // import Teuchos memory management classes into Cthulu
+  // import Teuchos memory management classes into Xpetra
 #ifndef __CUDACC__
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -175,7 +175,7 @@ namespace Xpetra {
   using Teuchos::typeName;
 #endif
 
-  // Cthulu functor objects
+  // Xpetra functor objects
   // inspired by SGI-specific project2nd, project1st
   template <class Arg1, class Arg2>
   class firstArg : std::binary_function<Arg1,Arg2,Arg1> {
@@ -195,11 +195,11 @@ namespace Xpetra {
     inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) { return arg2;}
   };
 
-} // end of Cthulu namespace
+} // end of Xpetra namespace
 
 
-//! Namespace for Cthulu example classes and methods
-namespace CthuluExamples {
+//! Namespace for Xpetra example classes and methods
+namespace XpetraExamples {
 }
 
 #define XPETRA_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); } ; }; // TODO: throw exceptions
