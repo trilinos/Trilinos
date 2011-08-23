@@ -40,6 +40,8 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
 
+#include <MueLu_Utilities.hpp>
+
 namespace {
   using Teuchos::Array;
   using Teuchos::as;
@@ -389,14 +391,6 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  /*RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
-  }*/
-
   //
   // UNIT TESTS
   //
@@ -514,12 +508,189 @@ namespace {
 
   }
 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
+  {
+#ifdef HAVE_XPETRA_EPETRA
+
+    RCP<Epetra_Comm> Comm;
+    if(testMpi)
+      Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    else
+      Comm = Teuchos::rcp(new Epetra_SerialComm);
+
+    // 1) load all matrices
+    Epetra_Map pointmap(5148,0,*Comm);  // 5148  2
+
+    // generate local maps for loading matrices
+    std::vector<int> velgidvec; // global strided maps
+    std::vector<int> pregidvec;
+    std::vector<int> fullgidvec; // full global map
+    for (int i=0; i<pointmap.NumMyElements(); i++)
+    {
+      // loop over all local ids in pointmap
+
+      // get corresponding global id
+      int gid = pointmap.GID(i);
+
+      // store global strided gids
+      velgidvec.push_back(3*gid);
+      velgidvec.push_back(3*gid+1);
+      pregidvec.push_back(3*gid+2);
+
+      // gid for full map
+      fullgidvec.push_back(3*gid);
+      fullgidvec.push_back(3*gid+1);
+      fullgidvec.push_back(3*gid+2);
+    }
+
+    // generate strided maps
+    Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcp(new const Epetra_Map(-1, velgidvec.size(), &velgidvec[0], 0, *Comm));
+    Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcp(new const Epetra_Map(-1, pregidvec.size(), &pregidvec[0], 0, *Comm));
+
+    // generate full map
+    const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcp(new const Epetra_Map(-1, fullgidvec.size(), &fullgidvec[0], 0, *Comm));
+
+    // read in matrices
+    Epetra_CrsMatrix* ptrA = 0;
+    Epetra_Vector*    ptrx = 0;
+    Epetra_Vector*    ptrf = 0;
+    EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nsrhs_test.mm",*fullmap,ptrf);
+    EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nslhs_test.mm",*fullmap,ptrx);
+
+//    EpetraExt::MatrixMarketFileToCrsMatrix("nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
+//    EpetraExt::MatrixMarketFileToVector("nsrhs_test.mm",*fullmap,ptrf);
+//    EpetraExt::MatrixMarketFileToVector("nslhs_test.mm",*fullmap,ptrx);
+
+    Teuchos::RCP<Epetra_CrsMatrix> fullA = Teuchos::rcp(ptrA);
+    Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(ptrf);
+    Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(ptrx);
+
+    // split fullA into A11,..., A22
+    Teuchos::RCP<Epetra_CrsMatrix> A11;
+    Teuchos::RCP<Epetra_CrsMatrix> A12;
+    Teuchos::RCP<Epetra_CrsMatrix> A21;
+    Teuchos::RCP<Epetra_CrsMatrix> A22;
+
+    TEST_EQUALITY(SplitMatrix2x2(fullA,velmap,premap,A11,A12,A21,A22),true);
+
+    //////////////////////////////////////
+    // build 1st block matrix
+
+    // build Xpetra objects from Epetra_CrsMatrix objects
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(fullA));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
+
+    // build map extractor
+    Teuchos::RCP<Xpetra::EpetraMap> xfullmap = Teuchos::rcp(new Xpetra::EpetraMap(fullmap));
+    Teuchos::RCP<Xpetra::EpetraMap> xvelmap  = Teuchos::rcp(new Xpetra::EpetraMap(velmap ));
+    Teuchos::RCP<Xpetra::EpetraMap> xpremap  = Teuchos::rcp(new Xpetra::EpetraMap(premap ));
+
+    std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO> > > xmaps;
+    xmaps.push_back(xvelmap);
+    xmaps.push_back(xpremap);
+
+    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap,xmaps);
+
+    // build blocked operator
+    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    bOp->setMatrix(0,0,xA11);
+    bOp->setMatrix(0,1,xA12);
+    bOp->setMatrix(1,0,xA21);
+    bOp->setMatrix(1,1,xA22);
+
+    bOp->fillComplete();
+    //////////////////////////////
+
+
+    //////////////////////////////////////
+    // build 2nd block matrix
+
+    // split fullA into A11,..., A22
+    Teuchos::RCP<Epetra_CrsMatrix> fullA_2 = Teuchos::rcp(new Epetra_CrsMatrix(*fullA));
+    Teuchos::RCP<Epetra_CrsMatrix> A11_2;
+    Teuchos::RCP<Epetra_CrsMatrix> A12_2;
+    Teuchos::RCP<Epetra_CrsMatrix> A21_2;
+    Teuchos::RCP<Epetra_CrsMatrix> A22_2;
+
+    TEST_EQUALITY(SplitMatrix2x2(fullA_2,velmap,premap,A11_2,A12_2,A21_2,A22_2),true);
+
+    // build Xpetra objects from Epetra_CrsMatrix objects
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuA_2 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(fullA_2));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA11_2 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11_2));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA12_2 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12_2));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA21_2 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21_2));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA22_2 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22_2));
+
+    // build map extractor
+    Teuchos::RCP<Xpetra::EpetraMap> xfullmap_2 = Teuchos::rcp(new Xpetra::EpetraMap(fullmap));
+    Teuchos::RCP<Xpetra::EpetraMap> xvelmap_2  = Teuchos::rcp(new Xpetra::EpetraMap(velmap ));
+    Teuchos::RCP<Xpetra::EpetraMap> xpremap_2  = Teuchos::rcp(new Xpetra::EpetraMap(premap ));
+
+    std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO> > > xmaps_2;
+    xmaps_2.push_back(xvelmap_2);
+    xmaps_2.push_back(xpremap_2);
+
+    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO> > map_extractor_2 = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap_2,xmaps_2);
+
+    // build blocked operator
+    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOp_2 = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor_2,map_extractor_2,10));
+    bOp_2->setMatrix(0,0,xA11_2);
+    bOp_2->setMatrix(0,1,xA12_2);
+    bOp_2->setMatrix(1,0,xA21_2);
+    bOp_2->setMatrix(1,1,xA22_2);
+
+    bOp_2->fillComplete();
+    //////////////////////////////
+
+    RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO> > bOpbOp_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiplyBlock(bOp,false,bOp_2,false);
+
+    //////////////////////////////
+    // matrix-matrix multiplication of standard matrices
+    RCP<Xpetra::CrsOperator<Scalar,LO,GO> > xfuAop   = rcp(new Xpetra::CrsOperator<Scalar,LO,GO>(xfuA));
+    RCP<Xpetra::CrsOperator<Scalar,LO,GO> > xfuAop_2 = rcp(new Xpetra::CrsOperator<Scalar,LO,GO>(xfuA_2));
+    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > fuAfuA_2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(xfuAop,false,xfuAop_2,false);
+
+    /////////////////////////////
+    // build vector
+    Teuchos::RCP<Xpetra::EpetraVector> xx  = Teuchos::rcp(new Xpetra::EpetraVector(x));
+    Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > result =  Xpetra::VectorFactory<Scalar,LO,GO>::Build(xfullmap ,true);
+
+    // matrix vector product
+    bOpbOp_2->apply(*xx,*result,Teuchos::NO_TRANS);
+
+    // check results
+    Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > result2 =  Xpetra::VectorFactory<Scalar,LO,GO>::Build(xfullmap ,true);
+    fuAfuA_2->apply(*xx,*result2);
+
+    result2->update(1.0,*result,-1.0);
+
+    //cout << "norm of difference " << result2->norm2() << endl;
+
+    TEUCHOS_TEST_COMPARE(result2->norm2(), <, 1e-16, out, success);
+
+    //
+    TEUCHOS_TEST_EQUALITY(bOpbOp_2->getGlobalNumRows(), fuAfuA_2->getGlobalNumRows(), out, success );
+    TEUCHOS_TEST_EQUALITY(bOpbOp_2->getGlobalNumCols(), fuAfuA_2->getGlobalNumCols(), out, success );
+
+    //RCP<Xpetra::EpetraCrsMatrix> rd = MueLu::Gallery::Random<Scalar, LO, GO, Xpetra::EpetraMap, Xpetra::EpetraCrsMatrix>(xvelmap,xpremap);
+
+    //rd->describe(out,Teuchos::VERB_EXTREME);
+#endif
+
+  }
   //
   // INSTANTIATIONS
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraApply, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraApply, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult, SC, LO, GO, Node )
 
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)

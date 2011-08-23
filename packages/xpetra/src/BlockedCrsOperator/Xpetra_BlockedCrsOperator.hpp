@@ -589,6 +589,17 @@ public:
 
   //@}
 
+  //! @name Block matrix access
+  //@{
+
+  /// number of row blocks
+  virtual size_t Rows() const { return rangemaps_->NumMaps(); }
+
+  /// number of column blocks
+  virtual size_t Cols() const { return domainmaps_->NumMaps(); }
+
+  /// return block (r,c)
+  Teuchos::RCP<CrsMatrixClass> getMatrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
 
   /// set matrix block
   void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrixClass>& mat)
@@ -605,7 +616,7 @@ public:
     // set matrix
     blocks_[r*Cols()+c] = mat;
   }
-
+  //@}
 
 
 private:
@@ -629,11 +640,7 @@ private:
   /** \name Block maps */
   //@{
 
-  /// number of row blocks
-  virtual size_t Rows() const { return rangemaps_->NumMaps(); }
 
-  /// number of column blocks
-  virtual size_t Cols() const { return domainmaps_->NumMaps(); }
 
   /// range map for given row block
   //const Teuchos::RCP<const MapClass> RangeMap(size_t r) const { return rangemaps_->Map(r); }
@@ -643,13 +650,6 @@ private:
 
   //@}
 
-  /** \name Block matrix access */
-  //@{
-
-  /// return block (r,c)
-  Teuchos::RCP<CrsMatrixClass> getMatrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
-
-  //@}
 
 private:
   Teuchos::RCP<CrsMatrixClass> matrixData_;

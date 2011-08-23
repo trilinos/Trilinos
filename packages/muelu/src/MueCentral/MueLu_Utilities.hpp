@@ -278,7 +278,7 @@ namespace MueLu {
      @param transposeB if true, use the transpose of B
      @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
    */
-  static RCP<BlockedCrsOperator> TwoMatrixMultiply(RCP<BlockedCrsOperator> const &A, bool transposeA,
+  static RCP<BlockedCrsOperator> TwoMatrixMultiplyBlock(RCP<BlockedCrsOperator> const &A, bool transposeA,
                                          RCP<BlockedCrsOperator> const &B, bool transposeB,
                                          bool doFillComplete=true,
                                          bool doOptimizeStorage=true)
@@ -288,8 +288,8 @@ namespace MueLu {
 
     // todo make sure that A and B are filled and completed
 
-    const RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A->getRangeMapExtractor();
-    const RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B->getDomainMapExtractor();
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A->getRangeMapExtractor();
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B->getDomainMapExtractor();
 
     RCP<BlockedCrsOperator> C = rcp(new BlockedCrsOperator(rgmapextractor,
                      domapextractor,
@@ -302,22 +302,31 @@ namespace MueLu {
       for(size_t j=0; j<B->Cols(); ++j)
       {
         // empty CrsOperator
-        RCP<Operator> Cij = OperatorFactory::Build(A->getRowMap(i), 33 /* TODO fix me */);
+        RCP<Operator> Cij = OperatorFactory::Build(A->getRangeMap(i), 33 /* TODO fix me */);
 
         // loop for calculating entry C_{ij}
         for(size_t l=0; l<B->Rows(); ++l)
         {
-          RCP<Operator> temp = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiply
-              (A->getMatrix(i,l), false, B->getMatrix(l,j),false);
+          RCP<CrsMatrix> crmat1 = A->getMatrix(i,l);
+          RCP<CrsMatrix> crmat2 = B->getMatrix(l,j);
+          RCP<CrsOperator> crop1 = rcp(new CrsOperator(crmat1));
+          RCP<CrsOperator> crop2 = rcp(new CrsOperator(crmat2));
+
+          RCP<Operator> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::TwoMatrixMultiply(crop1, false, crop2, false);
 
           // sum up
-          MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd
-              (temp, false, 1.0, Cij, 1.0);
+          MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(temp, false, 1.0, Cij, 1.0);
         }
 
         Cij->fillComplete(B->getDomainMap(j), A->getRangeMap(i));
 
-        C->setMatrix(i,j,Cij);
+        RCP<CrsOperator> crsCij = Teuchos::rcp_dynamic_cast<CrsOperator>(Cij);
+        TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
+                 "OperatorFactory failed in generating a CrsOperator." );
+
+        RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+        C->setMatrix(i,j,crsMatCij);
+
       }
     }
 
