@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "Xpetra_ConfigDefs.hpp"
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Exceptions.hpp"

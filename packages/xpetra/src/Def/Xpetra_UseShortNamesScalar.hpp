@@ -1,5 +1,3 @@
-#include "Xpetra_ConfigDefs.hpp"
-
 // Get rid of template parameters
 
 // New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
@@ -62,6 +60,7 @@ typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpe
 
 // Define convenient shortcut for data types
 typedef Scalar    SC;
+#ifdef _TEUCHOS_SCALARTRAITS_DECL_HPP_
 typedef Teuchos::ScalarTraits<SC> ST;
-
+#endif
 // TODO: do the same for Epetra object (problem of namespace)

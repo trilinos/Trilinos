@@ -1,5 +1,3 @@
-#include "Xpetra_ConfigDefs.hpp"
-
 // Get rid of template parameters
 
 // New definition of types using the types LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
