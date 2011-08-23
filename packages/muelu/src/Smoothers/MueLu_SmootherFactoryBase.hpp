@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-#include "MueLu_Needs.hpp"
 //#include "MueLu_Smoother.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level.hpp"
@@ -21,7 +20,7 @@ namespace MueLu {
 */
 
 template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherFactoryBase : public Needs {
+class SmootherFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 

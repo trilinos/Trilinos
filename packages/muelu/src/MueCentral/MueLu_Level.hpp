@@ -4,14 +4,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_Vector.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Needs.hpp"
-#include "MueLu_SmootherPrototype.hpp"
-
-// JG TODO: remove template parameters
 
 namespace MueLu {
 

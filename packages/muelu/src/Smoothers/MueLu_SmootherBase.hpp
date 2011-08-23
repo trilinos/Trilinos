@@ -1,11 +1,8 @@
 #ifndef MUELU_SMOOTHERBASE_HPP
 #define MUELU_SMOOTHERBASE_HPP
 
-#include <iostream>
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Needs.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
 
@@ -18,12 +15,12 @@ namespace MueLu {
   */
 
   template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-  class SmootherBase : public Needs {
+  class SmootherBase : public Teuchos::VerboseObject<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
 
 #include "MueLu_UseShortNames.hpp"
 
   private:
-    std::string Type_;
+    std::string type_;
 
   public:
     //@{ Constructors/Destructors.
@@ -51,7 +48,7 @@ namespace MueLu {
 
     //! Get the smoother type.
     std::string GetType() const {
-      return Type_;
+      return type_;
     }
 
     /*! @brief Set the smoother type.
@@ -59,7 +56,7 @@ namespace MueLu {
     This method must be called by constructors of derived classes.
     */
     void SetType(std::string type) {
-      Type_ = type;
+      type_ = type;
     }
 
     //! @name Utilities.
