@@ -24,7 +24,7 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_agg_ipm;     /* agglomerative IPM */
-static ZOLTAN_PHG_MATCHING_FN pmatching_rcb;         /* rcb-based matching */
+static ZOLTAN_PHG_MATCHING_FN pmatching_geom;        /* geometric matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
@@ -33,11 +33,11 @@ static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, PHGPartParams* hgp,
                                      ZOLTAN_GNO_TYPE *match, int small_degree);
 static int Zoltan_PHG_compute_esize(ZZ* zz, HGraph* hg, PHGPartParams* hgp);
 
-/* Functions to be used in rcb-based matching */
-static ZOLTAN_NUM_OBJ_FN rcb_get_num_obj;
-static ZOLTAN_OBJ_LIST_FN rcb_get_obj_list;
-static ZOLTAN_NUM_GEOM_FN rcb_get_num_geom;
-static ZOLTAN_GEOM_MULTI_FN rcb_get_geom_multi;
+/* Functions to be used in geometric matching */
+static ZOLTAN_NUM_OBJ_FN geometric_get_num_obj;
+static ZOLTAN_OBJ_LIST_FN geometric_get_obj_list;
+static ZOLTAN_NUM_GEOM_FN geometric_get_num_geom;
+static ZOLTAN_GEOM_MULTI_FN geometric_get_geom_multi;
   
 typedef struct triplet {
     ZOLTAN_GNO_TYPE candidate;      /* gno of candidate vertex */
@@ -94,8 +94,9 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = pmatching_agg_ipm;
         hgp->match_array_type = 1;
     }
-    else if (!strncasecmp(hgp->redm_str, "rcb", 3)) {
-        hgp->matching = pmatching_rcb;
+    else if (!strncasecmp(hgp->redm_str, "rcb", 3) || 
+             !strncasecmp(hgp->redm_str, "rib", 3)) {
+        hgp->matching = pmatching_geom;
 	hgp->match_array_type = 1;
     }
     else if (!strcasecmp(hgp->redm_str, "l-ipm"))
@@ -146,8 +147,8 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Do the matching */
   if (hgp->matching) {
     /* first match isolated vertices */
-    /* NEANEA if matching is not what I call my RCB, then run isolated */
-    if (hgp->matching != pmatching_rcb)
+    /* if matching is not geometric, then run isolated */
+    if (hgp->matching != pmatching_geom)
       Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
 
     /* now do the real matching */
@@ -2320,14 +2321,14 @@ ZOLTAN_FREE(&master_procs);
 
 
 /****************************************************************************/
-static int pmatching_rcb (ZZ *zz,
+static int pmatching_geom (ZZ *zz,
 			  HGraph *hg,
 			  ZOLTAN_GNO_TYPE *match, /* the matching array */
                           PHGPartParams *hgp)
 {
-   int ierr = ZOLTAN_OK;
+  int ierr = ZOLTAN_OK;
 
-  char *yo = "pmatching_rcb";	     
+  char *yo = "pmatching_geom";
   ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
   int i;
   char s[8]; 
@@ -2335,7 +2336,7 @@ static int pmatching_rcb (ZZ *zz,
   ZOLTAN_GNO_TYPE *procmatch;
   MPI_Datatype zoltan_gno_mpi_type;
 
-  /* --RCB arguments-- */
+  /* --LB_Partition arguments-- */
   int num_import;                         /* Returned */
   ZOLTAN_ID_PTR import_global_ids = NULL; /* Returned */
   ZOLTAN_ID_PTR import_local_ids = NULL;  /* Returned */
@@ -2349,26 +2350,26 @@ static int pmatching_rcb (ZZ *zz,
   int *export_to_part = NULL;             /* Not computed */
   /* ----------------- */
 
-  /* NEANEA Register new geometric callbacks and parameters */
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) rcb_get_num_obj,
+  /* Register new geometric callbacks and parameters */
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) geometric_get_num_obj,
 		    (void *) hg) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
   }
 
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) rcb_get_obj_list,
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) geometric_get_obj_list,
 		    (void *) hg) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
   }
 
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) rcb_get_num_geom,
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) geometric_get_num_geom,
 		    (void *) hg) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
   }
 
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) rcb_get_geom_multi,
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) geometric_get_geom_multi,
 		    (void *) hg) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
@@ -2385,33 +2386,22 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
 
-  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "1") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
 
-  if ((hgp->rcb_red <= 0) || (hgp->rcb_red > 1)) {
+  if ((hgp->geometric_red <= 0) || (hgp->geometric_red > 1)) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.1.");
-      hgp->rcb_red = 0.1;
+      hgp->geometric_red = 0.1;
   }
   /* Parts are reduced by a factor, result should not be 0 */  
-  local_vtx = (int)(hgp->rcb_red * hg->nVtx);
+  local_vtx = (int)(hgp->geometric_red * hg->nVtx);
   sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
   if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
-
-#ifdef KDDKDD_DEBUG
-  /* KDDKDD */
-  {ZOLTAN_GNO_TYPE gnvtx;
-  MPI_Datatype tmp = Zoltan_mpi_gno_type();
-  MPI_Allreduce(&(hg->nVtx), &gnvtx, 1, tmp, MPI_SUM, hg->comm->row_comm);
-  sprintf(s, "%d", (int)(0.2 * (int)gnvtx));
-  printf("%d KDDKDD GNVTX %s %d \n", zz->Proc, s, (int)gnvtx);
-  }
-  /* KDDKDD */
-#endif
 
   if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
@@ -2433,29 +2423,18 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
 	
-  if (Zoltan_Set_Param(zz2, "LB_METHOD", "RCB") == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Param(zz2, "LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
 
-     
-  /* NEANEA  using the wrapper (just like any other RCB user) */
+  /* using the wrapper (just like any other RCB/RIB user) */
   ierr = Zoltan_LB_Partition(zz2, &changes, &num_gid_entries, &num_lid_entries,
                     &num_import, &import_global_ids,
 		    &import_local_ids, &import_procs, &import_to_part,
 		    &num_export, &candidate_ids, &export_local_ids,
 		    &export_procs, &export_to_part);
 
-#ifdef KDDKDD_DEBUG
-{/* KDDKDD */
-  int kdd;
-  for (kdd = 0; kdd < num_import; kdd++) {
-    printf("%d KDDKDD Input (%d %d)  Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], export_global_ids[kdd]);
-  }
-/* KDDKDD */
-}
-#endif
- 
   if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
     MEMORY_ERROR;
 
@@ -2473,7 +2452,7 @@ static int pmatching_rcb (ZZ *zz,
    int kdd;
    printf("%d KDDKDD Sanity Check %d == %d ? \n", zz->Proc, num_import, num_export);
    for (kdd = 0; kdd < num_import; kdd++) { 
-     printf("%d KDDKDD Input (%d %d)  Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], candidate_ids[kdd]); 
+     printf("%d KDDKDD Input (%d %d)  (%f %f)  wgt %f Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], hg->coor[2*import_local_ids[kdd]], hg->coor[2*import_local_ids[kdd]+1], hg->vwgt[import_local_ids[kdd]], candidate_ids[kdd]); 
    } 
  /* KDDKDD */
 
@@ -2481,14 +2460,14 @@ static int pmatching_rcb (ZZ *zz,
 #endif    
 
   /* 
-   * Perform RCB matching only on rcb_levels levels.  If done,
+   * Perform geometric matching only on geometric_levels levels.  If done,
    * switch to agglomerative matching.
    */
-  if (hg->info+1 >= hgp->rcb_levels) {
+  if (hg->info+1 >= hgp->geometric_levels) {
     hgp->matching = pmatching_agg_ipm;
     sprintf(hgp->redm_str, "agg");
   }
-  if (zz->Proc == 0) printf("KDDKDD RCB_MATCHING %d %x\n", hg->info, hgp->matching);
+  if (zz->Proc == 0) printf("KDDKDD GEOM_MATCHING %d %x\n", hg->info, hgp->matching);
 
  End:
   Zoltan_Destroy(&zz2);
@@ -2505,7 +2484,7 @@ static int pmatching_rcb (ZZ *zz,
 
 }
 
-static int rcb_get_num_obj(void *data, int *ierr) {
+static int geometric_get_num_obj(void *data, int *ierr) {
   /* Return number of vertices / number of processes on the y-axis */
   HGraph *hg;
   int count, diff;
@@ -2525,7 +2504,7 @@ static int rcb_get_num_obj(void *data, int *ierr) {
   return hg->comm->myProc_y < diff? count + 1 : count;
 }
 
-static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
+static void geometric_get_obj_list(void *data, int num_gid, int num_lid,
 			     ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
 			     int wdim, float *wgt, int *ierr) {
   /* Return GNOs, LNOs, and weights */
@@ -2560,7 +2539,7 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
 	wgt[(i * wdim) + j] = hg->vwgt[local_id[i] * wdim + j];
 }
 
-static int rcb_get_num_geom(void *data, int *ierr) {
+static int geometric_get_num_geom(void *data, int *ierr) {
 /* Return number of values needed to express the geometry of the HG */
 
   HGraph *hg;
@@ -2576,7 +2555,7 @@ static int rcb_get_num_geom(void *data, int *ierr) {
   return hg->nDim;
 }
 
-static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
+static void geometric_get_geom_multi(void *data, int num_obj, int num_gid,
 			       int num_lid, ZOLTAN_ID_PTR global_id,
 			       ZOLTAN_ID_PTR local_id, int num_dim,
 			       double *coor, int *ierr) {
@@ -2595,7 +2574,7 @@ static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
   hg = ((HGraph*) data);
   *ierr = ZOLTAN_OK;
 
-  local_obj = rcb_get_num_obj(hg, ierr);
+  local_obj = geometric_get_num_obj(hg, ierr);
 				    
   for (i = 0; i < local_obj; i++) { 
     glob = local_id[i];
