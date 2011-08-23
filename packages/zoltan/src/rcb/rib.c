@@ -657,7 +657,8 @@ static int rib_fn(
    * more parts if needed. */
 
   if (num_parts > 1) {
-    wgts = (double *) ZOLTAN_MALLOC(wgtdim * dotnum * sizeof(double));
+    if (dotpt->nWeights) 
+      wgts = (double *) ZOLTAN_MALLOC(dotpt->nWeights * dotnum * sizeof(double));
     dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
     tmpdindx = dindx + dotnum;
     if (allocflag) {
