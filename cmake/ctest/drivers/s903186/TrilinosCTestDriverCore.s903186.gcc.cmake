@@ -25,6 +25,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
+    "-DTPL_LAPACK_LIBRARIES=/Users/jmwille/install/lapack/lib/liblapack.dylib"
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/jmwille/install/boost_1_41_0"
     "-DTPL_ENABLE_Netcdf:BOOL=ON"
     "-DNetcdf_LIBRARY_DIRS=/Users/jmwille/install/netcdf-4.1.3/lib"
