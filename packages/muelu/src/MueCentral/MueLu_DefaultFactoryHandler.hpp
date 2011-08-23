@@ -8,6 +8,7 @@
 
 // Default factories:
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 namespace MueLu {
 
@@ -33,9 +34,8 @@ namespace MueLu {
     virtual const RCP<FactoryBase> & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
-        if (varName == "Aggregates") {
-          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
-        }
+        if (varName == "Graph")      return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates") return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
 

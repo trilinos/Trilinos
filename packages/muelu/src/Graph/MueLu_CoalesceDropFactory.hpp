@@ -4,6 +4,7 @@
 #include "Xpetra_Operator.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
 
@@ -23,7 +24,7 @@ namespace MueLu {
 */
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class CoalesceDropFactory : public Teuchos::Describable {
+class CoalesceDropFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal, GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -37,10 +38,12 @@ public:
   virtual ~CoalesceDropFactory() {}
   //@}
 
-  void Build(Level &currentLevel) {
+  bool Build(Level &currentLevel) const {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
     RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
     currentLevel.Set("Graph",graph);
+
+    return true;//??
   } //Build
 
 }; //class CoalesceDropFactory

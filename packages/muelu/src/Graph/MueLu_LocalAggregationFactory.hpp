@@ -92,14 +92,13 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationFactory(RCP<CoalesceDropFactory> const &cdFact=Teuchos::null) :
+    LocalAggregationFactory(RCP<CoalesceDropFactory> const &coalesceDropFact=Teuchos::null) :
       printFlag_(0), //TODO: to be removed
       ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0),
-      coalesceDropFact_(cdFact), 
+      coalesceDropFact_(coalesceDropFact), 
       graphName_("unnamed") //, Algorithm_("notSpecified"), 
     {
-      if (cdFact == Teuchos::null)
-        coalesceDropFact_ = rcp(new CoalesceDropFactory());
+
     }
 
   //! Destructor.
@@ -140,6 +139,9 @@ namespace MueLu {
     currentLevel.Request("Graph");
     if (coalesceDropFact_ != Teuchos::null)
       coalesceDropFact_->Build(currentLevel);
+    else
+      currentLevel.GetDefaultFactory("Graph")->SingleLevelBuild(currentLevel);
+
     RCP<Graph> graph;
     currentLevel.Get("Graph",graph);
     currentLevel.Release("Graph");
