@@ -14,6 +14,7 @@ export TDD_IN_TESTING_MODE=ON
 
 # CTest Settings
 #
+export CTEST_TEST_TYPE=Experimental
 export CTEST_DO_SUBMIT=TRUE
 export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
 
