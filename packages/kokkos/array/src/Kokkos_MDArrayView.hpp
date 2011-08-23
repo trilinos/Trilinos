@@ -52,7 +52,7 @@ namespace Kokkos {
 
 enum { MDArrayMaxRank = 8 };
 
-template< typename ValueType , class DeviceType >
+template< typename ValueType , class DeviceType = DeviceHost >
 class MDArrayView ;
 
 template< typename ValueType , class DeviceType >
@@ -108,7 +108,7 @@ class MDArrayDeepCopy ;
  *  create_mdarray< MDArrayView<...> >( nP , ... );
  */
 
-template< typename ValueType , class DeviceType = DeviceHost >
+template< typename ValueType , class DeviceType >
 class MDArrayView {
 public:
   typedef ValueType                          value_type ;
@@ -124,24 +124,21 @@ public:
   /** \brief  True if the array type has contiguous memory
    *          If contiguous then can get a pointer to the memory.
    */
-  enum { Contiguous =
-         Impl::MDArrayIndexMap< memory_space , mdarray_map , 1 >::Contiguous };
+  enum { Contiguous = false };
 
   /** \brief  Query rank of the array */
-  size_type rank() const { return m_map.rank(); }
+  size_type rank() const ;
 
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
-  size_type dimension( const iType & rank_ordinate ) const
-    { return m_map.dimension( rank_ordinate ); }
+  size_type dimension( const iType & rank_ordinate ) const ;
 
   /** \brief  Query all dimensions */
   template< typename iType >
-  void dimensions( iType * const dims ) const
-    { return m_map.dimensions( dims ); }
+  void dimensions( iType * const dims ) const ;
 
   /** \brief  Query total number of members */
-  size_type size() const { return m_map.size(); }
+  size_type size() const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */
@@ -152,8 +149,7 @@ public:
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
                            const iType4 & i4 , const iType5 & i5 ,
-                           const iType6 & i6 , const iType7 & i7 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3,i4,i5,i6,i7) ]; }
+                           const iType6 & i6 , const iType7 & i7 ) const ;
 
   /** \brief  Query value of a rank 7 array */
   template< typename iTypeP , typename iType1 ,
@@ -163,8 +159,7 @@ public:
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
                            const iType4 & i4 , const iType5 & i5 ,
-                           const iType6 & i6 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3,i4,i5,i6) ]; }
+                           const iType6 & i6 ) const ;
 
   /** \brief  Query value of a rank 6 array */
   template< typename iTypeP , typename iType1 ,
@@ -172,8 +167,7 @@ public:
             typename iType4 , typename iType5 >
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 , const iType5 & i5 ) const 
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3,i4,i5) ]; }
+                           const iType4 & i4 , const iType5 & i5 ) const ;
 
   /** \brief  Query value of a rank 5 array */
   template< typename iTypeP , typename iType1 ,
@@ -181,98 +175,67 @@ public:
             typename iType4 >
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3,i4) ]; }
+                           const iType4 & i4 ) const ;
 
   /** \brief  Query value of a rank 4 array */
   template< typename iTypeP , typename iType1 ,
             typename iType2 , typename iType3 >
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
-                           const iType2 & i2 , const iType3 & i3 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3) ]; }
+                           const iType2 & i2 , const iType3 & i3 ) const ;
 
   /** \brief  Query value of a rank 3 array */
   template< typename iTypeP , typename iType1 ,
             typename iType2 >
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
-                           const iType2 & i2 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2) ]; }
+                           const iType2 & i2 ) const ;
 
   /** \brief  Query value of a rank 2 array */
   template< typename iTypeP , typename iType1 >
-  value_type & operator()( const iTypeP & iP , const iType1 & i1 ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP,i1) ]; }
+  value_type & operator()( const iTypeP & iP , const iType1 & i1 ) const ;
 
   /** \brief  Query value of a rank 1 array */
   template< typename iTypeP >
-  value_type & operator()( const iTypeP & iP ) const
-  { return m_memory.ptr_on_device()[ m_map.offset(iP) ]; }
+  value_type & operator()( const iTypeP & iP ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Memory is contiguous, OK to return pointer */
-  inline
-  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
+  value_type * ptr_on_device() const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  inline
-  MDArrayView() : m_memory(), m_map() {}
+  MDArrayView();
 
   /** \brief  Construct another view of the 'rhs' array */
-  inline
-  MDArrayView( const MDArrayView & rhs )
-    : m_memory() , m_map( rhs.m_map )
-    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); }
+  MDArrayView( const MDArrayView & rhs );
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  inline
-  MDArrayView & operator = ( const MDArrayView & rhs )
-    {
-      memory_space::assign_memory_view( m_memory , rhs.m_memory );
-      m_map = rhs.m_map ;
-      return *this ;
-    }
+  MDArrayView & operator = ( const MDArrayView & rhs );
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  inline
-  ~MDArrayView() {}
+  ~MDArrayView();
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if non-NULL view */
-  operator bool () const 
-  { return m_memory.operator bool(); }
+  operator bool () const ;
 
-  bool operator == ( const MDArrayView & rhs ) const
-  { return m_memory.operator == ( rhs.m_memory ); }
+  bool operator == ( const MDArrayView & rhs ) const ;
 
-  bool operator != ( const MDArrayView & rhs ) const
-  { return m_memory.operator != ( rhs.m_memory ); }
+  bool operator != ( const MDArrayView & rhs ) const ;
 
 private:
-  enum { OK_memory_space =
-           Impl::StaticAssert<
-             Impl::SameType< HostMemory , memory_space >::value >::value };
 
-
-  MemoryView< value_type , memory_space >                 m_memory ;
-  Impl::MDArrayIndexMap< memory_space , mdarray_map , 1 > m_map ;
+  /** \brief  Allocation constructor only called by the
+   *          'create_labeled_mdarray' friend free-function.
+   */
 
   MDArrayView( const std::string & label ,
                size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-               size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-    : m_memory()
-    , m_map( nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 )
-    {
-      memory_space::allocate_memory_view( m_memory , m_map.size() , label );
-      value_type * dst = m_memory.ptr_on_device();
-      value_type * const dst_end = dst + m_map.size();
-      while ( dst_end != dst ) *dst++ = 0 ;
-    }
+               size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
   template< typename V , class D >
   friend
@@ -281,8 +244,7 @@ private:
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class DeviceDst , class DeviceSrc ,
-            bool , bool , bool >
+  template< typename , class , class , bool , bool , bool >
   friend
   class Impl::MDArrayDeepCopy ;
 };

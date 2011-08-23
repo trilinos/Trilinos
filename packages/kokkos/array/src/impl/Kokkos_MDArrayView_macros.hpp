@@ -529,58 +529,6 @@ public:
   }
 };
 
-/** \brief  Different maps on the same memory space */
-template< typename ValueType , class DeviceDst , bool Contig >
-class MDArrayDeepCopy< ValueType , DeviceDst , KOKKOS_MACRO_DEVICE ,
-                       true   /* Same Memory Space */ ,
-                       false  /* Different MDArray Maps */ ,
-                       Contig /* Don't care */ >
-{
-public:
-  typedef KOKKOS_MACRO_DEVICE    DeviceSrc ;
-
-  typedef MDArrayView<ValueType, DeviceDst > dst_type ;
-  typedef MDArrayView<ValueType, DeviceSrc > src_type ;
-  
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    switch( dst.rank() ) {
-    case 8 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 8 >( dst , src ) );
-      break ;
-    
-    case 7 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 7 >( dst , src ) );
-      break ;
-
-    case 6 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 6 >( dst , src ) );
-      break ;
-    
-    case 5 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 5 >( dst , src ) );
-      break ;
-
-    case 4 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 4 >( dst , src ) );
-      break ;
-
-    case 3 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 3 >( dst , src ) );
-      break ;
-
-    case 2 :
-      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 2 >( dst , src ) );
-
-    case 1 :
-      parallel_for( dst.dimension(0), Impl::DeepCopyContiguous< ValueType , DeviceSrc >( dst.m_memory.ptr_on_device() , src.m_memory.ptr_on_device() ) );
-      break ;
-
-    default: break ;
-    }
-  }
-};
-
 } // namespace Impl
 } // namespace Kokkos
 
