@@ -11,7 +11,6 @@ SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;hdf5_cpp"                               CAC
 SET(HDF5_LIBRARY_DIRS /opt/gcc-4.6.1/tpls/hdf5-1.8.5-patch1/lib              CACHE FILEPATH "")
 SET(HDF5_INCLUDE_DIRS /opt/gcc-4.6.1/tpls/hdf5-1.8.5-patch1/include          CACHE FILEPATH "")
 SET(EpetraExt_ENABLE_HDF5 OFF                                                CACHE BOOL "")
-SET(CMAKE_Fortran_FLAGS "-ffree-line-length-275"                             CACHE STRING "gfortran doesn't like lines longer than 132, but CASLRAVE/ANC does. Address this.")
 
 SET(TRILINOS_TOOLSET_BASE /opt/gcc-4.6.1/trilinos-toolset)
 SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
