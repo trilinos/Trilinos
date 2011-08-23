@@ -556,13 +556,9 @@ namespace {
     Epetra_CrsMatrix* ptrA = 0;
     Epetra_Vector*    ptrx = 0;
     Epetra_Vector*    ptrf = 0;
-    EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nsrhs_test.mm",*fullmap,ptrf);
-    EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/preCopyrightTrilinos/muelu/xpetra/test/BlockedCrsOperator/nslhs_test.mm",*fullmap,ptrx);
-
-//    EpetraExt::MatrixMarketFileToCrsMatrix("nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
-//    EpetraExt::MatrixMarketFileToVector("nsrhs_test.mm",*fullmap,ptrf);
-//    EpetraExt::MatrixMarketFileToVector("nslhs_test.mm",*fullmap,ptrx);
+    EpetraExt::MatrixMarketFileToCrsMatrix("nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("nsrhs_test.mm",*fullmap,ptrf);
+    EpetraExt::MatrixMarketFileToVector("nslhs_test.mm",*fullmap,ptrx);
 
     Teuchos::RCP<Epetra_CrsMatrix> fullA = Teuchos::rcp(ptrA);
     Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(ptrf);
