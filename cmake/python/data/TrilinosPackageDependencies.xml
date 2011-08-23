@@ -905,9 +905,9 @@
     <TEST_REQUIRED_DEP_PACKAGES value="Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="SEACASExodus"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="ExodusII"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="moertel-checkins@software.sandia.gov"/>
       <Regression address="moertel-regression@software.sandia.gov"/>
