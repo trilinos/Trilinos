@@ -234,8 +234,8 @@ namespace MueLu {
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
         
-        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,doFillComplete);
-        
+        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
+  
         if (i != 0) {
           std::ostringstream buf;
           buf << i;
@@ -250,23 +250,23 @@ namespace MueLu {
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
-        
-        if (!doOptimizeStorage) {
-          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
-          C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                          (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                          Xpetra::DoNotOptimizeStorage);
-        } else {
-          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
-          C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                          (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                          Xpetra::DoOptimizeStorage);
-        }
+
+        Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);        
 #else
         throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
       }
 
+      if (!doOptimizeStorage) {
+        C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                        (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                        Xpetra::DoNotOptimizeStorage);
+      } else {
+        C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                        (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                        Xpetra::DoOptimizeStorage);
+      }
+      
       return C;
     } //TwoMatrixMultiply()
 
