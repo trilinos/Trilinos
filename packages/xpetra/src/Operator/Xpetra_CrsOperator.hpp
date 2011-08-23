@@ -17,14 +17,18 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/** \file Xpetra_Operator.hpp
+/** \file Xpetra_CrsOperator.hpp
 
-  Declarations for the class Xpetra::Operator.
+  Declarations for the class Xpetra::CrsOperator.
 */
 namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
+/*!
+  @class CrsOperator
+  @brief Concrete implementation of Xpetra::Operator.
+*/
 template <class Scalar, 
           class LocalOrdinal  = int, 
           class GlobalOrdinal = LocalOrdinal, 
