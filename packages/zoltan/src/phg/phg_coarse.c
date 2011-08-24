@@ -345,6 +345,9 @@ int Zoltan_PHG_Coarsening
     for (i = 0; i < hg->nVtx; ++i){
         if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
             LevelMap[i] = (ZOLTAN_GNO_TYPE)c_hg->nVtx;
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
+#endif
             if (c_hg->fixed_part)
                 c_hg->fixed_part[c_hg->nVtx] = hg->fixed_part[i];
             if (c_hg->pref_part)
@@ -370,6 +373,9 @@ int Zoltan_PHG_Coarsening
 /*                  uprintf(hgc, "LOCMAT:  match[%d (gno=%zd)] = %zd   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], LevelMap[i]);*/
               }
       }
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
+#endif
     }
     *LevelSndCnt = count;
 /*      errexit("this type of coarsening is not implemented yet"); */
@@ -432,11 +438,14 @@ int Zoltan_PHG_Coarsening
       int lno = listlno[i];
       for (j = 0; j < hg->nDim; j++)
 	coordbuf[i * hg->nDim + j] = hg->coor[lno * hg->nDim + j];
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO_GNO(hg, lno) == 66) printf("%d LOADING %d (%f %f %f) (%f %f %f)\n", zz->Proc, VTX_LNO_TO_GNO(hg, lno), hg->coor[lno*hg->nDim], hg->coor[lno*hg->nDim+1], hg->coor[lno*hg->nDim+2], coordbuf[i*hg->nDim], coordbuf[i*hg->nDim+1], coordbuf[i*hg->nDim+2]);
+#endif
     }
   }
   /* Create comm plan. */
   Zoltan_Comm_Create(comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
-                      &size); /* we'll ignore the size because of resize*/
+                      &size); /* we'll use size for coords and then resize*/
   
   if (hg->nDim) {
     if (size &&
@@ -453,12 +462,16 @@ int Zoltan_PHG_Coarsening
       || !(coorcount  = (double *) ZOLTAN_CALLOC(c_hg->nVtx, sizeof(double)))))
       MEMORY_ERROR;
 
+    /* Accumulating on-processor coordinates */
     for (i = 0; i < hg->nVtx; i++) {
       ZOLTAN_GNO_TYPE ni = LevelMap[i];
       if (ni >= 0) {
 	for (j = 0; j < hg->nDim; j++)
 	  c_hg->coor[ni*hg->nDim + j] += hg->coor[i*hg->nDim + j];
-	coorcount[ni]++;
+	coorcount[ni]+=1.;
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into ni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], ni, coorcount[ni]);
+#endif
       }
     }
   }
@@ -500,6 +513,8 @@ int Zoltan_PHG_Coarsening
   *LevelCnt   = 0;
   b = rbuffer;
   b_end = rbuffer + (size * sizeof(int));
+  if (hg->nDim)
+    doubleptr = (double *)coordrecbuf;
 
   while (b < b_end){
     int j, sz, source_lno;
@@ -511,8 +526,6 @@ int Zoltan_PHG_Coarsening
     sz = intptr[1 + alt_field_count];
     floatptr = (float *)(intptr + 2 + alt_field_count + sz);
     b = (char *)(floatptr + hg->VtxWeightDim);
-    if (hg->nDim)
-      doubleptr = (double *)coordrecbuf;
     
     source_lno              = *intptr++;
     lno = VTX_GNO_TO_LNO (hg, gnoptr[0]);
@@ -531,10 +544,13 @@ int Zoltan_PHG_Coarsening
 
     lno = (int)LevelMap[lno];
     if (hg->nDim) {
+#ifdef KDDKDD_DEBUG
+if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %d (%f %f %f) into lno %d coorcount %f doublptr %x\n", zz->Proc, gnoptr[0], *doubleptr, *(doubleptr+1), *(doubleptr+2), lno, coorcount[lno]+1., doubleptr);
+#endif
       for (j = 0; j < hg->nDim; j++){
 	c_hg->coor[lno * hg->nDim + j] += *doubleptr++;
       }
-      coorcount[lno]++;
+      coorcount[lno]+=1.;
     }
     
     for (j=0; j<hg->VtxWeightDim; ++j)

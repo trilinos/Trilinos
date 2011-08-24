@@ -2350,6 +2350,11 @@ static int pmatching_geom (ZZ *zz,
   int *export_to_part = NULL;             /* Not computed */
   /* ----------------- */
 
+#ifdef KDDKDD_DEBUG
+for (i =0; i < hg->nVtx; i++)
+  printf("%d KDDIN: %d (%f %f %f) %f\n", hg->info, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], hg->vwgt[i]);
+#endif
+
   /* Register new geometric callbacks and parameters */
   if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) geometric_get_num_obj,
 		    (void *) hg) == ZOLTAN_FATAL) {
@@ -2450,15 +2455,14 @@ static int pmatching_geom (ZZ *zz,
 
 #ifdef KDDKDD_DEBUG
  {/* KDDKDD */
-   int kdd;
-   printf("%d KDDKDD Sanity Check %d == %d ? \n", zz->Proc, num_import, num_export);
+   int kdd, kddlid;
    for (kdd = 0; kdd < num_import; kdd++) { 
-     printf("%d KDDKDD Input (%d %d)  (%f %f)  wgt %f Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], hg->coor[2*import_local_ids[kdd]], hg->coor[2*import_local_ids[kdd]+1], hg->vwgt[import_local_ids[kdd]], candidate_ids[kdd]); 
+     kddlid = import_local_ids[kdd];
+     printf("%d KDDMATCH (%d %d %d)  (%f %f %f)  wgt %f Candidate %d\n", hg->info, import_global_ids[kdd], VTX_LNO_TO_GNO(hg, kddlid), kddlid, hg->coor[3*kddlid], hg->coor[3*kddlid+1], hg->coor[3*kddlid+2], hg->vwgt[kddlid], candidate_ids[kdd]); 
    } 
  /* KDDKDD */
-
  } 
-#endif    
+#endif
 
   /* 
    * Perform geometric matching only on geometric_levels levels.  If done,
