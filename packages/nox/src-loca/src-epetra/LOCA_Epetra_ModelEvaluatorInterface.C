@@ -255,7 +255,7 @@ LOCA::Epetra::ModelEvaluatorInterface::
 printSolution  (const Epetra_Vector  &x_, double conParam)
 { 
   if ( !observer.is_null() )
-     observer->observeSolution( x_ ); 
+     observer->observeSolution( x_, conParam ); 
 }
 
 // *****************************************************************
