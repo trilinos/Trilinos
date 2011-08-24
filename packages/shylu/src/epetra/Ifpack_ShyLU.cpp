@@ -232,6 +232,7 @@ int Ifpack_ShyLU::JustTryIt()
     solver->SetLHS(&Xs);
     solver->SetRHS(&Bs);
     solver->Iterate(30, 1e-10);
+    return 0;
 }
 
 int Ifpack_ShyLU::ApplyInverse(const Epetra_MultiVector& X,
