@@ -11,8 +11,8 @@ SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
   StarCCMExt      ""                              GIT  casl-dev.ornl.gov:/git-root/StarCCMClient  ""  Continuous
   DeCARTExt       ""                              GIT  casl-dev.ornl.gov:/git-root/casl_decart    ""  Continuous
   NeutronicsExt   "NeutronicsExt"                 GIT  casl-dev.ornl.gov:/git-root/denovoExt      ""  Continuous
-  Denovo          "NeutronicsExt/denovo"          GIT  angmar.ornl.gov/data/git/denovo.git        ""  Continuous
-  Nemesis         "NeutronicsExt/denovo/src/nemesis"  GIT  angmar.ornl.gov/data/git/nemesis.git       ""  Continuous
+  Denovo          "NeutronicsExt/denovo"          GIT  angmar.ornl.gov/data/git/denovo.git        NOPACKAGES  Continuous
+  Nemesis         "NeutronicsExt/denovo/src/nemesis"  GIT  angmar.ornl.gov/data/git/nemesis.git   NOPACKAGES  Continuous
   CASLBOA         ""                              GIT  casl-dev.ornl.gov:/git-root/casl_boa       ""  Continuous
   CASLRAVE        ""                              GIT  casl-dev.ornl.gov:/git-root/casl_rave      ""  Continuous
   LIMEExt         ""                              GIT  software.sandia.gov:/space/git/LIMEExt     ""  Continuous
