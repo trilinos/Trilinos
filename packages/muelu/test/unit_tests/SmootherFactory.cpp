@@ -119,7 +119,8 @@ namespace MueLuTests {
         //RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto1,smooProto2) );
         RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto1) );
 
-        RCP<Level> aLevel = rcp(new Level() );
+        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());        
+        RCP<Level> aLevel = rcp(new Level(defaultFactHandler) );
         aLevel->SetLevelID(1);
         RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
 

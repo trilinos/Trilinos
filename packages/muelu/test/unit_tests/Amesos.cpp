@@ -52,6 +52,7 @@ namespace MueLuTests {
         RCP<AmesosSmoother> smoother = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
 
         RCP<Operator> Op = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(125);
+        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
         Level aLevel;
         aLevel.Set("A",Op);
 

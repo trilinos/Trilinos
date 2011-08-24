@@ -19,6 +19,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#include "MueLu_Level.hpp"
+#include "MueLu_DefaultFactoryHandler.hpp"
+
 // Gallery
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"

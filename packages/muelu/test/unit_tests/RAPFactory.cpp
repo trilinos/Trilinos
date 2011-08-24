@@ -33,9 +33,9 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    Level fineLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
     fineLevel.Set("A",Op);
-    Level coarseLevel;
 
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
@@ -85,9 +85,9 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    Level fineLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
     fineLevel.Set("A",Op);
-    Level coarseLevel;
 
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);

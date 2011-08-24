@@ -54,7 +54,8 @@ namespace MueLuTests {
         ifpackList.set("relaxation: damping factor", (double) 1.0);
         ifpackList.set("relaxation: zero starting solution", false);
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-        Level aLevel;
+        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+        Level aLevel(defaultFactHandler);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -102,7 +103,9 @@ namespace MueLuTests {
         ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
         ifpackList.set("chebyshev: zero starting solution", false);
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
-        Level aLevel;
+        
+        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+        Level aLevel(defaultFactHandler);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -162,7 +165,8 @@ namespace MueLuTests {
 
         Teuchos::ParameterList  ifpackList;
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("ILU",ifpackList) );
-        Level aLevel;
+        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+        Level aLevel(defaultFactHandler);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> Xtrue = MultiVectorFactory::Build(Op->getDomainMap(),1);

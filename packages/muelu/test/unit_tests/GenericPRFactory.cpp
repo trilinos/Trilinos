@@ -54,7 +54,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test that Build returns early if the coarsest matrix is smaller than specified MaxCoarseSize" << std::endl;
 
-    Level levelOne, levelTwo;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level levelOne(defaultFactHandler), levelTwo(defaultFactHandler);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
     levelOne.Set("A",A);
 

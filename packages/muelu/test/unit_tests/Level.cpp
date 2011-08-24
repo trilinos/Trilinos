@@ -17,7 +17,8 @@ namespace MueLuTests {
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
-    Level firstLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level firstLevel(defaultFactHandler);
     firstLevel.Set("A",A);
     RCP<Operator> newA = firstLevel.Get< RCP<Operator> >("A");
     TEUCHOS_TEST_EQUALITY(newA, A, out, success);

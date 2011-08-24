@@ -40,12 +40,11 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
-    Level fineLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
     fineLevel.SetLevelID(1);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Set("A",A);
-
-    Level coarseLevel;
 
     // first iteration calls LAPACK QR
     // second iteration (with only one NS vector) exercises manual orthogonalization
@@ -101,12 +100,11 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    Level fineLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
     fineLevel.SetLevelID(1);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Set("A",A);
-
-    Level coarseLevel;
 
     fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                     //FIXME is implemented

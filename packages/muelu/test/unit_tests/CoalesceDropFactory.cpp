@@ -24,7 +24,8 @@ namespace MueLuTests {
 
     CoalesceDropFactory coalesceDropFact;
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
-    Level fineLevel;
+    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
+    Level fineLevel(defaultFactHandler);
     fineLevel.Set("A",A);
 
     coalesceDropFact.Build(fineLevel);
