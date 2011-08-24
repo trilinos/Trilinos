@@ -1,8 +1,6 @@
 #ifndef MUELU_PFACTORY_HPP
 #define MUELU_PFACTORY_HPP
 
-#include "Teuchos_VerboseObject.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"

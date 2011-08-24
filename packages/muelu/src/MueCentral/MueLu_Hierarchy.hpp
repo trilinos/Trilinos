@@ -1,12 +1,11 @@
 #ifndef MUELU_HIERARCHY_HPP
 #define MUELU_HIERARCHY_HPP
 
-#include "Teuchos_VerboseObject.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
+#include "MueLu_DefaultFactoryHandler.hpp"
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_DefaultFactoryHandler.hpp"
 
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -30,7 +29,7 @@ namespace MueLu {
     an apply method that supports V and W cycles.
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+  class Hierarchy : public BaseClass {
 
 #include "MueLu_UseShortNames.hpp"
 

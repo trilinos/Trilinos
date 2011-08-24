@@ -1,14 +1,14 @@
-#ifndef MUELU_FACTORY_HPP
-#define MUELU_FACTORY_HPP
+#ifndef MUELU_FACTORYBASE_HPP
+#define MUELU_FACTORYBASE_HPP
 
-#include <Teuchos_VerboseObject.hpp>
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
   class Level;
 
   //! Base class for factories (e.g., R, P, and A_coarse).
-  class FactoryBase : public Teuchos::VerboseObject<FactoryBase> {
+  class FactoryBase : public BaseClass {
 
   public:
     //@{ Constructors/Destructors.
@@ -35,5 +35,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_FACTORY_SHORT
-#endif //ifndef MUELU_FACTORY_HPP
+#define MUELU_FACTORYBASE_SHORT
+#endif //ifndef MUELU_FACTORYBASE_HPP

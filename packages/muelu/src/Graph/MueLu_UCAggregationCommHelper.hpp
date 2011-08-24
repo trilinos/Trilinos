@@ -1,21 +1,18 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_HPP
 
-#include <exception>
-
-#include <Teuchos_VerboseObject.hpp>
-
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class UCAggregationCommHelper : public Teuchos::VerboseObject<UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
+  class UCAggregationCommHelper : public BaseClass {
 
     typedef double Scalar; // Scalar type only used for weight: always a double.
 #include "MueLu_UseShortNames.hpp"

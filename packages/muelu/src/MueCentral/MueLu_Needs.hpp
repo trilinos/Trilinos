@@ -1,10 +1,10 @@
 #ifndef MUELU_NEEDS_HPP
 #define MUELU_NEEDS_HPP
 
-#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #define MueLu_cout(minimumVerbLevel)                                    \
@@ -19,10 +19,8 @@ namespace MueLu {
     Maintains a list of 'Needs' for a given Level. For example, a restriction factory that
     transposes the tentative prolongator 'Needs' the prolongator factory to save this.
 
-    Derives from Teuchos::VerboseObject.
-
   */
-  class Needs : public Teuchos::VerboseObject<Needs> {
+  class Needs : public BaseClass {
 
     /*
     //! Friendly print.  FIXME pretty print doesn't work ;(

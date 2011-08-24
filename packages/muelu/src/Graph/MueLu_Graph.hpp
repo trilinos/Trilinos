@@ -5,6 +5,7 @@
 #include <Xpetra_CrsGraph.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 
 /******************************************************************************
@@ -15,7 +16,7 @@ namespace MueLu {
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class Graph 
-    : public Teuchos::VerboseObject<Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
+    : public BaseClass {
 
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

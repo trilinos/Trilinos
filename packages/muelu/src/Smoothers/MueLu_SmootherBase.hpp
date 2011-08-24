@@ -2,6 +2,7 @@
 #define MUELU_SMOOTHERBASE_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
@@ -15,7 +16,7 @@ namespace MueLu {
   */
 
 template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SmootherBase : public Teuchos::VerboseObject<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
+  class SmootherBase : public BaseClass {
 
 #include "MueLu_UseShortNames.hpp"
 

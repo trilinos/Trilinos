@@ -6,6 +6,7 @@
 #include "Xpetra_VectorFactory.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_Graph.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
@@ -37,7 +38,7 @@
 namespace MueLu {
 
    template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-   class Aggregates : public Teuchos::VerboseObject<Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+   class Aggregates : public BaseClass {
 
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

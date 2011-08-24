@@ -2,17 +2,17 @@
 #define MUELU_DEFAULTFACTORYHANDLERBASE_HPP
 
 #include <string>
-#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_Hashtable.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 //#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
   class FactoryBase;
 
   //! Class that provides default factories within Needs class.
-  class DefaultFactoryHandlerBase : public Teuchos::VerboseObject<DefaultFactoryHandlerBase> {
+  class DefaultFactoryHandlerBase : public BaseClass {
 
   public:
     //@{ Constructors/Destructors.
