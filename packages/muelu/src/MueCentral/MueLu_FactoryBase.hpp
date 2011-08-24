@@ -23,11 +23,7 @@ namespace MueLu {
     //@{
     //! @name Build methods.
 
-    //! Build an object with this factory.
-    virtual bool SingleLevelBuild(Level & fineLevel) const = 0;
-    
-    //! Build an object with this factory.
-    virtual bool TwoLevelBuild(Level & fineLevel, Level & coarseLevel) const = 0;
+    virtual bool NewBuild(Level & requestedLevel) const = 0;
 
     //@}
 

@@ -88,7 +88,7 @@ namespace MueLu {
     LocalAggregationFactory(RCP<SingleLevelFactoryBase> const &coalesceDropFact=Teuchos::null) :
       printFlag_(0), //TODO: to be removed
       ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0),
-      coalesceDropFact_(coalesceDropFact), 
+      graphFact_(coalesceDropFact), 
       graphName_("unnamed") //, Algorithm_("notSpecified"), 
     {
 
@@ -131,15 +131,13 @@ namespace MueLu {
     timer->start(true);
 
     currentLevel.Request("Graph");
-    if (coalesceDropFact_ != Teuchos::null)
-      coalesceDropFact_->SingleLevelBuild(currentLevel);
-    else
-      currentLevel.GetDefaultFactory("Graph")->SingleLevelBuild(currentLevel);
 
-    RCP<Graph> graph;
-    currentLevel.Get("Graph",graph);
-    currentLevel.Release("Graph");
+    RCP<Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_);
+
     RCP<Aggregates> aggregates = Build(*graph);
+
+    currentLevel.Release("Graph");
+
     currentLevel.Set("Aggregates",aggregates);
 
     timer->stop();
@@ -168,7 +166,7 @@ private:
   // std::string Algorithm_;
 
   //! coalesce and drop factory
-  RCP<FactoryBase> coalesceDropFact_;
+  RCP<FactoryBase> graphFact_;
 
   //! user-defined graph label
     std::string graphName_;//TODO unused?

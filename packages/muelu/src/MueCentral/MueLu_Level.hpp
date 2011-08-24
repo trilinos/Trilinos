@@ -7,6 +7,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Needs.hpp"
+#include "MueLu_FactoryBase.hpp"
 #include "MueLu_DefaultFactoryHandlerBase.hpp"
 
 namespace MueLu {
@@ -90,6 +91,23 @@ namespace MueLu {
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
 
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
+    // Usage: Level->Get< RCP<Operator> >("A", factory)
+    // factory == Teuchos::null => use default factory
+    template <class T>
+    T & NewGet(const std::string& ename, const RCP<FactoryBase> & factory) {
+      if (! Needs::IsAvailable(ename)) {
+        if (factory != Teuchos::null)
+          factory->NewBuild(*this);
+        else
+          GetDefaultFactory(ename)->NewBuild(*this);
+
+        TEST_FOR_EXCEPTION(! Needs::IsAvailable(ename), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output.");
+      }
+
+      return Needs::Get<T>(ename);
+    }
+    
     //! For internal check only
     RCP<Level> & GetPreviousLevel() {
       return previousLevel_;

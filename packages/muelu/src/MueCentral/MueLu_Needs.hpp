@@ -90,8 +90,7 @@ namespace MueLu {
     } //Release
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
-    // Usage: Level->Get< RCP<Operator> >("A") or
-    //        Level->Get< RCP<Operator> >("A")
+    // Usage: Level->Get< RCP<Operator> >("A")
     template <class T>
     T & Get(const std::string& ename) {
       if (countTable_.isParameter(ename)) {
