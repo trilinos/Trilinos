@@ -247,7 +247,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      a->Update(fdt2, *x,  -fdt2, *x_pred,0.0);
      v->Update(hdt, *a, hdt, *a_old, 1.0); 
 
-     if (observer != Teuchos::null) observer->observeSolution(*x);
+     if (observer != Teuchos::null) observer->observeSolution(*x,t);
      if (g_out != Teuchos::null) 
        g_out->Print(*out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n");
    }
