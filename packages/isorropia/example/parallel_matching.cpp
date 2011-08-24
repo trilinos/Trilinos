@@ -48,14 +48,14 @@ int main(int argc, char** argv) {
         //Isorropia::Epetra::Isorropia_EpetraMatcher pm(r,paramlist);
         
         pm.match();
-        std::cout<<*matrixPtr<<std::endl;
-
+        
+        /*std::cout<<*matrixPtr<<std::endl;
         Epetra_Map * map = pm.getPermutedRowMap();
         Teuchos::RCP<Epetra_Map> rcpMap(Teuchos::RCP<
         Epetra_Map>(map,true));
         Isorropia::Epetra::Redistributor redist(rcpMap);
         Teuchos::RCP<Epetra_CrsMatrix> myMat=redist.redistribute(*matrixPtr);
-        std::cout<<*myMat<<std::endl;
+        std::cout<<*myMat<<std::endl;*/
 
         //Epetra_Map defMap2(-1, 5, 0,matrixPtr->Comm());
         //EpetraExt::ViewTransform<Epetra_CrsMatrix> * ReIdx_MatTrans2 =
