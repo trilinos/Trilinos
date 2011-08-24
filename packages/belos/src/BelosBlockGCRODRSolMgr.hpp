@@ -1,10 +1,55 @@
+//@HEADER
+// ************************************************************************
+//
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+
+/*! \file BelosBlockGCRODRSolMgr.hpp
+ *  \brief The Belos::BlockGCRODRSolMgr provides a solver manager for the Block GCRODR (block GMRES with recycling) linear solver.
+*/
+#ifndef BELOS_BLOCK_GCRODR_SOLMGR_HPP
+#define BELOS_BLOCK_GCRODR_SOLMGR_HPP
+
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosOrthoManagerFactory.hpp"
-
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
-
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGCRODRIter.hpp"
 #include "BelosBlockGmresIter.hpp"
@@ -20,18 +65,28 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-//ADD COMMENTS WITH EXAMPLES AND BRIEF INFO ABOUT CLASS
+//ADD COMMENTS WITH EXAMPLES
+
+/*! \class Belos::BlockGCRODRSolMgr
+ *
+ *  \brief The Belos::BlockGCRODRSolMgr provides a powerful and fully-featured solver manager over the BlockGCRODR linear solver.
+
+ \ingroup belos_solver_framework
+
+ \author Kirk M. Soodhalter and Michael Parks
+ */
+
 
 
 namespace Belos{
 
-  //! @name GCRODRSolMgr Exceptions
+  //! @name BlockGCRODRSolMgr Exceptions
       //@{
 
-  /** \brief GCRODRSolMgrLinearProblemFailure is thrown when the linear problem is
+  /** \brief BlockGCRODRSolMgrLinearProblemFailure is thrown when the linear problem is
  *    * not setup (i.e. setProblem() was not called) when solve() is called.
  *       *
- *          * This exception is thrown from the GCRODRSolMgr::solve() method.
+ *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
  *             *
  *                */
   class BlockGCRODRSolMgrLinearProblemFailure : public BelosError {
@@ -39,10 +94,10 @@ namespace Belos{
       BlockGCRODRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief GCRODRSolMgrOrthoFailure is thrown when the orthogonalization manager is
+  /** \brief BlockGCRODRSolMgrOrthoFailure is thrown when the orthogonalization manager is
  *    * unable to generate orthonormal columns from the initial basis vectors.
  *       *
- *          * This exception is thrown from the GCRODRSolMgr::solve() method.
+ *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
  *             *
  *                */
   class BlockGCRODRSolMgrOrthoFailure : public BelosError {
@@ -50,10 +105,10 @@ namespace Belos{
       BlockGCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief GCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
+  /** \brief BlockGCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
  *    * from an LAPACK call.
  *       *
- *          * This exception is thrown from the GCRODRSolMgr::solve() method.
+ *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
  *             *
  *                */
   class BlockGCRODRSolMgrLAPACKFailure : public BelosError {
@@ -61,10 +116,10 @@ namespace Belos{
       BlockGCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief GCRODRSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
+  /** \brief BlockGCRODRSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
  *    * the recycling subspace.
  *       *
- *          * This exception is thrown from the GCRODRSolMgr::solve() method.
+ *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
  *             *
  *                */
   class BlockGCRODRSolMgrRecyclingFailure : public BelosError {
@@ -88,20 +143,78 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
 
   public:
-    //ANY CONSTRUCTORS/DESTRUCTORS WILL GO HERE.  ALL PARAMETER HARD CODED.
+	//! @name Constructors/Destructor
+	//@{
 
-    //DEFAULT CONSTRUCTOR
-    BlockGCRODRSolMgr();
+	/*! \brief Empty constructor for BlockGCRODRSolMgr.
+	* This constructor takes no arguments and sets the default values for the solver.
+	* The linear problem must be passed in using setProblem() before solve() is called on this object.
+	* The solver values can be changed using setParameters().
+	*/
+	BlockGCRODRSolMgr();
     
-    //THE BASIC CONSTRUCTOR, STILL DOES NOT ACTUALLY PARSE PARAMETERS
+	/*! \brief Basic constructor for GCRODRSolMgr.
+	*
+	* This constructor accepts the LinearProblem to be solved in
+	* addition to a parameter list of options for the solver manager.
+	* Some of the more important options include the following:
+	* - "Num Blocks": an \c int specifying the number of blocks
+	*   allocated for the Krylov basis. Default: 50.
+	* - "Block Size": an \c int specifying the number of right hand sides
+	*    being solved at a time.
+	* - "Num Recycled Blocks": an \c int specifying the number of
+	*   blocks allocated for the Krylov basis. Default: 5.
+	* - "Maximum Iterations": an \c int specifying the maximum number
+	*   of iterations the underlying solver is allowed to
+	*   perform. Default: 5000.
+	* - "Maximum Restarts": an \c int specifying the maximum number
+	*   of restarts the underlying solver is allowed to
+	*   perform. Default: 100.
+	* - "Orthogonalization": an \c std::string specifying the desired
+	*   orthogonalization. Currently supported values: "DGKS",
+	*   "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR
+	*   support). Default: "DGKS".
+	* - "Orthogonalization Parameters": a ParameterList or
+	*   RCP<(const) ParameterList> of parameters specific to the type
+	*   of orthogonalization used. Defaults are set automatically.
+	* - "Verbosity": a sum of MsgType specifying the
+	*   verbosity. Default: Belos::Errors.
+	* - "Output Style": a OutputType specifying the style of
+	*   output. Default: Belos::General.
+	* - "Convergence Tolerance": a \c MagnitudeType specifying the
+	*   level that residual norms must reach to decide
+	*   convergence. Default: 1e-8.
+	*
+	* Other supported options:
+
+	* - "Output Frequency": an int specifying how often (in terms of
+	*   number of iterations) convergence information should be
+	*   output to the output stream. Default: -1 (means never output
+	*   convergence information).
+	* - "Output Stream": a reference-counted pointer to the output
+	*   stream where all solver output is sent. Default stream is
+	*   std::cout (stdout, in C terms). For stderr, supply
+	*   Teuchos::rcp(&std::cerr, false).
+	* - "Implicit Residual Scaling": the type of scaling used in the
+	*   implicit residual convergence test. Default: "Norm of
+	*   Preconditioned Initial Residual".
+	* - "Explicit Residual Scaling": the type of scaling used in the
+	*   explicit residual convergence test. Default: "Norm of Initial
+	*   Residual".
+	* - "Timer Label": the string to use as a prefix for the timer
+	*   labels. Default: "Belos"
+	* - "Orthogonalization Constant": a \c MagnitudeType
+	*   corresponding to the "depTol" parameter of DGKS
+	*   orthogonalization. Ignored unless DGKS orthogonalization is
+	*   used. DGKS decides the default value.
+	*/
     BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
-    //DEFAULT DESTRUCTOR
+    //! Destructor.
     virtual ~BlockGCRODRSolMgr() {};
-
-    //ACCESSOR METHODS
-    
+    //@}
+  
     /** \name Overridden from Teuchos::Describable */
     //@{
     //
@@ -109,6 +222,9 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     std::string description() const;      
 
     //@}
+
+   //! @name Accessor methods
+    //@{
     
      /*! \brief Get current linear problem being solved for in this object.
       */
@@ -136,7 +252,10 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
      */
     bool isLOADetected() const { return loaDetected_; }
 
-    //SET METHODS
+    //@}
+
+    //! @name Set methods
+    //@{
 
     //! Set the linear problem that needs to be solved.
     void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) {
@@ -146,7 +265,10 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
 
-    //RESET METHODS
+    //@}
+
+    //! @name Reset methods
+    //@{
     
     /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
@@ -156,12 +278,34 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
          return;
      }
 
-    //SOLVER APPLICATION METHODS
+    //@}
+
+    //! @name Solver application methods
+    //@{
+
+    /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
+     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to quit
+     *
+     * This method calls BlockGCRODRIter::iterate(), which will return either because a specially constructed status test evaluates to
+     * ::Passed or an exception is thrown.
+     *
+     * A return from BlockGCRODRIter::iterate() signifies one of the following scenarios:
+     *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
+     *      will be placed in the linear problem and return ::Unconverged.
+     *    - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
+     *      problem and the solver manager will return ::Converged
+     *
+     * \returns ::ReturnType specifying:
+     *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
+     *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
+     */
     ReturnType solve();
 
 
-  private:
-    //PRIVATE FUNCTION PROTOTYPES
+  private: 
+
+    /************************ PRIVATE FUNCTION PROTOTYPES *************************************/
+    
     // Called by all constructors; Contains init instructions common to all constructors
     void init();
 
@@ -200,6 +344,7 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
 
     //PRIVATE VARIABLES
+
     // Lapack interface
     Teuchos::LAPACK<int,ScalarType> lapack;
 
@@ -225,6 +370,9 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     // OrthoManagerFactory instance, and may be changed if the
     // parameters to this solver manager are changed.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+
+    // Current parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> params_;
 
     //Default Solver Values
     static const MagnitudeType convTol_default_;
@@ -288,17 +436,15 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     std::vector<int> ipiv_;
     /////////////////////////////////////////////////////////////////////////
 
+    // Timers.
+    Teuchos::RCP<Teuchos::Time> timerSolve_;
+
     // Internal State Variables
     bool isSet_;
     bool loaDetected_;
 
     // Have we generated or regenerated a recycle space yet this solve?
     bool builtRecycleSpace_; 
-
-    // File stream variables to use Mike Parks matlab output codes
-    std::ofstream ofs;
-    char filename[30];
-
 
   };//End BlockGCRODRSolMgr Class Definition
 
@@ -328,13 +474,15 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     const int BlockGCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 25;
  
     template<class ScalarType, class MV, class OP>
-    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Debug;
+ // MLP   const int BlockGCRODRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Debug;
+    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::verbosity_default_ =  Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails;
 
     template<class ScalarType, class MV, class OP>
     const int BlockGCRODRSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
 
     template<class ScalarType, class MV, class OP>
-    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+// MLP    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+    const int BlockGCRODRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = 1;
 
     template<class ScalarType, class MV, class OP>
     const std::string BlockGCRODRSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
@@ -353,7 +501,8 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
     template<class ScalarType, class MV, class OP>
     const Teuchos::RCP<std::ostream> BlockGCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false); 
-    //PRIVATE FUNCTION DEFINITIONS
+
+    /************************* PRIVATE FUNCTION DEFINITIONS *******************************/
 
     // Method to convert std::string to enumerated type for residual.
     Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
@@ -376,23 +525,32 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
        init();
      }
 
-     //Basic Constructor
-     template<class ScalarType, class MV, class OP>
-     BlockGCRODRSolMgr<ScalarType,MV,OP>::
-     BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                  const Teuchos::RCP<Teuchos::ParameterList> &pl )
-     {
-        //Initialize local pointers to null, and initialize local variables
-        //to default values.
-     	init();
+	//Basic Constructor
+	template<class ScalarType, class MV, class OP>
+	BlockGCRODRSolMgr<ScalarType,MV,OP>::
+	BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+	const Teuchos::RCP<Teuchos::ParameterList> &pl )
+	{
+		//Initialize local pointers to null, and initialize local variables
+		//to default values.
+		init();
 
-	//NEED TO ADD EXCEPTION TEST FOR USER PASSING IN NULL PROBLEM
-	
-      	problem_ = problem;
+		TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument,
+		"Belos::bLOCKGCRODRSolMgr constructor: The solver manager's "
+		"constructor needs the linear problem argument 'problem' "
+		"to be non-null.");
 
- 	//RIGHT NOW THIS CONSTRUCTOR JUST IGNORES PARAMETER LIST.
- 	//LATER WE WILL NEED TO DEAL WITH IT APPROPRIATELY
-     }
+		problem_ = problem;
+
+		// Set the parameters using the list that was passed in.  If null,
+		// we defer initialization until a non-null list is set (by the
+		// client calling setParameters(), or by calling solve() -- in
+		// either case, a null parameter list indicates that default
+		// parameters should be used).
+		if (! is_null (pl)){
+			setParameters (pl);
+		}
+	}
 
      template<class ScalarType, class MV, class OP>
      void BlockGCRODRSolMgr<ScalarType,MV,OP>::init() {
@@ -432,7 +590,8 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 	H_ = Teuchos::null;//H_ such that A*V(:,1:numBlocks_*blockSize_) = V_*H_ + C_*C_'*V_
 	B_ = Teuchos::null;//B_ = C_'*V_
     
-	//WE TEMPORARILY INITIALIZE STATUS TESTS HERE FOR TESTING PURPOSES, BUT THEY SHOULD BE 
+	//THIS BLOCK OF CODE IS COMMENTED OUT AND PLACED ELSEWHERE IN THE CODE
+	/*//WE TEMPORARILY INITIALIZE STATUS TESTS HERE FOR TESTING PURPOSES, BUT THEY SHOULD BE 
 	//INITIALIZED SOMEWHERE ELSE, LIKE THE setParameters() FUNCTION
 
 	//INSTANTIATE AND INITIALIZE TEST OBJECTS AS NEEDED
@@ -486,11 +645,11 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
 	StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
  	outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
-                                         Passed+Failed+Undefined);
+                                         Passed+Failed+Undefined); */
 
 
     }
-     //PUBLIC FUNCTION DEFINITIONS
+     /******************************* PUBLIC FUNCTION DEFINITIONS **********************************/
 
    //  This method requires the solver manager to return a string that describes itself.
    template<class ScalarType, class MV, class OP>
@@ -509,15 +668,544 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
    
    template<class ScalarType, class MV, class OP>
    Teuchos::RCP<const Teuchos::ParameterList> BlockGCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const {
-       Teuchos::RCP<const Teuchos::ParameterList> fooParams;
-       return fooParams;
-   }
+   
+	static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+	if (is_null(validPL)) {
+    		Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    		// Set all the valid parameters and their default values.
+           	pl->set("Convergence Tolerance", convTol_default_,
+      			"The relative residual tolerance that needs to be achieved by the\n"
+      			"iterative solver in order for the linear system to be declared converged.");
+    		pl->set("Maximum Restarts", maxRestarts_default_,
+      			"The maximum number of cycles allowed for each\n"
+      			"set of RHS solved.");
+    		pl->set("Maximum Iterations", maxIters_default_,
+     	 		"The maximum number of iterations allowed for each\n"
+      			"set of RHS solved.");
+                pl->set("Block Size", blockSize_default_,
+      			"Block Size Parameter -- currently must be 1 for GCRODR");
+    		pl->set("Num Blocks", numBlocks_default_,
+      			"The maximum number of vectors allowed in the Krylov subspace\n"
+      			"for each set of RHS solved.");
+    		pl->set("Num Recycled Blocks", recycledBlocks_default_,
+      			"The maximum number of vectors in the recycled subspace." );
+    		pl->set("Verbosity", verbosity_default_,
+      			"What type(s) of solver information should be outputted\n"
+      			"to the output stream.");
+    		pl->set("Output Style", outputStyle_default_,
+      			"What style is used for the solver information outputted\n"
+     	 		"to the output stream.");
+    		pl->set("Output Frequency", outputFreq_default_,
+      			"How often convergence information should be outputted\n"
+      			"to the output stream.");
+    		pl->set("Output Stream", outputStream_default_,
+      			"A reference-counted pointer to the output stream where all\n"
+     	 		"solver output is sent.");
+    		pl->set("Implicit Residual Scaling", impResScale_default_,
+      			"The type of scaling used in the implicit residual convergence test.");
+    		pl->set("Explicit Residual Scaling", expResScale_default_,
+      			"The type of scaling used in the explicit residual convergence test.");
+    		pl->set("Timer Label", label_default_,
+      			"The string to use as a prefix for the timer labels.");
+    		//  pl->set("Restart Timers", restartTimers_);
+            	pl->set("Orthogonalization", orthoType_default_,
+            		"The type of orthogonalization to use.  Valid options: " +
+            	orthoFactory_.validNamesString());
+    		{
+      			// We have to help out the C++ compiler's type inference a bit here.
+               		typedef Teuchos::RCP<const Teuchos::ParameterList> const_plist_ptr;
+			#if 0
+      				const_plist_ptr orthoParams =
+        			orthoFactory_.getDefaultParameters (orthoType_default_);
+			#else
+      			const_plist_ptr orthoParams;
+			#endif // 0
+      			pl->set< const_plist_ptr > ("Orthogonalization Parameters", orthoParams,
+                        "Parameters specific to the type of "
+                        "orthogonalization used.");
+    		}
+    		pl->set("Orthogonalization Constant", orthoKappa_default_,
+            	"When using DGKS orthogonalization: the \"depTol\" constant, used "
+            	"to determine whether another step of classical Gram-Schmidt is "
+            	"necessary.  Otherwise ignored.");
+   	 	validPL = pl;
+  	}
+  	return validPL;
+   }//end definition for getValidParameters()
    
    template<class ScalarType, class MV, class OP>
    void
    BlockGCRODRSolMgr<ScalarType,MV,OP>::
    setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
-   {return;}
+   {
+
+   	using Teuchos::isParameterType;
+  	using Teuchos::getParameter;
+	using Teuchos::null;
+	using Teuchos::ParameterList;
+	using Teuchos::parameterList;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::rcp_dynamic_cast;
+	using Teuchos::rcpFromRef;
+	using Teuchos::Exceptions::InvalidParameter;
+	using Teuchos::Exceptions::InvalidParameterName;
+	using Teuchos::Exceptions::InvalidParameterType;
+
+	// The default parameter list contains all parameters that
+  	// GCRODRSolMgr understands, and none that it doesn't understand.
+  	RCP<const ParameterList> defaultParams = getValidParameters();
+
+	// Create the internal parameter list if one doesn't already exist.
+	//
+	// As of 8-19-2011, this code does not yet use validators
+	// for the parameter lists.  This needs to be added.
+	if (params_.is_null()) {
+		params_ = parameterList (*defaultParams);
+	} 
+	else {
+		// setParameters() may be called at the beginning of the solve()
+		//  routine.  In this common case, we save ourselves
+		// a deep copy of the input parameter list.
+		if (params_ != params){
+			// Make deep copy of input param list.  Now  caller can
+			// modify or change params later, but this will only effect 				// solver when setParameters() is called again.
+			params_ = parameterList (*params);
+		}
+		// Currently, validation is quite strict.  The following line will 
+		// throw exceptions for mispelled or extra parameters.  There is
+		// additional discussion of other validation strategies in the
+		// comments of this function for Belos::GCRODRSolMgr
+		params_->validateParametersAndSetDefaults (*defaultParams);
+	}
+
+	// Check for maximum number of restarts.
+	if (params->isParameter ("Maximum Restarts")) {
+		maxRestarts_ = params->get("Maximum Restarts", maxRestarts_default_);
+
+		// Update parameter in our list.
+		params_->set ("Maximum Restarts", maxRestarts_);
+	}
+
+	// Check for maximum number of iterations
+	if (params->isParameter ("Maximum Iterations")) {
+	maxIters_ = params->get ("Maximum Iterations", maxIters_default_);
+
+	// Update parameter in our list and in status test.
+	params_->set ("Maximum Iterations", maxIters_);
+	if (! maxIterTest_.is_null())
+		maxIterTest_->setMaxIters (maxIters_);
+	}
+
+	// Check for the maximum number of blocks.
+	if (params->isParameter ("Num Blocks")) {
+		numBlocks_ = params->get ("Num Blocks", numBlocks_default_);
+		TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+		"Belos::GCRODRSolMgr: The \"Num Blocks\" parameter must "
+		"be strictly positive, but you specified a value of "
+		<< numBlocks_ << ".");
+		// Update parameter in our list.
+		params_->set ("Num Blocks", numBlocks_);
+	}
+
+	
+
+	// Check for blocksize
+	if (params->isParameter("Block Size")) {
+		blockSize_ = params->get("Block Size",blockSize_default_);
+		TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+		"Belos::BlockGmresSolMgr: \"Block Size\" must be strictly positive.");
+
+		// Update parameter in our list.
+		params_->set("Block Size", blockSize_);
+	}
+
+	// Check for the maximum number of blocks.
+	if (params->isParameter ("Num Recycled Blocks")) {
+		recycledBlocks_ = params->get ("Num Recycled Blocks",
+		recycledBlocks_default_);
+		TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
+		"Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
+		"parameter must be strictly positive, but you specified "
+		"a value of " << recycledBlocks_ << ".");
+		TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
+		"Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
+		"parameter must be less than the \"Num Blocks\" "
+		"parameter, but you specified \"Num Recycled Blocks\" "
+		"= " << recycledBlocks_ << " and \"Num Blocks\" = "
+		<< numBlocks_ << ".");
+		// Update parameter in our list.
+		params_->set("Num Recycled Blocks", recycledBlocks_);
+	}
+	
+	// Check to see if the timer label changed.  If it did, update it in
+	// the parameter list, and create a new timer with that label (if
+	// Belos was compiled with timers enabled).
+	if (params->isParameter ("Timer Label")) {
+		std::string tempLabel = params->get ("Timer Label", label_default_);
+
+		// Update parameter in our list and solver timer
+		if (tempLabel != label_) {
+			label_ = tempLabel;
+			params_->set ("Timer Label", label_);
+			std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
+			#ifdef BELOS_TEUCHOS_TIME_MONITOR
+			timerSolve_ = Teuchos::TimeMonitor::getNewTimer (solveLabel);
+			#endif
+		}
+	}
+
+	// Check for a change in verbosity level
+	if (params->isParameter ("Verbosity")) {
+		if (isParameterType<int> (*params, "Verbosity")) {
+			verbosity_ = params->get ("Verbosity", verbosity_default_);
+		} 
+		else {
+			verbosity_ = (int) getParameter<Belos::MsgType> (*params, "Verbosity");
+		}
+		// Update parameter in our list.
+		params_->set ("Verbosity", verbosity_);
+		// If the output manager (printer_) is null, then we will
+		// instantiate it later with the correct verbosity.
+		if (! printer_.is_null())
+			printer_->setVerbosity (verbosity_);
+	}
+
+	// Check for a change in output style
+	if (params->isParameter ("Output Style")) {
+		if (isParameterType<int> (*params, "Output Style")) {
+			outputStyle_ = params->get ("Output Style", outputStyle_default_);
+		} 
+		else {
+			outputStyle_ = (int) getParameter<OutputType> (*params, "Output Style");
+		}
+
+		// Update parameter in our list.
+		params_->set ("Output Style", outputStyle_);
+		// We will (re)instantiate the output status test afresh below.
+		outputTest_ = null;
+	}
+	
+	// Get the output stream for the output manager.
+	//
+	// It has been pointed out (mfh 28 Feb 2011 in GCRODRSolMgr code) that it is nearly
+	// impossible to serialize the parameter list, read it back in from
+	// the serialized representation, and get the same output stream as
+	// before.
+	//
+	// In case the output stream can't be read back in, we default to
+	// stdout (std::cout), just to ensure reasonable behavior.
+	if (params->isParameter ("Output Stream")) {
+		try {
+			outputStream_ = getParameter<RCP<std::ostream> > (*params, "Output Stream");
+		} 
+		catch (InvalidParameter&) {
+			outputStream_ = rcpFromRef (std::cout);
+		}
+		// We assume that a null output stream indicates that the user
+		// doesn't want to print anything, so we replace it with a "black
+		// hole" stream that prints nothing sent to it.  (We can't use a
+		// null output stream, since the output manager always sends
+		// things it wants to print to the output stream.)
+		if (outputStream_.is_null())
+			outputStream_ = rcp (new Teuchos::oblackholestream);
+
+		// Update parameter in our list.
+		params_->set ("Output Stream", outputStream_);
+		// If the output manager (printer_) is null, then we will
+		// instantiate it later with the correct output stream.
+		if (! printer_.is_null())
+			printer_->setOStream (outputStream_);
+	}
+
+	// frequency level
+	if (verbosity_ & Belos::StatusTestDetails) {
+	if (params->isParameter ("Output Frequency")) {
+	outputFreq_ = params->get ("Output Frequency", outputFreq_default_);
+	}
+
+	// Update parameter in out list and output status test.
+	params_->set("Output Frequency", outputFreq_);
+	if (! outputTest_.is_null())
+	outputTest_->setOutputFrequency (outputFreq_);
+	}
+
+	// Create output manager if we need to, using the verbosity level
+	// and output stream that we fetched above.  We do this here because
+	// instantiating an OrthoManager using OrthoManagerFactory requires
+	// a valid OutputManager.
+	if (printer_.is_null()) {
+	printer_ = rcp (new OutputManager<ScalarType> (verbosity_, outputStream_));
+	}
+
+	// Get the orthogonalization manager name ("Orthogonalization").
+	//
+	// Getting default values for the orthogonalization manager
+	// parameters ("Orthogonalization Parameters") requires knowing the
+	// orthogonalization manager name.  Save it for later, and also
+	// record whether it's different than before.
+	bool changedOrthoType = false;
+	if (params->isParameter ("Orthogonalization"))
+	{
+		const std::string& tempOrthoType =
+		params->get ("Orthogonalization", orthoType_default_);
+		// Ensure that the specified orthogonalization type is valid.
+		if (! orthoFactory_.isValidName (tempOrthoType))
+		{
+			std::ostringstream os;
+			os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \""
+			<< tempOrthoType << "\".  The following are valid options "
+			<< "for the \"Orthogonalization\" name parameter: ";
+			orthoFactory_.printValidNames (os);
+			throw std::invalid_argument (os.str());
+		}
+		if (tempOrthoType != orthoType_)
+		{
+			changedOrthoType = true;
+			orthoType_ = tempOrthoType;
+			// Update parameter in our list.
+			params_->set ("Orthogonalization", orthoType_);
+		}
+	}
+
+	// Get any parameters for the orthogonalization ("Orthogonalization
+	// Parameters").  If not supplied, the orthogonalization manager
+	// factory will supply default values.
+	//
+	// NOTE (mfh 12 Jan 2011) For the sake of backwards compatibility,
+	// if params has an "Orthogonalization Constant" parameter and the
+	// DGKS orthogonalization manager is to be used, the value of this
+	// parameter will override DGKS's "depTol" parameter.
+	//
+	// Users may supply the orthogonalization manager parameters either
+	// as a sublist, or as an RCP.  We test for both.
+
+	RCP<const ParameterList> orthoParams;
+	{
+		bool gotOrthoParams = false;
+		try { // Could it be an RCP?
+			orthoParams =
+			params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
+			gotOrthoParams = true;
+		} 
+		catch (InvalidParameter&) {
+			// We didn't get orthoParams; gotOrthoParams stays false.
+		}
+		if (! gotOrthoParams) {
+			try { // Could it be a sublist?
+				const ParameterList& _orthoParams =
+				  params_->sublist("Orthogonalization Parameters");
+				// A deep copy is the only safe way to ensure that
+				// orthoParams doesn't "go away," since params doesn't
+				// belong to the solution manager and may fall out of
+				// scope.
+				orthoParams = rcp (new ParameterList (_orthoParams));
+				gotOrthoParams = true;
+			} 
+			catch (InvalidParameter&) {
+				// We didn't get orthoParams; gotOrthoParams stays false.
+			}
+		}
+		// We didn't get the parameter list from params, so get a default
+		// parameter list from the OrthoManagerFactory.
+		if (! gotOrthoParams)
+			orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
+		// Update parameter in our list.
+		params_->set ("Orthogonalization Parameters", orthoParams);
+	}
+
+	// Check if the desired orthogonalization method changed, or if the
+	// orthogonalization manager has not yet been instantiated.  If
+	// either is the case, instantiate a new MatOrthoManager subclass
+	// instance corresponding to the desired orthogonalization method.
+	// We've already fetched the orthogonalization method name
+	// (orthoType_) and its parameters (orthoParams) above.
+	
+	// As suggested (by mfh 12 Jan 2011 in Belos::GCRODRSolMgr)
+	// In order to ensure parameter changes get propagated to the orthomanager
+	// we simply reinstantiate the OrthoManager every time, whether or
+	// not the orthogonalization method name or parameters have changed.
+	// This is not efficient. A more general way to fix this bug is to supply each
+	// orthogonalization manager class with a setParameters() method
+	// that takes a parameter list input, and changes the parameters as
+	// appropriate.
+	
+	// Create orthogonalization manager.  This requires that the
+	// OutputManager (printer_) already be initialized.
+	ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_,
+			                  label_, orthoParams);
+	
+
+	//OLDER CONDITIONAL REGENERATION OF OrthoManager
+	/*if (ortho_.is_null() || changedOrthoType)
+	{
+		// Create orthogonalization manager.  This requires that the
+		// OutputManager (printer_) already be initialized.
+		ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_,
+				                  label_, orthoParams);
+	}*/
+
+	// The DGKS orthogonalization accepts a "Orthogonalization Constant"
+	// parameter (also called kappa in the code, but not in the
+	// parameter list).  If its value is provided in the given parameter
+	// list, and its value is positive, use it.  Ignore negative values.
+	//
+	// NOTE (mfh 12 Jan 2011) This overrides the "depTol" parameter that
+	// may have been specified in "Orthogonalization Parameters".  We
+	// retain this behavior for backwards compatibility.
+	bool gotValidOrthoKappa = false;
+	if (params->isParameter ("Orthogonalization Constant"))
+	{
+		const MagnitudeType orthoKappa =
+		params->get ("Orthogonalization Constant", orthoKappa_default_);
+		if (orthoKappa > 0)
+		{
+			orthoKappa_ = orthoKappa;
+			gotValidOrthoKappa = true;
+			// Update parameter in our list.
+			params_->set("Orthogonalization Constant", orthoKappa_);
+			// Only DGKS currently accepts this parameter.
+			if (orthoType_ == "DGKS" && ! ortho_.is_null())
+			{
+				typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
+				// This cast should always succeed; it's a bug
+				// otherwise.  (If the cast fails, then orthoType_
+				// doesn't correspond to the OrthoManager subclass
+				// instance that we think we have, so we initialized the
+				// wrong subclass somehow.)
+				rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
+			}
+		}
+	}
+
+	// Convergence
+	typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+	typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+
+	// Check for convergence tolerance
+	if (params->isParameter("Convergence Tolerance")) {
+		convTol_ = params->get ("Convergence Tolerance", convTol_default_);
+
+		// Update parameter in our list and residual tests.
+		params_->set ("Convergence Tolerance", convTol_);
+		if (! impConvTest_.is_null())
+			impConvTest_->setTolerance (convTol_);
+		if (! expConvTest_.is_null())
+			expConvTest_->setTolerance (convTol_);
+	}
+
+	// Check for a change in scaling, if so we need to build new residual tests.
+	if (params->isParameter ("Implicit Residual Scaling")) {
+		std::string tempImpResScale =
+		getParameter<std::string> (*params, "Implicit Residual Scaling");
+
+		// Only update the scaling if it's different.
+		if (impResScale_ != tempImpResScale) {
+			ScaleType impResScaleType = convertStringToScaleType (tempImpResScale);
+			impResScale_ = tempImpResScale;
+
+			// Update parameter in our list and residual tests
+			params_->set("Implicit Residual Scaling", impResScale_);
+
+			if (! impConvTest_.is_null()) {
+				try {
+					impConvTest_->defineScaleForm (impResScaleType, Belos::TwoNorm);
+				}
+				catch (StatusTestError&) {
+					// Delete the convergence test so it gets constructed again.
+					impConvTest_ = null;
+					convTest_ = null;
+				}
+			}
+		}
+	}
+
+	if (params->isParameter("Explicit Residual Scaling")) {
+		std::string tempExpResScale =
+		getParameter<std::string> (*params, "Explicit Residual Scaling");
+
+		// Only update the scaling if it's different.
+		if (expResScale_ != tempExpResScale) {
+			ScaleType expResScaleType = convertStringToScaleType (tempExpResScale);
+			expResScale_ = tempExpResScale;
+
+			// Update parameter in our list and residual tests
+			params_->set("Explicit Residual Scaling", expResScale_);
+			// FIXME (mfh 28 Feb 2011)
+			//
+			// See note above on Belos design problems.
+			if (! expConvTest_.is_null()) {
+				try {
+					expConvTest_->defineScaleForm (expResScaleType, Belos::TwoNorm);
+				}
+				catch (StatusTestError&) {
+					// Delete the convergence test so it gets constructed again.
+					expConvTest_ = null;
+					convTest_ = null;
+				}
+			}
+		}
+	}
+	//
+	// Create iteration stopping criteria ("status tests") if we need
+	// to, by combining three different stopping criteria.
+	//
+	// First, construct maximum-number-of-iterations stopping criterion.
+	if (maxIterTest_.is_null())
+	maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
+
+	// Implicit residual test, using the native residual to determine if
+	// convergence was achieved.
+	if (impConvTest_.is_null()) {
+		impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
+		impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_),
+		   Belos::TwoNorm);
+	}
+
+	// Explicit residual test once the native residual is below the tolerance
+	if (expConvTest_.is_null()) {
+		expConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
+		expConvTest_->defineResForm (StatusTestResNorm_t::Explicit, Belos::TwoNorm);
+		expConvTest_->defineScaleForm (convertStringToScaleType (expResScale_),
+		   Belos::TwoNorm);
+	}
+	// Convergence test first tests the implicit residual, then the
+	// explicit residual if the implicit residual test passes.
+	if (convTest_.is_null()) {
+		convTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::SEQ,
+		                                    impConvTest_,
+		                                    expConvTest_));
+  	}
+	// Construct the complete iteration stopping criterion:
+	//
+	// "Stop iterating if the maximum number of iterations has been
+	// reached, or if the convergence test passes."
+	sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
+				maxIterTest_,
+				convTest_));
+	// Create the status test output class.
+	// This class manages and formats the output from the status test.
+	StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+	outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
+	Passed+Failed+Undefined);
+
+	// Set the solver string for the output test
+	std::string solverDesc = "Block GCRODR ";
+	outputTest_->setSolverDesc( solverDesc );
+
+	// Create the timer if we need to.
+	if (timerSolve_.is_null()) {
+		std::string solveLabel = label_ + ": BlockGCRODRSolMgr total solve time";
+		#ifdef BELOS_TEUCHOS_TIME_MONITOR
+			timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+		#endif
+	}
+
+	// Inform the solver manager that the current parameters were set.
+	isSet_ = true;
+
+
+   }//end setParameters()
    
    // initializeStateStorage.
    template<class ScalarType, class MV, class OP>
@@ -684,8 +1372,14 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
 	//GET CORRECT PIECE OF MATRIX H APPROPRIATE TO SIZE OF KRYLOV SUBSPACE
 	SDM HH(Teuchos::Copy, *H_, p+blockSize_, p);
-        if(recycledBlocks_ >= p + 1){//keep whole block Krylov subspace
-		
+        if(recycledBlocks_ >= p + blockSize_){//keep whole block Krylov subspace
+		//IF THIS HAS HAPPENED, THIS MEANS WE CONVERGED DURING THIS CYCLE
+		//THEREFORE, WE DO NOT CONSTRUCT C = A*U;
+                index.resize(p);
+                for (int ii=0; ii < p; ++ii) { index[ii] = ii; }
+                Teuchos::RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
+		MVT::SetBlock(*V_, index, *Utmp);
+		keff = p;
 	}
 	else{//use a subspace selection method to get recycle space
 		int info = 0; 
@@ -776,6 +1470,18 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
 	// insufficient new information to update recycle space
 	if (p<1) return;
+
+	if(recycledBlocks_ >= keff + p){//we add new Krylov vectors to existing recycle space
+		//IF THIS HAS HAPPENED, THIS MEANS WE CONVERGED DURING THIS CYCLE
+		//THEREFORE, WE DO NOT CONSTRUCT C = A*U;
+		index.resize(p);
+                for (int ii=0; ii < p; ++ii) { index[ii] = keff+ ii; }//get a view after current reycle vectors
+                Teuchos::RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
+                for (int ii=0; ii < p; ++ii) { index[ii] =ii; }
+                MVT::SetBlock(*V_, index, *Utmp);
+		keff += p;
+	}
+
 	// Take the norm of the recycled vectors
 	{
     		index.resize(keff);
@@ -1363,7 +2069,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, i
         	// Throw an error if we could not orthogonalize this block
         	TEST_FOR_EXCEPTION(rank != keff,BlockGCRODRSolMgrOrthoFailure,"Belos::BlockGCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 
-		// U_ = U_*R^{-1}
+		// U_ = U_*F^{-1}
 		// First, compute LU factorization of R
 		int info = 0;
 	        ipiv_.resize(Ftmp.numRows());
@@ -1478,7 +2184,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, i
  		// Orthonormalize the new V_0
  		int rank = ortho_->normalize( *V_0, z_0 );
 		//ADD EXCEPTION IF INITIAL BLOCK IS RANK DEFFICIENT
-		
+
 		// Set the new state and initialize the iteration.
 		GmresIterationState<ScalarType,MV> newstate;
 		newstate.V = V_0;
@@ -1708,16 +2414,6 @@ std::cout << "Here are the current residuals after block GMRES" << std::endl;
 		//iterate using block_gcrodr_iter
 		try{	
 			block_gcrodr_iter -> iterate();
-//KMS**********************************************************************
-  std::cout << "Here are the current residuals after a block GCRODR cycle" << std::endl;
-{
-        std::vector<MagnitudeType> norms;
-        block_gcrodr_iter -> getNativeResiduals( &norms );
-        for(int jj=0; jj<norms.size(); jj++){
-                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
-        }
-}
-//************************************************************************8
 
 			///////////////////////////////////////////////////////////////
 			//
@@ -1747,6 +2443,16 @@ std::cout << "Here are the current residuals after block GMRES" << std::endl;
 			///////////////////////////////////////////////////////////
 			else if (block_gcrodr_iter->getCurSubspaceDim() == block_gcrodr_iter->getMaxSubspaceDim()){
 
+//KMS**********************************************************************
+  std::cout << "Here are the current residuals after a block GCRODR cycle" << std::endl;
+{
+        std::vector<MagnitudeType> norms;
+        block_gcrodr_iter -> getNativeResiduals( &norms );
+        for(int jj=0; jj<norms.size(); jj++){
+                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
+        }
+}
+//************************************************************************8
 				//Update recycled space even if we have reached max number of restarts
 
 				//update linear problem
@@ -1901,7 +2607,9 @@ std::cout << "Here are the current residuals after block GMRES" << std::endl;
    }//end solve()
 }//End Belos Namespace
 
-/*
+#endif /* BELOS_BLOCK_GCRODR_SOLMGR_HPP */
+
+/* JUST KEEPING THESE DOWN HERE FOR DEBUGGING RIGHT NOW
 
 std::ofstream ofs;
 char filename[30];
