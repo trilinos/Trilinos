@@ -1,35 +1,36 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Trilinos_TsqrFactory_hpp
 #define __TSQR_Trilinos_TsqrFactory_hpp
 
 /// \file TsqrFactory.hpp
+/// \brief Base class for TSQR implementation instantiation
 ///
 /// \warning TSQR users should _not_ include this file directly.
 
@@ -38,8 +39,6 @@
 #include <Tsqr_MessengerBase.hpp>
 #include <Tsqr.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Trilinos {
@@ -51,30 +50,36 @@ namespace TSQR {
     /// particular TSQR implementation.  TsqrFactory contains all
     /// common functionality for this task.
     ///
+    /// \tparam LO The (local) ordinal type used by TSQR.
+    /// \tparam S The Scalar type used by TSQR; the type of the
+    ///   entries of the matrices to factor.
+    /// \tparam NodeTsqrType The type of the intranode part of TSQR.
+    /// \tparam DistTsqrType The type of the internode part of TSQR.
+    ///
     /// \note Unless you need to change the interface between Trilinos
-    /// and TSQR, you don't need to do anything with TsqrFactory or
-    /// its subclasses.  Just choose the appropriate subclass of
-    /// TsqrAdaptor.  TsqrFactory and its subclasses don't have
-    /// anything to do with any of the Trilinos multivector classes.
+    ///   and TSQR, you don't need to do anything with TsqrFactory or
+    ///   its subclasses.  Just choose the appropriate subclass of
+    ///   \c TsqrAdaptor.  TsqrFactory and its subclasses don't have
+    ///   anything to do with any of the Trilinos multivector classes.
     ///
     /// \note If you have implemented a new intranode TSQR
-    /// factorization type, you'll need to create a subclass of
-    /// TsqrFactory that knows how to instantiate that intranode TSQR
-    /// class.
+    ///   factorization type, you'll need to create a subclass (not
+    ///   specialization) of TsqrFactory that knows how to instantiate
+    ///   that intranode TSQR class.
     ///
     /// \note If you have implemented a new internode TSQR
-    /// factorization type, you'll need to create a subclass of
-    /// TsqrFactory that knows how to instantiate that internode TSQR
-    /// class.
+    ///   factorization type, you'll need to create a subclass (not
+    ///   specialization) of TsqrFactory that knows how to instantiate
+    ///   that internode TSQR class.
     ///
     /// \note If you want to change which TSQR implementation is
-    /// invoked for a particular multivector (MV) class, you don't
-    /// need to do anything with this class, as long as the
-    /// appropriate subclass of TsqrFactory for the desired
-    /// NodeTsqrType and DistTsqrType exists.  Just change the
-    /// factory_type typedef in the specialization of TsqrTypeAdaptor
-    /// for the MV class.
-    template< class LO, class S, class NodeTsqrType, class DistTsqrType >
+    ///   invoked for a particular multivector (MV) class, you don't
+    ///   need to do anything with this class, as long as the
+    ///   appropriate subclass of TsqrFactory for the desired
+    ///   NodeTsqrType and DistTsqrType exists.  Just change the
+    ///   factory_type typedef in the specialization of \c
+    ///   TsqrTypeAdaptor for the MV class.
+    template<class LO, class S, class NodeTsqrType, class DistTsqrType>
     class TsqrFactory {
     public:
       typedef NodeTsqrType                        node_tsqr_type;
@@ -87,10 +92,7 @@ namespace TSQR {
       typedef Tsqr< LO, S, node_tsqr_type > tsqr_type;
       typedef Teuchos::RCP< tsqr_type >     tsqr_ptr;
 
-      /// \brief Instantiate and return TSQR implementation
-      ///
-      /// Instantiate and return (through the output arguments) the
-      /// two TSQR implementation objects.
+      /// Instantiate and return the two TSQR implementation objects.
       ///
       /// \param plist [in] Parameter list (keys depend on the
       ///   subclass; keys are accessed in the subclass' makeNodeTsqr() 
@@ -114,7 +116,7 @@ namespace TSQR {
 	tsqr = Teuchos::rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
 
-      TsqrFactory () {}
+      //! Virtual destructor for memory safety of derived classes.
       virtual ~TsqrFactory () {};
 
     private:

@@ -29,12 +29,14 @@
 #ifndef __TSQR_TsqrBlas_hpp
 #define __TSQR_TsqrBlas_hpp
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include <Tsqr_ConfigDefs.hpp>
 
 namespace TSQR {
 
-  template< class Ordinal, class Scalar >
+  /// \class BLAS
+  /// \brief Wrappers for BLAS routines used by the Tall Skinny QR factorization.
+  ///
+  template<class Ordinal, class Scalar>
   class BLAS {
   public:
     BLAS () {}

@@ -82,6 +82,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_CombineBenchmarker.hpp
     Tsqr_CombineNative.hpp
     Tsqr_CombineTest.hpp
+    Tsqr_ConfigDefs.hpp
     Tsqr_Lapack.hpp
     Tsqr_LocalVerify.hpp
     Tsqr_Matrix.hpp

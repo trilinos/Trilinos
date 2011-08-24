@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_KokkosNodeTsqr.hpp
+/// \brief Parallel intranode TSQR implemented using the Kokkos Node API.
+///
 #ifndef __TSQR_KokkosNodeTsqr_hpp
 #define __TSQR_KokkosNodeTsqr_hpp
 
@@ -1154,15 +1157,15 @@ namespace TSQR {
   };
 
   /// \class KokkosNodeTsqr
-  /// \brief Intranode TSQR using the Kokkos Node API.
+  /// \brief Parallel intranode TSQR implemented using the Kokkos Node API.
   /// \author Mark Hoemmen
   ///
-  /// This version of Intranode TSQR factors the matrix in two passes.
-  /// The first pass parallelizes over partitions, doing Sequential
-  /// TSQR over each partition.  The second pass combines the R
-  /// factors from the partitions, and is not currently parallel.
-  /// Thus, the overall algorithm is similar to that of \c TbbTsqr,
-  /// except that:
+  /// This implementation of the intranode part of TSQR factors the
+  /// matrix in two passes.  The first pass parallelizes over
+  /// partitions, doing Sequential TSQR over each partition.  The
+  /// second pass combines the R factors from the partitions, and is
+  /// not currently parallel.  Thus, the overall algorithm is similar
+  /// to that of \c TbbTsqr, except that:
   /// - TbbTsqr partitions differently; KokkosNodeTsqr's partitions
   ///   use the same layout of cache blocks as SequentialTsqr, whereas
   ///   TbbTsqr uses a different layout.

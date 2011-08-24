@@ -1,52 +1,51 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_RMessenger_hpp
 #define __TSQR_RMessenger_hpp
 
 #include <Tsqr_MatView.hpp>
 #include <Tsqr_MessengerBase.hpp>
-
 #include <Teuchos_RCP.hpp>
 
 #include <algorithm>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
+
   /// \class RMessenger
-  /// \brief Send, receive, and broadcast square R factors
+  /// \brief Send, receive, and broadcast square R factors.
   ///
   /// Object that handles sending, receiving, and broadcasting square
-  /// upper triangular matrices containing data of type Scalar.
-  template< class Ordinal, class Scalar >
+  /// upper triangular matrices containing data of type Scalar, and
+  /// indexed by indices of type Ordinal.
+  template<class Ordinal, class Scalar>
   class RMessenger {
   public:
     typedef Scalar scalar_type;
@@ -55,10 +54,12 @@ namespace TSQR {
     typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
     /// \brief Constructor
+    ///
+    /// \param messenger [in/out] Pointer to the communicator wrapper.
     RMessenger (const messenger_ptr& messenger) :
       messenger_ (messenger) {}
 
-    template< class ConstMatrixViewType >
+    template<class ConstMatrixViewType>
     void
     send (const ConstMatrixViewType& R, const int destProc)
     {
@@ -66,7 +67,7 @@ namespace TSQR {
       messenger_->send (&buffer_[0], buffer_.size(), destProc, 0);
     }
 
-    template< class MatrixViewType >
+    template<class MatrixViewType>
     void
     recv (MatrixViewType& R, const int srcProc)
     {
@@ -77,7 +78,7 @@ namespace TSQR {
       unpack (R);
     }
 
-    template< class MatrixViewType >
+    template<class MatrixViewType>
     void
     broadcast (MatrixViewType& R, const int rootProc)
     {
@@ -89,14 +90,13 @@ namespace TSQR {
 	unpack (R);
     }
 
-    /// Copy constructor
-    ///
+    //! Copy constructor
     RMessenger (const RMessenger& rhs) :
-      messenger_ (rhs.messenger_), buffer_ (0) // don't need to copy the buffer
+      messenger_ (rhs.messenger_), 
+      buffer_ (0) // don't need to copy the buffer
     {}
 
-    /// Assignment operator
-    ///
+    //! Assignment operator
     RMessenger& operator= (const RMessenger& rhs) {
       if (this != &rhs)
 	{
@@ -112,10 +112,10 @@ namespace TSQR {
     messenger_ptr messenger_;
     std::vector< Scalar > buffer_;
 
-    // Default construction doesn't make sense, so we forbid it.
+    //! Default construction doesn't make sense, so we forbid it syntactically.
     RMessenger ();
 
-    /// Buffer length as a function of R factor dimension
+    /// \brief Buffer length as a function of R factor dimension.
     /// 
     /// \param ncols [in] Number of columns (and number of rows)
     ///   in the R factor input.
@@ -123,7 +123,7 @@ namespace TSQR {
       return (ncols * (ncols + Ordinal(1))) / Ordinal(2);
     }
 
-    template< class ConstMatrixViewType >
+    template<class ConstMatrixViewType>
     void
     pack (const ConstMatrixViewType& R)
     {
@@ -143,7 +143,7 @@ namespace TSQR {
 	}
     }
 
-    template< class MatrixViewType >
+    template<class MatrixViewType>
     void
     unpack (MatrixViewType& R)
     {
@@ -161,7 +161,7 @@ namespace TSQR {
   };
 
 
-  /// \brief Distribute a stack of R factors
+  /// \brief Distribute a stack of R factors.
   ///
   /// \param R_stack [in] nprocs*ncols by ncols stack of square upper
   ///   triangular matrices.  The whole stack is stored in
@@ -172,11 +172,11 @@ namespace TSQR {
   ///
   /// \param messenger [in/out] Object that handles communication 
   ///
-  template< class MatrixViewType, class ConstMatrixViewType >
+  template<class MatrixViewType, class ConstMatrixViewType>
   void
   scatterStack (const ConstMatrixViewType& R_stack, 
 		MatrixViewType& R_local,
-		const Teuchos::RCP< MessengerBase< typename MatrixViewType::scalar_type > >& messenger)
+		const Teuchos::RCP<MessengerBase<typename MatrixViewType::scalar_type> >& messenger)
   {
     typedef typename MatrixViewType::ordinal_type ordinal_type;
     typedef typename MatrixViewType::scalar_type scalar_type;
@@ -215,15 +215,15 @@ namespace TSQR {
 
 
 
-  template< class MatrixViewType, class ConstMatrixViewType >
+  template<class MatrixViewType, class ConstMatrixViewType>
   void
   gatherStack (MatrixViewType& R_stack, 
 	       ConstMatrixViewType& R_local,
-	       const Teuchos::RCP< MessengerBase< typename MatrixViewType::scalar_type > >& messenger)
+	       const Teuchos::RCP<MessengerBase<typename MatrixViewType::scalar_type> >& messenger)
   {
     typedef typename MatrixViewType::ordinal_type ordinal_type;
     typedef typename MatrixViewType::scalar_type scalar_type;
-    typedef MatView< ordinal_type, scalar_type > matrix_view_type;
+    typedef MatView<ordinal_type, scalar_type> matrix_view_type;
 
     const int nprocs = messenger->size();
     const int my_rank = messenger->rank();

@@ -1061,7 +1061,9 @@ int Isorropia_EpetraMatcher::match_dfs()
     
         
 #ifdef ISORROPIA_MATCHING_STATS
+#ifdef ISORROPIA_HAVE_OMP
     std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+#endif
 #endif
     return 0;
 }
@@ -1071,8 +1073,8 @@ int Isorropia_EpetraMatcher::match_hk()
     // Forking function for HK based algorithm
     int totc=0,count=0;
     icm_=0;
-    double start,end;
 #ifdef ISORROPIA_HAVE_OMP
+    double start,end;
     start=omp_get_wtime();
 #endif
     
@@ -1105,7 +1107,9 @@ int Isorropia_EpetraMatcher::match_hk()
     
     
 #ifdef ISORROPIA_MATCHING_STATS
+#ifdef ISORROPIA_HAVE_OMP
     std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+#endif
 #endif
     return 0;
 }

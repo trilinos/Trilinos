@@ -39,7 +39,7 @@ namespace test{
 
 			std::cout <<	std::setw(8) << n << ", " << 
 							std::setw(8) << 1000 * min << ", " << 
-							std::setw(8) << min / n << std::endl;
+							std::setw(8) << 1000 * min / n << std::endl;
 
 		}//for
 

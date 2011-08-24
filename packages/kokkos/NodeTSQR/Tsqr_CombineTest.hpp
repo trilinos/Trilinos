@@ -26,25 +26,24 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Test_CombineTest_hpp
-#define __TSQR_Test_CombineTest_hpp
-
 /// \file Tsqr_CombineTest.hpp
-/// \brief Test for TSQR::Combine
+/// \brief Test accuracy of TSQR::Combine
 ///
 /// TSQR::Combine implements two structured QR factorizations: [R1;
 /// R2] (where R1 and R2 are both square and upper triangular) and [R;
 /// A] (where R is square and upper triangular, and A is a general
 /// dense matrix).  This file implements accuracy tests for both
 /// versions.
+#ifndef __TSQR_Test_CombineTest_hpp
+#define __TSQR_Test_CombineTest_hpp
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include <Tsqr_ConfigDefs.hpp>
+
 
 namespace TSQR {
   namespace Test {
 
-    /// \brief Test accuracy of TSQR::Combine
+    /// \brief Test accuracy of TSQR::Combine.
     ///
     /// Test the accuracy of TSQR::Combine, and print the results to
     /// stdout.  Rather than template on Ordinal and Scalar, as with

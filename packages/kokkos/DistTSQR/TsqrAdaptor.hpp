@@ -1,53 +1,57 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Trilinos_TsqrAdaptor_hpp
 #define __TSQR_Trilinos_TsqrAdaptor_hpp
 
 /// \file TsqrAdaptor.hpp
 /// \brief Abstract interface between TSQR and multivector type
-
-#include <Tsqr_Config.hpp>
+///
+#include <Tsqr_ConfigDefs.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
-
 #include <TsqrTypeAdaptor.hpp>
 #include <TsqrCommFactory.hpp>
-
 #include <Tsqr_GlobalVerify.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <stdexcept>
 #include <sstream>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
+
+  /// \namespace Trilinos
+  /// \brief Interface between TSQR implementation and "the rest of Trilinos."
+  ///
+  /// "The rest of Trilinos" in this case means the specific linear
+  /// algebra library: Epetra, Tpetra, or Thyra (which is more of an
+  /// interface to other linear algebra libraries, but requires its
+  /// own special TSQR adaptor).
   namespace Trilinos {
 
     /// \class TsqrAdaptor
@@ -55,50 +59,50 @@ namespace TSQR {
     ///
     /// Child classes of TsqrAdaptor tell TSQR how to compute a
     /// factorization of a specific Trilinos multivector class MV.
-    /// Currently, Tpetra::MultiVector< S, LO, GO, NodeType > for any
+    /// Currently, \c Tpetra::MultiVector<S, LO, GO, NodeType> for any
     /// NodeType is supported.  At the moment, the latter will only be
-    /// efficient if NodeType is not a GPU node.  Support for
+    /// efficient if NodeType is not a GPU node.  Support for \c
     /// Epetra_MultiVector and Thyra multivectors may be added on
     /// request.
     ///
     /// TsqrAdaptor uses the appropriate specialization of
-    /// TsqrTypeAdaptor to figure out which variant of TSQR to use on
+    /// \c TsqrTypeAdaptor to figure out which variant of TSQR to use on
     /// the given multivector type.  For example, with
-    /// Tpetra::MultiVector< S, LO, GO, NodeType >, if NodeType is
-    /// Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
+    /// \c Tpetra::MultiVector<S, LO, GO, NodeType>, if NodeType is
+    /// \c Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
     /// will be used.  The caller is responsible for constructing the
     /// intranode and internode TSQR objects.
     ///
-    /// \li S: scalar type
-    /// \li LO: local ordinal type
-    /// \li GO: global ordinal type: TSQR doesn't use it, but MV does.
-    /// \li MV: multivector type
+    /// \tparam S Scalar type
+    /// \tparam LO Local ordinal type
+    /// \tparam GO Global ordinal type: TSQR doesn't use it, but MV does.
+    /// \tparam MV Multivector type
     ///
     /// Implementers who want to support TSQR with a new MultiVector
-    /// (MV) type must create a subclass of that type, using e.g.,
-    /// TsqrTpetraAdaptor as a model.  They must then create a new
+    /// (MV) type must create a subclass of that type, using e.g., \c
+    /// TsqrTpetraAdaptor as a model.  They must then create a new \c
     /// TsqrTypeAdaptor specialization (with the appropriate
-    /// typedefs), and a new TsqrCommFactory subclass.  The
+    /// typedefs), and a new \c TsqrCommFactory subclass.  The
     /// TsqrCommFactory subclass gets the underlying communicator
-    /// object (e.g., Teuchos::Comm<int>) from a "prototype"
-    /// multivector and wraps it into TSQR::MessengerBase< S > and
-    /// TSQR::MessengerBase< LO > objects for TSQR.
+    /// object (e.g., \c Teuchos::Comm<int>) from a "prototype"
+    /// multivector and wraps it into \c TSQR::MessengerBase<S> and \c
+    /// TSQR::MessengerBase<LO> objects for TSQR.
     ///
     /// Implementers who wish to change which TSQR implementation is
     /// used for a particular MultiVector type (for which a
     /// TsqrAdaptor child class exists) should change the
-    /// corresponding (possibly partial) specialization of
+    /// corresponding (possibly partial) specialization of \c
     /// TsqrTypeAdaptor.  Certainly the node_tsqr_type (and perhaps
-    /// also the dist_tsqr_type) typedef(s) in the TsqrTypeAdaptor
-    /// specialization must be changed.  If no corresponding
+    /// also the dist_tsqr_type) typedef(s) in the \c TsqrTypeAdaptor
+    /// specialization must be changed.  If no corresponding \c
     /// TsqrFactory subclass exists for that combination of
-    /// node_tsqr_type and dist_tsqr_type, a new TsqrFactory subclass
-    /// may also have to be created, to tell Anasazi how to
+    /// node_tsqr_type and dist_tsqr_type, a new \c TsqrFactory
+    /// subclass may also have to be created, to tell us how to
     /// instantiate those node_tsqr_type and dist_tsqr_type objects.
     ///
     /// Implementers who wish to add a new TSQR factorization must
-    /// create a new TsqrFactory subclass.
-    template< class S, class LO, class GO, class MV >
+    /// create a new \c TsqrFactory subclass.
+    template<class S, class LO, class GO, class MV>
     class TsqrAdaptor {
     public:
       typedef S   scalar_type;
@@ -106,9 +110,9 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
-      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
+      typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-      typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
+      typedef TsqrTypeAdaptor<S, LO, GO, MV>        type_adaptor;
       typedef typename type_adaptor::factory_type   factory_type;
 
       typedef typename type_adaptor::node_tsqr_type node_tsqr_type;
@@ -124,13 +128,14 @@ namespace TSQR {
       typedef typename type_adaptor::tsqr_ptr       tsqr_ptr;
 
       typedef typename tsqr_type::FactorOutput      factor_output_type;
-      typedef Teuchos::SerialDenseMatrix< LO, S >   dense_matrix_type;
-      typedef Teuchos::RCP< MessengerBase< S > >    scalar_messenger_ptr;
-      typedef Teuchos::RCP< MessengerBase< LO > >   ordinal_messenger_ptr;
+      typedef Teuchos::SerialDenseMatrix<LO, S>     dense_matrix_type;
+      typedef Teuchos::RCP< MessengerBase<S> >      scalar_messenger_ptr;
+      typedef Teuchos::RCP< MessengerBase<LO> >     ordinal_messenger_ptr;
 
+      //! Virtual destructor ensures memory safety for derived classes.
       virtual ~TsqrAdaptor() {}
 
-      /// \brief Compute explicit "thin" QR factorization of A
+      /// \brief Compute explicit "thin" QR factorization of A.
       /// 
       /// \param A [in/out] On input, the multivector to factor.
       ///   Overwritten with nonuseful data on output.
@@ -157,13 +162,13 @@ namespace TSQR {
 	explicitQ (A, output, Q, contiguousCacheBlocks);
       }
 
-      /// \brief Compute QR factorization of the multivector A
+      /// \brief Compute QR factorization of the multivector A.
       ///
       /// Compute the QR factorization in place of the multivector A.
       /// The Q factor is represented implicitly; part of that is
       /// stored in place in A (overwriting the input), and the other
       /// part is returned.  The returned object as well as the
-      /// representation in A are both inputs of explicitQ().  The R
+      /// representation in A are both inputs of \c explicitQ().  The R
       /// factor is copied into R.
       ///
       /// \param A [in/out] On input, the multivector whose QR
@@ -216,7 +221,7 @@ namespace TSQR {
 			       R.values(), R.stride(), contiguousCacheBlocks);
       }
 
-      /// \brief Compute the explicit Q factor
+      /// \brief Compute the explicit Q factor.
       ///
       /// Compute the explicit (multivector) "thin" (same number of
       /// columns as the input) representation of the Q factor
@@ -272,7 +277,7 @@ namespace TSQR {
 			    contiguousCacheBlocks);
       }
 
-      /// \brief Rank-revealing decomposition
+      /// \brief Rank-revealing decomposition.
       ///
       /// Using the R factor from factor() and the explicit Q factor
       /// from explicitQ(), compute the SVD of R (\f$R = U \Sigma
@@ -315,7 +320,7 @@ namespace TSQR {
 				    contiguousCacheBlocks);
       }
 
-      /// \brief Cache-block A_in into A_out
+      /// \brief Cache-block A_in into A_out.
       ///
       /// Copy A_in into A_out, in a reorganized way that improves
       /// locality of cache blocks.
@@ -358,9 +363,9 @@ namespace TSQR {
 			     pA_in.get(), LDA_in);
       }
 
-      /// \brief Un-cache-block A_in into A_out
+      /// \brief Un-cache-block A_in into A_out.
       ///
-      /// Undo the transformation performed by cacheBlock(), by
+      /// Undo the transformation performed by \c cacheBlock(), by
       /// copying the contiguously cache blocked data in A_in into the
       /// conventionally stored A_out.
       virtual void 
@@ -395,8 +400,18 @@ namespace TSQR {
 	pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.get(), 
 				LDA_out, pA_in.get());
       }
-
-      /// \return Three magnitudes:  $\| A - QR \|_F$, $\|I - Q^* Q\|_F$, and $\|A\|_F$.
+      
+      /// \brief Verify the result of the "thin" QR factorization \f$A = QR\f$.
+      ///
+      /// This method returns a list of three magnitudes: 
+      /// - \f$\| A - QR \|_F\f$
+      /// - \f$\|I - Q^* Q\|_F\f$
+      /// - \f$\|A\|_F\f$
+      ///
+      /// The notation $\f\| X \|\f$ denotes the Frobenius norm
+      /// (square root of sum of squares) of a matrix \f$X\f$.
+      /// Returning the Frobenius norm of \f$A\f$ allows you to scale
+      /// or not scale the residual \f$\|A - QR\|\f$ as you prefer.
       virtual std::vector< magnitude_type >
       verify (const multivector_type& A,
 	      const multivector_type& Q,
@@ -426,8 +441,15 @@ namespace TSQR {
       }
 
     protected:
-      /// Like the constructor, except you're not supposed to call the
-      /// constructor of a pure virtual class.
+
+      /// \brief A "nonconstructor constructor."
+      ///
+      /// This method initializes the adaptor, as a constructor would
+      /// normally do.  However, we have to make this method not a
+      /// constructor, since you're not supposed to call the
+      /// constructor of a pure virtual class.  ("Call the constructor
+      /// of" is a synonym for "instantiate," and you can't
+      /// instantiate an instance of a pure virtual class.)
       void 
       init (const multivector_type& mv,
 	    const Teuchos::ParameterList& plist)
@@ -441,7 +463,7 @@ namespace TSQR {
       }
 
     private:
-      /// \brief Return dimensions of a multivector object
+      /// \brief Return dimensions of a multivector object.
       ///
       /// For a given multivector A, return the number of rows stored
       /// locally on this process, the number of columns (multivectors
@@ -462,42 +484,52 @@ namespace TSQR {
 		 local_ordinal_type& ncols, 
 		 local_ordinal_type& LDA) const = 0;
 
-      /// \return Non-const smart pointer to the node-local data in A
+      /// \brief Get nonconst pointer to the node-local data in A.
       ///
       /// \note Child classes should implement this in such a way as
-      /// to make the above public methods always correct (though not
-      /// necessarily efficient) for all multivector types.  (It may
-      /// not be efficient if the ArrayRCP copies between different
-      /// memory spaces.)
-      virtual Teuchos::ArrayRCP< scalar_type > 
+      ///   to make the above public methods always correct (though
+      ///   not necessarily efficient) for all multivector types.  (It
+      ///   may not be efficient if the \c Teuchos::ArrayRCP copies
+      ///   between different memory spaces.)
+      virtual Teuchos::ArrayRCP<scalar_type> 
       fetchNonConstView (multivector_type& A) const = 0;
 
-      /// \return Const smart pointer to the node-local data in A
+      /// \brief Get const pointer to the node-local data in A.
       ///
       /// \note Child classes should implement this in such a way as
-      /// to make the above public methods always correct (though not
-      /// necessarily efficient) for all multivector types.  (It may
-      /// not be efficient if the ArrayRCP copies between different
-      /// memory spaces.)
-      virtual Teuchos::ArrayRCP< const scalar_type > 
+      ///   to make the above public methods always correct (though
+      ///   not necessarily efficient) for all multivector types.  (It
+      ///   may not be efficient if the \c Teuchos::ArrayRCP copies
+      ///   between different memory spaces.)
+      virtual Teuchos::ArrayRCP<const scalar_type> 
       fetchConstView (const multivector_type& A) const = 0;
 
-      /// Maps from multivector_type object to (scalar_messenger_ptr,
-      /// ordinal_messenger_ptr).
+      /// \brief Get "messenger" objects associated with the given multivector.
+      ///
+      /// Trilinos multivectors typically store a (distributed-memory)
+      /// communicator of some kind.  For example, \c
+      /// Epetra_MultiVector instances store an \c Epetra_Comm, and \c
+      /// Tpetra::MultiVector instances store a \c Teuchos::Comm<int>.
+      /// This method wraps the communicator in two "messenger"
+      /// objects, one for communicating scalars and the other for
+      /// communicating ordinals.
+      ///
+      /// \note The messenger objects may or may not be valid once the
+      ///   given multivector falls out of scope, depending on the
+      ///   multivector type.
       virtual void
       fetchMessengers (const multivector_type& mv,
 		       scalar_messenger_ptr& pScalarMessenger,
 		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
 
-      /// Shared pointer to an object that knows how to communicate
-      /// scalar_type objects.
+      /// Object that knows how to communicate scalar_type objects.
       scalar_messenger_ptr pScalarMessenger_;
 
-      /// Shared pointer to an object that knows how to communicate
-      /// local_ordinal_type objects.
+      /// Object that knows how to communicate local_ordinal_type
+      /// objects.
       ordinal_messenger_ptr pOrdinalMessenger_;
 
-      /// Shared pointer to the Tsqr object that performs the QR
+      /// The \c Tsqr object that implements the Tall Skinny QR (TSQR)
       /// factorization.
       tsqr_ptr pTsqr_;
     };

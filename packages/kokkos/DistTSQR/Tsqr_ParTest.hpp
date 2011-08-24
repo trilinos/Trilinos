@@ -1,35 +1,35 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Test_DistTest_hpp
 #define __TSQR_Test_DistTest_hpp
 
-#include <Tsqr_Config.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
@@ -39,26 +39,23 @@
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
 
-
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
 
     /// \class DistTsqrVerifier
-    /// \brief Template version of DistTsqr accuracy test
+    /// \brief Generic version of \c DistTsqr accuracy test.
     ///
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     class DistTsqrVerifier {
-      TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
-      Teuchos::RCP< MessengerBase< Ordinal > > const ordinalComm_;
-      Teuchos::RCP< MessengerBase< Scalar > > const scalarComm_;
+      TSQR::Random::NormalGenerator<Ordinal, Scalar> gen_;
+      Teuchos::RCP<MessengerBase<Ordinal> > const ordinalComm_;
+      Teuchos::RCP<MessengerBase<Scalar> > const scalarComm_;
       std::string scalarTypeName_;
       std::ostream& out_;
       std::ostream& err_;
@@ -68,9 +65,9 @@ namespace TSQR {
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
-      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-      typedef typename std::vector< magnitude_type > result_type;
-      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+      typedef typename std::vector<magnitude_type> result_type;
+      typedef Matrix<ordinal_type, scalar_type> matrix_type;
       
       /// \brief Constructor, with custom seed value
       ///
@@ -408,7 +405,7 @@ namespace TSQR {
 
 
     /// \class DistTsqrBenchmarker
-    /// \brief Template version of DistTsqr performance test
+    /// \brief Generic version of \c DistTsqr performance test.
     ///
     template< class Ordinal, class Scalar, class TimerType >
     class DistTsqrBenchmarker {

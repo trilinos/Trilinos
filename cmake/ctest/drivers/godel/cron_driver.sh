@@ -9,16 +9,9 @@ echo
 
 export TDD_GIT_EXE=/home/trilinos/install/bin/eg
 export TDD_PARALLEL_LEVEL=4
-if [ -z "$TDD_CTEST_TEST_TYPE" ]; then
-    export TDD_CTEST_TEST_TYPE=Nightly
-fi
 
 # Trilinos settings:
 #
-
-if [ -z "$CTEST_TEST_TYPE" ]; then
-    export CTEST_TEST_TYPE=Nightly
-fi
 
 #export CTEST_TEST_TYPE=Experimental
 

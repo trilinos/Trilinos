@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_NodeTsqr.hpp
+/// \brief Common interface and functionality for intranode TSQR.
+///
 #ifndef __TSQR_Tsqr_NodeTsqr_hpp
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
@@ -48,20 +51,20 @@ namespace TSQR {
   /// a node ("intranode").  It also implements rank-revealing
   /// functionality used by all intranode TSQR implementations.
   ///
-  /// NodeTsqr has three template parameters:  
-  /// - the (local) Ordinal type (how we index into a matrix)
-  /// - the Scalar type (the type of elements stored in the matrix)
-  /// - the type returned by factor() (FactorOutputType)
+  /// \tparam Ordinal The (local) Ordinal type; the type of indices
+  ///   into a matrix on a node
+  /// \tparam Scalar Tthe type of elements stored in the matrix
+  /// \tparam FactorOutputType The type returned by factor().
   ///
   /// We template on FactorOutputType for compile-time polymorphism.
-  /// This lets subclasses define the factor method(), without
+  /// This lets subclasses define the \c factor() method, without
   /// constraining them to inherit their particular FactorOutputType
   /// from a common abstract base class.  FactorOutputType is meant to
   /// be either just a simple composition of std::pair and
   /// std::vector, or a simple struct.  Its contents are specific to
   /// each intranode TSQR implementation.  and are not intended to be
   /// polymorphic, so it would not make sense for all the different
-  /// FactorOutputType types to inherit from a common base class.  
+  /// FactorOutputType types to inherit from a common base class.
   ///
   /// Templating on FactorOutputType means that we can't use run-time
   /// polymorphism to swap between NodeTsqr subclasses, since the
@@ -85,7 +88,7 @@ namespace TSQR {
     //! Constructor
     NodeTsqr() {}
 
-    //! Virtual destructor ensures safe polymorphic destruction.
+    //! Virtual destructor, for memory safety of derived classes.
     virtual ~NodeTsqr() {}
 
     /// \brief Cache size hint (in bytes) used for the factorization.
@@ -99,10 +102,10 @@ namespace TSQR {
 
     /// \brief One-line description of this object.
     ///
-    /// This implements Teuchos::Describable::description().
+    /// This implements \c Teuchos::Describable::description().
     /// Subclasses should override this to provide a more specific
     /// description of their implementation.  Subclasses may also
-    /// implement Teuchos::Describable::describe(), which for this
+    /// implement \c Teuchos::Describable::describe(), which for this
     /// class has a simple default implementation that calls
     /// description() with appropriate indenting.
     virtual std::string description () const {

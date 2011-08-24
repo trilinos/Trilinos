@@ -26,6 +26,10 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_Util.hpp
+/// \brief Utilities for TSQR (the Tall Skinny QR factorization)
+///
+
 #ifndef __TSQR_Tsqr_Util_hpp
 #define __TSQR_Tsqr_Util_hpp
 
@@ -35,20 +39,24 @@
 #include <complex>
 #include <ostream>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
+  /// \class ScalarPrinter
   /// \brief Print a Scalar value to the given output stream
-  /// 
-  /// C++ annoyingly doesn't let me do partial template specialization
-  /// of functions.  Because of that, I can't use a template function;
-  /// instead, I have to reify the function into a class ("function
-  /// object"), in the worst Java style (where everything is a noun
-  /// with a "run()" method).
   ///
-  template< class Scalar, bool isComplex >
+  /// \tparam Scalar The type of the value to print.
+  /// \tparam isComplex Whether Scalar represents a complex number
+  ///   type (such as std::complex<T>).
+  /// 
+  /// C++ (before C++0x) doesn't let me do partial template
+  /// specialization of functions.  Because of that, I can't use a
+  /// template function; instead, I have to reify the function into a
+  /// class ("function object").  This is typical Java style, where
+  /// everything is a noun with a "run()" method; not my favorite, but
+  /// it's the only way to do it.
+  ///
+  template<class Scalar, bool isComplex>
   class ScalarPrinter {
   public:
     ///
