@@ -29,10 +29,13 @@
 /// \file Tsqr_ConfigDefs.hpp
 /// \brief File to include in order to get TSQR's configure-time options.
 ///
-
 #ifndef __Tsqr_ConfigDefs_hpp
 #define __Tsqr_ConfigDefs_hpp
 
+// Pull in the Kokkos defines first.  Since TSQR is in the Kokkos
+// package, these include HAVE_TSQR_COMPLEX, HAVE_TSQR_FORTRAN, and
+// HAVE_TSQR_INTEL_TBB.
+#include <Kokkos_ConfigDefs.hpp>
 #include <Tsqr_Config.hpp>
 
 /// \namespace TSQR
@@ -74,6 +77,5 @@ namespace TSQR {
   } // namespace Test
 
 } // namespace TSQR
-
 
 #endif // __Tsqr_ConfigDefs_hpp
