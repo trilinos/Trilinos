@@ -1054,7 +1054,9 @@ int Isorropia_EpetraMatcher::SGM()
         for(j=CRS_pointers_[i];j<CRS_pointers_[i+1];j++)
         {
             ind=CRS_indices_[j];
+#ifdef ISORROPIA_HAVE_OMP
             lock=omp_test_lock(&scannedV_[ind]);
+#endif
             if(lock>0)
             {
 
@@ -1097,9 +1099,9 @@ int Isorropia_EpetraMatcher::match_hk()
 {
     // Forking function for HK based algorithm
     int totc=0,count=0;
+    double start,end;
     icm_=0;
 #ifdef ISORROPIA_HAVE_OMP
-    double start,end;
     start=omp_get_wtime();
 #endif
     
