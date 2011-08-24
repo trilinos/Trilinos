@@ -288,6 +288,7 @@ int JustTryIt() ;
     //mutable AztecOO *solver_; // Ugh !!! Mutable ! To workaround AztecOO bug
     mutable shylu_data slu_data_; // More mutable !!!
     mutable shylu_config slu_config_; // More mutable !!
+    mutable shylu_symbolic slu_sym_; // More mutable !!
 
     //fpr later use
     Isorropia::Epetra::Partitioner *partitioner_;

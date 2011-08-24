@@ -46,6 +46,7 @@ APPEND_SET(HEADERS
   shylu_util.h
   shylu.h
   shylu_probing_operator.h
+  shylu_internal.h
   )
 
 # Set sources

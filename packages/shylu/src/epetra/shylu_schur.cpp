@@ -104,8 +104,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 #ifdef TIMING_OUTPUT
         app_time.stop();
 #endif
-        //cout << Scol << endl;
-
         Scol.MaxValue(maxvalue);
         for (int k = 0; k < nvectors; k++) //TODO:Need to switch these loops
         {
@@ -157,8 +155,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 #ifdef TIMING_OUTPUT
         app_time.stop();
 #endif
-        //cout << Scol << endl;
-
         vecvalues = Scol[0];
         Scol.MaxValue(maxvalue);
         //cout << "MAX" << maxvalue << endl;
@@ -242,7 +238,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     Epetra_Map R_localRMap (-1, r_localElems, r_rows, 0, LComm);
     Epetra_Map R_localCMap (-1, r_localcolElems, r_cols, 0, LComm);
 
-    cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
+    //cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
 
 #ifdef DEBUG
     cout << "DEBUG MODE" << endl;
@@ -273,7 +269,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int *indices2 = new int[maxentries];
     int *indices3 = new int[maxentries];
 
-    //cout << *C << endl;
     //cout << "Creating local matrices" << endl;
     int err;
     Epetra_CrsMatrix localC(Copy, C_localRMap, C->MaxNumEntries(), false);
@@ -399,22 +394,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
             //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;
         }
 
-#ifdef DEBUG
-        if (i == 0 && mypid == 0)
-        cout << "Probe Vector " << probevec << endl;
-#endif
-
 #ifdef TIMING_OUTPUT
         app_time.start();
 #endif
         probeop.Apply(probevec, Scol);
 #ifdef TIMING_OUTPUT
         app_time.stop();
-#endif
-
-#ifdef DEBUG
-        if ( i == 0 && mypid == 0)
-            cout << "Result vector" << Scol << endl;
 #endif
 
         Scol.MaxValue(maxvalue);
@@ -473,8 +458,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 #ifdef TIMING_OUTPUT
         app_time.stop();
 #endif
-        //cout << Scol << endl;
-
         vecvalues = Scol[0];
         Scol.MaxValue(maxvalue);
         //cout << "MAX" << maxvalue << endl;

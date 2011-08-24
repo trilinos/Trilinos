@@ -9,8 +9,13 @@
 #include "shylu_util.h"
 #include "shylu.h"
 
-int shylu_solve(shylu_data *data, shylu_config *config,
-    const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+int shylu_solve(
+    shylu_symbolic *ssym,
+    shylu_data *data,
+    shylu_config *config,
+    const Epetra_MultiVector& X,
+    Epetra_MultiVector& Y
+)
 {
     int err;
     AztecOO *solver;
@@ -53,7 +58,7 @@ int shylu_solve(shylu_data *data, shylu_config *config,
     double *values;
     err = Bd.ExtractView(&values, &lda);
     assert (err == 0);
-    int nrows = data->Cptr->RowMap().NumMyElements();
+    int nrows = ssym->C->RowMap().NumMyElements();
 
     // copy to local vector //TODO: OMP ?
     assert(lda == nrows);
@@ -66,9 +71,9 @@ int shylu_solve(shylu_data *data, shylu_config *config,
        }
     }
 
-    data->LP->SetRHS(&localrhs);
-    data->LP->SetLHS(&locallhs);
-    data->Solver->Solve();
+    ssym->LP->SetRHS(&localrhs);
+    ssym->LP->SetLHS(&locallhs);
+    ssym->Solver->Solve();
 
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);
@@ -85,7 +90,7 @@ int shylu_solve(shylu_data *data, shylu_config *config,
     }
 
     Epetra_MultiVector temp1(BsMap, nvectors);
-    data->Rptr->Multiply(false, Z, temp1);
+    ssym->R->Multiply(false, Z, temp1);
     Bs.Update(-1.0, temp1, 1.0);
 
     Xs.PutScalar(0.0);
@@ -132,7 +137,7 @@ int shylu_solve(shylu_data *data, shylu_config *config,
     }
 
     Epetra_MultiVector temp(BdMap, nvectors);
-    data->Cptr->Multiply(false, Xs, temp);
+    ssym->C->Multiply(false, Xs, temp);
     temp.Update(1.0, Bd, -1.0);
 
     //Epetra_SerialComm LComm;        // Use Serial Comm for the local vectors.
@@ -157,9 +162,9 @@ int shylu_solve(shylu_data *data, shylu_config *config,
        }
     }
 
-    data->LP->SetRHS(&localrhs);
-    data->LP->SetLHS(&locallhs);
-    data->Solver->Solve();
+    ssym->LP->SetRHS(&localrhs);
+    ssym->LP->SetLHS(&locallhs);
+    ssym->Solver->Solve();
 
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);

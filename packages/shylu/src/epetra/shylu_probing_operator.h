@@ -14,6 +14,8 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
 {
 
     public:
+
+    // TODO: Change to RCPs
     ShyLU_Probing_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *LocalDRowMap, int nvectors);

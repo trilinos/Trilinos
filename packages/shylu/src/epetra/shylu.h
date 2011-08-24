@@ -8,21 +8,38 @@
 #include "Epetra_SerialComm.h"
 #include "Amesos_BaseSolver.h" 
 #include "AztecOO.h"
+#include "Isorropia_EpetraProber.hpp"
+
+#include "shylu_debug_manager.hpp"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
 
+// This is NOT just the symbolic structure, needs a better name
+typedef struct
+{
+    Teuchos::RCP<Epetra_CrsMatrix> D;        // D Matrix
+    Teuchos::RCP<Epetra_CrsMatrix> C;        // Column separator
+    Teuchos::RCP<Epetra_CrsMatrix> R;        // Row separator
+    Teuchos::RCP<Epetra_CrsMatrix> G;        // G Matrix (A22 block)
+    Teuchos::RCP<Epetra_LinearProblem> LP;   // Local problem to solve D
+    Teuchos::RCP<Amesos_BaseSolver> Solver;  // Local solver for D
+    Teuchos::RCP<Epetra_CrsGraph> Sg;        // The approximate graph of S
+                                             // Graph(S) + few diagonals
+    Teuchos::RCP<Isorropia::Epetra::Prober> prober;  // Prober for Sbar
+} shylu_symbolic;
+
 
 typedef struct
 {
-    Epetra_LinearProblem *LP;   // Local problem to solve
-    Amesos_BaseSolver *Solver;  // Local Subdomain solver
-    Epetra_CrsMatrix *Cptr;     // Column separator
-    Epetra_CrsMatrix *Rptr;     // Row separator
     int Dnr;                    // #local rows
+    int Dnc;                    // #local cols
     int Snr;                    // #remote rows
     int *DRowElems;             // local rows
     int *SRowElems;             // remote rows
+    int *DColElems;             // Columns in D
+    int *gvals;                 // O(n) array differentiating local/global
+                                //  row/col
     //Epetra_SerialComm *SComm;   // Serial comm for block diagonals
     //Epetra_Map *LDRowMap;       // RowMap for block diagonals
     //Epetra_Map *LDColMap;       // ColMap for block diagonals
@@ -32,6 +49,8 @@ typedef struct
     AztecOO *innersolver;            // inner solver
     Epetra_LinearProblem *LP2;   // Local problem to solve
     Amesos_BaseSolver *dsolver;  // Local Subdomain solver
+    int lmax;                    // May be this is optimizing too much
+    int rmax;                    // May be this is optimizing too much
 } shylu_data;
 
 typedef struct
@@ -49,12 +68,22 @@ typedef struct
     string libName;             // library for the outer solver
     string schurSolver;         // Solver for the Schur complement
     int sep_type;
+    int debug_level;
+    DebugManager dm;
 } shylu_config;
 
-int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config 
-                *config);
+int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
+                shylu_config *config);
 
-int shylu_solve(shylu_data *data, shylu_config *config,
+int shylu_symbolic_factor
+(
+    Epetra_CrsMatrix *A,    // i/p: A matrix
+    shylu_symbolic *ssym,   // symbolic structure
+    shylu_data *data,       // numeric structure, TODO: Required ?
+    shylu_config *config   // i/p: library configuration
+);
+
+int shylu_solve(shylu_symbolic *ssym, shylu_data *data, shylu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,

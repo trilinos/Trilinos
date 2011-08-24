@@ -64,11 +64,6 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     err = C_->Multiply(false, X, *temp);
     assert(err == 0);
 
-#ifdef DEBUG
-    if (cntApply == 0)
-        cout << "C1(:, 1)" << *temp << endl;
-#endif
-
 #ifdef TIMING_OUTPUT
     matvec_time_->stop();
 #endif
@@ -131,12 +126,6 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     LP_->SetLHS(localX.getRawPtr());
     solver_->Solve();
 
-#ifdef DEBUG
-    if (cntApply == 0)
-        cout << "localX" << *localX << endl;
-#endif
-
-
 #ifdef TIMING_OUTPUT
     trisolve_time_->stop();
     dist_time_->start();
@@ -172,11 +161,6 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     {
         R_->Multiply(false, *localX, Y);
     }
-
-#ifdef DEBUG
-    if (cntApply == 0)
-        cout << " R * localX" << Y << endl;
-#endif
 
 #ifdef TIMING_OUTPUT
     matvec2_time_->stop();

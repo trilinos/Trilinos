@@ -29,11 +29,17 @@ void Ifpack_ShyLU::Destroy()
         //delete A_;
         //delete partitioner_;
         //delete rd_;
-    }
-    if (IsComputed_)
-    {
-        delete slu_data_.LP;
-        delete slu_data_.Solver;
+
+        // I would rather explicitly delete
+        /*delete slu_sym_.LP;
+        delete slu_sym_.Solver;
+        delete slu_sym_.C;
+        delete slu_sym_.R;
+        delete slu_sym_.D;
+        delete slu_sym_.G;
+        delete slu_sym_.Sg;
+        delete slu_sym_.prober;*/
+
         if (slu_config_.schurSolver == "Amesos")
         {
             delete slu_data_.LP2;
@@ -41,14 +47,16 @@ void Ifpack_ShyLU::Destroy()
         }
         else if (slu_config_.libName == "Belos")
             delete slu_data_.innersolver;
-        //delete slu_data_.D;
-        delete slu_data_.Cptr;
-        delete slu_data_.Rptr;
-        //delete slu_data_.LDRowMap;
-        //delete slu_data_.LDColMap;
-        //delete slu_data_.SComm;
+
         delete[] slu_data_.DRowElems;
         delete[] slu_data_.SRowElems;
+        delete[] slu_data_.DColElems;
+        delete[] slu_data_.gvals;
+    }
+    if (IsComputed_)
+    {
+        // I would rather explicitly delete
+        // delete slu_data_.Sbar;
     }
 }
 
@@ -109,13 +117,32 @@ int Ifpack_ShyLU::Initialize()
                                                 "Inner Solver MaxIters");
     string sep_type = Teuchos::getParameter<string>(List_,
                                                     "Separator Type");
+    int dl =  List_.get<int>("Debug Level", 0);
+    slu_config_.dm.setDebugLevel(dl); 
 
     if (sep_type == "Wide")
         slu_config_.sep_type = 1;
     else
         slu_config_.sep_type = 2;
 
-    shylu_factor(A_, &slu_data_, &slu_config_);
+    shylu_symbolic_factor(A_, &slu_sym_, &slu_data_, &slu_config_);
+
+    if (slu_config_.schurSolver == "Amesos")
+    {
+        slu_data_.LP2 = new Epetra_LinearProblem();
+        Amesos Factory;
+        char* SolverType = "Amesos_Klu";
+        bool IsAvailable = Factory.Query(SolverType);
+        assert(IsAvailable == true);
+        slu_data_.dsolver = Factory.Create(SolverType, *(slu_data_.LP2));
+    }
+    else
+    {
+        if (slu_config_.libName == "Belos")
+            slu_data_.innersolver = new AztecOO() ;
+        else
+            slu_data_.innersolver = NULL;
+    }
 
     IsInitialized_ = true;
     return 0;
@@ -124,57 +151,51 @@ int Ifpack_ShyLU::Initialize()
 int Ifpack_ShyLU::SetParameters(Teuchos::ParameterList& parameterlist)
 {
     List_ = parameterlist;
+    return 0;
 }
 
 int Ifpack_ShyLU::Compute()
 {
-    AztecOO *solver;
-    Amesos_BaseSolver *dsolver;
-    Epetra_LinearProblem *schurLP;
     Teuchos::Time ftime("setup time");
     ftime.start();
+
+    shylu_factor(A_, &slu_sym_, &slu_data_, &slu_config_);
 
     slu_config_.libName = Teuchos::getParameter<string>(List_,
                                                 "Outer Solver Library");
     if (slu_config_.schurSolver == "Amesos")
     {
-        Amesos Factory;
-        char* SolverType = "Amesos_Klu";
-        bool IsAvailable = Factory.Query(SolverType);
-        assert(IsAvailable == true);
         Teuchos::ParameterList aList;
         aList.set("Reindex", true);
 
-        schurLP = new Epetra_LinearProblem();
-        schurLP->SetOperator(slu_data_.Sbar.get());
-        dsolver = Factory.Create(SolverType, *schurLP);
-        dsolver->SetParameters(aList);
-        cout << "Created the direct Schur  Solver" << endl;
+        slu_data_.LP2->SetOperator(slu_data_.Sbar.get());
+        slu_data_.dsolver->SetParameters(aList);
+        //cout << "Created the direct Schur  Solver" << endl;
 
-        dsolver->SymbolicFactorization();
-        cout << "Symbolic Factorization done for schur complement" << endl;
+        slu_data_.dsolver->SymbolicFactorization();
+        //cout << "Symbolic Factorization done for schur complement" << endl;
 
-        cout << "In Numeric Factorization of Schur complement" << endl;
-        dsolver->NumericFactorization();
-        cout << "Numeric Factorization done for schur complement" << endl;
+        //cout << "In Numeric Factorization of Schur complement" << endl;
+        slu_data_.dsolver->NumericFactorization();
+        //cout << "Numeric Factorization done for schur complement" << endl;
 
     }
     else
     {
         if (slu_config_.libName == "Belos")
         {
-            solver  = new AztecOO() ;
-            int err = solver->SetUserMatrix(slu_data_.Sbar.get());
+            int err = slu_data_.innersolver->SetUserMatrix
+                        (slu_data_.Sbar.get());
             assert (err == 0);
-            solver->SetAztecOption(AZ_solver, AZ_gmres);
-            solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
-            solver->SetAztecOption(AZ_keep_info, 1);
+            slu_data_.innersolver->SetAztecOption(AZ_solver, AZ_gmres);
+            slu_data_.innersolver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+            slu_data_.innersolver->SetAztecOption(AZ_keep_info, 1);
             //solver->SetAztecOption(AZ_overlap, 3);
             //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-            solver->SetMatrixName(999);
+            slu_data_.innersolver->SetMatrixName(999);
 
             double condest;
-            err = solver->ConstructPreconditioner(condest);
+            err = slu_data_.innersolver->ConstructPreconditioner(condest);
             assert (err == 0);
             //cout << "Condition number of inner Sbar" << condest << endl;
         }
@@ -185,16 +206,13 @@ int Ifpack_ShyLU::Compute()
             // here will cause an error when we use the solver in ApplyInverse
             // The error will not happen when we call the dummy JustTryIt()
             // below
-            solver = NULL;
+            slu_data_.innersolver = NULL;
         }
     }
 
     ftime.stop();
     //cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
             //<< endl;
-    slu_data_.innersolver = solver;
-    slu_data_.dsolver = dsolver;
-    slu_data_.LP2 = schurLP;
     IsComputed_ = true;
     //cout << " Done with the compute" << endl ;
     return 0;
@@ -223,17 +241,15 @@ int Ifpack_ShyLU::ApplyInverse(const Epetra_MultiVector& X,
     if (NumApplyInverse_ == 0)
     {
         EpetraExt::MultiVectorToMatlabFile("X.mat", X);
-        cout << X;
     }
 #endif
     //cout << "Entering ApplyInvers" << endl;
 
-    shylu_solve(&slu_data_, &slu_config_, X, Y);
+    shylu_solve(&slu_sym_, &slu_data_, &slu_config_, X, Y);
 #ifdef DUMP_MATRICES
     if (NumApplyInverse_ == 0)
     {
         EpetraExt::MultiVectorToMatlabFile("Y.mat", Y);
-        cout << Y;
     }
 #endif
     NumApplyInverse_++;

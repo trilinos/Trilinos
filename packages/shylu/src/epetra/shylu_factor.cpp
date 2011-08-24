@@ -9,13 +9,8 @@
     extracts the entire As matrix in each proc. This is not a huge problem.
     When one needs vec = S * v = As * v - Si * v(corres rows) and minus updates
     the corresponding rows of vec correctly. This also needs storing both As and
-    Si. The preconditioner for this method is not yet writted TODO, Currently
-    keep BLOCK_DIAGONAL_Si always defined.
+    Si. The preconditioner for this method is not yet written.
 
-    When BLOCK_DIAGONAL_Si is defined:
-    This version extracts all rows/columns of R/C, 
-    This version also extracts the block diagonal of As matrix in each proc. 
-    We store As - Si.
 
 */
 
@@ -28,24 +23,424 @@
 #include "shylu_util.h"
 #include "shylu_probing_operator.h"
 
+int create_matrices
+(
+    Epetra_CrsMatrix *A,    // i/p: A matrix
+    shylu_symbolic *ssym,   // symbolic structure
+    shylu_data *data,       // numeric structure, TODO: Required ?
+    shylu_config *config    // i/p: library configuration
+)
+{
+    int Dnr = data->Dnr;
+    int Snr = data->Snr;
+    int Dnc = data->Dnc;
+    int *DRowElems = data->DRowElems;
+    int *SRowElems = data->SRowElems;
+    int *DColElems = data->DColElems;
+    int *gvals = data->gvals;
 
-int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
-                *config)
+    double Sdiagfactor = config->Sdiagfactor;
+    int sym = config->sym;
+
+    /* --------------- Create the maps for the DBBD form ------------------- */
+    // Create the local and distributed row map
+    Epetra_SerialComm LComm;
+
+	// Use Serial Comm for the local blocks.
+    Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
+    Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
+    Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
+
+    // Create the local column map
+    Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
+
+    /*----------- Compute nnz per row for all five matrices ----------------- */
+    // Compute nnz per row.
+    int *Ai;
+    double *Ax;
+    int *DNumEntriesPerRow = new int[Dnr];
+    int *GNumEntriesPerRow = new int[Snr];
+    int *CNumEntriesPerRow = new int[Dnr];
+    int *RNumEntriesPerRow = new int[Snr];
+    int *SBarNumEntriesPerRow = new int[Snr];
+    int Dmaxnnz=0, Cmaxnnz=0, Rmaxnnz=0, Smaxnnz=0; // Max nnz in any row
+
+    // Find the required no of diagonals
+    /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
+    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
+    int Sdiag = (int) Snr * Sdiagfactor;
+    Sdiag = MIN(Sdiag, Snr-1);
+    Sdiag = MAX(Sdiag, 0);
+    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    //assert (Sdiag <= SNumGlobalCols-1);
+    if (Snr != 0) assert (Sdiag <= Snr-1);
+
+    int dcol, ccol, rcol, scol;
+    int gcid;
+    int gid;
+
+    int nrows = A->RowMap().NumMyElements();
+    int *rows = A->RowMap().MyGlobalElements();
+    if (sym)
+    {
+
+        int NumEntries;
+        int dcnt, scnt, ccnt, rcnt;
+        dcol = 0 ; ccol = 0; rcol = 0; scol = 0;
+        // Three things to worry about here, Num entries in each row of S,
+        // size of C and R and the corresponding cols/rows.
+        for (int i = 0; i < nrows; i++) 
+        {
+            dcnt = 0; scnt = 0; ccnt = 0; rcnt = 0;
+            // Need to pass local id i to this function 
+            int err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
+            if (err != 0)
+            { 
+                assert (err == 0);
+                //config->dm.error("create_matrices: extract_my_row failed");
+            }
+
+            gid = rows[i];
+            if (gvals[gid] == 1)
+            { // D or C row
+                for (int j = 0 ; j < NumEntries ; j++)
+                { // O(nnz) ! Careful what you do inside
+                    gcid = A->GCID(Ai[j]);
+                    // Only cols corresponding to local rows belong to D.
+                    if (A->LRID(gcid) != -1 && gvals[gcid] == 1)
+                    {
+                        dcnt++;
+                    }
+                    else
+                    { 
+                        ccnt++;
+                    }
+                }
+                // There should not be a null row in D.
+                assert(dcnt != 0);
+                DNumEntriesPerRow[dcol++] = dcnt;
+                CNumEntriesPerRow[ccol++] = ccnt;
+            }
+            else
+            { // R or S row
+                //cout << "proc/row " << myPID << "/" << gid;
+                //cout << " has Cols = " ;
+                for (int j = 0 ; j < NumEntries ; j++)
+                { // O(nnz) ! Careful what you do inside
+                    gcid = A->GCID(Ai[j]); 
+                    //if (A->LRID(gcid) != -1 && gvals[gcid] == 1) // TBD : Need to change here
+                    // No need to check for local rows as above.
+                    // All cols with gvals[cols] == 1 belong to R.
+                    if (gvals[gcid] == 1)
+                    {
+                        rcnt++;
+                    }
+                    else
+                    {
+                        scnt++;
+                    }
+                }
+                // There should not be a null row in S.
+                assert(scnt != 0);
+                assert(scol < Snr);
+                assert(rcol < Snr);
+                GNumEntriesPerRow[scol++] = scnt;
+                RNumEntriesPerRow[rcol++] = rcnt;
+            }
+            Dmaxnnz = max(Dmaxnnz, dcnt);
+            Smaxnnz = max(Smaxnnz, scnt); 
+            Rmaxnnz = max(Rmaxnnz, rcnt); 
+            Cmaxnnz = max(Cmaxnnz, ccnt); 
+        }
+        assert( dcol == Dnr);
+        assert( scol == Snr);
+        assert( ccol == Dnr);
+        assert( rcol == Snr);
+        int sbarcol = 0;
+        for (int i = 0; i < nrows; i++) 
+        {
+            gid = rows[i];
+            if (gvals[gid] != 1)
+            { // S row
+                // Add the number of required diagonals in approximate Schur 
+                // complement , +1 below for the main diagonal
+                assert(sbarcol < Snr);
+                SBarNumEntriesPerRow[sbarcol] = GNumEntriesPerRow[sbarcol] 
+                                                + Sdiag*2 + 1;
+                sbarcol++;
+                //SBarNumEntriesPerRow[i] = GNumEntriesPerRow[i] ;
+
+            }
+        }
+        assert( sbarcol == Snr);
+        Smaxnnz = Smaxnnz + Sdiag * 2 + 1;
+    }
+    else
+    {
+        assert (0 == 1);
+        /*assert(Dnr == nrows);
+        // TODO : Need to compute the entries for D and C in one array of size
+        // nrow*/
+    }
+
+
+    //Create the local matrices
+    ssym->D = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                        LocalDRowMap, LocalDColMap, DNumEntriesPerRow, true));
+    //config->dm.print(5, "Created D matrix");
+
+    // Leave the column map out, Let Epetra do the work in the rest of the cases
+    ssym->G = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                                SRowMap, GNumEntriesPerRow, true));
+    //config->dm.print(5, "Created S matrix");
+
+    ssym->C = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                                DRowMap, CNumEntriesPerRow, true));
+    //config->dm.print(5, "Created C matrix");
+
+    ssym->R = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                                SRowMap, RNumEntriesPerRow, true));
+    //config->dm.print(5, "Created R matrix");
+
+    if (config->schurApproxMethod == 1)
+    {
+        ssym->Sg = Teuchos::RCP<Epetra_CrsGraph> (new Epetra_CrsGraph(Copy,
+                                SRowMap, SBarNumEntriesPerRow, false));
+        //config->dm.print(5, "Created Sg graph");
+    }
+
+    data->lmax = max(Dmaxnnz, Rmaxnnz);
+    data->rmax = max(Cmaxnnz, Smaxnnz);
+
+    delete[] DNumEntriesPerRow;
+    delete[] GNumEntriesPerRow;
+    delete[] CNumEntriesPerRow;
+    delete[] RNumEntriesPerRow;
+    delete[] SBarNumEntriesPerRow;
+    return 0;
+}
+
+int extract_matrices
+(
+    Epetra_CrsMatrix *A,    // i/p: A matrix
+    shylu_symbolic *ssym,   // symbolic structure
+    shylu_data *data,       // numeric structure, TODO: Required ?
+    shylu_config *config,   // i/p: library configuration
+    bool insertValues       // true implies values will be inserted and fill
+                            // complete will be called. false implies values
+                            // will be replaced.
+)
+{
+    Teuchos::RCP<Epetra_CrsMatrix> D = ssym->D;
+    Teuchos::RCP<Epetra_CrsMatrix> C = ssym->C;
+    Teuchos::RCP<Epetra_CrsMatrix> R = ssym->R;
+    Teuchos::RCP<Epetra_CrsMatrix> G = ssym->G;
+    Teuchos::RCP<Epetra_CrsGraph> Sg = ssym->Sg;
+    int *DColElems = data->DColElems;
+    int *gvals = data->gvals;
+    double Sdiagfactor = config->Sdiagfactor;
+
+    int *LeftIndex = new int[data->lmax];
+    double *LeftValues = new double[data->lmax];
+    int *RightIndex = new int[data->rmax];
+    double *RightValues = new double[data->rmax];
+    int err;
+    int lcnt, rcnt ;
+    int gcid;
+    int gid;
+    int *Ai;
+    double *Ax;
+
+    int nrows = A->RowMap().NumMyElements();
+    int *rows = A->RowMap().MyGlobalElements();
+
+    for (int i = 0; i < nrows ; i++)
+    {
+        int NumEntries;
+        err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
+
+        lcnt = 0; rcnt = 0;
+        // Place the entry in the correct sub matrix, Works only for sym
+        gid = rows[i];
+        int lcid;
+        for (int j = 0 ; j < NumEntries ; j++)
+        { // O(nnz) ! Careful what you do inside
+            // Row permutation does not matter here 
+            gcid = A->GCID(Ai[j]);
+            assert(gcid != -1);
+            //Either in D or R 
+            if ((gvals[gid] != 1 && gvals[gcid] == 1)
+               || (gvals[gid] == 1 && A->LRID(gcid) != -1 && gvals[gcid] == 1))
+            {
+                assert(lcnt < data->lmax);
+                if (insertValues)
+                    LeftIndex[lcnt] = gcid;
+                else
+                {
+                    //local column id
+                    lcid = (gvals[gid] == 1 ? D->LCID(gcid) : R->LCID(gcid));
+                    assert(lcid != -1);
+                    LeftIndex[lcnt] = lcid;
+                }
+                LeftValues[lcnt++] = Ax[j];
+            }
+            else
+            {
+                assert(rcnt < data->rmax);
+                if (insertValues)
+                    RightIndex[rcnt] = gcid;
+                else
+                {
+                    //local column id
+                    lcid = (gvals[gid] == 1 ? C->LCID(gcid) : G->LCID(gcid));
+                    assert(lcid != -1);
+                    RightIndex[rcnt] = lcid;
+                }
+                RightValues[rcnt++] = Ax[j];
+            }
+        }
+
+        if (gvals[gid] == 1)
+        { // D or C row
+            if (insertValues)
+            {
+                err = D->InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+                assert(err == 0);
+                err = C->InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
+                assert(err == 0);
+            }
+            else
+            {
+                err = D->ReplaceMyValues(D->LRID(gid), lcnt, LeftValues,
+                                    LeftIndex);
+                assert(err == 0);
+                err = C->ReplaceMyValues(C->LRID(gid), rcnt, RightValues,
+                                    RightIndex);
+                assert(err == 0);
+            }
+        }
+        else
+        { // R or S row
+            //assert(lcnt > 0); // TODO: Enable this once using narrow sep.
+            if (insertValues)
+            {
+                assert(rcnt > 0);
+                err = R->InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
+                assert(err == 0);
+                err = G->InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
+                assert(err == 0);
+                if (config->schurApproxMethod == 1)
+                {
+                    err = Sg->InsertGlobalIndices(gid, rcnt, RightIndex);
+                    assert(err == 0);
+                }
+            }
+            else
+            {
+                assert(rcnt > 0);
+                err = R->ReplaceMyValues(R->LRID(gid), lcnt, LeftValues,
+                                    LeftIndex);
+                assert(err == 0);
+                err = G->ReplaceMyValues(G->LRID(gid), rcnt, RightValues,
+                                    RightIndex);
+                assert(err == 0);
+            }
+        }
+    }
+
+    if (insertValues)
+    {
+        /* ------------- Create the maps for the DBBD form ------------------ */
+        Epetra_Map DRowMap(-1, data->Dnr, data->DRowElems, 0, A->Comm());
+        Epetra_Map SRowMap(-1, data->Snr, data->SRowElems, 0, A->Comm());
+        Epetra_Map DColMap(-1, data->Dnc, DColElems, 0, A->Comm());
+
+        D->FillComplete();
+        //config->dm.print(5, "Done D fillcomplete");
+
+        G->FillComplete();
+        //config->dm.print(5, "Done G fillcomplete");
+
+        C->FillComplete(SRowMap, DRowMap); //TODO: Won't work if permutation is
+                                                // unsymmetric SRowMap
+        //config->dm.print(5, "Done C fillcomplete");
+
+        R->FillComplete(DColMap, SRowMap);
+        //config->dm.print(5, "Done R fillcomplete");
+
+        int Sdiag = (int) data->Snr * Sdiagfactor;
+        Sdiag = MIN(Sdiag, data->Snr-1);
+        Sdiag = MAX(Sdiag, 0);
+
+        // Add the diagonals to Sg
+        for (int i = 0; config->schurApproxMethod == 1 && i < nrows ; i++)
+        {
+            gid = rows[i];
+            if (gvals[gid] == 1) continue; // not a row in S
+            if (data->Snr == 0) assert(0 == 1);
+
+            rcnt = 0;
+            //TODO Will be trouble if SNumGlobalCols != Snc
+            //assert(SNumGlobalCols == Snc);
+            //for (int j = MAX(i-Sdiag,0) ; j<MIN(SNumGlobalCols, i+Sdiag); j++)
+            for (int j = MAX(i-Sdiag, 0) ; j < MIN(data->Snr, i+Sdiag); j++)
+            {
+                // find the adjacent columns from the row map of S
+                //assert (j >= 0 && j < Snr);
+                RightIndex[rcnt++] = data->SRowElems[j];
+            }
+            err = Sg->InsertGlobalIndices(gid, rcnt, RightIndex);
+            assert(err == 0);
+            // Always insert the diagonals, if it is added twice that is fine.
+            err = Sg->InsertGlobalIndices(gid, 1, &gid);
+            assert(err == 0);
+        }
+
+        if (config->schurApproxMethod == 1)
+            Sg->FillComplete();
+    }
+    // A is no longer needed
+    delete[] LeftIndex;
+    delete[] LeftValues;
+    delete[] RightIndex;
+    delete[] RightValues;
+
+    //cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" <<
+        //S.NumGlobalCols() << "#cols in column map="<<
+        //S.ColMap().NumMyElements() << endl;
+    //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
+        //Cptr->NumGlobalCols() << "#cols in column map="<<
+        //Cptr->ColMap().NumMyElements() << endl;
+    //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
+        //D.NumGlobalCols() << "#cols in column map="<<
+        //D.ColMap().NumMyElements() << endl;
+    //cout << msg << "R rows=" << Rptr->NumGlobalRows() << " R cols=" <<
+        //Rptr->NumGlobalCols() << "#cols in column map="<<
+        //Rptr->ColMap().NumMyElements() << endl;
+    // ]
+
+    return 0;
+
+}
+
+/* Find the DBBD form */
+int shylu_symbolic_factor
+(
+    Epetra_CrsMatrix *A,    // i/p: A matrix
+    shylu_symbolic *ssym,   // symbolic structure
+    shylu_data *data,       // numeric structure, TODO: Required ?
+    shylu_config *config    // i/p: library configuration
+)
 {
     int myPID = A->Comm().MyPID();
     int n = A->NumGlobalRows();
 
-    Epetra_LinearProblem *LP;
-    Amesos_BaseSolver *Solver;
-    Epetra_CrsMatrix *Cptr;
-    Epetra_CrsMatrix *Rptr;
     int Dnr;
     int Snr;
     int *DRowElems;
     int *SRowElems;
-    Teuchos::RCP<Epetra_CrsMatrix> Sbar;
     int sym = config->sym;
-    double Sdiagfactor = config->Sdiagfactor;
 
     checkMaps(A);
 
@@ -125,6 +520,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
 
     // TODO : The above assignment may not be correct in the unsymetric case
 
+    ////config->dm.print(2, msg + " Mycols=");
     cout << msg << " Mycols="<< ncols << "Myrows ="<< nrows << endl;
     cout << msg << " #rows and #cols in diagonal blk ="<< Dnr << endl;
     cout << msg << " #columns in S ="<< Snc << endl;
@@ -139,7 +535,6 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     // Assemble row ids in two arrays (for D and R blocks)
     if (sym)
     {
-        cout << "In first BlockElems" << endl;
         findBlockElems(A, nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems,
                     "D"+pidstr.str()+"Rows", "S"+pidstr.str()+"Rows", false) ;
     }
@@ -151,33 +546,20 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
 
     data->Dnr = Dnr;
     data->Snr = Snr;
+    data->Dnc = Dnc;
     data->DRowElems = DRowElems;
     data->SRowElems = SRowElems;
 
-    // Create the local row map 
-    Epetra_SerialComm LComm; // TODO: Fix this
-    // Somehow this Comm is not available in Amesos_Pardiso's solve
-    //
-	// Use Serial Comm for the local blocks.
-    Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
-    Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
-    //Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, LComm);
-    Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
-    // ]
-
     // Create a column map for the D and S blocks [
     int *DColElems = new int[Dnc]; // Elems in column map of D 
-    int *SColElems = new int[Snc]; // Elems in column map of C
+    int *SColElems = new int[Snc]; // Elems in column map of C TODO: Unused
     // Assemble column ids in two arrays (for D and C blocks)
-        cout << "In Second BlockElems" << endl;
     findBlockElems(A, ncols, cols, gvals, Dnc, DColElems, Snc, SColElems,
                     "D"+pidstr.str()+"Cols", "S"+pidstr.str()+"Cols", true) ;
 
-    // Create the local column map 
-    Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
-    Epetra_Map DColMap(-1, Dnc, DColElems, 0, A->Comm());
-    //Epetra_Map LocalSColMap(-1, Snc, SColElems, 0, LComm);
-    //Epetra_Map SColMap(SNumGlobalCols, Snc, SColElems, 0, A->Comm());
+    data->DColElems = DColElems;
+    data->gvals = gvals;
+
     for (int i = 0; i < Snr; i++)
     {
         // Epetra guarentees columns corresponding to local rows will be first
@@ -186,397 +568,110 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     }
     // ]
 
-    // Compute nnz per row.
-    int *Ai;
-    double *Ax;
-    int *DNumEntriesPerRow = new int[Dnr];
-    int *SNumEntriesPerRow = new int[Snr];
-    int *CNumEntriesPerRow = new int[Dnr];
-    int *RNumEntriesPerRow = new int[Snr];
-    int *SBarNumEntriesPerRow = new int[Snr];
-    int Dmaxnnz=0, Cmaxnnz=0, Rmaxnnz=0, Smaxnnz=0; // Max nnz in any row
+    /*--Create the Epetra Matrices with the maps (does not insert values) --- */
+    create_matrices(A, ssym, data, config);
 
-    // Find the required no of diagonals
-    /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
-    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
-    Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
-    int Sdiag = (int) Snr * Sdiagfactor;
-    Sdiag = MIN(Sdiag, Snr-1);
-    Sdiag = MAX(Sdiag, 0);
-    cout << "No of diagonals in Sbar =" << Sdiag << endl;
-    //assert (Sdiag <= SNumGlobalCols-1);
-    if (Snr != 0) assert (Sdiag <= Snr-1);
+    /*--Extract the Epetra Matrices and call fillComplete --- */
+    extract_matrices(A, ssym, data, config, true);
 
-    int dcol, ccol, rcol, scol;
-    int gcid;
-    if (sym)
-    {
+    delete[] SColElems;
 
-        int NumEntries;
-        int dcnt, scnt, ccnt, rcnt;
-        dcol = 0 ; ccol = 0; rcol = 0; scol = 0;
-        // Three things to worry about here, Num entries in each row of S,
-        // size of C and R and the corresponding cols/rows.
-        for (int i = 0; i < nrows; i++) 
-        {
-            dcnt = 0; scnt = 0; ccnt = 0; rcnt = 0;
-            // Need to pass local id i to this function 
-            int err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
-            if (err != 0)
-            { 
-                cout << msg << "\t" << i << "\t" << rows[i] << endl 
-                << "Trouble " << " " << err << endl; 
-            }
-
-            gid = rows[i];
-            if (gvals[gid] == 1)
-            { // D or C row
-                for (int j = 0 ; j < NumEntries ; j++)
-                { // O(nnz) ! Careful what you do inside
-                    gcid = A->GCID(Ai[j]);
-                    // Only cols corresponding to local rows belong to D.
-                    if (A->LRID(gcid) != -1 && gvals[gcid] == 1)
-                    {
-                        dcnt++;
-                    }
-                    else
-                    { 
-                        ccnt++;
-                    }
-                }
-                // There should not be a null row in D.
-                assert(dcnt != 0);
-                DNumEntriesPerRow[dcol++] = dcnt;
-                CNumEntriesPerRow[ccol++] = ccnt;
-            }
-            else
-            { // R or S row
-                //cout << "proc/row " << myPID << "/" << gid;
-                //cout << " has Cols = " ;
-                for (int j = 0 ; j < NumEntries ; j++)
-                { // O(nnz) ! Careful what you do inside
-                    gcid = A->GCID(Ai[j]); 
-                    //if (A->LRID(gcid) != -1 && gvals[gcid] == 1) // TBD : Need to change here
-                    // No need to check for local rows as above.
-                    // All cols with gvals[cols] == 1 belong to R.
-                    if (gvals[gcid] == 1)
-                    {
-                        rcnt++;
-                    }
-                    else
-                    {
-                        scnt++;
-                    }
-                }
-                // There should not be a null row in S.
-                assert(scnt != 0);
-                assert(scol < Snr);
-                assert(rcol < Snr);
-                SNumEntriesPerRow[scol++] = scnt;
-                RNumEntriesPerRow[rcol++] = rcnt;
-            }
-            Dmaxnnz = max(Dmaxnnz, dcnt);
-            Smaxnnz = max(Smaxnnz, scnt); 
-            Rmaxnnz = max(Rmaxnnz, rcnt); 
-            Cmaxnnz = max(Cmaxnnz, ccnt); 
-        }
-        assert( dcol == Dnr);
-        assert( scol == Snr);
-        assert( ccol == Dnr);
-        assert( rcol == Snr);
-        int sbarcol = 0;
-        for (int i = 0; i < nrows; i++) 
-        {
-            gid = rows[i];
-            if (gvals[gid] != 1)
-            { // S row
-                // Add the number of required diagonals in approximate Schur 
-                // complement , +1 below for the main diagonal
-                assert(sbarcol < Snr);
-                SBarNumEntriesPerRow[sbarcol] = SNumEntriesPerRow[sbarcol] 
-                                                + Sdiag*2 + 1;
-                sbarcol++;
-                //SBarNumEntriesPerRow[i] = SNumEntriesPerRow[i] ;
-
-            }
-        }
-        assert( sbarcol == Snr);
-        Smaxnnz = Smaxnnz + Sdiag * 2 + 1;
-    }
-    else
-    {
-        assert (0 == 1);
-        /*assert(Dnr == nrows);
-        // TODO : Need to compute the entries for D and C in one array of size
-        // nrow*/
-    }
-
-
-    //cout << " I am here" << endl;
-    //Create the local matrices
-    Epetra_CrsMatrix D(Copy, LocalDRowMap, LocalDColMap, DNumEntriesPerRow, true);
-    //cout << " Created D matrix" << endl;
-    //MPI_Barrier(MPI_COMM_WORLD);
-    //Epetra_CrsMatrix S(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
-    Epetra_CrsMatrix S(Copy, SRowMap, SNumEntriesPerRow, true);
-    //cout << " Created S matrix" << endl;
-    //Cptr = new Epetra_CrsMatrix(Copy, DRowMap, SColMap, 
-                                        //CNumEntriesPerRow, true);
-    Cptr = new Epetra_CrsMatrix(Copy, DRowMap, CNumEntriesPerRow, true);
-    //cout << " Created C matrix" << endl;
-    //Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
-    Rptr = new Epetra_CrsMatrix(Copy, SRowMap, RNumEntriesPerRow, true);
-    //cout << " Created all the matrices" << endl;
-    //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
-    // Leave the column map out, Let Epetra do the work.
-    Epetra_CrsGraph Sg(Copy, SRowMap, SBarNumEntriesPerRow, false);
-    // for all diagonals
-    //Epetra_CrsGraph Sg(Copy, SRowMap, SRowMap, 0, false);
-    //cout << " Created Sbar graph" << endl;
-
-    int *LeftIndex = new int[max(Dmaxnnz, Rmaxnnz)];
-    double *LeftValues = new double[max(Dmaxnnz, Rmaxnnz)];
-    int *RightIndex = new int[max(Cmaxnnz, Smaxnnz)];
-    double *RightValues = new double[max(Cmaxnnz, Smaxnnz)];
-    //cout << "Inserting values in matrices" << endl;
-    int err;
-    int lcnt, rcnt ;
-    //int debug_row = 0;
-    for (int i = 0; i < nrows ; i++)
-    {
-        int NumEntries;
-        err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
-
-        lcnt = 0; rcnt = 0;
-        // Place the entry in the correct sub matrix, Works only for sym
-        gid = rows[i];
-        for (int j = 0 ; j < NumEntries ; j++)
-        { // O(nnz) ! Careful what you do inside
-            // Row permutation does not matter here 
-            gcid = A->GCID(Ai[j]);
-            assert(gcid != -1);
-            //Either in D or R 
-            if ((gvals[gid] != 1 && gvals[gcid] == 1)
-               || (gvals[gid] == 1 && A->LRID(gcid) != -1 && gvals[gcid] == 1))
-            {
-                assert(lcnt < max(Dmaxnnz, Rmaxnnz));
-                LeftIndex[lcnt] = gcid;
-                LeftValues[lcnt++] = Ax[j];
-            }
-            else
-            {
-                if (rcnt >= max(Cmaxnnz, Smaxnnz)) 
-                    cout << "rcnt =" << rcnt << "Smaxnnz =" << Smaxnnz << endl;
-                assert(rcnt < max(Cmaxnnz, Smaxnnz));
-                RightIndex[rcnt] = gcid;
-                RightValues[rcnt++] = Ax[j];
-            }
-        }
-
-        if (gvals[gid] == 1)
-        { // D or C row
-            err = D.InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
-            assert(err == 0);
-            err = Cptr->InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
-            assert(err == 0);
-        }
-        else
-        { // R or S row
-            //assert(lcnt > 0); // TODO: Enable this once using narrow sep.
-            assert(rcnt > 0);
-            err = Rptr->InsertGlobalValues(gid, lcnt, LeftValues, LeftIndex);
-            assert(err == 0);
-            err = S.InsertGlobalValues(gid, rcnt, RightValues, RightIndex);
-            assert(err == 0);
-            if (config->schurApproxMethod == 1)
-            {
-                err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
-                assert(err == 0);
-            }
-        }
-    }
-    //cout << "Done Inserting values in matrices" << endl;
-    D.FillComplete();
-    //cout << "Done D fill complete" << endl;
-    S.FillComplete();
-    //cout << "Done S fill complete" << endl;
-    //Cptr->FillComplete(SColMap, DRowMap);
-    Cptr->FillComplete(SRowMap, DRowMap); //TODO: Won't work if permutation is
-                                            // unsymmetric SRowMap
-    //cout << "Done C fill complete" << endl;
-    Rptr->FillComplete(DColMap, SRowMap);
-    //cout << "Done R fill complete" << endl;
-
-    // Add the diagonals to Sg
-    for (int i = 0; config->schurApproxMethod == 1 && i < nrows ; i++)
-    {
-        gid = rows[i];
-        if (gvals[gid] == 1) continue; // not a row in S
-        if (Snr == 0) assert(0 == 1);
-
-        rcnt = 0;
-        //TODO Will be trouble if SNumGlobalCols != Snc
-        //assert(SNumGlobalCols == Snc);
-        //for (int j = MAX(i-Sdiag, 0) ; j < MIN(SNumGlobalCols, i+Sdiag); j++)
-        for (int j = MAX(i-Sdiag, 0) ; j < MIN(Snr, i+Sdiag); j++)
-        {
-            // find the adjacent columns from the row map of S
-            //assert (j >= 0 && j < Snr);
-            RightIndex[rcnt++] = SRowElems[j];
-        }
-        err = Sg.InsertGlobalIndices(gid, rcnt, RightIndex);
-        assert(err == 0);
-        // Always insert the diagonals, if it is added twice that is fine.
-        err = Sg.InsertGlobalIndices(gid, 1, &gid);
-        assert(err == 0);
-    }
-    /*// This is for all diagonals, Should remove later
-    int totalElems = SRowMap.NumGlobalElements();
-    cout << "totalElems" << totalElems << endl;
-
-    int *allSGID = new int[totalElems];   // vector of size Schur complement !
-    getAllSGIDs(Snr, SRowElems, allSGID);
-
-    // OUT OF DATE, 2 is used for something else
-    for (int i = 0; config->schurApproxMethod == 2 && i < nrows ; i++)
-    {
-        rcnt = 0;
-        cout << msg << "i=" << i ;
-        //for (int j = MAX(i-Sdiag, 0) ; j < MIN(SNumGlobalCols, i+Sdiag); j++)
-        for (int j = MAX(i-Sdiag, 0) ; j < MIN(totalElems, i+Sdiag); j++)
-        {
-            // find the adjacent columns from the row map of S
-            //assert (j >= 0 && j < Snr);
-            RightIndex[rcnt++] = j;
-            cout << "j=" << j ;
-        }
-        err = Sg.InsertMyIndices(i, rcnt, RightIndex);
-        cout << "Error = " << err << endl;
-        assert(err == 0);
-        // Always insert the diagonals, if it is added twice that is fine.
-        err = Sg.InsertMyIndices(i, 1, &i);
-        assert(err == 0);
-    }*/
-
-    if (config->schurApproxMethod == 1)
-        Sg.FillComplete();
-    // A is no longer needed
-    delete[] LeftIndex;
-    delete[] LeftValues;
-    delete[] RightIndex;
-    delete[] RightValues;
-
-    //cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" <<
-        //S.NumGlobalCols() << "#cols in column map="<<
-        //S.ColMap().NumMyElements() << endl;
-    //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
-        //Cptr->NumGlobalCols() << "#cols in column map="<<
-        //Cptr->ColMap().NumMyElements() << endl;
-    //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
-        //D.NumGlobalCols() << "#cols in column map="<<
-        //D.ColMap().NumMyElements() << endl;
-    //cout << msg << "R rows=" << Rptr->NumGlobalRows() << " R cols=" <<
-        //Rptr->NumGlobalCols() << "#cols in column map="<<
-        //Rptr->ColMap().NumMyElements() << endl;
-    // ]
-
-
-    /*int temp_ncols = S.ColMap().NumMyElements();
-    int *temp_cols = S.ColMap().MyGlobalElements();
-
-    ostringstream temp_ssmsg1;
-    temp_ssmsg1 << "PID =" << myPID << " ";
-    temp_ssmsg1 << "Column in proc 0's S" ;
-    for (int junk = 0 ; myPID == 0 && junk < temp_ncols ; junk++)
-    {
-        temp_ssmsg1 << temp_cols[junk] << " ";
-    }
-    cout << temp_ssmsg1.str() << endl;*/
-    // ======================= Numeric factorization =========================
-    //Amesos_BaseSolver *Solver;
     Amesos Factory;
     char* SolverType = "Amesos_Klu";
     bool IsAvailable = Factory.Query(SolverType);
     assert(IsAvailable == true);
 
-    // TODO : All these three vectors and the solve can be removed
-    /*Epetra_MultiVector *X = new Epetra_MultiVector(LocalDRowMap, 1);
-    Epetra_MultiVector *residual = new Epetra_MultiVector(LocalDRowMap, 1);
-    Epetra_MultiVector *B = new Epetra_MultiVector(LocalDRowMap, 1);
-    B->PutScalar(1.0);
+    Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem> 
+                                        (new Epetra_LinearProblem());
+    LP->SetOperator((ssym->D).getRawPtr());
 
-    double *resid = new double[Snr];*/
-
-    LP = new Epetra_LinearProblem();
-    LP->SetOperator(&D);
-    /*LP->SetLHS(X);
-    LP->SetRHS(B);*/
-    Solver = Factory.Create(SolverType, *LP);
-    cout << "Created the diagonal Solver" << endl;
+    Teuchos::RCP<Amesos_BaseSolver> Solver = Teuchos::RCP<Amesos_BaseSolver>
+                                            (Factory.Create(SolverType, *LP));
+    //config->dm.print(5, "Created the diagonal solver");
 
 #ifdef TIMING_OUTPUT
     Teuchos::Time ftime("setup time");
     ftime.start();
 #endif
     Solver->SymbolicFactorization();
-    cout << "Symbolic Factorization done" << endl;
+    //config->dm.print(3, "Symbolic Factorization done");
 
-    cout << "In Numeric Factorization" << endl;
-    Solver->NumericFactorization();
-    cout << "Numeric Factorization done" << endl;
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
+    cout << "Symbolic Factorization Time" << ftime.totalElapsedTime() << endl;
     ftime.reset();
 #endif
 
-    //data->SComm = LComm;
-    data->LP = LP;
-    data->Solver = Solver;
-    //data->D = D;
-    data->Cptr = Cptr;
-    data->Rptr = Rptr;
-    //data->LDRowMap = LocalDRowMap;
-    //data->LDColMap = LocalDColMap;
-
-    /*Solver->Solve();
-    cout << "Solve done" << endl;
-
-
-    D.Multiply(false, *X, *residual);
-    residual->Update(-1.0, *B, 1.0);
-    residual->Norm2(resid);
-    double max_resid = 0;
-    for (int i = 0 ; i < Snr; i++)
-        max_resid = max(max_resid, abs(resid[i]));
-
-    cout << "Maximum residual = " << max_resid << endl;*/
+    ssym->LP = LP;
+    ssym->Solver = Solver;
 
     if (config->schurApproxMethod == 1)
     {
         Teuchos::ParameterList pList;
-        Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
-        Isorropia::Epetra::Prober prober(rSg, pList, false);
-        //cout << Sg << endl;
-        cout << "Doing coloring" << endl;
+        Teuchos::RCP<Isorropia::Epetra::Prober> prober = 
+                         Teuchos::RCP<Isorropia::Epetra::Prober> (new
+                          Isorropia::Epetra::Prober((ssym->Sg).getRawPtr(),
+                                                     pList, false));
+        //config->dm.print(3, "Doing Coloring");
 #ifdef TIMING_OUTPUT
         ftime.start();
 #endif
-        prober.color();
+        prober->color();
 #ifdef TIMING_OUTPUT
         ftime.stop();
         cout << "Time to color" << ftime.totalElapsedTime() << endl;
         ftime.reset();
         ftime.start();
 #endif
-        int nvectors = prober.getNumOrthogonalVectors();
-        //Set up the probing operator
-        ShyLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
-                                        &LocalDRowMap, nvectors);
+        ssym->prober = prober;
+    }
+}
 
-        cout << "Doing probing" << endl;
-        Sbar = prober.probe(probeop);
-        cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
+             shylu_config *config)
+{
+
+    Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
+    Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
+    Teuchos::RCP<Isorropia::Epetra::Prober> prober = ssym->prober;
+
+    /*--Extract the Epetra Matrices into already existing matrices --- */
+    extract_matrices(A, ssym, data, config, false);
+
+    // ======================= Numeric factorization =========================
+#ifdef TIMING_OUTPUT
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+#endif
+
+    //config->dm.print(3, "In Numeric Factorization");
+    Solver->NumericFactorization();
+    //config->dm.print(3, "Numeric Factorization done");
+
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
+
+    // Create the local and distributed row map
+    Epetra_SerialComm LComm;
+    Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
+    Teuchos::RCP<Epetra_CrsMatrix> Sbar;
+
+    if (config->schurApproxMethod == 1)
+    {
+        int nvectors = prober->getNumOrthogonalVectors();
+        //Set up the probing operator
+        // TODO: Change to RCPs
+        ShyLU_Probing_Operator probeop((ssym->G).getRawPtr(),
+         (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
+         (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
+         nvectors);
+
+        //cout << "Doing probing" << endl;
+        Sbar = prober->probe(probeop);
+        //cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
         cout << "Time to probe" << ftime.totalElapsedTime() << endl;
@@ -587,16 +682,22 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     {
         // Compute and drop the entries in the Schur complement
         // Ignore the structure of the Schur complement
-        cout << "Computing the Approx Schur complement" << endl;
+        //cout << "Computing the Approx Schur complement" << endl;
 #ifdef TIMING_OUTPUT
         ftime.start();
 #endif
+
+        // TODO: Pass the operator rather than all the matrices
         if (config->sep_type == 2)
-            Sbar = computeApproxSchur(config, &S, Rptr, LP, Solver, Cptr,
-                                            &LocalDRowMap);
+            Sbar = computeApproxSchur(config, (ssym->G).getRawPtr(),
+             (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
+             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
+             &LocalDRowMap);
         else
-            Sbar = computeApproxWideSchur(config, &S, Rptr, LP, Solver, Cptr,
-                                            &LocalDRowMap);
+            Sbar = computeApproxWideSchur(config, (ssym->G).getRawPtr(),
+             (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
+             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
+             &LocalDRowMap);
 
         //cout << *Sbar << endl;
 #ifdef TIMING_OUTPUT
@@ -604,34 +705,11 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
         cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << endl;
         ftime.reset();
 #endif
-        cout << "Computed Approx Schur complement" << endl;
+        //cout << "Computed Approx Schur complement" << endl;
     }
 
     data->Sbar  = Sbar;
 
-    // ======================= Solve =========================================
-
-    // Clean up
-    /*delete residual;
-    delete[] resid;
-    delete X;*/
-    //delete B;
-    delete[] DNumEntriesPerRow;
-    delete[] SNumEntriesPerRow;
-    delete[] CNumEntriesPerRow;
-    delete[] RNumEntriesPerRow;
-    delete[] SBarNumEntriesPerRow;
-    delete[] DColElems;
-    delete[] SColElems;
-    //delete[] CColMax;
-    //delete[] RRowMax;
-    //delete[] CColElems;
-    //delete[] RRowElems;
-    //delete[] DRowElems;
-    //delete[] SRowElems;
-
-    delete[] gvals;
-    //delete A;
     //cout << " Out of factor" << endl ;
     return 0;
 }
