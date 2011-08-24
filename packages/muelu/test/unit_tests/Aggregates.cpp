@@ -44,22 +44,34 @@ namespace MueLuTests {
       GO numAggs = aggregates->GetNumAggregates();
       RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
 
+      ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
+      bool foundAggNotSize3=false;
+      for (int i=0; i<aggSizes.size(); ++i)
+        if (aggSizes[i] != 3) {
+          foundAggNotSize3=true;
+          break;
+        }
+
       switch (comm->getSize()) {
 
         case 1 :
            TEUCHOS_TEST_EQUALITY(numAggs, 12, out, success);
+           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
            break;
 
         case 2:
            TEUCHOS_TEST_EQUALITY(numAggs, 6, out, success);
+           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
            break;
 
         case 3:
            TEUCHOS_TEST_EQUALITY(numAggs, 4, out, success);
+           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
            break;
 
         case 4:
            TEUCHOS_TEST_EQUALITY(numAggs, 3, out, success);
+           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
            break;
 
         default:
@@ -69,31 +81,24 @@ namespace MueLuTests {
            break;
       }
 
-      ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
-      bool foundAggNotSize3=false;
-      for (int i=0; i<aggSizes.size(); ++i)
-        if (aggSizes[i] != 3) {
-          foundAggNotSize3=true;
-          break;
-        }
-
-      TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
-
       ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
       aggregates->ComputeAggregateToRowMap(aggToRowMap);
+      int root = out.getOutputToRootOnly();
+      out.setOutputToRootOnly(-1);
       for (int j=0; j<comm->getSize(); ++j) {
         if (comm->getRank() == j) {
-            std::cout << "++ pid " << j << " ++" << std::endl;
-            std::cout << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+            out << "++ pid " << j << " ++" << std::endl;
+            out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
           for (int i=0; i< aggToRowMap.size(); ++i) {
-            std::cout << "   aggregate " << i << ": ";
+            out << "   aggregate " << i << ": ";
             for (int k=0; k< aggToRowMap[i].size(); ++k)
-              std::cout << aggToRowMap[i][k] << " ";
-            std::cout << std::endl;
+              out << aggToRowMap[i][k] << " ";
+            out << std::endl;
           }
         }
         comm->barrier();
       }
+      out.setOutputToRootOnly(root);
 
   } //GetNumAggregates
 
