@@ -108,7 +108,8 @@ class SaPFactory : public PFactory {
     bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
 
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP"));
+      std::ostringstream buf; buf << coarseLevel.GetLevelID();
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
       timer->start(true);
 
       RCP<Operator> finalP;
@@ -173,7 +174,7 @@ class SaPFactory : public PFactory {
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
         RCP< Operator > Op = fineLevel.Get< RCP<Operator> >("A");
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent_"+buf.str()));
         sapTimer->start(true);
 
         //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
@@ -185,7 +186,7 @@ class SaPFactory : public PFactory {
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_APtent"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_APtent_"+buf.str()));
         sapTimer->start(true);
         doFillComplete=false;
         optimizeStorage=false;
@@ -194,7 +195,7 @@ class SaPFactory : public PFactory {
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate_"+buf.str()));
         sapTimer->start(true);
         Scalar lambdaMax = Utils::PowerMethod(*Op, true, (LO) 10,(Scalar)1e-4);
         sapTimer->stop();
@@ -204,7 +205,7 @@ class SaPFactory : public PFactory {
           std::cout << "damping factor = " << dampingFactor_/lambdaMax << " ("
                     << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:Pt_plus_DinvAPtent"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Pt_plus_DinvAPtent_"+buf.str()));
         sapTimer->start(true);
 
         bool doTranspose=false; 
@@ -217,7 +218,7 @@ class SaPFactory : public PFactory {
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP_fillComplete"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP_fillComplete_"+buf.str()));
         sapTimer->start(true);
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
         sapTimer->stop();

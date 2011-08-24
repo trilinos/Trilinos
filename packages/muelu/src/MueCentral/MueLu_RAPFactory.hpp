@@ -37,14 +37,15 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
 
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build"));
+      std::ostringstream buf; buf << coarseLevel.GetLevelID();
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
       timer->start(true);
 
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P"));
+RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
 apTimer->start(true);
       RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
 apTimer->stop();
@@ -60,7 +61,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         coarseLevel.Set("A",RAP);
       } else {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
-RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP"));
+RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
 rapTimer->stop();

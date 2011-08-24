@@ -95,7 +95,8 @@ namespace MueLu {
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
       //FIXME there ever be more than one graph?
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build"));
+      std::ostringstream buf; buf << currentLevel.GetLevelID();
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_"+buf.str()));
       timer->start(true);
 
       currentLevel.Request("Graph");

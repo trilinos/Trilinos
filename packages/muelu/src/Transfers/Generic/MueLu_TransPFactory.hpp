@@ -70,7 +70,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     bool BuildR(Level & fineLevel, Level & coarseLevel) const {
 
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR"));
+      std::ostringstream buf; buf << coarseLevel.GetLevelID();
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
       timer->start(true);
 
       Teuchos::OSTab tab(this->out_);

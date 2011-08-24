@@ -126,7 +126,8 @@ class TentativePFactory : public PFactory {
     static void MakeTentative(Level &fineLevel, Level &coarseLevel)
     {
 
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
+      std::ostringstream buf; buf << coarseLevel.GetLevelID();
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative_"+buf.str()));
       timer->start(true);
 
       RCP< Operator > fineA = fineLevel.Get< RCP<Operator> >("A");
@@ -336,9 +337,9 @@ class TentativePFactory : public PFactory {
         }
 
         if (info != 0) {
-          std::ostringstream buf;
-          buf << info;
-          std::string msg = "MakeTentativeWithQR: dgeqrf (LAPACK QR routine) returned error code " + buf.str();
+          std::ostringstream tbuf;
+          tbuf << info;
+          std::string msg = "MakeTentativeWithQR: dgeqrf (LAPACK QR routine) returned error code " + tbuf.str();
           throw(Exceptions::RuntimeError(msg));
         }
 
@@ -381,10 +382,10 @@ class TentativePFactory : public PFactory {
         }
 
         if (info != 0) {
-          std::ostringstream buf;
-          buf << info;
+          std::ostringstream tbuf;
+          tbuf << info;
           std::string msg = "MakeTentativeWithQR: dorgqr (LAPACK auxiliary QR routine) returned error code "
-            + buf.str();
+            + tbuf.str();
           throw(Exceptions::RuntimeError(msg));
         }
 
