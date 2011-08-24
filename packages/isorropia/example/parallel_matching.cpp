@@ -30,8 +30,6 @@ int main(int argc, char** argv) {
 			 }
 			 exit(1);
 		  }
-		  else
-		  		cout<<"Crs Matrix Created!!!...."<<endl;
 		#else
 		  fail = 0;
 		  if (localProc == 0){

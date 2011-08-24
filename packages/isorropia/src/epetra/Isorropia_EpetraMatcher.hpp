@@ -98,7 +98,7 @@ private:
 
     void delete_matched_v();
     void complete_nonperfect_permutation();
-    
+    int SGM();  
     int match_dfs();
     int match_hk();
     int construct_layered_graph();
