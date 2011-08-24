@@ -18,9 +18,7 @@
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
-
-#include "MueLu_Level.hpp"
-#include "MueLu_DefaultFactoryHandler.hpp"
+#include "MueLu_Hierarchy.hpp"
 
 // Gallery
 #include "MueLu_MatrixFactory.hpp"
@@ -124,6 +122,21 @@ namespace MueLu {
         return A;
       } // Build2DPoisson()
  
+      // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
+      // This method initializes LevelID and DefaultFactoryHandlers
+      static void createSingleLevelHierarchy(Level& currentLevel) {
+        Hierarchy H;
+        H.SetLevel(rcpFromRef(currentLevel)); // rcpFromRef safe here
+      }
+      
+      // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
+      // This method initializes LevelIDs, DefaultFactoryHandlers and references to previous level
+      static void createTwoLevelHierarchy(Level& coarseLevel, Level& fineLevel) {
+        Hierarchy H;
+        H.SetLevel(rcpFromRef(fineLevel));   // rcpFromRef safe here
+        H.SetLevel(rcpFromRef(coarseLevel)); // rcpFromRef safe here
+      }
+      
     }; // class Factory
 
   } // namespace TestHelpers

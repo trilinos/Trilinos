@@ -15,31 +15,32 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
+    Level aLevel;
+    MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
+
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
-    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-    Level firstLevel(defaultFactHandler);
-    firstLevel.Set("A",A);
-    RCP<Operator> newA = firstLevel.Get< RCP<Operator> >("A");
+    aLevel.Set("A",A);
+    RCP<Operator> newA = aLevel.Get< RCP<Operator> >("A");
     TEUCHOS_TEST_EQUALITY(newA, A, out, success);
-    firstLevel.Set("R", A);
-    TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<Operator> >("R"), A, out, success); //TODO from JG: must be tested using another matrix !
-    firstLevel.Set("P", A);
-    TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<Operator> >("P"), A, out, success);
-    firstLevel.SetLevelID(42);
-    TEUCHOS_TEST_EQUALITY(firstLevel.GetLevelID(), 42, out, success); //TODO: test default value of LevelID
+    aLevel.Set("R", A);
+    TEUCHOS_TEST_EQUALITY(aLevel.Get< RCP<Operator> >("R"), A, out, success); //TODO from JG: must be tested using another matrix !
+    aLevel.Set("P", A);
+    TEUCHOS_TEST_EQUALITY(aLevel.Get< RCP<Operator> >("P"), A, out, success);
+    aLevel.SetLevelID(42);
+    TEUCHOS_TEST_EQUALITY(aLevel.GetLevelID(), 42, out, success); //TODO: test default value of LevelID
 
     /*
       RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
-      TEUCHOS_TEST_EQUALITY(firstLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo, out, success);
+      TEUCHOS_TEST_EQUALITY(aLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo, out, success);
       //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, Operator>();
       */
 
 
-    //out << firstLevel << std::endl;
+    //out << aLevel << std::endl;
     /*
       out << "Testing copy ctor" << std::endl;
-      Level secondLevel(firstLevel);
+      Level secondLevel(aLevel);
       //out << secondLevel << std::endl;
       */
   }

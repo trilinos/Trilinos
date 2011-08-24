@@ -229,12 +229,7 @@ namespace MueLu {
           // Warning: shift of 1 between i and LevelID. Weird...
           TEST_FOR_EXCEPTION(fineLevel.GetLevelID()   != i+1, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): FineLevel have a wrong level ID");
           TEST_FOR_EXCEPTION(coarseLevel.GetLevelID() != i+2, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): CoarseLevel have a wrong level ID");
-
-//           std::cout << "coarseLevel.GetPreviousLevel()= " << coarseLevel.GetPreviousLevel()->GetLevelID() 
-//                     << "Levels_[i]=" << Levels_[i]->GetLevelID()
-//                     << std::endl;
-
-//           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
+          TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
           *out_ << "starting build of P's and R's"  << std::endl;
           goodBuild = PRFact.Build(fineLevel, coarseLevel);

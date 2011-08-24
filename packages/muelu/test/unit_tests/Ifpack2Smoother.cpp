@@ -45,16 +45,17 @@ namespace MueLuTests {
         out << "version: " << MueLu::Version() << std::endl;
         out << "Tests interface to Ifpack2's Gauss-Seidel preconditioner." << std::endl;
 
-        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-
         Teuchos::ParameterList  ifpack2List;
         ifpack2List.set("relaxation: type", "Gauss-Seidel");
         ifpack2List.set("relaxation: sweeps", (int) 1);
         ifpack2List.set("relaxation: damping factor", (double) 1.0);
         ifpack2List.set("relaxation: zero starting solution", false);
         RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("RELAXATION",ifpack2List) );
-        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-        Level aLevel(defaultFactHandler);
+
+        Level aLevel;
+        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
+
+        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -94,16 +95,17 @@ namespace MueLuTests {
 
         out << "Tests interface to Ifpack2's Chebyshev preconditioner." << std::endl;
 
-        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-
         Teuchos::ParameterList  ifpack2List;
         ifpack2List.set("chebyshev: degree", (int) 1);
         ifpack2List.set("chebyshev: max eigenvalue", (double) 2.0);
         ifpack2List.set("chebyshev: min eigenvalue", (double) 1.0);
         ifpack2List.set("chebyshev: zero starting solution", false);
         RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpack2List) );
-        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-        Level aLevel(defaultFactHandler);
+
+        Level aLevel;
+        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
+
+        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -159,12 +161,14 @@ namespace MueLuTests {
 
         out << "Tests interface to Ifpack2's ILU(0) preconditioner." << std::endl;
 
-        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-
         Teuchos::ParameterList  ifpack2List;
         RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
-        RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-        Level aLevel(defaultFactHandler);
+
+
+        Level aLevel;
+        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
+
+        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
         aLevel.Set("A",Op);
 
         RCP<MultiVector> Xtrue = MultiVectorFactory::Build(Op->getDomainMap(),1);

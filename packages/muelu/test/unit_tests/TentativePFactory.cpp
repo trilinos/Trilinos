@@ -40,9 +40,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
-    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
-    fineLevel.SetLevelID(1);
+    Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Set("A",A);
 
@@ -100,9 +99,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    RCP<DefaultFactoryHandlerBase> defaultFactHandler = rcp(new DefaultFactoryHandler());
-    Level fineLevel(defaultFactHandler), coarseLevel(defaultFactHandler);
-    fineLevel.SetLevelID(1);
+    Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Set("A",A);
 
