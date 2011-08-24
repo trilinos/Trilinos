@@ -155,9 +155,7 @@ int main(int argc,char * argv[])
    Teko_ADD_UNIT_TEST(Teko::Test::tBlockingEpetra,BlockingEpetra);
    Teko_ADD_UNIT_TEST(Teko::Test::tEpetraThyraConverter,EpetraThyraConverter);
    Teko_ADD_UNIT_TEST(Teko::Test::tGraphLaplacian,tGraphLaplacian);
-#ifdef Teko_ENABLE_DEV_MODE
    Teko_ADD_UNIT_TEST(Teko::Test::tParallelInverse,tParallelInverse);
-#endif
    Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
    Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);

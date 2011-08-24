@@ -12,10 +12,17 @@ PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_DEVELOPMENT_MODE
-  Teko_ENABLE_DEV_MODE
-  "Enable development functionality."
-  ON )
+#ADD_OPTION_AND_DEFINE(Teko_ENABLE_BLOCK_SMOOTHERS
+#  Teko_ENABLE_ML_SMOOTHERS
+#  "Enable ml block smoothers."
+#  OFF )
+
+# Enable ML block Smoothers
+IF(ML_ENABLE_TekoSmoothers)
+   SET(Teko_ENABLE_ML_SMOOTHERS ON)
+ELSE()
+   SET(Teko_ENABLE_ML_SMOOTHERS OFF)
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples

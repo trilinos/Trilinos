@@ -64,7 +64,7 @@
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
-#ifdef Teko_ENABLE_DEV_MODE
+#ifdef Teko_ENABLE_ML_SMOOTHERS
 #include "Teko_SmootherPreconditionerFactory.hpp"
 #include "Teko_MLPreconditionerFactory.hpp"
 #endif
@@ -321,7 +321,7 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
    precFactoryBuilder_.addClone("Probing Preconditioner",clone);
 #endif
 
-#ifdef Teko_ENABLE_DEV_MODE
+#ifdef Teko_ENABLE_ML_SMOOTHERS
    clone = rcp(new AutoClone<MLPreconditionerFactory>());
    precFactoryBuilder_.addClone("Blocked ML Preconditioner",clone);
 #endif
