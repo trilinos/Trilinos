@@ -10,7 +10,7 @@
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
-#include "shylu_debug_manager.hpp"
+//#include "shylu_debug_manager.hpp"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
@@ -69,7 +69,7 @@ typedef struct
     string schurSolver;         // Solver for the Schur complement
     int sep_type;
     int debug_level;
-    DebugManager dm;
+    //DebugManager dm;
 } shylu_config;
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,

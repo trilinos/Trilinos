@@ -118,7 +118,7 @@ int Ifpack_ShyLU::Initialize()
     string sep_type = Teuchos::getParameter<string>(List_,
                                                     "Separator Type");
     int dl =  List_.get<int>("Debug Level", 0);
-    slu_config_.dm.setDebugLevel(dl); 
+    //slu_config_.dm.setDebugLevel(dl); 
 
     if (sep_type == "Wide")
         slu_config_.sep_type = 1;
