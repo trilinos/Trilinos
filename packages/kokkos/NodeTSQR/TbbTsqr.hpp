@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file TbbTsqr.hpp
+/// \brief Intranode TSQR, parallelized with Intel TBB.
+///
 #ifndef __TSQR_TbbTsqr_hpp
 #define __TSQR_TbbTsqr_hpp
 

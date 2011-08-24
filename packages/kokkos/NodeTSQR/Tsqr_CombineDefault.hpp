@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_CombineDefault.hpp
+/// \brief Default copy-in, copy-out implementation of \c TSQR::Combine.
+///
 #ifndef __TSQR_CombineDefault_hpp
 #define __TSQR_CombineDefault_hpp
 
@@ -39,13 +42,11 @@
 #include <sstream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \class CombineDefault
-  /// \brief Default implementation of TSQR::Combine
+  /// \brief Default copy-in, copy-out implementation of \c TSQR::Combine.
   ///
   /// This is a default implementation of TSQR::Combine, which
   /// TSQR::Combine may use (via a "has-a" relationship) if it doesn't
@@ -55,7 +56,7 @@ namespace TSQR {
   /// copies out the results again.  It truncates to zero any values
   /// that should be zero because of the input's structure (e.g.,
   /// upper triangular).
-  template< class Ordinal, class Scalar >
+  template<class Ordinal, class Scalar>
   class CombineDefault {
   private:
     typedef LAPACK< Ordinal, Scalar > lapack_type;
@@ -67,9 +68,14 @@ namespace TSQR {
 
     CombineDefault () {}
 
-    /// Whether or not the QR factorizations computed by methods of
-    /// this class produce an R factor with all nonnegative diagonal
-    /// entries.  
+    /// \brief Does the R factor have a nonnegative diagonal?
+    ///
+    /// CombineDefault implements a QR factorization (of a matrix with
+    /// a special structure).  Some, but not all, QR factorizations
+    /// produce an R factor whose diagonal may include negative
+    /// entries.  This Boolean tells you whether CombineDefault
+    /// promises to compute an R factor whose diagonal entries are all
+    /// nonnegative.
     static bool QR_produces_R_factor_with_nonnegative_diagonal()
     { 
       return lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
@@ -84,7 +90,9 @@ namespace TSQR {
 		  Scalar work[])
     {
       // info must be an int, not a LocalOrdinal, since LAPACK
-      // routines always (???) use int for the INFO output argument.
+      // routines always (???) use int for the INFO output argument,
+      // whether or not they were built with 64-bit integer index
+      // support.
       int info = 0;
       lapack_.GEQR2 (nrows, ncols, A, lda, tau, work, &info);
       if (info != 0)

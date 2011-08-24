@@ -29,7 +29,7 @@
 #ifndef __Tsqr_CombineBenchmarker_hpp
 #define __Tsqr_CombineBenchmarker_hpp
 
-#include <Tsqr_Config.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_Random_MatrixGenerator.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>

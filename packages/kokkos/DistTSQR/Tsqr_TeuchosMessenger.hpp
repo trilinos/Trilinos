@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_TeuchosMessenger_hpp
 #define __TSQR_TeuchosMessenger_hpp
@@ -34,31 +34,31 @@
 
 #include <algorithm>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR { 
+
   /// \class TeuchosMessenger
   /// \brief Communication object for TSQR
   ///
-  /// A thin wrapper around Teuchos::Comm, for use by TSQR.  The
-  /// internode parallel part of TSQR communicates via a
-  /// MessengerBase<Datum> interface.  TeuchosMessenger<Datum>
-  /// implements that interface by wrapping Teuchos::Comm.
+  /// A thin wrapper around \c Teuchos::Comm<int>, for use by TSQR.
+  /// The internode parallel part of TSQR communicates via a
+  /// \c MessengerBase<Datum> interface.  \c TeuchosMessenger<Datum>
+  /// implements that interface by wrapping \c Teuchos::Comm<int>.
   ///
-  /// \warning Datum should be a class with value-type semantics, and
-  ///   Datum objects should be less-than comparable.
+  /// \tparam Datum A class with value-type semantics, whose instances
+  ///   are less-than comparable.
   template<class Datum>
   class TeuchosMessenger : public MessengerBase<Datum> {
   public:
     typedef Teuchos::RCP<const Teuchos::Comm<int> > comm_ptr;
 
+    //! Constructor, taking the communicator object to wrap.
     TeuchosMessenger (const comm_ptr& pComm) : pComm_ (pComm) {}
 
-    //! Virtual destructor, for correct deallocation.
+    //! Virtual destructor for memory safety of derived classes.
     virtual ~TeuchosMessenger() {}
 
-    /// Send sendData[0:sendCount-1] to process destProc.
+    /// \brief Send sendData[0:sendCount-1] to process destProc.
     ///
     /// \param sendData [in] Array of value-type elements to send
     /// \param sendCount [in] Number of elements in the array
@@ -70,13 +70,13 @@ namespace TSQR {
 	  const int destProc, 
 	  const int tag) 
     {
-      /// \note (mfh 14 June 2010) Teuchos generates "tag" arguments to
-      /// MPI calls internally, so we ignore the tag here.  I don't use
-      /// tags for anything in TSQR, so it doesn't matter.
+      // NOTE (mfh 14 June 2010): Teuchos generates "tag" arguments to
+      // MPI calls internally, so we ignore the tag here.  I don't use
+      // tags for anything in TSQR, so it doesn't matter.
       Teuchos::send (*pComm_, sendCount, sendData, destProc);
     }
 
-    /// Receive recvData[0:recvCount-1] from process srcProc.
+    /// \brief Receive recvData[0:recvCount-1] from process srcProc.
     ///
     /// \param recvData [out] Array of value-type elements to receive
     /// \param recvCount [in] Number of elements to receive in the array
@@ -88,15 +88,19 @@ namespace TSQR {
 	  const int srcProc, 
 	  const int tag) 
     {
-      /// \note (mfh 14 June 2010) Teuchos generates "tag" arguments to
-      /// MPI calls internally, so we ignore the tag here.  I don't use
-      /// tags for anything in TSQR, so it doesn't matter.
+      // NOTE (mfh 14 June 2010): Teuchos generates "tag" arguments to
+      // MPI calls internally, so we ignore the tag here.  I don't use
+      // tags for anything in TSQR, so it doesn't matter.
       Teuchos::receive (*pComm_, srcProc, recvCount, recvData);
     }
 
     /// Exchange sencRecvCount elements of sendData with processor
-    /// destProc, receiving the result into recvData.  Assume that
-    /// sendData and recvData do not alias one another.
+    /// destProc, receiving the result into recvData.  Optimize for
+    /// the case that sendData and recvData do not alias one another,
+    /// which is the common case for TSQR.
+    ///
+    /// \warning This routine does only a rudimentary and incomplete
+    ///   check for whether sendData and recvData alias one another.
     ///
     /// \param sendData [in] Array of value-type elements to send
     /// \param recvData [out] Array of value-type elements to
@@ -132,13 +136,21 @@ namespace TSQR {
 
 	  const int srcProc = Teuchos::rank (*pComm_);
 
-	  // FIXME (mfh 14 June 2010, 09 Jul 2010) It would be nice
-	  // if Teuchos had a sendRecv() routine... as it is, we
-	  // have to do a send and then a receive.  We could do an
-	  // isend and an ireceive in order to exploit potential
-	  // overlap of the two messages.  That works if sendData
-	  // and recvData don't alias one another.  We only do a
-	  // partial check for aliasing here (sendData == recvData).
+	  // If we can prove that sendData and recvData don't alias
+	  // one another, use an isend and an ireceive to exchange
+	  // them.  (Our test may not necessarily be safe in general,
+	  // since we only check whether the pointers are equal and
+	  // not whether the arrays overlap.  However, it is safe for
+	  // the specific case of TSQR.)
+	  //
+	  // Otherwise, if the arrays do alias one another, safely
+	  // perform a send and then a receive (or a receive and then
+	  // a send, depending on whether this MPI process is the
+	  // source or destination process).  
+	  //
+	  // (It would be nice if Teuchos had a sendRecv() routine, as
+	  // of summer 2010 when this code was written.  As it stands,
+	  // we have to do a send and then a receive.)
 	  if (sendData == recvData)
 	    {
 	      // The smaller-rank process sends first, and the
@@ -160,10 +172,10 @@ namespace TSQR {
 	    }
 	  else
 	    {
-	      ArrayRCP< const Datum > sendBuf (sendData, 0, sendRecvCount, false);
-	      ArrayRCP< Datum > recvBuf (recvData, 0, sendRecvCount, false);
+	      ArrayRCP<const Datum> sendBuf (sendData, 0, sendRecvCount, false);
+	      ArrayRCP<Datum> recvBuf (recvData, 0, sendRecvCount, false);
 
-	      RCP< CommRequest > sendReq, recvReq;
+	      RCP<CommRequest> sendReq, recvReq;
 	      if (srcProc < destProc)
 		{
 		  sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);

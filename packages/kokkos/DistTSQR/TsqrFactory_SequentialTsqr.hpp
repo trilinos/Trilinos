@@ -1,37 +1,37 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 #define __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 
 /// \file TsqrFactory_SequentialTsqr.hpp
 /// \brief Declaration and definition of SequentialTsqrFactory.
-/// \author Mark Hoemmen
+///
 
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr.hpp"
@@ -45,14 +45,15 @@ namespace TSQR {
 
     /// \class SequentialTsqrFactory
     ///
-    /// Subclass of TsqrFactory that knows how to instantiate
-    /// SequentialTsqr for intranode TSQR.
-    template< class LO, class S >
+    /// Subclass of \c TsqrFactory that knows how to instantiate
+    /// \c SequentialTsqr as the intranode TSQR implementation.
+    template<class LO, class S>
     class SequentialTsqrFactory :
-      public TsqrFactory< LO, S, SequentialTsqr< LO, S >, DistTsqr< LO, S > >
+      public TsqrFactory<LO, S, SequentialTsqr<LO, S>, DistTsqr<LO, S> >
     {
     public:
-      typedef TsqrFactory< LO, S, SequentialTsqr< LO, S >, DistTsqr< LO, S > > base_type;
+      // This class' parent class.
+      typedef TsqrFactory<LO, S, SequentialTsqr<LO, S>, DistTsqr<LO, S> > base_type;
 
       // Pull in the typedefs from the base class.  C++ doesn't do
       // this when both the base and the derived classes are
@@ -69,6 +70,9 @@ namespace TSQR {
       virtual ~SequentialTsqrFactory () {}
 
     private:
+
+      /// \brief Implementation of the parent class' pure virtual method.
+      ///
       /// \param [in] plist Parameter list with the following key:
       ///   \li "cacheSizeHint": Cache size hint in bytes.  Default is
       ///       zero, which means that TSQR will guess a reasonable
@@ -97,6 +101,7 @@ namespace TSQR {
 	return node_tsqr;
       }
 
+      //! Implementation of the parent class' pure virtual method.
       virtual dist_tsqr_ptr
       makeDistTsqr (const scalar_messenger_ptr& messenger,
 		    const Teuchos::ParameterList& plist) const
