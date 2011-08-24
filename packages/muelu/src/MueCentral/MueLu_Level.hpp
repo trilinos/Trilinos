@@ -25,6 +25,9 @@ namespace MueLu {
     mutable int levelID_; // id number associated with level
     RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
 
+    // linked list of Level
+    RCP<Level> previousLevel_;
+
   protected:
     RCP<Teuchos::FancyOStream> out_;
 
@@ -69,6 +72,10 @@ namespace MueLu {
       levelID_ = i;
     }
 
+    void SetPreviousLevel(const RCP<Level> & previousLevel) {
+      previousLevel_ = previousLevel;
+    }
+
     //! Set default factories (used internally by Hierarchy::SetLevel()).
     // Users should not use this method.
     void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) {
@@ -82,6 +89,11 @@ namespace MueLu {
 
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
+
+    //! For internal check only
+    RCP<Level> & GetPreviousLevel() {
+      return previousLevel_;
+    }
 
     //! Get default factory.
     const RCP<FactoryBase> & GetDefaultFactory(const std::string& varname) {

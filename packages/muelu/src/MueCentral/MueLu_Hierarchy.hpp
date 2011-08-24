@@ -78,6 +78,11 @@ namespace MueLu {
       Levels_.push_back(level);
       level->SetLevelID(Levels_.size());
       level->SetDefaultFactoryHandler(defaultFactoryHandler_);
+
+      if (Levels_.size() < 2)
+        level->SetPreviousLevel(Teuchos::null);
+      else
+        level->SetPreviousLevel(Levels_[Levels_.size()-2]); // new level = size-1, previous = size-2
     }
 
     //! Retrieve a certain level from hierarchy.
@@ -200,7 +205,7 @@ namespace MueLu {
     */
     Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
                                          TwoLevelFactoryBase const &AcFact,
-                                         int startLevel=0, int numDesiredLevels=10 )
+                                         int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
 
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
@@ -211,24 +216,41 @@ namespace MueLu {
       int i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
         {
-          if ( (i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null ) {
-            Levels_.push_back( Levels_[i]->Build(*out_) );
+          Level & fineLevel = *Levels_[i];
+
+          if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
+            std::cout << "Create new level" << std::endl;
+            RCP<Level> coarseLevel = fineLevel.Build(*out_); // new coarse level, using copy constructor
+            this->SetLevel(coarseLevel);                     // add to hierarchy
           }
-          Levels_[i+1]->SetLevelID(i+1);
+          
+          Level & coarseLevel = *Levels_[i+1];
+
+          // Warning: shift of 1 between i and LevelID. Weird...
+          TEST_FOR_EXCEPTION(fineLevel.GetLevelID()   != i+1, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): FineLevel have a wrong level ID");
+          TEST_FOR_EXCEPTION(coarseLevel.GetLevelID() != i+2, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): CoarseLevel have a wrong level ID");
+
+//           std::cout << "coarseLevel.GetPreviousLevel()= " << coarseLevel.GetPreviousLevel()->GetLevelID() 
+//                     << "Levels_[i]=" << Levels_[i]->GetLevelID()
+//                     << std::endl;
+
+//           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
+
           *out_ << "starting build of P's and R's"  << std::endl;
-          goodBuild = PRFact.Build(*(Levels_[i]),*(Levels_[i+1]));
+          goodBuild = PRFact.Build(fineLevel, coarseLevel);
           if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
           if (!goodBuild) {
             Levels_.resize(i+1); //keep only entries 0..i
             break;
           }
           *out_ << "starting build of RAP"  << std::endl;
-          if ( !AcFact.Build(*(Levels_[i]),*(Levels_[i+1])) ) {
+          if ( !AcFact.Build(fineLevel, coarseLevel) ) {
             Levels_.resize(i+1); //keep only entries 0..i
             break;
           }
-          //RCP<Operator> A = Levels_[i+1]->Get< RCP<Operator> >("A");
-          totalNnz += Levels_[i+1]->Get< RCP<Operator> >("A")->getGlobalNumEntries();
+          //RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A");
+          totalNnz += coarseLevel.Get< RCP<Operator> >("A")->getGlobalNumEntries();
+
           ++i;
         } //while
 
