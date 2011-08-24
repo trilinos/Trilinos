@@ -104,7 +104,7 @@ inline void DebugManager::print(int debugLevel, const char *output)
     if (debugLevel <= debugLevel_ && iPrint_)
         *myOS_ << output;
 //#endif
-};
+}
 
 inline void DebugManager::printInAllTasks(int debugLevel,
             const std::string &output)
