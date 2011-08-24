@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 /* This define will make S block diagonal, To make this happen even some
    zero columns/rows of C and R will be stored.

@@ -131,7 +131,7 @@ int Ifpack_ShyLU::Initialize()
     {
         slu_data_.LP2 = new Epetra_LinearProblem();
         Amesos Factory;
-        char* SolverType = "Amesos_Klu";
+        std::string SolverType = "Amesos_Klu";
         bool IsAvailable = Factory.Query(SolverType);
         assert(IsAvailable == true);
         slu_data_.dsolver = Factory.Create(SolverType, *(slu_data_.LP2));
@@ -169,6 +169,7 @@ int Ifpack_ShyLU::Compute()
         aList.set("Reindex", true);
 
         slu_data_.LP2->SetOperator(slu_data_.Sbar.get());
+        slu_data_.LP2->SetLHS(0); slu_data_.LP2->SetRHS(0);
         slu_data_.dsolver->SetParameters(aList);
         //cout << "Created the direct Schur  Solver" << endl;
 
