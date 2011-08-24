@@ -487,7 +487,7 @@ class TentativePFactory : public PFactory {
         }
       }
 
-      for (typename ArrayRCP<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
+      for (typename Array<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
         for (size_t j=0; j<NSDim; ++j) {
           valPtr[j] = targetQvals[j][reducedMap->getLocalElement(*r)];
           colPtr[j] = (GO) targetQcols[j][reducedMap->getLocalElement(*r)];
