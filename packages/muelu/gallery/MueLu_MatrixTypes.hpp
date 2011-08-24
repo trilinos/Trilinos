@@ -208,7 +208,7 @@ namespace MueLu {
         } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
 
         timer->stop();
-        MemUtils::ReportTimeAndMemory(*timer, *comm);
+        //MemUtils::ReportTimeAndMemory(*timer, *comm);
 
 /*
       t1 = MPI_Wtime() - t0;
@@ -229,7 +229,7 @@ namespace MueLu {
       mtx->fillComplete();
 
       timer->stop();
-      MemUtils::ReportTimeAndMemory(*timer, *comm);
+      //MemUtils::ReportTimeAndMemory(*timer, *comm);
       /*
       t2 = MPI_Wtime() - t2;
       t1 = MPI_Wtime() - t0;

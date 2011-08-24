@@ -86,9 +86,9 @@ namespace MueLu {
       avgTime /= Comm.getSize();
       //std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl; 
       if (Comm.getRank()==0) {
-        std::cout << "&&& " << timer.name() << " time    &&& "
-                 << "max=" << maxTime << "   min=" << minTime << "  avg=" << avgTime << std::endl;
-        std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
+        std::cout << "&&&" << timer.name()
+                 << " max=" << maxTime << " min=" << minTime << " avg=" << avgTime << std::endl;
+        std::cout << "&&&" << timer.name() << " " << MemUtils::PrintMemoryUsage() << std::endl;
       }
     } //ReportTimeAndMemory
 #else
@@ -97,7 +97,7 @@ namespace MueLu {
       return;
     }
 #endif
-    
+
   } //namespace MemUtils
   
 } //namespace MueLu
