@@ -39,7 +39,6 @@
 
 #include <gtest/gtest.h>
 
-#include <iostream>
 
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceHost_ValueView.hpp>
@@ -48,17 +47,9 @@
 #include <Kokkos_DeviceHost_ParallelFor.hpp>
 #include <Kokkos_DeviceHost_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
-
-
 //----------------------------------------------------------------------------
 
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
@@ -73,43 +64,60 @@
 
 namespace Test {
 
-void test_device_cuda_memory_management() {
+TEST( host, memory_management_double) {
   UnitTestDeviceMemoryManagement< double, Kokkos::DeviceHost >();
+}
+
+TEST( host, memory_management_int) {
   UnitTestDeviceMemoryManagement< int, Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_value_view() {
+TEST( host, value_view_double) {
   UnitTestValueView< double, Kokkos::DeviceHost >();
+}
+
+TEST( host, value_view_int) {
   UnitTestValueView< int, Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_multi_vector_view() {
+TEST( host, multi_vector_view_double) {
   UnitTestMultiVectorView< double, Kokkos::DeviceHost >();
+}
+
+TEST( host, multi_vector_view_int) {
   UnitTestMultiVectorView< int, Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_mdarray_view() {
+TEST( host, mdarray_view_double) {
   UnitTestMDArrayView< double, Kokkos::DeviceHost >();
+}
+
+TEST( host, mdarray_view_int) {
   UnitTestMDArrayView< int, Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_mdarray_deep_copy() {
+TEST( host, mdarray_deep_copy_double) {
   UnitTestMDArrayDeepCopy< double, Kokkos::DeviceHost >();
+}
+
+TEST( host, mdarray_deep_copy_int) {
   UnitTestMDArrayDeepCopy< int, Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_index_map() {
+TEST( host, mdarray_index_map) {
   UnitTestMDArrayIndexMap< Kokkos::DeviceHost >();
 }
 
-void test_device_cuda_reduce() {
+TEST( host, long_reduce) {
   UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
+}
+
+TEST( host, double_reduce) {
   UnitTestReduce< double ,   Kokkos::DeviceHost >( 1000000 );
 }
 
-void test_device_cuda_multi_reduce() {
+TEST( host, long_multi_reduce) {
   UnitTestReduceMulti< long , Kokkos::DeviceHost >( 1000000 , 7 );
 }
 
-}
-
+} // namespace test
