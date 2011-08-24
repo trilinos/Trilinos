@@ -20,6 +20,7 @@ of sparse matrices, these problems can each be viewed as a combinatorial problem
 <li> \ref coloringIntro
 <li> \ref orderingIntro (for sparse direct solvers).
 <li> \ref probingIntro
+<li> \ref matchingIntro
 </ul>
 
 Isorropia contains separate classes to solve each of these problems, all of which derive from Isorropia::Operator and Isorropia::Epetra::Operator. Note that an operator in Isorropia is different from an operator in Epetra!
