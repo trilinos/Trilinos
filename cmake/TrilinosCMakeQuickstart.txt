@@ -19,6 +19,7 @@ Section C: Configuring Trilinos
   --  Disabling Fortran
   --  Runtime Debug support
   --  Configuring MPI support
+  --  Configuring OpenMP support
   --  Building shared libraries
   --  Building static libraries and executables
   --  Configuring with third party libraries (TPLS)
@@ -573,6 +574,15 @@ C) Configuring (Makefile Generator)
         Other command-line arguments that must come *after* the numprocs
         argument.  The default is empty "".
 
+
+(*) Configuring Trilinos for OpenMP support:
+
+  To enable OpenMP support you must set
+
+    -D Trilinos_ENABLE_OpenMP:BOOL=ON
+
+  Note that if you enable OpenMP directly through a compiler option
+  (e.g., -fopenmp), you will NOT enable OpenMP inside Trilinos source code.
 
 (*) Building shared libraries:
 
