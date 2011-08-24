@@ -1,25 +1,24 @@
-Currently (as of 2/16/2011) \muelu is not part of \trilinos proper.  It is instead managed as a separate project,
-with its own git repository.  However, \muelu is intended to be built seamlessly with the \trilinos cmake
-infrastructure.
+Currently (as of 2/16/2011) \muelu is not part of \trilinos proper.  It is instead managed as part of \pct.
+However, \muelu is intended to be built seamlessly with the \trilinos cmake infrastructure.
 
 \subsection{Configure and Build Instructions}
 
 \be
-  \item Checkout both \trilinos and \muelu.
-  \item In the \trilinos root directory, make a symbolic link to the \muelu source directory.
+  \item Checkout both \trilinos and \pct.
+  \item In the \trilinos root directory, make a symbolic link to the \pct source directory.
   \item Configure \trilinos as usual, but with the additional cmake directives\\
     \begin{verbatim}
-      -D Trilinos_EXTRA_REPOSITORIES="MueLu"
+      -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos"
       -D Trilinos_ENABLE_MueLu:BOOL=ON
       -D MueLu_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
       -D MueLu_ENABLE_TESTS:BOOL=ON
       -D MueLu_ENABLE_EXAMPLES:BOOL=ON
     \end{verbatim}
   \item Build \trilinos as usual.
-  \item In your build directory, you should see the subdirectory \verb!MueLu!, which contains all the test and
+  \item In your build directory, you should see the subdirectory \verb!preCopyrightTrilinos/muelu!, which contains all the test and
   example executables.
 \ee
 
 \subsection{Sample Configure Scripts}
 
-Sample cmake scripts can be found in \verb!MueLu/muelu/doc/sampleScripts!.
+Sample cmake scripts can be found in \verb!preCopyrightTrilinos/muelu/doc/sampleScripts!.
