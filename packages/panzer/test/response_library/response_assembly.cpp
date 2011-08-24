@@ -70,11 +70,11 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   rLibrary.addResponse(*hrsTag,"block_0");
   rLibrary.addResponse(*hrsTag,"block_4");
 
-  Teuchos::ParameterList p;
-  p.set(dogTag->name(),true);
-  p.set(hrsTag->name(),true);
-
-  rLibrary.checkoutResponses(p);
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Dog","block_0");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Dog","block_1");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_0");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_5");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_4");
 
   out << rLibrary << std::endl;
 
@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
      // but not during this test
   }
 
-  rLibrary.registerResponses<panzer::Traits,EvalT>(comm,worksetSize,"block_0",fm);
+  rLibrary.registerReservedResponses<panzer::Traits::Value>("block_0",comm,worksetSize,fm);
   
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   workset->num_cells = worksetSize;
@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
- 
+
   fm.postRegistrationSetup(setupData);
 
   fm.preEvaluate<EvalT>(0);

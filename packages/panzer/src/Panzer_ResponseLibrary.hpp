@@ -1,37 +1,132 @@
 #ifndef __Panzer_ResponseLibrary_hpp__
 #define __Panzer_ResponseLibrary_hpp__
 
-#include "Panzer_ResponseLibraryDef.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
 
-#include "Phalanx_FieldTag_Tag.hpp"
-#include "Panzer_ScatterResponses.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldManager.hpp"
+#include "Phalanx_TemplateManager.hpp"
+
+#include "Panzer_BC.hpp"
+#include "Panzer_Traits.hpp"
+#include "Panzer_ResponseContainer.hpp"
 
 namespace panzer {
 
-template <typename Traits,typename EvalT>
+/** This contains, collects and serves as a resource for
+  * responses computed by panzer. This functions as a library
+  * where there are many "responses" maintained (as many as
+  * a user adds).  When a response is maintained that simply
+  * means there is a mechansim to "check it out". A response is
+  * not required by any field manager until a user "checks it
+  * out". The checkout process is done by response name and 
+  * can be specified by a parameter list. It is assume that
+  * each response parameter is defined on a 
+  * <code>MDALayout<ScalarT,Cell></code> data type. The field
+  * tag specified in the <code>addResponse</code> is used only
+  * for the "name" field, however that use of <code>PHX::FieldTag</code>
+  * reminds the user that something better be in the evaluation tree.
+  *
+  * The last aspect of the response library is that when a user
+  * wants to access the response (typically a model evaluator) they
+  * must specify the mechanism to use. TBD
+  */
+class ResponseLibrary {
+public:
+   ResponseLibrary();
+
+   //////////////////////////////////////////////////////////////////////
+   /** \defgroup BC and Volume methods
+     * Methods that act on both boundary condition and volume responses.
+     * @{
+     */
+
+   //! Print available reponses
+   void printAvailableResponses(std::ostream & os) const;
+
+   //! Print available reponses
+   void printReservedResponses(std::ostream & os) const;
+
+   //! Print available and checked out responses
+   void print(std::ostream & os) const;
+
+   /** @} */
+
+   //////////////////////////////////////////////////////////////////////
+   /** \defgroup Volume methods
+     * Methods that act on volume responses.
+     * @{
+     */
+
+   //! Include a volume type response in the library
+   void addResponse(const PHX::FieldTag & ft, const std::string & blockId);
+
+   //! Get the names of the available volume responses 
+   void getAvailableVolumeResponses(std::vector<std::pair<std::string,std::set<std::string> > > & responsePairs) const;
+
+    //! Reserve a response for actual calculation by name and element block.
+   template <typename RespT>
+   void reserveVolumeResponse(const std::string & name,const std::string & eBlock);
+
+   template <typename RespT>
+   void registerReservedResponses(const std::string & eBlock,
+                                  const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
+                                  PHX::FieldManager<panzer::Traits> & fm);
+
+   /** @} */
+
+private:
+   typedef std::map<std::string,std::set<std::string> > VolumeMap;
+   typedef PHX::TemplateManager<panzer::Traits::RespTypes,ResponseContainerBase,ResponseContainer<_> > RespContManager;
+
+   void initializeReservedVolumes();
+
+   //! Contains a library of responses and the element blocks they correspond to: field name -> block ids
+   VolumeMap volumeResponses_;
+
+   std::map<std::string,Teuchos::RCP<RespContManager> > rsvdVolResp_;
+   bool isInitialized_;
+};
+
+inline std::ostream & operator<<(std::ostream & os,const ResponseLibrary & rl)
+{ rl.print(os); return os; }
+
+template <typename RespT>
 void ResponseLibrary::
-registerResponses(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
-                  const std::string & blockId,PHX::FieldManager<Traits> & fm) const
+reserveVolumeResponse(const std::string & name,const std::string & eBlock)
 {
    using Teuchos::RCP;
-   using Teuchos::rcp;
 
-   std::vector<std::string> names;
-   this->getCheckedOutVolumeResponses(blockId,names);
+   // look up in available responses, and build reserved volume reponses map
+   initializeReservedVolumes();
 
-   // add scatter residual
-   {
-      Teuchos::ParameterList p;
-      p.set("Comm", comm);
-      p.set("Names", Teuchos::rcpFromRef(names));
-      p.set("Workset Size", worksetSize);
- 
-      RCP<panzer::ScatterResponses<EvalT,panzer::Traits> > e 
-         = rcp(new panzer::ScatterResponses<EvalT,panzer::Traits>(p));
+   std::map<std::string,Teuchos::RCP<RespContManager> >::iterator itr = rsvdVolResp_.find(eBlock);
+   TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,"Could not find element block \""+eBlock+"\"");
 
-      fm.template requireField<EvalT>(e->getRequiredFieldTag());
-      fm.template registerEvaluator<EvalT>(e);
-   }
+   Teuchos::RCP<ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
+   TEUCHOS_ASSERT(respContainer!=Teuchos::null);
+   respContainer->reserve(name);
+}
+
+template <typename RespT>
+void ResponseLibrary::
+registerReservedResponses(const std::string & eBlock,
+                          const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
+                          PHX::FieldManager<panzer::Traits> & fm)
+{
+   std::map<std::string,Teuchos::RCP<RespContManager> >::iterator itr = rsvdVolResp_.find(eBlock);
+   TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,"Could not find element block \""+eBlock+"\"");
+
+   Teuchos::RCP<ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
+   TEUCHOS_ASSERT(respContainer!=Teuchos::null);
+   
+   respContainer->registerResponses(comm,worksetSize,fm);
 }
 
 }

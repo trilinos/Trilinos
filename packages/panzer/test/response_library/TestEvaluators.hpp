@@ -10,8 +10,8 @@ namespace panzer {
 
 PHX_EVALUATOR_CLASS(TestEvaluator)
 
-  PHX::MDField<ScalarT,Cell,panzer::IP> dogValues;
-  PHX::MDField<ScalarT,Cell,panzer::IP> hrsValues;
+  PHX::MDField<ScalarT,Cell> dogValues;
+  PHX::MDField<ScalarT,Cell> hrsValues;
 
 PHX_EVALUATOR_CLASS_END
 
@@ -23,8 +23,8 @@ PHX_EVALUATOR_CTOR(TestEvaluator,p)
 
   Teuchos::RCP<PHX::DataLayout> dl = Teuchos::rcp(new PHX::MDALayout<Cell>(worksetSize));
   // grab information from quadrature rule
-  dogValues = PHX::MDField<ScalarT,Cell,IP>("Dog", dl);
-  hrsValues = PHX::MDField<ScalarT,Cell,IP>("Horse", dl);
+  dogValues = PHX::MDField<ScalarT,Cell>("Dog", dl);
+  hrsValues = PHX::MDField<ScalarT,Cell>("Horse", dl);
 
   this->addEvaluatedField(dogValues);
   this->addEvaluatedField(hrsValues);

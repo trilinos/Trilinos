@@ -71,6 +71,16 @@ namespace panzer {
                                > EvalTypes;
 
     // ******************************************************************
+    // *** Response Types
+    // ******************************************************************
+
+    struct Value {      typedef RealType ScalarT; typedef Residual EvalType; };
+    struct Derivative { typedef FadType ScalarT;  typedef Jacobian EvalType; };
+
+    typedef Sacado::mpl::vector<Value, Derivative 
+                               > RespTypes;
+
+    // ******************************************************************
     // *** Data Types
     // ******************************************************************
     
@@ -155,6 +165,13 @@ namespace PHX {
      template<> struct TypeString< panzer::Traits::SGFadType> 
      { static const std::string value; };
   #endif 
+
+  // Response Types
+  template<> struct TypeString<panzer::Traits::Value> 
+  { static const std::string value; };
+
+  template<> struct TypeString<panzer::Traits::Derivative> 
+  { static const std::string value; };
 }
 
 #endif

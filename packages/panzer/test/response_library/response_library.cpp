@@ -25,7 +25,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "UnitTest_UniqueGlobalIndexer.hpp"
+#include "TestEvaluators.hpp"
 
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -33,7 +33,7 @@ using Teuchos::rcp;
 namespace panzer {
 
 template <typename ScalarT>
-Teuchos::RCP<PHX::FieldTag> buildFieldTag(const std::string & name)
+Teuchos::RCP<PHX::Tag<ScalarT> > buildFieldTag(const std::string & name)
 {
    Teuchos::RCP<PHX::DataLayout> layout = Teuchos::rcp(new PHX::MDALayout<Cell>(10));
    return Teuchos::rcp(new PHX::Tag<ScalarT>(name,layout));
@@ -57,16 +57,6 @@ TEUCHOS_UNIT_TEST(response_library, add_response)
   rLibrary.addResponse(*catTag,"block_0");
   rLibrary.addResponse(*catTag,"block_0"); // same element block
 
-  // test sets
-  {
-     std::vector<std::string> responses;
-     rLibrary.getAvailableVolumeResponses(responses);
-
-     TEST_EQUALITY(responses.size(),std::size_t(2));
-     TEST_EQUALITY(responses[0],"Cat"); // assuming map sorts!
-     TEST_EQUALITY(responses[1],"Dog");
-  }
-
   // test element block sets
   {
      std::vector<std::pair<std::string,std::set<std::string> > > responses;
@@ -81,10 +71,9 @@ TEUCHOS_UNIT_TEST(response_library, add_response)
   }
 
   out << rLibrary << std::endl;
-  
 }
 
-TEUCHOS_UNIT_TEST(response_library, register_response)
+TEUCHOS_UNIT_TEST(response_library, reserve_response)
 {
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -113,39 +102,31 @@ TEUCHOS_UNIT_TEST(response_library, register_response)
   rLibrary.addResponse(*hrsTag,"block_0");
   rLibrary.addResponse(*hrsTag,"block_4");
 
-  Teuchos::ParameterList p;
-  p.set(dogTag->name(),true);
-  p.set(hrsTag->name(),true);
-
-  rLibrary.checkoutResponses(p);
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("dog","block_0");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("dog","block_1");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_0");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_5");
+  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_4");
 
   out << rLibrary << std::endl;
 
-  { 
-     std::vector<std::string> names;
-     rLibrary.getCheckedOutVolumeResponses(names);
-
-     TEST_EQUALITY(names.size(),2);
-     TEST_EQUALITY(names[0],"Dog");
-     TEST_EQUALITY(names[1],"Horse");
-  }
-
+/*
   { 
      std::vector<std::string> names;
 
-     rLibrary.getCheckedOutVolumeResponses("block_0",names);
+     rLibrary.getReservedVolumeResponses("block_0",names);
      TEST_EQUALITY(names.size(),2);
      TEST_EQUALITY(names[0],"Dog");
      TEST_EQUALITY(names[1],"Horse");
 
-     rLibrary.getCheckedOutVolumeResponses("block_1",names);
+     rLibrary.getReservedVolumeResponses("block_1",names);
      TEST_EQUALITY(names.size(),1);
      TEST_EQUALITY(names[0],"Dog");
 
-     rLibrary.getCheckedOutVolumeResponses("block_2",names);
+     rLibrary.getReservedVolumeResponses("block_2",names);
      TEST_EQUALITY(names.size(),0);
 
-     rLibrary.getCheckedOutVolumeResponses("block_4",names);
+     rLibrary.getReservedVolumeResponses("block_4",names);
      TEST_EQUALITY(names.size(),1);
      TEST_EQUALITY(names[0],"Horse");
   }
@@ -154,6 +135,7 @@ TEUCHOS_UNIT_TEST(response_library, register_response)
 
   PHX::FieldManager<panzer::Traits> fm;
   rLibrary.registerResponses<panzer::Traits,panzer::Traits::Residual>(comm,10,"block_0",fm);
+*/
 }
 
 }
