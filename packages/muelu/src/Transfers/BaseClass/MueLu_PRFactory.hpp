@@ -17,9 +17,7 @@ namespace MueLu {
   The user has to implement the Build function. The default implementation is GenericPRFactory.
 */
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class PRFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
-#include "MueLu_UseShortNames.hpp"
+class PRFactory : public TwoLevelFactoryBase {
 
   protected:
 
@@ -53,7 +51,7 @@ class PRFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,N
 
     //! @name Set methods.
     //@{
-    void SetMaxCoarseSize(GO const &maxCoarseSize) {
+    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) {
       maxCoarseSize_ = maxCoarseSize;
     }
 
@@ -69,7 +67,7 @@ class PRFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,N
     //! @name Get methods.
     //@{
 
-    GO GetMaxCoarseSize() const {
+  Xpetra::global_size_t GetMaxCoarseSize() const {
       return maxCoarseSize_;
     }
 

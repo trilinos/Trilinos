@@ -15,7 +15,7 @@ namespace MueLu {
   @brief Factory for building coarse matrices.
 */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+class RAPFactory : public TwoLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 

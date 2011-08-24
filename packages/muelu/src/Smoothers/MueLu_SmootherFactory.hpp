@@ -35,8 +35,8 @@ namespace MueLu {
   factory doesn't have any knowledge about that.
 */
 
-template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 

@@ -23,7 +23,7 @@ class Level;
   based on the type and ParameterList passed into the constructor.  See the constructor for more information.
 */
 
-  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class AmesosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 

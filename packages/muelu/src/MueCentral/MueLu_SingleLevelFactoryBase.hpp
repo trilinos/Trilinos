@@ -11,13 +11,7 @@ namespace MueLu {
     @class Base class for factories (e.g., Aggregation, Smoothers).
     @brief Base class for factories that use one levels (currentLevel).
   */
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class SingleLevelFactoryBase : public FactoryBase {
-
-#include "MueLu_UseShortNames.hpp"
-    
-  private:
 
   public:
     //@{ Constructors/Destructors.

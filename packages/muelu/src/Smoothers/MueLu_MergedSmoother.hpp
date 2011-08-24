@@ -12,7 +12,7 @@ namespace MueLu {
   /*!
     @class MergedSmoother
   */
-  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class MergedSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 

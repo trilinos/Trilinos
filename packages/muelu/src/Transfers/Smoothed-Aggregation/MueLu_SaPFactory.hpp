@@ -31,8 +31,8 @@ namespace MueLu {
   the # fine dofs by 3.
 */
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+class SaPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
 
   template<class AA, class BB, class CC, class DD, class EE>
@@ -101,6 +101,10 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       //FIXME what does the return code mean (unclear in MueMat)?
       //FIXME how should nullspace be stored?
     */
+  bool Build(Level& fineLevel, Level &coarseLevel) const {
+    return BuildP(fineLevel,coarseLevel);
+  }
+
     bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
 

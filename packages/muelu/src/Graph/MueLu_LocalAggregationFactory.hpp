@@ -11,7 +11,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_LinkedList.hpp"
@@ -72,17 +71,11 @@ namespace MueLu {
     This method has two phases.  The first is a local clustering algorithm.  The second creates aggregates
     that can include unknowns from more than one process.
 
-    - TODO remove template dependence on Scalar
   */
 
-  template <class Scalar        = double,
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-  class LocalAggregationFactory : public Teuchos::Describable {
-    //#include "MueLu_UseShortNamesOrdinal.hpp"
-#include "MueLu_UseShortNames.hpp"
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  class LocalAggregationFactory : public SingleLevelFactoryBase {
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
     typedef GO global_size_t; //TODO
     typedef LO my_size_t; //TODO
@@ -92,7 +85,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationFactory(RCP<CoalesceDropFactory> const &coalesceDropFact=Teuchos::null) :
+    LocalAggregationFactory(RCP<SingleLevelFactoryBase> const &coalesceDropFact=Teuchos::null) :
       printFlag_(0), //TODO: to be removed
       ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0),
       coalesceDropFact_(coalesceDropFact), 
@@ -128,7 +121,7 @@ namespace MueLu {
   - TODO reuse of aggregates
   - TODO check if called twice (bug TEUCHOS_TEST_EQUALITY)
   */
-  void Build(Level &currentLevel) const
+  bool Build(Level &currentLevel) const
   {
     //TODO check for reuse of aggregates here
     //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
@@ -138,7 +131,7 @@ namespace MueLu {
 
     currentLevel.Request("Graph");
     if (coalesceDropFact_ != Teuchos::null)
-      coalesceDropFact_->Build(currentLevel);
+      coalesceDropFact_->SingleLevelBuild(currentLevel);
     else
       currentLevel.GetDefaultFactory("Graph")->SingleLevelBuild(currentLevel);
 
@@ -150,6 +143,8 @@ namespace MueLu {
 
     timer->stop();
     MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
+
+    return true; //??
   }
 
   /*! @brief Build aggregates. */
@@ -172,7 +167,7 @@ private:
   // std::string Algorithm_;
 
   //! coalesce and drop factory
-  RCP<CoalesceDropFactory> coalesceDropFact_;
+  RCP<FactoryBase> coalesceDropFact_;
 
   //! user-defined graph label
     std::string graphName_;//TODO unused?

@@ -30,8 +30,8 @@ namespace MueLu {
     tentative prolongator, and the R becomes the coarse nullspace. 
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+class TentativePFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
 
   private:
@@ -96,6 +96,10 @@ namespace MueLu {
 
     //! @name Build methods.
     //@{
+    bool Build(Level & fineLevel, Level & coarseLevel) const {
+      return BuildP(fineLevel, coarseLevel);
+    }
+
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
 
       coarseLevel.Request("Ptent");

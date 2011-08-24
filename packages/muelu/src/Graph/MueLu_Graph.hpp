@@ -13,18 +13,17 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class Graph 
-    : public Teuchos::Describable {
+    : public Teuchos::VerboseObject<Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
 
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
 
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { setObjectLabel(objectLabel); }
+    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
+      //setObjectLabel(objectLabel); 
+    }
     ~Graph() {}
     
     inline size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }

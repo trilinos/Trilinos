@@ -21,8 +21,8 @@ namespace MueLu {
     matrix to do the transpose.  This should probably be fixed at some point.
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class TransPFactory : public RFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  class TransPFactory : public RFactory {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -64,7 +64,11 @@ namespace MueLu {
     } //BuildR
 */
 
-    bool BuildR(Level & fineLevel, Level & coarseLevel) {
+    bool Build(Level & fineLevel, Level & coarseLevel) const {
+      return BuildR(fineLevel,coarseLevel);
+    }
+
+    bool BuildR(Level & fineLevel, Level & coarseLevel) const {
 
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR"));
       timer->start(true);

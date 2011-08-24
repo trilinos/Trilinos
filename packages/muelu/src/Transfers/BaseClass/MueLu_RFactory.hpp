@@ -19,11 +19,7 @@ namespace MueLu {
   For a concrete implementation the user has to overwrite the virtual Build method.
 */
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RFactory : public Teuchos::VerboseObject<RFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
-#include "MueLu_UseShortNames.hpp"
-
-  private:
+class RFactory : public TwoLevelFactoryBase {
 
   protected:
      RCP<Teuchos::FancyOStream> out_;
@@ -49,7 +45,7 @@ class RFactory : public Teuchos::VerboseObject<RFactory<Scalar,LocalOrdinal,Glob
     /*!
       @brief Abstract Build method.
     */
-    virtual bool BuildR(Level &fineLevel, Level &coarseLevel) = 0;
+    virtual bool BuildR(Level &fineLevel, Level &coarseLevel) const = 0;
     //@}
 
 }; //class RFactory

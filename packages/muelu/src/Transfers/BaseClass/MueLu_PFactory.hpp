@@ -5,6 +5,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 
 #define MueLu_cout(minimumVerbLevel) \
@@ -21,10 +22,7 @@ namespace MueLu {
   For a concrete implementation the user has to overwrite the virtual Build method.
 */
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-//class PFactory public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> {
-class PFactory : public Teuchos::VerboseObject<PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
-#include "MueLu_UseShortNames.hpp"
+class PFactory : public TwoLevelFactoryBase {
 
   protected:
 

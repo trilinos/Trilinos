@@ -13,7 +13,6 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
 
 #include "MueLu_LocalAggregationFactory.hpp"
 #include "MueLu_UCAggregationCommHelper.hpp"
@@ -26,18 +25,10 @@ namespace MueLu {
 
     This method has two phases.  The first is a local clustering algorithm.  The second creates aggregates
     that can include unknowns from more than one process.
-
-    - TODO remove template dependence on Scalar
   */
-
-  template <class Scalar        = double,
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-  class UCAggregationFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-    //#include "MueLu_UseShortNamesOrdinal.hpp"
-#include "MueLu_UseShortNames.hpp"
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  class UCAggregationFactory : public SingleLevelFactoryBase {
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
     typedef GO global_size_t; //TODO
     typedef LO my_size_t;     //TODO
@@ -56,7 +47,7 @@ namespace MueLu {
     }
 
     //! Constructor.
-    UCAggregationFactory(RCP<CoalesceDropFactory> const & cdFact) :
+    UCAggregationFactory(RCP<SingleLevelFactoryBase> const & cdFact) :
       localAggregationFactory_(cdFact),
       phase3AggCreation_(.5), 
       graphName_("unnamed") //, Algorithm_("notSpecified")
@@ -360,7 +351,7 @@ namespace MueLu {
       const RCP<const Map> nonUniqueMap = aggregates.GetMap();
       const RCP<const Map> uniqueMap = graph.GetDomainMap(); // Q: DomainMap or RowMap??
 
-      MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
+      MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
       RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
@@ -952,7 +943,7 @@ namespace MueLu {
 
       //! @brief Attempt to clean up aggregates that are too small.
     int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
+                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const
     {
       int myPid = aggregates.GetMap()->getComm()->getRank();
         

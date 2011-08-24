@@ -23,8 +23,8 @@ namespace MueLu {
   
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class CoalesceDropFactory : public SingleLevelFactoryBase<Scalar,LocalOrdinal, GlobalOrdinal,Node,LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  class CoalesceDropFactory : public SingleLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 

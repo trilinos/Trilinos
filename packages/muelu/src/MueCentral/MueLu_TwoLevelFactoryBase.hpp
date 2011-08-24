@@ -13,10 +13,7 @@ namespace MueLu {
     @brief Base class for factories that use two levels (fineLevel and coarseLevel).
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class TwoLevelFactoryBase : public FactoryBase {
-
-#include "MueLu_UseShortNames.hpp"
 
   public:
     //@{ Constructors/Destructors.

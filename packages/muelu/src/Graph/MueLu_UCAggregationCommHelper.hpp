@@ -3,6 +3,8 @@
 
 #include <exception>
 
+#include <Teuchos_VerboseObject.hpp>
+
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -12,13 +14,10 @@
 
 namespace MueLu {
 
-  template <class Scalar    = double,
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class UCAggregationCommHelper {
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  class UCAggregationCommHelper : public Teuchos::VerboseObject<UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > {
 
+    typedef double Scalar; // Scalar type only used for weight: always a double.
 #include "MueLu_UseShortNames.hpp"
 
   private:

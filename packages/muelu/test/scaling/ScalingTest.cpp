@@ -7,6 +7,14 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Parameters.hpp>
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -21,13 +29,6 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_Exceptions.hpp"
-
-#include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_Parameters.hpp>
 
 // Gallery
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
