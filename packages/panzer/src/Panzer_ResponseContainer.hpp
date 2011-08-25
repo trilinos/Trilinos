@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <list>
 
 #include "Panzer_Traits.hpp"
 
@@ -30,6 +31,13 @@ public:
    //! Reserve a particular response
    virtual void reserve(const std::string & name)
    { names_.push_back(name); }
+
+   //! Does this container have a response of a specified name
+   virtual bool contains(const std::string & name) const
+   {
+      std::vector<std::string>::const_iterator itr = std::find(names_.begin(),names_.end(),name);
+      return itr!=names_.end();
+   }
 
    //! get a list of all reserved responses
    virtual void getReserved(std::vector<std::string> & names) const
@@ -93,6 +101,8 @@ public:
    //! This returns the response for a given field
    Teuchos::RCP<const Response<RespType> > getResponse(const std::string & name) const;
 
+   static Teuchos::RCP<const Response<RespType> > 
+   aggregateResponses(std::list<Teuchos::RCP<const Response<RespType> > > & responses);
 private:
    //! build response fields, called by registerResponses
    void buildResponseFields(int worksetSize);
@@ -133,6 +143,11 @@ public:
    //! This returns the response for a given field
    Teuchos::RCP<const Response<RespType> > getResponse(const std::string & name) const
    { return Teuchos::null; }
+
+   static Teuchos::RCP<const Response<RespType> > 
+   aggregateResponses(std::list<Teuchos::RCP<const Response<RespType> > > & responses)
+   { return Teuchos::null; }
+ 
 };
 
 }

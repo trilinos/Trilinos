@@ -79,6 +79,13 @@ public:
                                   const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
                                   PHX::FieldManager<panzer::Traits> & fm);
 
+   template <typename RespT>
+   Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name,
+                                                          const std::string & eBlock) const;
+
+   template <typename RespT>
+   Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name) const;
+
    /** @} */
 
 private:
@@ -127,6 +134,57 @@ registerReservedResponses(const std::string & eBlock,
    TEUCHOS_ASSERT(respContainer!=Teuchos::null);
    
    respContainer->registerResponses(comm,worksetSize,fm);
+}
+
+template <typename RespT>
+Teuchos::RCP<const Response<RespT> > ResponseLibrary::
+getVolumeResponse(const std::string & name, const std::string & eBlock) const
+{
+   std::map<std::string,Teuchos::RCP<RespContManager> >::const_iterator itr = rsvdVolResp_.find(eBlock);
+   TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,
+                      "panzer::ResponseLibrary::getVolumeResponse could not find element block \""+eBlock+"\"");
+
+   Teuchos::RCP<const ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
+   TEUCHOS_ASSERT(respContainer!=Teuchos::null);
+
+   // if response container contains desired response, return
+   if(respContainer->contains(name))
+      return respContainer->getResponse(name);
+
+   TEST_FOR_EXCEPTION(true,std::logic_error,
+                      "panzer::ResponseLibrary::getVolumeResponse could not find reserved field \""+name+
+                      "\" in element block \""+eBlock+"\"");
+
+   return Teuchos::null; // never execueted!
+}
+
+template <typename RespT>
+Teuchos::RCP<const Response<RespT> > ResponseLibrary::
+getVolumeResponse(const std::string & name) const
+{
+   using Teuchos::RCP;
+ 
+   std::list<RCP<const Response<RespT> > > responses;
+
+   // loop over all element blocks
+   for(std::map<std::string,Teuchos::RCP<RespContManager> >::const_iterator itr=rsvdVolResp_.begin();
+       itr!=rsvdVolResp_.end();++itr) {
+      // extract response container of specified type
+      Teuchos::RCP<const ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
+      TEUCHOS_ASSERT(respContainer!=Teuchos::null); // sanity check
+
+      // if response container contains desired response, add to responses list
+      if(respContainer->contains(name))
+         responses.push_back(respContainer->getResponse(name));
+   }
+
+   if(responses.size()>0)
+      return ResponseContainer<RespT>::aggregateResponses(responses);
+
+   TEST_FOR_EXCEPTION(true,std::logic_error,
+                      "panzer::ResponseLibrary::getVolumeResponse could not find reserved field \""+name+"\"");
+
+   return Teuchos::null;
 }
 
 }

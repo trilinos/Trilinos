@@ -66,19 +66,15 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   rLibrary.addResponse(*dogTag,"block_1");
   rLibrary.addResponse(*catTag,"block_0");
   rLibrary.addResponse(*catTag,"block_2");
-  rLibrary.addResponse(*hrsTag,"block_5");
   rLibrary.addResponse(*hrsTag,"block_0");
-  rLibrary.addResponse(*hrsTag,"block_4");
 
   rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Dog","block_0");
   rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Dog","block_1");
   rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_0");
-  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_5");
-  rLibrary.reserveVolumeResponse<panzer::Traits::Value>("Horse","block_4");
 
   out << rLibrary << std::endl;
 
-  PHX::FieldManager<panzer::Traits> fm;
+  PHX::FieldManager<panzer::Traits> fm0, fm1;
   
   int worksetSize = 10;
   // add test evaluator
@@ -89,26 +85,94 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
      RCP<PHX::Evaluator<panzer::Traits> > e 
         = rcp(new panzer::TestEvaluator<EvalT,panzer::Traits>(p));
 
-     fm.registerEvaluator<EvalT>(e);
+     fm0.registerEvaluator<EvalT>(e);
+     fm1.registerEvaluator<EvalT>(e);
 
      // typically we would add field tags associated with TestEvaluator
      // but not during this test
   }
 
-  rLibrary.registerReservedResponses<panzer::Traits::Value>("block_0",comm,worksetSize,fm);
+  rLibrary.registerReservedResponses<panzer::Traits::Value>("block_0",comm,worksetSize,fm0);
+  rLibrary.registerReservedResponses<panzer::Traits::Value>("block_1",comm,worksetSize,fm1);
   
-  Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  workset->num_cells = worksetSize;
+  Teuchos::RCP<panzer::Workset> workset0 = Teuchos::rcp(new panzer::Workset);
+  Teuchos::RCP<panzer::Workset> workset1 = Teuchos::rcp(new panzer::Workset);
+  workset0->num_cells = worksetSize; workset0->block_id = "block_0";
+  workset1->num_cells = worksetSize; workset1->block_id = "block_1";
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  // evaluate on block 0
+  {
+     panzer::Traits::SetupData setupData;
+     setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
+     setupData.worksets_->push_back(*workset0);
 
-  fm.postRegistrationSetup(setupData);
+     fm0.postRegistrationSetup(setupData);
+     fm0.preEvaluate<EvalT>(0);
+     fm0.evaluateFields<EvalT>(*workset0);
+     fm0.postEvaluate<EvalT>(0);
+  }
 
-  fm.preEvaluate<EvalT>(0);
-  fm.evaluateFields<EvalT>(*workset);
-  fm.postEvaluate<EvalT>(0);
+  // evaluate on block 1
+  {
+     panzer::Traits::SetupData setupData;
+     setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
+     setupData.worksets_->push_back(*workset1);
+
+     fm1.postRegistrationSetup(setupData);
+     fm1.preEvaluate<EvalT>(0);
+     fm1.evaluateFields<EvalT>(*workset1);
+     fm1.postEvaluate<EvalT>(0);
+  }
+
+
+  // check results on block 0
+  {
+     RCP<const Response<panzer::Traits::Value> > response_dog
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Dog","block_0");
+     RCP<const Response<panzer::Traits::Value> > response_horse
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Horse","block_0");
+
+     double sum_dog = 0.0;
+     double sum_horse = 0.0;
+     for(int i=0;i<worksetSize;i++) {
+        sum_dog += double(i)+1.0; 
+        sum_horse += -double(i)-5.5; 
+     }
+     TEST_EQUALITY(response_dog->getValue(),comm->getSize()*sum_dog); 
+     TEST_EQUALITY(response_horse->getValue(),comm->getSize()*sum_horse); 
+  }
+
+  // check results on block 1
+  {
+     RCP<const Response<panzer::Traits::Value> > response_dog
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Dog","block_1");
+     TEST_THROW(rLibrary.getVolumeResponse<panzer::Traits::Value>("Horse","block_1"),
+                std::logic_error);
+
+     double sum_dog = 0.0;
+     for(int i=0;i<worksetSize;i++) {
+        sum_dog += double(i)+1.0+44.3;  // from extra for this block
+     }
+     TEST_EQUALITY(response_dog->getValue(),comm->getSize()*sum_dog); 
+  }
+
+  // check summation (aggregation) over element blocks results
+  {
+     RCP<const Response<panzer::Traits::Value> > response_dog0
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Dog","block_0");
+     RCP<const Response<panzer::Traits::Value> > response_dog1
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Dog","block_1");
+     RCP<const Response<panzer::Traits::Value> > response_dog
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Dog");
+
+     RCP<const Response<panzer::Traits::Value> > response_horse0
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Horse","block_0");
+     RCP<const Response<panzer::Traits::Value> > response_horse
+        = rLibrary.getVolumeResponse<panzer::Traits::Value>("Horse");
+
+     TEST_EQUALITY(response_dog->getValue(),response_dog0->getValue()+response_dog1->getValue());
+     TEST_EQUALITY(response_horse->getValue(),response_horse0->getValue());
+  }
 }
 
 }

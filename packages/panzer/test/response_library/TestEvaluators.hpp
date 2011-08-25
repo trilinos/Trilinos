@@ -43,9 +43,13 @@ PHX_POST_REGISTRATION_SETUP(TestEvaluator,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(TestEvaluator,workset)
 { 
+   double extra = 0.0;
+   if(workset.block_id=="block_1")
+      extra = 44.3;
+
    for(int i=0;i<dogValues.dimension(0);i++) {
-      dogValues(i) = double(i) + 1.0;
-      hrsValues(i) = -double(i) - 5.5;
+      dogValues(i) = double(i) + 1.0 + extra;
+      hrsValues(i) = -double(i) - 5.5 + extra;
    }
 }
 

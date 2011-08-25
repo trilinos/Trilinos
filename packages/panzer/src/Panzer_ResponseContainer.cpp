@@ -109,8 +109,31 @@ Teuchos::RCP<const Response<panzer::Traits::Value> > ResponseContainer<panzer::T
 getResponse(const std::string & name) const
 {
    std::size_t i = this->getFieldIndex(name); 
+
+   TEST_FOR_EXCEPTION(i>=responseVector_.size(),std::logic_error,
+                      "panzer::ReponseContainer<Value>::getResponse: field index out of range "
+                      "of available fields (requested field = \""+name+"\"). Typically this "
+                      "implies that this reserved response was not evaluated by any FieldManager.");
+ 
    return Teuchos::rcp(new Response<RespType>(responseVector_[i])); 
 }
+
+Teuchos::RCP<const Response<panzer::Traits::Value> > ResponseContainer<panzer::Traits::Value>::
+aggregateResponses(std::list<Teuchos::RCP<const Response<panzer::Traits::Value> > > & responses)
+{
+   using Teuchos::RCP;
+  
+   // sum over all listed responses
+   Sacado::ScalarType<RespType::ScalarT>::type value = 0;
+   for(std::list<RCP<const Response<RespType> > >::const_iterator itr=responses.begin();
+       itr!=responses.end();++itr) {
+      value += (*itr)->getValue();
+   }
+
+   // return aggregate response (sum of all listed responses)
+   return Teuchos::rcp(new Response<RespType>(value));
+}
+
 
 // Derivative type responses
 //////////////////////////////////////////
