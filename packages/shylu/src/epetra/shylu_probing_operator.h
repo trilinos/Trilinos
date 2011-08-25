@@ -1,4 +1,7 @@
 
+#ifndef SHYLU_PROBING_OPERATOR_H
+#define SHYLU_PROBING_OPERATOR_H
+
 #include <Epetra_Operator.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
@@ -69,3 +72,4 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
 #endif
 
 };
+#endif // SHYLU_PROBING_OPERATOR_H

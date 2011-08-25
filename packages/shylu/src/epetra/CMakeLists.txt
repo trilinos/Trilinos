@@ -43,6 +43,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   shylu_debug_manager.hpp
   Ifpack_ShyLU.h
+  Ifpack_Amesos_Schur.h
   shylu_util.h
   shylu.h
   shylu_probing_operator.h
@@ -54,6 +55,7 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   shylu_factor.cpp
   Ifpack_ShyLU.cpp
+  Ifpack_Amesos_Schur.cpp
   shylu_probing_operator.cpp
   shylu_util.cpp
   shylu_solve.cpp

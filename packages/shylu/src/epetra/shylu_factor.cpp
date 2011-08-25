@@ -21,7 +21,6 @@
 
 #include "shylu.h"
 #include "shylu_util.h"
-#include "shylu_probing_operator.h"
 
 int create_matrices
 (
@@ -659,6 +658,12 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
+    data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
+             ShyLU_Probing_Operator((ssym->G).getRawPtr(),
+             (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
+             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
+             1));
+
     if (config->schurApproxMethod == 1)
     {
         int nvectors = prober->getNumOrthogonalVectors();
@@ -708,7 +713,79 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //cout << "Computed Approx Schur complement" << endl;
     }
 
-    data->Sbar  = Sbar;
+    data->Sbar = Sbar;
+
+    if (config->schurSolver == "Amesos")
+    {
+        Teuchos::ParameterList aList;
+        aList.set("Reindex", true);
+
+        data->LP2->SetOperator(data->Sbar.get());
+        data->dsolver->SetParameters(aList);
+        //cout << "Created the direct Schur  Solver" << endl;
+
+        data->dsolver->SymbolicFactorization();
+        //cout << "Symbolic Factorization done for schur complement" << endl;
+
+        //cout << "In Numeric Factorization of Schur complement" << endl;
+        data->dsolver->NumericFactorization();
+        //cout << "Numeric Factorization done for schur complement" << endl;
+
+    }
+    else if (config->schurSolver == "AztecOO-Exact")
+    {
+        data->schur_prec = Teuchos::RCP<Ifpack_Amesos_Schur> (new
+                                     Ifpack_Amesos_Schur(Sbar.getRawPtr()));
+        data->schur_prec->Initialize();
+        data->schur_prec->Compute();
+
+        int err = data->innersolver->SetUserOperator
+                    (data->schur_op.get());
+        assert (err == 0);
+
+        err = data->innersolver->SetPrecOperator
+                    (data->schur_prec.get());
+        assert (err == 0);
+
+        data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
+        data->innersolver->SetMatrixName(999);
+    }
+    else if (config->schurSolver == "AztecOO-Inexact")
+    {
+        // Doing an inexact Schur complement
+        if (config->libName == "Belos")
+        {
+            int err = data->innersolver->SetUserMatrix
+                        (data->Sbar.get());
+            assert (err == 0);
+
+            data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
+            data->innersolver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+            data->innersolver->SetAztecOption(AZ_keep_info, 1);
+            //solver->SetAztecOption(AZ_overlap, 3);
+            //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+            data->innersolver->SetMatrixName(999);
+
+            double condest;
+            err = data->innersolver->ConstructPreconditioner(condest);
+            assert (err == 0);
+            //cout << "Condition number of inner Sbar" << condest << endl;
+        }
+        else
+        {
+            // The outer solver is Aztec
+            // I suspect there is a bug in AztecOO. Doing what we do in the if
+            // case
+            // here will cause an error when we use the solver in ApplyInverse
+            // The error will not happen when we call the dummy JustTryIt()
+            // below
+            data->innersolver = NULL;
+        }
+    }
+    else
+    {
+        assert (0 == 1);
+    }
 
     //cout << " Out of factor" << endl ;
     return 0;

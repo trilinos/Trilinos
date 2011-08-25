@@ -10,6 +10,9 @@
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
+#include "shylu_probing_operator.h"
+#include "Ifpack_Amesos_Schur.h"
+
 //#include "shylu_debug_manager.hpp"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
@@ -49,6 +52,8 @@ typedef struct
     AztecOO *innersolver;            // inner solver
     Epetra_LinearProblem *LP2;   // Local problem to solve
     Amesos_BaseSolver *dsolver;  // Local Subdomain solver
+    Teuchos::RCP<Ifpack_Amesos_Schur> schur_prec;
+    Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
     int rmax;                    // May be this is optimizing too much
 } shylu_data;

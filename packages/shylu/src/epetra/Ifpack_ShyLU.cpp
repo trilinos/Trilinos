@@ -161,59 +161,7 @@ int Ifpack_ShyLU::Compute()
 
     shylu_factor(A_, &slu_sym_, &slu_data_, &slu_config_);
 
-    slu_config_.libName = Teuchos::getParameter<string>(List_,
-                                                "Outer Solver Library");
-    if (slu_config_.schurSolver == "Amesos")
-    {
-        Teuchos::ParameterList aList;
-        aList.set("Reindex", true);
-
-        slu_data_.LP2->SetOperator(slu_data_.Sbar.get());
-        slu_data_.LP2->SetLHS(0); slu_data_.LP2->SetRHS(0);
-        slu_data_.dsolver->SetParameters(aList);
-        //cout << "Created the direct Schur  Solver" << endl;
-
-        slu_data_.dsolver->SymbolicFactorization();
-        //cout << "Symbolic Factorization done for schur complement" << endl;
-
-        //cout << "In Numeric Factorization of Schur complement" << endl;
-        slu_data_.dsolver->NumericFactorization();
-        //cout << "Numeric Factorization done for schur complement" << endl;
-
-    }
-    else
-    {
-        if (slu_config_.libName == "Belos")
-        {
-            int err = slu_data_.innersolver->SetUserMatrix
-                        (slu_data_.Sbar.get());
-            assert (err == 0);
-            slu_data_.innersolver->SetAztecOption(AZ_solver, AZ_gmres);
-            slu_data_.innersolver->SetAztecOption(AZ_precond, AZ_dom_decomp);
-            slu_data_.innersolver->SetAztecOption(AZ_keep_info, 1);
-            //solver->SetAztecOption(AZ_overlap, 3);
-            //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-            slu_data_.innersolver->SetMatrixName(999);
-
-            double condest;
-            err = slu_data_.innersolver->ConstructPreconditioner(condest);
-            assert (err == 0);
-            //cout << "Condition number of inner Sbar" << condest << endl;
-        }
-        else
-        {
-            // I suspect there is a bug in AztecOO. Doing what we do in the if
-            // case
-            // here will cause an error when we use the solver in ApplyInverse
-            // The error will not happen when we call the dummy JustTryIt()
-            // below
-            slu_data_.innersolver = NULL;
-        }
-    }
-
     ftime.stop();
-    //cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
-            //<< endl;
     IsComputed_ = true;
     //cout << " Done with the compute" << endl ;
     return 0;
