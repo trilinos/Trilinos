@@ -66,9 +66,11 @@ namespace TSQR {
   //
 
 
-  /// \namespace Test
+  /// \namespace TSQR::Test
   /// \brief Accuracy and performance tests for TSQR.
   ///
+  /// The classes and routines here are not intended for consumers of
+  /// TSQR, but may be helpful as examples.
   namespace Test {
     //
     // We declare the TSQR::Test namespace here so that Doxygen will

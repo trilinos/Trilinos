@@ -89,7 +89,7 @@ namespace TSQR {
 
     /// \brief Return a pointer to the intranode TSQR implementation
     ///
-    /// In a proper implementation, this would teturn a pointer to the
+    /// In a proper implementation, this would return a pointer to the
     /// intranode TSQR implementation.  This class method is
     /// implemented with correct behavior for those Kokkos Node types
     /// for which we have an intranode TSQR implementation.
