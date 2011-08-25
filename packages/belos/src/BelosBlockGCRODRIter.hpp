@@ -69,13 +69,15 @@
 
 /*!
   \class Belos::BlockGCRODRIter
+  \brief Implementation of the Block GCRO-DR (Block Recycling GMRES) iteration.
 
-  \brief This class implements the Block GCRODR (block GMRES with recycling) iteration, where a
-  block-std::vector Krylov subspace is constructed.  The QR decomposition of
-  block, upper Hessenberg matrix is performed each iteration to update
-  the least squares system and give the current linear system residuals.
+  This class implements the Block GCRODR (block GMRES with recycling)
+  iteration, wherein a block-vector Krylov subspace is constructed.
+  The QR decomposition of a block upper Hessenberg matrix is performed
+  each iteration to update the least squares system and give the
+  current linear system residuals.  
+
   \ingroup belos_solver_framework
-
   \author Kirk M. Soodhalter and Michael Parks
 */
 
@@ -286,13 +288,13 @@ namespace Belos{
        void resetNumIters( int iter = 0 ) { iter_ = iter; };
 
        //! Get the norms of the residuals native to the solver.
-       //! \return A std::vector of length blockSize containing the native residuals.
+       //! \return A vector of length blockSize containing the native residuals.
        Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
 
 	//! Get the current update to the linear system.
 	/*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
 		This method forces its computation.  Other solvers, like CG, update the solution
-		each iteration, so this method will return a zero std::vector indicating that the linear
+		each iteration, so this method will return a zero vector indicating that the linear
 		problem contains the current solution.
 	*/
        Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -373,14 +375,14 @@ namespace Belos{
       const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
       //
-      //Algorithmic Paramters
+      //Algorithmic Parameters
       //
 
       //numBlocks_ is the size of the allocated space for the Krylov basis, in blocks.
       //blockSize_ is the number of columns in each block Krylov vector.
       int numBlocks_, blockSize_;
 
-      //boolean std::vector indicating which right-hand sides we care about
+      //boolean vector indicating which right-hand sides we care about
       //when we are testing residual norms.  THIS IS NOT IMPLEMENTED.  RIGHT NOW JUST
       //SELECTS ALL RIGHT HANDS SIDES FOR NORM COMPUTATION.
       std::vector<bool> trueRHSIndices_;
@@ -415,32 +417,41 @@ namespace Belos{
       // Recycled Krylov Method Storage
       //
 
-      //
-      //Krylov Vectors 
+
+      //! The Krylov basis vectors.
       Teuchos::RCP<MV> V_;
 
-      //
-      //Recycled subspace vectors.
+      //! Recycled subspace vectors.
       Teuchos::RCP<MV> U_, C_;
 
-      //
-      //Projected Operators on the Augmented Krylov Subspace
 
-      //
-      //H_: The Projected Matrix from Krylov Factorization AV = VH + C*B, B = C^H*A*V
+      //! @name Projected operators on the augmented Krylov subspace
+      //@{
+
+      /// \brief Projected matrix from the Krylov factorization.
+      ///
+      /// The matrix H satisfies \f$AV = VH + C*B\f$, wherein \f$B = C^H*A*V\f$.
       Teuchos::RCP<SDM > H_;
 
-      //
-      //B_ : Projected matrix from the recycled subspace B = C^H*A*V
+      /// \brief Projected matrix from the recycled subspace.
+      ///
+      /// The matrix B satisfies \f$B = C^H*A*V\f$.
       Teuchos::RCP<SDM > B_;
 
-      // QR decomposition of Projected matrices for solving the least squares system HY = RHS
-      // R_: Upper triangular reduction of H
-      // Z_: Q applied to right-hand side of the least squares system
+      /// \brief Upper triangular reduction of H_ (see above).
+      ///
+      /// R_ and Z_ together form the QR decomposition of the
+      /// projected matrices for solving the least-squares system
+      /// HY = RHS.
+      ///
       Teuchos::RCP<SDM> R_;
+
+      //! Q applied to right-hand side of the least squares system.
       SDM Z_;
 
-      // File stream variables to use Mike Parks matlab output codes
+      //@}
+
+      // File stream variables to use Mike Parks' Matlab output codes.
       std::ofstream ofs;
       char filename[30];
 
@@ -581,7 +592,7 @@ std::cout << "Assigning Z" << std::endl;
                         curind[blockSize_ - 1 - i] = curDim_ -  i - 1;
                 }
 		Vprev = MVT::CloneView(*V_,curind);
-		// Compute the next std::vector in the Krylov basis:  Vnext = Op*Vprev
+		// Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
 		lp_->apply(*Vprev,*Vnext);
 		Vprev = Teuchos::null;
 

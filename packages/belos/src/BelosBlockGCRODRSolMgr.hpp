@@ -39,9 +39,9 @@
 // ************************************************************************
 //@HEADER
 
-/*! \file BelosBlockGCRODRSolMgr.hpp
- *  \brief The Belos::BlockGCRODRSolMgr provides a solver manager for the Block GCRODR (block GMRES with recycling) linear solver.
-*/
+/// \file BelosBlockGCRODRSolMgr.hpp
+/// \brief A solver manager for the Block GCRO-DR (Block Recycling GMRES) linear solver.
+///
 #ifndef BELOS_BLOCK_GCRODR_SOLMGR_HPP
 #define BELOS_BLOCK_GCRODR_SOLMGR_HPP
 
@@ -67,43 +67,50 @@
 
 //ADD COMMENTS WITH EXAMPLES
 
-/*! \class Belos::BlockGCRODRSolMgr
- *
- *  \brief The Belos::BlockGCRODRSolMgr provides a powerful and fully-featured solver manager over the BlockGCRODR linear solver.
-
- \ingroup belos_solver_framework
-
- \author Kirk M. Soodhalter and Michael Parks
- */
-
-
-
+/// \class Belos::BlockGCRODRSolMgr
+/// \brief A solver manager for the Block GCRO-DR (Block Recycling GMRES) linear solver.
+/// \ingroup belos_solver_framework
+/// \author Kirk M. Soodhalter and Michael Parks
+///
+/// GCRO-DR (also called Recycling GMRES) is a variant of GMRES that
+/// can more efficiently solve sequences of closely related linear
+/// systems.  It does so by "recycling" Krylov basis information from
+/// previous solves.  
+///
+/// The original GCRO-DR algorithm can only solve one right-hand side
+/// at a time.  Block GCRO-DR extends GCRO-DR so that it can solve
+/// multiple right-hand sides at a time; thus, it can solve sequences
+/// of block systems.
+///
 namespace Belos{
 
   //! @name BlockGCRODRSolMgr Exceptions
-      //@{
+  //@{
 
-  /** \brief BlockGCRODRSolMgrLinearProblemFailure is thrown when the linear problem is
- *    * not setup (i.e. setProblem() was not called) when solve() is called.
- *       *
- *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
- *             *
- *                */
+  /// \class BlockGCRODRSolMgrLinearProblemFailure 
+  /// \brief Thrown when the linear problem was not set up correctly.
+  ///
+  /// The linear problem to solve must be set up correctly (by calling
+  /// setProblem()) before BlockGCRODRSolMgr's solve() method is
+  /// called.  Otherwise, the solution manager throws this exception.
   class BlockGCRODRSolMgrLinearProblemFailure : public BelosError {
     public:
       BlockGCRODRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief BlockGCRODRSolMgrOrthoFailure is thrown when the orthogonalization manager is
- *    * unable to generate orthonormal columns from the initial basis vectors.
- *       *
- *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
- *             *
- *                */
+
+  /// \class BlockGCRODRSolMgrOrthoFailure
+  /// \brief Thrown when the solution manager was unable to orthogonalize the initial basis vectors.
+  ///
+  /// This exception is thrown from BlockGCRODRSolMgr's solve() method
+  /// if the orthogonalization manager is unable to generate
+  /// orthonormal columns from the initial basis vectors.
   class BlockGCRODRSolMgrOrthoFailure : public BelosError {
     public:
       BlockGCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
+
+  /** \brief BlockGCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
 
   /** \brief BlockGCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
  *    * from an LAPACK call.
