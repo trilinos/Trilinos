@@ -80,13 +80,14 @@ int main(int argc, char *argv[]) {
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
   
   RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
-  AggFact->SetPrintFlag(printFlag);      
   AggFact->SetMinNodesPerAggregate(2);  
   AggFact->SetMaxNeighAlreadySelected(5);
   AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   AggFact->SetPhase3AggCreation(0.5);
-  
-  RCP<Aggregates> aggregates = AggFact->Build(*graph);
+
+#ifdef JG_TO_UPDATE
+//   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 
+//   AggFact->Build(*graph, *aggregates);
   
   /**********************************************************************************/
   /*                                                                                */
@@ -113,6 +114,8 @@ int main(int argc, char *argv[]) {
   Final_->describe(*out, Teuchos::VERB_EXTREME);
 
   // dumpAggregates(*aggregates);
+
+#endif
 
   return EXIT_SUCCESS;
 }
