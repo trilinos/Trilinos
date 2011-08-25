@@ -107,9 +107,9 @@ class TentativePFactory : public PFactory {
       fineLevel.Request("Aggregates"); //FIXME until Needs gets fixed
       aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
-      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent");
-      coarseLevel.Release("Ptent");//??
-      coarseLevel.Set("P", Ptent);
+//       RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent");
+//       coarseLevel.Release("Ptent");//??
+//       coarseLevel.Set("P", Ptent);
 
       return true;
     }
@@ -499,6 +499,7 @@ class TentativePFactory : public PFactory {
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
 
       coarseLevel.Set("Nullspace",coarseNullspace);
+
       coarseLevel.Set("Ptent",Ptentative);
 
       timer->stop();

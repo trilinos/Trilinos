@@ -138,7 +138,12 @@ class SaPFactory : public PFactory {
       initialPFact_->BuildP(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
       coarseLevel.Get("Ptent",Ptent);
+
       coarseLevel.Release("Ptent");
+
+      //TMP, to force desallocation of Ptent
+      coarseLevel.Set("Ptent", Teuchos::null);
+
       RCP<MultiVector> coarseNullspace;
       if (reUsePtent_) {
         try {
