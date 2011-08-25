@@ -62,10 +62,6 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 #endif
 
-// How many timers do we need?
-#define ntimers 3
-
-
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
 
@@ -80,8 +76,7 @@ int main(int argc, char *argv[]) {
   // Timing
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
-  int ctime=0;
-  RCP<Teuchos::Time> mtime[ntimers];
+  Teuchos::Array<Teuchos::RCP<Teuchos::Time> > mtime;
 
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
@@ -167,12 +162,11 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
-  mtime[ctime]=M.getNewTimer("Matrix Build");
-  mtime[ctime]->start();
+  mtime.push_back(M.getNewTimer("Matrix Build"));
+  (mtime.back())->start();
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
-  mtime[ctime]->stop();
-  ctime++;
+  mtime.back()->stop();
 
   //  return EXIT_SUCCESS;
   /**********************************************************************************/
@@ -183,8 +177,8 @@ int main(int argc, char *argv[]) {
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
 
-  mtime[ctime]=M.getNewTimer("MueLu Setup");
-  mtime[ctime]->start();
+  mtime.push_back(M.getNewTimer("MueLu Setup"));
+  mtime.back()->start();
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
@@ -278,8 +272,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
-  mtime[ctime]->stop();
-  ctime++;
+  mtime.back()->stop();
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
@@ -366,11 +359,10 @@ int main(int argc, char *argv[]) {
       X->putScalar( (SC) 0.0);
   
       H->PrintResidualHistory(true);
-    mtime[ctime]=M.getNewTimer("Fixed Point Solve");
-    mtime[ctime]->start();
+      mtime.push_back(M.getNewTimer("Fixed Point Solve"));
+      mtime.back()->start();
       H->Iterate(*RHS,its,*X);
-    mtime[ctime]->stop();
-    ctime++;
+      mtime.back()->stop();
   
       //X->norm2(norms);
       //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
@@ -379,7 +371,7 @@ int main(int argc, char *argv[]) {
 #endif //ifdef AMG_SOLVER
 
   // Use AMG as a preconditioner in Belos
-  if (amgAsPrecond)
+  if (amgAsPrecond && xpetraParameters.GetLib()==Xpetra::UseTpetra)
   {
 #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
 #define BELOS_SOLVER
@@ -431,18 +423,16 @@ int main(int argc, char *argv[]) {
     RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
     
     // Perform solve
-    mtime[ctime]=M.getNewTimer("Belos Solve");
-    mtime[ctime]->start();
+    mtime.push_back(M.getNewTimer("Belos Solve"));
+    mtime.back()->start();
     Belos::ReturnType ret = solver->solve();
-    mtime[ctime]->stop();
-    ctime++;
+    mtime.back()->stop();
 
     // Get the number of iterations for this solve.
     int numIters = solver->getNumIters();
     *out << "Number of iterations performed for this solve: " << numIters << std::endl;
   
     // Compute actual residuals.
-    bool badRes = false;
     std::vector<double> actual_resids( numrhs ); //TODO: double?
     std::vector<double> rhs_norm( numrhs );
 
@@ -453,43 +443,41 @@ int main(int argc, char *argv[]) {
     MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
     MVT::MvNorm( *belosResid, actual_resids );
     MVT::MvNorm( *belosRHS, rhs_norm );
+    bool badRes = false;
     *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
       *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) { badRes = true; }
     }
-#endif 
 
-    // Final summaries - this eats memory like a hot dog eating contest
-    // M.summarize();
-    
-    double lTime[ntimers];
-    double gTime[ntimers];
-
-    for(int i=0;i<ntimers;i++) lTime[i]=mtime[i]->totalElapsedTime();
-
-    // Allreduce is my friend.
-#ifdef HAVE_MPI
-    MPI_Allreduce(&lTime,&gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
-#else
-    for(int i=0;i<ntimers;i++) gTime[i] = lTime[i];
-#endif
-
-    for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
-
-#ifdef BELOS_SOLVER
     // Check convergence
     if (ret!=Belos::Converged || badRes) {
       *out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-      return EXIT_FAILURE;
-    }
-    *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    } else
+      *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif 
-  }
+  } //if (amgAsPrecond)
+
+  // Final summaries - this eats memory like a hot dog eating contest
+  // M.summarize();
+    
+  int ntimers=mtime.size();
+  Teuchos::ArrayRCP<double> lTime(ntimers);
+  Teuchos::ArrayRCP<double> gTime(ntimers);
+
+  for(int i=0;i<ntimers;i++) lTime[i]=mtime[i]->totalElapsedTime();
+
+  // Allreduce is my friend.
+#ifdef HAVE_MPI
+  MPI_Allreduce(&*lTime,&*gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+#else
+  for(int i=0;i<ntimers;i++) gTime[i] = lTime[i];
+#endif
+
+  for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
 
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   return EXIT_SUCCESS;
-
 }
