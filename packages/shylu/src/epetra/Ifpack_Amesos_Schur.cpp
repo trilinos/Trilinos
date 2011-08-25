@@ -49,6 +49,7 @@ int Ifpack_Amesos_Schur::Initialize()
 
     LP_->SetOperator(A_);
     Solver_->SetParameters(aList);
+    LP_->SetLHS(0); LP_->SetRHS(0);
 
     Solver_->SymbolicFactorization();
 

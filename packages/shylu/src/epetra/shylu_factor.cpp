@@ -721,6 +721,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         aList.set("Reindex", true);
 
         data->LP2->SetOperator(data->Sbar.get());
+        data->LP2->SetLHS(0); data->LP2->SetRHS(0);
         data->dsolver->SetParameters(aList);
         //cout << "Created the direct Schur  Solver" << endl;
 
