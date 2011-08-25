@@ -25,19 +25,13 @@ namespace panzer {
   * responses computed by panzer. This functions as a library
   * where there are many "responses" maintained (as many as
   * a user adds).  When a response is maintained that simply
-  * means there is a mechansim to "check it out". A response is
-  * not required by any field manager until a user "checks it
-  * out". The checkout process is done by response name and 
-  * can be specified by a parameter list. It is assume that
-  * each response parameter is defined on a 
-  * <code>MDALayout<ScalarT,Cell></code> data type. The field
+  * means there is a mechansim to "reserve" it. A response is
+  * not required by any field manager until a user "reserves"
+  * it. The reservation process is done by response name and 
+  * the element block or BC it is associated with. The field
   * tag specified in the <code>addResponse</code> is used only
   * for the "name" field, however that use of <code>PHX::FieldTag</code>
   * reminds the user that something better be in the evaluation tree.
-  *
-  * The last aspect of the response library is that when a user
-  * wants to access the response (typically a model evaluator) they
-  * must specify the mechanism to use. TBD
   */
 class ResponseLibrary {
 public:
@@ -76,15 +70,48 @@ public:
    template <typename RespT>
    void reserveVolumeResponse(const std::string & name,const std::string & eBlock);
 
+   /** Register reserved responses with a field manager. This only registers those
+     * responses in a user specified element block. The workset size is the maximum
+     * number of cells in any workset.
+     *
+     * \param[in] eBlock Registered fields will belong to the element block with this ID.
+     * \param[in] comm Parallel communicator (needed for parallel reduce type operations)
+     * \param[in] worksetSize Maximum number of cells in any given workset to be evaluated
+     *                        by the field manager
+     * \param[in] fm Field manager to register responses with.
+     */
    template <typename RespT>
    void registerReservedResponses(const std::string & eBlock,
-                                  const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
+                                  const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                                  int worksetSize,
                                   PHX::FieldManager<panzer::Traits> & fm);
 
+
+   //! Register volume responses with the specified field manager. Template specifies response type.
+   /** Get volume response associated with the response type (template parameter) and
+     * the field name and element block.
+     *
+     * \param[in] name Field name
+     * \param[in] eBlock Element block id
+     *
+     * \return Response object associated with the field on the specified element block.
+     *
+     * \note If no element block and field pair is found then a std::logic_error exception is thrown.
+     */
    template <typename RespT>
    Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name,
                                                           const std::string & eBlock) const;
 
+   /** Get volume response associated with the response type (template parameter) and
+     * the field name. The response is "aggregated" (dependeing on field type) over all
+     * element blocks.
+     *
+     * \param[in] name Field name
+     *
+     * \return Response object associated with the field on the specified element block.
+     *
+     * \note If no element block and field pair is found then a std::logic_error exception is thrown.
+     */
    template <typename RespT>
    Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name) const;
 
@@ -115,11 +142,15 @@ reserveVolumeResponse(const std::string & name,const std::string & eBlock)
    // look up in available responses, and build reserved volume reponses map
    initializeReservedVolumes();
 
+   // grab RespContManager associated with this element block
    std::map<std::string,Teuchos::RCP<RespContManager> >::iterator itr = rsvdVolResp_.find(eBlock);
    TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,"Could not find element block \""+eBlock+"\"");
 
+   // get ResponseContainer from the manager associate with this response type
    Teuchos::RCP<ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
    TEUCHOS_ASSERT(respContainer!=Teuchos::null);
+
+   // reserve this field
    respContainer->reserve(name);
 }
 
@@ -129,9 +160,11 @@ registerReservedResponses(const std::string & eBlock,
                           const Teuchos::RCP<const Teuchos::Comm<int> > & comm,int worksetSize,
                           PHX::FieldManager<panzer::Traits> & fm)
 {
+   // grab RespContManager associated with this element block
    std::map<std::string,Teuchos::RCP<RespContManager> >::iterator itr = rsvdVolResp_.find(eBlock);
    TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,"Could not find element block \""+eBlock+"\"");
 
+   // get ResponseContainer from the manager associate with this response type
    Teuchos::RCP<ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
    TEUCHOS_ASSERT(respContainer!=Teuchos::null);
    
@@ -142,10 +175,12 @@ template <typename RespT>
 Teuchos::RCP<const Response<RespT> > ResponseLibrary::
 getVolumeResponse(const std::string & name, const std::string & eBlock) const
 {
+   // grab RespContManager associated with this element block
    std::map<std::string,Teuchos::RCP<RespContManager> >::const_iterator itr = rsvdVolResp_.find(eBlock);
    TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error,
                       "panzer::ResponseLibrary::getVolumeResponse could not find element block \""+eBlock+"\"");
 
+   // get ResponseContainer from the manager associate with this response type
    Teuchos::RCP<const ResponseContainer<RespT> > respContainer = itr->second->getAsObject<RespT>();
    TEUCHOS_ASSERT(respContainer!=Teuchos::null);
 
@@ -157,7 +192,7 @@ getVolumeResponse(const std::string & name, const std::string & eBlock) const
                       "panzer::ResponseLibrary::getVolumeResponse could not find reserved field \""+name+
                       "\" in element block \""+eBlock+"\"");
 
-   return Teuchos::null; // never execueted!
+   return Teuchos::null; // never executed!
 }
 
 template <typename RespT>
@@ -180,6 +215,7 @@ getVolumeResponse(const std::string & name) const
          responses.push_back(respContainer->getResponse(name));
    }
 
+   // make sure some responses are available (we found field and response)
    if(responses.size()>0)
       return ResponseContainer<RespT>::aggregateResponses(responses);
 

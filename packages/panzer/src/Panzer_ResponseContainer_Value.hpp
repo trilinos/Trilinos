@@ -70,6 +70,7 @@ public:
 
    static Teuchos::RCP<const Response<RespType> > 
    aggregateResponses(std::list<Teuchos::RCP<const Response<RespType> > > & responses);
+
 private:
    //! build response fields, called by registerResponses
    void buildResponseFields(int worksetSize);
