@@ -110,25 +110,23 @@ namespace Belos{
       BlockGCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief BlockGCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
-
-  /** \brief BlockGCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
- *    * from an LAPACK call.
- *       *
- *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
- *             *
- *                */
+  /// \class BlockGCRODRSolMgrLAPACKFailure
+  /// \brief Thrown when an LAPACK call fails.
+  ///
+  /// This exception is thrown from BlockGCRODRSolMgr's solve() method
+  /// if an LAPACK call fails somewhere in the solve.  "Fails" means
+  /// that the LAPACK routine's INFO output parameter was
+  /// nonzero.
   class BlockGCRODRSolMgrLAPACKFailure : public BelosError {
     public:
       BlockGCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
-  /** \brief BlockGCRODRSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
- *    * the recycling subspace.
- *       *
- *          * This exception is thrown from the BlockGCRODRSolMgr::solve() method.
- *             *
- *                */
+
+  /// \class BlockGCRODRSolMgrRecyclingFailure 
+  /// \brief Thrown if any problem occurs in using or creating the recycling subspace.
+  ///
+  /// This exception is thrown from the BlockGCRODRSolMgr::solve() method.
   class BlockGCRODRSolMgrRecyclingFailure : public BelosError {
     public:
       BlockGCRODRSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg) {}
@@ -222,29 +220,27 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
     virtual ~BlockGCRODRSolMgr() {};
     //@}
   
-    /** \name Overridden from Teuchos::Describable */
+    /** \name Implementation of the Teuchos::Describable interface */
     //@{
-    //
-    //    /** \brief Method to return description of the block GCRODR solver manager */
+
+    //! A description of the Block GCRODR solver manager.
     std::string description() const;      
 
     //@}
 
-   //! @name Accessor methods
+
+    //! @name Accessor methods
     //@{
     
-     /*! \brief Get current linear problem being solved for in this object.
-      */
+     //! Get current linear problem being solved for in this object.
      const LinearProblem<ScalarType,MV,OP>& getProblem() const {
         return *problem_;
      }
 
-    /*! \brief Get a parameter list containing the valid parameters for this object.
-     */
+    //! Get a parameter list containing the valid parameters for this object.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    /*! \brief Get a parameter list containing the current parameters for this object.
-     */
+    //! Get a parameter list containing the current parameters for this object.
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
           Teuchos::RCP<const Teuchos::ParameterList> fooParams;
           return fooParams;
