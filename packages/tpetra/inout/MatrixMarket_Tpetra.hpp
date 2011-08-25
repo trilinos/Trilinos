@@ -1947,13 +1947,14 @@ namespace Tpetra {
             // scope, so (if necessary) it will be written back to X
             // at this time.
             ArrayRCP<S> X_view = X->get1dViewNonConst ();
-            TEST_FOR_EXCEPTION(X_view.size() <= numRows * numCols,
+            TEST_FOR_EXCEPTION(X_view.size() < numRows * numCols,
                                std::logic_error,
                                "The view of X has size " << X_view 
-                               << ", but numRows*numCols = " << numRows 
-                               << "*" << numCols << " = " << numRows*numCols 
-                               << ".  Please report this bug to the Tpetra "
-                               "developers.");
+                               << " which is not enough to accommodate the "
+			       "expected number of entries numRows*numCols = " 
+			       << numRows << "*" << numCols << " = " 
+			       << numRows*numCols << ".  Please report this "
+			       "bug to the Tpetra developers.");
             const size_t stride = X->getStride ();
 
             // The third element of the dimensions Tuple encodes the data
