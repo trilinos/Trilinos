@@ -1831,7 +1831,8 @@ namespace Tpetra {
                                << pBanner->dataType() << "\".");
           }
 
-          if (debug && myRank == 0) cerr << "About to read Matrix Market dimensions line" << endl;
+          if (debug && myRank == 0) 
+	    cerr << "About to read Matrix Market dimensions line" << endl;
 
           // Keep reading lines from the input stream until we find a
           // non-comment line, or until we run out of lines.  The latter
@@ -1933,12 +1934,18 @@ namespace Tpetra {
               cerr << "About to read Matrix Market matrix data" << endl;
 
             // Make sure that we can get a 1-D view of X.
-            TEST_FOR_EXCEPTION(X->isConstantStride (), std::runtime_error,
+            TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
                                "Can't get a 1-D view of the entries of the "
-                               "MultiVector X on Rank 0.");
+                               "MultiVector X on Rank 0, because the stride "
+			       "between the columns of X is not constant.  "
+			       "This shouldn't happen because we just created "
+			       "X and haven't filled it in yet.  Please report "
+			       "this bug to the Tpetra developers.");
             
-            // Get a writeable 1-D view of the entries of X.
-            // Rank 0 owns all of them.
+            // Get a writeable 1-D view of the entries of X.  Rank 0
+            // owns all of them.  The view will expire at the end of
+            // scope, so (if necessary) it will be written back to X
+            // at this time.
             ArrayRCP<S> X_view = X->get1dViewNonConst ();
             TEST_FOR_EXCEPTION(X_view.size() <= numRows * numCols,
                                std::logic_error,
