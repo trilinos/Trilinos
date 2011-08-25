@@ -127,7 +127,6 @@ int main(int argc, char *argv[]) {
   H->SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetPrintFlag(6);
   UCAggFact->SetMinNodesPerAggregate(3);
   UCAggFact->SetMaxNeighAlreadySelected(0);
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);

@@ -12,16 +12,21 @@ namespace MueLuTests {
   // Little utility to generate aggregates.
   RCP<Aggregates> gimmeAggregates(RCP<Operator> const &A)
   {
-    RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "someGraphLabel"));
+    //    RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "someGraphLabel"));
 
     UCAggregationFactory aggFact;
-    aggFact.SetPrintFlag(0);
     aggFact.SetMinNodesPerAggregate(3);
     aggFact.SetMaxNeighAlreadySelected(0);
     aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
     aggFact.SetPhase3AggCreation(0.5);
 
-    RCP<Aggregates> aggregates = aggFact.Build(*graph);
+    Level level;
+    MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+    level.Set("A",A);
+
+    aggFact.Build(level);
+
+    RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates");
     return aggregates;
   }  //gimmeAggregates
 

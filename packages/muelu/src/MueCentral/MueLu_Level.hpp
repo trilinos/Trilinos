@@ -86,7 +86,14 @@ namespace MueLu {
     //@}
 
     //@{
-    //! @name Get methods.
+    //! @name Set/Get methods.
+
+    //! Store need label and its associated data. This does not increment the storage counter.
+    //TODO: not fully implemented
+    template <class T>
+    void NewSet(const std::string ename, const T &entry, const FactoryBase* factory) {
+      Needs::Set<T>(ename, entry); 
+    } //Set
 
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
@@ -95,31 +102,54 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A", factory)
     // factory == Teuchos::null => use default factory
     template <class T>
-    T & NewGet(const std::string& ename, const RCP<FactoryBase> & factory) {
+    T & NewGet(const std::string& ename, const FactoryBase* factory) {
       if (! Needs::IsAvailable(ename)) {
-        if (factory != Teuchos::null)
+        if (factory != NULL)
           factory->NewBuild(*this);
         else
-          GetDefaultFactory(ename)->NewBuild(*this);
+          GetDefaultFactory(ename).NewBuild(*this);
 
         TEST_FOR_EXCEPTION(! Needs::IsAvailable(ename), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output.");
       }
 
       return Needs::Get<T>(ename);
     }
-    
-    //! For internal check only
+
+
+    //!
+    void Input(const std::string& ename, const FactoryBase* factory) {
+      //TODO
+    }
+
+    //! Previous level
     RCP<Level> & GetPreviousLevel() {
       return previousLevel_;
     }
+    //@}
+
+
+    void Input(const std::string& ename, Teuchos::Ptr<const FactoryBase> factory) {
+      Input(ename, factory.get());
+    }
+
+    template <class T>
+    T & NewGet(const std::string& ename, Teuchos::Ptr<const FactoryBase> factory) {
+      return NewGet<T>(ename, factory.get());
+    }
+
+    template <class T>
+    void NewSet(const std::string& ename, const T &entry, Teuchos::Ptr<const FactoryBase> factory) {
+      NewSet<T>(ename, entry, factory.get());
+    }
+
+  private:
 
     //! Get default factory.
-    const RCP<FactoryBase> & GetDefaultFactory(const std::string& varname) {
+    const FactoryBase & GetDefaultFactory(const std::string& varname) {
       TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
       return defaultFactoryHandler_->GetDefaultFactory(varname);
     }
 
-    //@}
 
   }; //class Level
 

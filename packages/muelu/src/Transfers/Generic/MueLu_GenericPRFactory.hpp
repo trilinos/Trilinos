@@ -8,7 +8,7 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
@@ -51,7 +51,7 @@ class GenericPRFactory : public PRFactory {
       if (PFact != Teuchos::null)
         PFact_ = PFact;
       else
-        PFact_ = rcp(new TentativePFactory());
+        PFact_ = rcp(new SaPFactory());
 
       if (RFact != Teuchos::null)
         RFact_ = RFact;

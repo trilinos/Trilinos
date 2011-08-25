@@ -57,9 +57,9 @@ namespace MueLu {
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string ename, const T &entry) {
-      if ( !countTable_.isParameter(ename) ) {
-        countTable_.set(ename,0);
-      }
+//JG       if ( !countTable_.isParameter(ename) ) {
+//JG         countTable_.set(ename,0);
+//JG       }
       dataTable_.set(ename,entry);
     } //Set
 
@@ -93,20 +93,20 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A")
     template <class T>
     T & Get(const std::string& ename) {
-      if (countTable_.isParameter(ename)) {
+      if (dataTable_.isParameter(ename)) { //JG: TODO check also countTable_
         return dataTable_.get<T>(ename);
       } else {
-        throw(Exceptions::RuntimeError("Get: " + ename + " not found in countTable_"));
+        throw(Exceptions::RuntimeError("Get: " + ename + " not found in dataTable_"));
       } 
     }
 
     template <class T>
     //    void Get(const std::string& ename, T &value) { value = Get<T>(ename); }
     void Get(const std::string& ename, T &value) {
-      if (countTable_.isParameter(ename)) {
+      if (dataTable_.isParameter(ename)) {
         value =  dataTable_.get<T>(ename);
       } else {
-        throw(Exceptions::RuntimeError("Get: " + ename + " not found in countTable_"));
+        throw(Exceptions::RuntimeError("Get: " + ename + " not found in dataTable_"));
       } 
     }
 

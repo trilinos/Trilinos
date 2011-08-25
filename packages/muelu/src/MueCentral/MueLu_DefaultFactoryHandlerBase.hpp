@@ -24,9 +24,12 @@ namespace MueLu {
 
     //@{ Get/Set functions.
 
-    virtual const RCP<FactoryBase> & GetDefaultFactory(const std::string& varname) {
+    //! Get
+    // Return ref because user also give ref to the Hierarchy.
+    // Factory freed at the end of FillHierarchy() //->TODO
+    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       // TODO: try/catch + better exception msg if not found
-      return factoryTable_.get(varname);
+      return *factoryTable_.get(varName);
     }    
 
     void SetDefaultFactory(const std::string & varName, const RCP<FactoryBase> & factory) {
@@ -49,3 +52,6 @@ namespace MueLu {
 
 #define MUELU_DEFAULTFACTORYHANDLERBASE_SHORT
 #endif //ifndef MUELU_DEFAULTFACTORYHANDLERBASE_HPP
+
+//TODO: factoryTable_ must be cleaned at the end of hierarchy Populate() (because Hierarchy is not holding any factories after construction)
+

@@ -10,8 +10,12 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
 typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
 #endif
 
-#ifdef MUELU_LOCALAGGREGATIONFACTORY_SHORT
-typedef MueLu::LocalAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LocalAggregationFactory;
+#ifdef MUELU_LOCALAGGREGATIONALGORITHM_SHORT
+typedef MueLu::LocalAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LocalAggregationAlgorithm;
+#endif
+
+#ifdef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
+typedef MueLu::LeftoverAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LeftoverAggregationAlgorithm;
 #endif
 
 #ifdef MUELU_UCAGGREGATIONFACTORY_SHORT

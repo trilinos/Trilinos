@@ -54,7 +54,6 @@ class TentativePFactory : public PFactory {
       : QR_(false)
     {
       aggregationFact_ = rcp(new UCAggregationFactory());
-      aggregationFact_->SetPrintFlag(6);
       aggregationFact_->SetMinNodesPerAggregate(2);
       aggregationFact_->SetMaxNeighAlreadySelected(5);
       aggregationFact_->SetOrdering(AggOptions::RANDOM);
@@ -69,7 +68,6 @@ class TentativePFactory : public PFactory {
       if (AggregationFact != Teuchos::null) aggregationFact_ = AggregationFact;
       else {
         aggregationFact_ = rcp(new UCAggregationFactory());
-        aggregationFact_->SetPrintFlag(6);
         aggregationFact_->SetMinNodesPerAggregate(2);
         aggregationFact_->SetMaxNeighAlreadySelected(5);
         aggregationFact_->SetOrdering(AggOptions::RANDOM);
@@ -108,7 +106,6 @@ class TentativePFactory : public PFactory {
       aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
 //       RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent");
-//       coarseLevel.Release("Ptent");//??
 //       coarseLevel.Set("P", Ptent);
 
       return true;
@@ -135,14 +132,12 @@ class TentativePFactory : public PFactory {
 
       RCP<Aggregates> aggregates;
       fineLevel.Get("Aggregates",aggregates);
-      fineLevel.Release("Aggregates");
       GO numAggs = aggregates->GetNumAggregates();
 
       //get the fine grid nullspace
       RCP<MultiVector> fineNullspace;
       if (fineLevel.IsAvailable("Nullspace")) {
         fineLevel.Get("Nullspace",fineNullspace);
-        fineLevel.Release("Nullspace");
       } else {
         //throw(Exceptions::NotImplemented("MakeTentativeWithQR:  nullspace generation not implemented yet"));
         //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system

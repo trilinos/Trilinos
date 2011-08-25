@@ -30,7 +30,7 @@ namespace MueLu {
     
     //@{ Get/Set functions.
 
-    virtual const RCP<FactoryBase> & GetDefaultFactory(const std::string & varName) {
+    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
         if (varName == "Graph")      return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
@@ -48,7 +48,7 @@ namespace MueLu {
   private:
 
     //! helper
-    const RCP<FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) {
+    const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) {
       DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //return factory;
     }

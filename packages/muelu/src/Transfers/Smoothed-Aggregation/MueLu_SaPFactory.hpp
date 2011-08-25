@@ -126,7 +126,6 @@ class SaPFactory : public PFactory {
       RCP<MultiVector> fineNullspace;
       if (fineLevel.IsAvailable("Nullspace")) {
         fineLevel.Get("Nullspace",fineNullspace);
-        fineLevel.Release("Nullspace");
       } else {
         //TODO add this functionality
         //throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
@@ -139,7 +138,6 @@ class SaPFactory : public PFactory {
       RCP<Operator> Ptent;
       coarseLevel.Get("Ptent",Ptent);
 
-      coarseLevel.Release("Ptent");
 
       //TMP, to force desallocation of Ptent
       coarseLevel.Set("Ptent", Teuchos::null);
@@ -148,9 +146,7 @@ class SaPFactory : public PFactory {
       if (reUsePtent_) {
         try {
           coarseLevel.Get("Ptent",Ptent); //FIXME throws an error, replace with recomputation
-          coarseLevel.Release("Ptent"); //FIXME throws an error, replace with recomputation
           coarseLevel.Get("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
-          coarseLevel.Release("Nullspace"); //FIXME throws an error, replace with recomputation
         }
         catch(...) {
           throw(Exceptions::NotImplemented("SaPFactory.Build(): regeneration of Ptent/nullspace not implemented yet"));

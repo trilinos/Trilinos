@@ -114,7 +114,7 @@ namespace MueLu {
       return printResidualHistory_;
     }
 
-    //TODO: allow users to change default factories.
+    //TODO: allow users to change default factory handler.
     // void SetDefaultFactory(const std::string&, RCP<Factory>&) {
     //   defaultFactoryHandler_->SetDefaultFactory(...)
     // }
