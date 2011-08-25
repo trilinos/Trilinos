@@ -1,4 +1,4 @@
-#include "Panzer_ResponseContainer.hpp"
+#include "Panzer_ResponseContainer_Value.hpp"
 
 #include "Panzer_config.hpp"
 #include "Panzer_ScatterResponses.hpp"
@@ -132,14 +132,6 @@ aggregateResponses(std::list<Teuchos::RCP<const Response<panzer::Traits::Value> 
 
    // return aggregate response (sum of all listed responses)
    return Teuchos::rcp(new Response<RespType>(value));
-}
-
-
-// Derivative type responses
-//////////////////////////////////////////
-
-ResponseContainer<panzer::Traits::Derivative>::ResponseContainer()
-{
 }
 
 }

@@ -16,6 +16,8 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseContainer.hpp"
+#include "Panzer_ResponseContainer_Value.hpp"
+#include "Panzer_ResponseContainer_Derivative.hpp"
 
 namespace panzer {
 

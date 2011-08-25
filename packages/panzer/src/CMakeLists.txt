@@ -78,6 +78,8 @@ APPEND_SET(HEADERS
   Panzer_PhysicsBlock.hpp
   Panzer_ResponseLibrary.hpp
   Panzer_ResponseContainer.hpp
+  Panzer_ResponseContainer_Value.hpp
+  Panzer_ResponseContainer_Derivative.hpp
   Panzer_String_Utilities.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
@@ -168,7 +170,7 @@ APPEND_SET(SOURCES
   Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
   Panzer_ResponseLibrary.cpp
-  Panzer_ResponseContainer.cpp
+  Panzer_ResponseContainer_Value.cpp
   Panzer_String_Utilities.cpp
   Panzer_Traits.cpp
   Panzer_Version.cpp
