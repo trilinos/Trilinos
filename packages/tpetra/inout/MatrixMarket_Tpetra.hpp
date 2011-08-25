@@ -1904,7 +1904,7 @@ namespace Tpetra {
 
         // Broadcast matrix dimensions and the encoded data type from
         // MPI Rank 0 to all the MPI processes.
-        Teuchos::broadcast (pComm, 0, dims);
+        Teuchos::broadcast (*pComm, 0, dims);
 
         // Tpetra objects want the matrix dimensions in these types.
         const global_size_t numRows = static_cast<global_size_t> (dims[0]);
@@ -1914,7 +1914,7 @@ namespace Tpetra {
         // this to construct a "distributed" vector X owned entirely
         // by Rank 0.  Rank 0 will then read all the matrix entries
         // and put them in X.
-        RCP<map_type> pRank0Map = 
+        RCP<const map_type> pRank0Map = 
           createContigMapWithNode<LO, GO, Node> (numRows, 
                                                  (myRank == 0 ? numRows : 0),
                                                  pComm, pNode);
@@ -1933,7 +1933,7 @@ namespace Tpetra {
               cerr << "About to read Matrix Market matrix data" << endl;
 
             // Make sure that we can get a 1-D view of X.
-            TEST_FOR_EXCEPTION(X.isConstantStride (), std::runtime_error,
+            TEST_FOR_EXCEPTION(X->isConstantStride (), std::runtime_error,
                                "Can't get a 1-D view of the entries of the "
                                "MultiVector X on Rank 0.");
             
@@ -1947,7 +1947,7 @@ namespace Tpetra {
                                << "*" << numCols << " = " << numRows*numCols 
                                << ".  Please report this bug to the Tpetra "
                                "developers.");
-            const size_t stride = X.getStride ();
+            const size_t stride = X->getStride ();
 
             // The third element of the dimensions Tuple encodes the data
             // type reported by the Banner: "real" == 0, "complex" == 1,
@@ -2132,12 +2132,14 @@ namespace Tpetra {
         // map.
         Export<LO, GO, Node> exporter (pRank0Map, pMap);
 
-        if (debug && myRank == 0) cerr << "Exporting from MultiVector X to global MultiVector Y" << endl;
+        if (debug && myRank == 0) 
+	  cerr << "Exporting from MultiVector X to global MultiVector Y" << endl;
 
         // Export X into Y.
-        Y->doExport (X, exporter, INSERT);
+        Y->doExport (*X, exporter, INSERT);
 
-        if (debug && myRank == 0) cerr << "Done reading multivector from Matrix Market file" << endl;
+        if (debug && myRank == 0) 
+	  cerr << "Done reading multivector from Matrix Market file" << endl;
 
         // Y is distributed over all process(es) in the communicator.
         return Y;
