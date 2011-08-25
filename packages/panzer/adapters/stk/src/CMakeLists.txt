@@ -32,8 +32,6 @@ APPEND_SET(HEADERS
   Panzer_STKConnManager.hpp
   Panzer_STK_SetupUtilities.hpp
   Panzer_STK_SetupUtilitiesT.hpp
-  Panzer_STK_AuxiliaryVariables.hpp
-  Panzer_STK_AuxiliaryVariablesT.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp

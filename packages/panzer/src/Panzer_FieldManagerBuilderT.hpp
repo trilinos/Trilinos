@@ -82,8 +82,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
 					    const Teuchos::ParameterList& closure_models,
                                             const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-                                            const Teuchos::RCP<const std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > > 
-					       & auxManager,
 					    const Teuchos::ParameterList& user_data)
 {
   using Teuchos::RCP;
@@ -94,8 +92,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
   worksets_.clear();
   phx_volume_field_managers_.clear();
 
-  std::map<std::string, Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > >::const_iterator auxItr;
-  
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
     RCP<panzer::PhysicsBlock> pb = *blkItr;
@@ -110,30 +106,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
     pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, user_data);
     pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
 
-    if(auxManager!=Teuchos::null) {
-       // find the set of auxilary factories for this block
-       auxItr = auxManager->find(blockId);
-
-       // add any auxiliary evaluators needed
-       if(auxItr!=auxManager->end()) {
-          typedef panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> AuxEval_TM_Type;
-          Teuchos::RCP<const AuxEval_TM_Type> auxEvalTM = auxItr->second; 
-
-          // loop over all evaluator types stored in the tempalte manaager
-          TEUCHOS_ASSERT(auxEvalTM!=Teuchos::null);
-          std::cout << "Adding auxiliary evaluators in \"" << blockId << "\"" << std::endl;
-          for(AuxEval_TM_Type::const_iterator auxEvalItr=auxEvalTM->begin();
-                auxEvalItr!=auxEvalTM->end();++auxEvalItr) {
-             const std::vector<Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> > & auxFactory_vec = *auxEvalItr;
-
-             // loop over vector of factories and have them build and register evaluators
-             std::vector<Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> >::const_iterator auxFactItr;
-             for(auxFactItr=auxFactory_vec.begin();auxFactItr!=auxFactory_vec.end();++auxFactItr)
-                (*auxFactItr)->buildAndRegisterEvaluators(*fm);
-          }
-       }
-    }
-     
     // build the setup data using passed in information
     Traits::SetupData setupData;
     setupData.worksets_ = volume_worksets.find(blockId)->second;

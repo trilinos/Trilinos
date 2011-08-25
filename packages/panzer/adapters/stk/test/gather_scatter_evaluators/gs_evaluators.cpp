@@ -18,7 +18,6 @@ using Teuchos::rcp;
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_Basis.hpp"
-#include "Panzer_AuxiliaryEvaluator_TemplateManager.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -27,7 +26,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_STK_AuxiliaryVariables.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -57,29 +55,6 @@ namespace panzer {
          getchar();
       comm->barrier();
    }
-
-  class DogBuilder {
-     Teuchos::RCP<panzer_stk::STK_Interface> mesh_;
-     Teuchos::RCP<panzer::Basis> basis_;
-  public:
-     DogBuilder(const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
-                const Teuchos::RCP<panzer::Basis> & basis) 
-        : mesh_(mesh), basis_(basis) {}
- 
- 
-     template <typename EvalT>
-     Teuchos::RCP<panzer::AuxiliaryEvaluator_FactoryBase> build() const
-     {
-        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>);
-        fieldNames->push_back("dog");
-
-        Teuchos::ParameterList pl;
-        pl.set<Teuchos::RCP<std::vector<std::string> > >("Field Names",fieldNames);
-        pl.set("Basis",basis_);
-  
-        return Teuchos::rcp(new panzer_stk::AuxiliaryVariables<EvalT>(mesh_,pl));
-     }
-  };
 
   Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
 
@@ -165,11 +140,6 @@ namespace panzer {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    const DogBuilder db(mesh,linBasis);
-    std::map<std::string,Teuchos::RCP<panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits> > > auxEval;
-    auxEval["eblock-0_0"] = Teuchos::rcp(new panzer::AuxiliaryEvaluator_TemplateManager<panzer::Traits>);
-    auxEval["eblock-0_0"]->buildAndPushBackObjects(db);
- 
     // Add in the application specific closure model factory
     Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
@@ -182,7 +152,7 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,auxEval,user_data);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,user_data);
 
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 

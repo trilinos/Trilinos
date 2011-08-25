@@ -88,8 +88,6 @@ APPEND_SET(HEADERS
   Panzer_VectorTemplateManager.hpp
   Panzer_VectorTemplateIterator.hpp
   Panzer_ZeroSensitivities.hpp
-  Panzer_AuxiliaryEvaluator_TemplateManager.hpp
-  Panzer_AuxiliaryEvaluator_Factory.hpp
   dofmngr/Panzer_FieldPattern.hpp
   dofmngr/Panzer_IntrepidFieldPattern.hpp
   dofmngr/Panzer_GeometricAggFieldPattern.hpp
