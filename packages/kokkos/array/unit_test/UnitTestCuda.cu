@@ -73,42 +73,46 @@
 
 namespace Test {
 
+void test_device_cuda_init() {
+  Kokkos::DeviceCuda::initialize();
+}
+
 void test_device_cuda_memory_management() {
-  UnitTestDeviceMemoryManagement< double, Kokkos::DeviceHost >();
-  UnitTestDeviceMemoryManagement< int, Kokkos::DeviceHost >();
+  UnitTestDeviceMemoryManagement< double, Kokkos::DeviceCuda >();
+  UnitTestDeviceMemoryManagement< int, Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_value_view() {
-  UnitTestValueView< double, Kokkos::DeviceHost >();
-  UnitTestValueView< int, Kokkos::DeviceHost >();
+  UnitTestValueView< double, Kokkos::DeviceCuda >();
+  UnitTestValueView< int, Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_multi_vector_view() {
-  UnitTestMultiVectorView< double, Kokkos::DeviceHost >();
-  UnitTestMultiVectorView< int, Kokkos::DeviceHost >();
+  UnitTestMultiVectorView< double, Kokkos::DeviceCuda >();
+  UnitTestMultiVectorView< int, Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_mdarray_view() {
-  UnitTestMDArrayView< double, Kokkos::DeviceHost >();
-  UnitTestMDArrayView< int, Kokkos::DeviceHost >();
+  UnitTestMDArrayView< double, Kokkos::DeviceCuda >();
+  UnitTestMDArrayView< int, Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_mdarray_deep_copy() {
-  UnitTestMDArrayDeepCopy< double, Kokkos::DeviceHost >();
-  UnitTestMDArrayDeepCopy< int, Kokkos::DeviceHost >();
+  UnitTestMDArrayDeepCopy< double, Kokkos::DeviceCuda >();
+  UnitTestMDArrayDeepCopy< int, Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_index_map() {
-  UnitTestMDArrayIndexMap< Kokkos::DeviceHost >();
+  UnitTestMDArrayIndexMap< Kokkos::DeviceCuda >();
 }
 
 void test_device_cuda_reduce() {
-  UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
-  UnitTestReduce< double ,   Kokkos::DeviceHost >( 1000000 );
+  UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
+  UnitTestReduce< double ,   Kokkos::DeviceCuda >( 1000000 );
 }
 
 void test_device_cuda_multi_reduce() {
-  UnitTestReduceMulti< long , Kokkos::DeviceHost >( 1000000 , 7 );
+  UnitTestReduceMulti< long , Kokkos::DeviceCuda >( 1000000 , 7 );
 }
 
 }

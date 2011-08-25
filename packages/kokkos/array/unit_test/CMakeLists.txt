@@ -33,7 +33,7 @@ IF(Kokkos_ENABLE_DeviceCuda)
     UnitTestCuda.cpp
   )
   LIST( APPEND LIBRARIES
-    kokkosdevicecuda cuda cudart
+    kokkosdevicecuda cuda cudart unit_cuda
   )
 ENDIF()
 
