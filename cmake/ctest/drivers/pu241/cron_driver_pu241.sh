@@ -8,8 +8,11 @@ BASEDIR=/home/casl-vri-admin/Dashbaords
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
 
-# mpi compiler must have ifort in path
-. $DRIVER_SCRIPT_DIR/load_intel_12.0.4_env
+# Allow override of dev env
+if [ "$CASL_VRI_DEV_ENV" == "" ] ; then
+  CASL_VRI_DEV_ENV=/opt/casl_vri_dev_env
+fi
+. $CASL_VRI_DEV_ENV/fissile_four/build_scripts/load_official_dev_env
 
 umask u=rwx,g=rwx,o=
 
