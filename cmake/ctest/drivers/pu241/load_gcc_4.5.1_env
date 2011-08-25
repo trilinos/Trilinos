@@ -1,0 +1,10 @@
+# Loads the environment for GCC 4.5.1 development
+#
+# This file must be sourced with:
+#
+#  $ . THIS_DIR/load_gcc_4.5.1_env
+
+. /usr/share/Modules/init/bash
+module use /opt/casl_vri_dev_env/fissile_four/modules
+module load casl-dev
+module load gcc/4.5.1

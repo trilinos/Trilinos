@@ -12,4 +12,5 @@ SET(EpetraExt_ENABLE_HDF5 OFF                                                CAC
 SET(TRILINOS_TOOLSET_BASE /opt/gcc-4.5.1/trilinos-toolset)
 SET(INTEL_COMPILER_BASE   /opt/intel/Compiler/composerxe-2011.4.191)
 # add rpath for gnu and intel compiler libraries
-SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64 -Wl,-rpath,${INTEL_COMPILER_BASE}/compiler/lib/intel64" CACHE STRING "")
+SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
+

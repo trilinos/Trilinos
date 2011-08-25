@@ -8,6 +8,7 @@ BASEDIR=/home/casl-vri-admin/CIDashboards
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
 
+# mpi compiler must have ifort in path
 . $DRIVER_SCRIPT_DIR/load_intel_12.0.4_env
 
 umask u=rwx,g=rwx,o=
