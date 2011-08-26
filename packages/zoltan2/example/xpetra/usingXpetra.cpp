@@ -3,13 +3,13 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Epetra_Comm.h>
+#include <Epetra_MpiComm.h>
+#include <Epetra_SerialComm.h>
 #include <Epetra_CrsMatrix.h>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Cthulhu_EpetraCrsMatrix.hpp>
-#include <Cthulhu_TpetraCrsMatrix.hpp>
-#include <Cthulhu_Comm.hpp>
-
+#include <MueLu_config.hpp>   // For HAVE_MUELU_TPETRA HAVE_MUELU_EPETRA
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
 
 using namespace std;
 
@@ -21,10 +21,10 @@ GO globalNumRows = 80;
 LO maxRowSize = 8;
 
 template<typename Scalar, typename LO, typename GO>
-  void print_crsmatrix(const Cthulhu::CrsMatrix<Scalar, LO, GO> &matrix, std::string caption)
+  void print_crsmatrix(const Xpetra::CrsMatrix<Scalar, LO, GO> &matrix, std::string caption)
 {
-  const Teuchos::RCP<const Cthulhu::Map<LO, GO> > map = matrix.getRowMap();
-  const Teuchos::RCP<const Cthulhu::Map<LO, GO> > colmap = matrix.getColMap();
+  const Teuchos::RCP<const Xpetra::Map<LO, GO> > map = matrix.getRowMap();
+  const Teuchos::RCP<const Xpetra::Map<LO, GO> > colmap = matrix.getColMap();
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
 
   int rank = comm->getRank();
@@ -75,9 +75,9 @@ template<typename Scalar, typename LO, typename GO>
 }
 
 template<typename Scalar, typename LO, typename GO>
-  void populate_crsmatrix(Cthulhu::CrsMatrix<Scalar, LO, GO> &matrix)
+  void populate_crsmatrix(Xpetra::CrsMatrix<Scalar, LO, GO> &matrix)
 {
-  const Teuchos::RCP<const Cthulhu::Map<LO, GO> > map = matrix.getRowMap();
+  const Teuchos::RCP<const Xpetra::Map<LO, GO> > map = matrix.getRowMap();
 
   size_t nrows = map->getNodeNumElements();
   GO base = map->getIndexBase();
@@ -108,7 +108,11 @@ int main(int argc, char *argv[])
 {
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession session(&argc, &argv);
+  Epetra_MpiComm commObj(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm commObj();
 #endif
+
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
@@ -116,22 +120,22 @@ int main(int argc, char *argv[])
   int base=0;
 
   // Feature #1:
-  // Create a Cthulhu::EpetraCrsMatrix and a Cthulhu::TpetraCrsMatrix and
+  // Create a Xpetra::EpetraCrsMatrix and a Xpetra::TpetraCrsMatrix and
   //   perform operations on them using the same interface.
 
   // Epetra_CrsMatrix
 
-  Teuchos::RCP<const Cthulhu::EpetraMap>  emap = 
-    Teuchos::rcp(new Cthulhu::EpetraMap(globalNumRows, base, comm));
+  Teuchos::RCP<const Xpetra::EpetraMap>  emap = 
+    Teuchos::rcp(new Xpetra::EpetraMap(globalNumRows, base, comm));
 
-  Cthulhu::EpetraCrsMatrix emtx(emap, maxRowSize);
+  Xpetra::EpetraCrsMatrix emtx(emap, maxRowSize);
 
   // Tpetra_CrsMatrix
 
-  Teuchos::RCP<const Cthulhu::TpetraMap<LO, GO> >  tmap = 
-    Teuchos::rcp(new Cthulhu::TpetraMap<LO, GO>(globalNumRows, base, comm));
+  Teuchos::RCP<const Xpetra::TpetraMap<LO, GO> >  tmap = 
+    Teuchos::rcp(new Xpetra::TpetraMap<LO, GO>(globalNumRows, base, comm));
 
-  Cthulhu::TpetraCrsMatrix<Scalar, LO, GO> tmtx(tmap, maxRowSize);
+  Xpetra::TpetraCrsMatrix<Scalar, LO, GO> tmtx(tmap, maxRowSize);
 
   // Populate both matrices using the same interface.
 
@@ -140,12 +144,12 @@ int main(int argc, char *argv[])
 
   // Print both as a check
 
-  print_crsmatrix<double, int, int>(emtx, "Cthulhu::EpetraCrsMatrix");
-  print_crsmatrix<Scalar, LO, GO>(tmtx, "Cthulhu::TpetraCrsMatrix");
+  print_crsmatrix<double, int, int>(emtx, "Xpetra::EpetraCrsMatrix");
+  print_crsmatrix<Scalar, LO, GO>(tmtx, "Xpetra::TpetraCrsMatrix");
 
   // Feature #2:
   // Create an Epetra::CrsMatrix and a Tpetra::CrsMatrix and
-  //  interact with them as const Cthulhu objects.
+  //  interact with them as const Xpetra objects.
 
   int rank = comm->getRank();
 
@@ -164,8 +168,7 @@ int main(int argc, char *argv[])
 
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &nrows, &nGlobalRows);
 
-  Teuchos::RCP< const Epetra_Comm > ecomm = Cthulhu::Teuchos2Epetra_Comm(comm);
-  Epetra_Map map(nGlobalRows, nrows, base, *ecomm);
+  Epetra_Map map(nGlobalRows, nrows, base, commObj);
   Teuchos::RCP<Epetra_CrsMatrix> emtxPtr = 
     Teuchos::rcp<Epetra_CrsMatrix>(new Epetra_CrsMatrix(Copy, map, 10));
 
@@ -195,13 +198,15 @@ int main(int argc, char *argv[])
   emtxPtr->FillComplete();
   tmtxPtr->fillComplete();
 
-  const Cthulhu::EpetraCrsMatrix constEMtx(emtxPtr);
-  const Cthulhu::TpetraCrsMatrix<Scalar, LO, GO>  constTMtx(tmtxPtr);
+  const Xpetra::EpetraCrsMatrix constEMtx(emtxPtr);
+  const Xpetra::TpetraCrsMatrix<Scalar, LO, GO>  constTMtx(tmtxPtr);
 
   print_crsmatrix(constEMtx, "The Epetra_CrsMatrix derived object");
   print_crsmatrix(constTMtx, "The Tpetra::CrsMatrix derived object");
 
   comm->barrier();
+
+  std::cout << "PASS" << std::endl;
 
   return 0;
 }

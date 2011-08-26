@@ -1,8 +1,8 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  usingCthulhu
-  SOURCES usingCthulhu.cpp
+  usingXpetra
+  SOURCES usingXpetra.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
