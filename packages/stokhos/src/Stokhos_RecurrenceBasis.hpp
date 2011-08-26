@@ -247,7 +247,7 @@ namespace Stokhos {
      * Derived classes should call this method after computing their recurrence
      * coefficients in their constructor to finish setting up the basis.
      */
-    void setup();
+    virtual void setup();
 
     //! Normalize coefficients
     void normalizeRecurrenceCoefficients(

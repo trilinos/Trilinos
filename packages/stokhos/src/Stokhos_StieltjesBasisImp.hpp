@@ -46,17 +46,6 @@ StieltjesBasis(
   phi_vals(),
   use_pce_quad_points(use_pce_quad_points_)
 {
-  // Evaluate func at quad points
-  const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
-    quad->getQuadPoints();
-  ordinal_type nqp = pce_weights.size();
-  func_vals.resize(nqp);
-  phi_vals.resize(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    func_vals[i] = (*func)(quad_points[i]);
-    phi_vals[i].resize(p+1);
-  }
-  
   // Setup rest of recurrence basis
   this->setup();
 }
@@ -139,6 +128,25 @@ computeRecurrenceCoefficients(ordinal_type n,
     phi_vals = vals;
 
   return false;
+}
+
+template <typename ordinal_type, typename value_type, typename func_type>
+void
+Stokhos::StieltjesBasis<ordinal_type, value_type, func_type>::
+setup() 
+{
+  // Evaluate func at quad points
+  const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
+    quad->getQuadPoints();
+  ordinal_type nqp = pce_weights.size();
+  func_vals.resize(nqp);
+  phi_vals.resize(nqp);
+  for (ordinal_type i=0; i<nqp; i++) {
+    func_vals[i] = (*func)(quad_points[i]);
+    phi_vals[i].resize(this->p+1);
+  }
+
+  RecurrenceBasis<ordinal_type,value_type>::setup();
 }
 
 template <typename ordinal_type, typename value_type, typename func_type>
@@ -229,5 +237,20 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::StieltjesBasis<ordinal_type, value_type, func_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::StieltjesBasis<ordinal_type,value_type,func_type>(p,func,quad,use_pce_quad_points,this->normalize));
+   return Teuchos::rcp(new Stokhos::StieltjesBasis<ordinal_type,value_type,func_type>(p,*this));
+}
+
+template <typename ordinal_type, typename value_type, typename func_type>
+Stokhos::StieltjesBasis<ordinal_type, value_type, func_type>::
+StieltjesBasis(ordinal_type p, const StieltjesBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, basis),
+  func(basis.func),
+  quad(basis.quad),
+  pce_weights(quad->getQuadWeights()),
+  basis_values(quad->getBasisAtQuadPoints()),
+  func_vals(),
+  phi_vals(),
+  use_pce_quad_points(basis.use_pce_quad_points)
+{
+  this->setup();
 }

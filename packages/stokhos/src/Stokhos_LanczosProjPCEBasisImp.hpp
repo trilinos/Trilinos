@@ -34,16 +34,17 @@ template <typename ordinal_type, typename value_type>
 Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
 LanczosProjPCEBasis(
   ordinal_type p,
-  const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-  const Stokhos::Sparse3Tensor<ordinal_type, value_type>& Cijk,
+  const Teuchos::RCP< const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce_,
+  const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
   bool normalize,
   bool limit_integration_order_) :
   RecurrenceBasis<ordinal_type, value_type>("Lanczos-proj PCE", p, normalize),
+  pce(pce_),
   limit_integration_order(limit_integration_order_),
-  pce_sz(pce.basis()->size()),
+  pce_sz(pce->basis()->size()),
   Cijk_matrix(pce_sz,pce_sz),
   weights(Teuchos::Copy, 
-	  const_cast<value_type*>(pce.basis()->norm_squared().getRawPtr()), 
+	  const_cast<value_type*>(pce->basis()->norm_squared().getRawPtr()), 
 	  pce_sz),
   u0(pce_sz),
   lanczos_vecs(pce_sz, p+1),
@@ -51,7 +52,7 @@ LanczosProjPCEBasis(
 {
   u0[0] = value_type(1);
 
-  pce_norms = pce.basis()->norm_squared();
+  pce_norms = pce->basis()->norm_squared();
   for (ordinal_type i=0; i<pce_sz; i++) {
     pce_norms[i] = std::sqrt(pce_norms[i]);
     weights[i] = value_type(1);
@@ -61,18 +62,18 @@ LanczosProjPCEBasis(
   // must be normalized.  However we don't want to require this, so we
   // rescale the pce coefficients for a normalized basis
   typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
-  for (typename Cijk_type::k_iterator k_it = Cijk.k_begin();
-       k_it != Cijk.k_end(); ++k_it) {
+  for (typename Cijk_type::k_iterator k_it = Cijk->k_begin();
+       k_it != Cijk->k_end(); ++k_it) {
     ordinal_type k = index(k_it);
-    for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it); 
-	 j_it != Cijk.j_end(k_it); ++j_it) {
+    for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
       ordinal_type j = index(j_it);
       value_type val = 0;
-      for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it);
-	   i_it != Cijk.i_end(j_it); ++i_it) {
+      for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
 	ordinal_type i = index(i_it);
 	value_type c = value(i_it);
-	val += pce[i]*c / (pce_norms[j]*pce_norms[k]);
+	val += (*pce)[i]*c / (pce_norms[j]*pce_norms[k]);
       }
       Cijk_matrix(k,j) = val;
     }
@@ -81,14 +82,7 @@ LanczosProjPCEBasis(
   // Setup of rest of recurrence basis
   this->setup();
 
-  // Project original PCE into the new basis
-  vector_type u(pce_sz);
-  for (ordinal_type i=0; i<pce_sz; i++)
-    u[i] = pce[i]*pce_norms[i];
-  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, lanczos_vecs, u, 
-		   0.0);
-  for (ordinal_type i=0; i<=p; i++)
-    new_pce[i] /= this->norms[i];
+  
 }
 
 template <typename ordinal_type, typename value_type>
@@ -224,18 +218,36 @@ computeRecurrenceCoefficients(ordinal_type n,
   return this->normalize;
 }
 
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
+setup() 
+{
+  RecurrenceBasis<ordinal_type,value_type>::setup();
+
+  // Project original PCE into the new basis
+  vector_type u(pce_sz);
+  for (ordinal_type i=0; i<pce_sz; i++)
+    u[i] = (*pce)[i]*pce_norms[i];
+  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, lanczos_vecs, u, 
+		   0.0);
+  for (ordinal_type i=0; i<=this->p; i++)
+    new_pce[i] /= this->norms[i];
+}
+
 template <typename ordinal_type, typename value_type> 
 Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
 LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis) :
   RecurrenceBasis<ordinal_type, value_type>("Lanczos-proj PCE", p, false),
+  pce(basis.pce),
   limit_integration_order(basis.limit_integration_order),
   pce_sz(basis.pce_sz),
   pce_norms(basis.pce_norms),
   Cijk_matrix(basis.Cijk_matrix),
   weights(basis.weights),
   u0(basis.u0),
-  lanczos_vecs(basis.lanczos_vecs),
-  new_pce(basis.new_pce)
+  lanczos_vecs(pce_sz, p+1),
+  new_pce()
 {
   this->setup();
 }

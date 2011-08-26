@@ -116,13 +116,13 @@ struct Lanczos_PCE_Setup {
     if (project) {
       st_1d_proj_basis = 
 	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<OrdinalType,ValueType>(
-		       p, u, *Cijk, normalize));
+		       p, Teuchos::rcp(&u,false), Cijk, normalize));
       st_bases[0] = st_1d_proj_basis;
     }
     else {
       st_1d_basis = 
 	Teuchos::rcp(new Stokhos::LanczosPCEBasis<OrdinalType,ValueType>(
-		       p, u, *quad, normalize, false));
+		       p, Teuchos::rcp(&u,false), quad, normalize, false));
       st_bases[0] = st_1d_basis;
     }
     

@@ -56,33 +56,8 @@ StieltjesPCEBasis(
   Cijk(Cijk_),
   phi_pce_coeffs()
 {
-  // Evaluate PCE at quad points
-  const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
-    quad->getQuadPoints();
-  ordinal_type nqp = pce_weights.size();
-  pce_vals.resize(nqp);
-  phi_vals.resize(nqp);
-  for (ordinal_type i=0; i<nqp; i++) {
-    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
-    phi_vals[i].resize(p+1);
-  }
-
-  if (project_integrals)
-    phi_pce_coeffs.resize(basis->size());
-  
   // Setup rest of recurrence basis
   this->setup();
-
-  ordinal_type sz = pce->size();
-  fromStieltjesMat.putScalar(0.0);
-  for (ordinal_type i=0; i<=p; i++) {
-    for (ordinal_type j=0; j<sz; j++) {
-      for (ordinal_type k=0; k<nqp; k++)
-	fromStieltjesMat(i,j) += 
-	  pce_weights[k]*phi_vals[k][i]*basis_values[k][j];
-      fromStieltjesMat(i,j) /= basis->norm_squared(j);
-    }
-  }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -163,6 +138,39 @@ computeRecurrenceCoefficients(ordinal_type n,
     phi_vals = vals;
 
   return false;
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+setup() 
+{
+  // Evaluate PCE at quad points
+  const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
+    quad->getQuadPoints();
+  ordinal_type nqp = pce_weights.size();
+  pce_vals.resize(nqp);
+  phi_vals.resize(nqp);
+  for (ordinal_type i=0; i<nqp; i++) {
+    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
+    phi_vals[i].resize(this->p+1);
+  }
+
+  if (project_integrals)
+    phi_pce_coeffs.resize(basis->size());
+
+  RecurrenceBasis<ordinal_type,value_type>::setup();
+
+  ordinal_type sz = pce->size();
+  fromStieltjesMat.putScalar(0.0);
+  for (ordinal_type i=0; i<=this->p; i++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type k=0; k<nqp; k++)
+	fromStieltjesMat(i,j) += 
+	  pce_weights[k]*phi_vals[k][i]*basis_values[k][j];
+      fromStieltjesMat(i,j) /= basis->norm_squared(j);
+    }
+  }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -322,5 +330,25 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(p,pce,quad,use_pce_quad_points,this->normalize,project_integrals,Cijk));
+   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(p,*this));
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+StieltjesPCEBasis(ordinal_type p, const StieltjesPCEBasis& sbasis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, sbasis),
+  pce(sbasis.pce),
+  quad(sbasis.quad),
+  pce_weights(quad->getQuadWeights()),
+  basis_values(quad->getBasisAtQuadPoints()),
+  pce_vals(sbasis.pce_vals),
+  phi_vals(),
+  use_pce_quad_points(sbasis.use_pce_quad_points),
+  fromStieltjesMat(p+1,pce->size()),
+  project_integrals(sbasis.project_integrals),
+  basis(pce->basis()),
+  Cijk(sbasis.Cijk),
+  phi_pce_coeffs()
+{
+  this->setup();
 }

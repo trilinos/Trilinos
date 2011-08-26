@@ -52,7 +52,8 @@ JacobiBasis(ordinal_type p, const JacobiBasis& basis) :
   betaIndex_(basis.betaIndex_)
 {
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+				this->gamma);
 
   // Setup rest of recurrence basis
   this->setup();

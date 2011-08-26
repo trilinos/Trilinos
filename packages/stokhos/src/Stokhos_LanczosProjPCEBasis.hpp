@@ -80,8 +80,8 @@ namespace Stokhos {
      */
     LanczosProjPCEBasis(
       ordinal_type p,
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-      const Stokhos::Sparse3Tensor<ordinal_type, value_type>& Cijk,
+      const Teuchos::RCP< const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
+      const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
       bool normalize,
       bool limit_integration_order = false);
 
@@ -132,7 +132,13 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& delta,
 				  Teuchos::Array<value_type>& gamma) const;
 
+    //! Setup basis after computing recurrence coefficients
+    virtual void setup();
+
     //@}
+
+    //! Copy constructor with specified order
+    LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis);
 
   private:
 
@@ -142,9 +148,6 @@ namespace Stokhos {
     // Prohibit Assignment
     LanczosProjPCEBasis& operator=(const LanczosProjPCEBasis& b);
 
-    //! Copy constructor with specified order
-    LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis);
-
   protected:
 
     typedef WeightedVectorSpace<ordinal_type,value_type> vectorspace_type;
@@ -152,6 +155,9 @@ namespace Stokhos {
     typedef Stokhos::Lanczos<vectorspace_type, operator_type> lanczos_type;
     typedef typename lanczos_type::matrix_type matrix_type;
     typedef typename lanczos_type::vector_type vector_type;
+
+    //! PCE Lanczos procedure is based on
+    Teuchos::RCP< const Stokhos::OrthogPolyApprox<ordinal_type, value_type> > pce;
 
     //! Flag indicating whether to limit the integration order
     bool limit_integration_order;

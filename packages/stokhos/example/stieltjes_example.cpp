@@ -137,20 +137,20 @@ int main(int argc, char **argv)
         if (project_integrals) {
 	  stp_basis_u = 
 	    Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
-	  		 p, u, *Cijk, normalize, true));
+			   p, Teuchos::rcp(&u,false), Cijk, normalize, true));
 	  stp_basis_v = 
 	    Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
-			 p, v, *Cijk, normalize, true));
+			   p, Teuchos::rcp(&v,false), Cijk, normalize, true));
 	  st_bases[0] = stp_basis_u;
 	  st_bases[1] = stp_basis_v;
         }
         else {
   	  st_basis_u = 
 	    Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-			 p, u, *quad, normalize, true));
+			 p, Teuchos::rcp(&u,false), quad, normalize, true));
 	  st_basis_v = 
 	    Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-			 p, v, *quad, normalize, true));
+			   p, Teuchos::rcp(&v,false), quad, normalize, true));
 	  st_bases[0] = st_basis_u;
 	  st_bases[1] = st_basis_v;
         }

@@ -115,6 +115,9 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& delta,
 				  Teuchos::Array<value_type>& gamma) const;
 
+    //! Setup basis after computing recurrence coefficients
+    virtual void setup();
+
     //@}
 
     //! Compute 3-term recurrence using Stieljtes procedure
@@ -160,6 +163,9 @@ namespace Stokhos {
 			    const Teuchos::Array<value_type>& b,
 			    const Teuchos::Array<value_type>& points,
 			    Teuchos::Array< Teuchos::Array<value_type> >& values) const;
+
+    //! Copy constructor with specified order
+    StieltjesPCEBasis(ordinal_type p, const StieltjesPCEBasis& basis);
 
   private:
 

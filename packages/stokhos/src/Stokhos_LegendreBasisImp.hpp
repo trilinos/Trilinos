@@ -46,7 +46,8 @@ LegendreBasis(ordinal_type p, const LegendreBasis& basis) :
   RecurrenceBasis<ordinal_type, value_type>(p, basis)
 {
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+				this->gamma);
 
   // Setup rest of recurrence basis
   this->setup();

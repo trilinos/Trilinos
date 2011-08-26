@@ -64,7 +64,8 @@ DiscretizedStieltjesBasis(const ordinal_type& p,
   quadBasis->getQuadPoints(200*this->p, quad_points, quad_weights, quad_values);
 
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+				this->gamma);
 
   // Setup rest of recurrence basis
   this->setup();

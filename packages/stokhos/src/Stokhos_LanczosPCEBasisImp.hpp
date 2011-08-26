@@ -34,55 +34,36 @@ template <typename ordinal_type, typename value_type>
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 LanczosPCEBasis(
    ordinal_type p,
-   const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-   const Stokhos::Quadrature<ordinal_type, value_type>& quad,
+   const Teuchos::RCP< const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce_,
+   const Teuchos::RCP< const Stokhos::Quadrature<ordinal_type, value_type> >& quad_,
    bool normalize,
    bool limit_integration_order_) :
   RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, normalize),
+  pce(pce_),
+  quad(quad_),
   limit_integration_order(limit_integration_order_),
-  nqp(quad.size()),
+  nqp(quad->size()),
   pce_weights(Teuchos::Copy, 
-	      const_cast<value_type*>(quad.getQuadWeights().getRawPtr()), 
+	      const_cast<value_type*>(quad->getQuadWeights().getRawPtr()), 
 	      nqp),
   pce_vals(nqp),
   u0(nqp),
   lanczos_vecs(nqp, p+1),
-  fromStieltjesMat(pce.size(), p+1),
-  new_pce(p+1)
+  fromStieltjesMat(),
+  new_pce()
 {
   // Evaluate PCE at quad points
   const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
-    quad.getQuadPoints();
+    quad->getQuadPoints();
   const Teuchos::Array< Teuchos::Array<value_type> >& basis_values =
-    quad.getBasisAtQuadPoints();
+    quad->getBasisAtQuadPoints();
   for (ordinal_type i=0; i<nqp; i++) {
-    pce_vals[i] = pce.evaluate(quad_points[i], basis_values[i]);
+    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
     u0[i] = value_type(1);
   }
 
   // Setup rest of basis
   this->setup();
-
-  // Compute transformation matrix back to original basis
-  ordinal_type sz = pce.size();
-  fromStieltjesMat.putScalar(0.0);
-  for (ordinal_type i=0; i<sz; i++) {
-    for (ordinal_type j=0; j<=p; j++) {
-      for (ordinal_type k=0; k<nqp; k++)
-	fromStieltjesMat(i,j) += 
-	  pce_weights[k]*lanczos_vecs(k,j)*basis_values[k][i];
-      fromStieltjesMat(i,j) /= pce.basis()->norm_squared(i);
-    }
-  }
-
-  // Project original PCE into the new basis
-  vector_type u(sz);
-  for (ordinal_type i=0; i<sz; i++)
-    u[i] = pce[i]*pce.basis()->norm_squared(i);
-  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, fromStieltjesMat, u, 
-		   0.0);
-  for (ordinal_type i=0; i<=p; i++)
-    new_pce[i] /= this->norms[i];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -198,15 +179,53 @@ computeRecurrenceCoefficients(ordinal_type n,
   return this->normalize;
 }
 
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
+setup() 
+{
+  RecurrenceBasis<ordinal_type,value_type>::setup();
+
+  // Compute transformation matrix back to original basis
+  ordinal_type sz = pce->size();
+  fromStieltjesMat.shape(sz, this->p+1);
+  fromStieltjesMat.putScalar(0.0);
+  const Teuchos::Array< Teuchos::Array<value_type> >& basis_values =
+    quad->getBasisAtQuadPoints();
+  for (ordinal_type i=0; i<sz; i++) {
+    for (ordinal_type j=0; j<=this->p; j++) {
+      for (ordinal_type k=0; k<nqp; k++)
+	fromStieltjesMat(i,j) += 
+	  pce_weights[k]*lanczos_vecs(k,j)*basis_values[k][i];
+      fromStieltjesMat(i,j) /= pce->basis()->norm_squared(i);
+    }
+  }
+
+  // Project original PCE into the new basis
+  new_pce.resize(this->p+1);
+  vector_type u(sz);
+  for (ordinal_type i=0; i<sz; i++)
+    u[i] = (*pce)[i]*pce->basis()->norm_squared(i);
+  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, fromStieltjesMat, u, 
+		   0.0);
+  for (ordinal_type i=0; i<=this->p; i++)
+    new_pce[i] /= this->norms[i];
+}
+
 template <typename ordinal_type, typename value_type> 
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
-  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, false),
+  RecurrenceBasis<ordinal_type, value_type>(p, basis),
+  pce(basis.pce),
+  quad(basis.quad),
+  limit_integration_order(basis.limit_integration_order),
   nqp(basis.nqp),
   pce_weights(basis.pce_weights),
   pce_vals(basis.pce_vals),
   u0(basis.u0),
-  lanczos_vecs(basis.lanczos_vecs)
+  lanczos_vecs(nqp, p+1),
+  fromStieltjesMat(),
+  new_pce()
 {
   this->setup();
 }
