@@ -37,7 +37,7 @@
 #include "Teuchos_FILEstream.hpp"
 
 // Teuchos python interface includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 %}
 
 // The python implementation of Teuchos::ParameterList is augmented to
@@ -79,7 +79,7 @@ namespace Teuchos
 class any;
 }
 %import "Teuchos_ParameterEntry.hpp"
-%import "Teuchos_PythonParameter.h"
+%import "PyTrilinos_Teuchos_Util.h"
 
 /////////////////////////////////////////////////////////////////////
 // Override typemaps for ParameterLists to allow PyDicts as input //

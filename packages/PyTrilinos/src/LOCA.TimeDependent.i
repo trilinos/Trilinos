@@ -32,7 +32,7 @@
 
 %{
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // LOCA includes
 #include "LOCA_Extended_MultiAbstractGroup.H"

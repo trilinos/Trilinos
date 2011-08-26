@@ -30,8 +30,8 @@
 
 %{
 // PyTrilinos includes
-#include "PythonException.h"
-#include "FILEstream.h"
+#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_FILEstream.h"
 
 // Epetra includes
 #include "Epetra_Version.h"

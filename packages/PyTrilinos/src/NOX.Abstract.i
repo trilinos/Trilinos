@@ -56,7 +56,7 @@ NOX.Abstract provides the following user-level classes:
 
 %{
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // NOX includes
 #include "NOX_Abstract_Group.H"

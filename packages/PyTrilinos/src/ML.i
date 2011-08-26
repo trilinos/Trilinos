@@ -71,8 +71,8 @@ example subdirectory of the PyTrilinos package:
 
 %{
 //  PyTrilinos includes
-#include "PythonException.h"
-#include "FILEstream.h"
+#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_FILEstream.h"
 
 // System includes
 #include <iostream>
@@ -91,7 +91,7 @@ example subdirectory of the PyTrilinos package:
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
 #include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #endif
 
 // Epetra includes
@@ -143,7 +143,7 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_SYS_TIME_H
 #include "ml_MultiLevelPreconditioner.h"
 #include "MLAPI.h"
-#include "MLAPI_PyMatrix.h"
+#include "PyTrilinos_ML_Util.h"
 
 %}
 
@@ -706,11 +706,11 @@ namespace MLAPI
 }
 #endif
 
-////////////////////////////
-// MLAPI_PyMatrix support //
-////////////////////////////
+////////////////////////////////
+// PyTrilinos_ML_Util support //
+////////////////////////////////
 #ifdef HAVE_EPETRA
-%include "MLAPI_PyMatrix.h"
+%include "PyTrilinos_ML_Util.h"
 %extend PyTrilinos::PyMatrix
 {
   PyObject * __setitem__(PyObject* args, double val)
