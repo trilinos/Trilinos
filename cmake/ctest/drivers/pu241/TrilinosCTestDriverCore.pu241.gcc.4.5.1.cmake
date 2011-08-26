@@ -27,6 +27,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
+    -DTrilinos_ENABLE_Stokhos:BOOL=OFF
     # Allow user to override these by putting theirs at the bottom
     ${EXTRA_CONFIGURE_OPTIONS}
     )
