@@ -25,15 +25,15 @@ IF(Kokkos_ENABLE_DeviceTBB)
 ENDIF()
 
 IF(Kokkos_ENABLE_DeviceCuda)
-  CUDA_ADD_LIBRARY(
+  PACKAGE_ADD_CUDA_LIBRARY(
     unit_cuda
-    UnitTestCuda.cu
+    SOURCES UnitTestCuda.cu
     )
   LIST( APPEND SOURCES
     UnitTestCuda.cpp
   )
   LIST( APPEND LIBRARIES
-    kokkosdevicecuda cuda cudart unit_cuda
+    kokkosdevicecuda unit_cuda
   )
 ENDIF()
 
@@ -42,7 +42,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
+  PASS_REGULAR_EXPRESSION "[  PASSED  ]"
   DEPLIBS ${LIBRARIES}
   )
   
