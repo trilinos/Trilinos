@@ -9,10 +9,11 @@ DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
 
 # Allow override of dev env
-if [ "$CASL_VRI_DEV_ENV" == "" ] ; then
-  CASL_VRI_DEV_ENV=/opt/casl_vri_dev_env
+if [ "$CASL_VRI_DEV_ENV_BASE" == "" ] ; then
+  CASL_VRI_DEV_ENV_BASE=/opt/casl_vri_dev_env
 fi
-. $CASL_VRI_DEV_ENV/fissile_four/build_scripts/load_official_dev_env
+echo "CASL_VRI_DEV_ENV_BASE = '$CASL_VRI_DEV_ENV_BASE'"
+. $CASL_VRI_DEV_ENV_BASE/fissile_four/build_scripts/load_official_dev_env
 
 umask u=rwx,g=rwx,o=
 
