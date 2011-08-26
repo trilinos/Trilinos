@@ -50,6 +50,27 @@ namespace Tpetra {
   class Operator : virtual public Teuchos::Describable {
   public:
 
+    /** \name Typedefs that give access to the template parameters. */
+    //@{
+
+    /// \typedef scalar_type
+    /// \brief The type of the entries of the input and output multivectors.
+    typedef Scalar scalar_type;
+
+    /// \typedef local_ordinal_type
+    /// \brief The local index type.
+    typedef LocalOrdinal local_ordinal_type;
+
+    /// \typedef global_ordinal_type
+    /// \brief The global index type.
+    typedef GlobalOrdinal global_ordinal_type;
+
+    /// \typedef node_type
+    /// \brief The Kokkos Node type.
+    typedef Node node_type;
+
+    //@}
+
     /** \name Pure virtual functions to be overridden by subclasses. */
     //@{
 

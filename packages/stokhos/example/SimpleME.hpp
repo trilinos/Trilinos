@@ -70,18 +70,11 @@ public:
   
   //! Return parameter vector map
   Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
-  
-  //! Return parameter vector map
-  Teuchos::RCP<const Epetra_Map> get_p_sg_map(int l) const;
-  
+    
   //! Return array of parameter names
   Teuchos::RCP<const Teuchos::Array<std::string> > 
   get_p_names(int l) const;
-  
-  //! Return array of parameter names
-  Teuchos::RCP<const Teuchos::Array<std::string> > 
-  get_p_sg_names(int l) const;
-  
+    
   //! Return initial solution
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   

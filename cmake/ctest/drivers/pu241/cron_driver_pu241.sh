@@ -8,7 +8,13 @@ BASEDIR=/home/casl-vri-admin/Dashbaords
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
 
-. $DRIVER_SCRIPT_DIR/load_intel_12.0.4_env
+
+# Allow override of dev env
+if [ "$CASL_VRI_DEV_ENV_BASE" == "" ] ; then
+  CASL_VRI_DEV_ENV_BASE=/opt/casl_vri_dev_env
+fi
+echo "CASL_VRI_DEV_ENV_BASE = '$CASL_VRI_DEV_ENV_BASE'"
+. $CASL_VRI_DEV_ENV_BASE/fissile_four/build_scripts/load_official_dev_env.sh
 
 umask u=rwx,g=rwx,o=
 

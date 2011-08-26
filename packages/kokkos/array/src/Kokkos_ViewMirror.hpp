@@ -37,17 +37,40 @@
  *************************************************************************
  */
 
+#ifndef KOKKOS_VIEWMIRROR_HPP
+#define KOKKOS_VIEWMIRROR_HPP
 
-#include <iostream>
-
-namespace Test {
-
-void test_device_tpi()
-{
-  std::cout << "PASSED : UnitTestTPI SKIPPED : NO DEVICE TPI" << std::endl ;
-}
-
-}
+#if ! defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
+#define KOKKOS_MIRROR_VIEW_OPTIMIZE 0
+#endif /* ! defined( KOKKOS_MIRROR_VIEW_OPTIMIZE ) */
 
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class ViewDest , class ViewSrc > class ViewTraits ;
+
+template< class ViewDst , class ViewSrc ,
+          bool AvoidDeepCopy = ViewTraits< ViewDst , ViewSrc >::compatible &&
+                               KOKKOS_MIRROR_VIEW_OPTIMIZE >
+class ViewMirror ;
+
+void view_mirror_incompatible_throw();
+
+} // namespace Impl
+
+template< class ViewType >
+typename ViewType::HostView mirror_create( const ViewType & s )
+{ return Impl::ViewMirror< typename ViewType::HostView , ViewType >::create( s ); }
+
+template< class ViewTypeDst , class ViewTypeSrc >
+void mirror_update( const ViewTypeDst & d , const ViewTypeSrc & s )
+{ return Impl::ViewMirror< ViewTypeDst , ViewTypeSrc >::update( d , s ); }
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_VIEWMIRROR_HPP */
 

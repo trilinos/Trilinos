@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
+
 #ifndef KOKKOS_MACRO_DEVICE
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
@@ -101,7 +103,7 @@ public:
     dst.value[0] += 1 ;
     dst.value[1] += iwork + 1 ;
     dst.value[2] += nwork - iwork ;
-  } 
+  }
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
@@ -127,25 +129,10 @@ public:
 
   //------------------------------------
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestReduce< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
-
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  //------------------------------------
-
   UnitTestReduce( const size_type & nwork )
+  { run_test(nwork); }
+
+  void run_test( const size_type & nwork )
   {
     value_type result ;
     Kokkos::ValueView< value_type , device_type > device_result ;
@@ -160,18 +147,10 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    if ( result.value[0] != (ScalarType) nw ||
-         result.value[1] != (ScalarType) nsum ||
-         result.value[2] != (ScalarType) nsum ) {
-      std::cout << " { " << result.value[0]
-                << " , " << result.value[1]
-                << " , " << result.value[2]
-                << " } != { " << nw
-                << " , " << nsum
-                << " , " << nsum
-                << " }" << std::endl ;
-      error( "FAILED" );
-    }
+    ASSERT_EQ( result.value[0], (ScalarType) nw);
+    ASSERT_EQ( result.value[1], (ScalarType) nsum);
+    ASSERT_EQ( result.value[2], (ScalarType) nsum);
+
   }
 };
 

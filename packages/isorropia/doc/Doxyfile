@@ -22,7 +22,7 @@ PROJECT_NAME           = "Isorropia: Partitioning, Load Balancing and more"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 3.0"
+#PROJECT_NUMBER         = "Version 3.0"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -247,7 +247,7 @@ WARN_FORMAT            = "$file:$line: $text"
 # with spaces. 
 
 INPUT                  = index.doc partitioning.doc ordering.doc coloring.doc probing.doc \
-		         partitioningRCP.doc partitioningPtr.doc \
+		         partitioningRCP.doc partitioningPtr.doc  matching.doc \
                          ../src ../utils ../test
 
 # If the value of the INPUT tag contains directories, you can use the 

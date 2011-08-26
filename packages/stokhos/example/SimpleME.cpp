@@ -99,18 +99,6 @@ SimpleME::get_p_map(int l) const
   return p_map;
 }
 
-Teuchos::RCP<const Epetra_Map>
-SimpleME::get_p_sg_map(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  SimpleME::get_p_sg_map():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_map;
-}
-
 Teuchos::RCP<const Teuchos::Array<std::string> >
 SimpleME::get_p_names(int l) const
 {
@@ -118,18 +106,6 @@ SimpleME::get_p_names(int l) const
 		     std::logic_error,
                      std::endl << 
                      "Error!  SimpleME::get_p_names():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_names;
-}
-
-Teuchos::RCP<const Teuchos::Array<std::string> >
-SimpleME::get_p_sg_names(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  SimpleME::get_p_sg_names():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
   return p_names;
@@ -175,7 +151,7 @@ SimpleME::createInArgs() const
 
   // Stochastic InArgs
   inArgs.setSupports(IN_ARG_x_sg,true);
-  inArgs.set_Np_sg(1); // 1 SG parameter vector
+  inArgs.setSupports(IN_ARG_p_sg, 0, true); // 1 SG parameter vector
   inArgs.setSupports(IN_ARG_sg_basis,true);
   inArgs.setSupports(IN_ARG_sg_quadrature,true);
   inArgs.setSupports(IN_ARG_sg_expansion,true);
@@ -195,7 +171,6 @@ SimpleME::createOutArgs() const
   outArgs.setSupports(OUT_ARG_W,true);
   
   // Stochastic OutArgs
-  outArgs.set_Np_Ng_sg(1, 0);
   outArgs.setSupports(OUT_ARG_f_sg,true);
   outArgs.setSupports(OUT_ARG_W_sg,true);
 

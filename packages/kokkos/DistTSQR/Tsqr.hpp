@@ -60,7 +60,9 @@ namespace TSQR {
   /// \tparam LocalOrdinal Index type that can address all elements of
   ///   a matrix, when treated as a 1-D array.  That is, for A[i +
   ///   LDA*j], the index i + LDA*j must fit in a LocalOrdinal.
+  ///
   /// \tparam Scalar The type of the matrix entries.
+  ///
   /// \tparam NodeTsqrType The intranode (single-node) part of TSQR.
   ///   Defaults to \c SequentialTsqr, which provides a sequential
   ///   cache-blocked implementation.  Any class implementing the same
@@ -74,7 +76,11 @@ namespace TSQR {
   /// \note TSQR only needs to know about the local ordinal type (used
   ///   to index matrix entries on a single node), not about the
   ///   global ordinal type (used to index matrix entries globally,
-  ///   i.e., over all nodes).
+  ///   i.e., over all nodes).  For some distributed linear algebra
+  ///   libraries, such as Epetra, the local and global ordinal types
+  ///   are the same (int, in the case of Epetra).  For other
+  ///   distributed linear algebra libraries, such as Tpetra, the
+  ///   local and global ordinal types may be different.
   ///
   template<class LocalOrdinal, 
 	   class Scalar, 
@@ -166,9 +172,9 @@ namespace TSQR {
     /// \c explicit_Q() in sequence, if you know that you only want
     /// the explicit version of the Q factor.  This method is
     /// especially intended for orthogonalizing the columns of a \c
-    /// Tpetra::MultiVector.  It can also be used for an \c
-    /// Epetra_MultiVector, if you put each node's data in a
-    /// Kokkos::MultiVector first.  (This does not require copying.)
+    /// Tpetra::MultiVector. It can also be used for an \c
+    /// Epetra_MultiVector, if you put each node's data in a \c
+    /// Kokkos::MultiVector first. (This does not require copying.)
     ///
     /// \param A [in/out] On input: my node's part of the matrix to
     ///   factor; the matrix is distributed over the participating

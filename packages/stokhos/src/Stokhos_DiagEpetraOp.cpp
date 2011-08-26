@@ -40,7 +40,7 @@ Stokhos::DiagEpetraOp::DiagEpetraOp(
  const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
- const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_) 
+ const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops_) 
   : label("Stokhos Diagonal Operator"),
     domain_base_map(domain_base_map_),
     range_base_map(range_base_map_),
@@ -65,18 +65,18 @@ Stokhos::DiagEpetraOp::~DiagEpetraOp()
 
 void 
 Stokhos::DiagEpetraOp::reset(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
   block_ops = ops;
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> >
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly >
 Stokhos::DiagEpetraOp::getOperatorBlocks() const
 {
   return block_ops;
 }
 
-Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >
+Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >
 Stokhos::DiagEpetraOp::getOperatorBlocks()
 {
   return block_ops;

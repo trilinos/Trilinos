@@ -173,7 +173,7 @@ namespace Stokhos {
     Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
     //! Pointer to the PCE expansion of Jacobian.
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
+    Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > sg_poly;
 
     //! SG operator to implement SG mat-vec
     Teuchos::RCP<Stokhos::SGOperator> mat_free_op;

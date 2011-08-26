@@ -24,7 +24,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      PyTrilinos TriKota Optika  # We don't have TPLs for these
      Sundance Stokhos # Currently have failures and nor currently needed by CASL
      TrilinosFramework # Has 11 failing tests for some reason so disabling for now
-     CASLRAVEANC CASLRAVEANCKVIPRE CASLRAVECoreStore
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
@@ -32,7 +31,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     ${EXTRA_CONFIGURE_OPTIONS}
     )
   
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1-IFort-12.0.4")
 
   SET_DEFAULT(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE Nightly)
   

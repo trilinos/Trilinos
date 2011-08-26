@@ -1,0 +1,21 @@
+#  DAKOTA INPUT FILE
+
+method,
+   nl2sol
+   max_iterations = 50
+   convergence_tolerance = 1.0e-6
+
+variables,
+	continuous_design = 6
+
+interface,
+	direct
+	  analysis_driver = 'Piro'
+          evaluation_servers = 1
+
+responses,
+	num_least_squares_terms = 1
+	least_squares_data_file = 'dakota_sg_target.txt'
+        analytic_gradients
+	#numerical_gradients
+	no_hessians

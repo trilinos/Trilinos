@@ -36,7 +36,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
     
     choice_=1;
     std::string str(paramlist.get<std::string>("Matching Algorithm"));
-    std::cout<<str<<endl;
     if(str.compare("PHKDW")==0)
         choice_=1;
     else 
@@ -51,7 +50,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
     
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
-    std::cout<<"choice: "<<choice_<<endl;
 #endif
     
     finish_=false;
@@ -139,7 +137,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMa
     
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
-    std::cout<<"choice: "<<choice_<<endl;
 #endif
     
     finish_=false;
@@ -232,7 +229,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPt
     
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
-    std::cout<<"choice: "<<choice_<<endl;
 #endif
     
     finish_=false;
@@ -323,7 +319,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGr
     
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
-    std::cout<<"choice: "<<choice_<<endl;
 #endif
     
     finish_=false;
@@ -956,7 +951,7 @@ int Isorropia_EpetraMatcher::dfs_augment()
     //This function is the starter function for PPF and DFS. It unsets the locks
     //the call dfs_path_finder and then call the augment_matching.
 
-    int i,flag=0,flag1=0,count=0,totc=0,index=U_;
+    int i,flag=0,flag1=0,count=0,totc=0,index=U_,cur=0;
     icm_=0;
 #ifdef ISORROPIA_MATCHING_STATS
     std::vector<int> med;
@@ -975,7 +970,11 @@ int Isorropia_EpetraMatcher::dfs_augment()
 #endif
         }
             
-        
+        cur=0;
+        for(i=0;i<U_;i++)
+            if(mateU_[i]==-1)
+                unmatchedU_[cur++]=i;
+        index=cur;
         flag=flag1=count=0;
 #ifdef ISORROPIA_MATCHING_STATS
         maxL=0;
@@ -1030,8 +1029,7 @@ int Isorropia_EpetraMatcher::dfs_augment()
             med.clear();
 #endif
             
-            int cur=0;
-            
+            cur=0;
             for(i=0;i<index;i++)
             {
                 if(mateU_[unmatchedU_[i]]==-1)
@@ -1045,6 +1043,37 @@ int Isorropia_EpetraMatcher::dfs_augment()
     return totc;
 }
 
+int Isorropia_EpetraMatcher::SGM()
+{
+    int i,j,lock,ind,count=0;
+#ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for private(j,ind,lock)
+#endif
+    for(i=0;i<U_;i++)
+    {    
+        for(j=CRS_pointers_[i];j<CRS_pointers_[i+1];j++)
+        {
+            ind=CRS_indices_[j];
+#ifdef ISORROPIA_HAVE_OMP
+            lock=omp_test_lock(&scannedV_[ind]);
+#endif
+            if(lock>0)
+            {
+
+                mateU_[i]=ind;
+                mateV_[ind]=i;
+#ifdef ISORROPIA_MATCHING_STATS
+#ifdef ISORROPIA_HAVE_OMP
+                #pragma omp atomic
+                count++;
+#endif
+#endif
+                break;
+            }
+        }
+    }
+    return count;
+}
 int Isorropia_EpetraMatcher::match_dfs()
 {
     // Forking function for DFS based algorithm
@@ -1061,20 +1090,18 @@ int Isorropia_EpetraMatcher::match_dfs()
     
         
 #ifdef ISORROPIA_MATCHING_STATS
-#ifdef ISORROPIA_HAVE_OMP
-    std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+    std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching=";
 #endif
-#endif
-    return 0;
+    return totc;
 }
 
 int Isorropia_EpetraMatcher::match_hk()
 {
     // Forking function for HK based algorithm
     int totc=0,count=0;
+    double start,end;
     icm_=0;
 #ifdef ISORROPIA_HAVE_OMP
-    double start,end;
     start=omp_get_wtime();
 #endif
     
@@ -1105,13 +1132,10 @@ int Isorropia_EpetraMatcher::match_hk()
     end=omp_get_wtime();
 #endif
     
-    
 #ifdef ISORROPIA_MATCHING_STATS
-#ifdef ISORROPIA_HAVE_OMP
-    std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+    std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching=";
 #endif
-#endif
-    return 0;
+    return totc;
 }
 
 int Isorropia_EpetraMatcher::match()
@@ -1119,26 +1143,30 @@ int Isorropia_EpetraMatcher::match()
     // User interface function for the matching..
 
     //std::cout<<"mathc"<<std::endl;
+    int totc=0;
+    totc=SGM();
     switch(choice_)
     {
-        case 1:match_hk(); 
+        case 1:totc+=match_hk(); 
                  break;
-        case 2:match_hk(); 
+        case 2:totc+=match_hk(); 
                  break;
-        case 3:match_dfs(); 
+        case 3:totc+=match_dfs(); 
                  break;
-        case 4:match_dfs(); 
+        case 4:totc+=match_dfs(); 
                  break;
-        default:match_hk();
+        default:totc+=match_hk();
     }
-    
-    std::cout<<"MateU: ";
+#ifdef ISORROPIA_MATCHING_STATS
+    std::cout<<totc<<std::endl;
+#endif
+    /*std::cout<<"MateU: ";
     for(int i=0; i<5;i++)
         std::cout<<mateU_[i]<<",";
      std::cout<<std::endl;
     
     for(int i=0;i<5;i++)
-        mateV_[mateU_[i]]=i;
+        mateV_[mateU_[i]]=i;*/
     //std::cout<<"MateV: ";
     
     //for(int i=0; i<5;i++)

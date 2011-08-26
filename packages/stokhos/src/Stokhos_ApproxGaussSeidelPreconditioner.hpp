@@ -169,7 +169,7 @@ namespace Stokhos {
     Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
     //! Pointer to the PCE expansion of Jacobian.
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
+    Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > sg_poly;
     
     //! Short-hand for Cijk
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;

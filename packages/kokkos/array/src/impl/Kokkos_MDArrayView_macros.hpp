@@ -101,7 +101,11 @@ public:
   /** \brief  Because memory is contiguous this is exposed */
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
+  value_type * ptr_on_device() const
+  {
+    // TBD: If memory is not contiguous and can throw then throw !
+    return m_memory.ptr_on_device();
+  }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */
@@ -220,6 +224,29 @@ public:
   ~MDArrayView() {}
 
   /*------------------------------------------------------------------*/
+  /** \brief  Assign view if memory space and map are compatible.
+   *          Intended use is to optimize mirroring by eliminating
+   *          unnecessary deep copies.
+   */
+  template< class DeviceRHS >
+  inline
+  explicit
+  MDArrayView( const MDArrayView< value_type , DeviceRHS > & rhs )
+    : m_memory(), m_map( rhs.m_map.dimension(0), rhs.m_map.dimension(1),
+                         rhs.m_map.dimension(2), rhs.m_map.dimension(3),
+                         rhs.m_map.dimension(4), rhs.m_map.dimension(5),
+                         rhs.m_map.dimension(6), rhs.m_map.dimension(7) )
+  {
+    typedef typename DeviceRHS::mdarray_map rhs_mdarray_map ;
+
+    enum { SameMap = Impl::SameType< mdarray_map , rhs_mdarray_map >::value };
+
+    Impl::StaticAssert< SameMap >::ok();
+
+    // This requires compatible memory space.
+    memory_space::assign_memory_view( m_memory , rhs.m_memory );
+  }
+  /*------------------------------------------------------------------*/
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   operator bool () const
@@ -233,6 +260,17 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const MDArrayView & rhs ) const
+  { return m_memory.operator != ( rhs.m_memory ); }
+
+  /*------------------------------------------------------------------*/
+  template< class DeviceRHS >
+  inline
+  bool operator == ( const MDArrayView< value_type , DeviceRHS > & rhs )
+  { return m_memory.operator == ( rhs.m_memory ); }
+
+  template< class DeviceRHS >
+  inline
+  bool operator != ( const MDArrayView< value_type , DeviceRHS > & rhs )
   { return m_memory.operator != ( rhs.m_memory ); }
 
   /*------------------------------------------------------------------*/
@@ -261,6 +299,8 @@ private:
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
+
+  template< typename V , class D > friend class MDArrayView ;
 
   template< typename V , class DeviceDst , class DeviceSrc ,
             bool , bool , bool >

@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
+
 #ifndef KOKKOS_MACRO_DEVICE
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
@@ -66,22 +68,6 @@ public:
 
   enum { NP = 1000 , N1 = 10 , N2 = 20 };
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestMDArrayIndexMap< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
-
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
   array_type     m_left ;
   array_type     m_right ;
   map_left_type  m_map_left ;
@@ -103,6 +89,9 @@ public:
     , m_right( Kokkos::create_mdarray< array_type >( NP , N1 , N2 ) )
     , m_map_left(  NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
     , m_map_right( NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
+  { run_test(); }
+
+  void run_test()
   {
     typedef Kokkos::Serial< Kokkos::HostMemory ,
                             Kokkos::Impl::MDArrayIndexMapLeft >  host_left ;
@@ -124,12 +113,7 @@ public:
     for ( int j = 0 ; j < N2 ; ++j ) {
       for ( int i = 0 ; i < N1 ; ++i ) {
         for ( int iwork = 0 ; iwork < NP ; ++iwork , ++verify ) {
-          if ( verify != h_left(iwork,i,j) ) {
-            std::ostringstream msg ;
-            msg << "  left( " << iwork << "," << i << "," << j << ") = "
-                << h_left(iwork,i,j) << " != " << verify << std::endl ;
-            error( msg.str().c_str() );
-          }
+          ASSERT_EQ( (unsigned)verify, (unsigned)h_left(iwork,i,j));
         }
       }
     }
@@ -138,12 +122,7 @@ public:
     for ( int iwork = 0 ; iwork < NP ; ++iwork ) {
       for ( int i = 0 ; i < N1 ; ++i ) {
         for ( int j = 0 ; j < N2 ; ++j , ++verify ) {
-          if ( verify != h_right(iwork,i,j) ) {
-            std::ostringstream msg ;
-            msg << "  right( " << iwork << "," << i << "," << j << ") = "
-                << h_right(iwork,i,j) << " != " << verify << std::endl ;
-            error( msg.str().c_str() );
-          }
+          ASSERT_EQ( (unsigned)verify, (unsigned)h_right(iwork,i,j));
         }
       }
     }

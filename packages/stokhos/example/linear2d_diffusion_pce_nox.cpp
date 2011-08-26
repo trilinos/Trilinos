@@ -309,10 +309,10 @@ int main(int argc, char *argv[]) {
       sg_model->createOutArgs();
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(1);
     Teuchos::RCP<Epetra_Vector> sg_g = 
-      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(1))));
+      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
     sg_inArgs.set_p(1, sg_p);
     sg_inArgs.set_x(Teuchos::rcp(&finalSolution,false));
-    sg_outArgs.set_g(1, sg_g);
+    sg_outArgs.set_g(0, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs);
 
     // Print mean and standard deviation of response
@@ -322,6 +322,7 @@ int main(int argc, char *argv[]) {
     Epetra_Vector g_std_dev(*(model->get_g_map(0)));
     sg_g_poly->computeMean(g_mean);
     sg_g_poly->computeStandardDeviation(g_std_dev);
+    std::cout.precision(16);
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g_poly->print(std::cout);

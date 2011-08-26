@@ -37,13 +37,14 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_DeviceTPI.hpp>
+#include <Kokkos_DeviceTPI_ValueView.hpp>
+#include <Kokkos_DeviceTPI_MultiVectorView.hpp>
+#include <Kokkos_DeviceTPI_MDArrayView.hpp>
+#include <Kokkos_DeviceTPI_ParallelFor.hpp>
+#include <Kokkos_DeviceTPI_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceTPI.hpp>
 #include <Kokkos_DeviceTPI_ValueView.hpp>
@@ -69,31 +70,73 @@
 
 namespace Test {
 
-void test_device_tpi()
-{
-  try {
-    Kokkos::DeviceTPI::initialize( 4 );
+class tpi : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+      Kokkos::DeviceTPI::initialize( 4 );
+    }
+    static void TearDownTestCase() {
+      Kokkos::DeviceTPI::finalize();
+    }
+};
 
-    UnitTestDeviceMemoryManagement< Kokkos::DeviceTPI >();
-    UnitTestValueView<       Kokkos::DeviceTPI >();
-    UnitTestMultiVectorView< Kokkos::DeviceTPI >();
-    UnitTestMDArrayView<     Kokkos::DeviceTPI >();
-    UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
 
-    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceTPI >();
 
-    UnitTestReduce< long ,   Kokkos::DeviceTPI >( 1000000 );
-    UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
-    UnitTestReduceMulti< long , Kokkos::DeviceTPI >( 1000000 , 7 );
-
-    std::cout << "PASSED : UnitTestTPI" << std::endl ;
-  }
-  catch( const std::exception & x ) {
-    std::cout << "FAILED : UnitTestTPI : " << x.what() << std::endl ;
-  }
-
-  Kokkos::DeviceTPI::finalize();
+TEST_F( tpi, memory_management_double) {
+  UnitTestDeviceMemoryManagement< double, Kokkos::DeviceTPI >();
 }
 
+TEST_F( tpi, memory_management_int) {
+  UnitTestDeviceMemoryManagement< int, Kokkos::DeviceTPI >();
 }
+
+TEST_F( tpi, value_view_double) {
+  UnitTestValueView< double, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, value_view_int) {
+  UnitTestValueView< int, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, multi_vector_view_double) {
+  UnitTestMultiVectorView< double, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, multi_vector_view_int) {
+  UnitTestMultiVectorView< int, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, mdarray_view_double) {
+  UnitTestMDArrayView< double, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, mdarray_view_int) {
+  UnitTestMDArrayView< int, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, mdarray_deep_copy_double) {
+  UnitTestMDArrayDeepCopy< double, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, mdarray_deep_copy_int) {
+  UnitTestMDArrayDeepCopy< int, Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, mdarray_index_map) {
+  UnitTestMDArrayIndexMap< Kokkos::DeviceTPI >();
+}
+
+TEST_F( tpi, long_reduce) {
+  UnitTestReduce< long ,   Kokkos::DeviceTPI >( 1000000 );
+}
+
+TEST_F( tpi, double_reduce) {
+  UnitTestReduce< double ,   Kokkos::DeviceTPI >( 1000000 );
+}
+
+TEST_F( tpi, long_multi_reduce) {
+  UnitTestReduceMulti< long , Kokkos::DeviceTPI >( 1000000 , 7 );
+}
+
+} // namespace test
 

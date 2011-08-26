@@ -76,7 +76,7 @@ void Stokhos::AdaptivityManager::setupWithGraph(const Epetra_CrsGraph & determGr
   */
 void 
 Stokhos::AdaptivityManager::
-setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokhos::VectorOrthogPoly<Epetra_Operator> & poly,
+setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokhos::EpetraOperatorOrthogPoly & poly,
               bool onlyUseLinear,bool includeMean) const
 {
    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;

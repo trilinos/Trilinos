@@ -1,9 +1,50 @@
-#ifndef BELOS_GCRODR_ITER_HPP
-#define BELOS_GCRODR_ITER_HPP
-#endif
+//@HEADER
+// ************************************************************************
+//
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+
+#ifndef BELOS_BLOCK_GCRODR_ITER_HPP
+#define BELOS_BLOCK_GCRODR_ITER_HPP
+
 
 /*! \file BelosBlockGCRODRIter.hpp
- *     \brief Belos concrete class for performing the block GCRO-DR iteration.
+ *     \brief Belos concrete class for performing the block GCRO-DR (block GMRES with recycling) iteration.
  *     */
 
 #include "BelosConfigDefs.hpp"
@@ -23,42 +64,103 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+// MLP
+#include <unistd.h>
+
+/*!
+  \class Belos::BlockGCRODRIter
+  \brief Implementation of the Block GCRO-DR (Block Recycling GMRES) iteration.
+
+  This class implements the Block GCRODR (block GMRES with recycling)
+  iteration, wherein a block-vector Krylov subspace is constructed.
+  The QR decomposition of a block upper Hessenberg matrix is performed
+  each iteration to update the least squares system and give the
+  current linear system residuals.  
+
+  \ingroup belos_solver_framework
+  \author Kirk M. Soodhalter and Michael Parks
+*/
+
 namespace Belos{
 
+  //! @name BlockGCRODRIter Structures
+  //@{
 
-   //Structure to contain pointers to GCRODRIter state variables.  
-   template <class ScalarType, class MV>
-   struct BlockGCRODRIterState {
-   	int curDim;
+  /** \brief Structure to contain pointers to BlockGCRODRIter state variables.
+   *
+   * This struct is utilized by BlockGCRODRIter::initialize() and BlockGCRODRIter::getState().
+   */
+ 
+	template <class ScalarType, class MV>
+	struct BlockGCRODRIterState {
+		/*! \brief The current dimension of the reduction.
+		*
+		* This should always be equal to BlockGCRODRIter::getCurSubspaceDim()
+		*/
 
-        /*! \brief The current Krylov basis. */
-    	Teuchos::RCP<MV> V; 
+		int curDim;
 
-	/*! \brief The recycled subspace and its projection. */
-	Teuchos::RCP<MV> U, C;	
+		/*! \brief The current Krylov basis. */
+		Teuchos::RCP<MV> V; 
 
-	/*! \brief The current Hessenberg matrix.
- 	 *
-	 * The \c curDim by \c curDim leading submatrix of H is the
-	 *  projection of problem->getOperator() by the first \c curDim vectors in V.
-	 */
-	 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H;
-	    
- 	/*! \brief The projection of the Krylov subspace against the recycled subspace *      
- 	 */
-    	 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B;
-   };
+		/*! \brief The recycled subspace and its projection. */
+		Teuchos::RCP<MV> U, C;	
 
-   //NEED TO CREATE EXCEPTION CLASSES
-   class BlockGCRODRIterInitFailure : public BelosError {
-   	public:
-   	BlockGCRODRIterInitFailure(const std::string& what_arg) : BelosError(what_arg) {}
-   };
+		/*! \brief The current Hessenberg matrix.
+		 *
+		 * The \c curDim by \c curDim leading submatrix of H is the
+		 *  projection of problem->getOperator() by the first \c curDim vectors in V.
+		 */
+		 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+		    
+		/*! \brief The projection of the Krylov subspace against the recycled subspace *      
+		 */
+		 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B;
 
-   class BlockGCRODRIterOrthoFailure : public BelosError {
-  	public:
-  	BlockGCRODRIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
-    };
+		 BlockGCRODRIterState() : curDim(0), V(Teuchos::null),
+			U(Teuchos::null), C(Teuchos::null),
+			H(Teuchos::null), B(Teuchos::null)
+		 {}
+
+	};
+
+	//@}
+
+
+
+	//! @name BlockGCRODRIter Exceptions
+	//@{
+
+	/** \brief BlockGCRODRIterInitFailure is thrown when the BlockGCRODRIter object is unable to
+	* generate an initial iterate in the BlockGCRODRIter::initialize() routine.
+	*
+	* This std::exception is thrown from the GCRODRIter::initialize() method, which is
+	* called by the user or from the BlockGCRODRIter::iterate() method if isInitialized()
+	* == \c false.
+	*
+	* In the case that this std::exception is thrown,
+	* BlockGCRODRIter::isInitialized() will be \c false and the user will need to provide
+	* a new initial iterate to the iteration.
+	*/
+
+	class BlockGCRODRIterInitFailure : public BelosError {
+		public:
+		BlockGCRODRIterInitFailure(const std::string& what_arg) : BelosError(what_arg) {}
+	};
+
+	/** \brief BlockGCRODRIterOrthoFailure is thrown when the BlockGCRODRIter object is unable to
+	* compute independent direction vectors in the BlockGCRODRIter::iterate() routine.
+	*
+	* This std::exception is thrown from the BlockGCRODRIter::iterate() method.
+	*
+	*/
+
+	class BlockGCRODRIterOrthoFailure : public BelosError {
+		public:
+		BlockGCRODRIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
+	};
+
+  	//@}
 
 
     template<class ScalarType, class MV, class OP>
@@ -75,38 +177,92 @@ namespace Belos{
  	typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
     	typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
 
-       //CONSTRUCTORS AND DESTRUCTORS
+	//! @name Constructors/Destructor
+	//@{
 
-       //ONLY ONE CONSTRUCTOR       
-       //NEED COMMENTS HERE EXPLAINING WHAT PARAMETERS ARE VALID FOR PARAMETER LIST
-       //RIGHT NOW THIS CONSTRUCTOR WILL IGNORE WHATEVER PARAMETER LIST IS PASSED 
+	/*! \brief %BlockGCRODRIter constructor with linear problem, solver utilities, and parameter list of solver options.
+	*
+	* This constructor takes pointers required by the linear solver, in addition
+	* to a parameter list of options for the linear solver. These options include the following:
+	*   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
+	*   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
+	*/
+
        BlockGCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                         const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
                         const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
                               Teuchos::ParameterList &params );
 
-       //DESTRUCTOR
+       //! Destructor.
        virtual ~BlockGCRODRIter() {};
+       //@}
  
-       //SOLVER METHODS
+	//! @name Solver methods
+	//@{
 
-       //NEED COMMENTS HERE EXPLAINING HOW THE ITERATION PROCEEDS
+	/*! \brief This method performs block GCRODR iterations until the status
+	* test indicates the need to stop or an error occurs (in which case, an
+	* std::exception is thrown).
+	*
+	* iterate() will first determine whether the solver is inintialized; if
+	* not, it will call initialize() using default arguments. After
+	* initialization, the solver performs block GCRODR iterations until the
+	* status test evaluates as ::Passed, at which point the method returns to
+	* the caller.
+	*
+	* The block GCRODR iteration proceeds as follows:
+	* -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
+	* -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
+	* -# The Hessenberg matrix is updated.
+	* -# The least squares system is updated.
+	*
+	* The status test is queried at the beginning of the iteration.
+	*
+	* Possible exceptions thrown include the GCRODRIterOrthoFailure.
+	*
+	*/
        void iterate();
 
-       //Initialize the solver with empty data. THIS MUST BE IMPLEMENTED ACCORDING TO 
-       //INTERFACE OF ABSTRACT CLASS iterator.  GCRODR CODE SAYS THIS FUNCTION WILL
-       //CAUSE ERROR BECAUSE WE SHOULD INITIALIZE TO VALID STATE
+	/*! \brief Initialize the solver to an iterate, providing a complete state.
+	*
+	* The %BlockGCRODRIter contains a certain amount of state, consisting of the current
+	* Krylov basis and the associated Hessenberg matrix.
+	*
+	* initialize() gives the user the opportunity to manually set these,
+	* although this must be done with caution, abiding by the rules given
+	* below. All notions of orthogonality and orthonormality are derived from
+	* the inner product specified by the orthogonalization manager.
+	*
+	* \post
+	* <li>isInitialized() == \c true (see post-conditions of isInitialize())
+	*
+	* The user has the option of specifying any component of the state using
+	* initialize(). However, these arguments are assumed to match the
+	* post-conditions specified under isInitialized(). Any necessary component of the
+	* state not given to initialize() will be generated.
+	*
+	* \note For any pointer in \c newstate which directly points to the multivectors in
+	* the solver, the data is not copied.
+	*/
+
        void initialize() {
        	  BlockGCRODRIterState<ScalarType,MV> empty;
      	  initialize(empty);
        }  
 
-       //NEED COMMENTS EXPLAINING HOW INITIALIZATION WORKS
+	/*! \brief Initialize the solver with empty data. Calling this method will result in error,
+	*  as GCRODRIter must be initialized with a valid state.
+	*/
        void initialize(BlockGCRODRIterState<ScalarType,MV> newstate);
        
-       //STATUS METHODS
-
+	/*! \brief Get the current state of the linear solver.
+	*
+	* The data is only valid if isInitialized() == \c true.
+	*
+	* \returns A BlockGCRODRIterState object containing const pointers to the current
+	* solver state.
+	*/
        BlockGCRODRIterState<ScalarType,MV> getState() const{
 		BlockGCRODRIterState<ScalarType,MV> state;
 		state.curDim = curDim_;
@@ -117,7 +273,12 @@ namespace Belos{
       		state.B = B_;
       		return state;
        }
+       //@}
 
+	//! @name Status methods
+	//@{
+
+	//! States whether the solver has been initialized or not.
        bool isInitialized(){ return initialized_;};
 
        //! \brief Get the current iteration count.
@@ -127,13 +288,24 @@ namespace Belos{
        void resetNumIters( int iter = 0 ) { iter_ = iter; };
 
        //! Get the norms of the residuals native to the solver.
-       //! \return A std::vector of length blockSize containing the native residuals.
+       //! \return A vector of length blockSize containing the native residuals.
        Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
 
-       //NEED COMMENTS EXPLAINING GET CURRENT UPDATE
+	//! Get the current update to the linear system.
+	/*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
+		This method forces its computation.  Other solvers, like CG, update the solution
+		each iteration, so this method will return a zero vector indicating that the linear
+		problem contains the current solution.
+	*/
        Teuchos::RCP<MV> getCurrentUpdate() const;
 
-       //ACCESSOR METHODS
+
+	//@}
+
+
+	//! @name Accessor methods
+	//@{
+
 
        //! Get a constant reference to the linear problem.
        const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; };
@@ -144,16 +316,23 @@ namespace Belos{
        //! Get the blocksize to be used by the iterative solver in solving this linear problem.
        int getBlockSize() const { return blockSize_; };
 
+	//! Get the dimension of the search subspace used to generate the current solution to the linear problem.
        int getCurSubspaceDim() const {
 		if (!initialized_) return 0;
       		return curDim_;
        };
 
+	//! Get the maximum dimension allocated for the search subspace.
        int getMaxSubspaceDim() const { return numBlocks_*blockSize_; };
 
+	//! \brief Set the maximum number of recycled blocks used by the iterative solver.
        int getRecycledBlocks() const { return recycledBlocks_; };
 
-       //SET METHODS
+	//@}
+
+
+	//! @name Set methods
+	//@{
 
        void updateLSQR( int dim = -1);
 
@@ -178,9 +357,15 @@ namespace Belos{
       }
     }
 
-
+	//@}
 
       private:
+
+	//
+	// Internal methods
+	//
+
+
 
       //Classes inputed through constructor that define the linear problem to be solved
       //
@@ -190,14 +375,14 @@ namespace Belos{
       const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
       //
-      //Algorithmic Paramters
+      //Algorithmic Parameters
       //
 
       //numBlocks_ is the size of the allocated space for the Krylov basis, in blocks.
       //blockSize_ is the number of columns in each block Krylov vector.
       int numBlocks_, blockSize_;
 
-      //boolean std::vector indicating which right-hand sides we care about
+      //boolean vector indicating which right-hand sides we care about
       //when we are testing residual norms.  THIS IS NOT IMPLEMENTED.  RIGHT NOW JUST
       //SELECTS ALL RIGHT HANDS SIDES FOR NORM COMPUTATION.
       std::vector<bool> trueRHSIndices_;
@@ -232,32 +417,41 @@ namespace Belos{
       // Recycled Krylov Method Storage
       //
 
-      //
-      //Krylov Vectors 
+
+      //! The Krylov basis vectors.
       Teuchos::RCP<MV> V_;
 
-      //
-      //Recycled subspace vectors.
+      //! Recycled subspace vectors.
       Teuchos::RCP<MV> U_, C_;
 
-      //
-      //Projected Operators on the Augmented Krylov Subspace
 
-      //
-      //H_: The Projected Matrix from Krylov Factorization AV = VH + C*B, B = C^H*A*V
+      //! @name Projected operators on the augmented Krylov subspace
+      //@{
+
+      /// \brief Projected matrix from the Krylov factorization.
+      ///
+      /// The matrix H satisfies \f$AV = VH + C*B\f$, wherein \f$B = C^H*A*V\f$.
       Teuchos::RCP<SDM > H_;
 
-      //
-      //B_ : Projected matrix from the recycled subspace B = C^H*A*V
+      /// \brief Projected matrix from the recycled subspace.
+      ///
+      /// The matrix B satisfies \f$B = C^H*A*V\f$.
       Teuchos::RCP<SDM > B_;
 
-      // QR decomposition of Projected matrices for solving the least squares system HY = RHS
-      // R_: Upper triangular reduction of H
-      // Z_: Q applied to right-hand side of the least squares system
+      /// \brief Upper triangular reduction of H_ (see above).
+      ///
+      /// R_ and Z_ together form the QR decomposition of the
+      /// projected matrices for solving the least-squares system
+      /// HY = RHS.
+      ///
       Teuchos::RCP<SDM> R_;
+
+      //! Q applied to right-hand side of the least squares system.
       SDM Z_;
 
-      // File stream variables to use Mike Parks matlab output codes
+      //@}
+
+      // File stream variables to use Mike Parks' Matlab output codes.
       std::ofstream ofs;
       char filename[30];
 
@@ -285,12 +479,22 @@ namespace Belos{
     	H_              = Teuchos::null;
     	B_              = Teuchos::null;
 	R_              = Teuchos::null;
+	// Get the maximum number of blocks allowed for this Krylov subspace
+	TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument, "Belos::BlockGCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
+	int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
-        //PARAMETER LIST EXCEPTIONS WOULD GO HERE BUT WE ARE GOING TO USE THE NEW
-        //METHOD OF PARAMETER LIST VERIFICATION
-        int nb = Teuchos::getParameter<int>(params, "Num Blocks");
+	TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,"Belos::BlockGCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
 	int rb = Teuchos::getParameter<int>(params, "Recycled Blocks");
+
+	TEST_FOR_EXCEPTION(nb <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() was passed a non-positive argument for \"Num Blocks\".");
+	TEST_FOR_EXCEPTION(rb >= nb, std::invalid_argument, "Belos::BlockGCRODRIter() the number of recycled blocks is larger than the allowable subspace.");
+
+
 	int bs = Teuchos::getParameter<int>(params, "Block Size");
+
+	TEST_FOR_EXCEPTION(bs <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() the block size was passed a non-postitive argument.");
+
+
 	numBlocks_ = nb;
 	recycledBlocks_ = rb;
 	blockSize_ = bs;
@@ -322,6 +526,9 @@ namespace Belos{
    void BlockGCRODRIter<ScalarType,MV,OP>::iterate() {
 	TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
 
+// MLP
+sleep(1);
+std::cout << "Calling setSize" << std::endl;
 	// Force call to setsize to ensure internal storage is correct dimension
 	setSize( recycledBlocks_, numBlocks_ );
 
@@ -335,6 +542,9 @@ namespace Belos{
 	// Orthonormalize the new V_0
 	for(int i = 0; i<blockSize_; i++){curind[i] = i;};
 	
+// MLP
+sleep(1);
+std::cout << "Calling normalize" << std::endl;
 	Vnext = MVT::CloneViewNonConst(*V_,curind);
 	//Orthonormalize Initial Columns
 	//Store orthogonalization coefficients in Z0
@@ -342,8 +552,9 @@ namespace Belos{
                Teuchos::rcp( new SDM(blockSize_,blockSize_) );
 	int rank = ortho_->normalize(*Vnext,Z0);
 
-
-
+// MLP
+sleep(1);
+std::cout << "Assigning Z" << std::endl;
 	TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank at the initial step.");
 	// Copy Z0 into the leading blockSize_ by blockSize_ block of Z_
 	Teuchos::RCP<SDM > Z_block = Teuchos::rcp( new SDM(Teuchos::View, Z_, blockSize_,blockSize_) );
@@ -356,11 +567,11 @@ namespace Belos{
 	//
 	// also break if the basis is full
 	//
-	while(stest_->checkStatus(this) != Passed && curDim_+blockSize_-1 < numBlocks_*blockSize_){
+	while( (stest_->checkStatus(this) != Passed) && (curDim_+blockSize_-1) < (numBlocks_*blockSize_)) {
 		lclIter_++;
 		iter_++;
 //KMS
-std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::endl;
+//std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::endl;
 
 		int HFirstCol = curDim_-blockSize_;//First column of H we need view of
 		int HLastCol = HFirstCol + blockSize_-1 ;//last column of H we need a view of
@@ -381,7 +592,7 @@ std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::en
                         curind[blockSize_ - 1 - i] = curDim_ -  i - 1;
                 }
 		Vprev = MVT::CloneView(*V_,curind);
-		// Compute the next std::vector in the Krylov basis:  Vnext = Op*Vprev
+		// Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
 		lp_->apply(*Vprev,*Vnext);
 		Vprev = Teuchos::null;
 
@@ -508,7 +719,8 @@ std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::en
 	// there is no update, so return Teuchos::null.
 	//
 	Teuchos::RCP<MV> currentUpdate = Teuchos::null;
-	if(curDim_==0) {
+//KMS	if(curDim_==0) {
+	if(curDim_<=blockSize_) {
 		return currentUpdate;
 	}
 	else{
@@ -520,8 +732,16 @@ std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::en
 		// Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
 		//
 		SDM Y( Teuchos::Copy, Z_, curDim_-blockSize_, blockSize_ );
-
-
+		Teuchos::RCP<SDM> Rtmp = Teuchos::rcp(new SDM(Teuchos::View, *R_, curDim_, curDim_-blockSize_));
+//KMS
+sleep(1);
+std::cout << "Before TRSM" << std::endl;
+sleep(1);
+std::cout << "The size of Rtmp is " << Rtmp -> numRows() << " by " << Rtmp -> numCols() << std::endl;
+std::cout << "The size of Y is " << Y.numRows() << " by " << Y.numCols() << std::endl;
+std::cout << "blockSize_ = " << blockSize_ << std::endl;
+std::cout << "curDim_ =  " << curDim_ << std::endl;
+std::cout << "curDim_ - blockSize_ =  " << curDim_ - blockSize_ << std::endl;
 		//
 		// Solve the least squares problem.
 		// Observe that in calling TRSM, we use the value
@@ -531,8 +751,10 @@ std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::en
 		//
 		blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                 Teuchos::NON_UNIT_DIAG, curDim_-blockSize_, blockSize_, one,
-                R_->values(), R_->stride(), Y.values(), Y.stride() );
-
+                Rtmp->values(), Rtmp->stride(), Y.values(), Y.stride() );
+//KMS
+sleep(1);
+std::cout << "After TRSM" << std::endl;
       		//
               	//  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
                 //
@@ -721,8 +943,9 @@ std::cout << "Iter=" << iter_ << std::endl << "lclIter=" << lclIter_ <<  std::en
 
 	}
 
-
     } // end updateLSQR()
 
 
 }//End Belos Namespace
+
+#endif /* BELOS_BLOCK_GCRODR_ITER_HPP */

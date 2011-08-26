@@ -37,16 +37,68 @@
  *************************************************************************
  */
 
-#include <iostream>
+#include <gtest/gtest.h>
 
 namespace Test {
 
-void test_device_cuda()
+extern void test_device_cuda_init();
+
+class cuda : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+      test_device_cuda_init();
+    }
+    static void TearDownTestCase() {
+    }
+};
+
+extern void test_device_cuda_memory_management();
+extern void test_device_cuda_value_view();
+extern void test_device_cuda_multi_vector_view();
+extern void test_device_cuda_mdarray_view();
+extern void test_device_cuda_mdarray_deep_copy();
+extern void test_device_cuda_index_map();
+extern void test_device_cuda_reduce();
+extern void test_device_cuda_multi_reduce();
+
+TEST_F( cuda, memory_management )
 {
-  std::cout << "PASSED : UnitTestCuda SKIPPED : NO DEVICE CUDA" << std::endl ;
+  test_device_cuda_memory_management();
+}
+
+TEST_F( cuda, value_view )
+{
+  test_device_cuda_value_view();
+}
+
+TEST_F( cuda, multi_vector_view )
+{
+  test_device_cuda_multi_vector_view();
+}
+
+TEST_F( cuda, mdarray_view )
+{
+  test_device_cuda_mdarray_view();
+}
+
+TEST_F( cuda, mdarray_deep_copy )
+{
+  test_device_cuda_mdarray_deep_copy();
+}
+
+TEST_F( cuda, index_map )
+{
+  test_device_cuda_index_map();
+}
+
+TEST_F( cuda, reduce )
+{
+  test_device_cuda_reduce();
+}
+
+TEST_F( cuda, multi_reduce )
+{
+  test_device_cuda_multi_reduce();
 }
 
 }
-
-//----------------------------------------------------------------------------
-

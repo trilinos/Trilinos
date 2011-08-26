@@ -1,0 +1,13 @@
+/** \defgroup matching_grp Isorropia Matching Methods  
+
+    \brief Here we describe the matching interface provided by Isorropia.
+
+
+\section matchingIntro Matching
+
+Isorropia currently supports maximum-cardinality matching, also
+known as maximum transversal. This may be used to permute
+a matrix to get a zero-free diagonal. This code uses shared-memory parallelism
+and requires OpenMP. An MPI version is planned for a future version.
+
+*/

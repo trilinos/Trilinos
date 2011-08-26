@@ -5,7 +5,6 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-SET(HAVE_FORTRAN_SUPPORT ${Trilinos_ENABLE_Fortran})
 SET(EPETRA_MPI ${TPL_ENABLE_MPI})
 IF(CMAKE_SIZEOF_VOID_P GREATER 4)
   SET(EPETRA_ADDRESS64BIT ON)
@@ -178,7 +177,7 @@ IF(Epetra_ENABLE_Oski)
     )
 ENDIF()
 
-IF(Trilinos_ENABLE_Fortran)
+IF(${PACKAGE_NAME}_ENABLE_Fortran)
   SET(SOURCES ${SOURCES}	
     Epetra_dcrsmm.f
     Epetra_dcrsmv.f

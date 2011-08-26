@@ -102,6 +102,9 @@ Stokhos::ApproxJacobiPreconditioner::
 SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
+  sg_op->SetUseTranspose(UseTranspose);
+  mat_free_op->SetUseTranspose(UseTranspose);
+  mean_prec->SetUseTranspose(UseTranspose);
 
   return 0;
 }

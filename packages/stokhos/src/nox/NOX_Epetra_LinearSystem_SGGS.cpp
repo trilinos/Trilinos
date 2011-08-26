@@ -42,7 +42,7 @@ LinearSystemSGGS(
   sg_y_block = Teuchos::rcp(new EpetraExt::BlockVector(*base_map, *sg_map));
   kx = Teuchos::rcp(new Epetra_Vector(*base_map));
 
-  only_use_linear = linearSolverParams.get("Only Use Linear Terms", true);
+  only_use_linear = linearSolverParams.get("Only Use Linear Terms", false);
   k_limit = sg_poly->size();
   int dim = sg_basis->dimension();
   if (only_use_linear && sg_poly->size() > dim+1)

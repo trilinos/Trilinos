@@ -73,17 +73,18 @@ int main(int argc, char *argv[]) {
   if (argc>1) doAll = !strcmp(argv[1],"-v");
  
 #ifdef Piro_ENABLE_Rythmos
-  int numTests=3;
+  int numTests=4;
 #else
-  int numTests=2;
+  int numTests=3;
 #endif
   for (int iTest=0; iTest<numTests; iTest++) {
-
+  
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Solve_NOX_1.xml"; break;
-       case 1: inputFile="input_Solve_LOCA_1.xml"; break;
-       case 2: inputFile="input_Solve_Rythmos_1.xml"; break;
+       case 1: inputFile="input_Solve_NOX_Adjoint.xml"; break;
+       case 2: inputFile="input_Solve_LOCA_1.xml"; break;
+       case 3: inputFile="input_Solve_Rythmos_1.xml"; break;
        default : cout << "iTest logic error " << endl; exit(-1);
       }
     }

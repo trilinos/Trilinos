@@ -75,7 +75,8 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
     Teuchos::RCP<const Epetra_CrsGraph> base_graph = 
       params->get< Teuchos::RCP<const Epetra_CrsGraph> >("Base Graph");
     sg_op = Teuchos::rcp(new Stokhos::FullyAssembledOperator(
-			   sg_comm, sg_basis, epetraCijk, base_graph, params));
+			   sg_comm, sg_basis, epetraCijk, base_graph, 
+			   domain_sg_map, range_sg_map, params));
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,

@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(tBuildColBasis, test_adapted)
       Teuchos::Array<Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > cBases
          = cBasis->getCoordinateBases();
      
-      for(std::size_t i=0;i<cBases.size();i++) {
+      for(int i=0;i<cBases.size();i++) {
          int bOrder = cBases[i]->order();
 
          if(gid==2)

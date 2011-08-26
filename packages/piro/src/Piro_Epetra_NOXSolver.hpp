@@ -41,6 +41,9 @@
 #include <NOX_Epetra_MultiVector.H>
 #include <NOX_Epetra_Observer.H>
 
+#include "LOCA_GlobalData.H"
+#include "LOCA_Epetra_TransposeLinearSystem_AbstractStrategy.H"
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -88,7 +91,7 @@ class NOXSolver
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
-//  Teuchos::RCP<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_DgDp_op( int j, int l ) const;
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;
   /** \brief . */
@@ -127,6 +130,10 @@ class NOXSolver
    int num_g;
 
    Teuchos::RCP<NOX::Epetra::Group> grp;
+   Teuchos::RCP<LOCA::GlobalData> globalData;
+   Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
+
+   enum DerivativeLayout { OP, COL, ROW };
 };
 
 }

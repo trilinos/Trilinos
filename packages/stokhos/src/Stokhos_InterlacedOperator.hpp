@@ -70,14 +70,14 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly);
+      const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& poly);
 
     //! Get SG polynomial
-    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial();
 
     //! Get SG polynomial
-    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial() const;
 
     //@}
@@ -111,7 +111,7 @@ namespace Stokhos {
     Teuchos::RCP<const Cijk_type> Cijk;
 
     //! Stores operators
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
+    Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > block_ops;
 
     //! Flag indicating whether operator be scaled with <\psi_i^2>
     bool scale_op;

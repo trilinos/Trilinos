@@ -65,9 +65,9 @@ class RythmosSolver
     : public EpetraExt::ModelEvaluator
 {
 
-  typedef double Scalar;
-
   public:
+
+  typedef double Scalar;
 
   /** \name Constructors/initializers */
   //@{

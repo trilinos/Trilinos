@@ -50,11 +50,8 @@ namespace Stokhos {
     // Constructor
     MPInverseModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
-      const Teuchos::Array<int>& mp_p_index,
-      const Teuchos::Array<int>& non_mp_p_index,
-      const Teuchos::Array<int>& mp_g_index,
-      const Teuchos::Array<int>& non_mp_g_index,
-      const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_p_maps,
+      const Teuchos::Array<int>& mp_p_index_map,
+      const Teuchos::Array<int>& mp_g_index_map,
       const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
@@ -69,22 +66,12 @@ namespace Stokhos {
     //! Return parameter vector map
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 
-    //! Return parameter vector map
-    Teuchos::RCP<const Epetra_Map> get_p_mp_map(int l) const;
-
     //! Return response map
     Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
-
-     //! Return observation vector map
-    Teuchos::RCP<const Epetra_Map> get_g_mp_map(int l) const;
 
     //! Return array of parameter names
     Teuchos::RCP<const Teuchos::Array<std::string> > 
     get_p_names(int l) const;
-
-    //! Return array of parameter names
-    Teuchos::RCP<const Teuchos::Array<std::string> > 
-    get_p_mp_names(int l) const;
 
     //! Return initial parameters
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
@@ -105,44 +92,26 @@ namespace Stokhos {
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
-    //! Index of multi-point parameters
-    Teuchos::Array<int> mp_p_index;
+    //! Mapping between multipoint block parameters and mp parameters
+    Teuchos::Array<int> mp_p_index_map;
 
-    //! Index of non-multi-point parameters
-    Teuchos::Array<int> non_mp_p_index;
-
-    //! Index of multi-point responses
-    Teuchos::Array<int> mp_g_index;
-
-    //! Index of non-multi-point responses
-    Teuchos::Array<int> non_mp_g_index;
-
-    //! Base maps of block p vectors
-    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps;
+    //! Mapping between stochastic block responses and sg responses
+    Teuchos::Array<int> mp_g_index_map;
 
     //! Base maps of block g vectors
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps;
 
+    //! Number of parameters
+    int num_p;
+
+    //! Number of responses
+    int num_g;
+
     //! Number of multi-point parameter vectors
     int num_p_mp;
 
-    //! Number of non-multi-point parameter vectors
-    int num_p;
-
     //! Number of multi-point response vectors
     int num_g_mp;
-
-    //! Number of non-multi-point response vectors
-    int num_g;
-
-    //! Block MP p vectors
-    Teuchos::Array< Teuchos::RCP< Epetra_Vector > > block_p;
-
-    //! Block MP g vectors
-    mutable Teuchos::Array< Teuchos::RCP< Epetra_Vector > > block_g;
-
-    //! Block MP dg/dp vectors
-    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Epetra_MultiVector > > > block_dgdp;
 
   };
 

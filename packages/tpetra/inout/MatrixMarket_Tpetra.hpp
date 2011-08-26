@@ -1831,7 +1831,8 @@ namespace Tpetra {
                                << pBanner->dataType() << "\".");
           }
 
-          if (debug && myRank == 0) cerr << "About to read Matrix Market dimensions line" << endl;
+          if (debug && myRank == 0) 
+	    cerr << "About to read Matrix Market dimensions line" << endl;
 
           // Keep reading lines from the input stream until we find a
           // non-comment line, or until we run out of lines.  The latter
@@ -1904,7 +1905,7 @@ namespace Tpetra {
 
         // Broadcast matrix dimensions and the encoded data type from
         // MPI Rank 0 to all the MPI processes.
-        Teuchos::broadcast (pComm, 0, dims);
+        Teuchos::broadcast (*pComm, 0, dims);
 
         // Tpetra objects want the matrix dimensions in these types.
         const global_size_t numRows = static_cast<global_size_t> (dims[0]);
@@ -1914,7 +1915,7 @@ namespace Tpetra {
         // this to construct a "distributed" vector X owned entirely
         // by Rank 0.  Rank 0 will then read all the matrix entries
         // and put them in X.
-        RCP<map_type> pRank0Map = 
+        RCP<const map_type> pRank0Map = 
           createContigMapWithNode<LO, GO, Node> (numRows, 
                                                  (myRank == 0 ? numRows : 0),
                                                  pComm, pNode);
@@ -1933,21 +1934,28 @@ namespace Tpetra {
               cerr << "About to read Matrix Market matrix data" << endl;
 
             // Make sure that we can get a 1-D view of X.
-            TEST_FOR_EXCEPTION(X.isConstantStride (), std::runtime_error,
+            TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
                                "Can't get a 1-D view of the entries of the "
-                               "MultiVector X on Rank 0.");
+                               "MultiVector X on Rank 0, because the stride "
+			       "between the columns of X is not constant.  "
+			       "This shouldn't happen because we just created "
+			       "X and haven't filled it in yet.  Please report "
+			       "this bug to the Tpetra developers.");
             
-            // Get a writeable 1-D view of the entries of X.
-            // Rank 0 owns all of them.
+            // Get a writeable 1-D view of the entries of X.  Rank 0
+            // owns all of them.  The view will expire at the end of
+            // scope, so (if necessary) it will be written back to X
+            // at this time.
             ArrayRCP<S> X_view = X->get1dViewNonConst ();
-            TEST_FOR_EXCEPTION(X_view.size() <= numRows * numCols,
+            TEST_FOR_EXCEPTION(X_view.size() < numRows * numCols,
                                std::logic_error,
                                "The view of X has size " << X_view 
-                               << ", but numRows*numCols = " << numRows 
-                               << "*" << numCols << " = " << numRows*numCols 
-                               << ".  Please report this bug to the Tpetra "
-                               "developers.");
-            const size_t stride = X.getStride ();
+                               << " which is not enough to accommodate the "
+			       "expected number of entries numRows*numCols = " 
+			       << numRows << "*" << numCols << " = " 
+			       << numRows*numCols << ".  Please report this "
+			       "bug to the Tpetra developers.");
+            const size_t stride = X->getStride ();
 
             // The third element of the dimensions Tuple encodes the data
             // type reported by the Banner: "real" == 0, "complex" == 1,
@@ -2132,12 +2140,14 @@ namespace Tpetra {
         // map.
         Export<LO, GO, Node> exporter (pRank0Map, pMap);
 
-        if (debug && myRank == 0) cerr << "Exporting from MultiVector X to global MultiVector Y" << endl;
+        if (debug && myRank == 0) 
+	  cerr << "Exporting from MultiVector X to global MultiVector Y" << endl;
 
         // Export X into Y.
-        Y->doExport (X, exporter, INSERT);
+        Y->doExport (*X, exporter, INSERT);
 
-        if (debug && myRank == 0) cerr << "Done reading multivector from Matrix Market file" << endl;
+        if (debug && myRank == 0) 
+	  cerr << "Done reading multivector from Matrix Market file" << endl;
 
         // Y is distributed over all process(es) in the communicator.
         return Y;

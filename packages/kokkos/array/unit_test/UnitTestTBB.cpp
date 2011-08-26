@@ -67,30 +67,73 @@
 
 namespace Test {
 
-void test_device_tbb()
-{
-  try {
-//    Kokkos::DeviceTBB::initialize( 4 );
+class tbb : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+      //Kokkos::DeviceTBB::initialize( 4 );
+    }
+    static void TearDownTestCase() {
+      //Kokkos::DeviceTBB::finalize();
+    }
+};
 
-    UnitTestDeviceMemoryManagement< Kokkos::DeviceTBB >();
-    UnitTestValueView<       Kokkos::DeviceTBB >();
-    UnitTestMultiVectorView< Kokkos::DeviceTBB >();
-    UnitTestMDArrayView<     Kokkos::DeviceTBB >();
-    UnitTestMDArrayDeepCopy< Kokkos::DeviceTBB >();
 
-    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceTBB >();
 
-    UnitTestReduce< long ,   Kokkos::DeviceTBB >( 1000000 );
-    UnitTestReduce< double , Kokkos::DeviceTBB >( 1000000 );
-
-    std::cout << "PASSED : UnitTestTBB" << std::endl ;
-  }
-  catch( const std::exception & x ) {
-    std::cout << "FAILED : UnitTestTBB : " << x.what() << std::endl ;
-  }
-
-//  Kokkos::DeviceTBB::finalize();
+TEST_F( tbb, memory_management_double) {
+  UnitTestDeviceMemoryManagement< double, Kokkos::DeviceTBB >();
 }
 
+TEST_F( tbb, memory_management_int) {
+  UnitTestDeviceMemoryManagement< int, Kokkos::DeviceTBB >();
 }
+
+TEST_F( tbb, value_view_double) {
+  UnitTestValueView< double, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, value_view_int) {
+  UnitTestValueView< int, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, multi_vector_view_double) {
+  UnitTestMultiVectorView< double, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, multi_vector_view_int) {
+  UnitTestMultiVectorView< int, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, mdarray_view_double) {
+  UnitTestMDArrayView< double, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, mdarray_view_int) {
+  UnitTestMDArrayView< int, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, mdarray_deep_copy_double) {
+  UnitTestMDArrayDeepCopy< double, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, mdarray_deep_copy_int) {
+  UnitTestMDArrayDeepCopy< int, Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, mdarray_index_map) {
+  UnitTestMDArrayIndexMap< Kokkos::DeviceTBB >();
+}
+
+TEST_F( tbb, long_reduce) {
+  UnitTestReduce< long ,   Kokkos::DeviceTBB >( 1000000 );
+}
+
+TEST_F( tbb, double_reduce) {
+  UnitTestReduce< double ,   Kokkos::DeviceTBB >( 1000000 );
+}
+
+//TEST_F( tbb, long_multi_reduce) {
+//  UnitTestReduceMulti< long , Kokkos::DeviceTBB >( 1000000 , 7 );
+//}
+
+} // namespace test
 

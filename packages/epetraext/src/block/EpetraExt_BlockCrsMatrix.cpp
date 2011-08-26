@@ -44,7 +44,8 @@ BlockCrsMatrix::BlockCrsMatrix(
     BaseGraph_( BaseGraph ),
     RowStencil_( vector< vector<int> >(1,RowStencil) ),
     RowIndices_( vector<int>(1,RowIndex) ),
-    Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
+    ROffset_(BlockUtility::CalculateOffset(BaseGraph.RowMap())),
+    COffset_(BlockUtility::CalculateOffset(BaseGraph.ColMap()))
 {
 }
 
@@ -58,7 +59,8 @@ BlockCrsMatrix::BlockCrsMatrix(
     BaseGraph_( BaseGraph ),
     RowStencil_( RowStencil ),
     RowIndices_( RowIndices ),
-    Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
+    ROffset_(BlockUtility::CalculateOffset(BaseGraph.RowMap())),
+    COffset_(BlockUtility::CalculateOffset(BaseGraph.ColMap()))
 {
 }
 
@@ -71,7 +73,8 @@ BlockCrsMatrix::BlockCrsMatrix(
     BaseGraph_( BaseGraph ),
     RowStencil_( ),
     RowIndices_( ),
-    Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
+    ROffset_(BlockUtility::CalculateOffset(BaseGraph.RowMap())),
+    COffset_(BlockUtility::CalculateOffset(BaseGraph.ColMap()))
 {
   BlockUtility::GenerateRowStencil(LocalBlockGraph, RowIndices_, RowStencil_);
 }
@@ -86,7 +89,8 @@ BlockCrsMatrix::BlockCrsMatrix(
     BaseGraph_( Copy, BaseMatrix.RowMatrixRowMap(), 1 ), //Junk to satisfy constructor
     RowStencil_( RowStencil ),
     RowIndices_( RowIndices ),
-    Offset_(BlockUtility::CalculateOffset(BaseMatrix.RowMatrixRowMap()))
+    ROffset_(BlockUtility::CalculateOffset(BaseMatrix.RowMatrixRowMap())),
+    COffset_(BlockUtility::CalculateOffset(BaseMatrix.RowMatrixColMap()))
 {
 }
 
@@ -96,7 +100,8 @@ BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix )
     BaseGraph_( Matrix.BaseGraph_ ),
     RowStencil_( Matrix.RowStencil_ ),
     RowIndices_( Matrix.RowIndices_ ),
-    Offset_( Matrix.Offset_ )
+    ROffset_( Matrix.ROffset_ ),
+    COffset_( Matrix.COffset_ )
 {
 }
 
@@ -108,8 +113,8 @@ BlockCrsMatrix::~BlockCrsMatrix()
 //==============================================================================
 void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
@@ -143,8 +148,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 //==============================================================================
   void BlockCrsMatrix::SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
@@ -180,8 +185,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 //==============================================================================
   void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
-  int RowOffset = Row * Offset_;
-  int ColOffset = Col * Offset_;
+  int RowOffset = Row * ROffset_;
+  int ColOffset = Col * COffset_;
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
@@ -219,8 +224,8 @@ void BlockCrsMatrix::BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
      double* Values, const int* Indices, const int Row, const int Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
   // Convert to BlockMatrix Global numbering scheme
   vector<int> OffsetIndices(NumIndices);
@@ -238,8 +243,8 @@ void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
      double* Values, const int* Indices, const int Row, const int Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
   // Convert to BlockMatrix Global numbering scheme
   vector<int> OffsetIndices(NumIndices);
@@ -260,8 +265,8 @@ void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow,
 					       const int Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
   // Get the whole row
   int ierr = this->ExtractGlobalRowView(BaseRow + RowOffset, NumEntries,
@@ -278,8 +283,8 @@ void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow,
 //==============================================================================
 void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
 {
-  int RowOffset = RowIndices_[Row] * Offset_;
-  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+  int RowOffset = RowIndices_[Row] * ROffset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * COffset_;
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
@@ -311,7 +316,7 @@ void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, 
     for( int l = 0; l < BlkNumIndices; ++l ) {
        icol = this->RowMatrixColMap().GID(BlkIndices[l]);
        indx = icol - ColOffset;
-       if (indx >= 0 && indx < Offset_) {
+       if (indx >= 0 && indx < COffset_) {
          Indices[NumIndices] = indx;
          Values[NumIndices] = BlkValues[l];
 	 NumIndices++;
