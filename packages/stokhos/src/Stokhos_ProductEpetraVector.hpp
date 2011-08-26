@@ -120,11 +120,14 @@ namespace Stokhos {
     //! Assignment
     void assignFromBlockVector(const Epetra_Vector& v);
 
-    //! Get product comm
-    Teuchos::RCP<const EpetraExt::MultiComm> productComm() const;
-
     //! Get coefficient map
     Teuchos::RCP<const Epetra_BlockMap> coefficientMap() const;
+
+    //! Get product map
+    Teuchos::RCP<const Epetra_BlockMap> productMap() const;
+
+    //! Get product comm
+    Teuchos::RCP<const EpetraExt::MultiComm> productComm() const;
 
     //! Reset to a new size
     /*!
