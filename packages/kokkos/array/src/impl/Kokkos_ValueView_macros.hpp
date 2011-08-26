@@ -116,6 +116,38 @@ public:
 
   /*------------------------------------------------------------------*/
 
+  template< class DeviceRHS >
+  inline
+  explicit
+  ValueView( const ValueView< value_type , DeviceRHS > & rhs )
+    : m_memory()
+    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); }
+
+  /*------------------------------------------------------------------*/
+
+  inline
+  bool operator == ( const ValueView & rhs )
+  { return m_memory == rhs.m_memory(); }
+
+  template< class DeviceRHS >
+  inline
+  bool operator != ( const ValueView & rhs )
+  { return m_memory != rhs.m_memory(); }
+
+  /*------------------------------------------------------------------*/
+
+  template< class DeviceRHS >
+  inline
+  bool operator == ( const ValueView< value_type , DeviceRHS > & rhs )
+  { return m_memory == rhs.m_memory(); }
+
+  template< class DeviceRHS >
+  inline
+  bool operator != ( const ValueView< value_type , DeviceRHS > & rhs )
+  { return m_memory != rhs.m_memory(); }
+
+  /*------------------------------------------------------------------*/
+
 #if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
 
   /** \brief  Allow the ValueView to be a parallel reduce
