@@ -61,8 +61,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_LanczosPCEBasisImp.hpp
   Stokhos_LanczosProjPCEBasis.hpp
   Stokhos_LanczosProjPCEBasisImp.hpp
-  Stokhos_HouseTriDiagPCEBasis.hpp
-  Stokhos_HouseTriDiagPCEBasisImp.hpp
   Stokhos_PecosOneDOrthogPolyBasis.hpp
   Stokhos_PecosOneDOrthogPolyBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
