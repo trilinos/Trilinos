@@ -466,9 +466,10 @@ if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO
     for (i = 0; i < hg->nVtx; i++) {
       ZOLTAN_GNO_TYPE ni = LevelMap[i];
       if (ni >= 0) {
+        double hg_vwgt = hg->vwgt[i*hg->VtxWeightDim];
 	for (j = 0; j < hg->nDim; j++)
-	  c_hg->coor[ni*hg->nDim + j] += hg->coor[i*hg->nDim + j];
-	coorcount[ni]+=1.;
+	  c_hg->coor[ni*hg->nDim + j] += (hg_vwgt * hg->coor[i*hg->nDim + j]);
+	coorcount[ni] += hg_vwgt;
 #ifdef KDDKDD_DEBUG
 if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into ni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], ni, coorcount[ni]);
 #endif
@@ -548,9 +549,11 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
 if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %d (%f %f %f) into lno %d coorcount %f doublptr %x\n", zz->Proc, gnoptr[0], *doubleptr, *(doubleptr+1), *(doubleptr+2), lno, coorcount[lno]+1., doubleptr);
 #endif
       for (j = 0; j < hg->nDim; j++){
-	c_hg->coor[lno * hg->nDim + j] += *doubleptr++;
+        /* NOTE:  This code must preceed accumulation of vwgt below so that 
+         * floatptr is correct. */
+	c_hg->coor[lno * hg->nDim + j] += (*floatptr * *doubleptr++);
       }
-      coorcount[lno]+=1.;
+      coorcount[lno] += *floatptr;
     }
     
     for (j=0; j<hg->VtxWeightDim; ++j)
