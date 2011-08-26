@@ -14,7 +14,7 @@ if [ "$CASL_VRI_DEV_ENV_BASE" == "" ] ; then
   CASL_VRI_DEV_ENV_BASE=/opt/casl_vri_dev_env
 fi
 echo "CASL_VRI_DEV_ENV_BASE = '$CASL_VRI_DEV_ENV_BASE'"
-. $CASL_VRI_DEV_ENV_BASE/fissile_four/build_scripts/load_official_dev_env
+. $CASL_VRI_DEV_ENV_BASE/fissile_four/build_scripts/load_official_dev_env.sh
 
 umask u=rwx,g=rwx,o=
 
