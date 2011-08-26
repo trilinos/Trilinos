@@ -2331,7 +2331,7 @@ static int pmatching_geom (ZZ *zz,
   char *yo = "pmatching_geom";
   ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
   int i;
-  char s[8]; 
+  char s[28]; 
   int changes, num_gid_entries, num_lid_entries, local_vtx;
   ZOLTAN_GNO_TYPE *procmatch;
   MPI_Datatype zoltan_gno_mpi_type;
@@ -2356,80 +2356,37 @@ for (i =0; i < hg->nVtx; i++)
 #endif
 
   /* Register new geometric callbacks and parameters */
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) geometric_get_num_obj,
-		    (void *) hg) == ZOLTAN_FATAL) {
+  if ((Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) geometric_get_num_obj,
+		    (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) geometric_get_obj_list,
+		    (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) geometric_get_num_geom,
+		    (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) geometric_get_geom_multi,
+		    (void *) hg) == ZOLTAN_FATAL))
+  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) geometric_get_obj_list,
-		    (void *) hg) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) geometric_get_num_geom,
-		    (void *) hg) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) geometric_get_geom_multi,
-		    (void *) hg) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-    goto End;
-  }
-    
-  sprintf(s, "%d", 1);
-  if (Zoltan_Set_Param(zz2, "NUM_GID_ENTRIES", s) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Param(zz2, "NUM_LID_ENTRIES", s) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
 
   if ((hgp->geometric_red <= 0) || (hgp->geometric_red > 1)) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.1.");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value.");
       hgp->geometric_red = 0.1;
   }
   /* Parts are reduced by a factor, result should not be 0 */  
   local_vtx = (int)(hgp->geometric_red * (double) hg->nVtx
                                        / (double) hg->comm->nProc_y);
   sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
-  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
 
-  if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
 
-  if (Zoltan_Set_Param(zz2, "REMAP", "0") == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Param(zz2, "CHECK_GEOM", "0")== ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
-
-  if (Zoltan_Set_Param(zz2, "RETURN_LISTS", "CANDIDATE_LISTS")== ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
-	
-  if (Zoltan_Set_Param(zz2, "LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL) {
+  if ((Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "REMAP", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "CHECK_GEOM", "0")== ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "RETURN_LISTS", "CANDIDATE_LISTS")== ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2, "LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL))
+  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
@@ -2444,11 +2401,9 @@ for (i =0; i < hg->nVtx; i++)
   if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
     MEMORY_ERROR;
 
-  for (i = 0; i < hg->nVtx; i++)
-    match[i] = 0;
+  for (i = 0; i < hg->nVtx; i++) match[i] = 0;
 
-  for (i = 0; i < num_import; i++)
-    procmatch[import_local_ids[i]] = candidate_ids[i];
+  for (i = 0; i < num_import; i++) procmatch[import_local_ids[i]] = candidate_ids[i];
 
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
   MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM, hg->comm->col_comm);
