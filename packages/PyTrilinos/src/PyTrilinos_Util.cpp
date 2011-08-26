@@ -31,7 +31,7 @@
 
 // Local includes
 #include "PyTrilinos_Util.h"
-#include "PythonException.h"
+#include "PyTrilinos_PythonException.h"
 #include "swigpyrun.h"
 
 ////////////////////////////////////////////////////////////////////////
