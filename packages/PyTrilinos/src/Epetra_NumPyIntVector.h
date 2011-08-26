@@ -32,7 +32,7 @@
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 
-#include "PythonException.h"
+#include "PyTrilinos_PythonException.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
