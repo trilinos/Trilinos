@@ -17,31 +17,22 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
   "Enable support for Metis in Ifpack."
   OFF )
 
-ADD_OPTION_AND_DEFINE(TPL_ENABLE_HYPRE
-  HAVE_HYPRE
-  "Enable Ifpack/Hypre adapters"
-  OFF )
+#Adding a define for when the TPL Metis is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_HYPRE "${${PACKAGE_NAME}_ENABLE_HYPRE}")
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Euclid
   HAVE_EUCLID
   "Enable Ifpack/Euclid adapters"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_HIPS
-  HAVE_IFPACK_HIPS
-  "Enable support for HIPS in Ifpack."
-  OFF )
+#Adding a define for when the TPL HIPS is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_IFPACK_HIPS "${${PACKAGE_NAME}_ENABLE_HIPS}")
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
-#  HAVE_IFPACK_SUPERLU
-#  "Enable support for SUPERLU in Ifpack."
-#  OFF )
-
-IF(${PACKAGE_NAME}_ENABLE_SuperLU)
-   SET(HAVE_IFPACK_SUPERLU ON)
-ELSE()
-   SET(HAVE_IFPACK_SUPERLU OFF)
-ENDIF()
+#Adding a define for when the TPL SuperLU is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_IFPACK_SUPERLU "${${PACKAGE_NAME}_ENABLE_SuperLU}")
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   IFPACK_TEUCHOS_TIME_MONITOR

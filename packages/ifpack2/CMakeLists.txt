@@ -28,23 +28,13 @@ ADD_OPTION_AND_DEFINE(
 
 PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
-IF (TPL_ENABLE_QD)
-ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_QD
-  HAVE_${PACKAGE_NAME}_QD
-  "Enable use of the QD TPL."
-  ${TPL_ENABLE_QD}
-  )
-ENDIF()
+#Adding a define for when the TPL QD is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 
-IF (Trilinos_ENABLE_MPI)
-ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_MPI
-  HAVE_${PACKAGE_NAME}_MPI
-  "Enable use of the MPI TPL."
-  ${Trilinos_ENABLE_MPI}
-  )
-ENDIF()
+#Adding a define for when MPI is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
 
 #
 # C) Add the libraries, tests, and examples
