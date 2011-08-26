@@ -9,6 +9,9 @@ SET(HDF5_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/hdf5-1.8.5-patch1/lib              CAC
 SET(HDF5_INCLUDE_DIRS /opt/gcc-4.5.1/tpls/hdf5-1.8.5-patch1/include          CACHE FILEPATH "")
 SET(EpetraExt_ENABLE_HDF5 OFF                                                CACHE BOOL "")
 
+# To avoid problem with EpetraExt_inout_test failure in optimized code
+SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
+
 SET(TRILINOS_TOOLSET_BASE /opt/gcc-4.5.1/trilinos-toolset)
 SET(INTEL_COMPILER_BASE   /opt/intel/Compiler/composerxe-2011.4.191)
 # add rpath for gnu and intel compiler libraries
