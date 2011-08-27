@@ -20,7 +20,6 @@
 */
 
 #include <ostream>
-#include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Teuchos_RCP.hpp>

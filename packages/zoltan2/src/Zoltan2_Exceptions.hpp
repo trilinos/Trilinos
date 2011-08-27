@@ -36,7 +36,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <string>
-#include <Zoltan2_Parameters.hpp>
+#include <Zoltan2_Environment.hpp>
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 

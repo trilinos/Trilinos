@@ -6,42 +6,35 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_GraphAdapter_decl.hpp
+/*! \file Zoltan2_GraphInput.hpp
 
     \brief The abstract interface for a graph input adapter.
 */
 
 
-#ifndef _ZOLTAN2_GRAPHADAPTER_DECL_HPP_
-#define _ZOLTAN2_GRAPHADAPTER_DECL_HPP_
+#ifndef _ZOLTAN2_GRAPHINPUT_HPP_
+#define _ZOLTAN2_GRAPHINPUT_HPP_
 
+#include <Zoltan2_InputAdapter.hpp>
 #include <Teuchos_ArrayView.hpp>
 
 namespace Zoltan2 {
 
-/*! Zoltan2::GraphAdapter
-    \brief The GraphAdapter is the abstract base class for weighted graph input adapters.
-
-    The data type that the caller uses for local IDs and global IDs may be different
-    than the type that Zoltan2 uses for these values.  The first template variable is
-    the data type used by the caller for vertex and edge weights.  The following two
-    are the data type used by the caller for its local and global IDs.  The
-    final two are the data type used by Zoltan2 for local and global IDs.  For these
-    the caller must choose an integral type that is large enough to represent the space
-    of the caller's local and global identifiers respectively.  For example, if the
-    caller's global IDs are std::pair<int, int>, this caller should set the GNO
-    to int or long (or long long if needed and if supported).
-
-    Zoltan2 is more efficient if the callers global IDs are an integral type.
-
-    The NODE template parameter should be set if the caller is using Kokkos for
-    multicore/manycore optimizations.
+/*! Zoltan2::GraphInput
+    \brief The GraphInput is the abstract base class for weighted graph input adapters.
 
     The Graph accessor methods defined here mimic those of Tpetra::CrsGraph and Tpetra::Map.
+
+    These public methods define the graph adapter interface to Zoltan2 models.  They
+    uses the internal local and global IDs used by Zoltan2.  However the concrete subclasses 
+    of GraphInput will define in addition an interface to the application providing
+    the graph.  That interface will use the application's local and global ID types.
+
+    TODO: It may be necessary to put a migration interface at this level.
 */
 
 template<typename Scalar, typename LNO, typename GNO>
-  class GraphAdapter : public InputAdapter {
+  class GraphInput : public InputAdapter{
 private:
 
 public:
@@ -61,6 +54,9 @@ public:
   /*! Returns the number edges on this process.
    */
   virtual LNO getLocalNumEdges() const = 0;
+
+  virtual LNO getVertexWeightDim() const = 0;
+  virtual LNO getEdgeWeightDim() const = 0;
 
   /*! Returns the minimum global vertex ID on this process.
    */
@@ -187,12 +183,6 @@ public:
   /*! Returns the local maximum vertex degree.
    */
   virtual LNO getLocalMaxNumVertexNbors() const = 0;
-
-  /*! Edge IDs may or may not be supplied in increasing order in queries.
-      \return true if edge IDs are supplied in increasing order.
-      \return false if edge IDs may not be supplied in increasing order.
-   */
-  virtual bool isSorted() const = 0;
 
   /*! Vertex weights are optional in a user supplied graph.
       \return true if vertex weights are available

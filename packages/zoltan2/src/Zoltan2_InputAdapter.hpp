@@ -28,13 +28,42 @@ namespace Zoltan2 {
    Zoltan2 defines input adapters for many common types of user input.  In addition, users
    can write their own input adapter.
 
+   TODO: add methods that return a view of the vertices and edges, not a copy.
+
 */
 
 class InputAdapter{
 
 private:
+  
+protected:
+
+  Teuchos::RCP<Zoltan2::Environment> _env;
+
+  /*! True if the application input to the adapter is finished.
+      Some input adapters may be initialized with the application data
+      in several steps.  They should indicate with this boolean when
+      input is complete.
+   */
+  bool _inputComplete;
+
+  /*! True if adapter processing of application input is complete.
+      Some input adapters may need to process the application input
+      before they can respond to queries. They should indicate with 
+      this boolean when such process has been done.
+   */
+  bool _adapterProcessingComplete;
 
 public:
+
+  bool adapterComplete() {return _adapterProcessingComplete;}
+
+  /*! Direct the input adapter to complete processing input data.
+      Some input adapters may choose to delay processing the input
+      until they get a query. completeProcessing() directs that the
+      processing must be done now.
+   */
+  virtual void completeProcessing() = 0;
 
   /*! Destructor */
   virtual ~InputAdapter(){};
@@ -52,7 +81,7 @@ public:
    *   use Kokkos are Tpetra users, then these can be pushed down to
    *   the Tpetra input adapters.
 
-  MOVE THESE
+  MOVE THESE   will probably only be used with Tpetra objects
 
   bool haveMultiCoreNode() const { return !multicoreNode.is_null();}
 
