@@ -616,10 +616,101 @@ public:
     // set matrix
     blocks_[r*Cols()+c] = mat;
   }
+
+  /// merge BlockedCrsOperator blocks in a CrsMatrix
+  /*
+   * This is a rather expensive operation, since all blocks are copied into a new big CrsMatrix
+   */
+  Teuchos::RCP<CrsMatrixClass> Merge() const
+  {
+    Teuchos::RCP<CrsMatrixClass> sparse = Teuchos::rcp_dynamic_cast<CrsMatrixClass>(Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal>::Build(fullrowmap_,33));// Teuchos::rcp(new CrsMatrixClass(*fullrowmap_,33));
+    for (size_t i=0; i<blocks_.size(); ++i)
+    {
+      Teuchos::RCP<CrsMatrixClass> block = Teuchos::rcp_dynamic_cast<CrsMatrixClass>(blocks_[i]);
+      this->Add(block,1.0,sparse,1.0);
+    }
+    sparse->fillComplete(getDomainMap(),getRangeMap());
+    return sparse;
+  }
   //@}
 
 
 private:
+
+  /** \name helper functions */
+  //@{
+
+  /// Add a Xpetra::CrsMatrix to another: B = B*scalarB + A*scalarA
+  /**
+   * Note, that this routine works only correctly if A only has entries which are empty (zero) in B.
+   * We use the insertGlobalValues routine for inserting the new values from A in B. The sumIntoGlobalValues
+   * routine is not implemented in Xpetra (and would not extend the graph of B for new entries).
+   * Here we need something to catch the exceptions of a future implementation of sumIntoGlobalValues that
+   * then adds the remaining new entries with insertGlobal Values.
+   *
+   * This routine is private and used only by Merge. Since the blocks in BlockedCrsOperator are seperated,
+   * this routine works for merging a BlockedCrsOperator.
+   */
+  void Add(Teuchos::RCP<CrsMatrixClass>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrixClass>& B, const Scalar scalarB) const
+  {
+    TEST_FOR_EXCEPTION( !A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
+        "Matrix A is not completed" );
+
+    B->scale(scalarB);
+
+    size_t MaxNumEntries = std::max(A->getNodeMaxNumRowEntries(),B->getNodeMaxNumRowEntries());
+    std::vector<GlobalOrdinal> vecIndices(MaxNumEntries);
+    std::vector<Scalar>        vecValues (MaxNumEntries);
+
+    const Teuchos::ArrayView<GlobalOrdinal> Indices(&vecIndices[0], vecIndices.size());
+    const Teuchos::ArrayView<Scalar>        Values (&vecValues[0],  vecValues.size());
+    size_t NumEntries;
+
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalRowIds = A->getRowMap()->getNodeElementList(); // global row ids
+
+    if(scalarA)
+    {
+      for(size_t i=0; i<A->getNodeNumRows(); ++i)
+      {
+        GlobalOrdinal Row = MyGlobalRowIds[i];
+
+        //A->getGlobalRowCopy(Row, Indices, Values, NumEntries);
+        A->getLocalRowCopy(i, Indices, Values, NumEntries);
+
+        if(scalarA != 1.0)
+          for (size_t j=0; j<NumEntries; ++j)
+            Values[j] *= scalarA;
+
+
+#if 0
+        for (size_t j=0; j<NumEntries; ++j)
+        {
+          std::vector<GlobalOrdinal> tempVec; tempVec.push_back(Indices[j]);
+          std::vector<Scalar> tempVal; tempVal.push_back(Values[j]);
+          Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], 1);
+          Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0],  1);
+          B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
+        }
+#else
+        std::vector<GlobalOrdinal> vecIndices;
+        std::copy(Indices.getRawPtr(),
+            Indices.getRawPtr()+NumEntries,
+            std::inserter(vecIndices,vecIndices.begin()));
+        std::vector<Scalar> vecValues;
+        std::copy(Values.getRawPtr(),
+            Values.getRawPtr()+NumEntries,
+            std::inserter(vecValues,vecValues.begin()));
+        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&vecIndices[0], NumEntries);
+        Teuchos::ArrayView<Scalar>        tempValue(&vecValues[0],  NumEntries);
+        B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
+#endif
+
+
+      }
+    }
+  }
+
+  //@}
 
   // Default view is created after fillComplete()
   // Because ColMap might not be available before fillComplete().
