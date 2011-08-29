@@ -779,6 +779,9 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
             data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
             data->innersolver->SetAztecOption(AZ_precond, AZ_dom_decomp);
             data->innersolver->SetAztecOption(AZ_keep_info, 1);
+#ifndef DEBUG
+            data->innersolver->SetAztecOption(AZ_output, AZ_none);
+#endif
             //solver->SetAztecOption(AZ_overlap, 3);
             //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
             data->innersolver->SetMatrixName(999);

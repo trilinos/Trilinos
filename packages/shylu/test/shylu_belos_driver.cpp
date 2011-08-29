@@ -222,7 +222,6 @@ int main(int argc, char *argv[])
 //#ifdef TIMING_OUTPUT
         ftime.start();
 //#endif
-                cout << "Create Shylu and initialize" << endl;
                 prec = new Ifpack_ShyLU(A);
                 prec->SetParameters(shyLUList);
                 prec->Initialize();

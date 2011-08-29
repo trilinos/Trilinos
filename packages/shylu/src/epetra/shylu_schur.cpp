@@ -331,7 +331,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         Sbar->InsertGlobalValues(gid, scnt, values3, indices3);
     }
     localG.FillComplete();
-    cout << "Created local G matrix" << endl;
+    //cout << "Created local G matrix" << endl;
 
     int nvectors = 16;
     ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
