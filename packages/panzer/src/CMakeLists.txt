@@ -23,6 +23,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/responses)
 
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
@@ -152,6 +153,14 @@ APPEND_SET(HEADERS
   evaluators/Panzer_SumT.hpp
   evaluators/Panzer_VectorToScalar.hpp
   evaluators/Panzer_VectorToScalarT.hpp
+  responses/Panzer_Response.hpp
+  responses/Panzer_ResponseAggregatorBase.hpp
+  responses/Panzer_ResponseFunctional_Aggregator.hpp
+  responses/Panzer_ResponseFunctional_AggregatorT.hpp
+  responses/Panzer_ResponseScatterEvaluator.hpp
+  responses/Panzer_ResponseScatterEvaluatorT.hpp
+  responses/Panzer_ResponseLibrary_novel.hpp
+  responses/Panzer_ResponseContainer_novel.hpp
   ) 
 
 APPEND_SET(SOURCES
