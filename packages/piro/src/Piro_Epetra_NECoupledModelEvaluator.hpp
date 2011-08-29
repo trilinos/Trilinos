@@ -2,6 +2,8 @@
 #define PIRO_EPETRA_NE_COUPLED_MODEL_EVALUATOR_HPP
 
 #include "EpetraExt_ModelEvaluator.h"
+#include "Piro_Epetra_StokhosSolver.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
@@ -23,7 +25,7 @@ namespace Piro {
 
       /** \brief . */
       NECoupledModelEvaluator(
-	const Teuchos::RCP<Teuchos::ParameterList>& params,
+	const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
 	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelA, 
 	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelB,
 	const Teuchos::RCP<Teuchos::ParameterList>& piroParamsA,
@@ -65,12 +67,18 @@ namespace Piro {
       
       typedef Stokhos::StandardStorage<int,double> StorageType;
 
-      Teuchos::RCP<EpetraExt::ModelEvaluator> DiffModel;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> HeatModel;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> DiffProb;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> HeatProb;
-      Teuchos::RCP<Teuchos::ParameterList> DiffParams;
-      Teuchos::RCP<Teuchos::ParameterList> HeatParams;
+      Teuchos::RCP<EpetraExt::ModelEvaluator> modelA;
+      Teuchos::RCP<EpetraExt::ModelEvaluator> modelB;
+      Teuchos::RCP<Teuchos::ParameterList> piroParamsA;
+      Teuchos::RCP<Teuchos::ParameterList> piroParamsB;
+      Teuchos::RCP<Teuchos::ParameterList> piroParams;
+      Teuchos::RCP<const Epetra_Comm> comm;
+
+      Teuchos::RCP<EpetraExt::ModelEvaluator> solverA;
+      Teuchos::RCP<EpetraExt::ModelEvaluator> solverB;
+      Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverA;
+      Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverB;
+
       Teuchos::RCP<const Epetra_LocalMap> map_p;
       Teuchos::RCP<const Epetra_LocalMap> map_rvar;
       Teuchos::RCP<const Epetra_LocalMap> map_g;
@@ -92,7 +100,6 @@ namespace Piro {
       
       Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> dgdp1;
       Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> dgdp2;
-      Teuchos::RCP<const Epetra_Comm> Comm;
       Teuchos::RCP<Teuchos::Array<std::string> > pnames;
       mutable Teuchos::RCP<Epetra_CrsMatrix> A;
       

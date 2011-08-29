@@ -1,29 +1,32 @@
-#include "ME_Coupled.hpp"
-#include "Teuchos_TimeMonitor.hpp"
+#include "Piro_Epetra_NECoupledModelEvaluator.hpp"
+#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_StokhosSolver.hpp"
+
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
-#include <iostream>
-#include "Epetra_Map.h"
-#include "Epetra_Import.h"
-#include "SGModelEvaluatorFactory.hpp"
+#include "Teuchos_TestForException.hpp"
+
+#include "Teuchos_TimeMonitor.hpp"
+
+
 #include "Stokhos.hpp"
 #include "Stokhos_StieltjesGramSchmidtBuilder.hpp"
 
-using namespace std;
+Piro::Epetra::NECoupledModelEvaluator::
+NECoupledModelEvaluator(
+  const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelA_, 
+  const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelB_,
+  const Teuchos::RCP<Teuchos::ParameterList>& piroParamsA_,
+  const Teuchos::RCP<Teuchos::ParameterList>& piroParamsB_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_,
+  const Teuchos::RCP<const Epetra_Comm>& comm_):
+  modelA(modelA_),
+  modelB(modelB_),
+  piroParamsA(piroParamsA_),
+  piroParamsB(piroParamsB_),
+  params(params_),
+  comm(comm_),
 
-ME_Coupled::ME_Coupled(const Teuchos::RCP<EpetraExt::ModelEvaluator>& Model1,
-		       const Teuchos::RCP<EpetraExt::ModelEvaluator>& Model2,
-		       const Teuchos::RCP<Teuchos::ParameterList>& Params1,
-		       const Teuchos::RCP<Teuchos::ParameterList>& Params2,
-		       const Teuchos::RCP<const Epetra_Comm>& comm, 
-		       int dnumRandVar, int hnumRandVar,
-		       bool do_dim_reduction,
-		       bool do_basis_orthog,
-		       bool eval_W_with_f_):
-  DiffModel(Model1),
-  HeatModel(Model2),
-  DiffParams(Params1),
-  HeatParams(Params2),
-  Comm(comm),
   basis(),
   DnumRandVar(dnumRandVar),
   HnumRandVar(hnumRandVar),
@@ -31,93 +34,160 @@ ME_Coupled::ME_Coupled(const Teuchos::RCP<EpetraExt::ModelEvaluator>& Model1,
   orthogonalize_bases(do_basis_orthog),
   eval_W_with_f(eval_W_with_f_)
 {
-  Teuchos::RCP<Stokhos::SGModelEvaluator> diff_sg_model;
-  Teuchos::RCP<Stokhos::SGModelEvaluator> heat_sg_model;
-  DiffProb = 
-    SGModelEvaluatorFactory::createModelEvaluator(DiffModel, DiffParams, Comm,
-						  diff_sg_model);
-  HeatProb = 
-    SGModelEvaluatorFactory::createModelEvaluator(HeatModel, HeatParams, Comm,
-						  heat_sg_model);
+  // Create solvers for models A and B
+  bool stochastic = params->get("Stochastic", false);
+  if (stochastic) {
+    sgSolverA = Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParamsA, 
+							     comm));
+    sgSolverB = Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParamsB, 
+							     comm));
+    sgSolverA->setup(modelA);
+    sgSolverB->setup(modelB);
+    solverA = sgSolverA;
+    solverB = sgSolverB;
+  }
+  else {
+    solverA = Piro::Epetra::Factory(piroParamsA, modelA);
+    solverB = Piro::Epetra::Factory(piroParamsB, modelB);
+  }
+
+  // Get connectivity information
+  pIndexA = params->get("Model A Parameter Index", 0);
+  pIndexB = params->get("Model B Parameter Index", 0);
+  gIndexA = params->get("Model A Response Index", 0);
+  gIndexB = params->get("Model B Response Index", 0);
+
+  // Get number of parameter and response vectors
+  EpetraExt::ModelEvaluator::InArgs modelA_inargs = modelA->createInArgs();
+  EpetraExt::ModelEvaluator::InArgs modelB_inargs = modelB->createInArgs();
+  EpetraExt::ModelEvaluator::OutArgs modelA_outargs = modelA->createOutArgs();
+  EpetraExt::ModelEvaluator::OutArgs modelB_outargs = modelB->createOutArgs();
+  num_params_A = modelA_inargs.Np();
+  num_params_B = modelB_inargs.Np();
+  num_responses_A = modelA_outargs.Ng();
+  num_responses_B = modelB_outargs.Ng();
+
+  // Building indexing maps between coupled system parameters/responses and
+  // individual components
+  param_map.resize(num_params_A + num_params_B - 2);
+  for (int i=0; i<pIndexA; i++)
+    param_map[i] = i;
+  for (int i=pIndexA+1; i<num_params_A; i++)
+    param_map[i-1] = i;
+  for (int i=0; i<pIndexB; i++)
+    param_map[num_params_A-1+i] = i;
+  for (int i=pIndexB+1; i<num_params_B; i++)
+    param_map[num_params_A-2+i] = i;
+  response_map.resize(num_responses_A + num_responses_B - 2);
+  for (int i=0; i<pIndexA; i++)
+    response_map[i] = i;
+  for (int i=pIndexA+1; i<num_responses_A; i++)
+    response_map[i-1] = i;
+  for (int i=0; i<pIndexB; i++)
+    response_map[num_responses_A-1+i] = i;
+  for (int i=pIndexB+1; i<num_responses_B; i++)
+    response_map[num_responses_A-2+i] = i;
+
+  //
+  // The network equations look like:
+  //    p_1 - g_2(x_2,p_2) = 0 s.t. f_1(x_1,p_1) = 0
+  //    p_2 - g_1(x_1,p_1) = 0 s.t. f_2(x_2,p_2) = 0
+  //
+  // We define x = [p_1; p_2] and f = [ p_1 - g_2(x_2,p_2); p_2 - g_1(x_1,p_1)]
+  //
+
+  // Build x map, which is the product of the pIndexA and pIndexB parameter maps
+  // For the time being, we will assume local maps, in the future we need to
+  // build proper product maps
+  Teuchos::RCP<const Epetra_Map> p_map_A = modelA->get_p_map(pIndexA);
+  Teuchos::RCP<const Epetra_Map> p_map_B = modelB->get_p_map(pIndexB);
+  int n_p_A = p_map_A->NumGlobalElements();
+  int n_p_B = p_map_B->NumGlobalElements();
+  int nx = n_p_A + n_p_B;
+  x_map = Teuchos::rcp(new Epetra_Map(nx, 0, *comm));
+  x_overlap_map = Teuchos::rcp(new Epetra_LocalMap(nx, 0, *comm));
+  x_importer = Teuchos::rcp(new Epetra_Import(*x_overlap_map, *x_map));
+
+  // Build f map, which is the product of the gIndexA and gIndexB response maps
+  // For the time being, we will assume local maps, in the future we need to
+  // build proper product maps
+  Teuchos::RCP<const Epetra_Map> g_map_A = modelA->get_g_map(gIndexA);
+  Teuchos::RCP<const Epetra_Map> g_map_B = modelB->get_g_map(gIndexB);
+  int n_g_A = g_map_A->NumGlobalElements();
+  int n_g_B = g_map_B->NumGlobalElements();
+  int nf = n_g_A + n_g_B;
+  f_map = Teuchos::rcp(new Epetra_Map(nf, 0, *comm));
+  f_overlap_map = Teuchos::rcp(new Epetra_LocalMap(nf, 0, *comm));
+  f_exporter = Teuchos::rcp(new Epetra_Export(*f_overlap_map, *f_map));
+
+  // Do some consistency checking
+  TEST_FOR_EXCEPTION(
+    !p_map_A->IsSameAs(*g_map_B), std::logic_error,
+    "Model A parameter map for index " << pIndexA << " must be the same " <<
+    "map as model B response map for index " << gIndexB << "!");
+  TEST_FOR_EXCEPTION(
+    !p_map_B->IsSameAs(*g_map_A), std::logic_error,
+    "Model B parameter map for index " << pIndexB << " must be the same " <<
+    "map as model A response map for index " << gIndexA << "!");
+
+  // Build the Jacobian graph, which looks like
+  //   [     I      dg_2/dp_2 ]
+  //   [ dg_1/dp_1     I      ]
+  W_graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *f_map, nx));
+  for (int i=0; i<f_map->NumMyElements(); i++) {
+    int row = f_map->GID(i);
+    // Diagonal part
+    int index = row;
+    W_graph->InsertGlobalIndices(row, 1, &index);
+    if (row < n_p_A) {
+      // dg_2/dp_2 part
+      for (int j=0; j<n_p_B; j++) {
+	index = n_p_A + j;
+	W_graph->InsertGlobalIndices(row, 1, &index);
+      }
+    }
+    else {
+      // dg_1/dp_1 part
+      for (int j=0; j<n_p_A; j++) {
+	index = j;
+	W_graph->InsertGlobalIndices(row, 1, &index);
+      }
+    }
+  }
+  W_graph->FillComplete();
+
+  // Build initial guess
+  Epetra_Vector x_init_overlap(*x_overlap_map);
+  Teuchos::RCP<const Epetra_Vector> p_init_A = modelA->get_p_init(pIndexA);
+  Teuchos::RCP<const Epetra_Vector> p_init_B = modelB->get_p_init(pIndexB);
+  for (int i=0; i<n_p_A; i++)
+    x_init_overlap[i] = (*p_init_A)[i];
+  for (int i=0; i<n_p_B; i++)
+    x_init_overlap[n_p_A + i] = (*p_init_B)[i];
+  x_init = Teuchos::rcp(new Epetra_Vector(*x_map));
+  x_init->Export(*x_init_overlap, *x_importer, Insert);
+
+  // Create storage for parameters, responses, and derivatives
+  p_A = Teuchos::rcp(new Epetra_Vector(*p_map_A));
+  p_B = Teuchos::rcp(new Epetra_Vector(*p_map_B));
+  g_A = Teuchos::rcp(new Epetra_Vector(*g_map_A));
+  g_B = Teuchos::rcp(new Epetra_Vector(*g_map_B));
+  Teuchos::RCP<Epetra_MultiVector> dgdp_vec_A = 
+    Teuchos::rcp(new Epetra_MultiVector(*g_map_A, n_p_A));
+  Teuchos::RCP<Epetra_MultiVector> dgdp_vec_B = 
+    Teuchos::rcp(new Epetra_MultiVector(*g_map_B, n_p_B));
+  dgdp_A = EpetraExt::ModelEvaluator::Derivative(dgdp_vec_A, DERIV_MV_BY_COL);
+  dgdp_B = EpetraExt::ModelEvaluator::Derivative(dgdp_vec_B, DERIV_MV_BY_COL);
 
   // Get the process ID and the total number of processors
   MyPID = Comm->MyPID();
   NumProc = Comm->NumProc();
 
-  //Total number of random variables
-  totNumRandVar=DnumRandVar+HnumRandVar;
-
-  //Maps for things
-  map_x=Teuchos::rcp(new Epetra_LocalMap(2,0,*Comm));
-  map_p=Teuchos::rcp(new Epetra_LocalMap(1,0,*Comm));
-  map_rvar=Teuchos::rcp(new Epetra_LocalMap(totNumRandVar,0,*Comm));
-  map_g=Teuchos::rcp(new Epetra_LocalMap(1,0,*Comm));
-
-  //To accommodate parallel computing, a map is constructed such that the 
-  //2*2 system will be computed only on MyPID==0.  The others will not 
-  //have any elements on the parallel map
-  if (NumProc==1){
-    x_OverlapMap=Teuchos::rcp(new Epetra_Map(*map_x));
-    g_OverlapMap=Teuchos::rcp(new Epetra_Map(*map_g));
-  }
-  else{
-    if (MyPID==0){
-      x_OverlapMap=Teuchos::rcp(new Epetra_Map(2,2,0,*Comm));
-      g_OverlapMap=Teuchos::rcp(new Epetra_Map(1,1,0,*Comm));
-    }
-    else {
-      x_OverlapMap=Teuchos::rcp(new Epetra_Map(2,0,0,*Comm));
-      g_OverlapMap=Teuchos::rcp(new Epetra_Map(1,0,0,*Comm));
-    }
-  }
-
-  //Importers
-  OtoLx = Teuchos::rcp(new Epetra_Import(*map_x,*x_OverlapMap));
-  LtoOx = Teuchos::rcp(new Epetra_Import(*x_OverlapMap,*map_x));
-  OtoLg = Teuchos::rcp(new Epetra_Import(*map_g,*g_OverlapMap));
-  LtoOg = Teuchos::rcp(new Epetra_Import(*g_OverlapMap,*map_g));
-
-
-  Epetra_Vector tempx(*map_p);
-
-  x0=Teuchos::rcp(new Epetra_Vector(*x_OverlapMap));
-
-  //Load the P_init values onto the first processor
-  if (MyPID==0){
-    tempx=*HeatProb->get_p_init(0);
-    (*x0)[0]=tempx[0];
-    tempx=*DiffProb->get_p_init(0);
-    (*x0)[1]=tempx[0];
-  }
-
-  A=Teuchos::rcp(new Epetra_CrsMatrix(Copy,*x_OverlapMap,2));
-
-
-  p1=Teuchos::rcp(new Epetra_Vector(*map_p));
-  p2=Teuchos::rcp(new Epetra_Vector(*map_p));
-  g1=Teuchos::rcp(new Epetra_Vector(*map_g));
-  g2=Teuchos::rcp(new Epetra_Vector(*map_g));
-
-  //Vectors that will go inside the dgdp matrices
-  dirvec1=Teuchos::rcp(new Epetra_MultiVector(*map_g.get(),1));
-  dirvec2= Teuchos::rcp(new Epetra_MultiVector(*map_g.get(),1));
-
-  dgdp1=Teuchos::rcp(new EpetraExt::ModelEvaluator::Derivative(dirvec1));
-  dgdp2=Teuchos::rcp(new EpetraExt::ModelEvaluator::Derivative(dirvec2));
-
-  pnames=Teuchos::rcp(new Teuchos::Array<std::string>(1));
-  (*pnames)[0]="Temperature";
-
-  rVars=Teuchos::rcp(new Epetra_Vector(*map_rvar));
-  for (int i=0;i<totNumRandVar/2;++i){
-    (*rVars)[2*i]=0.5;
-    (*rVars)[2*i+1]=0.5;
-  }
-
 }
 
+/*
 void
-ME_Coupled::init_sg(
+Piro::Epetra::NECoupledModelEvaluator::init_sg(
   const Teuchos::RCP<const Stokhos::ProductBasis<int,double> >& Basis, 
   const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& Quad,
   const Teuchos::RCP<const EpetraExt::MultiComm>& multiComm)
@@ -154,132 +224,164 @@ ME_Coupled::init_sg(
 		     map_p->NumGlobalElements()));
   }
 }
+*/
 
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_x_map() const
+Piro::Epetra::NECoupledModelEvaluator::
+get_x_map() const
 {
-  return x_OverlapMap;
+  return x_map;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_f_map() const
+Piro::Epetra::NECoupledModelEvaluator::
+get_f_map() const
 {
-  return x_OverlapMap;
+  return f_map;
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-ME_Coupled::get_x_init() const
+Piro::Epetra::NECoupledModelEvaluator::
+get_x_init() const
 {
-  return x0;
+  return x_init;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_p_map(int j) const
+Piro::Epetra::NECoupledModelEvaluator::
+get_p_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
-  return map_rvar;
+  TEST_FOR_EXCEPTION(
+    j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
+    std::endl <<
+    "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_map():  " <<
+    "Invalid parameter index j = " << j << std::endl);
+
+  if (j < num_params_A-1)
+    return modelA->get_p_map(param_map[j]);
+  return modelB->get_p_map(param_map[j]);
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_p_sg_map(int j) const
+Piro::Epetra::NECoupledModelEvaluator::
+get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
-  return map_rvar;
-}
+  TEST_FOR_EXCEPTION(
+    j >= num_responses_total || j < 0, Teuchos::Exceptions::InvalidParameter,
+    std::endl <<
+    "Error in Piro::Epetra::NECoupledModelEvaluator::get_g_map():  " <<
+    "Invalid response index j = " << j << std::endl);
 
-Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_g_map(int j) const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
-}
-
-Teuchos::RefCountPtr<const Epetra_Map>
-ME_Coupled::get_g_sg_map(int j) const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  if (j < num_responses_A-1)
+    return modelA->get_g_map(response_map[j]);
+  return modelB->get_g_map(response_map[j]);
 }
 
 Teuchos::RCP<const Teuchos::Array<std::string> > 
-ME_Coupled::get_p_names(int j) const
+Piro::Epetra::NECoupledModelEvaluator::
+get_p_names(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
-  return pnames;
-}
+  TEST_FOR_EXCEPTION(
+    j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
+    std::endl <<
+    "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_names():  " <<
+    "Invalid parameter index j = " << j << std::endl);
 
-Teuchos::RCP<const Teuchos::Array<std::string> > 
-ME_Coupled::get_p_sg_names(int j) const
-{
-  TEST_FOR_EXCEPT(j!=0);
-  return pnames;
+  if (j < num_params_A-1)
+    return modelA->get_p_names(param_map[j]);
+  return modelB->get_p_names(param_map[j]);
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-ME_Coupled::get_p_init(int j) const
+Piro::Epetra::NECoupledModelEvaluator::
+get_p_init(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
-  return rVars;
+  TEST_FOR_EXCEPTION(
+    j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
+    std::endl <<
+    "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_init():  " <<
+    "Invalid parameter index j = " << j << std::endl);
+
+  if (j < num_params_A-1)
+    return modelA->get_p_init(param_map[j]);
+  return modelB->get_p_init(param_map[j]);
 }
 
 Teuchos::RefCountPtr<Epetra_Operator>
-ME_Coupled::create_W() const
+Piro::Epetra::NECoupledModelEvaluator::
+create_W() const
 {
   Teuchos::RCP<Epetra_CrsMatrix> mat =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy,*x_OverlapMap,2));
-  if (MyPID==0){
-    double valu = 0.0;
-    int index = 0;
-    mat->InsertGlobalValues(0,1,&valu,&index);
-    mat->InsertGlobalValues(1,1,&valu,&index);
-    index=1;
-    mat->InsertGlobalValues(1,1,&valu,&index);
-    mat->InsertGlobalValues(0,1,&valu,&index);
-  }
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *W_graph));
   mat->FillComplete();
   return mat;
-  //return A;
 }
 
 EpetraExt::ModelEvaluator::InArgs
-ME_Coupled::createInArgs() const
+Piro::Epetra::NECoupledModelEvaluator::
+createInArgs() const
 {
   InArgsSetup inArgs;
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(1);
+
+  EpetraExt::ModelEvaluator::InArgs modelA_inargs = modelA->createInArgs();
+  EpetraExt::ModelEvaluator::InArgs modelB_inargs = modelB->createInArgs();
+
+  // Deterministic InArgs
   inArgs.setSupports(IN_ARG_x,true);
+  inArgs.set_Np(num_params_total);
+  
+  // Stochastic InArgs
   inArgs.setSupports(IN_ARG_x_sg,true);
-  inArgs.set_Np_sg(1); // 1 SG parameter vector
+  for (int i=0; i<num_params_A-1; i++)
+    inArgs.setSupports(IN_ARG_p_sg, i, 
+		       modelA_inargs.supports(IN_ARG_p_sg, param_map[i])); 
+  for (int i=0; i<num_params_B-1; i++)
+    inArgs.setSupports(IN_ARG_p_sg, i, 
+		       modelB_inargs.supports(IN_ARG_p_sg, 
+					      param_map[num_params_A-1+i])); 
   inArgs.setSupports(IN_ARG_sg_basis,true);
   inArgs.setSupports(IN_ARG_sg_quadrature,true);
   inArgs.setSupports(IN_ARG_sg_expansion,true);
+
   return inArgs;
 }
 
 EpetraExt::ModelEvaluator::OutArgs
-ME_Coupled::createOutArgs() const
+Piro::Epetra::NECoupledModelEvaluator::
+createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.setSupports(OUT_ARG_f,true);
-  outArgs.setSupports(OUT_ARG_W,true);
-  outArgs.setSupports(OUT_ARG_f_sg,true);
-  outArgs.setSupports(OUT_ARG_W_sg,true);
-  outArgs.set_Np_Ng(1,0);
-  outArgs.set_Np_Ng_sg(1,0);
+
+  EpetraExt::ModelEvaluator::OutArgs modelA_outargs = modelA->createOutArgs();
+  EpetraExt::ModelEvaluator::OutArgs modelB_outargs = modelB->createOutArgs();
+
+  // Deterministic OutArgs
+  outArgs.setSupports(OUT_ARG_f, true);
+  outArgs.setSupports(OUT_ARG_W, true);
   outArgs.set_W_properties(
-			   DerivativeProperties(
-						DERIV_LINEARITY_NONCONST
-						,DERIV_RANK_FULL
-						,true // supportsAdjoint
-						)
-			   );
+    DerivativeProperties(DERIV_LINEARITY_NONCONST, DERIV_RANK_FULL, true));
+  outArgs.set_Np_Ng(num_params_total, num_responses_total);
+
+  // Stochastic OutArgs
+  outArgs.setSupports(OUT_ARG_f_sg, true);
+  outArgs.setSupports(OUT_ARG_W_sg, true);
+  for (int i=0; i<num_responses_A-1; i++)
+    outArgs.setSupports(OUT_ARG_g_sg, i, 
+		       modelA_outargs.supports(OUT_ARG_g_sg, response_map[i])); 
+  for (int i=0; i<num_responses_B-1; i++)
+    outArgs.setSupports(OUT_ARG_g_sg, i, 
+		       modelB_outargs.supports(OUT_ARG_g_sg, 
+					       response_map[num_responses_A-1+i]));
+  
   return outArgs;
 }
 
-void ME_Coupled::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
+void Piro::Epetra::NECoupledModelEvaluator::
+evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -439,7 +541,7 @@ void ME_Coupled::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > diff_basis_vals;
   Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > heat_basis_vals;
   if (x_sg != Teuchos::null && reduce_dimension) {
-    TEUCHOS_FUNC_TIME_MONITOR("ME_Coupled -- dimension reduction");
+    TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- dimension reduction");
     int order = basis->order();
     int new_order = order;
     int sz = p1_sg->size();
@@ -792,13 +894,13 @@ void ME_Coupled::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 
 
   {
-  TEUCHOS_FUNC_TIME_MONITOR("ME_Coupled -- Diffusion nonlinear elimination");
+  TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Diffusion nonlinear elimination");
   std::cout << "eliminating diffusion states..." << std::endl;
   DiffProbLocal->evalModel(inArgs1,outArgs1);
   }
 
   {
-  TEUCHOS_FUNC_TIME_MONITOR("ME_Coupled -- Heat nonlinear elimination");
+  TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Heat nonlinear elimination");
   std::cout << "eliminating heat states..." << std::endl;
   HeatProbLocal->evalModel(inArgs2,outArgs2);
   }
@@ -842,7 +944,7 @@ void ME_Coupled::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 
     // Project back to original basis
     if (reduce_dimension) {
-      TEUCHOS_FUNC_TIME_MONITOR("ME_Coupled -- dimension reduction g integration");
+      TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- dimension reduction g integration");
       const Teuchos::Array<double>& weights = quad->getQuadWeights();
       const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
 	quad->getBasisAtQuadPoints();
@@ -876,7 +978,7 @@ void ME_Coupled::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
     
     // Project back to original basis
     if (reduce_dimension) {
-      TEUCHOS_FUNC_TIME_MONITOR("ME_Coupled -- dimension reduction dg/dp integration");
+      TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- dimension reduction dg/dp integration");
       const Teuchos::Array<double>& weights = quad->getQuadWeights();
       const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
 	quad->getBasisAtQuadPoints();
