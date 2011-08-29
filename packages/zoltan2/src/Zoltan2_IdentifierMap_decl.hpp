@@ -48,6 +48,9 @@ enum TranslationType {
            replace new/delete with memory wrappers
            exception handling
            use Kokkos node 
+
+    TODO - methods called by Problem to redistribute in place or to
+          create a redistributed copy.
 */
 
 template<typename AppLID, typename AppGID, typename LNO=int, 

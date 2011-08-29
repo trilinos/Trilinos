@@ -42,7 +42,7 @@ private:
   Teuchos::ArrayRCP<Scalar> _edgeWgt;
   int _vtxWeightDim;
   int _edgeWeightDim;
-  std::vector<LNO> _edgeOffsets;
+  std::vector<LNO> _edgeOffsets;   // TODO do we need these?
 
 public:
 

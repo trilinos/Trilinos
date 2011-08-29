@@ -20,11 +20,11 @@
 namespace Zoltan2 {
 
 /*! Zoltan2::TpetraCrsGraphInput
-    \brief TpetraCrsGraphInput provides access for Zoltan2 to Tpetra::CrsGraph data.
+    \brief This objects provides access for Zoltan2 to Tpetra::CrsGraph data plus weights.
 
     TpetraCrsGraphInput provides access for Zoltan2 to an Tpetra::CrsGraph using an
     interface that is the same for all graph input.  Most of the methods used by
-    Zoltan2 objects are in the XpetraGraphInput parent class.  The methods used
+    Zoltan2 are in the XpetraGraphInput parent class.  The methods used
     by the Zoltan2 caller are in this class.
 
     The template parameter is the weight type.
@@ -55,7 +55,10 @@ public:
                       Teuchos::ArrayRCP<Scalar> vertexWeights,
                       Teuchos::ArrayRCP<Scalar> edgeWeights){
 
-     this->setGraph(graph,vertexWeights,edgeWeights);
+     try{
+       this->setGraph(graph,vertexWeights,edgeWeights);
+     } catch(const std::exception &e)
+         Z2_THROW_ZOLTAN2_ERROR(*_env, e)
   }
 
   /*! Post construction update
@@ -68,7 +71,10 @@ public:
     Teuchos::ArrayRCP<Scalar> vwgt(null);
     Teuchos::ArrayRCP<Scalar> ewgt(null);
 
-    Xpetra::TpetraCrsGraph<Scalar, LNO, GNO> xgraph(graph);
+    try{
+      Xpetra::TpetraCrsGraph<Scalar, LNO, GNO> xgraph(graph);
+    } catch(const std::exception &e)
+        Z2_THROW_ZOLTAN2_ERROR(*_env, e)
 
     this->setXpetraCrsGraph(xgraph, vwgt, ewgt);
 
@@ -85,7 +91,10 @@ public:
     _adapterProcessingComplete = false;
     Xpetra::TpetraCrsGraph<Scalar, LNO, GNO> xgraph(graph);
 
-    this->setXpetraCrsGraph(xgraph, vertexWeights, edgeWeights);
+    try{
+      this->setXpetraCrsGraph(xgraph, vertexWeights, edgeWeights);
+    } catch(const std::exception &e)
+        Z2_THROW_ZOLTAN2_ERROR(*_env, e)
 
     _inputComplete = true;
     _adapterProcessingComplete = true;
