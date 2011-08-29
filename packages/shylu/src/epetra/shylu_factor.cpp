@@ -668,7 +668,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     {
         int nvectors = prober->getNumOrthogonalVectors();
         //Set up the probing operator
-        // TODO: Change to RCPs
+        // TODO: Change to RCPs. Call Set vectors on schur_op and remove
+        // probeop
         ShyLU_Probing_Operator probeop((ssym->G).getRawPtr(),
          (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
          (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
@@ -712,6 +713,21 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
         //cout << "Computed Approx Schur complement" << endl;
     }
+    else if (config->schurApproxMethod == 3)
+    {
+        Sbar = computeSchur_GuidedProbing(config, ssym, data, &LocalDRowMap);
+
+        // TODO: The above call does not work with narrow separator. We need
+        // distribute probing here, save the Sbar from the iteration in
+        // data in a different variable other than Sbar (as Sbar gets
+        // overwritten after every iteration, but we need the original Sbar
+        // graph for the probing in later iterations) Set the prober, when
+        // new dropped is computed in previous iteration, otherwise just do
+        // probing, same idea from above function this time it is distributed.
+        // This was slower when I implemented it for wide sep (and I deleted
+        // it !).
+    }
+
 
     data->Sbar = Sbar;
 

@@ -17,6 +17,7 @@ Ifpack_ShyLU::Ifpack_ShyLU(Epetra_CrsMatrix* A):
     IsInitialized_(false),
     IsComputed_(false),
     Label_(),
+    NumCompute_(0),
     NumApplyInverse_(0),
     Time_(A_->Comm())
 {
@@ -57,6 +58,8 @@ void Ifpack_ShyLU::Destroy()
     {
         // I would rather explicitly delete
         // delete slu_data_.Sbar;
+        slu_data_.localSbargraph = Teuchos::null;
+        slu_data_.guided_prober = Teuchos::null;
     }
 }
 
@@ -110,6 +113,13 @@ int Ifpack_ShyLU::Initialize()
         slu_config_.relative_threshold =  Teuchos::getParameter<double>(List_,
                                                     "Relative Threshold");
     }
+    else if (schurApproxMethod == "Guided Probing")
+    {
+        slu_config_.schurApproxMethod = 3;
+        slu_config_.reset_iter =  List_.get<int>("Schur Recompute Iteration", 10);
+        slu_config_.relative_threshold =  Teuchos::getParameter<double>(List_,
+                                                    "Relative Threshold");
+    }
 
     slu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
                                                 "Inner Solver Tolerance");
@@ -159,10 +169,13 @@ int Ifpack_ShyLU::Compute()
     Teuchos::Time ftime("setup time");
     ftime.start();
 
+    slu_data_.num_compute = NumCompute_;
+
     shylu_factor(A_, &slu_sym_, &slu_data_, &slu_config_);
 
     ftime.stop();
     IsComputed_ = true;
+    NumCompute_++;
     //cout << " Done with the compute" << endl ;
     return 0;
 }

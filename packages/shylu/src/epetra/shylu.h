@@ -49,6 +49,7 @@ typedef struct
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
+    Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
     Epetra_LinearProblem *LP2;   // Local problem to solve
     Amesos_BaseSolver *dsolver;  // Local Subdomain solver
@@ -56,6 +57,9 @@ typedef struct
     Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
     int rmax;                    // May be this is optimizing too much
+    Teuchos::RCP<Isorropia::Epetra::Prober> guided_prober;  // Guided Prober for Sbar
+    int num_compute;            // # of times Compute() has been called before
+                                // or in otherwords #nonlinear iteration-1
 } shylu_data;
 
 typedef struct
@@ -75,6 +79,7 @@ typedef struct
     int sep_type;
     int debug_level;
     //DebugManager dm;
+    int reset_iter;             // When should we reset the guided_probing
 } shylu_config;
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
@@ -101,4 +106,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
+Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
+(
+    shylu_config *config,
+    shylu_symbolic *ssym,   // symbolic structure
+    shylu_data *data,       // numeric structure
+    Epetra_Map *localDRowMap
+);
 #endif // SHYLU_H
