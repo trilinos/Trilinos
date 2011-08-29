@@ -139,7 +139,7 @@ namespace Xpetra
       XPETRA_RCP_DYNAMIC_CAST(const EpetraVector, full, efull, "Xpetra::EpetraMapextractor constructors only accepts Xpetra::EpetraMap as input arguments.");
       TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
-      const Teuchos::RCP<EpetraVector> ret = Teuchos::rcp(new Xpetra::EpetraVector(Map(block),true));
+      const Teuchos::RCP<EpetraVector> ret = Teuchos::rcp(new Xpetra::EpetraVector(getMap(block),true));
       ExtractVector(*efull,block,*ret);
       return ret;
     }
@@ -149,7 +149,7 @@ namespace Xpetra
       XPETRA_RCP_DYNAMIC_CAST(EpetraVector, full, efull, "Xpetra::EpetraMapextractor constructors only accepts Xpetra::EpetraMap as input arguments.");
       TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
-      const Teuchos::RCP<EpetraVector> ret = Teuchos::rcp(new Xpetra::EpetraVector(Map(block),true));
+      const Teuchos::RCP<EpetraVector> ret = Teuchos::rcp(new Xpetra::EpetraVector(getMap(block),true));
       ExtractVector(*efull,block,*ret);
       return ret;
     }
@@ -182,7 +182,7 @@ namespace Xpetra
       XPETRA_RCP_DYNAMIC_CAST(const EpetraMultiVector, full, efull, "Xpetra::EpetraMapextractor constructors only accepts Xpetra::EpetraMap as input arguments.");
       TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
-      const Teuchos::RCP<EpetraMultiVector> ret = Teuchos::rcp(new Xpetra::EpetraMultiVector(Map(block),full->getNumVectors(),true));
+      const Teuchos::RCP<EpetraMultiVector> ret = Teuchos::rcp(new Xpetra::EpetraMultiVector(getMap(block),full->getNumVectors(),true));
       ExtractVector(*efull,block,*ret);
       return ret;
     }
@@ -192,19 +192,19 @@ namespace Xpetra
       XPETRA_RCP_DYNAMIC_CAST(EpetraMultiVector, full, efull, "Xpetra::EpetraMapextractor constructors only accepts Xpetra::EpetraMap as input arguments.");
       TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
-      const Teuchos::RCP<EpetraMultiVector> ret = Teuchos::rcp(new Xpetra::EpetraMultiVector(Map(block),full->getNumVectors(),true));
+      const Teuchos::RCP<EpetraMultiVector> ret = Teuchos::rcp(new Xpetra::EpetraMultiVector(getMap(block),full->getNumVectors(),true));
       ExtractVector(*efull,block,*ret);
       return ret;
     }
 
-    virtual Teuchos::RCP<VectorClass> Vector(size_t i) const
+    virtual Teuchos::RCP<VectorClass> getVector(size_t i) const
     {
-      return Teuchos::rcp(new Xpetra::EpetraVector(Map(i),true));
+      return Teuchos::rcp(new Xpetra::EpetraVector(getMap(i),true));
     }
 
-    virtual Teuchos::RCP<MultiVectorClass> Vector(size_t i, size_t numvec) const
+    virtual Teuchos::RCP<MultiVectorClass> getVector(size_t i, size_t numvec) const
     {
-      return Teuchos::rcp(new Xpetra::EpetraMultiVector(Map(i),numvec,true));
+      return Teuchos::rcp(new Xpetra::EpetraMultiVector(getMap(i),numvec,true));
     }
 
     /** \name Maps */
@@ -214,10 +214,10 @@ namespace Xpetra
     size_t NumMaps() const { return maps_.size(); }
 
     /// get the map
-    const Teuchos::RCP<const MapClass> Map(size_t i) const { return maps_[i]; }
+    const Teuchos::RCP<const MapClass> getMap(size_t i) const { return maps_[i]; }
 
     /// the full map
-    const Teuchos::RCP<const MapClass> FullMap() const { return fullmap_; }
+    const Teuchos::RCP<const MapClass> getFullMap() const { return fullmap_; }
 
     //@}
 

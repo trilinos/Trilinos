@@ -168,7 +168,7 @@ public:
     }
 
     // get full row map
-    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->FullMap()->lib(), rangemaps_->FullMap()->getNodeNumElements(), rangemaps_->FullMap()->getNodeElementList(), rangemaps_->FullMap()->getIndexBase(), rangemaps_->FullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
+    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getNodeNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
 
     // TODO: check me, clean up, use only ArrayView instead of std::vector
     // build full col map
@@ -452,8 +452,8 @@ public:
     {
       for(size_t rblock=0; rblock<Rows(); ++rblock)
       {
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = rangemaps_->Vector(rblock,Y.getNumVectors()); // end result for block row
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = rangemaps_->Vector(rblock,Y.getNumVectors()); // helper vector
+        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = rangemaps_->getVector(rblock,Y.getNumVectors()); // end result for block row
+        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = rangemaps_->getVector(rblock,Y.getNumVectors()); // helper vector
         for (size_t cblock=0; cblock<Cols(); ++cblock)
         {
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = domainmaps_->ExtractVector(tX,cblock);
@@ -469,8 +469,8 @@ public:
       // TODO: test me!
       for (size_t cblock = 0; cblock<Cols(); ++cblock)
       {
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = domainmaps_->Vector(cblock,Y.getNumVectors()); // end result for block row
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = domainmaps_->Vector(cblock,Y.getNumVectors()); // helper vector
+        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = domainmaps_->getVector(cblock,Y.getNumVectors()); // end result for block row
+        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = domainmaps_->getVector(cblock,Y.getNumVectors()); // helper vector
         for (size_t rblock = 0; rblock<Rows(); ++rblock)
         {
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = rangemaps_->ExtractVector(tX,rblock);
@@ -491,28 +491,28 @@ public:
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const MapClass > getDomainMap() const
   {
-    return domainmaps_->FullMap();
+    return domainmaps_->getFullMap();
   }
 
   //! \brief Returns the Map associated with the i'th block domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const MapClass > getDomainMap(size_t i) const
   {
-    return domainmaps_->Map(i);
+    return domainmaps_->getMap(i);
   }
 
   //! Returns the Map associated with the full range of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const MapClass > getRangeMap() const
   {
-    return rangemaps_->FullMap();
+    return rangemaps_->getFullMap();
   }
 
   //! Returns the Map associated with the i'th block range of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const MapClass > getRangeMap(size_t i) const
   {
-    return rangemaps_->Map(i);
+    return rangemaps_->getMap(i);
   }
 
   //! Returns map extractor class for range map

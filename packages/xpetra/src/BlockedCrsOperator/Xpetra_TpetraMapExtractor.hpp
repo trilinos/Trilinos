@@ -225,7 +225,7 @@ namespace Xpetra
     const Teuchos::RCP<const MapClass> getMap(size_t i) const { return maps_[i]; }
 
     /// the full map
-    const Teuchos::RCP<const MapClass> FullMap() const { return fullmap_; }
+    const Teuchos::RCP<const MapClass> getFullMap() const { return fullmap_; }
 
     //@}
 

@@ -70,8 +70,8 @@ namespace Xpetra
 
 		//@}
 
-		virtual Teuchos::RCP<VectorClass> Vector(size_t i) const = 0;
-		virtual Teuchos::RCP<MultiVectorClass> Vector(size_t i, size_t numvec) const = 0;
+		virtual Teuchos::RCP<VectorClass> getVector(size_t i) const = 0;
+		virtual Teuchos::RCP<MultiVectorClass> getVector(size_t i, size_t numvec) const = 0;
 
     /** \name Maps */
     //@{
@@ -80,10 +80,10 @@ namespace Xpetra
     virtual size_t NumMaps() const = 0;
 
     /// get the map
-    virtual const Teuchos::RCP<const MapClass> Map(size_t i) const = 0;
+    virtual const Teuchos::RCP<const MapClass> getMap(size_t i) const = 0;
 
     /// the full map
-    virtual const Teuchos::RCP<const MapClass> FullMap() const = 0;
+    virtual const Teuchos::RCP<const MapClass> getFullMap() const = 0;
 
     //@}
 
