@@ -22,45 +22,6 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-#
-# See the comments on "experimental" code in belos/CMakeLists.txt.  In
-# particular, experimental headers and source files are not included
-# in the build or install unless the Belos_ENABLE_Experimental CMake
-# option was set at configure time.
-#
-
-#
-# List of all header files in belos/src that are marked "experimental."
-#
-SET(EXPERIMENTAL_HEADERS "")
-APPEND_SET(EXPERIMENTAL_HEADERS
-  BelosAkxFactory.hpp
-  BelosAkx.hpp
-  BelosBlockGCRODRIter.hpp
-  BelosBlockGCRODRSolMgr.hpp
-  BelosCaGmres.hpp
-  BelosGmresBaseFactory.hpp
-  BelosGmresBase.hpp
-  BelosGmresBaseIteration.hpp
-  BelosGmresInnerSolver.hpp
-  BelosGmresSolMgr.hpp
-  BelosInnerSolveResult.hpp
-  BelosInnerSolver.hpp
-  BelosMonomialOpAkx.hpp
-  BelosNewtonBasis.hpp
-  BelosNewtonOpAkx.hpp
-  BelosOpAkx.hpp
-  BelosStandardGmres.hpp
-)
-
-#
-# List of all source files in belos/src that are marked "experimental."
-#
-SET(EXPERIMENTAL_SOURCES "")
-APPEND_SET(EXPERIMENTAL_SOURCES
-  BelosInnerSolveResult.cpp
-)
-
 # CORE
 APPEND_SET(HEADERS
   BelosBlockCGIter.hpp
@@ -159,13 +120,20 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 
+#
+# See the comments on "experimental" code in belos/CMakeLists.txt.  In
+# particular, experimental headers and source files are not included
+# in the build or install unless the Belos_ENABLE_Experimental CMake
+# option was set at configure time.
+#
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 IF(${PACKAGE_NAME}_ENABLE_Experimental)
   #
   # Add experimental files to HEADERS and SOURCES.
   # 
-  APPEND_SET(HEADERS ${EXPERIMENTAL_HEADERS})
-  APPEND_SET(SOURCES ${EXPERIMENTAL_SOURCES})
+  APPEND_SET(HEADERS ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS})
+  APPEND_SET(SOURCES ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES})
 ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
 
 ######################################################################

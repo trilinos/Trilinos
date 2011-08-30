@@ -1,29 +1,29 @@
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
 
-#
-# A) Define the package
-#
+######################################################################
+## Define the package
+######################################################################
 
 PACKAGE(Belos)
 
-#
-# B) Set up package-specific options
-#
+######################################################################
+## Set up package-specific options
+######################################################################
 
 # Kokkos includes an implementation of the Tall Skinny QR (TSQR)
-# factorization.  TSQR is used to implement an OrthoManager
-# (Belos::TsqrOrthoManager) and a MatOrthoManager (which only uses
-# TSQR in the Euclidean-inner-product case).  TSQR is enabled by
-# default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
-# TSQR is built with complex arithmetic support.
+# factorization.  TSQR is used to implement orthogonalization methods.
+# TSQR is enabled by default in Belos if enabled in Kokkos.  If
+# Teuchos_ENABLE_COMPLEX is enabled, TSQR is built with complex
+# arithmetic support.
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Belos."
   "${Kokkos_ENABLE_TSQR}" )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   BELOS_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
@@ -47,6 +47,23 @@ ADD_OPTION_AND_DEFINE(
 # dependency on experimental code; test implementers can test for this
 # via "#ifdef HAVE_BELOS_EXPERIMENTAL".
 #
+# Belos developers must maintain the list of experimental header and
+# source files in this file, in Belos_EXPERIMENTAL_HEADERS
+# resp. Belos_EXPERIMENTAL_SOURCES.  (This is a bit awkward because
+# those files live in belos/src and should really be governed by
+# belos/src/CMakeLists.txt.  However, this file needs to know about
+# them so that it can exclude them from the release tarball.
+# belos/src/CMakeLists.txt will reference those variables in order to
+# exclude experimental code when building Belos' library/ies.)
+#
+# Belos developers must also exclude directories containing
+# experimental tests (i.e., tests with required dependencies on
+# experimental code) from both the release tarball (in the
+# PACKAGE_ARCH_EXCLUDE_FILES section below) and the build (in the
+# CMakeLists.txt files in the parent directory of the tests in
+# question).  For the latter, look at tpetra/test/CMakeLists.txt for
+# an example.
+#
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_BELOS_EXPERIMENTAL
@@ -54,9 +71,9 @@ ADD_OPTION_AND_DEFINE(
   NO )
 
 
-#
-# C) Add the libraries, tests, and examples
-#
+######################################################################
+## Add the libraries, tests, and examples
+######################################################################
 
 ADD_SUBDIRECTORY(src)
 
@@ -73,14 +90,62 @@ IF (Belos_ENABLE_Tpetra)
 ENDIF()
 
 
-#
-# Exclude files for source package.
-#
+######################################################################
+## Build list of files to exclude from the release tarball
+######################################################################
 
+#
+# Exclude leftover GNU Autotools files.
+#
 PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
 
 #
-# D) Do standard postprocessing
+# List of all header files in belos/src that are marked
+# "experimental."  See the comments above on "experimental" code.
 #
+SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+  BelosAkxFactory.hpp
+  BelosAkx.hpp
+  BelosBlockGCRODRIter.hpp
+  BelosBlockGCRODRSolMgr.hpp
+  BelosCaGmres.hpp
+  BelosGmresBaseFactory.hpp
+  BelosGmresBase.hpp
+  BelosGmresBaseIteration.hpp
+  BelosGmresInnerSolver.hpp
+  BelosGmresSolMgr.hpp
+  BelosInnerSolveResult.hpp
+  BelosInnerSolver.hpp
+  BelosMonomialOpAkx.hpp
+  BelosNewtonBasis.hpp
+  BelosNewtonOpAkx.hpp
+  BelosOpAkx.hpp
+  BelosStandardGmres.hpp
+)
+
+#
+# List of all source files in belos/src that are marked
+# "experimental."
+#
+SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
+  BelosInnerSolveResult.cpp
+)
+
+#
+# Exclude experimental header and source files, along with test
+# directories for experimental code (i.e., tests with required
+# dependencies on experimental code), from the release tarball.
+#
+PACKAGE_ARCH_EXCLUDE_FILES(
+  ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+  ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
+  tpetra/test/Gmres
+  )
+
+######################################################################
+## Do standard postprocessing
+######################################################################
 
 PACKAGE_POSTPROCESS()
