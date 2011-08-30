@@ -70,6 +70,7 @@ PACKAGE_ADD_TEST(
   UnitTests
   NAME "UnitTestsEpetra"
   ARGS "--linAlgebra=0"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   NUM_MPI_PROCS 4
   COMM serial mpi
   )
@@ -78,6 +79,7 @@ PACKAGE_ADD_TEST(
   UnitTests
   NAME "UnitTestsTpetra"
   ARGS "--linAlgebra=1"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   NUM_MPI_PROCS 4
   COMM serial mpi
   )

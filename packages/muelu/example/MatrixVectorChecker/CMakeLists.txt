@@ -18,7 +18,8 @@ PACKAGE_ADD_EXECUTABLE(
 IF (Xpetra_ENABLE_Epetra)
   PACKAGE_ADD_TEST(
     MatrixVectorCheckerExample
-    NAME "MatrixVectorChecker Epetra"
+    #NAME "MatrixVectorChecker Epetra"
+    NAME "MatrixVectorChecker"
     ARGS "--linAlgebra=0"
     COMM serial mpi
     # NUM_MPI_PROCS 2
@@ -29,7 +30,8 @@ ENDIF()
 IF (Xpetra_ENABLE_Tpetra)
   PACKAGE_ADD_TEST(
     MatrixVectorCheckerExample
-    NAME "MatrixVectorChecker Epetra"
+    #NAME "MatrixVectorChecker Epetra"
+    NAME "MatrixVectorChecker"
     ARGS "--linAlgebra=1"
     COMM serial mpi
     # NUM_MPI_PROCS 2
