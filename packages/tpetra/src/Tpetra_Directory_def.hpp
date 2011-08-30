@@ -235,18 +235,27 @@ namespace Tpetra {
 
       typename Teuchos::Array<global_size_t>::iterator ptr = imports.begin();
       const size_t numRecv = numEntries - numMissing;
+
+      Teuchos::Array<GlobalOrdinal> sortedIDs(globalIDs);
+      Teuchos::ArrayRCP<GlobalOrdinal> offset = arcp<GlobalOrdinal>(numEntries);
+      GlobalOrdinal ii=0;
+      for (typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator oo = offset.begin(); oo != offset.end(); ++oo,++ii)
+        *oo = ii;
+      sort2(sortedIDs.begin(),sortedIDs.begin()+numEntries,offset.begin());
+
+      typedef typename Teuchos::Array<GlobalOrdinal>::iterator IT;
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
         GlobalOrdinal curGID = as<GlobalOrdinal>(*ptr++);
-        for (size_t j = 0; j < numEntries; ++j) {
-          if (curGID == globalIDs[j]) {
-            nodeIDs[j] = as<int>(*ptr++);
-            if (computeLIDs) {
-              localIDs[j] = as<LocalOrdinal>(*ptr++);
-            }
-            if (nodeIDs[j] == -1) res = IDNotPresent;
-            break;
+        std::pair< IT, IT> p1 = std::equal_range(sortedIDs.begin(),sortedIDs.end(),curGID);
+        if (p1.first != p1.second) {
+          //found it
+          size_t j = p1.first - sortedIDs.begin();
+          nodeIDs[offset[j]] = as<int>(*ptr++);
+          if (computeLIDs) {
+            localIDs[offset[j]] = as<LocalOrdinal>(*ptr++);
           }
+          if (nodeIDs[offset[j]] == -1) res = IDNotPresent;
         }
       }
     }
