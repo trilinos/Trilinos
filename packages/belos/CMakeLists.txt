@@ -32,8 +32,27 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Tpetra_Timers
   HAVE_BELOS_TPETRA_TIMERS
   "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
-  NO
-  )
+  NO )
+
+#
+# "Experimental" code lives in Belos, but is not quite ready for use
+# by a general audience.  You have to enable the CMake option below in
+# order to install experimental headers, include experimental source
+# files in the libraries, and build experimental tests.
+#
+# It's up to Belos developers to define what headers and source files
+# are experimental, and what tests depend on experimental code.  They
+# should disable building and running tests that have a required
+# dependency on experimental code.  Some tests may have an optional
+# dependency on experimental code; test implementers can test for this
+# via "#ifdef HAVE_BELOS_EXPERIMENTAL".
+#
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_BELOS_EXPERIMENTAL
+  "Enables experimental features of Belos, such as new solvers which are not quite ready for release to a general audience."
+  NO )
+
 
 #
 # C) Add the libraries, tests, and examples

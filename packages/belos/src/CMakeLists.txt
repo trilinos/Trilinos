@@ -1,15 +1,15 @@
 
 INCLUDE(PackageLibraryMacros)
 
-#
-# A) Package-specific configuration options
-#
+######################################################################
+## Package-specific configuration options
+######################################################################
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
-#
-# B) Define the header and source files (and directories)
-#
+######################################################################
+## Define the header and source files (and directories)
+######################################################################
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -22,34 +22,63 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# CORE
-APPEND_SET(HEADERS
+#
+# See the comments on "experimental" code in belos/CMakeLists.txt.  In
+# particular, experimental headers and source files are not included
+# in the build or install unless the Belos_ENABLE_Experimental CMake
+# option was set at configure time.
+#
+
+#
+# List of all header files in belos/src that are marked "experimental."
+#
+SET(EXPERIMENTAL_HEADERS "")
+APPEND_SET(EXPERIMENTAL_HEADERS
   BelosAkxFactory.hpp
   BelosAkx.hpp
+  BelosBlockGCRODRIter.hpp
+  BelosBlockGCRODRSolMgr.hpp
+  BelosCaGmres.hpp
+  BelosGmresBaseFactory.hpp
+  BelosGmresBase.hpp
+  BelosGmresBaseIteration.hpp
+  BelosGmresInnerSolver.hpp
+  BelosGmresSolMgr.hpp
+  BelosInnerSolveResult.hpp
+  BelosInnerSolver.hpp
+  BelosMonomialOpAkx.hpp
+  BelosNewtonBasis.hpp
+  BelosNewtonOpAkx.hpp
+  BelosOpAkx.hpp
+  BelosStandardGmres.hpp
+)
+
+#
+# List of all source files in belos/src that are marked "experimental."
+#
+SET(EXPERIMENTAL_SOURCES "")
+APPEND_SET(EXPERIMENTAL_SOURCES
+  BelosInnerSolveResult.cpp
+)
+
+# CORE
+APPEND_SET(HEADERS
   BelosBlockCGIter.hpp
   BelosBlockCGSolMgr.hpp
   BelosBlockFGmresIter.hpp
   BelosBlockGmresIter.hpp
   BelosBlockGmresSolMgr.hpp
-  BelosCaGmres.hpp  # Subclass of GmresBase
   BelosCGIteration.hpp
   BelosCGIter.hpp
   BelosConfigDefs.hpp
   BelosDGKSOrthoManager.hpp
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
-  BelosGmresBaseFactory.hpp
-  BelosGmresBase.hpp
-  BelosGmresBaseIteration.hpp
-  BelosGmresInnerSolver.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
-  BelosGmresSolMgr.hpp
   BelosICGSOrthoManager.hpp
   BelosIMGSOrthoManager.hpp
-  BelosInnerSolveResult.hpp
-  BelosInnerSolver.hpp
   BelosIteration.hpp
   BelosLinearProblem.hpp
   BelosLSQRIter.hpp
@@ -60,13 +89,9 @@ APPEND_SET(HEADERS
   BelosMinresIteration.hpp
   BelosMinresIter.hpp
   BelosMinresSolMgr.hpp
-  BelosMonomialOpAkx.hpp
   BelosMultiVec.hpp
   BelosMultiVecTraits.hpp
   BelosMVOPTester.hpp
-  BelosNewtonBasis.hpp
-  BelosNewtonOpAkx.hpp
-  BelosOpAkx.hpp
   BelosOperator.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManagerFactory.hpp
@@ -83,7 +108,6 @@ APPEND_SET(HEADERS
   BelosRCGSolMgr.hpp
   BelosSimpleOrthoManager.hpp
   BelosSolverManager.hpp
-  BelosStandardGmres.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
@@ -99,11 +123,6 @@ APPEND_SET(HEADERS
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
   ) 
-
-# CORE
-APPEND_SET(SOURCES
-  BelosInnerSolveResult.cpp
-  )
 
 # UTIL
 APPEND_SET(SOURCES
@@ -128,7 +147,8 @@ APPEND_SET(HEADERS
   )
 
 ######################################################################
-## BEGIN TSQR setup
+## Add files to HEADERS and /or SOURCES, depending on the values of
+## certain configure-time options.
 ######################################################################
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
@@ -139,15 +159,23 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 
-######################################################################
-## END TSQR setup
-######################################################################
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
+  #
+  # Add experimental files to HEADERS and SOURCES.
+  # 
+  APPEND_SET(HEADERS ${EXPERIMENTAL_HEADERS})
+  APPEND_SET(SOURCES ${EXPERIMENTAL_SOURCES})
+ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
 
-#
-# C) Define the targets for package's library(s)
-#
+######################################################################
+## Define the targets for the package's library/ies.
+######################################################################
 
 IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  # If TSQR support is enabled in Belos, we have to link Belos with
+  # the appropriate Kokkos libraries, since TSQR is implemented in
+  # Kokkos.
   PACKAGE_ADD_LIBRARY(
     belos
     HEADERS ${HEADERS}
