@@ -359,6 +359,21 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Amesos2" dir="amesos2">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="amesos2-checkins@software.sandia.gov"/>
+      <Regression address="amesos2-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Amesos" dir="amesos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
