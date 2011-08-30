@@ -1,0 +1,72 @@
+<ParameterList name="test_params">
+  <!-- Any of the test driver's command-line parameters may also be specified here -->
+  <ParameterList name="arc130.mtx">
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="SuperLU_DIST">
+      
+      <!-- Test Epetra objects first -->
+      <ParameterList name="epetra">
+      	<Parameter name="defaultrun" type="bool" value="true"/>
+      </ParameterList>
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run0-l">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- end SuperLU_DIST -->
+  </ParameterList> <!-- end arc130.mtx -->
+
+  <ParameterList name="orsirr_2.mtx">
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="SuperLU_DIST">
+      
+      <!-- Test Epetra objects first -->
+      <ParameterList name="epetra">
+      	<Parameter name="defaultrun" type="bool" value="true"/>
+      </ParameterList>
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run0-l">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- end SuperLU_DIST -->
+  </ParameterList> <!-- end orsirr_2.mtx -->
+
+  <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+  <ParameterList name="young1c.mtx">
+    <ParameterList name="SuperLU_DIST">
+      <ParameterList name="tpetra">
+	<ParameterList name="run1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	</ParameterList>
+	<ParameterList name="run1-l">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- end young1c.mtx -->
+</ParameterList>

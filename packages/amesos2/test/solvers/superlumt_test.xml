@@ -1,0 +1,156 @@
+<ParameterList name="test_params">
+  <!-- Any of the test driver's command-line parameters may also be specified here -->
+  <ParameterList name="arc130.mtx">
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="SuperLU_MT">
+      
+      <!-- Test Epetra objects first -->
+      <ParameterList name="epetra">
+	<Parameter name="defaultrun" type="bool" value="true"/>
+	<ParameterList name="equilibration">
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equil" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="NATURAL ordering">
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="ColPerm" type="string" value="NATURAL"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="MMD_ATA ordering">
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="ColPerm" type="string" value="MMD_ATA"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="MMD_AT_PLUS_A ordering">
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="ColPerm" type="string" value="MMD_AT_PLUS_A"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<ParameterList name="run0 - equilibrate">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equil" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run0 - 2 threads - equilibrate">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="nprocs" type="int" value="2"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run0 - 4 threads - equilibrate">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equil" type="bool" value="true"/>
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run1 - transpose solve">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="amesos2_params">
+	    <Parameter name="Transpose" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run2 - equilibrate">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equil" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run3">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run3 - 4 threads">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run4 - 4 threads">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="solver_params">
+	<Parameter name="ColPerm" type="string" value="COLAMD"/>
+      </ParameterList>
+    </ParameterList> <!-- end SuperLU_MT -->
+    <ParameterList name="all_solver_params">
+      <Parameter name="Transpose" type="bool" value="false"/>
+    </ParameterList>
+  </ParameterList> <!-- end arc130.mtx -->
+
+  <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+  <ParameterList name="young1c.mtx">
+    <ParameterList name="SuperLU_MT">
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="float"/>
+	</ParameterList>
+	<ParameterList name="run0-1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="float"/>
+	</ParameterList>
+	<ParameterList name="run1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	</ParameterList>
+	<ParameterList name="run1 - 2 threads">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="nprocs" type="int" value="2"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run1 - 4 threads">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run1-1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- end young1c.mtx -->
+</ParameterList>

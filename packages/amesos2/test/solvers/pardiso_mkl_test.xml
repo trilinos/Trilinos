@@ -1,0 +1,53 @@
+<ParameterList name="test_params">
+  <ParameterList name="arc130.mtx">
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="PARDISOMKL">
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<!-- these `run*' sublist names are arbitrary -->
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run0 - l">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+	<ParameterList name="run1">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run1 - l">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="long long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- end PardisoMKL -->
+  </ParameterList> <!-- end arc130.mtx -->
+
+  <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+  <ParameterList name="young1c.mtx">
+    <ParameterList name="PARDISOMKL">
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
+	  <Parameter name="Magnitude" type="string" value="float"/>
+	</ParameterList>
+	<ParameterList name="run1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- end young1c.mtx -->
+</ParameterList>

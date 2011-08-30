@@ -1,0 +1,349 @@
+===================
+ Amesos2 TODO List
+===================
+
+Priorities for 2011:
+
+- Add more tests. Read in matrix from file using Tpetra MatrixMarket reader.
+  Make sure all commonly used templated types work.
+- Fix KLU2 so it works in all cases. May require third template parameter.
+- Add support for SuperLU_MT and SuperLU_Dist.
+- Add support for Pardiso (at least MKL version).
+- Wish list: SuiteSparseQR, MUMPS, Pastix
+
+General TODO
+============
+
+ - Remove Amesos2_ENABLE_XXXX configure options in CMakeLists.txt
+   because they are auto-generated from the Dependencies file. (DONE)
+
+ - When refreshing the internal values of A, need to check that the
+   dimensions still line up, and if not, resize internal arrays and
+   variables. (DONE)
+   
+ - Validate and give doc strings to parameterlists
+ 
+ - In our general solver test framework, add an option to run multiple
+   factorizations and solves in sequence.  The option would make the
+   test do a sequence like::
+
+     symb -> num -> solve -> num -> solve -> solve
+
+   or something similar (DONE)
+   
+ - Make the B argument for solve_impl and solve(X,B) a Ptr to a const
+   MV adapter.  This might mean we have to follow through to some
+   downstream functions to make them take const arguments also (or
+   make member functions const when appropriate). (DONE, also extended
+   this const'ness to the `create' method and all matrix args)
+   
+ - May be useful to define some Amesos2 exception classes?
+
+ - Update the NewSolver and NewAdapter templates in examples/ 
+
+ - Change namespace to "Amesos2" (DONE)
+
+ - setParameters should use the default parameter interface provided
+   by ParameterList.  This should make the effect of multiple
+   setParameters calls non-cumulative (which is how most packages
+   treat this function).
+
+ - Add cases to unit tests where the matrix is empty on some
+   processors before calling solve().  This was suggested by David Day
+   since this case has a tendency to expose bugs.
+
+ - Remove the printStatus method. (DONE)
+
+ - LAPACK support (ScaLAPACK would be nice, but more involved.  Only
+   upon request). (LAPACK DONE)
+
+ - Add Amesos2_ENABLE_Timers option which is off by default.  Will
+   have to put ifdef guards around all timer activity. (DONE)
+
+ - Add Amesos2 parameter "Memory" which has two possible values "safe"
+   and "optimized".  The "optimized" option will tell the Amesos2
+   solver that it can release it's hold on the matrix RCP as soon as
+   numeric factorization has been performed.
+
+ - Give the setA() method an additional parameter, which will be a
+   state that should be kept within the solver object.  For example
+   setA(newA,SYMBFACT) will direct the solver to replace A with newA,
+   but instead of resetting everything, should set the solver state
+   such that it is the same as if a symbolic factorization had just
+   been performed.  The default value for the second parameter would
+   be something like "FRESH", "CLEAN", or "NONE" to indicate that no
+   computation has been performed.  (DONE)
+
+ - Provide an Amesos2 "Status" object to users through a
+   solver->getStatus() method.  The status should hold things such as
+
+   + number of non-zeros in the L and U factors
+   + number of solves, numeric and symbolic facts, and preOrderings
+   + the current phase (i.e. which was the last phase to complete)
+   
+   The concrete solver interfaces can set the values for the L and U
+   nnz.  I think it would be best to provide a method in the status
+   object for setting these values, rather than calling a function in
+   the interface.  That way, if a solver does not yet want to support
+   that feature, or is unable to support that feature (e.g. MUMPS),
+   then we do not have to burden the developer with stubbing out the
+   method.  The solver interface can then just call the method when
+   they want to.
+
+   A lot of status machinery exists already in the Amesos::Status
+   class, but it was designed mostly for internal use.  It could just
+   be cleaned up and made ready for use by users. (DONE)
+
+ - Abstract the matrix loading/reading process/decisions into the
+   SolverCore class.  SolverCore should declare and define a private
+   (or perhaps public) method called `loadA()'.  This method will be
+   called from within the computational methods whenever it is decided
+   that the internal solver data of matrix A should be refreshed.  In
+   general, this is upon every call to preOrdering,
+   symbolicFactorization, or numericFactorization.  In certain
+   circumstances, in particular whenever a method calls its
+   predecessor because it has not been done yet (e.g. numeric calling
+   symbolic).
+
+   The solver interfaces then define a `loadA_impl()' method that
+   actually handles loading the matrix data into internal
+   structures. (DONE)
+
+ - Pull out many of the type and enum declarations from the Util::
+   namespace and header files.  Put them in an Amesos2_TypesDecl.hpp
+   header and in the Amesos2:: namespace to be used when
+   needed. (DONE)
+
+ - Throw error if a user tries to create a solver with an unsupported
+   type.  This will require a bit more meta-programming than we
+   currently have.  Pulling our meta-programming functions out of Util
+   might also be good.  (DONE)
+
+ - The Amesos2::query function may also want template parameters so
+   that we can also tell the user if a solver does not support a
+   scalar type.  Have it return true only in the case where the solver
+   is enabled *and* it supports the types of the Matrix and Vector
+   template parameters. (NO, we will leave it as is)
+
+-------------------------------
+ Some things worth considering
+-------------------------------
+
+
+Matrix Adapters
+===============
+
+something small first (DONE)
+---------------------
+
+The Tpetra MatrixAdapters need to move to something more like how the
+Epetra matrix adapters are declared/defined.  It's not so much of an
+issue right now (Tue Jul 20 13:30:05 CDT 2010), since Tpetra has only
+one class implemented that implements the ``Tpetra::RowMatrix``
+interface.  Once more come along though, the change should be made.
+
+The reason that we do need to explicitely define a template
+specialization for each class that implements/inherits from
+``Tpetra::RowMatrix``, is that class templates are blind to
+polymorphism.  A ``MatrixAdapter<Tpetra::CrsMatrix>`` cannot be
+interpreted as a ``MatrixAdapter<Tpetra::RowMatrix>`` even though a
+``Tpetra::CrsMatrix`` object could be interpreted at runtime as a
+``Tpetra::RowMatrix``.  At compile time they are just recognized as
+completely different types.
+
+
+something more involved (DONE)
+-----------------------
+
+Currently, we have ``getCrs()`` and ``getCcs()`` defined entirely in
+each MatrixAdapter specialization.  This was OK at first with
+``Tpetra::CrsMatrix``, but then, once I added the adapter for
+``Epetra_RowMatrix``, I noticed that essentially the only thing that
+needed changing with the part where the global row values are fetched.
+
+So, it would be beneficial to move the definition of ``getCrs()`` and
+``getCcs()`` to somewhere accessible by all specializations, require a
+``getGlobalRowCopy()`` method to be defined for each specialization,
+and then hook in to that method from within ``getCrs()`` and
+``getCcs()``.
+
+Currently, the MatrixAdapter specializations do not inherit from any
+common class.  We could define a ``MatrixAdapterBase`` class, which
+all MatrixAdapter's would inherit from, and which would define such
+methods.
+
+Along with the above, we also have the (potential) issue that some
+Matrix types are more efficiently accessed by columns, rather than
+rows, so that it would make sense to have the definitions of
+``getCrs()`` and ``getCcs()`` "swapped".  That is, define ``getCrs()``
+in terms of ``getCcs()``.
+
+One way to take care of this would be to define two types::
+
+  struct row_access {};
+
+and::
+
+  struct column_access {};
+
+Then, we define two overloaded versions of some common worker
+functions: ``do_getCrs()`` and ``do_getCcs()``.  For each, one
+overloaded version accepts as a function parameter an object of type
+``row_access``, and the other overloaded version takes as a parameter
+an object of type ``column_access``.
+
+The version of ``do_getCrs()`` that accepts a ``row_access`` object
+defines the entirety of the method, while the ``do_getCcs()`` for
+``row_access`` calls do_getCrs() and transposes the results.
+Conversely for the ``column_access`` versions.
+
+Here is a sample of what the setup might look like::
+
+  template< typename Matrix >   // Of an Amesos::MatrixAdapter type
+  struct MatrixAdapterBase {
+
+    void do_getCrs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
+      size_t& nnz,
+      row_access type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCrs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
+      size_t& nnz,
+      column_access type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCcs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      row_access type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCcs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      column_access type,
+      bool local = false,
+      int root = 0);
+
+    void getCrs(
+      const Teuchos::ArrauView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      bool local = false,
+      int root = 0)
+      {
+	typedef typename Matrix::access_type mat_access_type;
+	do_getCrs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
+      }
+
+    void getCcs(
+      const Teuchos::ArrauView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      bool local = false,
+      int root = 0)
+      {
+	typedef typename Matrix::access_type mat_access_type;
+	do_getCcs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
+      }
+  };
+
+MatrixAdapter classes would publicly inherit from this base class::
+
+  class MatrixAdapter< Epetra_RowMatrix >
+    : public MatrixAdapterBase< MatrixAdapter< Epetra_RowMatrix > >
+  {
+    typedef row_access access_type;
+
+    ...
+  }
+
+Which could also provide virtual definitions for methods which should
+be defined in specializations (in order to double-check
+implementation).
+
+Using this convention, it would be easy to define MatrixAdapter
+interfaces for MultiVector objects.  They would just need to define a
+``getGlobalRowCopy()`` method and ``typedef column_access
+access_type;``.
+
+
+Adapters in General (DONE)
+===================
+
+It may be possible to define many of the more ``involved'' adapter
+operations, e.g.::
+
+  - MatrixAdapter<MAT>::getCrs()
+  - MatrixAdapter<MAT>::getCcs()
+  - MultiVecAdapter<MV>::localize()
+  - MultiVecAdapter<MV>::globalize()
+
+in terms of some of the less involved functions.  If we could pinpoint
+what those functions are, we could break the more involved functions
+out into an abstract base class and define them in terms of the
+simpler functions that are easier to wrap.  In that way, a future
+developer would not need to redefine getCrs() for every new sparse
+matrix object; she would just need to wrap some of the more general
+functions.
+
+We would also ideally be able to do this without breaking much
+existing code...
+
+::
+
+  struct has_special_impl {};
+  struct no_special_impl {};
+
+  class MatrixAdapter< Epetra_RowMatrix >
+    : public MatrixAdapterBase< MatrixAdapter< Epetra_RowMatrix > >
+  {
+    typedef no_special_impl get_crs_spec;
+
+    ...
+  }
+
+and in MatrixAdapterBase, an entry-point and two overloaded doers::
+
+  getCrs(...){
+    do_getCrs(..., adapter_type::get_crs_spec());
+  }
+
+  do_getCrs(..., no_special_impl nsi){
+    // do the `template algorithm` stuff here
+  }
+
+  do_getCrs(..., has_special_impl hsi){
+    // delegate to the specialized implementation found in the subclass
+    static_cast<adapter_type*>(this)->getCrs_spec(...);
+  }
+
+  struct row_access {};     // as above
+  struct column_access {};  // as above
+
+To accomplish all this, it may be useful to define some templated
+factories, or some nonmember constructors.
+
+
+Organization
+============
+
+It may eventually be nice to organize the adapters into their own
+directory structure, so that they do not entirely clutter up the main
+src/ directory.  For that matter, it might be nice to put the solvers
+themselves in their own directory.

@@ -1,0 +1,36 @@
+     SUMMARY:  
+
+     BUGZILLA BUG #(s):  
+
+     CHECKLIST
+     ---------
+
+CVS: ADDING FILES:
+     1) Did you 'cvs add' all new files and directories [Y:N:N/A]?  [???]
+
+CVS:    NOTE: Packages that use globbing can skip 2
+     2) Did you add new source files to a CMakeLists.txt file [Y:N:N/A]?  [???]
+
+CVS: MODIFYING FILES:
+     3)  Did you modify or add any source or build system files?  [???]
+CVS:     If yes:  (if no, delete lines 3a, 3b, and 3c, and skip 5.)
+     3a) Did you rebuild the libraries and executables?  [???]
+     3b) Did you rerun the test suite on the packages that you changed and
+         all packages that depend on the modified packages?  [???]
+     3c) Did you change the required or optional dependencies for any
+         package?  [???]
+CVS:     If yes, check in from the Trilinos level to update CMake XML and HTML
+CVS:     dependency files.
+
+CVS: CHECKIN:
+CVS: 4) Perform the checkin.
+CVS: 
+CVS: POST-CHECKIN:
+CVS: 5) Do a 'cvs update' on a different working directory of Trilinos and
+CVS:    rebuild at least the packages that you modified.
+
+     DESCRIPTION OF CHANGES:
+ 
+     [???]
+
+(checklist version 2009-07-14)
