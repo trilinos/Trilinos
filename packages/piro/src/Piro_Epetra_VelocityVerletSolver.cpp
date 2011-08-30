@@ -228,7 +228,7 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
 
      v->Update(0.5*delta_t, *a, 1.0);
 
-     if (observer != Teuchos::null) observer->observeSolution(*x);
+     if (observer != Teuchos::null) observer->observeSolution(*x, t);
      if (g_out != Teuchos::null) 
        g_out->Print(*out << "Responses at time step(time) = " << timeStep << "("<<t<<")");
    }

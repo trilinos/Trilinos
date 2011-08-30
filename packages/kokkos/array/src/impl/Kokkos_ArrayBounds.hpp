@@ -45,6 +45,20 @@
 namespace Kokkos {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class MemorySpace >
+class ArrayAlignment {
+public:
+  enum { value = 1 };
+};
+
+//----------------------------------------------------------------------------
+
+void require_less( size_t , size_t );
+
+//----------------------------------------------------------------------------
+
 void multivector_require_equal_dimension(
   size_t length_x , size_t count_x ,
   size_t length_y , size_t count_y );
@@ -59,10 +73,10 @@ void multivector_require_equal_dimension( const MultiVectorX & x ,
 
 void multivector_require_range( size_t , size_t , size_t );
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+//----------------------------------------------------------------------------
 
-void require_less( size_t , size_t );
+size_t mdarray_deduce_rank( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
+                            size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
 void mdarray_require_dimension(
   size_t n_rank ,
@@ -90,6 +104,8 @@ void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
   mdarray_require_equal_dimension( array1_rank, array1_dims,
                                    array2_rank, array2_dims);
 }
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos

@@ -504,3 +504,75 @@ int fevec4(Epetra_Comm& Comm, bool verbose)
 
   return 0;
 }
+
+int fevec5(Epetra_Comm& Comm, bool verbose)
+{
+  int NumElements = 4;
+  Epetra_Map     Map(NumElements, 0, Comm);
+  Epetra_FEVector x1(Map);
+  x1.PutScalar (0);
+
+        // let all processors set global entry 0 to 1
+  const int GID = 0;
+  const double value = 1;
+  x1.ReplaceGlobalValues(1, &GID, &value);
+  x1.GlobalAssemble (Insert);
+  if (Comm.MyPID()==0)
+    std::cout << "Entry " << GID << " after construct & set: " 
+        << x1[0][0] << std::endl;
+
+        // copy vector
+  Epetra_FEVector x2 (x1);
+
+  x2.PutScalar(0);
+
+        // re-apply 1 to the vector, but only on the
+        // owning processor. should be enough to set
+        // the value (as non-local data in x1 should
+        // have been eliminated after calling
+        // GlobalAssemble).
+  if (Comm.MyPID()==0)
+    x2.ReplaceGlobalValues(1, &GID, &value);
+  x2.GlobalAssemble (Insert);
+
+  if (Comm.MyPID()==0)
+    std::cout << "Entry " << GID << " after copy & set:      " 
+        << x2[0][0] << std::endl;
+
+  return 0;
+}
+
+int fevec6(Epetra_Comm& Comm, bool verbose)
+{
+  int NumElements = 4;
+  Epetra_Map     Map(NumElements, 0, Comm);
+  Epetra_FEVector x1(Map);
+  x1.PutScalar (0);
+
+        // let all processors set global entry 0 to 1
+  const int GID = 0;
+  const double value = 1;
+  x1.ReplaceGlobalValues(1, &GID, &value);
+  x1.GlobalAssemble (Insert);
+  if (Comm.MyPID()==0)
+    std::cout << "Entry " << GID << " after construct & set: " 
+        << x1[0][0] << std::endl;
+
+  x1.PutScalar(0);
+
+        // re-apply 1 to the vector, but only on the
+        // owning processor. should be enough to set
+        // the value (as non-local data in x1 should
+        // have been eliminated after calling
+        // GlobalAssemble).
+  if (Comm.MyPID()==0)
+    x1.ReplaceGlobalValues(1, &GID, &value);
+  x1.GlobalAssemble (Insert);
+
+  if (Comm.MyPID()==0)
+    std::cout << "Entry " << GID << " after PutScalar & set:      " 
+        << x1[0][0] << std::endl;
+
+  return 0;
+}
+

@@ -60,6 +60,7 @@ USA
 #include <sstream>
 #include <string>
 #include <ctype.h>
+#include <exception>
 
 /* TODO: clean up the code */
 
@@ -169,6 +170,7 @@ int ZoltanLibClass::precompute()
 {
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   MPI_Comm mpicomm = MPI_COMM_WORLD;
+  MPI_Comm default_mpicomm = MPI_COMM_WORLD;
   int itype;
 
   Library::precompute(); // assumes input_type_ is set
@@ -207,8 +209,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, input_coords_, weights_, itype));
 #ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
   else if (input_matrix_.get() !=0 && input_coords_.get()!=0) //geometric and matrix inputs
@@ -216,8 +226,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, input_coords_, weights_, itype));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
   else if (input_graph_.get() != 0) //graph inputs
@@ -225,8 +243,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, itype));
 #ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
   else if (input_matrix_.get() != 0) //matrix inputs
@@ -234,8 +260,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, itype));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
   else if (input_coords_.get() != 0) // coord inputs 
@@ -243,8 +277,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_coords_, weights_));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_coords_->Map().Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
   else // BlockMap inputs
@@ -252,8 +294,16 @@ int ZoltanLibClass::precompute()
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_map_, itype));
 #ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_map_->Comm();
+    try
+    {
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
+    }
+    catch (std::exception& e)
+    {
+        // Serial Comm with MPI
+        MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
+    }
 #endif
   }
 

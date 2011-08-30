@@ -31,6 +31,7 @@
 #include "Stokhos_GaussSeidelPreconditioner.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "EpetraExt_BlockUtility.h"
+#include "Teuchos_TestForException.hpp"
 
 Stokhos::GaussSeidelPreconditioner::
 GaussSeidelPreconditioner(
@@ -92,6 +93,10 @@ Stokhos::GaussSeidelPreconditioner::
 SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
+  TEST_FOR_EXCEPTION(
+      UseTranspose == true, std::logic_error,
+      "Stokhos::GaussSeidelPreconditioner::SetUseTranspose():  " <<
+      "Preconditioner does not support transpose!" << std::endl);
 
   return 0;
 }

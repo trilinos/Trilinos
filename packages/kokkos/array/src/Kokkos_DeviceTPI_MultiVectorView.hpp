@@ -56,12 +56,10 @@ public:
   static void run( const MultiVectorView< ValueType , DeviceTPI >  & dst ,
                    const MultiVectorView< ValueType , DeviceHost > & src )
   {
-    typedef MultiVectorDeepCopy< ValueType , DeviceTPI , true ,
-                                             DeviceTPI , true > functor_type ;
-
     parallel_for( dst.length() * dst.count() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
+                  DeepCopyContiguous< ValueType , DeviceTPI >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
   }
 };
 
@@ -72,12 +70,10 @@ public:
   static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
                    const MultiVectorView< ValueType , DeviceTPI >  & src )
   {
-    typedef MultiVectorDeepCopy< ValueType , DeviceTPI , true ,
-                                             DeviceTPI , true > functor_type ;
-
     parallel_for( dst.length() * dst.count() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
+                  DeepCopyContiguous< ValueType , DeviceTPI >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
   }
 };
 

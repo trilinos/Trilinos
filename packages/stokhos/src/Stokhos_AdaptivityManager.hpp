@@ -35,6 +35,7 @@
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_SGOperator.hpp"
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
+#include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
@@ -107,7 +108,7 @@ namespace Stokhos {
 
       /** Setup operator
         */
-      void setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokhos::VectorOrthogPoly<Epetra_Operator> & poly,
+      void setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokhos::EpetraOperatorOrthogPoly & poly,
                          bool onlyUseLinear=false,bool includeMean=true) const;
 
       /** Sum into a matrix constructed from <code>buildMatrixFromGraph</code>

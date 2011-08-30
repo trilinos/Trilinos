@@ -1,43 +1,41 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Trilinos_TsqrCommFactory_hpp
 #define __TSQR_Trilinos_TsqrCommFactory_hpp
 
 /// \file TsqrCommFactory.hpp
+/// \brief Factory for TSQR messenger objects.
 ///
-/// \warning TSQR users should _not_ include this file directly.
+/// \warning TSQR users should <i>not</i> include this file directly.
 
 #include <Teuchos_RCP.hpp>
 #include <Tsqr_MessengerBase.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Trilinos {
@@ -50,7 +48,7 @@ namespace TSQR {
     class TsqrTypeAdaptor;
 
     /// \class CommFactory
-    /// \brief Factory for TSQR communicators
+    /// \brief Factory for TSQR messenger objects.
     ///
     template< class S, class LO, class GO, class MV >
     class CommFactory {
@@ -75,6 +73,7 @@ namespace TSQR {
 		      scalar_messenger_ptr& scalarMessenger,
 		      ordinal_messenger_ptr& ordinalMessenger) = 0;
 
+      //! Virtual destructor for memory safety.
       virtual ~CommFactory () {}
     };
   } // namespace Trilinos

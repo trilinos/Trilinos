@@ -352,17 +352,29 @@ float   **eweights 		/* edge weight list data */
     }
 
     if (vertex != 0) {		/* Normal file was read. */
-	/* Make sure narcs was reasonable. */
-	if (nedges + 2 * self_edge != 2 * narcs &&
-	    nedges + 2 * self_edge + ignored != 2 * narcs &&
-		nedges + self_edge != 2 * narcs &&
+        if (narcs) {
+	    /* Make sure narcs was reasonable. */
+	    if (nedges + 2 * self_edge != 2 * narcs &&
+	        nedges + 2 * self_edge + ignored != 2 * narcs &&
+	    	nedges + self_edge != 2 * narcs &&
 		nedges + self_edge + ignored != 2 * narcs &&
 		nedges != 2 * narcs &&
 		nedges + ignored != 2 * narcs &&
 		Debug_Chaco_Input) {
-	    printf("WARNING: I expected %d edges entered twice, but I only count %d.\n",
-	        narcs, nedges);
-	}
+	        printf("WARNING: I expected %d edges entered twice, but I only count %d.\n",
+	            narcs, nedges);
+	    }
+        }
+        else { /* no edges, but did have vertex weights or vertex numbers */
+  	    free(*start);
+	    *start = NULL;
+	    if (*adjacency != NULL)
+	        free(*adjacency);
+	    *adjacency = NULL;
+	    if (*eweights != NULL)
+	        free(*eweights);
+            *eweights = NULL;
+        }
     }
 
     else {

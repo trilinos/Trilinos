@@ -29,14 +29,12 @@
 #ifndef __TSQR_Test_SeqTest_hpp
 #define __TSQR_Test_SeqTest_hpp
 
-#include <Tsqr_Config.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 
 #include <cstring> // size_t definition
 #include <string>
 #include <iostream>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {

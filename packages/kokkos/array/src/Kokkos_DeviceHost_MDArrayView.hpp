@@ -45,7 +45,17 @@
 #include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
+
+//  Partial specialization for the default 'Right' map
 #include <impl/Kokkos_MDArrayView_macros.hpp>
+
+#undef  KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE Serial< HostMemory , Kokkos::Impl::MDArrayIndexMapLeft >
+
+//  Partial specialization for the 'Left' map
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
+#include <impl/Kokkos_MDArrayView_macros.hpp>
+
 #include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #ifndef KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP */

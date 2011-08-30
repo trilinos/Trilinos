@@ -268,7 +268,7 @@ namespace Teuchos {
     "Number of rows " << this->numRows_ << " not equal to x.numRows_ "<< x.numRows() );
    
     // Compute the dot product and return the result. 
-    return DOT(this->numRows_, this->values(), 1, x.values(), 1); 
+    return BLAS<OrdinalType, ScalarType>::DOT(this->numRows_, this->values(), 1, x.values(), 1); 
   } 
 
   template<typename OrdinalType, typename ScalarType>

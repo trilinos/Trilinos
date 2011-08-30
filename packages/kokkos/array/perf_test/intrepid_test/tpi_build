@@ -1,0 +1,46 @@
+#!/bin/csh
+
+#-----------------------------------------------------------------------------
+
+set INTREPID="../../../../intrepid/src"
+
+set INC_PATH="-I. -I../../src -I/opt/mpich/include -I../../../../teuchos/src -I../../../../shards/src -I${INTREPID}/Discretization/FunctionSpaceTools -I${INTREPID}/Shared -I${INTREPID} -I${INTREPID}/Cell -I${INTREPID}/Discretization/Basis -I${INTREPID}/Discretization/Integration" 
+
+set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp  Poisson_Main.cpp"
+
+# To build, need to include the CMake build of Trilinos having Teuchos, Shards and Intrepid set.
+set BUILD="/home/camsler/build/packages"
+set LIB=" -L${BUILD}/shards/src -lshards -L${BUILD}/teuchos/src -lteuchos -L${BUILD}/intrepid/src -lintrepid"
+
+#-----------------------------------------------------------------------------
+
+set INC_PATH="${INC_PATH} -I../../../../ThreadPool/src"
+
+set GCC_SOURCES="${GCC_SOURCES} ../../../../ThreadPool/src/*.c ../../src/DeviceTPI/*.cpp Poisson_TPI.cpp"
+
+set LIB="${LIB} -lpthread"
+
+#set GCC_SOURCES="${GCC_SOURCES} Poisson_TPIStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} Poisson_CudaStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} Poisson_TBBStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+
+set GCC_FLAGS="-Wall -O3 ${INC_PATH}"
+
+g++ $GCC_FLAGS -c ${GCC_SOURCES}
+
+g++ $GCC_FLAGS -o intrepid_test.exe *.o ${LIB} -lblas
+
+rm -f *.o *.a ThreadPool_config.h
+
+#-----------------------------------------------------------------------------
+

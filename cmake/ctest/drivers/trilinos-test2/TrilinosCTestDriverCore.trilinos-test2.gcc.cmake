@@ -50,6 +50,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/SRC"
     "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.1"
+    "-DTPL_ENABLE_MATLAB=OFF"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")

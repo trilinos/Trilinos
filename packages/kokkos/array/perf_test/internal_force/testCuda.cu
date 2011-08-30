@@ -17,42 +17,46 @@
 #include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
-#include <internal_force_test.hpp>
+#include <internal_force_driver.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
 __global__ void dummy_kernel(){}
 
 namespace test{
 
-  void test_Cuda(int beg, int end, int runs){
+	void test_Cuda(int beg, int end, int runs){
 
-    cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
-    dummy_kernel<<<1, 1>>>();
+		cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
+		dummy_kernel<<<1, 1>>>();
 
-    std::cout << "Kokkos Cuda: " << std::endl;
+		std::cout << "Kokkos Cuda: " << std::endl;
 
-    Kokkos::DeviceCuda::initialize();
+		Kokkos::DeviceCuda::initialize();
 
-    for(int i = beg; i < end; i++){
+		for(int i = beg; i < end; i++){
 
-      double min = 100000;
+			double min = 100000;
 
-      int n = 1 << i;
+			int x = 10 + 5 * i;
+			int y = 10 + 5 * i;
+			int z = 10 + 5 * i;
 
-      for(int j = 0; j < runs; j++){
+			int n = x * y * z;
 
-        double time = internal_force_test<double, Kokkos::DeviceCuda>( n );
+			for(int j = 0; j < runs; j++){
 
-        if ( 0 == j || time < min)
-          min = time;
-      }
+				double time = internal_force_test<double, Kokkos::DeviceCuda>( x, y, z );
 
-      std::cout <<   std::setw(8) << n << ", " << 
-					  std::setw(8) << 1000 * min << ", " << 
-					  std::setw(8) << min / n << std::endl;
+				if ( 0 == j || time < min)
+					min = time;
+			}
 
-    }//for
-  }
+			std::cout << 	std::setw(8) << n << ", " << 
+							std::setw(8) << 1000 * min << ", " << 
+							std::setw(8) << 1000 * min / n << std::endl;
+
+		}//for
+	}
 
 }// namespace
 

@@ -48,13 +48,13 @@
 namespace Kokkos {
 
 template< typename ValueType >
-class MemoryView< ValueType , KOKKOS_MACRO_DEVICE > {
+class MemoryView< ValueType , KOKKOS_MACRO_DEVICE_MEMORY > {
 private:
 
   ValueType       * m_ptr_on_device ;
   Impl::ViewTracker m_tracker ;
 
-  friend class KOKKOS_MACRO_DEVICE ;
+  friend class KOKKOS_MACRO_DEVICE_MEMORY ;
 
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MemoryView( const MemoryView & rhs );
@@ -64,8 +64,8 @@ private:
 
 public:
 
-  typedef ValueType           value_type ;
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef ValueType                   value_type ;
+  typedef KOKKOS_MACRO_DEVICE_MEMORY  memory_space ;
 
   /*------------------------------------------------------------------*/
 
@@ -112,7 +112,7 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MemoryView()
-  { device_type::clear_memory_view( *this ); }
+  { memory_space::clear_memory_view( *this ); }
 
   /*------------------------------------------------------------------*/
   /** \brief  On the host for testing purposes only

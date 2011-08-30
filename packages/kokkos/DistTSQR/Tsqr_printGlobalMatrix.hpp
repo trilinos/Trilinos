@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __Tsqr_printGlobalMatrix_hpp
 #define __Tsqr_printGlobalMatrix_hpp
@@ -38,24 +38,33 @@
 #include <ostream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \fn printGlobalMatrix
-  /// \brief Print a dense matrix distributed among all MPI processes
   ///
-  template< class ConstMatrixViewType >
+  /// Print a dense matrix distributed in block row fashion among all
+  /// MPI processes in a participating communicator.  The given
+  /// "MessengerBase" communicator wrapper objects should wrap the
+  /// same underlying communicator.
+  ///
+  /// \param out [out] Output stream to which to write the matrix (on
+  ///   MPI Proc 0 only, relative to the underlying communicator).
+  /// \param A_local [in] Each MPI process' part of the matrix.
+  /// \param scalarComm [in/out] Communicator wrapper for
+  ///   ConstMatrixViewType::scalar_type objects.
+  /// \param ordinalComm [in/out] Communicator wrapper for
+  ///   ConstMatrixViewType::ordinal_type objects.
+  template<class ConstMatrixViewType>
   void
   printGlobalMatrix (std::ostream& out,
 		     const ConstMatrixViewType& A_local,
-		     MessengerBase< typename ConstMatrixViewType::scalar_type >* const scalarComm,
-		     MessengerBase< typename ConstMatrixViewType::ordinal_type >* const ordinalComm)
+		     MessengerBase<typename ConstMatrixViewType::scalar_type>* const scalarComm,
+		     MessengerBase<typename ConstMatrixViewType::ordinal_type>* const ordinalComm)
     {
       typedef typename ConstMatrixViewType::ordinal_type LocalOrdinal;
       typedef typename ConstMatrixViewType::scalar_type Scalar;
-      typedef Teuchos::ScalarTraits< Scalar > STS;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
       using std::endl;
 
       const int myRank = scalarComm->rank ();
@@ -74,7 +83,7 @@ namespace TSQR {
 	  // Space for remote matrix data.  Other processors are allowed
 	  // to have different nrows_local values; we make space as
 	  // necessary.
-	  Matrix< LocalOrdinal, Scalar > A_remote (nrowsLocal, ncols, quiet_NaN);
+	  Matrix<LocalOrdinal, Scalar> A_remote (nrowsLocal, ncols, quiet_NaN);
 
 	  // Loop through all the other processors in order.
 	  // Fetch their matrix data and print it.
@@ -95,7 +104,7 @@ namespace TSQR {
 	      // appropriate specialization.  Teuchos::ScalarTraits,
 	      // in contrast, has to work for non-built-in Scalar
 	      // types, like ARPREC or QD floating-point numbers.
-	      if (std::numeric_limits< LocalOrdinal >::is_signed)
+	      if (std::numeric_limits<LocalOrdinal>::is_signed)
 		{
 		  if (dims[0] <= 0 || dims[1] <= 0)
 		    throw std::runtime_error ("Invalid dimensions of remote matrix");

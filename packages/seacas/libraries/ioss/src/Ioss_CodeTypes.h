@@ -38,7 +38,7 @@
 #define HAVE_MPI
 #else
 #if !defined(NO_MPI)
-#include <SEACAS_config.h>
+#include <SEACASIoss_config.h>
 #endif
 #endif
 #endif

@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
+
 #ifndef KOKKOS_MACRO_DEVICE
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
@@ -50,34 +52,19 @@
 
 namespace {
 
-template< class > class UnitTestDeviceMemoryManagement ;
+template< typename T, class > class UnitTestDeviceMemoryManagement ;
 
-template<>
-class UnitTestDeviceMemoryManagement< KOKKOS_MACRO_DEVICE >
+template<typename T>
+class UnitTestDeviceMemoryManagement< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::MemoryView< double , device::memory_space > dView ;
-  typedef Kokkos::MemoryView< int ,    device::memory_space > iView ;
+  typedef Kokkos::MemoryView< T , device::memory_space > dView ;
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestDeviceMemoryManagement< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
+  UnitTestDeviceMemoryManagement() { run_test(); }
 
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  UnitTestDeviceMemoryManagement()
+  void run_test()
   {
     std::ostringstream s_init ;
     std::ostringstream s_noop ;
@@ -85,106 +72,78 @@ public:
     std::ostringstream s_assign ;
     std::ostringstream s_clear1 ;
     std::ostringstream s_clear3 ;
-  
+
     device::memory_space::print_memory_view( s_init );
 
     dView dx , dy , dz ;
-    iView ix , iy , iz ;
-  
-    if ( dx || dx.test_support_view_count() ||
-         dy || dy.test_support_view_count() ||
-         dz || dz.test_support_view_count() ||
-         ix || ix.test_support_view_count() ||
-         iy || iy.test_support_view_count() ||
-         iz || iz.test_support_view_count() ) {
-      error("FAILED Initialization");
-    }
-  
-    device::memory_space::clear_memory_view( dx );
-    device::memory_space::clear_memory_view( ix );
-    device::memory_space::assign_memory_view( dy , dz );
-    device::memory_space::assign_memory_view( iy , iz );
-    device::memory_space::print_memory_view( s_noop );
-  
-    if ( dx || dx.test_support_view_count() ||
-         dy || dy.test_support_view_count() ||
-         dz || dz.test_support_view_count() ||
-         ix || ix.test_support_view_count() ||
-         iy || iy.test_support_view_count() ||
-         iz || iz.test_support_view_count() ||
-         s_init.str() != s_noop.str() ) {
-      error("FAILED No-op");
-    }
-  
-    device::memory_space::allocate_memory_view( dx , 10 , "dx" );
-    device::memory_space::allocate_memory_view( ix , 20 , "ix" );
-    device::memory_space::print_memory_view( s_alloc );
-  
-    if ( ! dx || 1 != dx.test_support_view_count() ||
-         ! ix || 1 != ix.test_support_view_count() ||
-         s_alloc.str().length() <= s_init.str().length() ) {
-      error("FAILED Allocation");
-    }
-  
-    device::memory_space::assign_memory_view( dy , dx );
-    device::memory_space::assign_memory_view( iy , ix );
-    device::memory_space::assign_memory_view( iz , iy );
-    device::memory_space::print_memory_view( s_assign );
-  
-    if ( ! dx || 2 != dx.test_support_view_count() ||
-         ! dy || 2 != dy.test_support_view_count() ||
-         ! ix || 3 != ix.test_support_view_count() ||
-         ! iy || 3 != iy.test_support_view_count() ||
-         ! iz || 3 != iz.test_support_view_count() ||
-         dx != dy ||
-         ix != iy ||
-         ix != iz ||
-         s_assign.str() != s_alloc.str() ) {
-      error("FAILED Assign view");
-    }
-  
-    device::memory_space::clear_memory_view( dx );
-    device::memory_space::clear_memory_view( ix );
-    device::memory_space::print_memory_view( s_clear1 );
-    
-    if ( dx || dx.test_support_view_count() ||
-         ix || ix.test_support_view_count() ||
-         ! dy || 1 != dy.test_support_view_count() ||
-         ! iy || 2 != iy.test_support_view_count() ||
-         ! iz || 2 != iz.test_support_view_count() ||
-         iy != iz ||
-         s_clear1.str() != s_alloc.str() ) {
-      error("FAILED Clear view #1");
-    }
-  
-    device::memory_space::clear_memory_view( dy );
-    device::memory_space::clear_memory_view( iy );
-  
-    if ( dx || dx.test_support_view_count() ||
-         dy || dy.test_support_view_count() ||
-         dz || dz.test_support_view_count() ||
-         ix || ix.test_support_view_count() ||
-         iy || iy.test_support_view_count() ||
-         ! iz || 1 != iz.test_support_view_count() ) {
-      error("FAILED Clear view #2");
-    }
-  
-    device::memory_space::clear_memory_view( iz );
-    device::memory_space::print_memory_view( s_clear3 );
-  
-    if ( dx || dx.test_support_view_count() ||
-         dy || dy.test_support_view_count() ||
-         dz || dz.test_support_view_count() ||
-         ix || ix.test_support_view_count() ||
-         iy || iy.test_support_view_count() ||
-         iz || iz.test_support_view_count() ||
-         s_init.str() != s_clear3.str() ) {
-      error("FAILED Clear view #3");
-    }
-  
-    // optional:
 
-    // std::cout << name() << std::endl << s_alloc.str();
+    const bool error_constructing_views =
+       ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() );
+
+    ASSERT_FALSE(error_constructing_views);
+
+    device::memory_space::clear_memory_view( dx );
+    device::memory_space::assign_memory_view( dy , dz );
+    device::memory_space::print_memory_view( s_noop );
+
+    const bool error_performing_noop =
+       ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         s_init.str() != s_noop.str() );
+
+    ASSERT_FALSE(error_performing_noop);
+
+    device::memory_space::allocate_memory_view( dx , 10 , "dx" );
+    device::memory_space::print_memory_view( s_alloc );
+
+    const bool error_initializing_views =
+       ( ! dx || 1 != dx.test_support_view_count() ||
+         s_alloc.str().length() <= s_init.str().length() );
+
+    ASSERT_FALSE(error_initializing_views);
+
+    device::memory_space::assign_memory_view( dy , dx );
+    device::memory_space::print_memory_view( s_assign );
+
+    const bool error_copying_views =
+       ( ! dx || 2 != dx.test_support_view_count() ||
+         ! dy || 2 != dy.test_support_view_count() ||
+         dx != dy ||
+         s_assign.str() != s_alloc.str() );
+
+    ASSERT_FALSE(error_copying_views);
+
+    device::memory_space::clear_memory_view( dx );
+    device::memory_space::print_memory_view( s_clear1 );
+
+    bool error_clearing_views =
+       ( dx || dx.test_support_view_count() ||
+         ! dy || 1 != dy.test_support_view_count() ||
+         s_clear1.str() != s_alloc.str() );
+
+    ASSERT_FALSE(error_clearing_views);
+
+    device::memory_space::clear_memory_view( dy );
+
+    error_clearing_views =
+       ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() );
+
+    ASSERT_FALSE(error_clearing_views);
+
+    device::memory_space::print_memory_view( s_clear3 );
+
+    error_clearing_views =
+       ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         s_init.str() != s_clear3.str() );
+
+    ASSERT_FALSE(error_clearing_views);
   }
 };
 

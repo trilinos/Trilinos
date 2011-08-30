@@ -30,6 +30,10 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
   "Enable threading support."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Fortran
+  HAVE_FORTRAN_SUPPORT
+  "Enable Fortran support in Epetra."
+  ${${PROJECT_NAME}_ENABLE_Fortran} )
 
 ADD_SUBDIRECTORY(src)
 

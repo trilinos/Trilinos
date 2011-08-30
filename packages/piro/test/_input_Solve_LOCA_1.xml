@@ -24,7 +24,7 @@
         <Parameter name="Save Eigenvectors" type="int" value="1"/>
         <Parameter name="Block Size" type="int" value="1"/>
         <Parameter name="Maximum Restarts" type="int" value="0"/>
-        <Parameter name="Shift" type="double" value="8.001"/>
+        <Parameter name="Shift" type="double" value="8.0001"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Step Size">

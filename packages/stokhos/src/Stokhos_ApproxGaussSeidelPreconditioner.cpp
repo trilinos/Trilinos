@@ -84,6 +84,8 @@ Stokhos::ApproxGaussSeidelPreconditioner::
 SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
+  sg_op->SetUseTranspose(UseTranspose);
+  mean_prec->SetUseTranspose(UseTranspose);
 
   return 0;
 }
@@ -170,8 +172,12 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	    int j = index(j_it);
 	    int j_gid = epetraCijk->GCID(j);
 	    double c = value(j_it);
-	    if (scale_op)
-	      c /= norms[j_gid];
+	    if (scale_op) {
+	      if (useTranspose)
+		c /= norms[i_gid];
+	      else
+		c /= norms[j_gid];
+	    }
 	    if (j_gid > i_gid) {
 	      bool on_proc = epetraCijk->myGRID(j_gid);
 	      if (on_proc) {

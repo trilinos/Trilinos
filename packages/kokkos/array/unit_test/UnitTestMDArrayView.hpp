@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
+
 #ifndef KOKKOS_MACRO_DEVICE
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
@@ -51,84 +53,43 @@
 
 namespace {
 
-template< class > class UnitTestMDArrayView ;
+template< typename T, class > class UnitTestMDArrayView ;
 
-template<>
-class UnitTestMDArrayView< KOKKOS_MACRO_DEVICE >
+template<typename T>
+class UnitTestMDArrayView< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::MDArrayView< double , device > dView ;
-  typedef Kokkos::MDArrayView< int ,    device > iView ;
+  typedef Kokkos::MDArrayView< T , device > dView ;
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestMDArrayView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
+  UnitTestMDArrayView() { run_test(); }
 
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
 
-  UnitTestMDArrayView()
+  void run_test()
   {
-    enum { dN = 1000 , iN = 2000 };
+    enum { dN = 1000 };
 
     dView dx , dy ;
-    iView ix , iy ;
+    ASSERT_TRUE( dx.rank() == 0);
+    ASSERT_TRUE( dy.rank() == 0);
 
-    if ( dx.rank() != 0 ||
-         dy.rank() != 0 ||
-         ix.rank() != 0 ||
-         iy.rank() != 0 ) {
-      error("FAILED Initialize view");
-    }
 
     dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
-    ix = Kokkos::create_labeled_mdarray< iView > ( "ix" , iN );
-
-    if ( dx.rank() != 1 || dx.dimension(0) != dN ||
-         dy.rank() != 0 ||
-         ix.rank() != 1 || ix.dimension(0) != iN ||
-         iy.rank() != 0 ) {
-      error("FAILED Allocate view");
-    }
+    ASSERT_TRUE( dx.rank() == 1);
+    ASSERT_EQ( (unsigned)dx.dimension(0), dN);
 
     dView dz = dy = dx ;
-    iView iz = iy = ix ;
-  
-    if ( dx != dy ||
-         dx != dz ||
-         ix != iy ||
-         ix != iz ) {
-      error("FAILED Assign view");
-    }
+    ASSERT_EQ(dx,dy);
+    ASSERT_EQ(dx,dz);
 
     dx = dView();
-    iy = iView();
-  
-    if ( dx.rank() != 0 ||
-         dy != dz ||
-         ix != iz ||
-         iy.rank() != 0 ) {
-      error("FAILED Clear view");
-    }
+    ASSERT_TRUE(dx.rank() == 0);
+    ASSERT_EQ(dy,dz);
 
     dz = dy = dView();
-    iz = ix = iView();
-
-    if ( dx.rank() != 0 || dy.rank() != 0 || dz.rank() != 0 ||
-         ix.rank() != 0 || iy.rank() != 0 || iz.rank() != 0 ) {
-      error("FAILED Clear all view");
-    }
+    ASSERT_TRUE( dy.rank() == 0);
+    ASSERT_TRUE( dz.rank() == 0);
   }
 };
 

@@ -77,7 +77,7 @@ KLReducedMatrixFreeOperator(
 void 
 Stokhos::KLReducedMatrixFreeOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
   block_ops = ops;
   num_blocks = block_ops->size();
@@ -96,14 +96,14 @@ setupOperator(
   setup();
 }
 
-Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::KLReducedMatrixFreeOperator::
 getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::KLReducedMatrixFreeOperator::
 getSGPolynomial() const
 {
@@ -306,8 +306,9 @@ setup()
     Teuchos::rcp(new Epetra_LocalMap(num_KL_computed+1, 0, 
 				     sg_comm->TimeDomainComm()));
   kl_ops = 
-    Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(
-		   sg_basis, kl_map));
+    Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		   sg_basis, kl_map, domain_base_map, range_base_map, 
+		   range_sg_map, sg_comm));
   kl_ops->setCoeffPtr(0, mean);
   for (int rv=0; rv<num_KL_computed; rv++) {
     if (kl_blocks[rv] == Teuchos::null) 

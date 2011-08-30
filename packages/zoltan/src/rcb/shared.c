@@ -2064,8 +2064,7 @@ ZOLTAN_ID_PTR current_candidate;
                    ZOLTAN_MALLOC(dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
   if (dindx) {
     int prevpart = -1;
-for (i = 0; i < dotnum; i++) printf("%d KDDKDD SANITY %d dindx %d gid %d part %d\n", zz->Proc, i, dindx[i], gidpt[dindx[i]], dotpt->Part[dindx[i]]);
-    /* there are more than one part on this proc. */
+    /* there is more than one part on this proc. */
     /* use dindx to access dots grouped by part */
     for (i = 0; i < dotnum; i++) {
       if (dotpt->Part[dindx[i]] != prevpart) {
@@ -2074,7 +2073,6 @@ for (i = 0; i < dotnum; i++) printf("%d KDDKDD SANITY %d dindx %d gid %d part %d
         current_candidate = &(gidpt[dindx[i]*num_gid_entries]);
         prevpart = dotpt->Part[dindx[i]];
       }
-      printf("%d KDDKDD gid %d part %d candidate %d\n", zz->Proc, gidpt[dindx[i]*num_gid_entries], dotpt->Part[dindx[i]], *current_candidate);
       ZOLTAN_SET_GID(zz, &(dot_candidates[dindx[i]*num_gid_entries]), current_candidate);
     }
   }
@@ -2084,7 +2082,6 @@ for (i = 0; i < dotnum; i++) printf("%d KDDKDD SANITY %d dindx %d gid %d part %d
     ZOLTAN_ID_PTR current_dot_candidate = dot_candidates;
     current_candidate = &(gidpt[0]);
     for (i = 0; i < dotnum; i++) {
-      printf("%d KDDKDD gid %d part %d candidate %d\n", zz->Proc, gidpt[i*num_gid_entries], dotpt->Part[i], *current_candidate);
       ZOLTAN_SET_GID(zz, current_dot_candidate, current_candidate);
       current_dot_candidate += num_gid_entries;
     }
@@ -2103,7 +2100,7 @@ for (i = 0; i < dotnum; i++) printf("%d KDDKDD SANITY %d dindx %d gid %d part %d
   }
 
   ierr = Zoltan_DD_Find(dd, input_gids, NULL, (char*)*candidate_gids, NULL,
-                        num_input, NULL); /* KDD Can proc (last arg) be NULL? */
+                        num_input, NULL); 
 
 End:
 

@@ -45,8 +45,7 @@
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
-#include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -149,7 +148,7 @@ namespace Tpetra {
       std::ostream& 
       operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt) 
       {
-	typedef Teuchos::ScalarTraits<Scalar> STS;
+	typedef ScalarTraits<Scalar> STS;
 	// Non-Ordinal types are floating-point types.  In order not to
 	// lose information when we print a floating-point type, we have
 	// to set the number of digits to print.  C++ standard behavior
@@ -182,7 +181,7 @@ namespace Tpetra {
 	    // decimal digits, 53 binary digits).  This would be easier if
 	    // Teuchos exposed std::numeric_limits<T>::digits10, alas.
 	    const double numDigitsAsDouble = 
-	      16 * ((double) STS::t() / (double) Teuchos::ScalarTraits<double>::t());
+	      16 * ((double) STS::t() / (double) ScalarTraits<double>::t());
 	    // Adding 0.5 and truncating is a portable "floor".
 	    const int numDigits = static_cast<int> (numDigitsAsDouble + 0.5);
 
@@ -440,7 +439,7 @@ namespace Tpetra {
 	///   it's not performance-oriented.  That's why we do all the
 	///   broadcasts of and checks for "success".
 	static bool
-	readFile (const Teuchos::Comm<int>& comm,
+	readFile (const Comm<int>& comm,
 		  const std::string& filename,
 		  const bool echo,
 		  const bool tolerant,
@@ -454,13 +453,13 @@ namespace Tpetra {
 	  // instead, with the usual 1->true, 0->false Boolean
 	  // interpretation.
 	  int readFile = 0;
-	  Teuchos::RCP<std::ifstream> in; // only valid on Rank 0
+	  RCP<std::ifstream> in; // only valid on Rank 0
 	  if (myRank == 0)
 	    {
 	      if (debug)
 		cerr << "Attempting to open file \"" << filename 
 		     << "\" on Rank 0...";
-	      in = Teuchos::rcp (new std::ifstream (filename.c_str()));
+	      in = rcp (new std::ifstream (filename.c_str()));
 	      if (! *in)
 		{
 		  readFile = 0;
@@ -493,8 +492,8 @@ namespace Tpetra {
 	///   it's not performance-oriented.  That's why we do all the
 	///   broadcasts of and checks for "success".
 	static bool
-	read (const Teuchos::Comm<int>& comm,
-	      const Teuchos::RCP<std::istream>& in,
+	read (const Comm<int>& comm,
+	      const RCP<std::istream>& in,
 	      const bool echo,
 	      const bool tolerant,
 	      const bool debug=false)
@@ -587,15 +586,13 @@ namespace Tpetra {
 	///   includes comment lines.)
 	///
 	/// \return Banner [non-null]
-	static Teuchos::RCP<const Banner>
+	static RCP<const Banner>
 	readBanner (std::istream& in,
 		    size_t& lineNumber,
 		    const bool tolerant=false,
 		    const bool debug=false)
 	{
-	  using Teuchos::RCP;
-	  using Teuchos::rcp;
-	  typedef Teuchos::ScalarTraits<Scalar> STS;
+	  typedef ScalarTraits<Scalar> STS;
 
 	  // The pointer will be non-null on return only on MPI Rank 0.
 	  // Using a pointer lets the data persist outside the
@@ -643,9 +640,7 @@ namespace Tpetra {
 	  using std::cerr;
 	  using std::cout;
 	  using std::endl;
-	  using Teuchos::RCP;
-	  using Teuchos::Tuple;
-	  typedef Teuchos::ScalarTraits<Scalar> STS;
+	  typedef ScalarTraits<Scalar> STS;
 
 	  // This "Adder" knows how to add sparse matrix entries,
 	  // given a line of data from the file.  It also stores the
@@ -710,7 +705,7 @@ namespace Tpetra {
 	  // columns, # matrix entries (counting duplicates as
 	  // separate entries)).  The second element of the pair tells
 	  // us whether the values were gotten successfully.
-	  std::pair<Teuchos::Tuple<Ordinal, 3>, bool> dims = 
+	  std::pair<Tuple<Ordinal, 3>, bool> dims = 
 	    reader.readDimensions (in, lineNumber, tolerant);
 	  if (! dims.second)
 	    {

@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_Combine.hpp
+/// \brief TSQR's six computational kernels.
+///
 #ifndef __TSQR_Combine_hpp
 #define __TSQR_Combine_hpp
 
@@ -33,8 +36,6 @@
 #include <Tsqr_ApplyType.hpp>
 #include <Tsqr_CombineNative.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
@@ -54,18 +55,21 @@ namespace TSQR {
   /// - Apply Q factor of [R; A] to [C_1; C_2] (apply_inner)
   /// - Apply Q factor of [R_1; R_2] to [C_1; C_2] (apply_pair)
   ///
-  /// Template parameters:
-  /// - Ordinal: Type of indices into matrices.
-  /// - Scalar: Type of entries of matrices.
-  /// - CombineImpl: Type of a particular implementation of Combine.
-  ///   Its public interface must contain this class' interface.
+  /// \tparam Ordinal Type of indices into matrices.
+  /// \tparam Scalar Type of entries of matrices.
+  /// \tparam CombineImpl Type of a particular implementation of
+  ///   Combine.  Its public interface must contain this class'
+  ///   interface.
   /// 
-  /// Combine is completely implemented using CombineImpl.  Possible
-  /// implementations include \c CombineDefault (which uses LAPACK and
-  /// copies in and out of scratch space that it owns), \c
-  /// CombineNative (a C++ in-place (no scratch space) generic
-  /// implementation), and \c CombineFortran (a Fortran 9x in-place
-  /// implementation for LAPACK's four data types S, D, C, Z).  
+  /// All Combine methods are implemented using CombineImpl methods
+  /// with the same name.  TSQR includes three implementations of the
+  /// CombineImpl interface:
+  /// - \c CombineDefault, which uses LAPACK and copies in and out of
+  ///   scratch space that it owns, 
+  /// - \c CombineNative, a C++ in-place (no scratch space) generic 
+  ///   implementation), and 
+  /// - \c CombineFortran, a Fortran 9x in-place implementation for
+  ///   LAPACK's four data types S, D, C, Z.
   ///
   /// The default CombineImpl is \c CombineNative, since that should
   /// work for any Ordinal and Scalar types for which LAPACK<Ordinal,
@@ -73,7 +77,7 @@ namespace TSQR {
   ///
   template< class Ordinal, 
 	    class Scalar, 
-	    class CombineImpl = CombineNative< Ordinal, Scalar, Teuchos::ScalarTraits< Scalar >::isComplex > >
+	    class CombineImpl = CombineNative<Ordinal, Scalar, Teuchos::ScalarTraits<Scalar >::isComplex> >
   class Combine {
   public:
     /// \typedef scalar_type

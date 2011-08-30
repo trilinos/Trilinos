@@ -17,10 +17,7 @@
 #include "zoltan.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifndef ssize_t
-typedef long ssize_t;
-#endif
+#include <unistd.h>
 
 #include "dr_const.h"
 

@@ -25,34 +25,36 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
+    "-DTPL_LAPACK_LIBRARIES=/Users/jmwille/install/lapack/lib/liblapack.dylib"
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/jmwille/install/boost_1_41_0"
     "-DTPL_ENABLE_Netcdf:BOOL=ON"
-    "-DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/netcdf-4.0/lib"
-    "-DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/netcdf-4.0/include"
+    "-DNetcdf_LIBRARY_DIRS=/Users/jmwille/install/netcdf-4.1.3/lib"
+    "-DNetcdf_INCLUDE_DIRS=/Users/jmwille/install/netcdf-4.1.3/include"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
+    "-DTPL_ENABLE_MATLAB=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.6")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
   
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/gcc-4.4.6/openmpi-1.4.3"
+      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/gcc-4.6.1/openmpi-1.4.3"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/gfortran"
       )
   
   ENDIF()

@@ -122,7 +122,8 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 
   std::vector<int> RowIndices_; 
 
-  int Offset_;
+  int ROffset_;
+  int COffset_;
 
 };
 

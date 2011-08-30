@@ -272,7 +272,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
 #endif
   validateColRng(colRng);
   RTOpPack::ConstSubVectorView<Scalar> sv;
-  acquireDetachedView(rowRng,&sv);
+  this->acquireDetachedView(rowRng,&sv);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
@@ -308,7 +308,7 @@ void VectorDefaultBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
 #endif
   validateColRng(colRng);
   RTOpPack::SubVectorView<Scalar> sv;
-  acquireDetachedView(rowRng,&sv);
+  this->acquireDetachedView(rowRng,&sv);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
@@ -332,7 +332,7 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 #endif
   RTOpPack::SubVectorView<Scalar> sv(
     sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
-  commitDetachedView(&sv);
+  this->commitDetachedView(&sv);
   sub_mv->uninitialize();
 }
 

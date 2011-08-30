@@ -60,9 +60,13 @@ public:
 
   //! Constructor that takes the Model Evaluator to wrap
 
-   ThyraDirectApplicInterface(Dakota::ProblemDescDB& problem_db_,
-                         const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App_);
-                         //const Teuchos::RCP<Thyra::ModelEvaluator<double> > App_);
+   ThyraDirectApplicInterface(
+     Dakota::ProblemDescDB& problem_db_,
+     const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App_,
+     //const Teuchos::RCP<Thyra::ModelEvaluator<double> > App_);
+     int p_index = 0,
+     int g_index = 0);
+  
 
   ~ThyraDirectApplicInterface() {};
 
@@ -79,14 +83,16 @@ protected:
 private:
 
   // Data
-    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App;
-    Teuchos::RCP<Thyra::VectorBase<double> > model_p;
-    Teuchos::RCP<Thyra::VectorBase<double> > model_g;
-    Teuchos::RCP<Thyra::MultiVectorBase<double> > model_dgdp;
-    Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation;
-    unsigned int numParameters;
-    unsigned int numResponses;
-    bool supportsSensitivities;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App;
+  int p_index;
+  int g_index;
+  Teuchos::RCP<Thyra::VectorBase<double> > model_p;
+  Teuchos::RCP<Thyra::VectorBase<double> > model_g;
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > model_dgdp;
+  Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation;
+  unsigned int numParameters;
+  unsigned int numResponses;
+  bool supportsSensitivities;
 };
 
 } // namespace TriKota

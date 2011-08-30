@@ -700,14 +700,6 @@ public:
 
   FinalizeType result ;
 
-  ~MultiFunctorParallelReduce()
-  {
-    while ( ! m_member_functors.empty() ) {
-      delete m_member_functors.back();
-      m_member_functors.pop_back();
-    }
-  }
-
   MultiFunctorParallelReduce()
     : m_member_functors()
     , m_shmem_size( 0 )
@@ -734,6 +726,14 @@ public:
 
     m_threads_per_block = WarpSize * m_warps_per_block ;
     m_blocks_per_stream = m_threads_per_block / m_stream_count ;
+  }
+
+  ~MultiFunctorParallelReduce()
+  {
+    while ( ! m_member_functors.empty() ) {
+      delete m_member_functors.back();
+      m_member_functors.pop_back();
+    }
   }
 
   template< class FunctorType >

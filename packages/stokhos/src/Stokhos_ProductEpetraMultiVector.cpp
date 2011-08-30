@@ -165,10 +165,32 @@ assignFromBlockMultiVector(const Epetra_MultiVector& v)
   }
 }
 
+Teuchos::RCP<const Epetra_BlockMap> 
+Stokhos::ProductEpetraMultiVector::
+coefficientMap() const {
+  return coeff_map;
+}
+
+Teuchos::RCP<const Epetra_BlockMap> 
+Stokhos::ProductEpetraMultiVector::
+productMap() const {
+  return product_map;
+}
+
 Teuchos::RCP<const EpetraExt::MultiComm> 
 Stokhos::ProductEpetraMultiVector::
 productComm() const {
   return product_comm;
+}
+
+int
+Stokhos::ProductEpetraMultiVector::
+numVectors() const {
+  if (bv != Teuchos::null)
+    return bv->NumVectors();
+  else if (this->size() > 0 && this->coeff_[0] != Teuchos::null)
+    return this->coeff_[0]->NumVectors();
+  return -1;
 }
       
 void 

@@ -41,18 +41,22 @@ typedef Thyra::ModelEvaluatorBase MEB;
 
 // Define interface class
 TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
-              ProblemDescDB& problem_db_,
-              const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App_)
+  ProblemDescDB& problem_db_,
+  const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App_,
+  int p_index_,
+  int g_index_)
   : Dakota::DirectApplicInterface(problem_db_),
     App(App_),
+    p_index(p_index_),
+    g_index(g_index_),
     orientation(MEB::DERIV_MV_BY_COL)
 {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   if (App != Teuchos::null) {
-    model_p = Thyra::createMember<double>(App->get_p_space(0));
-    model_g = Thyra::createMember<double>(App->get_g_space(0));
+    model_p = Thyra::createMember<double>(App->get_p_space(p_index));
+    model_g = Thyra::createMember<double>(App->get_g_space(g_index));
 
     Thyra::DetachedVectorView<double> my_p(model_p);
     Thyra::DetachedVectorView<double> my_g(model_g);
@@ -63,7 +67,8 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
     *out << "TriKota:: ModeEval has " << numParameters <<
             " parameters and " << numResponses << " responses." << std::endl;
 
-    MEB::DerivativeSupport supportDgDp = App->createOutArgs().supports(MEB::OUT_ARG_DgDp, 0, 0);
+    MEB::DerivativeSupport supportDgDp = 
+      App->createOutArgs().supports(MEB::OUT_ARG_DgDp, g_index, p_index);
     supportsSensitivities = !(supportDgDp.none());
 
     // Create the MultiVector, then the Derivative object
@@ -72,11 +77,13 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
 
       if (supportDgDp.supports(MEB::DERIV_TRANS_MV_BY_ROW)) {
         orientation = MEB::DERIV_TRANS_MV_BY_ROW;
-        model_dgdp = Thyra::createMembers<double>(App->get_p_space(0), numResponses);
+        model_dgdp = Thyra::createMembers<double>(App->get_p_space(p_index), 
+						  numResponses);
       }
       else if (supportDgDp.supports(MEB::DERIV_MV_BY_COL)) {
         orientation = MEB::DERIV_MV_BY_COL;
-        model_dgdp = Thyra::createMembers<double>(App->get_g_space(0), numParameters);
+        model_dgdp = Thyra::createMembers<double>(App->get_g_space(g_index), 
+						  numParameters);
       }
       else {
         TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
@@ -85,17 +92,19 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
     }
 
     *out << "TriKota:: Setting initial guess from Model Evaluator to Dakota " << std::endl;
-    const Thyra::ConstDetachedVectorView<double> my_pinit(App->getNominalValues().get_p(0));
+    const Thyra::ConstDetachedVectorView<double> my_pinit(App->getNominalValues().get_p(p_index));
     for (unsigned int i=0; i<numParameters; i++) my_p[i] = my_pinit[i];
 
     Model& first_model = *(problem_db_.model_list().begin());
     unsigned int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
-    TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
-                       "TriKota Adapter Error: number of parameters in ModelEvaluator  "
-                       <<  numParameters << "\n is less then the number of continuous variables\n"
-                       << " specified in the dakota.in input file " << num_dakota_vars << "\n" );
+    TEST_FOR_EXCEPTION(
+      num_dakota_vars > numParameters, std::logic_error,
+      "TriKota Adapter Error: number of parameters in ModelEvaluator  " <<  
+      numParameters << 
+      "\n is less then the number of continuous variables\n" << 
+      " specified in the dakota.in input file " << num_dakota_vars << "\n" );
 
     for (unsigned int i=0; i<num_dakota_vars; i++) drv[i] = my_p[i];
     first_model.continuous_variables(drv);
@@ -134,9 +143,9 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     }
 
     // Evaluate model
-    inArgs.set_p(0,model_p);
-    outArgs.set_g(0,model_g);
-    if (gradFlag) outArgs.set_DgDp(0,0,
+    inArgs.set_p(p_index,model_p);
+    outArgs.set_g(g_index,model_g);
+    if (gradFlag) outArgs.set_DgDp(g_index,p_index,
       MEB::DerivativeMultiVector<double>(model_dgdp,orientation));
     App->evalModel(inArgs, outArgs);
 
@@ -161,9 +170,10 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     }
   }
   else {
-    TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
-               != MPI_COMM_NULL, std::logic_error,
-              "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
+    TEST_FOR_EXCEPTION(
+      parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
+      != MPI_COMM_NULL, std::logic_error,
+      "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
   }
 
   return 0;

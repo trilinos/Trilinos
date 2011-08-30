@@ -19,6 +19,15 @@ public:
         cout << "ObserveSolution: Norm = " << norm << endl;
     }
 
+  void observeSolution(
+    const Epetra_Vector& solution, double time_or_param_val)
+    {
+      double norm; solution.Norm2(&norm);
+      if (solution.Comm().MyPID()==0)
+        cout << "ObserveSolution: Norm = " << norm 
+             << "  for param/time = " << time_or_param_val << endl;
+    }
+
 private:
 
 };

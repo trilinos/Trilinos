@@ -97,6 +97,12 @@ namespace Stokhos {
     //! Create MP operator representing dg/dx
     Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
 
+    //! Create MP operator representing dg/dp
+    Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op(int j, int i) const;
+
+    //! Create MP operator representing df/dp
+    Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int i) const;
+
     //! Create InArgs
     InArgs createInArgs() const;
 
@@ -116,34 +122,15 @@ namespace Stokhos {
 
     //! Get indices of MP parameters
     /*!
-     * These indices determine which parameter vectors that will be passed
-     * through InArgs correspond to the MP parameters.
+     * These indices determine which parameter vectors support MP
      */
-    Teuchos::Array<int> get_p_mp_indices() const;
-
-    //! Get indices of non-MP parameters
-    /*!
-     * These indices determine which parameter vectors that will be passed
-     * through InArgs correspond to the non-MP parameters.
-     */
-    Teuchos::Array<int> get_non_p_mp_indices() const;
+    Teuchos::Array<int> get_p_mp_map_indices() const;
 
     //! Get indices of MP responses
     /*!
-     * These indices determine which response vectors that will be passed
-     * through OutArgs correspond to the MP responses.
+     * These indices determine which response vectors support MP
      */
-    Teuchos::Array<int> get_g_mp_indices() const;
-
-    //! Get indices of non-MP responses
-    /*!
-     * These indices determine which response vectors that will be passed
-     * through OutArgs correspond to the non-MP responses.
-     */
-    Teuchos::Array<int> get_non_g_mp_indices() const;
-
-    //! Get base maps of MP parameters
-    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_p_mp_base_maps() const;
+    Teuchos::Array<int> get_g_mp_map_indices() const;
 
     //! Get base maps of MP responses
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_g_mp_base_maps() const;
@@ -222,6 +209,9 @@ namespace Stokhos {
     //! Number of multi-point parameter vectors
     int num_p_mp;
 
+    //! Index map between block-p and p_mp maps
+    Teuchos::Array<int> mp_p_index_map;
+
     //! Block MP parameter map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > mp_p_map;
 
@@ -234,11 +224,14 @@ namespace Stokhos {
     //! Number of multi-point response vectors
     int num_g_mp;
 
+    //! Index map between block-g and g_mp maps
+    Teuchos::Array<int> mp_g_index_map;
+
     //! Block MP response map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > mp_g_map;
 
     //! W multi-point components
-    mutable Teuchos::RCP< Stokhos::ProductContainer<Epetra_Operator> > W_mp_blocks;
+    mutable Teuchos::RCP< Stokhos::ProductEpetraOperator> W_mp_blocks;
 
     //! dg/dxdot multi-point components
     mutable Teuchos::Array< Teuchos::RCP< Stokhos::ProductEpetraMultiVector > > dgdx_dot_mp_blocks;

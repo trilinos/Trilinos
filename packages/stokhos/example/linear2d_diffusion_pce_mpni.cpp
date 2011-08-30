@@ -364,12 +364,12 @@ int main(int argc, char *argv[]) {
     // Evaluate final responses
     Teuchos::RCP<const Epetra_Vector> mp_p = mp_model->get_p_init(1);
     Teuchos::RCP<Epetra_Vector> mp_g = 
-      Teuchos::rcp(new Epetra_Vector(*(mp_model->get_g_map(1))));
+      Teuchos::rcp(new Epetra_Vector(*(mp_model->get_g_map(0))));
     EpetraExt::ModelEvaluator::InArgs mp_inArgs = mp_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs mp_outArgs = mp_model->createOutArgs();
     mp_inArgs.set_x(mp_x);
     mp_inArgs.set_p(1, mp_p);
-    mp_outArgs.set_g(1, mp_g);
+    mp_outArgs.set_g(0, mp_g);
     mp_model->evalModel(mp_inArgs, mp_outArgs);
 
     // Import x and g

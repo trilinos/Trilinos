@@ -57,6 +57,7 @@ operator()( OriginalTypeRef orig )
   // Extract the CCS information
   int n = orig.NumMyRows();
   int nnz = orig.NumMyNonzeros();
+  vector<int> Ai_tmp(nnz);
 
   vector<int> Ap(n+1,0);  // column pointers
   vector<int> Ai(nnz);    // row indices
@@ -83,6 +84,34 @@ operator()( OriginalTypeRef orig )
     cout << "-----------------------------------------\n";
   }
 
+  // Transpose the graph, not the values
+  int j=0, next=0;
+  vector<int> Ap_tmp(n+1,0);
+
+  // Compute row lengths
+  for (int i = 0; i < n; i++)
+      for (int k = Ap[i]; k < Ap[i+1]; k++)
+          ++Ap_tmp[ Ai[k]+1 ];
+
+  // Compute pointers from row lengths
+  Ap_tmp[0] = 0;
+  for (int i = 0; i < n; i++)
+      Ap_tmp[i+1] += Ap_tmp[i];
+
+  // Copy over indices
+  for (int i = 0; i < n; i++) {
+      for (int k = Ap[i]; k < Ap[i+1]; k++) {
+          j = Ai[k];
+          next = Ap_tmp[j];
+          Ai_tmp[next] = i;
+          Ap_tmp[j] = next + 1;
+      }
+  }
+
+  // Reshift Ap_tmp
+  for (int i=n-1; i >= 0; i--) Ap_tmp[i+1] = Ap_tmp[i];
+  Ap_tmp[0] = 0;
+
   // Transformation information
   int numMatch = 0;       // number of nonzeros on diagonal after permutation.
   double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
@@ -102,15 +131,15 @@ operator()( OriginalTypeRef orig )
   // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
   // (k,k)th entry in P*A*Q is structurally zero.
 
-  numBlocks_ = amesos_btf_order( n, &Ap[0], &Ai[0], maxWork, &workPerf,
-			  &colperm[0], &rowperm[0], &blkPtr[0], 
+  numBlocks_ = amesos_btf_order( n, &Ap_tmp[0], &Ai_tmp[0], maxWork, &workPerf,
+			  &rowperm[0], &colperm[0], &blkPtr[0], 
 			  &numMatch, &work[0] );
 
   // Reverse ordering of permutation to get upper triangular form, if necessary
   rowPerm_.resize( n );
   colPerm_.resize( n );
   blkPtr_.resize( numBlocks_+1 );
-  if (upperTri_) {
+  if (!upperTri_) {
     for( int i = 0; i < n; ++i )
     {
       rowPerm_[i] = BTF_UNFLIP(rowperm[(n-1)-i]);

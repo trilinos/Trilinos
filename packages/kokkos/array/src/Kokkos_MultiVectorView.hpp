@@ -224,5 +224,34 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 
 } // namespace Kokkos
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType , class Device >
+class MultiVectorDeepCopy< ValueType , Device , true , Device , true > {
+public:
+  typedef MultiVectorView< ValueType , Device > multivector_type ;
+
+  inline
+  static void run( const multivector_type & dst ,
+                   const multivector_type & src )
+  {
+    const typename Device::size_type n = dst.length() * dst.count();
+
+    parallel_for( n , DeepCopyContiguous<ValueType,Device>
+                      ( dst.m_memory.ptr_on_device() ,
+                        src.m_memory.ptr_on_device() ) );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */
 

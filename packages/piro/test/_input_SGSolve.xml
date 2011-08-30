@@ -1,0 +1,111 @@
+<ParameterList>
+  <ParameterList name="Piro">
+    <Parameter name="Solver Type" type="string" value="NOX"/>
+    <ParameterList name="NOX">
+      <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+      <ParameterList name="Line Search">
+	<Parameter name="Method" type="string" value="Full Step"/>
+      </ParameterList>
+      <ParameterList name="Direction">
+        <Parameter name="Method" type="string" value="Newton"/>
+        <ParameterList name="Newton">
+          <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+          <ParameterList name="Linear Solver">
+            <Parameter name="Write Linear System" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="Stratimikos Linear Solver">
+            <ParameterList name="Stratimikos">
+              <Parameter name="Linear Solver Type" type="string" value="AztecOO"/>
+              <ParameterList name="Linear Solver Types">
+                <ParameterList name="AztecOO">
+                  <ParameterList name="Forward Solve">
+                    <ParameterList name="AztecOO Settings">
+                      <Parameter name="Aztec Solver" type="string" value="GMRES"/>
+                      <Parameter name="Output Frequency" type="int" value="10"/>
+                      <Parameter name="Size of Krylov Subspace" type="int" value="200"/>
+                    </ParameterList>
+                    <Parameter name="Max Iterations" type="int" value="200"/>
+                    <Parameter name="Tolerance" type="double" value="1e-12"/>
+                  </ParameterList>
+                  <ParameterList name="VerboseObject">
+                    <Parameter name="Verbosity Level" type="string" value="default"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+              <Parameter name="Preconditioner Type" type="string" value="None"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Printing">
+        <Parameter name="Output Information" type="int" value="103"/>
+        <Parameter name="Output Precision" type="int" value="3"/>
+        <Parameter name="Output Processor" type="int" value="0"/>
+      </ParameterList>
+      <ParameterList name="Status Tests">
+	<Parameter name="Test Type" type="string" value="Combo"/>
+        <Parameter name="Combo Type" type="string" value="OR"/>
+        <Parameter name="Number of Tests" type="int" value="2"/>
+        <ParameterList name="Test 0">
+	  <Parameter name="Test Type" type="string" value="NormF"/>
+          <Parameter name="Norm Type" type="string" value="Two Norm"/>
+          <Parameter name="Scale Type" type="string" value="Scaled"/>
+          <Parameter name="Tolerance" type="double" value="1e-10"/>
+        </ParameterList>
+        <ParameterList name="Test 1">
+	  <Parameter name="Test Type" type="string" value="MaxIters"/>
+          <Parameter name="Maximum Iterations" type="int" value="10"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="Stochastic Galerkin">
+      <Parameter name="SG Method" type="string" value="Direct"/>
+      <Parameter name="Number of Spatial Processors" type="int" value="1"/>
+      <Parameter name="Triple Product Size" type="string" value="Full"/>
+      <ParameterList name="Basis">
+        <Parameter name="Isotropic" type="bool" value="true"/>
+	<Parameter name="Type" type="string" value="Legendre"/>
+        <Parameter name="Dimension" type="int" value="1"/>
+        <Parameter name="Order" type="int" value="5"/>
+        <Parameter name="Normalize" type="bool" value="false"/>
+	<Parameter name="Cijk Drop Tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+      <ParameterList name="SG Parameters">
+	<Parameter name="Number of SG Parameter Vectors" type="int" value="1"/>
+	<ParameterList name="SG Parameter Vector 0">
+	  <Parameter name="Parameter Vector Index" type="int" value="0"/>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="Expansion">
+        <Parameter name="Type" type="string" value="Algebraic"/>
+      </ParameterList>
+      <ParameterList name="SG Solver Parameters">
+        <Parameter name="Jacobian Expansion Type" type="string" value="Full"/>
+        <Parameter name="Parameter Expansion Type" type="string" value="Full"/>
+	<Parameter name="SG Solver Algorithm" type="string" value="Krylov"/>
+        <ParameterList name="SG Operator">
+	  <Parameter name="Operator Method" type="string" value="Matrix Free"/>
+        </ParameterList>
+        <ParameterList name="SG Preconditioner">
+	  <Parameter name="Preconditioner Method" type="string" value="Approximate Gauss-Seidel"/>
+	  <Parameter name="Mean Preconditioner Type" type="string" value="Ifpack"/>
+          <ParameterList name="Mean Preconditioner Parameters">
+	    <Parameter name="default values" type="string" value="SA"/>
+            <Parameter name="coarse: pre or post" type="string" value="post"/>
+            <Parameter name="coarse: sweeps" type="int" value="1"/>
+            <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+            <Parameter name="increasing or decreasing" type="string" value="increasing"/>
+            <Parameter name="max levels" type="int" value="10"/>
+            <Parameter name="prec type" type="string" value="MGV"/>
+            <Parameter name="smoother: damping factor" type="double" value="1"/>
+            <Parameter name="smoother: pre or post" type="string" value="both"/>
+            <Parameter name="smoother: sweeps" type="int" value="2"/>
+            <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

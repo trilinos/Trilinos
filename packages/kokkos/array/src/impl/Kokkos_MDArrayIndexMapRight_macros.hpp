@@ -45,32 +45,24 @@
 
 #else
 
+#include <impl/Kokkos_MDArrayIndexMap.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
-template< class DeviceType , class MapOption > class MDArrayIndexMap ;
-
 template<>
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , Kokkos::MDArrayIndexMapRight > {
+class MDArrayIndexMap< KOKKOS_MACRO_DEVICE_MEMORY,
+                       Kokkos::Impl::MDArrayIndexMapRight, 1 > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE     device_type;
-  typedef device_type::size_type  size_type ;
+  typedef KOKKOS_MACRO_DEVICE_MEMORY  memory_space ;
+  typedef memory_space::size_type     size_type ;
 
-  enum { MAX_RANK = 8 };
+  enum { Contiguous = true };
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type rank() const { return m_rank; }
-
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const
-    {
-      size_type n = m_dims[0] ;
-      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
-      return n ;
-    }
 
   template< typename iType >
   inline
@@ -90,6 +82,24 @@ public:
       dims[i] = m_dims[i] ;
     }
   }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const
+    {
+      size_type n = m_dims[0] ;
+      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
+      return n ;
+    }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const
+    {
+      size_type n = m_dims[0] ;
+      for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
+      return n ;
+    }
 
   //------------------------------------
 
@@ -280,13 +290,13 @@ public:
   MDArrayIndexMap( size_t arg_rank, const size_t * const arg_dims )
     : m_rank(arg_rank)
   {
-    KOKKOS_MACRO_CHECK( require_less( arg_rank , MAX_RANK ) );
+    KOKKOS_MACRO_CHECK( require_less( arg_rank , MDArrayMaxRank ) );
     size_type i = 0 ;
     for ( ; i < m_rank ; ++i ) {
       m_dims[i] = arg_dims[i] ;
       KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
     }
-    for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
   }
 
   template < class IndexMap >
@@ -296,13 +306,13 @@ public:
   MDArrayIndexMap( const IndexMap & rhs )
     : m_rank( rhs.rank() )
   {
-    KOKKOS_MACRO_CHECK( require_less( m_rank , MAX_RANK ) );
+    KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
     size_type i = 0 ;
     for ( ; i < m_rank ; ++i ) {
       m_dims[i] = rhs.dimension(i);
       KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
     }
-    for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
   }
 
   template < class IndexMap >
@@ -312,20 +322,20 @@ public:
   {
     if (this != & rhs ) {
       m_rank = rhs.rank();
-      KOKKOS_MACRO_CHECK( require_less( m_rank , MAX_RANK ) );
+      KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
       size_type i = 0 ;
       for ( ; i < m_rank ; ++i ) {
         m_dims[i] = rhs.m_dims[i] ;
         KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
       }
-      for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+      for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
     }
     return *this;
   }
 
 private:
   size_type  m_rank;
-  size_type  m_dims[MAX_RANK];
+  size_type  m_dims[MDArrayMaxRank];
 };
 
 } // Impl namespace

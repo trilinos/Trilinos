@@ -59,22 +59,12 @@ namespace Stokhos {
     //! Return parameter vector map
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 
-    //! Return parameter vector map
-    Teuchos::RCP<const Epetra_Map> get_p_mp_map(int l) const;
-
     //! Return observation vector map
     Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
-
-    //! Return observation vector map
-    Teuchos::RCP<const Epetra_Map> get_g_mp_map(int l) const;
 
     //! Return array of parameter names
     Teuchos::RCP<const Teuchos::Array<std::string> > 
     get_p_names(int l) const;
-
-    //! Return array of parameter names
-    Teuchos::RCP<const Teuchos::Array<std::string> > 
-    get_p_mp_names(int l) const;
 
     //! Return initial solution
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;

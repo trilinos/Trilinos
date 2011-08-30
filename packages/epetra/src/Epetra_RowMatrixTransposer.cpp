@@ -101,7 +101,6 @@ void Epetra_RowMatrixTransposer::DeleteData (){
 
   int i;
 
-  if (TransposeMatrix_!=0) {delete TransposeMatrix_; TransposeMatrix_=0;}
   if (TransposeExporter_!=0) {delete TransposeExporter_; TransposeExporter_=0;}
 
   // Delete any intermediate storage

@@ -273,7 +273,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
             MPI_Bcast(nhg->vwgt, nVtx*ohg->VtxWeightDim, MPI_FLOAT, 0, ncomm->col_comm);
     }
 
-    /* NEANEA communicate coordinates */
+    /* communicate coordinates */
     if (ohg->nDim) {
       if (nVtx) {
 	nhg->coor = (double *) ZOLTAN_MALLOC(nVtx * ohg->nDim * sizeof(double));

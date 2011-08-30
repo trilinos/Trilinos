@@ -380,7 +380,7 @@ static int rcb_fn(
   int     outgoing;                 /* number of outgoing dots for reuse */
   double *coord = NULL;             /* temp array for serial_rcb */
   double *wgts = NULL;              /* temp array for serial_rcb */
-  double *wgt, *pts ;
+  double *pts ;
   double  valuehalf;                /* median cut position */
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
@@ -513,12 +513,6 @@ static int rcb_fn(
     ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
     goto End;
   }
-#ifdef KDDKDD_DEBUG
-  {int gnvtx;
-   MPI_Allreduce(&pdotnum, &gnvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
-  printf("%d KDDKDD RCB GDOT %d\n", zz->Proc, gnvtx);
-  }
-#endif
 
   rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
 
@@ -673,6 +667,7 @@ static int rcb_fn(
   }
   else {
     /* put sum of weights in weightlo */
+    double *wgt;
     for (j=0; j<dotpt->nWeights; j++){
       weightlo[j] = 0.0;
       wgt = dotpt->Weight + j;
@@ -704,6 +699,7 @@ static int rcb_fn(
   }
   else{
     /* scale the weights */
+    double *wgt;
     for (j=0; j<dotpt->nWeights; j++){
       wgt = dotpt->Weight + j;
       for (i=0; i < dotnum; i++){
@@ -1109,8 +1105,8 @@ static int rcb_fn(
       }
     }
 
-    coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-    wgts = (double *) ZOLTAN_MALLOC(wgtflag*dotmax*sizeof(double));
+    coord = (double *) ZOLTAN_MALLOC(dotnum*sizeof(double));
+    wgts = (double *) ZOLTAN_MALLOC(wgtflag*dotnum*sizeof(double));
 
     if (!coord || (wgtflag && !wgts)){
       ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");

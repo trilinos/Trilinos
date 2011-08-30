@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_SequentialTsqr.hpp
+/// \brief Implementation of the sequential cache-blocked part of TSQR.
+///
 #ifndef __TSQR_Tsqr_SequentialTsqr_hpp
 #define __TSQR_Tsqr_SequentialTsqr_hpp
 
@@ -48,10 +51,11 @@
 #include <utility> // std::pair
 #include <vector>
 
+
 namespace TSQR {
 
   /// \class SequentialTsqr
-  /// \brief Sequential TSQR factorization.
+  /// \brief Sequential cache-blocked TSQR factorization.
   /// \author Mark Hoemmen
   ///
   /// TSQR (Tall Skinny QR) is a collection of different algorithms
@@ -62,8 +66,8 @@ namespace TSQR {
   /// "OrthoManager" in Anasazi and Belos; you do not have to use it
   /// directly.)  For details, see e.g., our 2008 University of
   /// California Berkeley technical report (Demmel, Grigori, Hoemmen,
-  /// and Langou), or our SC09 paper (Demmel, Hoemmen, Mohiyuddin, and
-  /// Yelick).
+  /// and Langou), or our Supercomputing 2009 paper (Demmel, Hoemmen,
+  /// Mohiyuddin, and Yelick).
   ///
   /// SequentialTsqr implements the "sequential TSQR" algorithm of the
   /// aforementioned 2008 technical report.  It breaks up the matrix
@@ -87,14 +91,16 @@ namespace TSQR {
   /// implementation.  In fact, implementations of LAPACK's QR
   /// factorization generally do not show performance benefits from
   /// multithreading when factoring tall skinny matrices.  (See our
-  /// SC09 paper and my IPDPS 2011 paper.)  For thread-level
-  /// parallelism, use \c TbbTsqr.
+  /// Supercomputing 2009 paper and my IPDPS 2011 paper.)  This is why
+  /// we built other intranode TSQR factorizations that do effectively
+  /// exploit thread-level parallelism, such as \c TbbTsqr.
   ///
-  /// \note To implementers: SequentialTsqr cannot currently be a
-  ///   ParameterListAcceptorDefaultBase, because the latter uses RCP,
-  ///   and RCPs (more specifically, their reference counts) are not
-  ///   currently thread safe.  TbbTsqr uses SequentialTsqr in
-  ///   parallel to implement each thread's cache-blocked TSQR.
+  /// \note To implementers: SequentialTsqr cannot currently be a \c
+  ///   Teuchos::ParameterListAcceptorDefaultBase, because the latter
+  ///   uses RCP, and RCPs (more specifically, their reference counts)
+  ///   are not currently thread safe.  \c TbbTsqr uses SequentialTsqr
+  ///   in parallel to implement each thread's cache-blocked TSQR.
+  ///   This can be fixed as soon as RCPs are made thread safe.
   ///
   template<class LocalOrdinal, class Scalar>
   class SequentialTsqr : 

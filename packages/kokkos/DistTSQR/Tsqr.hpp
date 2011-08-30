@@ -1,31 +1,34 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
+/// \file Tsqr.hpp
+/// \brief Parallel Tall Skinny QR (TSQR) implementation
+///
 #ifndef __TSQR_Tsqr_hpp
 #define __TSQR_Tsqr_hpp
 
@@ -37,11 +40,10 @@
 #include <Tsqr_Util.hpp>
 
 #include <Kokkos_MultiVector.hpp>
+#include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
@@ -55,12 +57,13 @@ namespace TSQR {
   /// unlike ScaLAPACK's comparable QR factorization (P_GEQR2),
   /// Modified Gram-Schmidt, or Classical Gram-Schmidt.
   ///
-  /// Template parameters: 
-  /// - LocalOrdinal: index type that can address all elements of a
-  ///   matrix, when treated as a 1-D array.  That is, for A[i +
+  /// \tparam LocalOrdinal Index type that can address all elements of
+  ///   a matrix, when treated as a 1-D array.  That is, for A[i +
   ///   LDA*j], the index i + LDA*j must fit in a LocalOrdinal.
-  /// - Scalar: the type of the matrix entries.
-  /// - NodeTsqrType: the intranode (single-node) part of TSQR.
+  ///
+  /// \tparam Scalar The type of the matrix entries.
+  ///
+  /// \tparam NodeTsqrType The intranode (single-node) part of TSQR.
   ///   Defaults to \c SequentialTsqr, which provides a sequential
   ///   cache-blocked implementation.  Any class implementing the same
   ///   compile-time interface is valid.  We provide \c NodeTsqr as an
@@ -73,16 +76,20 @@ namespace TSQR {
   /// \note TSQR only needs to know about the local ordinal type (used
   ///   to index matrix entries on a single node), not about the
   ///   global ordinal type (used to index matrix entries globally,
-  ///   i.e., over all nodes).
+  ///   i.e., over all nodes).  For some distributed linear algebra
+  ///   libraries, such as Epetra, the local and global ordinal types
+  ///   are the same (int, in the case of Epetra).  For other
+  ///   distributed linear algebra libraries, such as Tpetra, the
+  ///   local and global ordinal types may be different.
   ///
   template<class LocalOrdinal, 
 	   class Scalar, 
 	   class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
   class Tsqr {
   public:
-    typedef MatView< LocalOrdinal, Scalar > matview_type;
-    typedef ConstMatView< LocalOrdinal, Scalar > const_matview_type;
-    typedef Matrix< LocalOrdinal, Scalar > matrix_type;
+    typedef MatView<LocalOrdinal, Scalar> matview_type;
+    typedef ConstMatView<LocalOrdinal, Scalar> const_matview_type;
+    typedef Matrix<LocalOrdinal, Scalar> matrix_type;
 
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
@@ -136,13 +143,18 @@ namespace TSQR {
       return nodeTsqr_->cache_size_hint(); 
     }
 
-    /// Whether or not all diagonal entries of the R factor computed
-    /// by the QR factorization are guaranteed to be nonnegative.
+    /// \brief Does the R factor have a nonnegative diagonal?
     ///
-    /// \note This property holds if all QR factorization steps (both
-    ///   intranode and internode) produce an R factor with a
-    ///   nonnegative diagonal.
+    /// Tsqr implements a QR factorization (of a distributed matrix).
+    /// Some, but not all, QR factorizations produce an R factor whose
+    /// diagonal may include negative entries.  This Boolean tells you
+    /// whether Tsqr promises to compute an R factor whose diagonal
+    /// entries are all nonnegative.
+    ///
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
+      // Tsqr computes an R factor with nonnegative diagonal, if and
+      // only if all QR factorization steps (both intranode and
+      // internode) produce an R factor with a nonnegative diagonal.
       return nodeTsqr_->QR_produces_R_factor_with_nonnegative_diagonal() &&
 	distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
@@ -160,9 +172,9 @@ namespace TSQR {
     /// \c explicit_Q() in sequence, if you know that you only want
     /// the explicit version of the Q factor.  This method is
     /// especially intended for orthogonalizing the columns of a \c
-    /// Tpetra::MultiVector.  It can also be used for an \c
-    /// Epetra_MultiVector, if you put each node's data in a
-    /// Kokkos::MultiVector first.  (This does not require copying.)
+    /// Tpetra::MultiVector. It can also be used for an \c
+    /// Epetra_MultiVector, if you put each node's data in a \c
+    /// Kokkos::MultiVector first. (This does not require copying.)
     ///
     /// \param A [in/out] On input: my node's part of the matrix to
     ///   factor; the matrix is distributed over the participating
@@ -191,19 +203,25 @@ namespace TSQR {
 		    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
 		    const bool contiguousCacheBlocks)
     {
-      typedef Kokkos::MultiVector< Scalar, NodeType > KMV;
+      using Teuchos::asSafe;
+      typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
 
-      // FIXME (mfh 19 Oct 2010) TSQR currently likes LocalOrdinal
-      // ordinals, but Kokkos::MultiVector has size_t ordinals.  Do
-      // conversions here.
-      // 
-      // FIXME check for overflow!
-      const LocalOrdinal A_numRows = static_cast<LocalOrdinal> (A.getNumRows());
-      const LocalOrdinal A_numCols = static_cast<LocalOrdinal> (A.getNumCols());
-      const LocalOrdinal A_stride = static_cast<LocalOrdinal> (A.getStride());
-      const LocalOrdinal Q_numRows = static_cast<LocalOrdinal> (Q.getNumRows());
-      const LocalOrdinal Q_numCols = static_cast<LocalOrdinal> (Q.getNumCols());
-      const LocalOrdinal Q_stride = static_cast<LocalOrdinal> (Q.getStride());
+      // Tsqr currently likes LocalOrdinal ordinals, but
+      // Kokkos::MultiVector has size_t ordinals.  Do conversions
+      // here.  
+      //
+      // Teuchos::asSafe() can do safe conversion (e.g., checking for
+      // overflow when casting to a narrower integer type), if a
+      // custom specialization is defined for
+      // Teuchos::ValueTypeConversionTraits<size_t, LocalOrdinal>.
+      // Otherwise, this has the same (potentially) unsafe effect as
+      // static_cast<LocalOrdinal>(...) would have.
+      const LocalOrdinal A_numRows = asSafe<LocalOrdinal> (A.getNumRows());
+      const LocalOrdinal A_numCols = asSafe<LocalOrdinal> (A.getNumCols());
+      const LocalOrdinal A_stride = asSafe<LocalOrdinal> (A.getStride());
+      const LocalOrdinal Q_numRows = asSafe<LocalOrdinal> (Q.getNumRows());
+      const LocalOrdinal Q_numCols = asSafe<LocalOrdinal> (Q.getNumCols());
+      const LocalOrdinal Q_stride = asSafe<LocalOrdinal> (Q.getStride());
 
       // Sanity checks for matrix dimensions
       if (A_numRows < A_numCols)
@@ -579,11 +597,14 @@ namespace TSQR {
 		   const magnitude_type& tol) const 
     {
       // Forward the request to the intranode TSQR implementation.
-      // This work is performed redundantly on all MPI processes.
+      // Currently, this work is performed redundantly on all MPI
+      // processes, without communication or agreement.
       //
-      // FIXME (mfh 26 Aug 2010) Could be a problem if your cluster is
+      // FIXME (mfh 26 Aug 2010) This be a problem if your cluster is
       // heterogeneous, because then you might obtain different
-      // answers (due to rounding error) on different processors.
+      // integer rank results.  This is because heterogeneous nodes
+      // might each compute the rank-revealing decomposition with
+      // slightly different rounding error.
       return nodeTsqr_->reveal_R_rank (ncols, R, ldr, U, ldu, tol);
     }
 

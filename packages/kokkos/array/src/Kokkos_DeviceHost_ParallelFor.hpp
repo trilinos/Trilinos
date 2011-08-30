@@ -40,16 +40,17 @@
 #ifndef KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 #define KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 
+#include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_ParallelFor.hpp>
 
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelFor< FunctorType , DeviceHost > {
+/** \brief  For any serial device on host memory */
+template< class FunctorType , class MDArrayMap >
+class ParallelFor< FunctorType , Serial< HostMemory , MDArrayMap > > {
 public:
-  typedef DeviceHost             device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceHost::size_type size_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
@@ -66,11 +67,11 @@ public:
   static
   void execute( const size_type work_count , const FunctorType & functor )
   {
-    device_type::set_dispatch_functor();
+    DeviceHost::set_dispatch_functor();
 
     const ParallelFor driver( work_count , functor );
 
-    device_type::clear_dispatch_functor();
+    DeviceHost::clear_dispatch_functor();
 
     for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
       driver.m_work_functor(iwork);

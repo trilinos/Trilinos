@@ -129,7 +129,7 @@ Stokhos::MatrixFreeOperator::
 void 
 Stokhos::MatrixFreeOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
   block_ops = ops;
   num_blocks = block_ops->size();
@@ -137,14 +137,14 @@ setupOperator(
     k_end = Cijk->find_k(num_blocks);
 }
 
-Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::MatrixFreeOperator::
 getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::MatrixFreeOperator::
 getSGPolynomial() const
 {
@@ -269,12 +269,17 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       (*block_ops)[k].Apply(input_tmp, result_tmp);
       l = 0;
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	int j = index(j_it);
 	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	     i_it != Cijk->i_end(j_it); ++i_it) {
 	  int i = index(i_it);
 	  double c = value(i_it);
 	  if (scale_op) {
-	    int i_gid = epetraCijk->GRID(i);
+	    int i_gid;
+	    if (useTranspose)
+	      i_gid = epetraCijk->GCID(j);
+	    else
+	      i_gid = epetraCijk->GRID(i);
 	    c /= norms[i_gid];
 	  }
 	  for (int mm=0; mm<m; mm++)

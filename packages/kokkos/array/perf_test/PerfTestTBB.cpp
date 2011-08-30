@@ -31,14 +31,14 @@ void run_test_tbb_hexgrad( int beg , int end )
 //  Kokkos::DeviceTBB::initialize( 12 );
   Test::run_test_hexgrad< Kokkos::DeviceTBB>( beg , end );
 //  Kokkos::DeviceTBB::finalize();
-};
+}
 
 void run_test_tbb_gramschmidt( int beg , int end )
 {
 //  Kokkos::DeviceTBB::initialize( 12 );
   Test::run_test_gramschmidt< Kokkos::DeviceTBB>( beg , end );
 //  Kokkos::DeviceTBB::finalize();
-};
+}
 
 }
 

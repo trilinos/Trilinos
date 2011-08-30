@@ -25,46 +25,63 @@
 // 
 // ***********************************************************************
 //@HEADER
-
-#ifndef EpetraExt_AMESOS_AMD_GLOBAL_CRSGRAPH_H
-#define EpetraExt_AMESOS_AMD_GLOBAL_CRSGRAPH_H
+//                                                                                                    
+#ifndef EpetraExt_AMESOS_AMD_CRSGRAPH_H
+#define EpetraExt_AMESOS_AMD_CRSGRAPH_H
 
 #include <EpetraExt_Transform.h>
 #include <Teuchos_RCP.hpp>
 #include <vector>
 
-class Epetra_CrsMatrix;
 class Epetra_CrsGraph;
 class Epetra_Map;
-class Epetra_Import;
 
 namespace EpetraExt {
 
 ///
-/** Approximate Minimum Degree (AMD) ordering of Epetra_CrsGraph
+/** Block Triangular Factorization (Reordering) of Epetra_CrsGraph
  *
- * Uses Tim Davis' AMD algorithm to find a fill-reducing ordering from an
- * Epetra_CrsGraph.
+ * Uses Tim Davis' AMDGlobal algorithm to find a block lower or upper triangular
+ * ordering form a Epetra_CrsGraph.
  */
 
-class AmesosAMDGlobal_CrsGraph : public SameTypeTransform<Epetra_CrsGraph> {
+class AmesosAMDGlobal_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~AmesosAMDGlobal_CrsGraph();
 
+  ///
+  /** Default Constructor
+   */
   AmesosAMDGlobal_CrsGraph( bool verbose = false, bool debug = false )
   : verbose_(verbose),
     debug_(debug)
   {}
-
+    
+  ///
+  /** Construction of AMDGlobal ordered Epetra_CrsGraph from <tt>orig</tt> object.
+   *
+   * Preconditions:<ul>
+   * </ul>
+   *
+   * Invariants:<ul>
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * </ul>
+   *
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
-  bool fwd();
-  bool rvs();
-
-  Teuchos::RCP<Epetra_Import> Importer() { return Importer_; }
+  std::vector<int> RowPerm() { return rowPerm_; }
+  std::vector<int> ColPerm() { return colPerm_; }
   std::vector<int> Perm() { return perm_; }
+  std::vector<int> BlockPtr() { return blkPtr_; }
+  int NumBlocks() { return numBlocks_; }
 
  private:
 
@@ -73,14 +90,13 @@ class AmesosAMDGlobal_CrsGraph : public SameTypeTransform<Epetra_CrsGraph> {
   
   Teuchos::RCP<Epetra_CrsGraph> NewGraph_;
 
-  Teuchos::RCP<Epetra_Import> Importer_;
+  std::vector<int> perm_, rowPerm_, colPerm_, blkPtr_;
 
-  std::vector<int> perm_;
-  
+  int numBlocks_;
+
   const bool verbose_, debug_;
-
 };
 
 } //namespace EpetraExt
 
-#endif //EpetraExt_AMESOS_AMD_GLOBAL_CRSGRAPH_H
+#endif //EpetraExt_AMESOS_AMD_CRSGRAPH_H

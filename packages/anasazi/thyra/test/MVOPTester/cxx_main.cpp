@@ -55,9 +55,15 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 
-int main(int argc, char *argv[])
-{
-
+int runTest(
+int argc,
+char* argv[],
+#ifdef HAVE_MPI
+Teuchos::RCP<Epetra_MpiComm>& Comm 
+#else
+Teuchos::RCP<Epetra_SerialComm>& Comm
+#endif
+){
   using std::cout;
   using std::endl;
   using Teuchos::rcp_implicit_cast;
@@ -65,15 +71,6 @@ int main(int argc, char *argv[])
   int i;
   bool ierr, gerr;
   gerr = true;
-
-#ifdef HAVE_MPI
-  // Initialize MPI and setup an Epetra communicator
-  MPI_Init(&argc,&argv);
-  Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
-#else
-  // If we aren't using MPI, then setup a serial communicator.
-  Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
-#endif
 
    // number of global elements
   int dim = 100;
@@ -237,10 +234,6 @@ int main(int argc, char *argv[])
   Teuchos::TimeMonitor::summarize(MyOM->stream(Anasazi::Warnings));
 #endif
 
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
   if (gerr == false) {
     MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
     return -1;
@@ -250,5 +243,25 @@ int main(int argc, char *argv[])
   //
   MyOM->print(Anasazi::Warnings,"End Result: TEST PASSED\n");
   return 0;
+}
+
+
+int main(int argc, char *argv[])
+{
+
+#ifdef HAVE_MPI
+  // Initialize MPI and setup an Epetra communicator
+  MPI_Init(&argc,&argv);
+  Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+#else
+  // If we aren't using MPI, then setup a serial communicator.
+  Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+  int toReturn = runTest(argc, argv, Comm);
+  Comm = Teuchos::null;
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return toReturn;
 
 }

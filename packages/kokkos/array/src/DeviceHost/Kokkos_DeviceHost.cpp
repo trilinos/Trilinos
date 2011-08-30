@@ -51,22 +51,22 @@ namespace Kokkos {
 
 namespace {
 
-class DeviceHostImpl {
+class HostMemoryImpl {
 public:
   Impl::MemoryInfoSet m_allocations ;
 
-  ~DeviceHostImpl();
+  ~HostMemoryImpl();
 
-  static DeviceHostImpl & singleton();
+  static HostMemoryImpl & singleton();
 };
 
-DeviceHostImpl & DeviceHostImpl::singleton()
+HostMemoryImpl & HostMemoryImpl::singleton()
 {
-  static DeviceHostImpl self ;
+  static HostMemoryImpl self ;
   return self ;
 }
 
-DeviceHostImpl::~DeviceHostImpl()
+HostMemoryImpl::~HostMemoryImpl()
 {
   if ( ! m_allocations.empty() ) {
     std::cerr << "Kokkos::DeviceHost memory leaks:" << std::endl ;
@@ -78,13 +78,13 @@ DeviceHostImpl::~DeviceHostImpl()
 
 /*--------------------------------------------------------------------------*/
 
-void * DeviceHost::allocate_memory(
+void * HostMemory::allocate_memory(
   const std::string    & label ,
   const std::type_info & type ,
   const size_t member_size ,
   const size_t member_count )
 {
-  DeviceHostImpl & s = DeviceHostImpl::singleton();
+  HostMemoryImpl & s = HostMemoryImpl::singleton();
 
   Impl::MemoryInfo tmp ;
 
@@ -99,7 +99,7 @@ void * DeviceHost::allocate_memory(
 
   if ( ! ok_alloc || ! ok_insert ) {
     std::ostringstream msg ;
-    msg << "Kokkos::DeviceHost::allocate_memory( " << label
+    msg << "Kokkos::HostMemory::allocate_memory( " << label
         << " , " << type.name()
         << " , " << member_size
         << " , " << member_count
@@ -112,13 +112,13 @@ void * DeviceHost::allocate_memory(
   return tmp.m_ptr ;
 }
 
-void DeviceHost::deallocate_memory( void * ptr )
+void HostMemory::deallocate_memory( void * ptr )
 {
-  DeviceHostImpl & s = DeviceHostImpl::singleton();
+  HostMemoryImpl & s = HostMemoryImpl::singleton();
 
   if ( ! s.m_allocations.erase( ptr ) ) {
     std::ostringstream msg ;
-    msg << "Kokkos::DeviceHost::deallocate_memory( " << ptr
+    msg << "Kokkos::HostMemory::deallocate_memory( " << ptr
         << " ) FAILED memory allocated by this device" ;
     throw std::runtime_error( msg.str() );
   }
@@ -126,22 +126,22 @@ void DeviceHost::deallocate_memory( void * ptr )
   free( ptr );
 }
 
-void DeviceHost::print_memory_view( std::ostream & o )
+void HostMemory::print_memory_view( std::ostream & o )
 {
-  DeviceHostImpl & s = DeviceHostImpl::singleton();
+  HostMemoryImpl & s = HostMemoryImpl::singleton();
 
   s.m_allocations.print( o );
 }
 
 /*--------------------------------------------------------------------------*/
 
-unsigned int DeviceHost::m_launching_kernel = false ;
+unsigned int HostMemory::m_launching_kernel = false ;
 
-void DeviceHost::set_dispatch_functor()
+void HostMemory::set_dispatch_functor()
 {
   if ( m_launching_kernel ) {
     std::string msg ;
-    msg.append( "Kokkos::DeviceHost::set_dispatch_functor FAILED: " );
+    msg.append( "Kokkos::HostMemory::set_dispatch_functor FAILED: " );
     msg.append( "kernel dispatch is already in progress, " );
     msg.append( "a recursive call or forgotten 'clear_dispatch_kernel" );
     throw std::runtime_error( msg );
@@ -149,11 +149,11 @@ void DeviceHost::set_dispatch_functor()
   m_launching_kernel = true ;
 }
 
-void DeviceHost::clear_dispatch_functor()
+void HostMemory::clear_dispatch_functor()
 {
   if ( ! m_launching_kernel ) {
     std::string msg ;
-    msg.append( "Kokkos::DeviceHost::clear_dispatch_functor FAILED: " );
+    msg.append( "Kokkos::HostMemory::clear_dispatch_functor FAILED: " );
     msg.append( "no kernel dispatch in progress." );
     throw std::runtime_error( msg );
   }

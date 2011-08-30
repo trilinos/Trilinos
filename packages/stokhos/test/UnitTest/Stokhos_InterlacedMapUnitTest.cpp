@@ -52,7 +52,7 @@ TEUCHOS_UNIT_TEST(map_test, copyToInterlace)
    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-   int rank = comm->MyPID();
+   //int rank = comm->MyPID();
    int numProc = comm->NumProc();
 
    int num_KL = 1;

@@ -42,8 +42,6 @@
 #ifndef __MatrixMarket_util_hpp
 #define __MatrixMarket_util_hpp
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 #include <string>
 
 namespace Tpetra {

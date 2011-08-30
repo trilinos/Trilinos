@@ -26,13 +26,15 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_ApplyType.hpp
+/// \brief NoTranspose, Transpose, or ConjugateTranspose
+///
 #ifndef __TSQR_TsqrApplyType_hpp
 #define __TSQR_TsqrApplyType_hpp
 
+#include <Tsqr_ConfigDefs.hpp>
 #include <string>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
@@ -71,32 +73,29 @@ namespace TSQR {
     /// factor().
     bool transposed () const { return type_ != NoTranspose_; }
 
-    ///
-    /// Copy constructor
+    //! Copy constructor
     ApplyType (const ApplyType& rhs);
 
-    ///
-    /// Assignment operator
+    //! Assignment operator
     ApplyType& operator= (const ApplyType& rhs);
 
+    //! Does rhs equal this?
     bool operator== (const ApplyType& rhs) const {
       return type_ == rhs.type_;
     }
 
+    //! Does rhs not equal this?
     bool operator!= (const ApplyType& rhs) const {
       return !(type_ == rhs.type_);
     }
 
-    ///
-    /// Represents applying Q to a matrix.
+    //! Represents applying Q to a matrix.
     static const ApplyType NoTranspose;
 
-    ///
-    /// Represents applying Q^T (transpose of Q) to a matrix.
+    //! Represents applying Q^T (transpose of Q) to a matrix.
     static const ApplyType Transpose;
 
-    ///
-    /// Represents applying Q^H (conjugate transpose of Q) to a matrix.
+    //! Represents applying Q^H (conjugate transpose of Q) to a matrix.
     static const ApplyType ConjugateTranspose;
 
     /// Return a reference to the canonical LAPACK string representing
@@ -114,8 +113,8 @@ namespace TSQR {
     /// ApplyType: Not transposed, Transposed, or Conjugate
     /// transposed.
     enum ApplyType_ { NoTranspose_, Transpose_, ConjugateTranspose_ };
-    ///
-    /// The state of this ApplyType
+
+    //! The state of this ApplyType.
     ApplyType_ type_;
 
     /// For a given ApplyType_ enum value, return the corresponding
@@ -123,8 +122,7 @@ namespace TSQR {
     static std::string 
     enumToLapackString (const ApplyType::ApplyType_ theType);
 
-    ///
-    /// Return true if op[0] == 'T', 'C', or 'H', false otherwise
+    //! Return true if op[0] == 'T', 'C', or 'H', false otherwise.
     bool 
     decide_transposed (const std::string& op) const;
 
@@ -135,8 +133,7 @@ namespace TSQR {
     ApplyType_
     decide_apply_type (const std::string& op) const;
 
-    /// 
-    /// Canonical LAPACK string representing the apply type.
+    /// \brief Canonical LAPACK string representing the apply type.
     ///
     /// \note We keep this around in the expectation that ApplyType
     ///   objects won't get copied much, but the underlying string

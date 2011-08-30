@@ -42,6 +42,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--working-dir=${INSTALLATION_WORKING_DIR}"
   "--install-dir=${INSTALLATION_DIR}"
   "--boost-dir=/home/trilinos/include"
+  "--netcdf-dir=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0"
   "--verbose-errors"
   )
 

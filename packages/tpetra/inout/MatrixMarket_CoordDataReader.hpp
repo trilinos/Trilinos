@@ -43,8 +43,6 @@
 #define __MatrixMarket_CoordDataReader_hpp
 
 #include "MatrixMarket_generic.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Tuple.hpp"
 
 namespace Tpetra {
   namespace MatrixMarket {
@@ -56,11 +54,11 @@ namespace Tpetra {
     /// reading coordinate-format sparse matrix data from a Matrix
     /// Market file.  There are two concrete implementations: one for
     /// real-valued data, and the other for complex-valued data.
-    template<class Callback, class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
+    template<class Callback, class Ordinal, class Scalar, bool isComplex = ScalarTraits<Scalar>::isComplex>
     class CoordDataReaderBase {
     private:
       //! Closure that knows how to add entries to the sparse matrix.
-      Teuchos::RCP<Callback> adder_;
+      RCP<Callback> adder_;
 
     public:
       /// \brief Constructor with "adder" argument.
@@ -72,7 +70,7 @@ namespace Tpetra {
       /// 
       /// \param adder [in/out] Closure whose operator() adds an entry
       ///   to the sparse matrix on each invocation.
-      CoordDataReaderBase (const Teuchos::RCP<Callback>& adder) : 
+      CoordDataReaderBase (const RCP<Callback>& adder) : 
 	adder_ (adder) {}
 
       /// \brief No-argument constructor.
@@ -82,7 +80,7 @@ namespace Tpetra {
       /// readDimensions() first before constructing the adder.  You
       /// should call setAdder() with a non-null argument before
       /// calling read() or readLine().
-      CoordDataReaderBase () : adder_ (Teuchos::null) {}
+      CoordDataReaderBase () : adder_ (null) {}
 
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReaderBase () {}
@@ -93,7 +91,7 @@ namespace Tpetra {
       /// The right time to call this is right after calling the
       /// no-argument constructor, if it's not possible to supply an
       /// Adder object before calling readDimensions().
-      void setAdder (const Teuchos::RCP<Callback>& adder) {
+      void setAdder (const RCP<Callback>& adder) {
 	adder_ = adder;
       }
 
@@ -133,7 +131,7 @@ namespace Tpetra {
       {
 	using std::cerr;
 	using std::endl;
-	typedef Teuchos::ScalarTraits<Scalar> STS;
+	typedef ScalarTraits<Scalar> STS;
 
 	if (isComplex != STS::isComplex)
 	  throw std::logic_error("Should never get here!");
@@ -200,12 +198,12 @@ namespace Tpetra {
       ///   tolerant mode, success may be false, meaning that the
       ///   read-in triple may not be valid.
       ///
-      std::pair<Teuchos::Tuple<Ordinal, 3>, bool>
+      std::pair<Tuple<Ordinal, 3>, bool>
       readDimensions (std::istream& in, 
 		      size_t& lineNumber,
 		      const bool tolerant = false)
       {
-	Teuchos::Tuple<Ordinal, 3> dims;
+	Tuple<Ordinal, 3> dims;
 	// Fill in (numRows, numCols, numNonzeros) with reasonable
 	// defaults.  If we don't succeed in reading all the data
 	// from the current line of the input stream, the remaining
@@ -369,12 +367,12 @@ namespace Tpetra {
     /// CoordDataReaderBase.  There are two concrete specializations:
     /// one for real-valued data, and the other for complex-valued
     /// data.
-    template<class Callback, class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex>
+    template<class Callback, class Ordinal, class Scalar, bool isComplex = ScalarTraits<Scalar>::isComplex>
     class CoordDataReader :
       public CoordDataReaderBase<Callback, Ordinal, Scalar, isComplex>
     {
     public:
-      CoordDataReader (const Teuchos::RCP<Callback>& adder);
+      CoordDataReader (const RCP<Callback>& adder);
       CoordDataReader ();
 
       //! Virtual destructor for safety and happy compilers.
@@ -395,12 +393,12 @@ namespace Tpetra {
       public CoordDataReaderBase<Callback, Ordinal, Scalar, true>
     {
     public:
-      CoordDataReader (const Teuchos::RCP<Callback>& adder) :
+      CoordDataReader (const RCP<Callback>& adder) :
 	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (adder)
       {}
 
       CoordDataReader() : 
-	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (Teuchos::null)
+	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (null)
       {}
 
       //! Virtual destructor for safety and happy compilers.
@@ -414,7 +412,7 @@ namespace Tpetra {
 		const size_t lineNumber,
 		const bool tolerant)
       {
-	typedef Teuchos::ScalarTraits<Scalar> STS;
+	typedef ScalarTraits<Scalar> STS;
 	typedef typename STS::magnitudeType Real;
 	Real realPart, imagPart;
 	const bool localSuccess = 
@@ -443,12 +441,12 @@ namespace Tpetra {
       public CoordDataReaderBase<Callback, Ordinal, Scalar, false>
     {
     public:
-      CoordDataReader (const Teuchos::RCP<Callback>& adder) :
+      CoordDataReader (const RCP<Callback>& adder) :
 	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (adder)
       {}
 
       CoordDataReader() : 
-	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (Teuchos::null)
+	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (null)
       {}
 
       //! Virtual destructor for safety and happy compilers.

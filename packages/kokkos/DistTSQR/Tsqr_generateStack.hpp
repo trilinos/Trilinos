@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Test_generateStack_hpp
 #define __TSQR_Test_generateStack_hpp
@@ -41,18 +41,15 @@
 #include <sstream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
 
+    /// \brief Generate a random "R stack" test problem on one MPI process.
+    ///
     /// Generate a (pseudo)random test problem consisting of numProcs
     /// different numRows by numCols upper triangular matrices,
-    /// stacked vertically.  The test problem will be generated and
-    /// output only on Proc 0.  Also, the generator will only be
-    /// modified on Proc 0, and the singularValues will only be read
-    /// on Proc 0.
+    /// stacked vertically.
     ///
     /// \param generator [in/out] (Pseudo)random number generator,
     ///   that generates according to a normal(0,1) distribution.
@@ -67,15 +64,15 @@ namespace TSQR {
     ///
     /// \param numCols Number of columns in the output matrix A_global
     ///
-    template< class Ordinal, class Scalar, class Generator >
+    template<class Ordinal, class Scalar, class Generator>
     static void
     generateStack (Generator& generator,
-		   Matrix< Ordinal, Scalar >& A_global,
-		   const typename Teuchos::ScalarTraits< Scalar >::magnitudeType singularValues[],
+		   Matrix<Ordinal, Scalar>& A_global,
+		   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType singularValues[],
 		   const int numProcs,
 		   const Ordinal numCols)
     {
-      TSQR::Random::MatrixGenerator< Ordinal, Scalar, Generator > matGen (generator);
+      TSQR::Random::MatrixGenerator<Ordinal, Scalar, Generator> matGen (generator);
       const Ordinal numRows = numProcs * numCols;
       A_global.reshape (numRows, numCols);
       A_global.fill (Scalar(0));
@@ -83,12 +80,21 @@ namespace TSQR {
       for (int p = 0; p < numProcs; ++p)
 	{
 	  Scalar* const curptr = A_global.get() + p*numCols;
-	  MatView< Ordinal, Scalar > R_cur (numCols, numCols, curptr, numRows);
+	  MatView<Ordinal, Scalar> R_cur (numCols, numCols, curptr, numRows);
 	  matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
 	}
     }
 
-    /// \brief Test problem for distributed-memory part of TSQR
+    /// \brief Generate a random test problem for the distributed-memory part of TSQR.
+    ///
+    /// Specifically, this routine generates an "R stack" test
+    /// problem, where each (MPI) process has a square ncols by ncols
+    /// upper triangular matrix A_local.  TSQR is supposed to factor
+    /// the distributed matrix formed by "stacking" the A_local
+    /// matrices on top of each other, so that MPI Rank 0's matrix is
+    /// on top, Rank 1's matrix is below that, and so on.  (Ranks here
+    /// are computed with respect to the given \c MessengerBase
+    /// communicator wrapper.)
     ///
     /// \param A_local [out] ncols by ncols upper triangular matrix
     ///   (on each MPI process)
@@ -105,13 +111,13 @@ namespace TSQR {
     ///
     /// \param messenger [in/out] MPI communicator object for Scalars
     ///
-    template< class Ordinal, class Scalar, class Generator >
+    template<class Ordinal, class Scalar, class Generator>
     void
     par_tsqr_test_problem (Generator& generator,
-			   Matrix< Ordinal, Scalar >& A_local,
-			   Matrix< Ordinal, Scalar >& A_global, 
+			   Matrix<Ordinal, Scalar>& A_local,
+			   Matrix<Ordinal, Scalar>& A_global, 
 			   const Ordinal ncols,
-			   const Teuchos::RCP< MessengerBase< Scalar > >& messenger)
+			   const Teuchos::RCP<MessengerBase<Scalar> >& messenger)
     {
       const int nprocs = messenger->size();
       const int my_rank = messenger->rank();

@@ -12,7 +12,7 @@ TEUCHOS_UNIT_TEST(Pattern, Pattern_test1)
 {
   int numIDs = 6;
   std::vector<int> idTypes(numIDs);
-  std::vector<snl_fei::RecordCollection*> recColls(numIDs,NULL);
+  std::vector<snl_fei::RecordCollection*> recColls(numIDs,(snl_fei::RecordCollection*)NULL);
   std::vector<int> fieldsPerID(numIDs);
   std::vector<int> fieldIDs(3);
   std::vector<int> fieldSizes(3, 1);

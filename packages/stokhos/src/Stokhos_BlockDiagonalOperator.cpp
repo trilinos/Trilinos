@@ -58,19 +58,19 @@ Stokhos::BlockDiagonalOperator::
 void 
 Stokhos::BlockDiagonalOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::ProductEpetraOperator >& ops)
 {
   block_ops = ops;
 }
 
-Teuchos::RCP< Stokhos::ProductContainer<Epetra_Operator> > 
+Teuchos::RCP< Stokhos::ProductEpetraOperator > 
 Stokhos::BlockDiagonalOperator::
 getMPOps()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::ProductContainer<Epetra_Operator> > 
+Teuchos::RCP<const Stokhos::ProductEpetraOperator > 
 Stokhos::BlockDiagonalOperator::
 getMPOps() const
 {

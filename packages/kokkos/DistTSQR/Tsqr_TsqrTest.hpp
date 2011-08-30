@@ -1,35 +1,33 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Test_TsqrTest_hpp
 #define __TSQR_Test_TsqrTest_hpp
-
-#include <Tsqr_Config.hpp>
 
 #include <Tsqr.hpp>
 #ifdef HAVE_TSQR_INTEL_TBB
@@ -46,22 +44,20 @@
 #include <stdexcept>
 #include <string>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
 
-    template< class TsqrType >
+    template<class TsqrType>
     class TsqrVerifier {
     public:
       typedef TsqrType tsqr_type;
       typedef typename tsqr_type::scalar_type scalar_type;
       typedef typename tsqr_type::ordinal_type ordinal_type;
-      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef Matrix<ordinal_type, scalar_type> matrix_type;
       typedef typename tsqr_type::FactorOutput factor_output_type;
-      typedef MessengerBase< scalar_type > messenger_type;
-      typedef Teuchos::RCP< messenger_type > messenger_ptr;
+      typedef MessengerBase<scalar_type> messenger_type;
+      typedef Teuchos::RCP<messenger_type> messenger_ptr;
 
       static void
       verify (tsqr_type& tsqr,
@@ -198,7 +194,7 @@ namespace TSQR {
     ///
     /// \param b_debug [in] Whether to print debug output
     ///
-    template< class Ordinal, class Scalar, class Generator >
+    template<class Ordinal, class Scalar, class Generator>
     void
     verifyTsqr (const std::string& which,
 		const std::string& scalarTypeName,
@@ -426,7 +422,7 @@ namespace TSQR {
     }
 
 
-    template< class TsqrBase, class TimerType >
+    template<class TsqrBase, class TimerType>
     double
     do_tsqr_benchmark (const std::string& which,
 		       TsqrBase& tsqr, 
@@ -583,7 +579,7 @@ namespace TSQR {
     ///
     /// \param b_debug [in] Whether to print debug output
     ///
-    template< class Ordinal, class Scalar, class Generator, class TimerType >
+    template<class Ordinal, class Scalar, class Generator, class TimerType>
     void
     benchmarkTsqr (const std::string& which,
 		   const std::string& scalarTypeName,

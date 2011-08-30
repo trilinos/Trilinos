@@ -42,23 +42,19 @@
 
 #include <cstddef>
 #include <string>
-#include <impl/Kokkos_ArrayBounds.hpp>
+#include <Kokkos_DeviceHost.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
 enum { MDArrayMaxRank = 8 };
 
-template< typename ValueType ,
-          class DeviceType ,
-          class MapOption = typename DeviceType::default_mdarray_map >
+template< typename ValueType , class DeviceType = DeviceHost >
 class MDArrayView ;
 
-class MDArrayIndexMapLeft ;
-class MDArrayIndexMapRight ;
-
-template< typename ValueType , class DeviceType , class MapOption >
-MDArrayView< ValueType , DeviceType , MapOption >
+template< typename ValueType , class DeviceType >
+MDArrayView< ValueType , DeviceType >
 create_labeled_mdarray( const std::string & label ,
                         size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
                                     size_t n3 = 0 , size_t n4 = 0 ,
@@ -67,9 +63,16 @@ create_labeled_mdarray( const std::string & label ,
 
 namespace Impl {
 
-template< typename ValueType ,
-          class DeviceDst , class MapDst , bool ContigDst ,
-          class DeviceSrc , class MapSrc , bool ContigSrc >
+template< typename ValueType , class DeviceDst , class DeviceSrc ,
+          bool same_memory_space =
+              SameType< typename DeviceDst::memory_space ,
+                        typename DeviceSrc::memory_space >::value ,
+          bool same_mdarray_map =
+              SameType< typename DeviceDst::mdarray_map ,
+                        typename DeviceSrc::mdarray_map >::value ,
+          bool both_contiguous =
+              MDArrayView< ValueType , DeviceDst >::Contiguous &&
+              MDArrayView< ValueType , DeviceSrc >::Contiguous >
 class MDArrayDeepCopy ;
 
 }
@@ -77,7 +80,7 @@ class MDArrayDeepCopy ;
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Multidimensional array allocated and mapped
- *          onto a compute device.
+ *          onto the memory space of a compute device.
  *
  *  The array is a simple rank-N container of simple scalar values
  *  where 1 <= N <= 8.
@@ -94,26 +97,26 @@ class MDArrayDeepCopy ;
  *  The "labeled" group creates MDArray's with string labels that
  *  will appear in error messages.
  *
- *  create_labeled_mdarray< ValueType , DeviceType , MapOption >( label , nP , ... );
  *  create_labeled_mdarray< ValueType , DeviceType >( label , nP , ... );
  *  create_labeled_mdarray< MDArrayView<...> >( label , nP , ... );
  *
  *  The "unlabeled" group creates MDArray's with NULL string labels.
  *
- *  create_mdarray< ValueType , DeviceType , MapOption >( nP , ... );
  *  create_mdarray< ValueType , DeviceType >( nP , ... );
  *  create_mdarray< MDArrayView<...> >( nP , ... );
  */
 
-template< typename ValueType , class DeviceType , class MapOption >
+template< typename ValueType , class DeviceType >
 class MDArrayView {
 public:
-  typedef ValueType                       value_type ;
-  typedef DeviceType                      device_type ;
-  typedef MapOption                       map_option ;
-  typedef typename DeviceType::size_type  size_type ;
+  typedef ValueType                          value_type ;
+  typedef DeviceType                         device_type ;
+  typedef typename DeviceType::mdarray_map   mdarray_map ;
+  typedef typename DeviceType::memory_space  memory_space ;
+  typedef typename DeviceType::size_type     size_type ;
 
-  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+  typedef MDArrayView< value_type ,
+                       Serial< HostMemory , mdarray_map > > HostView ;
 
   /*------------------------------------------------------------------*/
   /** \brief  True if the array type has contiguous memory
@@ -193,51 +196,53 @@ public:
   value_type & operator()( const iTypeP & iP ) const ;
 
   /*------------------------------------------------------------------*/
+  /** \brief  Memory is contiguous, OK to return pointer */
+  value_type * ptr_on_device() const ;
+
+  /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  inline
   MDArrayView();
 
   /** \brief  Construct another view of the 'rhs' array */
-  inline
   MDArrayView( const MDArrayView & rhs );
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  inline
   MDArrayView & operator = ( const MDArrayView & rhs );
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  inline
   ~MDArrayView();
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if non-NULL view */
   operator bool () const ;
 
-  bool operator == ( const MDArrayView & ) const ;
+  bool operator == ( const MDArrayView & rhs ) const ;
 
-  bool operator != ( const MDArrayView & ) const ;
+  bool operator != ( const MDArrayView & rhs ) const ;
 
 private:
+
+  /** \brief  Allocation constructor only called by the
+   *          'create_labeled_mdarray' friend free-function.
+   */
 
   MDArrayView( const std::string & label ,
                size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class D , class M >
+  template< typename V , class D >
   friend
-  MDArrayView< V , D , M >
+  MDArrayView< V , D >
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-
-  template< typename V , class DeviceDst , class MapDst , bool ContigDst ,
-                         class DeviceSrc , class MapSrc , bool ContigSrc >
+  template< typename , class , class , bool , bool , bool >
   friend
   class Impl::MDArrayDeepCopy ;
 };
@@ -247,29 +252,14 @@ private:
 /** \brief  This is THE creation function.
  *          All other versions call this function.
  */
-template< typename ValueType , class DeviceType , class MapType >
+template< typename ValueType , class DeviceType >
 inline
-MDArrayView< ValueType , DeviceType , MapType >
+MDArrayView< ValueType , DeviceType >
 create_labeled_mdarray( const std::string & label ,
                         size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                         size_t n4 , size_t n5 , size_t n6 , size_t n7 )
 {
-  return MDArrayView< ValueType , DeviceType , MapType >
-           ( label , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
-}
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-inline
-MDArrayView< ValueType , DeviceType , typename DeviceType::default_map >
-create_labeled_mdarray( const std::string & label ,
-                        size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
-                                    size_t n3 = 0 , size_t n4 = 0 ,
-                                    size_t n5 = 0 , size_t n6 = 0 ,
-                                    size_t n7 = 0 )
-{
-  return create_labeled_mdarray< ValueType , DeviceType , typename DeviceType::default_map >
+  return MDArrayView< ValueType , DeviceType >
            ( label , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
@@ -278,8 +268,7 @@ create_labeled_mdarray( const std::string & label ,
 template< typename MDArrayType >
 inline
 MDArrayView< typename MDArrayType::value_type ,
-             typename MDArrayType::device_type ,
-             typename MDArrayType::map_option >
+             typename MDArrayType::device_type >
 create_labeled_mdarray( const std::string & label ,
                         size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
                                     size_t n3 = 0 , size_t n4 = 0 ,
@@ -287,37 +276,22 @@ create_labeled_mdarray( const std::string & label ,
                                     size_t n7 = 0 )
 {
   return create_labeled_mdarray< typename MDArrayType::value_type ,
-                                 typename MDArrayType::device_type ,
-                                 typename MDArrayType::map_option >
+                                 typename MDArrayType::device_type >
            ( label , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceType , class MapType >
-inline
-MDArrayView< ValueType , DeviceType , MapType >
-create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
-                            size_t n3 = 0 , size_t n4 = 0 ,
-                            size_t n5 = 0 , size_t n6 = 0 ,
-                            size_t n7 = 0 )
-{
-  return create_labeled_mdarray< ValueType , DeviceType , MapType >
-           ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
-}
-
-//----------------------------------------------------------------------------
-
 template< typename ValueType , class DeviceType >
 inline
-MDArrayView< ValueType , DeviceType , typename DeviceType::default_map >
+MDArrayView< ValueType , DeviceType >
 create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
                             size_t n3 = 0 , size_t n4 = 0 ,
                             size_t n5 = 0 , size_t n6 = 0 ,
                             size_t n7 = 0 )
 {
-  return create_labeled_mdarray< ValueType , DeviceType , typename DeviceType::default_map >
+  return create_labeled_mdarray< ValueType , DeviceType >
            ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
@@ -326,151 +300,42 @@ create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
 template< typename MDArrayType >
 inline
 MDArrayView< typename MDArrayType::value_type ,
-             typename MDArrayType::device_type ,
-             typename MDArrayType::map_option >
+             typename MDArrayType::device_type >
 create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
                             size_t n3 = 0 , size_t n4 = 0 ,
                             size_t n5 = 0 , size_t n6 = 0 ,
                             size_t n7 = 0 )
 {
   return create_labeled_mdarray< typename MDArrayType::value_type ,
-                                 typename MDArrayType::device_type ,
-                                 typename MDArrayType::map_option >
+                                 typename MDArrayType::device_type >
            ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
 //----------------------------------------------------------------------------
-template< typename ValueType , class DeviceDst , class MapDst ,
-                               class DeviceSrc , class MapSrc >
-void deep_copy( const MDArrayView< ValueType , DeviceDst , MapDst > & dst ,
-                const MDArrayView< ValueType , DeviceSrc , MapSrc > & src );
 
-
-template< typename ValueType , class DeviceDst , class MapDst ,
-                               class DeviceSrc , class MapSrc >
+template< typename ValueType , class DeviceDst , class DeviceSrc >
 inline
-void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
-                const MDArrayView<ValueType,DeviceSrc,MapSrc> & src )
+void deep_copy( const MDArrayView<ValueType,DeviceDst> & dst ,
+                const MDArrayView<ValueType,DeviceSrc> & src )
 {
-  enum { ContigDst = MDArrayView<ValueType,DeviceDst,MapDst>::Contiguous };
-  enum { ContigSrc = MDArrayView<ValueType,DeviceSrc,MapSrc>::Contiguous };
-
-  typedef MDArrayView<ValueType,DeviceDst,MapDst>  dst_type ;
-  typedef MDArrayView<ValueType,DeviceSrc,MapSrc>  src_type ;
+  typedef MDArrayView<ValueType,DeviceDst>  dst_type ;
+  typedef MDArrayView<ValueType,DeviceSrc>  src_type ;
 
   Impl::mdarray_require_equal_dimension( dst , src );
 
-  Impl::MDArrayDeepCopy< ValueType,
-                         DeviceDst, MapDst, ContigDst,
-                         DeviceSrc, MapSrc, ContigSrc >::run( dst , src );
+  Impl::MDArrayDeepCopy< ValueType, DeviceDst, DeviceSrc >::run( dst , src );
 }
 
+//----------------------------------------------------------------------------
+
 } // namespace Kokkos
 
-
-
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+// Implementation details...
 
-namespace Kokkos {
-namespace Impl {
-
-/** \brief  Deep copy between different devices, different maps,
- *          and no assumption of contiguity.
- */
-template< typename ValueType , class DeviceDst , class MapDst , bool ,
-                               class DeviceSrc , class MapSrc , bool >
-class MDArrayDeepCopy {
-private:
-  enum { okD = StaticAssert< ! SameType<DeviceDst,DeviceSrc>::value >::value };
-  enum { okM = StaticAssert< ! SameType<MapDst,MapSrc>::value >::value };
-public:
-
-  typedef MDArrayView<ValueType,DeviceDst,MapDst> dst_type ;
-  typedef MDArrayView<ValueType,DeviceSrc,MapSrc> src_type ;
-  typedef MDArrayView<ValueType,DeviceDst,MapSrc> dst_srcmap_type ;
-
-  typedef MDArrayDeepCopy< ValueType,
-                           DeviceDst,MapSrc,dst_srcmap_type::Contiguous,
-                           DeviceSrc,MapSrc,src_type::Contiguous >
-    relocate_operator ;
-
-  typedef MDArrayDeepCopy< ValueType,
-                           DeviceDst,MapDst, dst_type::Contiguous,
-                           DeviceDst,MapSrc, dst_srcmap_type::Contiguous >
-    remap_operator ;
-
-  // Both the devices and the maps are different.
-  // Copy to a temporary on the destination with the source map
-  // and then remap the temporary to the final array.
-  static
-  void run( const dst_type & dst , const src_type & src )
-  {
-    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-
-    dst.dimensions( dims );
-
-    dst_srcmap_type tmp_dst = create_labeled_mdarray<dst_srcmap_type>(
-                                "temporary" ,
-                                dims[0] , dims[1] , dims[2] , dims[3] ,
-                                dims[4] , dims[5] , dims[6] , dims[7] );
-
-    relocate_operator::run( tmp_dst , src );
-    remap_operator   ::run( dst ,     tmp_dst );
-  }
-};
-
-/** \brief  Deep copy between different devices, different maps,
- *          and no assumption of contiguity.
- *          Force remap to occur on the host.
- */
-template< typename ValueType , class DeviceDst , class MapDst , bool ContigDst ,
-                               class MapSrc , bool ContigSrc >
-class MDArrayDeepCopy< ValueType , DeviceDst ,  MapDst , ContigDst ,
-                                   DeviceHost , MapSrc , ContigSrc > {
-private:
-  enum { okD = StaticAssert< ! SameType<DeviceDst,DeviceHost>::value >::value };
-  enum { okM = StaticAssert< ! SameType<MapDst,MapSrc>::value >::value };
-public:
-
-  typedef MDArrayView<ValueType,DeviceDst, MapDst> dst_type ;
-  typedef MDArrayView<ValueType,DeviceHost,MapDst> src_dstmap_type ;
-  typedef MDArrayView<ValueType,DeviceHost,MapSrc> src_type ;
-
-  typedef MDArrayDeepCopy< ValueType,
-                           DeviceHost,MapDst, src_dstmap_type::Contiguous,
-                           DeviceHost,MapSrc, src_type::Contiguous >
-    remap_operator ;
-
-  typedef MDArrayDeepCopy< ValueType,
-                           DeviceDst, MapDst,dst_type::Contiguous,
-                           DeviceHost,MapDst,src_dstmap_type::Contiguous >
-    relocate_operator ;
-
-  // Both the devices and the maps are different.
-  // Copy to a temporary on the destination with the source map
-  // and then remap the temporary to the final array.
-  static
-  void run( const dst_type & dst , const src_type & src )
-  {
-    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-
-    dst.dimensions( dims );
-
-    src_dstmap_type tmp_src = create_labeled_mdarray<src_dstmap_type>(
-                                "temporary" ,
-                                dims[0] , dims[1] , dims[2] , dims[3] ,
-                                dims[4] , dims[5] , dims[6] , dims[7] );
-
-    remap_operator   ::run( tmp_src , src );
-    relocate_operator::run( dst , tmp_src );
-  }
-};
-
-//----------------------------------------------------------------------------
-
-} // namespace Impl
-} // namespace Kokkos
+#include <impl/Kokkos_MDArrayIndexMap.hpp>
+#include <impl/Kokkos_MDArrayDeepCopy.hpp>
+#include <impl/Kokkos_MDArrayMirror.hpp>
 
 #endif /* KOKKOS_MDARRAYVIEW_HPP */
 

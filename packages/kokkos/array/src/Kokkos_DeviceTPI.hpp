@@ -48,8 +48,6 @@
 
 namespace Kokkos {
 
-class MDArrayIndexMapRight ;
-
 class DeviceTPI {
 private:
 
@@ -61,10 +59,10 @@ public:
   typedef size_t                size_type ;
 
   /** \brief  The TPI device uses the Host memory space */
-  typedef DeviceHost            memory_space ;
+  typedef HostMemory            memory_space ;
 
   /** \brief  Default mdarray map is index from right */
-  typedef MDArrayIndexMapRight  default_mdarray_map ;
+  typedef Impl::MDArrayIndexMapRight  mdarray_map ;
 
   /*--------------------------------*/
 
@@ -82,6 +80,10 @@ public:
 };
 
 } // namespace Kokkos
+
+#include <Kokkos_DeviceTPI_macros.hpp>
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #define KOKKOS_DEVICETPI_HPP */
 

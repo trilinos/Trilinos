@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <gtest/gtest.h>
+
 #ifndef KOKKOS_MACRO_DEVICE
 #error "KOKKOS_MACRO_DEVICE undefined"
 #endif
@@ -51,73 +53,43 @@
 
 namespace {
 
-template< class > class UnitTestValueView ;
+template< typename T, class > class UnitTestValueView ;
 
-template<>
-class UnitTestValueView< KOKKOS_MACRO_DEVICE >
+template<typename T>
+class UnitTestValueView< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::ValueView< double , device > dView ;
-  typedef Kokkos::ValueView< int ,    device > iView ;
+  typedef Kokkos::ValueView< T , device > dView ;
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestValueView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
+  UnitTestValueView() { run_test(); }
 
-  void error( const char * msg ) const
+  void run_test()
   {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  UnitTestValueView()
-  {
-    double host_dx = 20 , host_dy = 0 ;
-    int    host_ix = 10 , host_iy = 0 ;
+    T host_dx = 20 , host_dy = 0 ;
 
     dView dx , dy ;
-    iView ix , iy ;
 
-    dx = Kokkos::create_labeled_value<double,device> ( "dx" );
-    ix = Kokkos::create_labeled_value<int,device> ( "ix" );
-  
+    dx = Kokkos::create_labeled_value<T,device> ( "dx" );
+
     Kokkos::deep_copy( dx , host_dx );
-    Kokkos::deep_copy( ix , host_ix );
     Kokkos::deep_copy( host_dy , dx );
-    Kokkos::deep_copy( host_iy , ix );
-  
-    if ( host_dy != host_dx || host_iy != host_ix ) {
-      error("FAILED copy view value");
-    }
+    ASSERT_EQ( host_dy, host_dx);
 
     dView dz = dy = dx ;
-    iView iz = iy = ix ;
-  
-    if ( dx != dy || dx != dz || ix != iy || ix != iz ) {
-      error("FAILED Assign view");
-    }
+    ASSERT_EQ(dx,dy);
+    ASSERT_EQ(dx,dz);
 
     dx = dView();
-    iy = iView();
-  
-    if ( dx || dy != dz || ix != iz || iy ) {
-      error("FAILED Clear view");
-    }
+    ASSERT_FALSE(dx);
+    ASSERT_EQ(dy,dz);
 
     dz = dy = dView();
-    iz = ix = iView();
+    ASSERT_FALSE(dx);
+    ASSERT_FALSE(dy);
+    ASSERT_FALSE(dz);
 
-    if ( dx || dy || dz || ix || iy || iz ) {
-      error("FAILED Clear all view");
-    }
   }
 };
 

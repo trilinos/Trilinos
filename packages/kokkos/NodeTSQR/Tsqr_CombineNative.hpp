@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_CombineNative.hpp
+/// \brief Interface to C++ back end of \c TSQR::Combine.
+///
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
@@ -36,32 +39,23 @@
 #include "Tsqr_Lapack.hpp"
 #include "Tsqr_CombineDefault.hpp"
 
-// #define TSQR_COMBINE_NATIVE_DEBUG 1
-#ifdef TSQR_COMBINE_NATIVE_DEBUG
-#include "Tsqr_Util.hpp"
-#include <iostream>
-using std::cerr;
-using std::endl;
-#endif // TSQR_COMBINE_NATIVE_DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \class CombineNative
   /// \brief Interface to C++ back end of TSQR::Combine
   ///
-  /// TSQR::Combine has three implementations: CombineDefault,
-  /// CombineNative, and CombineFortran.  CombineNative, implemented
-  /// in this file, is a fully C++ (therefore "native," as opposed to
-  /// CombineFortran (implemented in Fortran) or CombineNative
-  /// (implemented by wrappers around LAPACK calls)) implementation.
+  /// \c TSQR::Combine has three implementations: \c CombineDefault,
+  /// CombineNative, and \c CombineFortran.  CombineNative,
+  /// implemented in this file, is a fully C++ (therefore "native," as
+  /// opposed to \c CombineFortran (implemented in Fortran) or \c
+  /// CombineNative (implemented by wrappers around LAPACK calls))
+  /// implementation.
   ///
   /// \warning CombineNative has no complex-arithmetic implementation
-  /// yet.  It's not hard to implement this (use LAPACK's ZGEQR2(P)
-  /// and ZUNM2R as models), but it will take time that the author
-  /// doesn't have at the moment.
+  ///   yet.  It's not hard to implement this (use LAPACK's ZGEQR2(P)
+  ///   and ZUNM2R as models), but it will take time that the author
+  ///   doesn't have at the moment.
   ///
   template< class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits< Scalar >::isComplex >
   class CombineNative 

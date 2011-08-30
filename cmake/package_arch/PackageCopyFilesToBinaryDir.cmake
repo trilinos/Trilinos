@@ -75,7 +75,7 @@ INCLUDE(ParseVariableArguments)
 #   DEST_DIR destDir
 #     Optional argument that gives the (absolute) base directory for all of the
 #     destination files.  If omited, this takes the default value of 
-#     ${CMAKE_CURRENT_SOURCE_DIR}
+#     ${CMAKE_CURRENT_BINARY_DIR}
 #
 #   EXEDEPS exeDep1 exeDep2 ...
 #     Listing of executable targets that these files will be added as

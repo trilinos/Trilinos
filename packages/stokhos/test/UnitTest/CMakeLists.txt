@@ -104,6 +104,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MatrixFreeOperatorUnitTest
+  SOURCES Stokhos_MatrixFreeOperatorUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   InterlacedOpUnitTest 
   SOURCES Stokhos_InterlacedOpUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp

@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Tsqr_CombineFortran.hpp
+/// \brief Interface to Fortran 9x back end of \c TSQR::Combine.
+///
 #ifndef __TSQR_CombineFortran_hpp
 #define __TSQR_CombineFortran_hpp
 
@@ -34,35 +37,38 @@
 #include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_CombineDefault.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \class CombineFortran
-  /// \brief Interface to Fortran 2003 back end of TSQR::Combine
+  /// \brief Interface to Fortran 9x back end of \c TSQR::Combine.
   ///
   /// TSQR::Combine has three implementations: CombineDefault,
   /// CombineNative, and CombineFortran.  The latter, implemented in
-  /// this file, is a C++ front end to a Fortran 2003 implementation.
+  /// this file, is a C++ front end to a Fortran 9x implementation.
   /// CombineFortran is not templated on the Ordinal type, because the
   /// Fortran implementation uses int for that.
   ///
-  template< class Scalar, bool is_complex = ScalarTraits< Scalar >::is_complex >
+  template<class Scalar, bool is_complex = ScalarTraits<Scalar>::is_complex >
   class CombineFortran {
   private:
-    typedef CombineDefault< int, Scalar > combine_default_type;
+    typedef CombineDefault<int, Scalar> combine_default_type;
 
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
     typedef int ordinal_type;
 
     CombineFortran () {}
 
-    /// Whether or not the QR factorizations computed by methods of
-    /// this class produce an R factor with all nonnegative diagonal
-    /// entries.  
+    /// \brief Does the R factor have a nonnegative diagonal?
+    ///
+    /// CombineFortran implements a QR factorization (of a matrix with
+    /// a special structure).  Some, but not all, QR factorizations
+    /// produce an R factor whose diagonal may include negative
+    /// entries.  This Boolean tells you whether CombineFortran
+    /// promises to compute an R factor whose diagonal entries are all
+    /// nonnegative.
     static bool QR_produces_R_factor_with_nonnegative_diagonal();
 
     void
@@ -135,8 +141,8 @@ namespace TSQR {
     mutable combine_default_type default_;
   };
 
-  /// "Forward declaration" for the real-arithmetic case.  The Fortran
-  /// back end works well here for Scalar = {float, double}.
+  // "Forward declaration" for the real-arithmetic case.  The Fortran
+  // back end works well here for Scalar = {float, double}.
   template< class Scalar >
   class CombineFortran< Scalar, false > {
   private:
@@ -235,10 +241,10 @@ namespace TSQR {
   };
 
 
-  /// "Forward declaration" for complex-arithmetic version of
-  /// CombineFortran.  The Fortran code doesn't actually work for this
-  /// case, so we implement everything using CombineDefault.  This
-  /// will likely result in an ~2x slowdown for typical use cases.
+  // "Forward declaration" for complex-arithmetic version of
+  // CombineFortran.  The Fortran code doesn't actually work for this
+  // case, so we implement everything using CombineDefault.  This
+  // will likely result in an ~2x slowdown for typical use cases.
   template< class Scalar >
   class CombineFortran< Scalar, true > {
   private:
@@ -346,11 +352,11 @@ namespace TSQR {
     }
 
   private:
-    /// Default implementation of TSQR::Combine copies data in and out
-    /// of a single matrix, which is given to LAPACK.  It's slow
-    /// because we expect the number of columns to be small, so
-    /// copying overhead is significant.  Experiments have shown a ~2x
-    /// slowdown due to copying overhead.
+    // Default implementation of TSQR::Combine copies data in and out
+    // of a single matrix, which is given to LAPACK.  It's slow
+    // because we expect the number of columns to be small, so copying
+    // overhead is significant.  Experiments have shown a ~2x slowdown
+    // due to copying overhead.
     mutable CombineDefault< ordinal_type, scalar_type > default_;
   };
 

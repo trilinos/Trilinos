@@ -41,16 +41,18 @@
 #define KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 
 #include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_DeviceHost.hpp>
 #include <vector>
 
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class ReduceTraits >
-class ParallelReduce< FunctorType , ReduceTraits , void , DeviceHost > {
+/** \brief For any serial device on host memory */
+template< class FunctorType , class ReduceTraits , class MDArrayMap >
+class ParallelReduce< FunctorType , ReduceTraits ,
+                      void , Serial< HostMemory , MDArrayMap > > {
 public:
-  typedef DeviceHost                         device_type ;
-  typedef device_type::size_type             size_type ;
+  typedef DeviceHost::size_type             size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
@@ -71,11 +73,11 @@ public:
                 const FunctorType & functor ,
                       value_type  & result )
   {
-    device_type::set_dispatch_functor();
+    DeviceHost::set_dispatch_functor();
 
     const ParallelReduce driver( work_count , functor );
 
-    device_type::clear_dispatch_functor();
+    DeviceHost::clear_dispatch_functor();
 
     FunctorType::init( result );
 
@@ -85,11 +87,11 @@ public:
   }
 };
 
-template< class FunctorType , class ReduceTraits , class FinalizeType >
-class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceHost > {
+template< class FunctorType , class ReduceTraits , class FinalizeType , class MDArrayMap >
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType ,
+                      Serial< HostMemory , MDArrayMap > > {
 public:
-  typedef DeviceHost                         device_type ;
-  typedef device_type::size_type             size_type ;
+  typedef DeviceHost::size_type             size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
@@ -113,11 +115,11 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
-    device_type::set_dispatch_functor();
+    DeviceHost::set_dispatch_functor();
 
     ParallelReduce driver( work_count , functor , finalize );
 
-    device_type::clear_dispatch_functor();
+    DeviceHost::clear_dispatch_functor();
 
     value_type result ;
 
@@ -195,6 +197,11 @@ public:
 
   value_type result ;
 
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    , result()
+    {}
+
   ~MultiFunctorParallelReduce()
     {
       while ( ! m_member_functors.empty() ) {
@@ -202,11 +209,6 @@ public:
         m_member_functors.pop_back();
       }
     }
-
-  MultiFunctorParallelReduce()
-    : m_member_functors()
-    , result()
-    {}
 
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )

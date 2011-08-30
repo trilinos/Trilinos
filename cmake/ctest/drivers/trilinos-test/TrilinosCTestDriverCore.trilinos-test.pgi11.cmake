@@ -28,8 +28,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE:STRING=RELEASE"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-     "-DMesquite_ENABLE_TESTS:BOOL=ON"
+    "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
+    "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
+    "-DTPL_ENABLE_MATLAB=OFF"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")

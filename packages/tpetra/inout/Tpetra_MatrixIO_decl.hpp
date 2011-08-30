@@ -2,10 +2,6 @@
 #define TPETRA_MATRIX_IO_DECL
 
 #include <string>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 

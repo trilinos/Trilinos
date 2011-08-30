@@ -56,6 +56,7 @@
 #include "Stokhos_SGModelEvaluator.hpp"
 #include "Stokhos_SGQuadModelEvaluator.hpp"
 #include "Stokhos_SGInverseModelEvaluator.hpp"
+#include "Stokhos_ResponseStatisticModelEvaluator.hpp"
 
 // MP Operators
 #include "Stokhos_BlockDiagonalOperator.hpp"

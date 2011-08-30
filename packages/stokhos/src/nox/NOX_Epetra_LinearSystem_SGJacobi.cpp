@@ -40,7 +40,7 @@ LinearSystemSGJacobi(
     Teuchos::rcp(&(linearSolverParams_.sublist("Jacobi SG Operator")), false);
   sgOpParams->set("Include Mean", false);
   if (!sgOpParams->isParameter("Only Use Linear Terms"))
-    sgOpParams->set("Only Use Linear Terms", true);
+    sgOpParams->set("Only Use Linear Terms", false);
 
   // Build new parallel Cijk if we are only using the linear terms, Cijk
   // is distributed over proc's, and Cijk includes more than just the linear

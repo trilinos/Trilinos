@@ -1,9 +1,10 @@
 #include"Isorropia_EpetraMatcher.hpp"
-using namespace std;
+#include"Isorropia_EpetraRedistributor.hpp"
+#include "EpetraExt_Reindex_CrsMatrix.h" 
 
 int main(int argc, char** argv) {
 
-	if(argc>1)
+	if(argc>2)
 	{	
 		int rc=0;
 		int localProc = 0;
@@ -29,8 +30,6 @@ int main(int argc, char** argv) {
 			 }
 			 exit(1);
 		  }
-		  else
-		  		cout<<"Crs Matrix Created!!!...."<<endl;
 		#else
 		  fail = 0;
 		  if (localProc == 0){
@@ -39,12 +38,34 @@ int main(int argc, char** argv) {
 		#endif
 		
 		Teuchos::ParameterList paramlist;
-		paramlist.set(argv[2],4);
-		Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
-		pm.match();
+		paramlist.set("Matching Algorithm",argv[2]);
+        Isorropia::Epetra::Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+		
+        //Teuchos::RCP<const Epetra_CrsMatrix> r(Teuchos::RCP<const
+        //Epetra_CrsMatrix>(matrixPtr,true));
+        //Isorropia::Epetra::Isorropia_EpetraMatcher pm(r,paramlist);
+        
+        pm.match();
+        
+        /*std::cout<<*matrixPtr<<std::endl;
+        Epetra_Map * map = pm.getPermutedRowMap();
+        Teuchos::RCP<Epetra_Map> rcpMap(Teuchos::RCP<
+        Epetra_Map>(map,true));
+        Isorropia::Epetra::Redistributor redist(rcpMap);
+        Teuchos::RCP<Epetra_CrsMatrix> myMat=redist.redistribute(*matrixPtr);
+        std::cout<<*myMat<<std::endl;*/
+
+        //Epetra_Map defMap2(-1, 5, 0,matrixPtr->Comm());
+        //EpetraExt::ViewTransform<Epetra_CrsMatrix> * ReIdx_MatTrans2 =
+                               //new EpetraExt::CrsMatrix_Reindex( defMap2 ); 
+        //Epetra_CrsMatrix t2S = (*ReIdx_MatTrans2)(*myMat);
+        //ReIdx_MatTrans2->fwd(); 
+        //std::cout<<t2S<<std::endl;
 	}
 	else
-		cout<<"Specify input file.."<<endl;
+		std::cout<<std::endl<<"./Isorropia_parallel_matching.exe \"mtx file\" \"Algorithm \
+        choice\""<<std::endl<<"Algorithm Choice: PHK, PHKDW, PDFS,PPF"\
+        <<std::endl<<std::endl;
 	
 	return 0;
 }

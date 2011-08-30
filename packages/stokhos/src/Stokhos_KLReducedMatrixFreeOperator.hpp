@@ -74,14 +74,14 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly);
+      const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& poly);
 
     //! Get SG polynomial
-    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial();
 
     //! Get SG polynomial
-    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial() const;
 
     //@}
@@ -187,7 +187,7 @@ namespace Stokhos {
     Teuchos::RCP<const Cijk_type> Cijk;
 
     //! Stores operators
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
+    Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > block_ops;
 
     //! Algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> params;
@@ -226,7 +226,7 @@ namespace Stokhos {
     Teuchos::Array< Teuchos::RCP<Epetra_CrsMatrix> > kl_blocks;
 
     //! KL blocks as operators
-    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > kl_ops;
+    Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > kl_ops;
 
     //! Matrix-Free operator using KL operators
     Teuchos::RCP< Stokhos::MatrixFreeOperator > kl_mat_free_op;
