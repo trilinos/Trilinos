@@ -4,19 +4,21 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <set>
 #include <map>
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "Phalanx_FieldManager.hpp"
-#include "Phalanx_TemplateManager.hpp"
 
+#include "Panzer_Response.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
 
 namespace panzer {
 namespace novel {
+
+template <typename TraitsT> class ResponseContainerBase;
+template <typename EvalT,typename TraitsT> class ResponseContainer;
 
 /** This contains, collects and serves as a resource for
   * responses computed by panzer. This functions as a library
@@ -33,6 +35,7 @@ namespace novel {
 template <typename TraitsT>
 class ResponseLibrary {
 public:
+   typedef typename TraitsT::EvalTypes TypeSeq;
 
    ResponseLibrary() {}
 
@@ -43,108 +46,79 @@ public:
    bool isResponseType(const std::string & type) const
    { return true; }
 
+   //! Get a particular aggregator 
    template <typename EvalT>
    const ResponseAggregatorBase<TraitsT> & getAggregator(const std::string & type) const
    {
       static ResponseFunctional_Aggregator<EvalT,TraitsT> rfa;
       return rfa;
    }
-#if 0
-   //////////////////////////////////////////////////////////////////////
-   /** \defgroup BC and Volume methods
-     * Methods that act on both boundary condition and volume responses.
+
+   /** \defgroup volume
+     * Volume methods for volumetric reponses
      * @{
      */
 
-   //! Print available reponses
-   void printAvailableResponses(std::ostream & os) const;
+   /** User access to a volume response object. This will throw if called before
+     * the volume field managers (all blocks) are evaluated.
+     */
+   Teuchos::RCP<const Response<TraitsT> > getVolumeResponse(const ResponseId & rid,
+                                                            const std::string & eBlock) const;
 
-   //! Print available reponses
-   void printReservedResponses(std::ostream & os) const;
+   //! Reserve a response for actual calculation (by response id and element block).
+   template <typename EvalT>
+   void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock);
 
-   //! Print available and checked out responses
-   void print(std::ostream & os) const;
+   /** Veryify that this response and element block are actual valid choices
+     * for the evaluation type. This is optional error checking but makes debugging
+     * simplier.
+     */
+   template <typename EvalT>
+   bool validateResponseIdInElementBlock(const ResponseId & rid,const std::string & eBlock) const 
+   { return true; }
+
+   /** This method builds the volume field managers from the reserved
+     * responses. It also registers a number of evaluators, using the closure
+     * model and equation set factories. Unlike in the assembly engine only gather
+     * evaluators, DOF, and Gradient evaluators are automaticlly included. This
+     * method also stores the worksets passed in to be used when the evaluate method
+     * is called.
+     */
+   void buildVolumeFieldManagersFromResponses(const Teuchos::ParameterList & pl);
+
+   /** Evaluate all the volume field managers of a particular evaluator type.
+     */
+   template <typename EvalT>
+   void evaluateVolumeFieldManagers();
 
    /** @} */
 
-   //////////////////////////////////////////////////////////////////////
-   /** \defgroup Volume methods
-     * Methods that act on volume responses.
-     * @{
+   /** Returns the set of element blocks required by the ResponseLibrary to 
+     * build any responses. This only details those element blocks the library is
+     * currently aware of, if new responses are reserved in new element blocks
+     * those will not be included. Additionally, this defines the set of worksets
+     * required for the evaluating the responses.
      */
+   void getRequiredElementBlocks(std::vector<std::string> & eBlocks) const;
 
-   //! Include a volume type response in the library
-   void addResponse(const PHX::FieldTag & ft, const std::string & blockId);
-
-   //! Get the names of the available volume responses 
-   void getAvailableVolumeResponses(std::vector<std::pair<std::string,std::set<std::string> > > & responsePairs) const;
-
-    //! Reserve a response for actual calculation by name and element block.
-   template <typename RespT>
-   void reserveVolumeResponse(const std::string & name,const std::string & eBlock);
-
-   /** Register reserved responses with a field manager. This only registers those
-     * responses in a user specified element block. The workset size is the maximum
-     * number of cells in any workset.
-     *
-     * \param[in] eBlock Registered fields will belong to the element block with this ID.
-     * \param[in] comm Parallel communicator (needed for parallel reduce type operations)
-     * \param[in] worksetSize Maximum number of cells in any given workset to be evaluated
-     *                        by the field manager
-     * \param[in] fm Field manager to register responses with.
-     */
-   template <typename RespT>
-   void registerReservedResponses(const std::string & eBlock,
-                                  const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                                  int worksetSize,
-                                  PHX::FieldManager<panzer::Traits> & fm);
-
-
-   //! Register volume responses with the specified field manager. Template specifies response type.
-   /** Get volume response associated with the response type (template parameter) and
-     * the field name and element block.
-     *
-     * \param[in] name Field name
-     * \param[in] eBlock Element block id
-     *
-     * \return Response object associated with the field on the specified element block.
-     *
-     * \note If no element block and field pair is found then a std::logic_error exception is thrown.
-     */
-   template <typename RespT>
-   Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name,
-                                                          const std::string & eBlock) const;
-
-   /** Get volume response associated with the response type (template parameter) and
-     * the field name. The response is "aggregated" (dependeing on field type) over all
-     * element blocks.
-     *
-     * \param[in] name Field name
-     *
-     * \return Response object associated with the field on the specified element block.
-     *
-     * \note If no element block and field pair is found then a std::logic_error exception is thrown.
-     */
-   template <typename RespT>
-   Teuchos::RCP<const Response<RespT> > getVolumeResponse(const std::string & name) const;
-
-   /** @} */
+protected:
+   //! Access a container field for a specified element block
+   template <typename EvalT>
+   Teuchos::RCP<ResponseContainerBase<TraitsT> > getVolumeContainer(const std::string & eBlock);
 
 private:
-   typedef std::map<std::string,std::set<std::string> > VolumeMap;
-   typedef PHX::TemplateManager<panzer::Traits::RespTypes,ResponseContainerBase,ResponseContainer<_> > RespContManager;
+   // This could be a template manager, but this turns out to be more in line with
+   // what is desired here. Direct access to the vector.
+   typedef std::vector<Teuchos::RCP<ResponseContainerBase<TraitsT> > > RespContVector;
+   typedef std::vector<Teuchos::RCP<PHX::FieldManager<TraitsT> > > FMVector;
 
-   void initializeReservedVolumes();
-
-   //! Contains a library of responses and the element blocks they correspond to: field name -> block ids
-   VolumeMap volumeResponses_;
-
-   std::map<std::string,Teuchos::RCP<RespContManager> > rsvdVolResp_;
-   bool isInitialized_;
-#endif
+   std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
+   std::map<std::string,Teuchos::RCP<FMVector> > volFieldManagers_;
 };
 
 }
 }
+
+#include "Panzer_ResponseLibrary_novelT.hpp"
 
 #endif

@@ -26,8 +26,13 @@ namespace novel {
 template <typename TraitsT>
 class ResponseContainerBase {
 public:
+   ResponseContainerBase() {}
+
    ResponseContainerBase(const Teuchos::RCP<const ResponseLibrary<TraitsT> > & rl)
       : responseLibrary_(rl) {}
+
+   void setResponseLibrary(const Teuchos::RCP<const ResponseLibrary<TraitsT> > & rl)
+   { responseLibrary_ = rl; }
 
    virtual ~ResponseContainerBase() {}
 
@@ -134,7 +139,6 @@ private:
    std::map<std::string,Teuchos::RCP<ResponseData<TraitsT> > > responseDataObjs_; 
 
    // hide undesirable constructors
-   ResponseContainerBase();
    ResponseContainerBase(const ResponseContainerBase<TraitsT> &);
 };
 
@@ -144,6 +148,9 @@ class ResponseContainer
    : public ResponseContainerBase<TraitsT> {
 
 public:
+   ResponseContainer()
+      : ResponseContainerBase<TraitsT>(), responseDataObjsBuilt_(false) {}
+
    ResponseContainer(const Teuchos::RCP<const ResponseLibrary<TraitsT> > & rl)
       : ResponseContainerBase<TraitsT>(rl), responseDataObjsBuilt_(false) {}
 

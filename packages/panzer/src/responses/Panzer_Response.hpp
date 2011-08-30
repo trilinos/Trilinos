@@ -41,12 +41,14 @@ ResponseId buildResponse(const std::string & n,
 template <typename TraitsT>
 class Response {
 public:
-   Response(const ResponseId & rid) :
-      rid_(rid), value_(0.0), derivative_(Teuchos::null) 
+   Response(const ResponseId & rid) 
+      : rid_(rid), value_(0.0), derivative_(Teuchos::null)
+      , hasValue_(false), hasDerivative_(false)
    {}
 
-   Response(const Response & r) :
-      rid_(r.rid_), value_(r.value_), derivative_(r.derivative_)
+   Response(const Response & r) 
+      : rid_(r.rid_), value_(r.value_), derivative_(r.derivative_)
+      , hasValue_(r.hasValue), hasDerivative_(r.hasDerviative_)
    {}
    
    //! What are the details of this response.
@@ -59,7 +61,7 @@ public:
  
    //! set value for 
    void setValue(typename TraitsT::RealType v)
-   { value_ = v; }
+   { value_ = v; hasValue_ = true; }
 
    /** The derivative is assumed to be stored in the residual vector.
      *
@@ -73,7 +75,10 @@ public:
 
    //! Set the derivative container for this response
    void setDerivative(const Teuchos::RCP<LinearObjContainer> & loc)
-   { derivative_ = loc; }
+   { derivative_ = loc; hasDerivative_ = true;}
+
+   bool hasValue() const { return hasValue_; }
+   bool hasDerivative() const { return hasDerivative_; }
 
 private:
    Response(); // hide me
@@ -81,6 +86,7 @@ private:
    ResponseId rid_;
    typename TraitsT::RealType value_;
    Teuchos::RCP<LinearObjContainer> derivative_;
+   bool hasValue_, hasDerivative_;
 };
 
 }

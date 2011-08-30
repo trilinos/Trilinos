@@ -26,16 +26,16 @@ SET(RIG_HEADERS
 SET(UNIT_TEST_DRIVER
   ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#   ResponseLibraryTest
-#   SOURCES 
-#      response_library.cpp 
-#      ${RIG_SOURCES}
-#      ${UNIT_TEST_DRIVER}
-#   COMM serial mpi
-#   NUM_MPI_PROCS 1
-#   )
-# 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ResponseLibraryTest
+  SOURCES 
+     response_library_novel.cpp 
+     ${RIG_SOURCES}
+     ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
 # PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #   ResponseAssemblyTest
 #   SOURCES 
