@@ -805,6 +805,7 @@ class test_checkin_test(unittest.TestCase):
        "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
        +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       +"\-DTPL_ENABLE_MPI:BOOL=OFF\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=OFF\n" \
        +"\-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF\n" \

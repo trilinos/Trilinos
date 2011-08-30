@@ -1570,6 +1570,7 @@ def checkinTest(inOptions):
     "SERIAL_RELEASE", inOptions.withSerialRelease, True,
     commonConfigOptions +
     [
+      "-DTPL_ENABLE_MPI:BOOL=OFF",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
       "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
       "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
