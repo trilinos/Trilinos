@@ -537,3 +537,5 @@ namespace Belos {
 
   };
 } // namespace Belos
+
+#endif // __Belos_SimpleOrthoManager_hpp
