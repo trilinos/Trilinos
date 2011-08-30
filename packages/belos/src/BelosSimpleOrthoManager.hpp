@@ -39,6 +39,12 @@
 // ************************************************************************
 //@HEADER
 
+/// \file BelosSimpleOrthoManager.hpp
+/// \brief Simple OrthoManager implementation for benchmarks.
+///
+#ifndef __Belos_SimpleOrthoManager_hpp
+#define __Belos_SimpleOrthoManager_hpp
+
 #include <BelosConfigDefs.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOrthoManager.hpp>
@@ -50,7 +56,7 @@
 namespace Belos {
 
   /// \class SimpleOrthoManager
-  /// \brief Very simple OrthoManager subclass for benchmarks
+  /// \brief Simple OrthoManager implementation for benchmarks.
   /// \author Mark Hoemmen
   ///
   /// This is a very simple orthogonalization method and should only
@@ -67,8 +73,8 @@ namespace Belos {
     
   private:
     typedef MultiVecTraits<Scalar, MV> MVT;
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     //! Label for Belos timer display
     std::string label_;
@@ -87,7 +93,7 @@ namespace Belos {
     //! Timer for normalization operations
     Teuchos::RCP<Teuchos::Time> timerNormalize_;
 
-    /// Instantiate and return a timer with an appropriate label
+    /// \brief Instantiate and return a timer with an appropriate label.
     ///
     /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
     /// \param timerName [in] Name of the timer, or what the timer
@@ -106,6 +112,16 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
     
   public:
+
+    /// \brief Get a default list of parameters.
+    ///
+    /// The "default" parameter list sets reasonably safe options in
+    /// terms of accuracy of the computed orthogonalization.  Call \c
+    /// getFastParameters() if you prefer to sacrifice some accuracy
+    /// for speed.
+    ///
+    /// \warning This class method is nonreentrant.
+    ///
     static Teuchos::RCP<const Teuchos::ParameterList> 
     getDefaultParameters ()
     {
@@ -130,6 +146,14 @@ namespace Belos {
       return params;
     }
 
+    /// \brief Get a "fast" list of parameters.
+    ///
+    /// The "fast" parameter list favors speed of orthogonalization,
+    /// but sacrifices some accuracy.  Call \c getDefaultParameters()
+    /// for safer options in terms of accuracy.
+    ///
+    /// \warning This class method is nonreentrant.
+    ///
     static Teuchos::RCP<const Teuchos::ParameterList> 
     getFastParameters ()
     {
@@ -154,8 +178,13 @@ namespace Belos {
     ///
     /// \param outMan [in/out] Output manager.  If not null, use for
     ///   various kinds of status output (in particular, for debugging).
-    /// \param label [in] Label for Belos timers
-    /// \param params [in] List of configuration parameters
+    ///
+    /// \param label [in] Label for Belos timers.
+    ///
+    /// \param params [in] List of configuration parameters.  Call
+    ///   getDefaultParameters() or getFastParameters() for sample
+    ///   valid parameter lists.
+    ///
     SimpleOrthoManager (const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 			const std::string& label,
 			const Teuchos::RCP<const Teuchos::ParameterList>& params) :
@@ -212,11 +241,11 @@ namespace Belos {
 	}
     }
     
-    
+    //! Virtual destructor for memory safety of derived classes.
     virtual ~SimpleOrthoManager() {}
       
     void innerProd (const MV &X, const MV &Y, mat_type& Z ) const {
-      MVT::MvTransMv (SCT::one(), X, Y, Z);
+      MVT::MvTransMv (STS::one(), X, Y, Z);
     }
 
     void norm (const MV& X, std::vector<magnitude_type>& normVec) const {
@@ -278,7 +307,7 @@ namespace Belos {
     magnitude_type 
     orthonormError(const MV &X) const 
     {
-      const Scalar ONE = SCT::one();
+      const Scalar ONE = STS::one();
       const int ncols = MVT::GetNumberVecs(X);
       mat_type XTX (ncols, ncols);
       innerProd (X, X, XTX);
@@ -332,7 +361,7 @@ namespace Belos {
 	      const MV& X_i = *X_prv;
 	      mat_type B_ij (View, *B, 1, 1, i, j);
 	      innerProd (X_i, X_j, B_ij);
-	      MVT::MvTimesMatAddMv (-SCT::one(), X_i, B_ij, SCT::one(), X_j);
+	      MVT::MvTimesMatAddMv (-STS::one(), X_i, B_ij, STS::one(), X_j);
 	      if (reorthogonalize_) // Unconditional reorthogonalization
 		{		    
 		  // innerProd() overwrites B(i,j), so save the
@@ -340,7 +369,7 @@ namespace Belos {
 		  // B(i,j) afterwards.
 		  const Scalar B_ij_first = (*B)(i, j);
 		  innerProd (X_i, X_j, B_ij);
-		  MVT::MvTimesMatAddMv (-SCT::one(), X_i, B_ij, SCT::one(), X_j);
+		  MVT::MvTimesMatAddMv (-STS::one(), X_i, B_ij, STS::one(), X_j);
 		  (*B)(i, j) += B_ij_first;
 		}
 	    }
@@ -348,8 +377,8 @@ namespace Belos {
 	  norm (X_j, normVec);
 	  const magnitude_type theNorm = normVec[0];
 	  (*B)(j, j) = theNorm;
-	  if (normVec[0] != SCTM::zero())
-	    MVT::MvScale (X_j, SCT::one() / theNorm);
+	  if (normVec[0] != STM::zero())
+	    MVT::MvScale (X_j, STS::one() / theNorm);
 	  else
 	    return j; // break out early
 	}
@@ -388,9 +417,9 @@ namespace Belos {
 	norm (*X_cur, normVec);
 	const magnitude_type theNorm = normVec[0];
 	B_ref(0,0) = theNorm;
-	if (theNorm != SCTM::zero())
+	if (theNorm != STM::zero())
 	  {
-	    const Scalar invNorm = SCT::one() / theNorm;
+	    const Scalar invNorm = STS::one() / theNorm;
 	    MVT::MvScale (*X_cur, invNorm);
 	  }
 	else
@@ -406,23 +435,23 @@ namespace Belos {
 
 	  // Project X_cur against X_prv (first pass)
 	  innerProd (*X_prv, *X_cur, B_prvcur);
-	  MVT::MvTimesMatAddMv (-SCT::one(), *X_prv, B_prvcur, SCT::one(), *X_cur);
+	  MVT::MvTimesMatAddMv (-STS::one(), *X_prv, B_prvcur, STS::one(), *X_cur);
 	  // Unconditional reorthogonalization: 
 	  // project X_cur against X_prv (second pass)
 	  if (reorthogonalize_) 
 	    {		    
 	      mat_type B2_prvcur (View, B2, j, 1, 0, j);
 	      innerProd (*X_prv, *X_cur, B2_prvcur);
-	      MVT::MvTimesMatAddMv (-SCT::one(), *X_prv, B2_prvcur, SCT::one(), *X_cur);
+	      MVT::MvTimesMatAddMv (-STS::one(), *X_prv, B2_prvcur, STS::one(), *X_cur);
 	      B_prvcur += B2_prvcur;
 	    }
 	  // Normalize column j of X
 	  norm (*X_cur, normVec);
 	  const magnitude_type theNorm = normVec[0];
 	  B_ref(j,j) = theNorm;
-	  if (theNorm != SCTM::zero())
+	  if (theNorm != STM::zero())
 	    {
-	      const Scalar invNorm = SCT::one() / theNorm;
+	      const Scalar invNorm = STS::one() / theNorm;
 	      MVT::MvScale (*X_cur, invNorm);
 	    }
 	  else
@@ -467,7 +496,7 @@ namespace Belos {
 		      numAllocated++;
 		    }
 		  else
-		    Ci.putScalar (SCT::zero());
+		    Ci.putScalar (STS::zero());
 		}
 	    }
 	}
@@ -502,7 +531,7 @@ namespace Belos {
 	  mat_type& Ci = *C[i];
 	  const MV& Qi = *Q[i];
 	  innerProd (Qi, X, Ci);
-	  MVT::MvTimesMatAddMv (-SCT::one(), Qi, Ci, SCT::one(), X);
+	  MVT::MvTimesMatAddMv (-STS::one(), Qi, Ci, STS::one(), X);
 	}
     }
 
