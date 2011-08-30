@@ -29,6 +29,7 @@ APPEND_SET(SOURCES
   CoalesceDropFactory.cpp
   Memory.cpp
   #UCAggregationFactory.cpp
+  ExtendedHashtable.cpp
 )
 
 ### Tests that require other Trilinos packages

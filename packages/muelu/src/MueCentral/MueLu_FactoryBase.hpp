@@ -7,6 +7,13 @@
 namespace MueLu {
   class Level;
 
+  static int generateUniqueFactoryId()
+  {
+    static int i = 0;
+    ++i;
+    return i;
+  }
+
   //! Base class for factories (e.g., R, P, and A_coarse).
   class FactoryBase : public BaseClass {
 
@@ -14,10 +21,12 @@ namespace MueLu {
     //@{ Constructors/Destructors.
 
     //! Constructor.
-    FactoryBase() {}
+    FactoryBase()
+    : id_(MueLu::generateUniqueFactoryId())
+    { /*std::cout << "Factory id: " << id_ << std::endl;*/ }
 
     //! Destructor.
-    virtual ~FactoryBase() {}
+    virtual ~FactoryBase() { /*std::cout << "Deconstructor factory id: " << id_ << std::endl;*/}
     //@}
 
     //@{
@@ -26,6 +35,17 @@ namespace MueLu {
     virtual bool NewBuild(Level & requestedLevel) const = 0;
 
     //@}
+
+    //@{
+    //! @name Access factory properties
+
+    /// return unique factory id
+    const int getID() const { return id_; };
+
+    //@}
+
+  private:
+    const int id_;
 
   }; //class FactoryBase
 
