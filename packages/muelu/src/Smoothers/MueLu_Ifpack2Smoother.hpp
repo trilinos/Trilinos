@@ -175,7 +175,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
           maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
           list_.set("chebyshev: max eigenvalue",maxEigenValue);
         }
-        *out_ << prefix << "Ifpack2 Chebyshev, degree " << list_.get("chebyshev degree",1) << std::endl;
+        *out_ << prefix << "Ifpack2 Chebyshev, degree " << list_.get("chebyshev: degree",1) << std::endl;
         *out_ << prefix << "lambda_min=" << list_.get("chebyshev: min eigenvalue",-1.0)
               << ", lambda_max=" << list_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
       }
