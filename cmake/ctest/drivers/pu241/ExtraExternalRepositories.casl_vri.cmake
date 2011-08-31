@@ -12,8 +12,8 @@ SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
   DeCARTExt       ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_decart    ""  Continuous
   Panzer          ""                                  GIT  software.sandia.gov:/space/git/Panzer      ""  Continuous
   NeutronicsExt   "NeutronicsExt"                     GIT  casl-dev.ornl.gov:/git-root/denovoExt      ""  Continuous
-  Denovo          "NeutronicsExt/denovo"              GIT  angmar.ornl.gov:/data/git/denovo.git       NOPACKAGES  Continuous
-  Nemesis         "NeutronicsExt/denovo/src/nemesis"  GIT  angmar.ornl.gov:/data/git/nemesis.git      NOPACKAGES  Continuous
+  Denovo          "NeutronicsExt/denovo"              GIT  casl-dev.ornl.gov:/git-root/denovo         NOPACKAGES  Continuous
+  Nemesis         "NeutronicsExt/denovo/src/nemesis"  GIT  casl-dev.ornl.gov:/git-root/nemesis        NOPACKAGES  Continuous
   CASLBOA         ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_boa       ""  Continuous
   CASLRAVE        ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_rave      ""  Continuous
   LIMEExt         ""                                  GIT  software.sandia.gov:/space/git/LIMEExt     ""  Continuous
