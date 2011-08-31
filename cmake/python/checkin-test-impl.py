@@ -21,7 +21,7 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (different variations on this workflow are described below):
 
-1) Commit changes in the lcoal repo:
+1) Commit changes in the local repo:
 
   # 1.a) See what files are changed, newly added, etc. that need to be committed
   # or stashed.
