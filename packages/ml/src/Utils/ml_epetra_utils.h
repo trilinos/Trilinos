@@ -165,6 +165,8 @@ int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatri
 void ML_CreateSublists(Teuchos::ParameterList &List,
                       Teuchos::ParameterList &newList,
                       int NumLevels);
+
+
 #endif
 
 #ifndef ML_CPP
@@ -251,7 +253,10 @@ namespace ML_Epetra{
 
   //! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
   int ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose=false);
-  
+
+  //! Does an RAP for Epetra_CrsMatrices using ML's kernels.
+  int ML_Epetra_RAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, const Epetra_CrsMatrix & R, Epetra_CrsMatrix *&Result,bool verbose);
+
   //! Finds the Dirichlet rows in a square matrix that got the one-and-zeros
   //treatment
   /*! Returns the local Dirichlet rows for a square matrix that go the
@@ -314,7 +319,10 @@ namespace ML_Epetra{
                                    const char* matrixName=0, bool verbose=false);
 #endif
 
-  
+#ifdef HAVE_ML_TEUCHOS
+int UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite);
+#endif
+ 
 }
 
 
