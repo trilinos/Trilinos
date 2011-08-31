@@ -49,9 +49,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVec.hpp"
-#ifdef BELOS_HAVE_EXPERIMENTAL
+#ifdef HAVE_BELOS_EXPERIMENTAL
 #  include "BelosInnerSolver.hpp"
-#endif // BELOS_HAVE_EXPERIMENTAL
+#endif // HAVE_BELOS_EXPERIMENTAL
 
 
 namespace Belos {
@@ -137,7 +137,7 @@ namespace Belos {
     }
   };
 
-#ifdef BELOS_HAVE_EXPERIMENTAL
+#ifdef HAVE_BELOS_EXPERIMENTAL
 
   /// \class OperatorInnerSolver
   /// \brief Adaptor between InnerSolver and Belos::Operator.
@@ -271,7 +271,7 @@ namespace Belos {
       return wrapper->getInnerSolver();
     }
   };
-#endif // BELOS_HAVE_EXPERIMENTAL
+#endif // HAVE_BELOS_EXPERIMENTAL
   
 } // end Belos namespace
 
