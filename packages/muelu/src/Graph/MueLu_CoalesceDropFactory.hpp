@@ -18,9 +18,6 @@ namespace MueLu {
   
     - TODO This factory is very incomplete.
     - TODO The Build method simply builds the matrix graph with no dropping.
-    - TODO Derive from TwoLevelFactoryBase so that UCAggregationFactory does not rely on Scalar template.
-    This entails removing Scalar dependence in Level class.
-  
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
@@ -32,19 +29,39 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    CoalesceDropFactory() {}
 
-    //!Destructor
+    //! Constructor
+    CoalesceDropFactory(RCP<FactoryBase> AFact = Teuchos::null)
+      : AFact_(AFact)
+    { }
+
+    //! Destructor
     virtual ~CoalesceDropFactory() {}
     //@}
 
-    bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
-      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-      currentLevel.Set("Graph",graph);
+    //! Input
+    //@{
 
-      return true;//??
-    } //Build
+    void DeclareInput(Level &currentLevel) {
+      currentLevel.Input("A", AFact_());
+    }
+
+    //@}
+
+    bool Build(Level &currentLevel) const {
+      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_());
+
+      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+
+      currentLevel.NewSet("Graph", graph, this);
+
+      return true; //??
+
+    } // Build
+
+  private:
+    //! A Factory
+    RCP<FactoryBase> AFact_;
 
   }; //class CoalesceDropFactory
 
