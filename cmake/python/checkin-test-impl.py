@@ -128,20 +128,22 @@ For more details on using this script, see the detailed documentation below.
 Detailed Documentation:
 -----------------------
 
-There are two basic configurations that are tested by default: MPI_DEBUG and
-SERIAL_RELEASE.  Both of these configurations only test Primary Stable Code
-(see --extra-builds for testing other types of code).  Several configure
-options are varied in these two builds to try to catch as much conditional
-configuration behavior as possible.  If nothing else, please at least do the
+There are two basic configurations that are tested by default:
+MPI_DEBUG and SERIAL_RELEASE.  Both of these configurations only test
+Primary Stable Code (see --extra-builds and --ss-extra-builds for
+testing other types of code).  Several configure options are varied in
+these two builds to try to catch as much conditional configuration
+behavior as possible.  If nothing else, please at least do the
 MPI_DEBUG build since that will cover the most code and best supports
-day-to-day development efforts.  However, if you are changing code that might
-break the serial build or break non-debug code, please allow the
-SERIAL_RELEASE build to be run as well.  Note that the MPI_DEBUG build
-actually uses -DCMAKE_BUILD_TYPE=RELEASE with -DTrilinos_ENABLE_DEBUG=ON to
-use optimized compiler options but with runtime debug checking turned on.
-This helps to make the tests run faster but still builds and runs the runtime
-debug checking code.  Therefore, you should not use the MPI_DEBUG configure
-options when building a debug version for yourself to do debugging.
+day-to-day development efforts.  However, if you are changing code
+that might break the serial build or break non-debug code, please
+allow the SERIAL_RELEASE build to be run as well.  Note that the
+MPI_DEBUG build actually uses -DCMAKE_BUILD_TYPE=RELEASE with
+-DTrilinos_ENABLE_DEBUG=ON to use optimized compiler options but with
+runtime debug checking turned on.  This helps to make the tests run
+faster but still builds and runs the runtime debug checking code.
+Therefore, you should not use the MPI_DEBUG configure options when
+building a debug version for yourself to do debugging.
 
 
 The following approximate steps are performed by this script:
@@ -256,9 +258,10 @@ NOTE: All tentatively-enabled TPLs (e.g. Pthreads and BinUtils) are hard
 disabled in order to avoid different behaviors between machines where they
 would be enabled and machines where they would be disabled.
 
-NOTE: If you want to add extra build/test cases that do not conform to the
-standard build/test configurations described above, then you need to create
-extra builds with the --extra-builds option (see below).
+NOTE: If you want to add extra build/test cases that do not conform to
+the standard build/test configurations described above, then you need
+to create extra builds with the --extra-builds and/or
+--ss-extra-builds options (see below).
 
 NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
@@ -641,6 +644,13 @@ clp.add_option(
     +" local custom builds." )
 
 clp.add_option(
+  "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
+  help="List of comma-separated SS extra build names.  For each of the build names in" \
+  +" --ss-extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
+  +" the local directory along side the COMMON.config file that defines the special" \
+  +" build options for the extra build." )
+
+clp.add_option(
   "--extra-builds", dest="extraBuilds", type="string", default="",
   help="List of comma-separated extra build names.  For each of the build names in" \
   +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
@@ -850,6 +860,8 @@ if not options.withSerialRelease:
   print "  --without-serial-release \\" 
 if options.withoutDefaultBuilds:
   print "  --without-default-builds \\" 
+print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
+print "  --extra-builds='"+options.extraBuilds+"' \\"
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
 if not options.sendEmailOnlyOnFailure:
   print "  --send-email-for-all \\"

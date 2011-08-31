@@ -69,7 +69,9 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
       True )
 
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+testingTrilinosDepsXmlInFile = getScriptBaseDir()+"/UnitTests/TrilinosPackageDependencies.gold.xml"
+trilinosDependencies = getTrilinosDependenciesFromXmlFile(testingTrilinosDepsXmlInFile)
+  
 #print "\ntrilinosDependencies:\n", trilinosDependencies
 
 
@@ -101,7 +103,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
   def test_getPackageNameFromPath_02(self):
     self.assertEqual(
       getPackageNameFromPath( trilinosDependencies, 'packages/thyra/src/blob.cpp' ),
-      'Thyra' )
+      'ThyraCoreLibs' )
 
 
   def test_getPackageNameFromPath_03(self):
@@ -112,14 +114,8 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
 
   def test_getPackageNameFromPath_04(self):
     self.assertEqual(
-      getPackageNameFromPath( trilinosDependencies, 'demos/FEApp/CMakeLists.txt' ),
-      'FEApp' )
-
-
-  def test_getPackageNameFromPath_05(self):
-    self.assertEqual(
-      getPackageNameFromPath( trilinosDependencies, 'packages/ifpack2/CMakeLists.txt' ),
-      'Ifpack2' )
+      getPackageNameFromPath( trilinosDependencies, 'cmake/CMakeLists.txt' ),
+      'TrilinosFramework' )
 
 
   def test_getPackageNameFromPath_noMatch(self):
@@ -155,7 +151,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
     packagesList = getPackagesListFromFilePathsList( trilinosDependencies, filesList )
 
     packagesList_expected = \
-      [u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra", u"Ifpack2", u"FEApp"]
+      [u"TrilinosFramework", u"Stratimikos", u"ThyraCoreLibs", u"Thyra"]
 
     self.assertEqual( packagesList, packagesList_expected )
 
@@ -171,11 +167,8 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
     packagesList_expected = [
       u"trilinos-checkins@software.sandia.gov",
       u"trilinosframework-checkins@software.sandia.gov",
-      u"nox-checkins@software.sandia.gov",
       u"stratimikos-checkins@software.sandia.gov",
       u"thyra-checkins@software.sandia.gov",
-      u"ifpack2-checkins@software.sandia.gov",
-      u"feapp-checkins@software.sandia.gov",
       ]
 
     self.assertEqual( packagesList, packagesList_expected )
@@ -187,7 +180,6 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       "CMakeLists.txt\n" \
       "cmake/python/checkin-test.py\n" \
       "cmake/python/dump-cdash-deps-xml-file.py\n" \
-      "packages/nox/src/dummy.C\n" \
       "packages/thyra/src/Thyra_ConfigDefs.hpp\n" \
       "packages/thyra/CMakeLists.txt\n" \
       )
@@ -195,14 +187,67 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
         " --files-list-file=modifiedFiles.txt", True),
-      "ALL_PACKAGES;TrilinosFramework;NOX;Thyra"
+      "ALL_PACKAGES;TrilinosFramework;Thyra"
       )
 
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
-        " --files-list-file=modifiedFiles.txt --deps-xml-file="+defaultTrilinosDepsXmlInFile,
+        " --files-list-file=modifiedFiles.txt --deps-xml-file="+testingTrilinosDepsXmlInFile,
         True),
-      "ALL_PACKAGES;TrilinosFramework;NOX;Thyra"
+      "ALL_PACKAGES;TrilinosFramework;ThyraCoreLibs;Thyra"
+      )
+
+
+class testFilterPackagesList(unittest.TestCase):
+
+
+  def test_get_PS(self):
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
+        " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS",
+        True),
+      "Teuchos,Thyra"
+      )
+
+
+  def test_get_PS_SS(self):
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
+        " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,SS",
+        True),
+      "Teuchos,Thyra,Phalanx"
+      )
+
+
+  def test_get_PS_SS_EX(self):
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
+        " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,SS,EX",
+        True),
+      "Teuchos,Thyra,Phalanx,Stokhos"
+      )
+
+
+  def test_get_SS(self):
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
+        " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=SS",
+        True),
+      "Phalanx"
+      )
+
+
+  def test_get_PS_EX(self):
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
+        " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,EX",
+        True),
+      "Teuchos,Thyra,Stokhos"
       )
 
 
