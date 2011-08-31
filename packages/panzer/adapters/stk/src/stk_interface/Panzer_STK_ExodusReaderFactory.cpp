@@ -56,9 +56,9 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
 
    // read in meta data
    Ioss::Init::Initializer io;
-   stk::io::util::MeshData * meshData = new stk::io::util::MeshData;
-   stk::io::util::create_input_mesh("exodusii", fileName_, "", parallelMach,
-                                    *femMetaData, *meshData, false); 
+   stk::io::MeshData * meshData = new stk::io::MeshData;
+   stk::io::create_input_mesh("exodusii", fileName_, parallelMach,
+                                    *femMetaData, *meshData); 
 
    // store mesh data pointer for later use in initializing 
    // bulk data
@@ -85,8 +85,8 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    // grab mesh data pointer to build the bulk data
    stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*mesh.getMetaData());
-   stk::io::util::MeshData * meshData = 
-         const_cast<stk::io::util::MeshData *>(metaData.get_attribute<stk::io::util::MeshData>());
+   stk::io::MeshData * meshData = 
+         const_cast<stk::io::MeshData *>(metaData.get_attribute<stk::io::MeshData>());
          // if const_cast is wrong ... why does it feel so right?
          // I believe this is safe since we are basically hiding this object under the covers
          // until the mesh construction can be completed...below I cleanup the object myself.
@@ -94,9 +94,14 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       // remove the MeshData attribute
 
    RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+
+   // build mesh bulk data
    mesh.beginModification();
-   stk::io::util::populate_bulk_data(*bulkData, *meshData, "exodusii", restartIndex_);
+   stk::io::populate_bulk_data(*bulkData, *meshData);
    mesh.endModification();
+
+   // populate mesh fields with specific index
+   stk::io::process_input_request(*meshData,*bulkData,restartIndex_);
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
@@ -148,7 +153,7 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
    return validParams.getConst();
 }
 
-void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::util::MeshData & meshData) const 
+void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::MeshData & meshData) const 
 {
    using Teuchos::RCP;
 
@@ -157,13 +162,12 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
    // here we use the Ioss interface because they don't add
    // "bonus" element blocks and its easier to determine
    // "real" element blocks versus STK-only blocks
-   const Ioss::ElementBlockContainer & elem_blocks = meshData.m_region->get_element_blocks();
+   const Ioss::ElementBlockContainer & elem_blocks = meshData.m_input_region->get_element_blocks();
    for(Ioss::ElementBlockContainer::const_iterator itr=elem_blocks.begin();itr!=elem_blocks.end();++itr) {
       Ioss::GroupingEntity * entity = *itr;
       const std::string & name = entity->name(); 
 
       const stk::mesh::Part * part = femMetaData->get_part(name);
-      // const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
       const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
 
       TEUCHOS_ASSERT(ct!=0);
@@ -181,7 +185,7 @@ void buildSetNames(const SetType & setData,std::vector<std::string> & names)
    }
 }
 
-void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::util::MeshData & meshData) const
+void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::MeshData & meshData) const
 {
    using Teuchos::RCP;
 

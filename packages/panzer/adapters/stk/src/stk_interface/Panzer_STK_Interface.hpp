@@ -17,7 +17,7 @@
 #include <Panzer_STK_config.hpp>
 
 #ifdef HAVE_IOSS
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 #endif
 
 namespace panzer_stk {
@@ -465,7 +465,7 @@ protected:
 
 #ifdef HAVE_IOSS
    // I/O support
-   Teuchos::RCP<stk::io::util::MeshData> meshData_;
+   Teuchos::RCP<stk::io::MeshData> meshData_;
 #endif
 
    // uses lazy evaluation
