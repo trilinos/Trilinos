@@ -2,17 +2,11 @@
  Amesos2 TODO List
 ===================
 
-Priorities for 2011:
+- Finish KLU2 so it works for all types. May require third template parameter.
+- Wish list: CholMod, UMFPACK, SuiteSparseQR, Pastix, MUMPS
 
-- Add more tests. Read in matrix from file using Tpetra MatrixMarket reader.
-  Make sure all commonly used templated types work.
-- Fix KLU2 so it works in all cases. May require third template parameter.
-- Add support for SuperLU_MT and SuperLU_Dist.
-- Add support for Pardiso (at least MKL version).
-- Wish list: SuiteSparseQR, MUMPS, Pastix
-
-General TODO
-============
+OLD TODO (some of these have been fixed)
+========================================
 
  - Remove Amesos2_ENABLE_XXXX configure options in CMakeLists.txt
    because they are auto-generated from the Dependencies file. (DONE)
