@@ -27,6 +27,7 @@ cmake \
 -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
 -D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
 -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Trilinos_ENABLE_MueLu:BOOL=ON \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
 -D BLAS_LIBRARY_DIRS:FILEPATH=/usr/local/lib \
 -D TPL_LAPACK_LIBRARIES:STRING="-llapack -lblas -lgfortran" \
