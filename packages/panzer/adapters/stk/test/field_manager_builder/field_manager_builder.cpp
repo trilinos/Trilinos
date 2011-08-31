@@ -123,7 +123,7 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,elof,user_data);
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,elof,user_data);
     fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,elof, user_data);
 
     // run tests

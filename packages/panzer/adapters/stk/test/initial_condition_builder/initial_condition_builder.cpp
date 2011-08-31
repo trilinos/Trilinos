@@ -131,7 +131,7 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,dofManager,*elof,user_data);
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,*elof,user_data);
     fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,*elof,user_data);
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");

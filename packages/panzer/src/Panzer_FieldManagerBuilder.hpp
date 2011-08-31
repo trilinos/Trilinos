@@ -7,7 +7,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
-#include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 
@@ -54,22 +53,6 @@ namespace panzer {
 		   panzer::LessBC>&
       getBCWorksets() const {return bc_worksets_;}
 
-    //! get the degree of freedom manager for this mesh
-    const Teuchos::RCP<DOFManager<LO,GO> > getDOFManager()
-    { return Teuchos::rcp_dynamic_cast<DOFManager<LO,GO> >(dofMngr_); }
-
-    //! get the degree of freedom manager for this mesh
-    const Teuchos::RCP<const DOFManager<LO,GO> > getDOFManager() const
-    { return Teuchos::rcp_dynamic_cast<const DOFManager<LO,GO> >(dofMngr_); }
-
-    //! get the unique global indexer for this mesh
-    const Teuchos::RCP<UniqueGlobalIndexer<LO,GO> > getGlobalIndexer()
-    { return dofMngr_; }
-
-    //! get the unique global indexer for this mesh
-    const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > getGlobalIndexer() const
-    { return dofMngr_; }
-
     // The intention of the next set of functions is to simplify and eventually
     // replace the setup routine above. Its not clear that these functions
     // belong in the field manager builder. Additionally this will add increased
@@ -108,7 +91,6 @@ namespace panzer {
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
-                                  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
 				  const Teuchos::ParameterList& user_data);
 
@@ -135,10 +117,6 @@ namespace panzer {
     
     //! Volume fill worksets for each element block.
     std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets_;
-
-    //! DOF manager for this object
-    // Teuchos::RCP<DOFManager<LO,GO> > dofMngr_;
-    Teuchos::RCP<UniqueGlobalIndexer<LO,GO> > dofMngr_;
 
     /*! \brief Field managers for the boundary conditions
 

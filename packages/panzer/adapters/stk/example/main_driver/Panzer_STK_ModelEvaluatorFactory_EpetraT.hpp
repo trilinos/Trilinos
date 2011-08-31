@@ -214,7 +214,7 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),dofManager,*linObjFactory,user_data_params);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs

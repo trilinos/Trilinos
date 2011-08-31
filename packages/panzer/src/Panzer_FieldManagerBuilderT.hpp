@@ -80,14 +80,11 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
-                                            const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & dofManager,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
 					    const Teuchos::ParameterList& user_data)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  dofMngr_ = dofManager; // assign DOF manager for now
 
   worksets_.clear();
   phx_volume_field_managers_.clear();

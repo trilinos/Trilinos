@@ -146,7 +146,7 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,dofManager,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
 
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
