@@ -47,14 +47,14 @@ namespace MueLu {
      Aggregates(const Graph & graph, const std::string & objectLabel = "");
      virtual ~Aggregates() {}
      
-     inline LO GetNumAggregates()                 { return nAggregates_;         } // rename GetNumLocal ?
-     inline void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates;  }
-     inline RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;        } // LocalOrdinal because it's an array of local id
-     inline RCP<LOVector> & GetProcWinner()       { return procWinner_;          }
-     inline bool IsRoot(LO i)                     { return isRoot_[i];           } // Local
-     inline void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;          } // Local
+     inline LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
+     inline void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+     inline RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+     inline RCP<LOVector> & GetProcWinner()       { return procWinner_;         }
+     inline bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
+     inline void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
      
-     inline const RCP<const Xpetra::Map<LO,GO> > GetMap() { return GetVertex2AggId()->getMap(); }
+     inline const RCP<const Xpetra::Map<LO,GO> > GetMap() const { return vertex2AggId_->getMap(); }
 
      /*! @brief Compute sizes of all the aggregates.
 
