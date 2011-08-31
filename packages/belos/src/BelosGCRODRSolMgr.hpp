@@ -755,16 +755,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Get the output stream for the output manager.
   //
-  // FIXME (mfh 28 Feb 2011) While storing the output stream in the
-  // parameter list (either as an RCP or as a nonconst reference) is
-  // convenient and safe for programming, it makes it nearly
-  // impossible to serialize the parameter list, read it back in from
-  // the serialized representation, and get the same output stream as
-  // before.  However, a general solution is likely impossible,
-  // because output streams may be arbitrary constructed objects.  
+  // While storing the output stream in the parameter list (either as
+  // an RCP or as a nonconst reference) is convenient and safe for
+  // programming, it makes it impossible to serialize the parameter
+  // list, read it back in from the serialized representation, and get
+  // the same output stream as before.  This is because output streams
+  // may be arbitrary constructed objects.
   //
-  // In case the output stream can't be read back in, we default to
-  // stdout (std::cout), just to ensure reasonable behavior.
+  // In case the user tried reading in the parameter list from a
+  // serialized representation and the output stream can't be read
+  // back in, we set the output stream to point to std::cout.  This
+  // ensures reasonable behavior.
   if (params->isParameter ("Output Stream")) {
     try {
       outputStream_ = getParameter<RCP<std::ostream> > (*params, "Output Stream");
@@ -847,12 +848,10 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // parameter will override DGKS's "depTol" parameter.
   //
   // Users may supply the orthogonalization manager parameters either
-  // as a sublist, or as an RCP.  We test for both.
-  //
-  // FIXME (mfh 28 Feb 2011) Setting the sublist as an RCP<const
-  // ParameterList> rather than a ParameterList means that you can't
-  // print out the solver manager's parameter list readably and read
-  // it back in again correctly.
+  // as a sublist, or as an RCP.  We test for both.  Note that setting
+  // the sublist as an RCP<const ParameterList> rather than a
+  // ParameterList means that you can't correctly serialize the solver
+  // manager's parameter list.
   RCP<const ParameterList> orthoParams;
   {
     bool gotOrthoParams = false;
@@ -892,19 +891,21 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // We've already fetched the orthogonalization method name
   // (orthoType_) and its parameters (orthoParams) above.
   //
-  // FIXME (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
+  // NOTE (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
   // subclass if the orthogonalization method name is different than
   // before.  Thus, for some orthogonalization managers, changes to
   // their parameters may not get propagated, if the manager type
   // itself didn't change.  The one exception is the "depTol"
   // (a.k.a. orthoKappa or "Orthogonalization Constant") parameter of
   // DGKS; changes to that _do_ get propagated down to the DGKS
-  // instance.  The most general way to fix this bug is to supply each
+  // instance.  
+  //
+  // The most general way to fix this issue would be to supply each
   // orthogonalization manager class with a setParameters() method
   // that takes a parameter list input, and changes the parameters as
-  // appropriate.  A less efficient but correct way to fix the bug is
-  // simply to reinstantiate the OrthoManager every time, whether or
-  // not the orthogonalization method name or parameters have changed.
+  // appropriate.  A less efficient but correct way would be simply to
+  // reinstantiate the OrthoManager every time, whether or not the
+  // orthogonalization method name or parameters have changed.
   if (ortho_.is_null() || changedOrthoType)
     {
       // Create orthogonalization manager.  This requires that the
@@ -974,16 +975,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
       // Update parameter in our list and residual tests
       params_->set("Implicit Residual Scaling", impResScale_);
-      // FIXME (mfh 28 Feb 2011) 
-      //
-      // This little bit of code shows some of Belos' design problems.
-      // StatusTestImpResNorm only lets you call defineScaleForm()
-      // once.  The code below attempts to call defineScaleForm(); if
-      // the scale form has already been defined, it constructs a new
-      // StatusTestImpResNorm instance.  StatusTestImpResNorm should
-      // not expose the defineScaleForm() method, since it's serving
-      // an initialization purpose; all initialization should happen
-      // in the constructor whenever possible.  In that case, the code
+      // NOTE (mfh 28 Feb 2011) StatusTestImpResNorm only lets you
+      // call defineScaleForm() once.  The code below attempts to call
+      // defineScaleForm(); if the scale form has already been
+      // defined, it constructs a new StatusTestImpResNorm instance.
+      // StatusTestImpResNorm really should not expose the
+      // defineScaleForm() method, since it's serving an
+      // initialization purpose; all initialization should happen in
+      // the constructor whenever possible.  In that case, the code
       // below could be simplified into a single (re)instantiation.
       if (! impConvTest_.is_null()) {
         try { 
@@ -1009,9 +1008,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
       // Update parameter in our list and residual tests
       params_->set("Explicit Residual Scaling", expResScale_);
-      // FIXME (mfh 28 Feb 2011) 
-      //
-      // See note above on Belos design problems.
+      // NOTE (mfh 28 Feb 2011) See note above on the (re)construction
+      // of StatusTestImpResNorm.
       if (! expConvTest_.is_null()) {
         try { 
           expConvTest_->defineScaleForm (expResScaleType, Belos::TwoNorm);

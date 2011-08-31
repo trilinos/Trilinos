@@ -263,7 +263,7 @@ namespace Belos {
 			 "Belos::MultiVecTraits<double, Epetra_MultiVector>::"
 			 "Clone(mv, outNumVecs = " << outNumVecs << "): "
 			 "outNumVecs must be positive.");
-      // FIXME (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
+      // NOTE (mfh 13 Jan 2011) Anasazi currently lets Epetra fill in
       // the entries of the returned multivector with zeros, but Belos
       // does not.  We retain this different behavior for now, but the
       // two versions should be reconciled.
@@ -636,7 +636,7 @@ namespace Belos {
       const int inNumVecs = GetNumberVecs (A);
       const int outNumVecs = index.size();
 
-      // FIXME (mfh 13 Jan 2011) Belos allows A to have more columns
+      // NOTE (mfh 13 Jan 2011) Belos allows A to have more columns
       // than index.size(), in which case we just take the first
       // index.size() columns of A.  Anasazi requires that A have the
       // same number of columns as index.size().  Changing Anasazi's

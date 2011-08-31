@@ -1134,9 +1134,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
 			// Update parameter in our list and residual tests
 			params_->set("Explicit Residual Scaling", expResScale_);
-			// FIXME (mfh 28 Feb 2011)
-			//
-			// See note above on Belos design problems.
 			if (! expConvTest_.is_null()) {
 				try {
 					expConvTest_->defineScaleForm (expResScaleType, Belos::TwoNorm);

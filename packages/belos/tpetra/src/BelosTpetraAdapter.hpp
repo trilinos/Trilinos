@@ -179,7 +179,9 @@ namespace Belos {
     CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 		       const Teuchos::Range1D& index)
     {
-      // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
+      // NOTE (mfh 11 Jan 2011) We really should check for possible
+      // overflow of int here.  However, the number of columns in a
+      // multivector typically fits in an int.
       const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && index.ubound() < numCols;
@@ -230,7 +232,9 @@ namespace Belos {
     CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     {
-      // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
+      // NOTE (mfh 11 Jan 2011) We really should check for possible
+      // overflow of int here.  However, the number of columns in a
+      // multivector typically fits in an int.
       const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && index.ubound() < numCols;

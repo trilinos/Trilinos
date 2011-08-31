@@ -658,10 +658,10 @@ namespace Belos {
       // same communicator (e.g., the same Teuchos::Comm<int>), we
       // don't need to reinitialize the adaptor.
       //
-      // FIXME (mfh 15 Jul 2010) If tsqrAdaptor_ has already been
-      // initialized, check to make sure that X has the same
-      // communicator as that of the the multivector with which
-      // tsqrAdaptor_ was previously initialized.
+      // NOTE (mfh 15 Jul 2010) If tsqrAdaptor_ has already been
+      // initialized, we really should check to make sure that X has
+      // the same communicator as that of the the multivector with
+      // which tsqrAdaptor_ was previously initialized.
       if (tsqrAdaptor_.is_null())
 	tsqrAdaptor_ = rcp (new tsqr_adaptor_type (X, tsqrParams));
 
@@ -971,18 +971,19 @@ namespace Belos {
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
     //
-    // FIXME (mfh 10 Mar 2011) The vector space capability that I
-    // proposed for Belos would have made it possible to ensure safe
-    // recycling of the scratch space.  Its removal means that we can
-    // only check whether X and Q_ have the same number of rows.
-    // Hopefully your linear algebra library implementation will do
-    // more checks than that and throw an exception if X and Q_ are
-    // not compatible.  If you find that recycling the Q_ space causes
-    // troubles, you may consider reallocating Q_ for every X that
-    // comes in, regardless of whether Q_ and X have the same number
-    // of rows.  The code below will be correct for the common case in
-    // Belos that all multivectors with the same number of rows have
-    // the same data distribution.
+    // NOTE (mfh 10 Mar 2011) We should only reuse the scratch space
+    // Q_ if X and Q_ have compatible data distributions.  However,
+    // Belos' current MultiVecTraits interface does not let us check
+    // for this.  Thus, we can only check whether X and Q_ have the
+    // same number of rows.  This will behave correctly for the common
+    // case in Belos that all multivectors with the same number of
+    // rows have the same data distribution.
+    //
+    // The specific MV implementation may do more checks than this on
+    // its own and throw an exception if X and Q_ are not compatible,
+    // but it may not.  If you find that recycling the Q_ space causes
+    // troubles, you may consider modifying the code below to
+    // reallocate Q_ for every X that comes in.  
     if (Q_.is_null() || 
 	MVT::GetVecLength(*Q_) != MVT::GetVecLength(X) ||
 	numCols > MVT::GetNumberVecs (*Q_))
@@ -1245,12 +1246,12 @@ namespace Belos {
 	// unless (using Stewart's term) there is an
 	// "orthogonalization fault" (indicated by reorthogFault).
 	//
-	// FIXME (mfh 07 Nov 2010) For now, we include the entire
-	// block of X, including possible random data (that was
-	// already projected and normalized above).  It might make
-	// more sense just to process the first firstPassRank columns
-	// of X.  However, the resulting reorthogonalization should
-	// still be correct regardless.
+	// NOTE (mfh 07 Nov 2010) For now, we include the entire block
+	// of X, including possible random data (that was already
+	// projected and normalized above).  It might make more sense
+	// just to process the first firstPassRank columns of X.
+	// However, the resulting reorthogonalization should still be
+	// correct regardless.
 	bool reorthogFault = false;
 	// Indices of X at which there was an orthogonalization fault.
 	std::vector<int> faultIndices;
@@ -1341,10 +1342,13 @@ namespace Belos {
 	      raiseReorthogFault (normsAfterFirstPass, normsAfterSecondPass, faultIndices);
 	    else 
 	      {
-		// FIXME (mfh 19 Jan 2011)
-		//
-		// We should slowly reorthogonalize, one vector at a
-		// time, the offending vectors of X.
+		// NOTE (mfh 19 Jan 2011) We could handle the
+		// reorthogonalization fault here by slowly
+		// reorthogonalizing, one vector at a time, the
+		// offending vectors of X.  However, we choose not to
+		// implement this for now.  If it becomes a problem,
+		// let us know and we will prioritize implementing
+		// this.
 		TEST_FOR_EXCEPTION(true, std::logic_error, 
 				   "TsqrOrthoManagerImpl has not yet implemented"
 				   " recovery from an orthogonalization fault.");
@@ -1514,9 +1518,9 @@ namespace Belos {
 				   "vector has norm zero!");
 	    else
 	      {
-		// FIXME (mfh 09 Nov 2010) I'm assuming that this
-		// operation that converts from a magnitude_type to
-		// a Scalar makes sense.
+		// NOTE (mfh 09 Nov 2010) I'm assuming that this
+		// operation that implicitly converts from a
+		// magnitude_type to a Scalar makes sense.
 		const Scalar alpha = SCT::one() / theNorm[0];
 		MVT::MvScale (X, alpha);
 	      }
@@ -1525,9 +1529,9 @@ namespace Belos {
       }
     else
       {
-	// FIXME (mfh 09 Nov 2010) I'm assuming that this
-	// operation that converts from a magnitude_type to
-	// a Scalar makes sense.
+	// NOTE (mfh 09 Nov 2010) I'm assuming that this operation
+	// that implicitly converts from a magnitude_type to a Scalar
+	// makes sense.
 	const Scalar alpha = SCT::one() / theNorm[0];
 	MVT::MvScale (X, alpha);
 	return 1;
@@ -1810,13 +1814,13 @@ namespace Belos {
 	// get a full rank matrix, but instead we just throw an
 	// exception.
 	//
-	// FIXME (mfh 08 Nov 2010) Perhaps we should deal with this
+	// NOTE (mfh 08 Nov 2010) Perhaps we should deal with this
 	// case more elegantly.  Recursion might be one way to solve
-	// it, but be sure to check that the recursion will
-	// terminate.  We could do this by supplying an additional
-	// argument to rawNormalize, which is the null space basis
-	// rank from the previous iteration.  The rank has to
-	// decrease each time, or the recursion may go on forever.
+	// it, but be sure to check that the recursion will terminate.
+	// We could do this by supplying an additional argument to
+	// rawNormalize, which is the null space basis rank from the
+	// previous iteration.  The rank has to decrease each time, or
+	// the recursion may go on forever.
 	if (nullSpaceBasisRank < nullSpaceNumCols)
 	  {
 	    std::vector<magnitude_type> norms (MVT::GetNumberVecs(*X_null));

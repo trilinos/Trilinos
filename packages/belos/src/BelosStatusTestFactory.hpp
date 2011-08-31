@@ -422,12 +422,11 @@ namespace Belos {
     RCP<res_norm_base_test> normTest = 
       rcp_dynamic_cast<res_norm_base_test> (test);
     if (nonnull (normTest))
-      { // FIXME (mfh 03 Mar 2011)
-	//
-	// setTolerance() returns an int result.  However, all
-	// subclasses' implementations return 0 here, and all of
-	// them always (re)set the tolerance, so I think it's OK to
-	// ignore the result.
+      { 
+	// NOTE (mfh 03 Mar 2011) setTolerance() returns an int
+	// result.  However, all subclasses' implementations return 0
+	// here, and all of them always (re)set the tolerance, so I
+	// think it's OK to ignore the result.
 	(void) test->setTolerance (convTol);
 	foundResNormTest = true;
       }
@@ -482,12 +481,11 @@ namespace Belos {
     RCP<res_norm_base_test> normTest = 
       rcp_dynamic_cast<res_norm_base_test> (test);
     if (nonnull (normTest))
-      { // FIXME (mfh 03 Mar 2011)
-	//
-	// setTolerance() returns an int result.  However, all
-	// subclasses' implementations return 0 here, and all of
-	// them always (re)set the tolerance, so I think it's OK to
-	// ignore the result.
+      { 
+	// NOTE (mfh 03 Mar 2011) setTolerance() returns an int
+	// result.  However, all subclasses' implementations return 0
+	// here, and all of them always (re)set the tolerance, so I
+	// think it's OK to ignore the result.
 	(void) test->setTolerance (convTol);
 	success = true;
       }

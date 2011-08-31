@@ -390,7 +390,7 @@ namespace Belos {
     typedef MultiVecTraits<Scalar, MV> MVT;
 
   public:
-    /// \brief Get default parameters for TsqrMatOrthoManager
+    /// \brief Get default parameters for TsqrMatOrthoManager.
     ///
     /// Get a (pointer to a) default list of parameters for
     /// configuring a TsqrMatOrthoManager instance.
@@ -407,7 +407,6 @@ namespace Belos {
     ///   called by one thread at a time.
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters() {
-      // FIXME (mfh 11 Jan 2011) What about DGKS parameters?
       return TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters();
     }
 
@@ -707,9 +706,9 @@ namespace Belos {
     void 
     ensureDgksInit () const
     {
-      // FIXME (mfh 11 Jan 2011) 
-      //
-      // DGKS has a parameter that needs to be set.
+      // NOTE (mfh 11 Jan 2011) DGKS has a parameter that needs to be
+      // set.  For now, we just use the default value of the
+      // parameter.
       if (pDgks_.is_null())
 	pDgks_ = Teuchos::rcp (new dgks_type (getLabel(), getOp()));
     }
