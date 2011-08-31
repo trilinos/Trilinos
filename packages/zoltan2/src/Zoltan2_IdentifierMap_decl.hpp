@@ -23,7 +23,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Zoltan2_Environment.hpp>
 
-namespace Z2
+namespace Zoltan2
 {
 
 /*! \brief Identifier translations available from IdentifierMap.
@@ -186,6 +186,6 @@ public:
 
 };
 
-}   // end namespace Z2
+}   // end namespace Zoltan2
 
 #endif /* _ZOLTAN2_IDENTIFIERMAP_DECL_HPP_ */

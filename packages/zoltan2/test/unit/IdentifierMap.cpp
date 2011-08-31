@@ -11,7 +11,7 @@
 // @HEADER
 //
 // TODO: doxygen comments
-// TODO Z2 could should throw errors and we should catch them
+// TODO Zoltan2 could should throw errors and we should catch them
 // TODO rewrite using Teuchos Unittest
 //     make this work if !HAVE_MPI
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     // Template parameters: AppLID, AppGID, LNO, GNO
 
     std::string problem("IdentifierMap<int, long, int, long>");
-    Z2::IdentifierMap<int, long, int, long> idmap;
+    Zoltan2::IdentifierMap<int, long, int, long> idmap;
 
     try {
       idmap.initialize(comm, envPtr, gids, lids);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayView<long> gidArray = gids.view(0, numLocalObjects);
 
     try{
-      idmap.gidTranslate(gidArray, gnoArray1, Z2::TRANSLATE_GID_TO_GNO);
+      idmap.gidTranslate(gidArray, gnoArray1, Zoltan2::TRANSLATE_GID_TO_GNO);
     }
     catch (std::exception &e){
       std::cerr << rank << ") gidTranslate error: " << e.what();
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayView<int> lidArray = lids.view(0, numLocalObjects);
 
     try{
-      idmap.lidTranslate(lidArray, gnoArray2, Z2::TRANSLATE_LID_TO_GNO);
+      idmap.lidTranslate(lidArray, gnoArray2, Zoltan2::TRANSLATE_LID_TO_GNO);
     }
     catch (std::exception &e){
       std::cerr << rank << ") lidTranslate error: " << e.what();

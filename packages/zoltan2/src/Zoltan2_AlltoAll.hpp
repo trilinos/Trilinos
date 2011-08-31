@@ -31,7 +31,7 @@
 // TODO: doxygen comments and error handling and timing
 //
 
-namespace Z2
+namespace Zoltan2
 {
 
 /*! \brief AlltoAll sends/receives a fixed number of objects to/from all processes.

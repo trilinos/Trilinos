@@ -19,7 +19,7 @@
 */
 
 
-namespace Z2{
+namespace Zoltan2{
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
@@ -73,7 +73,7 @@ namespace Z2{
 
 #endif
 
-} //namespace Z2
+} //namespace Zoltan2
 
 #endif
 

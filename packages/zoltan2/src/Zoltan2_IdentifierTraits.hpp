@@ -26,13 +26,13 @@
   supplied identifiers.
 */
 
-/*! \namespace Z2
+/*! \namespace Zoltan2
   \brief Internal Zoltan2 namespace.
 
   This namespace contains the internal symbols that are not
   part of the Zoltan2 user interface.
 */
-namespace Z2
+namespace Zoltan2
 {
 
 /*! 

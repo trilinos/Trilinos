@@ -37,6 +37,7 @@
 #include <iostream>
 #include <string>
 #include <Zoltan2_Environment.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 

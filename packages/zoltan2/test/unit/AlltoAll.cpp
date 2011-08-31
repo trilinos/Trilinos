@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
   if (!errcode){
 
-    // test of Z2::AlltoAll using a Scalar type (ints)
+    // test of Zoltan2::AlltoAll using a Scalar type (ints)
   
     int *sendBuf = new int [2*nprocs];
     
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAll<int, int>(*comm, *envPtr,
+    Zoltan2::AlltoAll<int, int>(*comm, *envPtr,
         sendBufView,    // ints to send from this process to all the others
         2,              // two ints per process
         recvBuf);       // will be allocated and filled in AlltoAll
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
   if (!errcode){
 
-    // test of Z2::AlltoAll using a non-Scalar type for which
+    // test of Zoltan2::AlltoAll using a non-Scalar type for which
     //  SerializationTraits are defined in Teuchos (std::pair).
   
     std::pair<int, int> *outBufPair = new std::pair<int, int> [nprocs];
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP< std::pair<int, int> > recvBufPair;
     
-    Z2::AlltoAll<std::pair<int, int> , int>(*comm, *envPtr,
+    Zoltan2::AlltoAll<std::pair<int, int> , int>(*comm, *envPtr,
         sendBufPair,    // ints to send from this process to all the others
         1,              // one pair per process
         recvBufPair);   // will be allocated and filled in AlltoAll
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 
   if (!errcode){
 
-    // test of Z2::AlltoAllv (different sized messages) using a Scalar type
+    // test of Zoltan2::AlltoAllv (different sized messages) using a Scalar type
 
     int myMsgSizeBase=rank*nprocs + 1;
     int *outMsgSizes = new int [nprocs];
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAllv<int, int>(*comm, *envPtr,
+    Zoltan2::AlltoAllv<int, int>(*comm, *envPtr,
                   sendBuf,    
                   sendCount,   
                   recvBuf,
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 
   if (!errcode){
 
-    // test of Z2::AlltoAllv using vectors - which can not
+    // test of Zoltan2::AlltoAllv using vectors - which can not
     //    be serialized by Teuchos.
 
     int myMsgSizeBase=rank*nprocs + 1;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<std::vector<float> > recvBuf;
     
-    Z2::AlltoAllv<float , int>(*comm, *envPtr,
+    Zoltan2::AlltoAllv<float , int>(*comm, *envPtr,
         sendBuf,    
         sendCount,   
         recvBuf,

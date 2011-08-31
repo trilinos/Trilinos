@@ -23,12 +23,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Kokkos_DefaultNode.hpp>
+#include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
-
-/*! \namespace Zoltan2
-
-  \brief The Zoltan2 namespace contains symbols that are part of the Zoltan2 API.
-*/
 
 namespace Zoltan2 {
 
@@ -122,7 +118,7 @@ public:
   const Teuchos::ParameterList &getLibraryConfiguration() const;
 
   /*! The debug manager, used by debug statements */
-  Z2::DebugManager _dbg;
+  Zoltan2::DebugManager _dbg;
 
   /*! The level of checking to do at runtime.  See Zoltan2_Exceptions.hpp. */
   int _errorCheckLevel;

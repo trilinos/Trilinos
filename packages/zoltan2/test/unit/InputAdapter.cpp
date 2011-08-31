@@ -8,7 +8,9 @@
 // Questions? Contact Lee Ann Riesen (lriesen@sandia.gov)
 //
 // ***********************************************************************
-
+//
+// This test requires MPI.
+//
 // Testing graph input adapters.
 //
 //  Find a few small mtx files for graphs.
@@ -21,9 +23,22 @@
 //     Test reset - assigning a new graph to adapter.
 //     Ditto for Tpetra
 //
+#include <Zoltan2_Config.h>
+
+#ifndef HAVE_MPI
+int main(int argc, char *argv[])
+{
+  std::cerr << "Test " << argv[0] << "requires MPI." << std::endl;
+  std::cout << "PASS" << std::endl;
+}
+#else
+
 #include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraCrsGraph.h>
-#include <TeuchosRCP.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_MpiComm.h>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_OpaqueWrapper.hpp>
+#include <Teuchos_MPIComm.hpp>
 
 static int numGraphs = 7;
 static char **mtxFiles={
@@ -36,29 +51,73 @@ static char **mtxFiles={
 "vwgt.mtx"
 };
 
-// Read an EpetraCrsMatrix from a file.  Diagonal weights are vertex weight.
-//  off diagonal weights are edge weights.
+template <typename Ordinal>
+  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > 
+    &getTeuchosCommunicator(MPI_Comm &comm)
+{
+  Teuchos::Opaque<MPI_Comm> > handle = Teuchos::opaqueWrapper<MPI_Comm>(comm);
+
+  Teuchos::RCP<Teuchos::Opaque<MPI_Comm> > commPtr = Teuchos::rcp(&handle)
+
+  return Teuchos::rcp(&Teuchos::MpiComm(commPtr));
+}
+
+int rank, nprocs;
+
+#if 0
+// Read an EpetraCrsMatrix from a file.  Return an Epetra::CrsGraph
+// and weights.  Diagonal non-zeros are vertex weights and
+// off-diagonal weights are edge weights.
 
 template <typename Scalar>
-Teuchos::RCP<Epetra::CrsMatrix> &getEpetraCrsGraphFromFile(std::string fname)
+Teuchos::RCP<Epetra::CrsMatrix> &getEpetraCrsGraphFromFile(
+     std::string fname,
+     Teuchos::RCP<Epetra::CrsMatrix> &m,
+     Scalar *vwgts,
+     Scalar *ewgts)
 {
   Epetra::CrsMatrix *M;
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  Epetra::MpiComm comm(MPI_COMM_WORLD);
+
   int rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname.c_str(), comm, M);
 
   if (rc < 0){
     std::cerr << "can't read file " << fname.c_str() << std::endl;
+    if 
     exit(1);
   }
 
   Teuchos::RCP<Epetra::CrsMatrix> A = Teuchos::rcp(M, false);
   return A;
 }
+#endif
 
 
 int main(int argc, char *argv[])
 {
+  // Set up MPI
 
+  Teuchos::GlobalMPISession session(&argc, &argv);
+  nprocs = session.getNProc();
+  rank = session.getRank();
+
+  Teuchos::RCP<Teuchos::Comm<int> > tcomm = getTeuchosCommunicator(MPI_COMM_WORLD);
+
+  // Complication due to fact that MPI_Comms are implemented
+  //  differently in different MPI implementations.
+
+  Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> > commDef = 
+    Teuchos::rcp(Teuchos::opaqueWrapper(MPI_COMM_WORLD));
+
+  Teuchos::MPIComm<int> comm(commDef);
+
+Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = comm.getRawMpiComm();
+Epetra::MpiComm equivComm((*rawComm)());
+
+#if 0
+  Epetra::MpiComm comm(MPI_COMM_WORLD);
+  comm->myPID(&rank);
+  comm->NumProc(&nprocs);
   std::string outcome("PASS");
 
   // We're testing the Graph input adapters.  We'll use the graph from a CrsMatrix
@@ -104,7 +163,9 @@ int main(int argc, char *argv[])
     
    
   }
+#endif
 
 }
 
 
+#endif // HAVE_MPI

@@ -13,7 +13,7 @@
 
 #include <Zoltan2_DebugManager.hpp>
 
-namespace Z2
+namespace Zoltan2
 {
 
 DebugManager::DebugManager(Teuchos::RCP<const Teuchos::Comm<int> > comm,
@@ -67,4 +67,4 @@ inline void DebugManager::error(const std::string &output)
     *myOS_ << "PID =" << myPID_ << " " << output;
 }
 
-} //namespace Z2
+} //namespace Zoltan2

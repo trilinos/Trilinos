@@ -25,7 +25,7 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_AlltoAll.hpp>
 
-namespace Z2
+namespace Zoltan2
 {
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
@@ -157,7 +157,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       LNO idx;
       for (teuchos_size_t i=0; i < len; i++){
         try{
-          idx = _gidHash->get(Z2::IdentifierTraits<AppGID>::key(gid[i]));
+          idx = _gidHash->get(Zoltan2::IdentifierTraits<AppGID>::key(gid[i]));
         }
         catch (const std::exception &e) {
           Z2_THROW_OUTSIDE_ERROR(*_env, e);
@@ -810,6 +810,6 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   }
 }
 
-}   // end namespace Z2
+}   // end namespace Zoltan2
 
 #endif /* _ZOLTAN2_IDENTIFIERMAP_DEF_HPP_ */

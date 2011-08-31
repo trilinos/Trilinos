@@ -24,38 +24,6 @@
 #include <Zoltan2_Environment.hpp>
 #include <Teuchos_RCP.hpp>
 
-//    We can't template on the ostream, ofstream or ostringstream because
-//    it requires making a copy in the ParameterList.  Assignment is
-//    private in these objects.  So we use pointers to the output streams.
-//    Copy these three definitions to Teuchos.
-
-#if 0
-
-namespace Teuchos{
-template <>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::ostream*> {
-public:
-  static std::string name() { return ("ostream*"); }
-  static std::string concreteName(const std::ostream *&) { return name(); }
-};
-
-template <>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::ofstream*> {
-public:
-  static std::string name() { return ("ofstream*"); }
-  static std::string concreteName(const std::ofstream *&) { return name(); }
-};
-
-template <>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::ostringstream *> {
-public:
-  static std::string name() { return ("ostringstream*"); }
-  static std::string concreteName(const std::ostringstream *&) { return name(); }
-};
-} // namespace Teuchos
-
-#endif
-
 namespace Zoltan2 {
 
 Environment::Environment(
@@ -118,16 +86,18 @@ void Environment::setLibraryConfiguration(Teuchos::ParameterList &libraryConfig)
 {
   _config = libraryConfig;
 
-  Z2::getOutputStreamFromParameterList(libraryConfig, "ERROR_OSTREAM", _errorOStream, std::cerr);
+#if 0
+  //Zoltan2::getOutputStreamFromParameterList(libraryConfig, "ERROR_OSTREAM", _errorOStream, std::cerr);
 
   std::ostream *os;
-  Z2::getOutputStreamFromParameterList(libraryConfig, "DEBUG_OSTREAM", os, std::cout);
+  Zoltan2::getOutputStreamFromParameterList(libraryConfig, "DEBUG_OSTREAM", os, std::cout);
   _dbg.setOStream(os);
 
   const std::string debug_level("DEBUG_LEVEL");
   int *debugLevel = _config.getPtr<int>(debug_level);
   if (debugLevel)
     _dbg.setDebugLevel(*debugLevel);
+#endif
 
 #if 0
   // Same for timing when we add profiling abilities

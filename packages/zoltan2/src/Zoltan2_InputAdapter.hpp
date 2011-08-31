@@ -38,6 +38,8 @@ private:
   
 protected:
 
+  Teuchos::RCP<Teuchos::MpiComm<int> > _comm;
+
   Teuchos::RCP<Zoltan2::Environment> _env;
 
   /*! True if the application input to the adapter is finished.
@@ -75,7 +77,7 @@ public:
   virtual InputAdapter &operator=(const InputAdapter &env) = 0;
 
   /*! The caller's communicator */
-  const Teuchos::Comm<int> &getComm() const {return comm;}
+  const Teuchos::Comm<int> &getComm() const {return *_comm;}
 
   /*! TODO perhaps we don't need these here.  If the only callers that
    *   use Kokkos are Tpetra users, then these can be pushed down to
@@ -91,6 +93,17 @@ public:
 
   Teuchos::RCP<const Kokkos_CUDANodeMemoryModel> &getGpuNode() const { return gpuNode;}
    */
+
+  void setComm(MPI_Comm comm){
+    MPI_Comm commCopy;
+    MPI_Comm_dup(comm, &commCopy);
+    MPI_Comm_set_errhandler(commCopy, MPI_ERRORS_RETURN);
+    Teuchos::RCP<Teuchos::MPIComm<int> > tcomm = getTeuchosMPIComm(commCopy);
+  }
+
+  void freeComm(){
+    MPI_Comm_free(static_cast<MPI_Comm *>(_comm->getRawMpiComm()->getRawPtr()));
+  }
 
 };
   

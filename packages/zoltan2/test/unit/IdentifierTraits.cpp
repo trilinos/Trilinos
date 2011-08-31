@@ -26,7 +26,7 @@ using namespace std;
 template <typename T> 
 void check_traits(T &val, T &compval)
 {
-  typedef Z2::IdentifierTraits<T> id;
+  typedef Zoltan2::IdentifierTraits<T> id;
 
   double k(id::key(val));
 

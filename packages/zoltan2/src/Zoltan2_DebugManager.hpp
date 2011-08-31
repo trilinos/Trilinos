@@ -18,7 +18,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
-namespace Z2
+namespace Zoltan2
 {
 /*! Zoltan2::DebugManager
     \brief Methods to display debugging statements.
@@ -91,6 +91,6 @@ class DebugManager
     int myPID_;
 };
 
-} //namespace Z2
+} //namespace Zoltan2
 
 #endif // _ZOLTAN2_DEBUG_MANAGER_HPP_

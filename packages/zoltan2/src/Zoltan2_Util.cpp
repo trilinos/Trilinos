@@ -14,7 +14,7 @@
 
 #include <Zoltan2_Util.hpp>
 
-namespace Z2 {
+namespace Zoltan2 {
 
 /*! \brief Search a parameter list for an ostream type of parameter.
 
@@ -57,4 +57,4 @@ void getOutputStreamFromParameterList( Teuchos::ParameterList &pl,
   }
 }
 
-}  //namespace Z2
+}  //namespace Zoltan2
