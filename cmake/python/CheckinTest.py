@@ -926,7 +926,7 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
 
   if inOptions.disablePackages:
     if verbose:
-      print "Removing package enables: [" + ','.join(inOptions.disablePackages) + "]"
+      print "\nRemoving package enables: [" + inOptions.disablePackages + "]"
     for disablePackage in inOptions.disablePackages.split(","):
       packageIdx = findInSequence(enablePackagesList, disablePackage)
       if packageIdx >= 0:
