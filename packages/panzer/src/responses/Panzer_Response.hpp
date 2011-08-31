@@ -36,6 +36,9 @@ ResponseId buildResponse(const std::string & n,
                          const std::string & t)
 { return ResponseId(n,t); }
 
+std::ostream & operator<<(std::ostream & os,const ResponseId & rid)
+{ return os << rid.getString(); }
+
 /** Provide access to responses through a user specified
   */
 template <typename TraitsT>
@@ -61,7 +64,7 @@ public:
  
    //! set value for 
    void setValue(typename TraitsT::RealType v)
-   { value_ = v; hasValue_ = true; }
+   { std::cout << "Setting value = " << v << std::endl; value_ = v; hasValue_ = true; }
 
    /** The derivative is assumed to be stored in the residual vector.
      *

@@ -22,7 +22,10 @@ using Teuchos::rcp;
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Panzer_InitialCondition_Builder.hpp"
+#include "Panzer_ResponseContainer_novel.hpp"
+#include "Panzer_ResponseLibrary_novel.hpp"
+
+#include "TestEvaluators.hpp"
 
 #include <vector>
 #include <map>
@@ -30,12 +33,22 @@ using Teuchos::rcp;
 
 namespace panzer {
 
+  using namespace novel;
+
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  TEUCHOS_UNIT_TEST(initial_condition_builder, exodus_restart)
+  TEUCHOS_UNIT_TEST(response_library_stk, test)
   {
+    typedef Traits::Residual EvalT;
+
     using Teuchos::RCP;
+
+  #ifdef HAVE_MPI
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+  #else
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+  #endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     user_app::MyFactory eqset_factory;
@@ -81,7 +94,7 @@ namespace panzer {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Blocks",2);
        pl->set("Y Blocks",1);
-       pl->set("X Elements",6);
+       pl->set("X Elements",4);
        pl->set("Y Elements",4);
        mesh_factory.setParameterList(pl);
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
@@ -93,9 +106,6 @@ namespace panzer {
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
     
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
-          = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
-
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
@@ -130,38 +140,59 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("Mesh", mesh);
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
+    user_data.set<int>("Workset Size",workset_size);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,*elof,user_data);
-    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,*elof,user_data);
+    Teuchos::ParameterList responseClosureModels("Response Closure");
+    responseClosureModels.sublist("eblock-0_0");
+    responseClosureModels.sublist("eblock-1_0");
 
-    Teuchos::ParameterList ic_closure_models("Initial Conditions");
-    ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-0_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-1_0").sublist("TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
+    // setup and evaluate ResponseLibrary
+    ///////////////////////////////////////////////////
+ 
+    out << "Adding responses" << std::endl;
 
-    std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
-    panzer::setupInitialConditionFieldManagers(volume_worksets,
-					       physics_blocks,
-					       *cm_factory,
-					       ic_closure_models,
-					       *elof,
-					       user_data,
-					       true,
-					       "initial_condition_test",
-					       phx_ic_field_managers);
+    ResponseId dResp  = buildResponse("Dog","Functional");
+    ResponseId hResp  = buildResponse("Horse","Functional");
+    RCP<ResponseLibrary<Traits> > rLibrary 
+          = Teuchos::rcp(new ResponseLibrary<Traits>());
+  
+    out << "reserving responses" << std::endl;
+    rLibrary->reserveVolumeResponse<EvalT>(dResp,"eblock-0_0");
+    rLibrary->reserveVolumeResponse<EvalT>(hResp,"eblock-1_0");
 
-    
+    rLibrary->printVolumeContainers(out);
+  
+    out << "building VFM" << std::endl;
+    rLibrary->buildVolumeFieldManagersFromResponses(volume_worksets,
+  					       physics_blocks,
+  					       *cm_factory,
+  					       responseClosureModels,
+  					       *elof,
+  					       user_data,true);
+
     Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->x->PutScalar(0.0);
-    panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0);
-    
-    Teuchos::RCP<Epetra_Vector> x = eloc->x;
-    for (int i=0; i < x->MyLength(); ++i)
-      TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
 
+    out << "evaluating VFM" << std::endl;
+    rLibrary->evaluateVolumeFieldManagers<EvalT>(volume_worksets,loc,*tcomm);
+
+    double sum_dog = 0.0;
+    double sum_horse = 0.0;
+    for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-0_0").size();i++)
+       sum_dog += double(i)+1.0; 
+    for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-1_0").size();i++)
+       sum_horse += -double(i)-5.5; 
+  
+    {
+       Teuchos::RCP<const panzer::Response<panzer::Traits> > dResp_o 
+             = rLibrary->getVolumeResponse(dResp,"eblock-0_0");
+       Teuchos::RCP<const panzer::Response<panzer::Traits> > hResp_o 
+             = rLibrary->getVolumeResponse(hResp,"eblock-1_0");
+       TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
+       TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
+    }
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

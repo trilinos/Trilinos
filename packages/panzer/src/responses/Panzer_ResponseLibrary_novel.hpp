@@ -14,6 +14,8 @@
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
 
+#include "Panzer_PhysicsBlock.hpp"
+
 namespace panzer {
 namespace novel {
 
@@ -80,16 +82,25 @@ public:
    /** This method builds the volume field managers from the reserved
      * responses. It also registers a number of evaluators, using the closure
      * model and equation set factories. Unlike in the assembly engine only gather
-     * evaluators, DOF, and Gradient evaluators are automaticlly included. This
+     * evaluators, DOF, and Gradient evaluators are automatically included. This
      * method also stores the worksets passed in to be used when the evaluate method
      * is called.
      */
-   void buildVolumeFieldManagersFromResponses(const Teuchos::ParameterList & pl);
+   void buildVolumeFieldManagersFromResponses(
+                        const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
+                        const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                        const Teuchos::ParameterList& ic_block_closure_models,
+                        const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
+                        const Teuchos::ParameterList& user_data,
+                        const bool write_graphviz_file=false,
+                        const std::string& graphviz_file_prefix="");
 
    /** Evaluate all the volume field managers of a particular evaluator type.
      */
    template <typename EvalT>
-   void evaluateVolumeFieldManagers();
+   void evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
+                                    const Teuchos::RCP<panzer::LinearObjContainer> & loc,const Teuchos::Comm<int> & comm);
 
    /** @} */
 
@@ -100,6 +111,9 @@ public:
      * required for the evaluating the responses.
      */
    void getRequiredElementBlocks(std::vector<std::string> & eBlocks) const;
+
+   //! Write out all volume containers to a stream
+   void printVolumeContainers(std::ostream & os) const;
 
 protected:
    //! Access a container field for a specified element block
@@ -113,7 +127,7 @@ private:
    typedef std::vector<Teuchos::RCP<PHX::FieldManager<TraitsT> > > FMVector;
 
    std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
-   std::map<std::string,Teuchos::RCP<FMVector> > volFieldManagers_;
+   std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > > volFieldManagers_;
 };
 
 }

@@ -256,7 +256,6 @@ namespace panzer_stk {
 						 physicsBlocks,
 						 *cm_factory,
 						 p.sublist("Initial Conditions"),
-						 dofManager,
 						 *linObjFactory,
 						 p.sublist("User Data"),
 						 write_dot_files,

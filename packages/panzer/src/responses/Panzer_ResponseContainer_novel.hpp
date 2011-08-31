@@ -78,6 +78,18 @@ public:
       return itr->second;
    }
 
+   void print(std::ostream & os) const 
+   {
+      const std::string & evalType = getResponseEvalType();
+      const std::set<ResponseId> & reserved = getReserved();
+
+      os << "Eval Type = " << evalType << ", Responses = ";
+      for(std::set<ResponseId>::const_iterator itr=reserved.begin();
+          itr!=reserved.end();++itr) {
+         os << *itr << ", ";
+      }
+   }
+
    /** @} */
 
    /** \defgroup Iterator access to the response data.
@@ -141,6 +153,13 @@ private:
    // hide undesirable constructors
    ResponseContainerBase(const ResponseContainerBase<TraitsT> &);
 };
+
+template <typename TraitsT>
+std::ostream & operator<<(std::ostream & os,const ResponseContainerBase<TraitsT> & container)
+{ 
+   container.print(os); 
+   return os; 
+}
 
 // forward declaration
 template <typename EvalT,typename TraitsT> 

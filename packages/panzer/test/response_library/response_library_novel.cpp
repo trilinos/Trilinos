@@ -73,9 +73,6 @@ TEUCHOS_UNIT_TEST(response_library, test)
   TEST_EQUALITY(eBlocks.size(),2);
   TEST_EQUALITY(eBlocks[0],"block_0");
   TEST_EQUALITY(eBlocks[1],"block_1");
-
-  rLibrary->buildVolumeFieldManagersFromResponses(mainParam);
-  rLibrary->evaluateVolumeFieldManagers<EvalT>();
 }
 
 }

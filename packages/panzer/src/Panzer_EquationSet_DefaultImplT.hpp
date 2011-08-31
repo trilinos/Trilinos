@@ -64,6 +64,12 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // this turns off the scatter contribution, and does
+  // only the gather
+  bool ignoreScatter = false;
+  if(user_data.isParameter("Ignore Scatter")) 
+     ignoreScatter = user_data.get<bool>("Ignore Scatter");
+
   // ********************
   // DOFs (unknowns)
   // ********************
@@ -80,33 +86,35 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     fm.template registerEvaluator<EvalT>(op);
   }
 
-  // Scatter
-  RCP<std::map<std::string,std::string> > names_map =
-    rcp(new std::map<std::string,std::string>);
-
-  TEUCHOS_ASSERT(m_dof_names->size() == m_residual_names->size());
-
-  for (std::size_t i = 0; i < m_dof_names->size(); ++i)
-    names_map->insert(std::make_pair((*m_residual_names)[i],(*m_dof_names)[i]));
-
-  {
-    ParameterList p("Scatter");
-    p.set("Scatter Name", this->m_scatter_name);
-    p.set("Basis", this->m_basis);
-    p.set("Dependent Names", this->m_residual_names);
-    p.set("Dependent Map", names_map);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
-      // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
-  
-  // Require variables
-  {
-    PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
-					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
-    fm.template requireField<EvalT>(tag);
+  if(!ignoreScatter) {
+     // Scatter
+     RCP<std::map<std::string,std::string> > names_map =
+       rcp(new std::map<std::string,std::string>);
+   
+     TEUCHOS_ASSERT(m_dof_names->size() == m_residual_names->size());
+   
+     for (std::size_t i = 0; i < m_dof_names->size(); ++i)
+       names_map->insert(std::make_pair((*m_residual_names)[i],(*m_dof_names)[i]));
+   
+     {
+       ParameterList p("Scatter");
+       p.set("Scatter Name", this->m_scatter_name);
+       p.set("Basis", this->m_basis);
+       p.set("Dependent Names", this->m_residual_names);
+       p.set("Dependent Map", names_map);
+   
+       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
+         // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
+       
+       fm.template registerEvaluator<EvalT>(op);
+     }
+     
+     // Require variables
+     {
+       PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
+   					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
+       fm.template requireField<EvalT>(tag);
+     }
   }
 
   // DOFs: Scalar value @ basis --> Scalar value @ IP 

@@ -29,6 +29,7 @@ reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
    if(container==Teuchos::null) {
       container = Teuchos::rcp(new ResponseContainer<EvalT,TraitsT>);
       container->setResponseLibrary(Teuchos::rcpFromRef(*this));
+      (*respContMngr)[idx] = container;
    } 
 
    // reserve this respoinse id
@@ -100,19 +101,48 @@ getRequiredElementBlocks(std::vector<std::string> & eBlocks) const
 
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
-buildVolumeFieldManagersFromResponses(const Teuchos::ParameterList & pl)
+buildVolumeFieldManagersFromResponses(
+                        const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
+                        const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                        const Teuchos::ParameterList& ic_block_closure_models,
+                        const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
+                        const Teuchos::ParameterList& user_data,
+                        const bool write_graphviz_file,
+                        const std::string& graphviz_file_prefix)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
-  
-   // for each element block, build and register evaluators for all required field managers
-   typename std::map<std::string,Teuchos::RCP<RespContVector> >::iterator itr;
-   for(itr=rsvdVolResp_.begin();itr!=rsvdVolResp_.end();++itr) {
-      const std::string & eBlock = itr->first;
-      RespContVector & contVector = *(itr->second);
 
-      // build anew field manager of same size as contVector (number of EvalTypes)
-      RCP<FMVector> fmVector = rcp(new FMVector(contVector.size()));
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
+   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
+      RCP<panzer::PhysicsBlock> pb = *blkItr;
+      std::string blockId = pb->elementBlockID();
+      RespContVector & contVector = *rsvdVolResp_.find(blockId)->second;
+  
+      // build a field manager object
+      Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+            = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
+      
+      // Choose model sublist for this element block
+      std::string closure_model_name = "";
+      if (ic_block_closure_models.isSublist(blockId))
+        closure_model_name = blockId;
+      else if (ic_block_closure_models.isSublist("Default"))
+        closure_model_name = "Default";
+      else 
+        TEST_FOR_EXCEPTION(true, std::logic_error, 
+                           "Failed to find initial condition for element block \"" << blockId << 
+                           "\".  You must provide an initial condition for each element block or set a default!" << ic_block_closure_models);
+     
+      Teuchos::ParameterList tmp_user_data(user_data);
+      tmp_user_data.set<bool>("Ignore Scatter",true);
+  
+      // use the physics block to register evaluators
+      pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
+      pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, tmp_user_data);
+      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, ic_block_closure_models.sublist(closure_model_name), user_data);
+
       for(std::size_t i=0;i<contVector.size();i++) {
 
          // if not container has been constructed, don't build
@@ -121,22 +151,80 @@ buildVolumeFieldManagersFromResponses(const Teuchos::ParameterList & pl)
             continue;
 
          // build and register new field manager
-         (*fmVector)[i] = rcp(new PHX::FieldManager<TraitsT>);
-         contVector[i]->registerResponses(*(*fmVector)[i],pl);
+         contVector[i]->registerResponses(*fm,user_data);
       }
+  
+      // build the setup data using passed in information
+      Traits::SetupData setupData;
+      setupData.worksets_ = volume_worksets.find(blockId)->second;
+  
+      fm->postRegistrationSetup(setupData);
+      
+      if (write_graphviz_file)
+        fm->writeGraphvizFile(graphviz_file_prefix+"Response_"+blockId);
 
-      volFieldManagers_[eBlock] = fmVector;
+      volFieldManagers_[blockId] = fm;
    }
 }
 
 template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
-evaluateVolumeFieldManagers()
+evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
+                            const Teuchos::RCP<panzer::LinearObjContainer> & loc,const Teuchos::Comm<int> & comm)
 {
-   // fm.preEvaluate<EvalT>(0);
-   // fm.evaluateFields<EvalT>(*workset);
-   // fm.postEvaluate<EvalT>(0);
+  int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
+
+  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
+  for(itr=worksets.begin();itr!=worksets.end();++itr) {
+    const std::string & eBlock = itr->first;
+    std::vector<panzer::Workset> & w = *(itr->second);
+
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
+
+    if(fm!=Teuchos::null) {
+       fm->preEvaluate<EvalT>(0);
+   
+       // Loop over worksets in this element block
+       for (std::size_t i = 0; i < w.size(); ++i) {
+         panzer::Workset& workset = w[i];
+   
+         workset.linContainer = loc;
+   
+         fm->evaluateFields<EvalT>(workset);
+       }
+   
+       fm->postEvaluate<EvalT>(0);
+   
+       // perform global communication
+       const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
+   
+       // if not container has been constructed, don't build
+       // a field manager
+       if(contVector[idx]!=Teuchos::null) 
+          contVector[idx]->globalReduction(comm);
+    }
+  }
+
+}
+
+//! Write out all volume containers to a stream
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+printVolumeContainers(std::ostream & os) const
+{
+   // loop over all active containers
+   for(typename std::map<std::string,Teuchos::RCP<RespContVector> >::const_iterator itr=rsvdVolResp_.begin();
+       itr!=rsvdVolResp_.end();++itr) {
+      const std::string & eBlock = itr->first;
+      const RespContVector & respContVec = *itr->second;
+
+      os << "Element Block = \"" << eBlock << "\"" << std::endl;
+      for(std::size_t i=0;i<respContVec.size();i++) {
+         if(respContVec[i]!=Teuchos::null) 
+            os << "   " << *respContVec[i] << std::endl;
+      }
+   }
 }
 
 }

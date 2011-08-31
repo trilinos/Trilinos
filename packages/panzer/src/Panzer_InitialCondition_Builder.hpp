@@ -19,18 +19,15 @@ namespace panzer {
   \param[in] physicsBlock PhysicsBlocks created by FieldManagerBuilder.
   \param[in] cm_factory Factory that provides all closure models required by the initial condition evaluation.
   \param[in] closure_models List of closure models for each element block required for initial conditions.
-  \param[in] dofManager Degree of Freedom manager corresponding to the volume problem.
   \param[in] lo_factory LinearObjFactory corresponding to the problem.
   \param[in] user_data ParameterList with optional user data.
   \param[out] phx_ic_field_managers Allocated PHX::FieldManagers for each element block.
 
   */
-  template <typename LO, typename GO>
   void setupInitialConditionFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
 					  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 					  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					  const Teuchos::ParameterList& ic_block_closure_models,
-					  const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >& dofManager,
 					  const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
 					  const Teuchos::ParameterList& user_data,
 					  const bool write_graphviz_file,

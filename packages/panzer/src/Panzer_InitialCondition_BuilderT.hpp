@@ -3,12 +3,10 @@
 
 #include "Teuchos_TestForException.hpp"
 
-template<typename LO, typename GO>
 void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
 						const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 						const Teuchos::ParameterList& ic_block_closure_models,
-						const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >& dofManager,
 						const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
 						const Teuchos::ParameterList& user_data,
 						const bool write_graphviz_file,
