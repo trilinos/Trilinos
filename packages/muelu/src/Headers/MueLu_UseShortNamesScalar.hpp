@@ -81,3 +81,7 @@ typedef MueLu::CoalesceDropFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,Local
 #ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
 typedef MueLu::DefaultFactoryHandler<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DefaultFactoryHandler;
 #endif
+
+#ifdef MUELU_NULLSPACEFACTORY_SHORT
+typedef MueLu::NullspaceFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> NullspaceFactory;
+#endif
