@@ -42,34 +42,40 @@
 #ifndef BELOS_OPERATOR_HPP
 #define BELOS_OPERATOR_HPP
 
-/*!     \file BelosOperator.hpp
-        \brief Virtual base class which defines the operator interface 
-	required by the iterative linear solver.
-*/
+/// \file BelosOperator.hpp
+///
+/// \brief Alternative run-time polymorphic interface for operators.
 
+#include "BelosConfigDefs.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVec.hpp"
-#include "BelosInnerSolver.hpp"
-#include "BelosConfigDefs.hpp"
+#ifdef BELOS_HAVE_EXPERIMENTAL
+#  include "BelosInnerSolver.hpp"
+#endif // BELOS_HAVE_EXPERIMENTAL
 
-/*!	\class Belos::Operator
-
-	\brief Belos's templated pure virtual class for constructing the operator that is
-	used by the linear solver.  
-
-	This operator is used as the interface to the matrix (<tt>A</tt>), 
-	solution (<tt>X</tt>), and right-hand side (<tt>B</tt>) of the linear system <tt>AX = B</tt>.
-	Furthermore, it is also the interface to left/right preconditioning and left/right scaling of the
-	linear system.
-
-	A concrete implementation of this class is necessary.  The user can create their own implementation
-	if those supplied are not suitable for their needs.
-
-	\author Michael Heroux and Heidi Thornquist
-*/
 
 namespace Belos {
-  
+
+  /// \class Operator
+  /// \brief Alternative run-time polymorphic interface for operators.
+  /// \author Michael Heroux and Heidi Thornquist
+  ///
+  /// Belos' linear solvers are templated on the scalar (Scalar),
+  /// multivector (MV), and operator (OP) types.  The term "operator"
+  /// includes the matrix A in the linear system \f$AX = B\f$, any left
+  /// or right preconditioners, and any left or right scaling operators.
+  /// If you have enabled the right packages, you can use Belos' solvers
+  /// directly with OP = Epetra_Operator, Tpetra::Operator, or
+  /// Thyra::LinearOpBase.  Alternately, you may wish to use some other
+  /// object as an operator.  If so, you can make that object inherit
+  /// from Belos::Operator<Scalar>, and make its corresponding
+  /// multivector objects inherit from Belos::MultiVec<Scalar>.  Belos'
+  /// solvers may also be instantiated with MV = Belos::MultiVec<Scalar>
+  /// and OP = Belos::Operator<Scalar>.
+  ///
+  /// A concrete implementation of this class is necessary.  Users may
+  /// create their own implementation if the supplied implementations
+  /// are not suitable for their needs.
   template <class ScalarType>
   class Operator {
   public:
@@ -77,23 +83,29 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{ 
     
-    //! Default constructor
+    //! Default constructor (does nothing).
     Operator() {};
     
-    //! Destructor.
+    //! Virtual destructor, for memory safety of derived classes.
     virtual ~Operator() {};
     //@}
     
     //! @name Operator application method
     //@{ 
-    
-    /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
-      to it resulting in the Belos::MultiVec \c y, which is returned.
-        \note It is expected that any problem with applying this operator to \c x will be
-	indicated by an std::exception being thrown.
-    */
-    virtual void Apply ( const MultiVec<ScalarType>& x, 
-			 MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const = 0;
+
+    /// \brief Apply the operator to x, putting the result in y.
+    ///
+    /// This routine takes the Belos::MultiVec \c x and applies the
+    /// operator (or its transpose or Hermitian transpose) to it,
+    /// writing the result into the Belos::MultiVec \c y.
+    ///
+    /// \note It is expected that any problem with applying this
+    ///   operator to \c x will be indicated by an std::exception
+    ///   being thrown.
+    virtual void 
+    Apply (const MultiVec<ScalarType>& x, 
+	   MultiVec<ScalarType>& y, 
+	   ETrans trans=NOTRANS) const = 0;
   };
   
   ////////////////////////////////////////////////////////////////////
@@ -125,6 +137,8 @@ namespace Belos {
     }
   };
 
+#ifdef BELOS_HAVE_EXPERIMENTAL
+
   /// \class OperatorInnerSolver
   /// \brief Adaptor between InnerSolver and Belos::Operator.
   /// 
@@ -134,6 +148,10 @@ namespace Belos {
   /// may also treat this wrapper as an "envelope" by extracting the
   /// underlying InnerSolver object (which has a richer interface) and
   /// discarding the Belos::Operator wrapper.
+  ///
+  /// \warning This interface is experimental and therefore subject to
+  ///   change or removal at any time.  Do not rely on the stability
+  ///   of this interface.
   template<class Scalar>
   class OperatorInnerSolver : public Operator<Scalar> {
   public:
@@ -203,12 +221,17 @@ namespace Belos {
     Teuchos::RCP<inner_solver_type> solver_;
   };
 
-  /// \brief Specialization of makeInnerSolverOperator() for Belos::Operator.
+  /// Specialization of makeInnerSolverOperator() for Belos::Operator.
   ///
   /// This class knows how to take an InnerSolver instance and wrap it
   /// in an implementation of the Belos::Operator interface.  That way
   /// you can use it alongside any other implementation of the
   /// Belos::Operator interface in any of the the Belos solvers.
+  ///
+  /// \warning This interface is experimental and therefore subject to
+  ///   change or removal at any time.  Do not rely on the stability
+  ///   of this interface.
+  ///
   template <class Scalar>
   class InnerSolverTraits<Scalar, MultiVec<Scalar>, Operator<Scalar> > {
   public:
@@ -248,6 +271,7 @@ namespace Belos {
       return wrapper->getInnerSolver();
     }
   };
+#endif // BELOS_HAVE_EXPERIMENTAL
   
 } // end Belos namespace
 
