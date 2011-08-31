@@ -86,8 +86,9 @@ namespace MueLu {
     }
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level>& GetLevel(int const levelID) {
-      return Levels_[levelID];
+    RCP<Level>& GetLevel(int const levelID) /* const */ {
+      TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "Hierarchy::GetLevel(): invalid input parameter value");
+      return Levels_[levelID-1];
     }
 
     LO GetNumberOfLevels() {
