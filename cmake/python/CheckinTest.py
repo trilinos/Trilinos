@@ -2,14 +2,6 @@
 #
 # ToDo:
 #
-#  (*) Augment the --extra-pull-from argument to allow specifying extra pulls
-#  for specific repos (i.e. different commands for different repos or on extra
-#  pull for some repos).  The idea would be to use some special character to
-#  specify the exact repo with something like
-#  (preCopyrightTrilinos)ssg:master'.  You would specify the main Trilinos
-#  repo with '()ssg:master'.  Using '(...)' would hopefully avoid any
-#  conflicts with the shell interpreter.
-#
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
@@ -1263,8 +1255,8 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestCaseName, inOptions)
     buildTestCaseOkayToCommit = False
     statusMsg = "The directory "+buildTestCaseName+" does not exist!"
 
-  emailsuccessFileName = buildTestCaseName+"/"+getEmailSuccessFileName()
-  if os.path.exists(emailsuccessFileName):
+  emailSuccessFileName = buildTestCaseName+"/"+getEmailSuccessFileName()
+  if os.path.exists(emailSuccessFileName):
     buildTestCaseActionsPass = True
   else:
     buildTestCaseActionsPass = False
