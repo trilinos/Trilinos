@@ -140,6 +140,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<Level> levelOne = rcp(new Level() );
+  RCP<Level> levelTwo = rcp(new Level() );
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
@@ -147,6 +148,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   Hierarchy H;
   H.SetLevel(levelOne);
+  H.SetLevel(levelTwo);
 
 //   H.SetSmoothers();
 

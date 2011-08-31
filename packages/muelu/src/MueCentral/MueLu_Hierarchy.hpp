@@ -294,15 +294,18 @@ namespace MueLu {
     void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
     {
       if (numDesiredLevels == -1)
-        numDesiredLevels = GetNumberOfLevels()-startLevel;
+        numDesiredLevels = GetNumberOfLevels()-startLevel-1;
       LO lastLevel = startLevel + numDesiredLevels - 1;
 
       //checks
       if (startLevel >= GetNumberOfLevels())
         throw(Exceptions::RuntimeError("startLevel >= actual number of levels"));
 
-      if (lastLevel >= GetNumberOfLevels()) {
-        lastLevel = GetNumberOfLevels() - 1;
+      if (startLevel == GetNumberOfLevels() - 1)
+        throw(Exceptions::RuntimeError("startLevel == coarse level. Use SetCoarseSolver()"));
+
+      if (lastLevel >= GetNumberOfLevels() - 1) {
+        lastLevel = GetNumberOfLevels() - 2;
         MueLu_cout(Teuchos::VERB_HIGH)
           << "Warning: Coarsest Level will have a direct solve!" << std::endl;
       }
