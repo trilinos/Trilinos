@@ -821,7 +821,7 @@ namespace Belos {
     label_ (label),
     tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
     Q_ (Teuchos::null),             // Scratch space for normalize()
-    eps_ (SCT::eps()),              // Machine precision
+    eps_ (SCTM::eps()),             // Machine precision
     randomizeNullSpace_ (true),     // Set later by readParams()
     reorthogonalizeBlocks_ (true),  // Set later by readParams()
     throwOnReorthogFault_ (false),  // Set later by readParams()
