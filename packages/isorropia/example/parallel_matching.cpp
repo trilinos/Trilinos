@@ -2,8 +2,11 @@
 #include"Isorropia_EpetraRedistributor.hpp"
 #include "EpetraExt_Reindex_CrsMatrix.h" 
 
+using namespace std;
+
 int main(int argc, char** argv) {
 
+#ifdef ISORROPIA_HAVE_OMP
 	if(argc>2)
 	{	
 		int rc=0;
@@ -63,9 +66,15 @@ int main(int argc, char** argv) {
         //std::cout<<t2S<<std::endl;
 	}
 	else
-		std::cout<<std::endl<<"./Isorropia_parallel_matching.exe \"mtx file\" \"Algorithm \
-        choice\""<<std::endl<<"Algorithm Choice: PHK, PHKDW, PDFS,PPF"\
-        <<std::endl<<std::endl;
+    {
+		cout<<endl<<" Usage: ./Isorropia_parallel_matching.exe <mtx file>" <<
+             " <Algorithm>" << endl;
+        cout << "\t Algorithm: PHK, PHKDW, PDFS,PPF" << endl << endl;
+    }
+#else
+    cout << "Matching in Isorropia requires OpenMP." << endl;
+    cout << "Please recompile with OpenMP enabled and try again" << endl;
+#endif
 	
 	return 0;
 }
