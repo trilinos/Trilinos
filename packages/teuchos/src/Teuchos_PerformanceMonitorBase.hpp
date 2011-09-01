@@ -75,7 +75,6 @@ namespace Teuchos
   /// reduce-and-broadcast rather than just a reduction, so that all
   /// participating processes can use the resulting list of global
   /// names as lookup keys for computing global statistics.
-  /// (Otherwise, different processes
   /// 
   /// \param comm [in] Communicator over which to merge.
   ///
@@ -105,14 +104,17 @@ namespace Teuchos
   /// counter type is a counter for the number of calls.  Derived counter
   /// types may supply additional features.
   ///
-  /// A PerformanceMonitorBase will increment its call counter upon every
-  /// constructor call. Derived types might do more upon construction or
-  /// destruction; for example, a timer will start upon construction and
-  /// stop upon destruction.
+  /// PerformanceMonitorBase's constructor increments its counter's
+  /// call count.  Subclasses of PerformanceMonitorBase may do more
+  /// upon construction or destruction; for example, TimeMonitor
+  /// starts its timer on construction and stops it on destruction.
   ///
-  /// The class keeps a static list of all counters created using
-  /// the \c getNewCounter() method during the course of a run. Counts
-  /// from this list can then be printed out at the end of the run. 
+  /// This class keeps a static list of all counters created using the
+  /// \c getNewCounter() method during the course of a run. Counts
+  /// from this list can then be printed out at the end of the run.
+  /// Subclasses of PerformanceMonitorBase, such as TimeMonitor, may
+  /// use this list to do things like compute global timer statistics
+  /// over all the MPI processes.
   ///
   /// PerformanceMonitorBase requires that the counter type T provide at
   /// least the following interface:
@@ -267,18 +269,15 @@ namespace Teuchos
   PerformanceMonitorBase<T>::clearTimer (const std::string& name)
   {
     Array<RCP<T> > newCounters;
-    // Only fill newCounters with counters whose name is not name.
-    //
-    // Alas, standard STL lacks compose1.
-    // std::remove_copy_if (counters().begin(), 
-    // 			 counters().end(), 
-    // 			 std::back_inserter (newCounters),
-    // 			 std::compose1 (std::bind2nd (std::equal_to<std::string>, name),
-    // 					std::mem_fun (&T::name)));
+    // Only fill newCounters with counters whose name is not the given
+    // name to clear.  Then, swap newCounters with the old list of
+    // counters.
     typedef typename Array<RCP<T> >::const_iterator iter_t;
     for (iter_t it = counters().begin(); it != counters().end(); ++it)
       {
-	if (it->name() != name)
+	// The variable 'it' is an Array iterator; '*it' is a 'const
+	// RCP<T>&'.  We want the latter.
+	if ((*it)->name() != name)
 	  newCounters.push_back (*it);
       }
     counters().swap (newCounters);
