@@ -23,6 +23,13 @@ namespace MueLu {
     virtual ~SingleLevelFactoryBase() {}
     //@}
 
+    //! Input
+    //@{
+
+    virtual void DeclareInput(Level &currentLevel) const = 0;
+
+    //@}
+
     //@{
     //! @name Build methods.
 

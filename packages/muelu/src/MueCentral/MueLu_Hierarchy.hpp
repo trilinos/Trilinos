@@ -233,6 +233,7 @@ namespace MueLu {
           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
           *out_ << "starting build of P's and R's"  << std::endl;
+          PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
           goodBuild = PRFact.Build(fineLevel, coarseLevel);
           if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
           if (!goodBuild) {
@@ -240,6 +241,7 @@ namespace MueLu {
             break;
           }
           *out_ << "starting build of RAP"  << std::endl;
+          AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
           if ( !AcFact.Build(fineLevel, coarseLevel) ) {
             Levels_.resize(i+1); //keep only entries 0..i
             break;
@@ -388,12 +390,12 @@ namespace MueLu {
           {
             bool emptySolve = true;
             if (Fine->IsAvailable("PreSmoother")) {
-              RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+              RCP<SmootherPrototype> preSmoo = Fine->NewGet< RCP<SmootherPrototype> >("PreSmoother");
               preSmoo->Apply(X, B, false);
               emptySolve=false;
             }
             if (Fine->IsAvailable("PostSmoother")) {
-              RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+              RCP<SmootherPrototype> postSmoo = Fine->NewGet< RCP<SmootherPrototype> >("PostSmoother");
               postSmoo->Apply(X, B, false); 
               emptySolve=false;
             }
@@ -403,7 +405,7 @@ namespace MueLu {
           //on an intermediate level
           RCP<Level> Coarse = Levels_[startLevel+1];
 
-          RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+          RCP<SmootherPrototype> preSmoo = Fine->NewGet< RCP<SmootherPrototype> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
 
           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
@@ -436,7 +438,7 @@ namespace MueLu {
           X.update(1.0,*correction,1.0);
 
           //X.norm2(norms);
-          RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+          RCP<SmootherPrototype> postSmoo = Fine->NewGet< RCP<SmootherPrototype> >("PostSmoother");
           postSmoo->Apply(X, B, false);
         }
         zeroGuess=false;

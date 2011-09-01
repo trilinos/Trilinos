@@ -67,6 +67,13 @@ class GenericPRFactory : public PRFactory {
     virtual ~GenericPRFactory() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+
+    //@}
+
     //! @name Build methods.
     //@{
 

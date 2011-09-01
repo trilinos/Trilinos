@@ -103,6 +103,13 @@ namespace MueLu {
     virtual ~SmootherFactory() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &currentLevel) const { }
+
+    //@}
+
     //! @name Build methods.
     //@{
 
@@ -138,7 +145,7 @@ namespace MueLu {
         preSmoo->Setup(currentLevel);
         
         // Level Set
-        currentLevel.NewSet("PreSmoother", preSmoo, this);
+        currentLevel.NewSet("PreSmoother", preSmoo/*, this*/); // TAW: todo fix me
       }
       
       if ((pop == BOTH || pop == POST) && (PostSmootherPrototype_ != Teuchos::null))
@@ -182,7 +189,7 @@ namespace MueLu {
             
             // Level Set
             std::cout << "POST" << std::endl;
-            currentLevel.NewSet("PostSmoother", postSmoo, this);
+            currentLevel.NewSet("PostSmoother", postSmoo/*, this*/); // TAW: TODO fix me
           }
         
         return true;//?

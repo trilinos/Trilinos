@@ -20,7 +20,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    NullspaceFactory(RCP<FactoryBase> AFact = Teuchos::null) 
+    NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null)
       : AFact_(AFact)
     { }
 
@@ -32,14 +32,14 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) {
+    void DeclareInput(Level &currentLevel) const {
       currentLevel.Input("A", AFact_());
     }
 
     //@}
 
     bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_());
+      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_);
 
       //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 
@@ -54,7 +54,7 @@ namespace MueLu {
 
   private:
     //! A Factory
-    RCP<FactoryBase> AFact_;
+    RCP<const FactoryBase> AFact_;
 
   }; //class NullspaceFactory
 

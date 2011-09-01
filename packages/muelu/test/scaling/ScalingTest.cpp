@@ -184,12 +184,12 @@ int main(int argc, char *argv[]) {
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+  Finest->Request("A");
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                 //FIXME is implemented
+  Finest->Set("A",Op);
+  Finest->Set("Nullspace",nullSpace);
 
-  Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());

@@ -91,6 +91,16 @@ class SaPFactory : public PFactory {
     virtual ~SaPFactory() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+      coarseLevel.Request("Ptent",initialPFact_);
+      coarseLevel.Request("Nullspace");
+    };
+
+    //@}
+
     //! @name Build methods.
     //@{
 
@@ -125,36 +135,36 @@ class SaPFactory : public PFactory {
       //TODO get or generate fine grid nullspace here
       RCP<MultiVector> fineNullspace;
       if (fineLevel.IsAvailable("Nullspace")) {
-        fineLevel.Get("Nullspace",fineNullspace);
+        fineLevel.NewGet("Nullspace",fineNullspace);
       } else {
         //TODO add this functionality
         //throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
         std::cout << "nullspace generation not implemented yet" << std::endl;
       }
 
-      coarseLevel.Request("Ptent");
-      coarseLevel.Request("Nullspace");
+      //coarseLevel.Request("Ptent");       // TAW: moved to declareInput
+      //coarseLevel.Request("Nullspace");
       initialPFact_->BuildP(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
-      coarseLevel.Get("Ptent",Ptent);
+      coarseLevel.NewGet("Ptent",Ptent,initialPFact_);
 
 
       //TMP, to force desallocation of Ptent
-      coarseLevel.Set("Ptent", Teuchos::null);
+      coarseLevel.Set("Ptent", Teuchos::null); // TAW: ok??
 
       RCP<MultiVector> coarseNullspace;
       if (reUsePtent_) {
         try {
-          coarseLevel.Get("Ptent",Ptent); //FIXME throws an error, replace with recomputation
-          coarseLevel.Get("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
+          coarseLevel.NewGet("Ptent",Ptent); //FIXME throws an error, replace with recomputation
+          coarseLevel.NewGet("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
         }
         catch(...) {
           throw(Exceptions::NotImplemented("SaPFactory.Build(): regeneration of Ptent/nullspace not implemented yet"));
         }
       }
 
-      if (coarseLevel.IsRequested("Ptent"))
-        coarseLevel.Set("Ptent",Ptent);
+      if (coarseLevel.IsRequested("Ptent",initialPFact_)) // TAW: ?? first desallocation then set again??
+        coarseLevel.Set("Ptent",Ptent,initialPFact_);
       
 
       //Build final prolongator

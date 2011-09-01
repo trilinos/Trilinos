@@ -7,6 +7,8 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#include <MueLu_ExtendedHashtable.hpp>
+
 #define MueLu_cout(minimumVerbLevel)                                    \
   if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
 
@@ -32,10 +34,16 @@ namespace MueLu {
     //! Prior output level
     Teuchos::EVerbosityLevel priorOutputLevel_;
     //! Stores number of outstanding requests for a need.
-    Teuchos::ParameterList countTable_;
+    MueLu::UTILS::ExtendedHashtable countTable_;
     //! Stores data associated with a need.
-    Teuchos::ParameterList dataTable_;
+    MueLu::UTILS::ExtendedHashtable dataTable_;
 
+    //! flag: setup phase
+    /*!
+     * if setupPhase=true, store always data, even if not requested
+     * Note: handling slightly different than in MueMat!
+     */
+    bool setupPhase_;
   protected:
     RCP<Teuchos::FancyOStream> out_;
 
@@ -45,8 +53,7 @@ namespace MueLu {
 
     //! Default constructor.
     Needs() : out_(this->getOStream()) {
-      countTable_.setName("countTable");
-      dataTable_.setName("dataTable");
+      setupPhase_ = true; //TODO fix me.
     }
 
     virtual ~Needs() {}
@@ -56,60 +63,116 @@ namespace MueLu {
     //@{
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
-    void Set(const std::string ename, const T &entry) {
-//JG       if ( !countTable_.isParameter(ename) ) {
-//JG         countTable_.set(ename,0);
-//JG       }
-      dataTable_.set(ename,entry);
+    void Set(const std::string& ename, const T &entry, RCP<const FactoryBase> factory = Teuchos::null) {
+
+        // check if in setupPhase (=store all data) or data is requested
+        if(setupPhase_ ||
+            (countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0))
+        {
+          if(!countTable_.isKey(ename, factory))
+            countTable_.Set(ename,0,factory);    // make sure that 'ename' is counted
+          dataTable_.Set(ename,entry,factory);
+        }
     } //Set
 
+
+    template <class T>
+    void Set(const std::string& ename, const T &entry, const FactoryBase* factory) {
+        // check if in setupPhase (=store all data) or data is requested
+        if(setupPhase_ ||
+            (countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0))
+        {
+          if(!countTable_.isKey(ename, factory))
+            countTable_.Set(ename,0,factory);    // make sure that 'ename' is counted
+          dataTable_.Set(ename,entry,factory);
+        }
+    }
+
     //! Indicate that an object is needed. This increments the storage counter.
-    void Request(const std::string ename) {
-      int currentCount = countTable_.get(ename,0);
-      countTable_.set(ename,++currentCount);
+    void Request(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+    	// if it's the first request for 'ename', create a new key in the hashtable
+      if(!countTable_.isKey(ename, factory))
+        countTable_.Set(ename,0,factory);
+
+      // todo handle debug mode
+
+      // increment counter
+      IncrementCounter(ename,factory);
+
     } //Request
 
 
     //! Decrement the storage counter.
-    void Release(const std::string ename) {
-      if (!countTable_.isParameter(ename)) {
-        std::string msg =  "Checkout: " + ename + " not found in countTable_";
+    void Release(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      // test: we can only release data if the key 'ename' exists in countTable (and dataTable)
+      if (!countTable_.isKey(ename,factory) ||
+          !dataTable_.isKey(ename,factory)) // why releasing data that has never been stored?
+      {
+        std::string msg =  "Release: " + ename + " not found. You must first request " + ename;
         throw(Exceptions::RuntimeError(msg));
-      } else if (countTable_.get(ename,0) < 1) {
-        std::string msg =  "Checkout: you must first Request " + ename;
-        throw(Exceptions::RuntimeError(msg));
-      } else {
-        int currentCount = countTable_.get(ename,0);
-        if (currentCount == 1) {
-          //          countTable_.remove(ename);
-          //          dataTable_.remove(ename);
-        } else {
-          countTable_.set(ename,--currentCount);
-        }
+      }
+
+      // decrement reference counter
+      DecrementCounter(ename,factory);
+
+      // desallocation if counter gets zero
+      if (countTable_.Get<int>(ename,factory) == 0) // todo: handle keepAll
+      {
+        countTable_.Remove(ename,factory);
+        dataTable_.Remove(ename,factory);
       }
     } //Release
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     // Usage: Level->Get< RCP<Operator> >("A")
     template <class T>
-    T & Get(const std::string& ename) {
-      if (dataTable_.isParameter(ename)) { //JG: TODO check also countTable_
-        return dataTable_.get<T>(ename);
-      } else {
+    T & Get(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      if (dataTable_.isKey(ename,factory))
+      {
+        return dataTable_.Get<T>(ename,factory);
+      }
+      else
         throw(Exceptions::RuntimeError("Get: " + ename + " not found in dataTable_"));
-      } 
     }
 
     template <class T>
-    //    void Get(const std::string& ename, T &value) { value = Get<T>(ename); }
-    void Get(const std::string& ename, T &value) {
-      if (dataTable_.isParameter(ename)) {
-        value =  dataTable_.get<T>(ename);
-      } else {
-        throw(Exceptions::RuntimeError("Get: " + ename + " not found in dataTable_"));
-      } 
+    void Get(const std::string& ename, T &value, RCP<const FactoryBase> factory = Teuchos::null) {
+        dataTable_.Get<T>(ename,value,factory);
     }
 
+
+    //@}
+
+    //! @name Access methods (without reference counter mechanism)
+    //@{
+
+    ///! keep variable 'ename' generated by 'factory'
+    void Keep(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      countTable_.Set(ename,-1,factory);
+    }
+
+    ///! returns true, if 'ename' generated by 'factory' is marked to be kept
+    bool isKept(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      if (!countTable_.isKey(ename,factory)) return false;
+      return countTable_.Get<int>(ename,factory) == -1;
+    }
+
+    void Delete(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      if (!countTable_.isKey(ename,factory)) return; // data not available?
+      if (countTable_.Get<int>(ename,factory) != -1)
+      {
+        std::cout << "Needs::Delete(): This method is intended to be used when the automatic garbage collector is disabled. Use Release instead to decrement the reference counter!" << std::endl;
+      }
+
+      countTable_.Remove(ename,factory);
+      if (dataTable_.isKey(ename,factory))
+          dataTable_.Remove(ename,factory);
+    }
 
     //@}
 
@@ -118,24 +181,53 @@ namespace MueLu {
     //! NeedsTable raw print
     //FIXME not covered by unit test right now
     void RawPrint(std::ostream &os, Needs const &foo) {
-      std::cout << "name | #requests" << std::endl;
-      std::cout << "=================" << std::endl;
-      std::cout << foo.countTable_ << std::endl << std::endl;
-      std::cout << "name | value" << std::endl;
-      std::cout << "============" << std::endl;
-      std::cout << foo.dataTable_ << std::endl;
+      //std::cout << "name | #requests" << std::endl;
+      //std::cout << "=================" << std::endl;
+      //std::cout << foo.countTable_ << std::endl << std::endl;
+      //std::cout << "name | value" << std::endl;
+      //std::cout << "============" << std::endl;
+      //std::cout << foo.dataTable_ << std::endl;
     } //RawPrint
 
+    void Print(std::ostream &out)
+    {
+      /*std::cout << "name | #requests" << std::endl;
+      std::cout << "=================" << std::endl;
+      countTable_.Print(out);
+      std::cout << std::endl;
+      std::cout << "name | #requests" << std::endl;
+      std::cout << "=================" << std::endl;
+      dataTable_.Print(out);*/
+
+
+      Teuchos::TabularOutputter outputter(out);
+      outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT,Teuchos::TabularOutputter::GENERAL,12);
+      outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+      outputter.pushFieldSpec("req", Teuchos::TabularOutputter::INT,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+      outputter.outputHeader();
+
+      std::vector<std::string> ekeys = countTable_.keys();
+      for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
+      {
+        std::vector<const MueLu::FactoryBase*> ehandles = countTable_.handles(*it);
+        for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+        {
+          outputter.outputField(*it);
+          outputter.outputField(*kt);
+          outputter.outputField(countTable_.Get<int>(*it,Teuchos::rcp(*kt,false)));  // TODO: fix me
+          outputter.nextRow();
+        }
+      }
+    }
+
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string ename) {
-      if (dataTable_.isParameter(ename)) return true;
-      else                               return false;
+    bool IsAvailable(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+      return dataTable_.isKey(ename,factory);
     }
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string ename) {
-      if (countTable_.isParameter(ename)) return true;
-      else                                return false;
+    bool IsRequested(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+      return countTable_.isKey(ename,factory);
     }
 
     /*! @brief Return the number of outstanding requests for a need.
@@ -143,15 +235,72 @@ namespace MueLu {
     Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
     hasn't been saved.
     */
-    int NumRequests(const std::string ename) {
+    int NumRequests(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
       //FIXME should we return 0 instead of throwing an exception?
-      if (!countTable_.isParameter(ename)) {
-        std::string msg =  "NumRequests: " + ename + " not found in countTable_";
-        throw(Exceptions::RuntimeError(msg));
-      } else {
-        return countTable_.get(ename,0);
-      }
+
+    	if (!countTable_.isKey(ename,factory))
+    	{
+            std::string msg =  "NumRequests: " + ename + " not found in countTable_";
+            throw(Exceptions::RuntimeError(msg));
+    	}
+
+    	return countTable_.Get<int>(ename,factory);
     } //NumRequests
+
+    bool SetupPhase(bool bSetup)
+    {
+      setupPhase_ = bSetup;
+
+      if(!setupPhase_)
+      {
+        // desallocation of data, that has not been requested
+        std::vector<string> dataKeys = dataTable_.keys();
+        for(std::vector<string>::iterator it = dataKeys.begin(); it!=dataKeys.end(); ++it)
+        {
+          for(std::vector<const MueLu::FactoryBase*>::iterator ith = dataTable_.handles(*it).begin(); ith!=dataTable_.handles(*it).end(); ++ith)
+          {
+            RCP<const MueLu::FactoryBase> rcpFacBase = Teuchos::rcp(*ith);
+            if(!countTable_.isKey(*it,rcpFacBase) || countTable_.Get<int>(*it,rcpFacBase) == 0)
+            {
+              std::cout << "Warning: SetupPhaseDesalloc: " << *it << " is present at the Level structure but has not been requested (-> removed)" << std::endl;
+              dataTable_.Remove(*it,rcpFacBase);
+              countTable_.Remove(*it,rcpFacBase);
+            }
+          }
+        }
+      }
+
+      return setupPhase_;
+    }
+
+    //@}
+
+  private:
+
+    //! @name Helper functions
+    //@{
+
+    /*! @brief increments counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
+     * */
+    void IncrementCounter(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      if(countTable_.Get<int>(ename,factory) != -1) // counter not disabled (no debug mode)
+      {
+        int currentCount = countTable_.Get<int>(ename,factory);
+        countTable_.Set(ename,++currentCount,factory);
+      }
+    }
+
+    /*! @brief decrements counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
+     * */
+    void DecrementCounter(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      if(countTable_.Get<int>(ename,factory) != -1) // counter not disabled (no debug mode)
+      {
+        int currentCount = countTable_.Get<int>(ename,factory);
+        countTable_.Set(ename,--currentCount,factory);
+      }
+    }
 
     //@}
 

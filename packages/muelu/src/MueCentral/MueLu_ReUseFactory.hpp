@@ -33,9 +33,10 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) {
+    // TAW: no DeclareInput, since it derives from FactoryBase???
+    //void DeclareInput(Level &currentLevel) const {
       // TODO
-    }
+    //}
 
     //@}
 

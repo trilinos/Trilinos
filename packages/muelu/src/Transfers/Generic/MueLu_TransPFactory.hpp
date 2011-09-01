@@ -43,6 +43,13 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     virtual ~TransPFactory() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+
+    //@}
+
     //! @name Build methods.
     //@{
 /*

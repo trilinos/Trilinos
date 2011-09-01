@@ -52,10 +52,15 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level & fineLevel, Level & coarseLevel) {
-      fineLevel.Input("A", AFact_());
+    void DeclareInput(Level & fineLevel, Level & coarseLevel) const {
+      fineLevel.Input("A", AFact_());                   // TAW: what's this??
       fineLevel.Input("Aggregates", aggregatesFact_());
       fineLevel.Input("Nullspace",  nullspaceFact_());
+
+      fineLevel.Request("A", AFact_);
+      fineLevel.Request("Aggregates", aggregatesFact_);
+      fineLevel.Request("Nullspace",  nullspaceFact_);
+
     }
 
     //@}
@@ -78,9 +83,9 @@ namespace MueLu {
 
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
       // Level Get
-      RCP<Operator>    A          = fineLevel.NewGet< RCP<Operator> >("A", AFact_());
-      RCP<Aggregates>  aggregates = fineLevel.NewGet< RCP<Aggregates> >("Aggregates", aggregatesFact_());
-      RCP<MultiVector> nullspace  = fineLevel.NewGet< RCP<MultiVector> >("Nullspace", nullspaceFact_());
+      RCP<Operator>    A          = fineLevel.NewGet< RCP<Operator> >("A", AFact_);
+      RCP<Aggregates>  aggregates = fineLevel.NewGet< RCP<Aggregates> >("Aggregates", aggregatesFact_);
+      RCP<MultiVector> nullspace  = fineLevel.NewGet< RCP<MultiVector> >("Nullspace"); // TAW: remove nullspaceFact_ //TODO fix me
 
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
@@ -106,7 +111,7 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.NewSet("Nullspace", coarseNullspace, this);
+      coarseLevel.NewSet("Nullspace", coarseNullspace);
       coarseLevel.NewSet("Ptent", Ptentative, this); //TODO: should be P when 'extended needs' implemented
 
       return true;

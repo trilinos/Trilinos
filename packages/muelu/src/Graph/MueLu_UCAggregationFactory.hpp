@@ -71,8 +71,9 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) {
-      currentLevel.Input("Graph", graphFact_());
+    void DeclareInput(Level &currentLevel) const {
+      currentLevel.Input("Graph", graphFact_()); // TW: what's this???
+      currentLevel.Request("Graph", graphFact_); // we should request data...
     }
 
     //@}
@@ -91,7 +92,7 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<const Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_());
+      RCP<const Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_);
 
       // Build
       RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 

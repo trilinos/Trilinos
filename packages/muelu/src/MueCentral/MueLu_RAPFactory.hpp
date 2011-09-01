@@ -34,6 +34,13 @@ class RAPFactory : public TwoLevelFactoryBase {
     virtual ~RAPFactory() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+
+    //@}
+
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
 

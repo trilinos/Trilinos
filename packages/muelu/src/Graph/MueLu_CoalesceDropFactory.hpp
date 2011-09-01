@@ -42,14 +42,14 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) {
+    void DeclareInput(Level &currentLevel) const {
       currentLevel.Input("A", AFact_());
     }
 
     //@}
 
     bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_());
+      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_);
 
       RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
 
