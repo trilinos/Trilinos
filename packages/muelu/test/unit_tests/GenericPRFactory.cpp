@@ -57,6 +57,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
+    fineLevel.Request("A");
     fineLevel.Set("A",A);
 
     GenericPRFactory genericPR = GenericPRFactory();
