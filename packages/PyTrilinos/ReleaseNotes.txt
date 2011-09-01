@@ -1,3 +1,29 @@
+Release Notes for PyTrilinos 4.6 (Trilinos 10.8)
+================================================
+
+Improved the MPI initialization logic in Teuchos and Epetra modules.
+Previously, both modules would call MPI_Init() when they were imported
+into the python interpretter and register MPI_Finalize() with the
+atexit module (each module did perform checks before executing the
+calls in case the other module beat it to the punch).  Now, each
+module checks to see if MPI_Init() has already been called, and if so,
+it does not register MPI_Finalize() with atexit.  This way, if the
+user initializes MPI ahead of importing Teuchos or Epetra (such as
+with mpi4py, for example), then the user is responsible for
+finalization, and can assume finer control.
+
+Added the Isorropia package, for partitioning Epetra objects.  This
+includes an IsorropiaVisualizer.py script.
+
+This release contains a large number of internal changes mostly not
+visible to end users, except for increased stability and bug fixes.
+One big change is that C++ referenced counted pointers (via the
+Teuchos::RCP class) are now properly handled.  Fixed a couple of bugs
+in the Amesos, AztecOO and EpetraExt wrappers.  Changed the Amesos
+example scripts to follow PyTrilinos coding standards.  Put all C++
+code within the PyTrilinos namespace.  Changed C++ file names to have
+PyTrilinos_ prefix.
+
 Release Notes for PyTrilinos 4.4 (Trilinos 10.4)
 ================================================
 
