@@ -4,18 +4,19 @@
 #include "EpetraExt_ModelEvaluator.h"
 #include "Piro_Epetra_StokhosSolver.hpp"
 
+#include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Comm.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_CrsGraph.h"
-#include "Epetra_LocalMap.h"
+#include "Epetra_CrsMatrix.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
-#include "EpetraExt_MultiComm.h"
 
 namespace Piro {
   namespace Epetra {
@@ -25,11 +26,11 @@ namespace Piro {
 
       /** \brief . */
       NECoupledModelEvaluator(
-	const Teuchos::RCP<Teuchos::ParameterList>& piroParams,
 	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelA, 
 	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelB,
 	const Teuchos::RCP<Teuchos::ParameterList>& piroParamsA,
 	const Teuchos::RCP<Teuchos::ParameterList>& piroParamsB,
+	const Teuchos::RCP<Teuchos::ParameterList>& params,
 	const Teuchos::RCP<const Epetra_Comm>& comm);
 
       /** \name Overridden from EpetraExt::ModelEvaluator . */
@@ -60,6 +61,28 @@ namespace Piro {
 
       //@}
 
+    protected:
+
+      void do_dimension_reduction(
+	const InArgs& inArgs,
+	const InArgs& solver_inargs, 
+	const OutArgs& solver_outargs,
+	const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
+	const Teuchos::RCP<EpetraExt::ModelEvaluator>& solver,
+	const Teuchos::RCP<Teuchos::ParameterList>& solver_params,
+	InArgs& reduced_inargs, 
+	OutArgs& reduced_outargs,
+	Teuchos::RCP<EpetraExt::ModelEvaluator>& reduced_solver,
+	Teuchos::RCP<Teuchos::ParameterList>& reduced_params,
+	Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > >& red_basis_vals) const;
+
+      void do_dimension_projection(
+	const InArgs& inArgs, 
+	const InArgs& reduced_inargs, 
+	const OutArgs& reduced_outargs,
+	const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > >& red_basis_vals,
+	OutArgs& solver_outargs) const;
+
     private:
 
       // /////////////////////////////////////
@@ -71,62 +94,72 @@ namespace Piro {
       Teuchos::RCP<EpetraExt::ModelEvaluator> modelB;
       Teuchos::RCP<Teuchos::ParameterList> piroParamsA;
       Teuchos::RCP<Teuchos::ParameterList> piroParamsB;
-      Teuchos::RCP<Teuchos::ParameterList> piroParams;
+      Teuchos::RCP<Teuchos::ParameterList> params;
       Teuchos::RCP<const Epetra_Comm> comm;
-
       Teuchos::RCP<EpetraExt::ModelEvaluator> solverA;
       Teuchos::RCP<EpetraExt::ModelEvaluator> solverB;
       Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverA;
       Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverB;
-
-      Teuchos::RCP<const Epetra_LocalMap> map_p;
-      Teuchos::RCP<const Epetra_LocalMap> map_rvar;
-      Teuchos::RCP<const Epetra_LocalMap> map_g;
-      Teuchos::RCP<const Epetra_LocalMap> map_x;
-      Teuchos::RCP<const Epetra_Map> x_OverlapMap;
-      Teuchos::RCP<const Epetra_Map> g_OverlapMap;
-      Teuchos::RCP<Epetra_Vector> x0;
-      Teuchos::RCP<Epetra_Vector> p1;
-      Teuchos::RCP<Epetra_Vector> p2;
-      Teuchos::RCP<Epetra_Vector> rVars;
-      Teuchos::RCP<Epetra_Import> OtoLx;
-      Teuchos::RCP<Epetra_Import> LtoOx;
-      Teuchos::RCP<Epetra_Import> OtoLg;
-      Teuchos::RCP<Epetra_Import> LtoOg;
-      Teuchos::RCP<Epetra_MultiVector> dirvec1;
-      Teuchos::RCP<Epetra_MultiVector> dirvec2;
-      Teuchos::RCP<Epetra_Vector> g1;
-      Teuchos::RCP<Epetra_Vector> g2;
-      
-      Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> dgdp1;
-      Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> dgdp2;
-      Teuchos::RCP<Teuchos::Array<std::string> > pnames;
-      mutable Teuchos::RCP<Epetra_CrsMatrix> A;
-      
-      mutable Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
-      mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
-      mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
-      mutable Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,StorageType> > expansion;
+      int pIndexA;
+      int pIndexB;
+      int gIndexA;
+      int gIndexB;
+      int n_p_A;
+      int n_p_B;
+      int n_g_A;
+      int n_g_B;
+      int num_params_A;
+      int num_params_B;
+      int num_params_total;
+      int num_responses_A;
+      int num_responses_B;
+      int num_responses_total;
+      bool supports_W;
+      Teuchos::Array<int> param_map;
+      Teuchos::Array<int> response_map;
+      Teuchos::RCP<const Epetra_Map> p_map_A;
+      Teuchos::RCP<const Epetra_Map> p_map_B;
+      Teuchos::RCP<const Epetra_Map> g_map_A;
+      Teuchos::RCP<const Epetra_Map> g_map_B;
+      Teuchos::RCP<Epetra_Map> x_map;
+      Teuchos::RCP<Epetra_Map> f_map;
+      Teuchos::RCP<Epetra_Map> x_overlap_map;
+      Teuchos::RCP<Epetra_Map> f_overlap_map;
+      Teuchos::RCP<Epetra_Import> x_importer;
+      Teuchos::RCP<Epetra_Export> f_exporter;
+      Teuchos::RCP<Epetra_Vector> x_overlap;
+      Teuchos::RCP<Epetra_Vector> f_overlap;
+      Teuchos::RCP<Epetra_CrsGraph> W_graph;
+      Teuchos::RCP<Epetra_CrsGraph> W_overlap_graph;
+      Teuchos::RCP<Epetra_CrsMatrix> W_overlap;
+      Teuchos::RCP<Epetra_Vector> x_init;
+      Teuchos::RCP<Epetra_Vector> p_A;
+      Teuchos::RCP<Epetra_Vector> p_B;
+      Teuchos::RCP<Epetra_Vector> g_A;
+      Teuchos::RCP<Epetra_Vector> g_B;
+      EDerivativeMultiVectorOrientation dgdp_A_layout;
+      EDerivativeMultiVectorOrientation dgdp_B_layout;
+      Teuchos::RCP<Epetra_MultiVector> dgdp_A;
+      Teuchos::RCP<Epetra_MultiVector> dgdp_B;
+     
+      // Stochastic Galerkin data
+      bool supports_x_sg;
+      bool supports_f_sg;
+      bool supports_W_sg;
       mutable Teuchos::RCP<const Epetra_BlockMap> sg_overlap_map;
-      mutable OutArgs::sg_vector_t p1_sg;
-      mutable OutArgs::sg_vector_t p2_sg;
-      mutable OutArgs::sg_vector_t rVars_sg;
-      mutable OutArgs::sg_vector_t g1_sg;
-      mutable OutArgs::sg_vector_t g2_sg;
-      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp1_sg;
-      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp2_sg;
-      
-      mutable Teuchos::RCP<EpetraExt::ModelEvaluator> DiffProbLocal;
-      mutable Teuchos::RCP<EpetraExt::ModelEvaluator> HeatProbLocal;
+      mutable OutArgs::sg_vector_t p_A_sg;
+      mutable OutArgs::sg_vector_t p_B_sg;
+      mutable OutArgs::sg_vector_t g_A_sg;
+      mutable OutArgs::sg_vector_t g_B_sg;
+      mutable EDerivativeMultiVectorOrientation dgdp_A_sg_layout;
+      mutable EDerivativeMultiVectorOrientation dgdp_B_sg_layout;
+      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_A_sg;
+      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_B_sg;
 
-      int MyPID;
-      int NumProc;
-      int DnumRandVar;
-      int HnumRandVar;
-      int totNumRandVar;
       bool reduce_dimension;
-      bool orthogonalize_bases;
-      bool eval_W_with_f;
+      mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
+      mutable Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > red_basis_vals_A;
+      mutable Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > red_basis_vals_B;
     };
 
   }

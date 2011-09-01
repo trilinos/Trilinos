@@ -100,6 +100,32 @@ IF (Piro_ENABLE_NOX)
       SOURCE_PREFIX "_"
       EXEDEPS SGAnalysisDriver
     )
+
+    PACKAGE_ADD_EXECUTABLE(
+      CoupledDriver
+      SOURCES 
+      Main_CoupledDriver.cpp
+      MockModelEval_D.cpp
+      MockModelEval_D.hpp
+    )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      SGCoupledDriver
+      SOURCES 
+      Main_SGCoupledDriver.cpp
+      MockModelEval_D.cpp
+      MockModelEval_D.hpp
+      NUM_MPI_PROCS 1
+      ARGS -v
+      PASS_REGULAR_EXPRESSION "TEST PASSED"
+    )
+
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(copySGCoupledTestInputFiles
+      DEST_FILES input_problem1.xml input_problem2.xml input_coupled.xml
+      SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
+      SOURCE_PREFIX "_"
+      EXEDEPS SGAnalysisDriver
+    )
   ENDIF()
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles

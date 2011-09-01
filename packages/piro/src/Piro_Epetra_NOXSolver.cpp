@@ -316,7 +316,8 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   }
 
   // Print stats
-  {
+  bool print_stats = piroParams->get("Print Convergence Stats", true);
+  if (print_stats) {
     static int totalNewtonIters=0;
     static int totalKrylovIters=0;
     static int stepNum=0;

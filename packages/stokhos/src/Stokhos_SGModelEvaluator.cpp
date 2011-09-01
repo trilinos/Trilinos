@@ -226,7 +226,7 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   dgdx_sg_blocks.resize(num_g_sg);
 
   // Create response maps
-  for (int i=0; i<num_g; i++) {
+  for (int i=0; i<num_g_sg; i++) {
     Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index_map[i]);
     sg_g_map[i] = 
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
