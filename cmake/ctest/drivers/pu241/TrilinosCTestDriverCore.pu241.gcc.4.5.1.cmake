@@ -27,6 +27,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
+    -DTrilinos_ENABLE_Stokhos:BOOL=OFF
     # Allow user to override these by putting theirs at the bottom
     ${EXTRA_CONFIGURE_OPTIONS}
     )
@@ -50,6 +51,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ${EXTRA_CONFIGURE_OPTIONS}
       "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-serial-ss-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+      "-DTPL_ENABLE_MPI:BOOL=OFF"
     )
 
   ENDIF()

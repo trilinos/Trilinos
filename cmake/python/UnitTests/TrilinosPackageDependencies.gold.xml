@@ -1,5 +1,5 @@
 <PackageDependencies>
-  <Package name="TrilinosFramework" dir="../cmake">
+  <Package name="TrilinosFramework" dir="../cmake" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -14,7 +14,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Teuchos" dir="teuchos">
+  <Package name="Teuchos" dir="teuchos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -29,7 +29,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="RTOp" dir="rtop">
+  <Package name="RTOp" dir="rtop" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -44,7 +44,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Epetra" dir="epetra">
+  <Package name="Epetra" dir="epetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -59,7 +59,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Zoltan" dir="zoltan">
+  <Package name="Zoltan" dir="zoltan" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -74,7 +74,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Shards" dir="shards">
+  <Package name="Shards" dir="shards" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -89,7 +89,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Triutils" dir="triutils">
+  <Package name="Triutils" dir="triutils" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -104,7 +104,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Tpetra" dir="tpetra">
+  <Package name="Tpetra" dir="tpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -119,7 +119,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="EpetraExt" dir="epetraext">
+  <Package name="EpetraExt" dir="epetraext" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Triutils,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -134,7 +134,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Stokhos" dir="stokhos">
+  <Package name="Stokhos" dir="stokhos" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -149,7 +149,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Sacado" dir="sacado">
+  <Package name="Sacado" dir="sacado" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Stokhos,Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -164,7 +164,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="ThyraCoreLibs" dir="thyra/src">
+  <Package name="ThyraCoreLibs" dir="thyra/src" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,RTOp"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -179,7 +179,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="ThyraGoodStuff" dir="thyra/src/good_stuff">
+  <Package name="ThyraGoodStuff" dir="thyra/src/good_stuff" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -194,7 +194,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="ThyraCrazyStuff" dir="thyra/src/crazy_stuff">
+  <Package name="ThyraCrazyStuff" dir="thyra/src/crazy_stuff" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraGoodStuff"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -209,7 +209,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="ThyraEpetra" dir="thyra/adapters/epetra">
+  <Package name="ThyraEpetra" dir="thyra/adapters/epetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -224,7 +224,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="ThyraEpetraExt" dir="thyra/adapters/epetraext">
+  <Package name="ThyraEpetraExt" dir="thyra/adapters/epetraext" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraEpetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -239,7 +239,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="ThyraTpetra" dir="thyra/adapters/tpetra">
+  <Package name="ThyraTpetra" dir="thyra/adapters/tpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -254,7 +254,7 @@
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
   </Package>
-  <Package name="Thyra" dir="thyra">
+  <Package name="Thyra" dir="thyra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="ThyraGoodStuff,ThyraCrazyStuff,ThyraEpetra,ThyraEpetraExt,ThyraTpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -269,7 +269,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Isorropia" dir="isorropia">
+  <Package name="Isorropia" dir="isorropia" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -284,7 +284,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="AztecOO" dir="aztecoo">
+  <Package name="AztecOO" dir="aztecoo" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Triutils"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -299,7 +299,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Galeri" dir="galeri">
+  <Package name="Galeri" dir="galeri" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -314,7 +314,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Amesos" dir="amesos">
+  <Package name="Amesos" dir="amesos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -329,7 +329,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Intrepid" dir="intrepid">
+  <Package name="Intrepid" dir="intrepid" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Sacado"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -344,7 +344,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Ifpack" dir="ifpack">
+  <Package name="Ifpack" dir="ifpack" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -359,7 +359,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="ML" dir="ml">
+  <Package name="ML" dir="ml" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Zoltan,Galeri,Amesos,Ifpack,AztecOO,EpetraExt,Isorropia"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -374,7 +374,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Belos" dir="belos">
+  <Package name="Belos" dir="belos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -389,7 +389,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Stratimikos" dir="stratimikos">
+  <Package name="Stratimikos" dir="stratimikos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="ThyraEpetraExt,ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Belos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -404,7 +404,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="RBGen" dir="rbgen">
+  <Package name="RBGen" dir="rbgen" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -419,7 +419,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Phalanx" dir="phalanx">
+  <Package name="Phalanx" dir="phalanx" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>

@@ -1,0 +1,86 @@
+<ParameterList name="test_params">
+  <ParameterList name="arc130.mtx">
+    <ParameterList name="LAPACK">
+      
+      <!-- Test Epetra objects first -->
+      <ParameterList name="epetra">
+	<ParameterList name="equilibrate">
+	  <!-- For epetra, we cannot specify types, so solver_run_params are the most meaningful -->
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="transpose solve">
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	  <ParameterList name="amesos2_params">
+	    <Parameter name="Transpose" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run2">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run3 - transpose, equilibrate">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	  <ParameterList name="amesos2_params">
+	    <Parameter name="Transpose" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList> <!-- end tpetra tests -->
+    </ParameterList> <!-- end SuperLU -->
+    <ParameterList name="all_solver_params">
+      <Parameter name="Transpose" type="bool" value="false"/>
+    </ParameterList>
+  </ParameterList> <!-- end arc130.mtx -->
+
+  <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+  <ParameterList name="young1c.mtx">
+    <!-- <Parameter name="complex" type="bool" value="true"/> -->
+    <ParameterList name="LAPACK">
+      <ParameterList name="tpetra">
+	<ParameterList name="run0">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
+	  <Parameter name="Magnitude" type="string" value="float"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="run1">
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
+	  <Parameter name="Magnitude" type="string" value="double"/>
+	  <ParameterList name="solver_run_params">
+	    <Parameter name="Equilibrate" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- end young1c.mtx -->
+</ParameterList>

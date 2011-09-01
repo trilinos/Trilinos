@@ -191,9 +191,9 @@ main (int argc, char *argv[])
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
   //
-  // FIXME In Anasazi, this class is called BasicOutputManager.  In
-  // Belos, this class is called OutputManager.  The difference is
-  // annoying and should be factored out.
+  // NOTE In Anasazi, this class is called BasicOutputManager.  In
+  // Belos, this class is called OutputManager.  We should eventually
+  // resolve the difference.
   RCP<OutputManager<scalar_type> > outMan = 
     Belos::Test::makeOutputManager<scalar_type> (verbose, debug);
 

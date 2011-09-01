@@ -69,7 +69,7 @@ namespace Belos {
     int
     selectVerbosity (const bool verbose, const bool debug)
     {
-      // FIXME Calling this a "MsgType" (its correct type) or even an
+      // NOTE Calling this a "MsgType" (its correct type) or even an
       // "enum MsgType" confuses the compiler.
       int theType = Belos::Errors; // default (always print errors)
       if (verbose) 

@@ -1,4 +1,4 @@
-#######################################
+########################################
 # Unit testing code for CheckinTest.py #
 ########################################
 
@@ -551,6 +551,8 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     writeStrToFile(fullCmndInterceptsFileName, fullCmndInterceptsStr)
 
     os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE'] = fullCmndInterceptsFileName
+
+    os.environ['CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE'] = trilinosDepsXmlFileDefaultOverride
     
     # D) Run the checkin-test.py script with mock commands
 
@@ -805,6 +807,7 @@ class test_checkin_test(unittest.TestCase):
        "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
        +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       +"\-DTPL_ENABLE_MPI:BOOL=OFF\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=OFF\n" \
        +"\-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF\n" \
@@ -1021,13 +1024,14 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Skipping configure because no packages are enabled and --abort-gracefully-if-no-enables!\n" \
+      "Skipping configure because no packages are enabled!\n" \
       +"subjectLine = .passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages.\n" \
       +"subjectLine = .passed: Trilinos/SERIAL_RELEASE: skipped configure, build, test due to no enabled packages.\n" \
-      +"0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages => Not ready to push!\n" \
-      +"1) SERIAL_RELEASE => passed: skipped configure, build, test due to no enabled packages => Not ready to push!\n" \
+      +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"1) SERIAL_RELEASE => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
       +"MPI_DEBUG: Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!\n"
       +"SERIAL_RELEASE: Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!\n"
+      +"There were no successfuly attempts to configure/build/test!\n" \
       +"Skipping sending final email because there were no enables and --abort-gracefully-if-no-enables was set!\n" \
       +"ABORTED DUE TO NO ENABLES: Trilinos:\n" \
       +"REQUESTED ACTIONS: PASSED\n" \
@@ -1108,14 +1112,26 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_explicit_enable_configure_pass(self):
+
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+
+    testName = "extra_repo_1_explicit_enable_configure_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
     checkin_test_run_case(
       \
       self,
       \
-      "extra_repo_1_configure_pass",
+      testName,
       \
-      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --enable-packages=Stalix --configure", \
+      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
+      " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
       \
       "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -1132,7 +1148,6 @@ class test_checkin_test(unittest.TestCase):
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
       +"Enabling only the explicitly specified packages .Stalix. ...\n" \
-      +"Trilinos_ENABLE_Stalix:BOOL=ON\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Stalix\n" \
       ,
@@ -1147,7 +1162,7 @@ class test_checkin_test(unittest.TestCase):
       \
       self,
       \
-      "extra_repo_1_configure_pass",
+      "extra_repo_1_implicit_enable_configure_pass",
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --configure", \
       \
@@ -1167,7 +1182,7 @@ class test_checkin_test(unittest.TestCase):
       +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
       +"Modified file: .packages/../preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
       +"  => Enabling .Teko.!\n" \
-      +"Trilinos_ENABLE_Teko:BOOL=ON\n" \
+      +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Teuchos, Teko\n" \
       ,
@@ -1199,7 +1214,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
-      +"Trilinos_ENABLE_Teko:BOOL=ON\n" \
+      +"Enabling .Teko..\n" \
+      +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
       +"pullInitial.preCopyrightTrilinos.out\n" \
       +"Update passed!\n"\
       +"All of the tests ran passed!\n" \
@@ -1615,11 +1631,11 @@ class test_checkin_test(unittest.TestCase):
       \
       "disable_packages",
       \
-      "--disable-packages=Tpetra,Sundance",
+      "--disable-packages=Tpetra,Thyra",
       \
       "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
       +"\-DTrilinos_ENABLE_Tpetra:BOOL=OFF\n" \
-      +"\-DTrilinos_ENABLE_Sundance:BOOL=OFF\n" \
+      +"\-DTrilinos_ENABLE_Thyra:BOOL=OFF\n" \
       )
     # Above: --disable-packages does not turn off auto-enable and therefore
     # Teuchos is picked up.
@@ -1633,13 +1649,13 @@ class test_checkin_test(unittest.TestCase):
       "enable_disable_packages",
       \
       "--enable-packages=TrilinosFramework,RTOp,Thyra,Tpetra" \
-      +" --disable-packages=Tpetra,Sundance",
+      +" --disable-packages=Tpetra,Stratimikos",
       \
       "\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n" \
       +"\-DTrilinos_ENABLE_RTOp:BOOL=ON\n" \
       +"\-DTrilinos_ENABLE_Thyra:BOOL=ON\n" \
       +"\-DTrilinos_ENABLE_Tpetra:BOOL=OFF\n" \
-      +"\-DTrilinos_ENABLE_Sundance:BOOL=OFF\n" \
+      +"\-DTrilinos_ENABLE_Stratimikos:BOOL=OFF\n" \
       ,
       \
       "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
@@ -1854,7 +1870,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # D) Test --extra-builds
+  # D) Test --extra-builds and --ss-extra-builds
 
 
   def test_extra_builds_read_config_file(self):
@@ -1911,6 +1927,272 @@ class test_checkin_test(unittest.TestCase):
       \
       "Error, the extra build configuration file SERIAL_DEBUG_BOOST_TRACING.config" \
       +" does not exit!\n" \
+      )
+
+
+  def test_ss_extra_builds_ps_only_pass(self):
+    
+    testName = "ss_extra_builds_ps_only_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --without-serial-release --do-all --push " \
+      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"Enable packages list is unchanged from default build, disabling all packages for this build/test case!\n"  \
+      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_SS => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"^DID PUSH\n" \
+      )
+
+
+  def test_ss_extra_builds_ss_only_pass(self):
+    
+    testName = "ss_extra_builds_ss_only_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = ""
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --without-serial-release --do-all --push " \
+      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"^DID PUSH\n" \
+      )
+
+
+  def test_ss_extra_builds_ps_ss_pass(self):
+    
+    testName = "ss_extra_builds_ps_ss_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = ""
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --without-serial-release --do-all --push " \
+      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Teuchos,Phalanx" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"^DID PUSH\n" \
+      )
+
+
+  def test_ss_extra_builds_ex_only_fail(self):
+    
+    testName = "ss_extra_builds_ex_only_fail"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = ""
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --without-serial-release --send-email-to=" \
+      +" --make-options=-j3 --ctest-options=-j5" \
+      +" --do-all --push" \
+      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=ThyraCrazyStuff" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      ,
+      \
+      False,
+      \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS,SS.\n" \
+      +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"There were no successfuly attempts to configure/build/test!\n" \
+      +"  => A PUSH IS .NOT. READY TO BE PERFORMED!\n" \
+      +"^PUSH FAILED\n" \
+      +"^REQUESTED ACTIONS: FAILED\n" \
+      )
+
+
+  def test_ss_extra_builds_extra_builds_ex_only_pass(self):
+    
+    testName = "ss_extra_builds_extra_builds_ex_only_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/SERIAL_RELEASE_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=OFF\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = ""
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --without-serial-release" \
+      +" --make-options=-j3 --ctest-options=-j5" \
+      +" --do-all --push" \
+      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      +" --extra-builds=SERIAL_RELEASE_SS" \
+      +" --enable-packages=ThyraCrazyStuff" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS,SS.\n" \
+      +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/SERIAL_RELEASE_SS: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"2) MPI_DEBUG_SS => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"3) SERIAL_RELEASE_SS => passed: passed=100,notpassed=0\n" \
+      +"^DID PUSH\n" \
       )
 
 

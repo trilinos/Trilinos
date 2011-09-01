@@ -35,13 +35,14 @@ class PackageEmailAddresses:
 
 class PackageDependencies:
 
-  def __init__(self, packageName_in, packageDir_in,
+  def __init__(self, packageName_in, packageDir_in, packageType_in,
     libRequiredDepPackages_in, libOptionalDepPackages_in,
     testRequiredDepPackages_in, testOptionalDepPackages_in,
     emailAddresses_in, parentPackage_in
     ):
     self.packageName = packageName_in
     self.packageDir = packageDir_in
+    self.packageType = packageType_in
     self.packageID = -1
     self.libRequiredDepPackages = libRequiredDepPackages_in
     self.libOptionalDepPackages = libOptionalDepPackages_in
@@ -210,6 +211,22 @@ class TrilinosDependencies:
     # NOTE: The above loop with match subpackages before it matches
     # packages because subpackages are listed before packages!
 
+
+  def filterPackageNameList(self, inputPackagesList, keepTypesList, verbose=False):
+    i = 0
+    outputPackagesList = []
+    for packageName in inputPackagesList:
+      #print "packageName = " + packageName
+      packageDep = self.getPackageByName(packageName)
+      packageType = packageDep.packageType
+      #print "packageType = " + packageType
+      if findInSequence(keepTypesList, packageType) >= 0:
+        outputPackagesList.append(packageName)
+      else:
+        if verbose:
+          print packageName + " of type " + packageType + " is being excluded because" \
+            " it is not in the valid list of package types [" + ','.join(keepTypesList) + "]"
+    return outputPackagesList
 
   def __str__(self):
     strRep = ""
@@ -579,8 +596,9 @@ def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')
       packageDir = ele.getAttribute('dir')
+      packageType = ele.getAttribute('type')
       #print "\npackageName =", packageName
-      packageDeps = PackageDependencies(packageName, packageDir,
+      packageDeps = PackageDependencies(packageName, packageDir, packageType,
         getDependenciesByType(ele, "LIB_REQUIRED_DEP_PACKAGES"),
         getDependenciesByType(ele, "LIB_OPTIONAL_DEP_PACKAGES"),
         getDependenciesByType(ele, "TEST_REQUIRED_DEP_PACKAGES"),

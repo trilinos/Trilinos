@@ -264,9 +264,9 @@ main (int argc, char *argv[])
 	"subclass will need to process a multivector with " << numCols 
 	 << " columns.  Not all MatOrthoManager subclasses can handle a "
 	"local row block with fewer rows than columns.";
-      // FIXME (mfh 26 Jan 2011) Should this be a logic error instead?
-      // It's really TSQR's fault that it can't handle a local number
-      // of elements less than the number of columns.
+      // QUESTION (mfh 26 Jan 2011) Should this be a logic error
+      // instead?  It's really TSQR's fault that it can't handle a
+      // local number of elements less than the number of columns.
       throw std::invalid_argument(os.str());
     }
 

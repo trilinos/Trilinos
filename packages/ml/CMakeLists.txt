@@ -39,11 +39,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU2_0
   "Enable the SUPERLU 2.0 functionality."
   OFF )
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
-#  HAVE_ML_SUPERLU4_0
-#  "Enable the SUPERLU 4.0 functionality."
-#  OFF )
-
 IF(${PACKAGE_NAME}_ENABLE_SuperLU)
    SET(HAVE_ML_SUPERLU4_0 ON)
 ELSE()
@@ -85,11 +80,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Flops
   "Enable the flops functionality."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Flops
-  HAVE_ML_FLOPS
-  "Enable the flops functionality."
-  OFF )
-
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MLapi
   HAVE_ML_MLAPI
   "Enable the ML api."
@@ -101,10 +91,9 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Cfunc
   OFF )
 
 
-ADD_OPTION_AND_DEFINE(TPL_ENABLE_MATLAB
-  HAVE_ML_MATLAB
-  "Enable Matlab Functionality."
-  OFF )
+#Adding a define for when the TPL matlab is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_ML_MATLAB "${${PACKAGE_NAME}_ENABLE_MATLAB}")
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TekoSmoothers
   HAVE_ML_TekoSmoothers

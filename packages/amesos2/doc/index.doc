@@ -1,0 +1,110 @@
+/** \mainpage Amesos2 - Direct Sparse Solver Interfaces
+
+\image html amesos2_logo.png
+
+\image latex amesos2_logo.eps
+
+\section Amesos2_outline Outline
+
+<ul>
+  <li>\ref Amesos2_intro</li>
+  <li>\ref Amesos2_contributors</li>
+  <li>\ref Amesos2_startup</li>
+    <ul>
+      <li>\ref Amesos2_sclasses</li>
+      <li>\ref Amesos2_aclasses</li>
+    </ul>
+</ul>
+
+\section Amesos2_intro Introduction
+
+Amesos2 provides a uniform interface to common third-party
+direct sparse solver libraries, such as SuperLU and KLU.
+Amesos2 is intended to supersede Amesos. While Amesos
+only supports Epetra double precision data types, Amesos2 allows
+a variety of data types through templating.
+Amesos2 supports both Epetra and Tpetra matrix and MultiVector types.
+It is fairly easy to extend the matrix and vector adapters to support
+other data types as well.
+
+\section Amesos2_contributors Amesos2 Contributors
+
+The following people have contributed to the development of Amesos2:
+
+<ul>
+  <li> Eric Bavier, St John's University and the University of Iowa,
+  <a href="mailto:bavier@member.fsf.org?subject=Amesos2">bavier at member dot fsf.org</a>.</li>
+  <li> Erik Boman, Sandia National Laboratories.</li>
+  <li> Siva Rajamanickam, Sandia National Laboratories.</li>
+</ul>
+
+\section Amesos2_startup Overview of Amesos2
+
+<!-- Motives for Amesos2.  Discuss improvements over Amesos. Give some
+small examples of usage -->
+
+\subsection Amesos2_sclasses Amesos2 Solver-interface Classes
+
+Amesos2::Solver provides the uniform solver interface for all the
+supported third party solvers. Users can use the non-member functions
+\c Amesos2::query to query for a solver and \c Amesos2::create to
+create a solver. (Please see Amesos2_Factory_decl.hpp for details)
+
+There is currently Amesos2 support for the following list of
+third-party solver libraries.
+
+<!-- List of supported solvers -->
+<ul>
+  <li> SuperLU</li>
+  <li> SuperLU_MT</li>
+  <li> SuperLU_DIST</li>
+  <li> Pardiso (MKL version 10.3 or compatible)</li>
+  <li> LAPACK</li>
+</ul>
+
+A templated version of KLU (KLU2) will be included in Amesos2.
+
+In order to enable a solver's use in Amesos2 you must also enable the
+solver's third-party library in Trilinos.
+
+\subsection Amesos2_aclasses Amesos2 Adapter Classes
+
+The Amesos2 adapter classes allow Amesos2 to be flexible to its users
+needs.  The existence of a matrix adapter for a particular linear
+algebra object means that it can be used by Amesos2 as the matrix
+<tt>A</tt>.  Similarly for the multivector adapters.  If a multivector
+adapter exists, then Amesos2 can use it as the left-hand-side
+multivector <tt>X</tt> or the right-hand-side multivector <tt>B</tt>.
+
+The list of supported linear algebra objects is flexible.  If you need
+to give Amesos2 a particular type of object, and it is not currently
+supported, please ask the Amesos2 developers about adding support.
+
+<!-- List of Amesos2 adapters and supported methods -->
+<ul>
+  <li> Matrix adapters exist for the following matrix classes
+    <ul>
+      <li> Tpetra::RowMatrix implementing classes:
+        <ul>
+          <li> Tpetra::CrsMatrix</li>
+        </ul>
+      </li>
+      <li> Epetra_RowMatrix implementing classes:
+        <ul>
+          <li> Epetra_CrsMatrix</li>
+<!--      <li> Epetra_JadMatrix</li>
+          <li> Epetra_MsrMatrix</li>
+          <li> Epetra_VbrMatrix</li> -->
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li> MultiVector adapters exist for the following multi-vector classes
+    <ul>
+      <li> Tpetra::MultiVector</li>
+      <li> Epetra_MultiVector</li>
+    </ul>
+  </li>
+</ul>
+
+*/

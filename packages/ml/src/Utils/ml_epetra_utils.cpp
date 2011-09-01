@@ -987,7 +987,46 @@ int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix
   /* Wrap back */
   int nnz;
   double time;
-  //  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,false,time,0);
+  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,true,time,0,false);
+  Result->OptimizeStorage();
+  
+  /* Cleanup */
+  ML_Operator_Destroy(&R_);
+  ML_Operator_Destroy(&A_);
+  ML_Operator_Destroy(&P_);
+  ML_Operator_Destroy(&Result_);
+  ML_Comm_Destroy(&comm);
+  return 0;
+}/*end ML_Epetra_PtAP */
+
+
+// ============================================================================
+//! Does an RAP for Epetra_CrsMatrices using ML's kernels.
+int ML_Epetra::ML_Epetra_RAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, const Epetra_CrsMatrix & R, Epetra_CrsMatrix *&Result,bool verbose){
+  ML_Comm* comm;
+  ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  // Use the same communicator as A if we're using MPI.
+  const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&A.Comm());
+  if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#endif
+
+  ML_Operator *R_       = ML_Operator_Create(comm);
+  ML_Operator *A_       = ML_Operator_Create(comm);
+  ML_Operator *P_       = ML_Operator_Create(comm);
+  ML_Operator *Result_  = ML_Operator_Create(comm);    
+
+  /* Do the wrapping */  
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&P,P_,verbose);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&R,R_,verbose);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_,verbose);
+  
+  /* Triple mat-product */
+  ML_rap(R_,A_,P_ ,Result_, ML_CSR_MATRIX);
+  
+  /* Wrap back */
+  int nnz;
+  double time;
   ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,true,time,0,false);
   Result->OptimizeStorage();
   
@@ -3501,6 +3540,15 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
    }
 
 } //BreakForDebugger()
+
+
+// ============================================================================
+int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite){
+  for(Teuchos::ParameterList::ConstIterator param=source.begin(); param!=source.end(); param++)
+    if ( dest.isParameter(source.name(param)) == false || OverWrite )
+      dest.setEntry(source.name(param),source.entry(param));
+  return 0;
+}
 
 // ============================================================================
 

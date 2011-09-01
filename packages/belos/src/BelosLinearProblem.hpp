@@ -279,23 +279,26 @@ namespace Belos {
     //! @name State methods
     //@{ 
     
-    //! Get the current status of the solution.
-    /*! This only means that the current linear system being solved for ( obtained by getCurr<LHS/RHS>Vec() )
-      has been updated by the solver.  This will be true every iteration for solvers like CG, but not
-      true until restarts for GMRES.
-    */
+    /// \brief Has the current approximate solution been updated?
+    ///
+    /// This only means that the current linear system for which the
+    /// solver is solving (as obtained by getCurr{LHS, RHS}Vec()) has
+    /// been updated by the solver.  This will be true every iteration
+    /// for solvers like CG, but not true for solvers like GMRES until
+    /// the solver restarts.
     bool isSolutionUpdated() const { return(solutionUpdated_); }
 
-    //! If the problem has been set, this will return true.
+    //! Whether the problem has been set.
     bool isProblemSet() const { return(isSet_); }
     
-    //! Get the current symmetry of the operator.
+    /// Whether the operator A is symmetric (in real arithmetic, or
+    /// Hermitian in complex arithmetic).
     bool isHermitian() const { return(isHermitian_); }
     
-    //! Get information on whether the linear system is being preconditioned on the left.
+    //! Whether the linear system is being preconditioned on the left.
     bool isLeftPrec() const { return(LP_!=Teuchos::null); }
 
-    //! Get information on whether the linear system is being preconditioned on the right.
+    //! Whether the linear system is being preconditioned on the right.
     bool isRightPrec() const { return(RP_!=Teuchos::null); }
  
     //@}
@@ -662,18 +665,16 @@ namespace Belos {
     curX_ = Teuchos::null;
     curB_ = Teuchos::null;
 
-    // Check the validity of the linear problem object.
-    // If no operator A exists, then throw an std::exception.
-    //
-    // FIXME (mfh 21 Feb 2011) The code below doesn't seem to be doing
-    // what the comment above says it should do (that is, throw an
-    // exception if the operator A has not been set).
+    // If we didn't set a matrix A, a left-hand side X, or a
+    // right-hand side B, then we didn't set the problem.
     if (A_ == Teuchos::null || X_ == Teuchos::null || B_ == Teuchos::null) {
       isSet_ = false;
       return isSet_;
     }
 
-    // Initialize the state booleans
+    // Reset whether the solution has been updated.  (We're just
+    // setting the problem now, so of course we haven't updated the
+    // solution yet.)
     solutionUpdated_ = false;
     
     // Compute the initial residuals.

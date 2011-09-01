@@ -114,7 +114,7 @@ namespace {
   int
   selectVerbosity (const bool verbose, const bool debug)
   {
-    // FIXME Calling this a "MsgType" (its correct type) or even an
+    // NOTE Calling this a "MsgType" (its correct type) or even an
     // "enum MsgType" confuses the compiler.
     int theType = Belos::Errors; // default (always print errors)
     if (verbose) 
@@ -430,9 +430,9 @@ main (int argc, char *argv[])
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
   //
-  // FIXME In Anasazi, this class is called BasicOutputManager.  In
-  // Belos, this class is called OutputManager.  The difference is
-  // annoying and should be factored out.
+  // NOTE In Anasazi, this class is called BasicOutputManager.  In
+  // Belos, this class is called OutputManager.  We should eventually
+  // resolve this difference.
   RCP<OutputManager<scalar_type> > outMan (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
 
   // Stream for debug output.  If debug output is not enabled, then

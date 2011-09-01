@@ -1,0 +1,82 @@
+=====================
+ NewSolver Templates
+=====================
+
+:author: Eric T Bavier <etbavie@sandia.gov>
+:date:   Mon Jul 12 13:11:37 CDT 2010
+
+The files in this directory should act as a template or example to
+developers who would like to create an Amesos2 interface for a new
+third-party library.
+
+Workflow
+========
+
+1. Copy the files in this folder to the
+$(TRILINOS_HOME)/packages/amesos2/src/ directory, replacing
+"NewSolver" with the name of the TPL (from now on: "TPL").
+
+2. Update Amesos2_TPL_TypeMap.hpp and Ameso2_TPL_FunctionMap.hpp with
+partial template specializations for the data types supported by TPL.
+Add or modify function calls in Ameso2_TPL_FunctionMap.hpp to reflect
+the needs of TPL.
+
+3. Determine what private data members need to be defined in
+Amesos::TPL to effectively interact with the TPL solver.
+
+4. Define Amesos2::TPL::setParameters_impl() so that it extracts
+options from the Teuchos::ParameterList that should be supported by
+this Amesos2 interface.
+
+5. Define a method `bool Amesos2::TPL::loadA_impl(Amesos2::EPhase)'
+which should handle the loading of the matrix data into the
+third-party-library's internal data structures.  This method will be
+called by Amesos2::SolverCore when it is deamed necessary to update
+information about the matrix.
+
+6. Use the functions defined in Amesos2_TPL_FunctionMap.hpp, while
+considering the options defined in Amesos::TPL::setParameters_impl(),
+to fill in the the details of
+
+  - Amesos2::TPL::preOrdering_impl(),
+  - Amesos2::TPL::symbolicFactorization_impl(),
+  - Amesos2::TPL::numericFactorization_impl(), and
+  - Amesos2::TPL::solve_impl().
+
+The first three methods may assume that loadA_impl has already been
+called so that internal matrix data is up-to-date and ready to be
+used.
+
+7. Modify Amesos2_Factory.hpp to conditionally include
+Amesos2_TPL.hpp.  Also modify Amesos2::create(), and Amesos2::query()
+in Amesos2_Factory.cpp, to add a case for this TPL.
+  
+8. Tests may be defined for this TPL using the general framework
+defined in Solver_Tests.cpp.  All that must be done is to write an XML
+specification of the desired tests.  Refer to the existing test XML
+specifications for an idea of how such a specification should be
+written.  You should then add a CTest test case for this TPL.  Again,
+refer to how the current TPL tests are included in
+amesos2/test/solvers/CMakeLists.txt
+
+9. Add documentation for TPL in the Amesos2 documentation.
+Amesos2.hpp defines a doxygen group names amess2_solver_parameters.
+The body of this group should have another section added for TPL, and
+have the body of the doxygen documentation for the
+TPL::setParameters_impl() copied under this new section.
+
+
+Notes
+=====
+
+Matrix and vector adapters
+--------------------------
+
+The Amesos2 matrix and multi-vector adapters have been designed to
+give functionality that would be fundamental for use with linear
+solvers, not much more.  Please use them!
+
+If there is some functionality that is not present in the adapters,
+and you feel it would be most convenient for writing your Amesos2
+solver interface, consider emailing the lead developer of Amesos2
+about adding the functionality.

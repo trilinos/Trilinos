@@ -153,6 +153,19 @@
       <Email address="galeri-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Amesos2">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILR"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <EmailAddresses>
+      <Email address="amesos2-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Amesos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>

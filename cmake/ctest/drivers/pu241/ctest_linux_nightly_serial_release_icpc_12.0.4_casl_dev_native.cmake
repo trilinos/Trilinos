@@ -1,5 +1,5 @@
 #
-# Build all Secondary Stable CASL VRI add-on Trilnos packages with GCC 4.5.1 compiler
+# Build only stand-alone WEC codes with Intel 12.0.4
 #
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.icpc.12.0.4.cmake")
