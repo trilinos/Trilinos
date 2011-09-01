@@ -17,7 +17,6 @@
 #include "Panzer_PhysicsBlock.hpp"
 
 namespace panzer {
-namespace novel {
 
 template <typename TraitsT> class ResponseContainerBase;
 template <typename EvalT,typename TraitsT> class ResponseContainer;
@@ -131,8 +130,7 @@ private:
 };
 
 }
-}
 
-#include "Panzer_ResponseLibrary_novelT.hpp"
+#include "Panzer_ResponseLibraryT.hpp"
 
 #endif

@@ -17,13 +17,12 @@ using Teuchos::rcp;
 #include "Panzer_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_ResponseContainer_novel.hpp"
+#include "Panzer_ResponseContainer.hpp"
 
 #include "TestEvaluators.hpp"
 
 
 namespace panzer {
-namespace novel {
 
 TEUCHOS_UNIT_TEST(response_assembly, test)
 {
@@ -130,5 +129,4 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   }
 }
 
-}
 }

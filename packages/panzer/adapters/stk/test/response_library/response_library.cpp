@@ -22,8 +22,8 @@ using Teuchos::rcp;
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Panzer_ResponseContainer_novel.hpp"
-#include "Panzer_ResponseLibrary_novel.hpp"
+#include "Panzer_ResponseContainer.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 #include "TestEvaluators.hpp"
 
@@ -32,8 +32,6 @@ using Teuchos::rcp;
 #include <string>
 
 namespace panzer {
-
-  using namespace novel;
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);

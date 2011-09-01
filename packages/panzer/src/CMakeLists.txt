@@ -153,8 +153,9 @@ APPEND_SET(HEADERS
   responses/Panzer_ResponseFunctional_AggregatorT.hpp
   responses/Panzer_ResponseScatterEvaluator.hpp
   responses/Panzer_ResponseScatterEvaluatorT.hpp
-  responses/Panzer_ResponseLibrary_novel.hpp
-  responses/Panzer_ResponseContainer_novel.hpp
+  responses/Panzer_ResponseLibrary.hpp
+  responses/Panzer_ResponseLibraryT.hpp
+  responses/Panzer_ResponseContainer.hpp
   ) 
 
 APPEND_SET(SOURCES

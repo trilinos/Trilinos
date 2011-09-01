@@ -1,10 +1,9 @@
-#ifndef __Panzer_ResponseLibrary_novelT_hpp__
-#define __Panzer_ResponseLibrary_novelT_hpp__
+#ifndef __Panzer_ResponseLibraryT_hpp__
+#define __Panzer_ResponseLibraryT_hpp__
 
-#include "Panzer_ResponseContainer_novel.hpp"
+#include "Panzer_ResponseContainer.hpp"
 
 namespace panzer {
-namespace novel {
 
 template <typename TraitsT>
 template <typename EvalT>
@@ -227,7 +226,6 @@ printVolumeContainers(std::ostream & os) const
    }
 }
 
-}
 }
 
 #endif

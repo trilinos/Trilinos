@@ -14,10 +14,9 @@
 
 #include "Panzer_Response.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
-#include "Panzer_ResponseLibrary_novel.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 namespace panzer {
-namespace novel {
 
 /** Base class for use with the Phalanx TemplateManager.
   * This object will serve as an accessor to the various
@@ -284,7 +283,6 @@ globalReduction(const Teuchos::Comm<int> & comm)
    }
 }
 
-}
 }
 
 #endif

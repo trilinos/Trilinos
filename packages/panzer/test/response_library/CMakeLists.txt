@@ -29,7 +29,7 @@ SET(UNIT_TEST_DRIVER
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ResponseLibraryTest
   SOURCES 
-     response_library_novel.cpp 
+     response_library.cpp 
      ${RIG_SOURCES}
      ${UNIT_TEST_DRIVER}
   COMM serial mpi
