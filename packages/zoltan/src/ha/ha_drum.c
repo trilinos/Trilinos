@@ -25,6 +25,9 @@ extern "C" {
 #include <string.h>
 
 #ifdef ZOLTAN_DRUM
+
+#warning "WARNING:  Zoltan support for DRUM is deprecated and will not be available in Trilinos v11."
+
 /* These belong in drum.h, but we want to avoid the dependency on
    drum.h for Zoltan_Struct */
 extern int DRUM_hierCreateCallbacks(DRUM_machineModel *dmm, 

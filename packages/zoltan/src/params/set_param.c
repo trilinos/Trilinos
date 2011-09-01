@@ -42,6 +42,7 @@ extern "C" {
 #endif
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
+#warning "WARNING:  Zoltan support for DRUM is deprecated and will not be available in Trilinos v11."
 #endif
 #include "coloring_const.h"
 #include "zz_const.h"

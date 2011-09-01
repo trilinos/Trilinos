@@ -30,6 +30,7 @@
 #include "third_library_const.h"
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
+#warning "WARNING:  Zoltan support for DRUM is deprecated and will not be available in Trilinos v11."
 #endif
 #include "zoltan_timer.h"
 
