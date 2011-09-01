@@ -63,7 +63,7 @@ namespace MueLu {
     //@{
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
-    void Set(const std::string& ename, const T &entry, RCP<const FactoryBase> factory = Teuchos::null) {
+    void SetData(const std::string& ename, const T &entry, RCP<const FactoryBase> factory = Teuchos::null) {
 
         // check if in setupPhase (=store all data) or data is requested
         if(setupPhase_ ||
@@ -77,7 +77,7 @@ namespace MueLu {
 
 
     template <class T>
-    void Set(const std::string& ename, const T &entry, const FactoryBase* factory) {
+    void SetData(const std::string& ename, const T &entry, const FactoryBase* factory) {
         // check if in setupPhase (=store all data) or data is requested
         if(setupPhase_ ||
             (countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0))
@@ -127,7 +127,7 @@ namespace MueLu {
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     // Usage: Level->Get< RCP<Operator> >("A")
     template <class T>
-    T & Get(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    T & GetData(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
     {
       if (dataTable_.isKey(ename,factory))
       {
@@ -138,7 +138,7 @@ namespace MueLu {
     }
 
     template <class T>
-    void Get(const std::string& ename, T &value, RCP<const FactoryBase> factory = Teuchos::null) {
+    void GetData(const std::string& ename, T &value, RCP<const FactoryBase> factory = Teuchos::null) {
         dataTable_.Get<T>(ename,value,factory);
     }
 

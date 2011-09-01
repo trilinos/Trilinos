@@ -145,7 +145,7 @@ namespace MueLu {
         preSmoo->Setup(currentLevel);
         
         // Level Set
-        currentLevel.NewSet("PreSmoother", preSmoo/*, this*/); // TAW: todo fix me
+        currentLevel.Set("PreSmoother", preSmoo/*, this*/); // TAW: todo fix me
       }
       
       if ((pop == BOTH || pop == POST) && (PostSmootherPrototype_ != Teuchos::null))
@@ -189,7 +189,7 @@ namespace MueLu {
             
             // Level Set
             std::cout << "POST" << std::endl;
-            currentLevel.NewSet("PostSmoother", postSmoo/*, this*/); // TAW: TODO fix me
+            currentLevel.Set("PostSmoother", postSmoo/*, this*/); // TAW: TODO fix me
           }
         
         return true;//?

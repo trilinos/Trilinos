@@ -39,14 +39,14 @@ namespace MueLu {
     //@}
 
     bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_);
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_);
 
       //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
       nullspace->putScalar(1.0);
 
-      currentLevel.NewSet("Nullspace", nullspace, this);
+      currentLevel.Set("Nullspace", nullspace, this);
 
       return true; //??
 

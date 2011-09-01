@@ -43,6 +43,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+    fineLevel.Request("A");
     fineLevel.Set("A",A);
 
     // first iteration calls LAPACK QR
@@ -50,23 +51,23 @@ namespace MueLuTests {
     for (LO NSdim = 2; NSdim >= 1; --NSdim) {
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
-      fineLevel.Set("Nullspace",nullSpace);
       fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                       //FIXME is implemented
-      UCAggregationFactory UCAggFact;
-      UCAggFact.SetMinNodesPerAggregate(3);
-      UCAggFact.SetMaxNeighAlreadySelected(0);
-      UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
-      UCAggFact.SetPhase3AggCreation(0.5);
+      fineLevel.Set("Nullspace",nullSpace);
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+      UCAggFact->SetMinNodesPerAggregate(3);
+      UCAggFact->SetMaxNeighAlreadySelected(0);
+      UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+      UCAggFact->SetPhase3AggCreation(0.5);
 
-      UCAggFact.Build(fineLevel);
-      fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
-      TentativePFactory TentativePFact;
+      UCAggFact->Build(fineLevel);
+      //fineLevel.Request("Aggregates",&UCAggFact); //FIXME putting this in to avoid error until Merge needs business
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
-      TentativePFact.Build(fineLevel,coarseLevel);
+      TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
-      coarseLevel.Get("Ptent",Ptent);
+      coarseLevel.Get("Ptent",Ptent,TentativePFact);
 
       RCP<MultiVector> coarseNullSpace; 
       coarseLevel.Get("Nullspace",coarseNullSpace);
@@ -105,29 +106,29 @@ namespace MueLuTests {
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Set("A",A);
 
-    fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+    //fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                     //FIXME is implemented
 
-    UCAggregationFactory UCAggFact;
-    UCAggFact.SetMinNodesPerAggregate(3);
-    UCAggFact.SetMaxNeighAlreadySelected(0);
-    UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact.SetPhase3AggCreation(0.5);
+    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+    UCAggFact->SetMinNodesPerAggregate(3);
+    UCAggFact->SetMaxNeighAlreadySelected(0);
+    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    UCAggFact->SetPhase3AggCreation(0.5);
 
-    UCAggFact.Build(fineLevel);
-    fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
-    TentativePFactory tentativePFact;
-    tentativePFact.Build(fineLevel,coarseLevel);
+    UCAggFact->Build(fineLevel);
+    //fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
+    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
+    tentativePFact->Build(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
-    coarseLevel.Get("Ptent",Ptent);
+    coarseLevel.Get("Ptent",Ptent,tentativePFact);
 
     RCP<MultiVector> coarseNullSpace; 
     coarseLevel.Get("Nullspace",coarseNullSpace);
 
     //grab default fine level nullspace (vector of all ones)
-    RCP<MultiVector> nullSpace; 
-    fineLevel.Get("Nullspace",nullSpace);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
+    nullSpace->putScalar(1.0);
 
     //check interpolation
     LO NSdim = 1;

@@ -135,7 +135,7 @@ class SaPFactory : public PFactory {
       //TODO get or generate fine grid nullspace here
       RCP<MultiVector> fineNullspace;
       if (fineLevel.IsAvailable("Nullspace")) {
-        fineLevel.NewGet("Nullspace",fineNullspace);
+        fineLevel.Get("Nullspace",fineNullspace);
       } else {
         //TODO add this functionality
         //throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
@@ -146,7 +146,7 @@ class SaPFactory : public PFactory {
       //coarseLevel.Request("Nullspace");
       initialPFact_->BuildP(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
-      coarseLevel.NewGet("Ptent",Ptent,initialPFact_);
+      coarseLevel.Get("Ptent",Ptent,initialPFact_);
 
 
       //TMP, to force desallocation of Ptent
@@ -155,8 +155,8 @@ class SaPFactory : public PFactory {
       RCP<MultiVector> coarseNullspace;
       if (reUsePtent_) {
         try {
-          coarseLevel.NewGet("Ptent",Ptent); //FIXME throws an error, replace with recomputation
-          coarseLevel.NewGet("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
+          coarseLevel.Get("Ptent",Ptent); //FIXME throws an error, replace with recomputation
+          coarseLevel.Get("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
         }
         catch(...) {
           throw(Exceptions::NotImplemented("SaPFactory.Build(): regeneration of Ptent/nullspace not implemented yet"));

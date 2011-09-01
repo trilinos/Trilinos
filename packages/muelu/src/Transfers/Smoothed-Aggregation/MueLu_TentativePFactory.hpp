@@ -83,9 +83,9 @@ namespace MueLu {
 
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
       // Level Get
-      RCP<Operator>    A          = fineLevel.NewGet< RCP<Operator> >("A", AFact_);
-      RCP<Aggregates>  aggregates = fineLevel.NewGet< RCP<Aggregates> >("Aggregates", aggregatesFact_);
-      RCP<MultiVector> nullspace  = fineLevel.NewGet< RCP<MultiVector> >("Nullspace"); // TAW: remove nullspaceFact_ //TODO fix me
+      RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_);
+      RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_);
+      RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_);
 
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
@@ -111,8 +111,8 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.NewSet("Nullspace", coarseNullspace);
-      coarseLevel.NewSet("Ptent", Ptentative, this); //TODO: should be P when 'extended needs' implemented
+      coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_);
+      coarseLevel.Set("Ptent", Ptentative, this); //TODO: should be P when 'extended needs' implemented
 
       return true;
     }

@@ -92,7 +92,7 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<const Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_);
+      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_);
 
       // Build
       RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 
@@ -100,7 +100,7 @@ namespace MueLu {
       algo2_.AggregateLeftovers(*graph, *aggregates);
 
       // Level Set
-      currentLevel.NewSet("Aggregates", aggregates, this);
+      currentLevel.Set("Aggregates", aggregates, this);
 
       //
       timer->stop();

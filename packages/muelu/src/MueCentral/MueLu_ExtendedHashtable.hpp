@@ -261,8 +261,10 @@ namespace MueLu
       {
         const FactoryBase* ptrFactory = fact.get(); // this is the memory ptr to the Factory, we are searching for
 
+        return ptrFactory;
+
         // ptrFactory = NULL: no factory at all
-        if(ptrFactory==NULL)
+        /*if(ptrFactory==NULL)
           return NULL;
 
         std::vector<const MueLu::FactoryBase*> ehandles = handles(ename);
@@ -279,7 +281,7 @@ namespace MueLu
 
         // no corresponding already existing Teuchos::RCP<FactoryBase> found
         // return memory ptr of fact
-        return fact.get();
+        return fact.get();*/
       }
 
 
