@@ -146,7 +146,10 @@ void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp
    RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
-   lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
+   // This stems from confusion of if the linear op with solve initializeAndResuseOp actually rebuilds
+   // the precondtioner. It seems not to and thus we have a fairly substantial problem.
+   // lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
+   lowsFactory_->initializeOp(Thyra::defaultLinearOpSource(source),&*lows);
 }
 
 /** \brief Pass in an already constructed inverse operator. Update
