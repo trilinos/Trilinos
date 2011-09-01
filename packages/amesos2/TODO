@@ -4,6 +4,7 @@
 
 - Finish KLU2 so it works for all types. May require third template parameter.
 - Wish list: CholMod, UMFPACK, SuiteSparseQR, Pastix, MUMPS
+- Test Pardiso with Swiss version
 
 OLD TODO (some of these have been fixed)
 ========================================
