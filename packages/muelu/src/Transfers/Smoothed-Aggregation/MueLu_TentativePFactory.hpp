@@ -42,7 +42,7 @@ namespace MueLu {
       \param AggregationFact -- (optional) factory that creates aggregates.
     */
     TentativePFactory(RCP<FactoryBase> aggregatesFact = Teuchos::null, RCP<FactoryBase> nullspaceFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
-      : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(Teuchos::null),
+      : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
         QR_(false) { }
     
     //! Destructor.

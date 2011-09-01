@@ -78,6 +78,7 @@ namespace MueLu {
     void SetLevel(RCP<Level> const& level) {
       Levels_.push_back(level);
       level->SetLevelID(Levels_.size());
+
       level->SetDefaultFactoryHandler(defaultFactoryHandler_);
 
       if (Levels_.size() < 2)
@@ -88,7 +89,7 @@ namespace MueLu {
 
     //! Retrieve a certain level from hierarchy.
     RCP<Level>& GetLevel(int const levelID) /* const */ {
-      TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "Hierarchy::GetLevel(): invalid input parameter value");
+      TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value");
       return Levels_[levelID-1];
     }
 

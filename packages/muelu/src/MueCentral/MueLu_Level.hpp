@@ -186,9 +186,7 @@ namespace MueLu {
     }
 
     //! Previous level
-    RCP<Level> & GetPreviousLevel() {
-      return previousLevel_;
-    }
+    RCP<Level> & GetPreviousLevel() { return previousLevel_; }
     //@}
 
 

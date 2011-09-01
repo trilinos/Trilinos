@@ -30,6 +30,13 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
+    // Test of createTwoLevelHierarchy: to be moved...
+    TEUCHOS_TEST_EQUALITY(fineLevel.GetLevelID(), 1, out, success);
+    TEUCHOS_TEST_EQUALITY(coarseLevel.GetLevelID(), 2, out, success);
+    //compilation warning TEUCHOS_TEST_EQUALITY(fineLevel.GetPreviousLevel().get(), NULL, out, success);
+    //TEUCHOS_TEST_EQUALITY(coarseLevel.GetPreviousLevel().get(), &fineLevel, out, success);
+    // --
+
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Request("A");
     fineLevel.Set("A",Op);
@@ -60,6 +67,7 @@ namespace MueLuTests {
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
+
   } //Correctness test
 
 }//namespace MueLuTests

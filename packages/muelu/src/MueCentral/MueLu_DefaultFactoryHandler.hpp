@@ -6,18 +6,17 @@
 
 #include "MueLu_DefaultFactoryHandlerBase.hpp"
 
-// Default factories:
-#include "MueLu_UCAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-
-// used as default:
+// Headers for factories used by default:
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+//#include "MueLu_TentativePFactory.hpp"
 //#include "MueLu_RAPFactory.hpp"
 #include "MueLu_ReUseFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 namespace MueLu {
 
@@ -43,9 +42,10 @@ namespace MueLu {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
         if (varName == "P")           return SetAndReturnDefaultFactory(varName, rcp(new GenericPRFactory(rcp(new SaPFactory()))));
+        if (varName == "Ptent")       return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory())); //TMP
         if (varName == "R")           return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
         // (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
-        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new ReUseFactory()));
+        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new ReUseFactory())); //TODO?
         if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
@@ -76,3 +76,6 @@ namespace MueLu {
 
 #define MUELU_DEFAULTFACTORYHANDLER_SHORT
 #endif //ifndef MUELU_DEFAULTFACTORYHANDLER_HPP
+
+// TODO: print default factory used in debug mode
+// TODO: if varName already available in Level but using another factory, print a warning.
