@@ -113,7 +113,6 @@ if ($package eq "Zoltan") {
                     zdrive.inp.rib*
                     zdrive.inp.reftree* 
                     zdrive.inp.hsfc*
-                    zdrive.inp.oct*
                     zdrive.inp.phg* 
                     zdrive.inp.block*
                     zdrive.inp.color*
