@@ -47,6 +47,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ResponseAggregatorMngrTest
+  SOURCES 
+     response_aggregator_mgr.cpp 
+     ${RIG_SOURCES}
+     ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ResponseContainerTest
   SOURCES 
      response_container.cpp 

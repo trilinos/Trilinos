@@ -59,6 +59,7 @@ TEUCHOS_UNIT_TEST(response_library, test)
   ResponseId hResp  = buildResponse("Horse","Functional");
   RCP<ResponseLibrary<Traits> > rLibrary 
         = Teuchos::rcp(new ResponseLibrary<Traits>());
+  rLibrary->defineDefaultAggregators();
 
   rLibrary->reserveVolumeResponse<EvalT>(dResp,"block_0");
   rLibrary->reserveVolumeResponse<EvalT>(hResp,"block_1");

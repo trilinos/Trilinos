@@ -149,6 +149,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_VectorToScalarT.hpp
   responses/Panzer_Response.hpp
   responses/Panzer_ResponseAggregatorBase.hpp
+  responses/Panzer_ResponseAggregator_Manager.hpp
+  responses/Panzer_ResponseAggregator_ManagerT.hpp
   responses/Panzer_ResponseFunctional_Aggregator.hpp
   responses/Panzer_ResponseFunctional_AggregatorT.hpp
   responses/Panzer_ResponseScatterEvaluator.hpp

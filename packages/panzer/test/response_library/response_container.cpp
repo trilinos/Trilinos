@@ -59,6 +59,8 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
 
   RCP<ResponseLibrary<Traits> > rLibrary 
         = Teuchos::rcp(new ResponseLibrary<Traits>());
+  rLibrary->defineDefaultAggregators();
+
   RCP<ResponseContainerBase<Traits> > container
         = Teuchos::rcp(new ResponseContainer<EvalT,Traits>(rLibrary));
 
@@ -68,14 +70,15 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   ResponseId cResp  = buildResponse("Cat","Functional"); // not added
   container->reserve(dResp);
   container->reserve(hResp);
-  container->reserve(hResp2);
+  // container->reserve(hResp2);
   container->reserve(hResp); // You can reserve things multiple times, should
                             // not increased number of reserved items
 
-  TEST_EQUALITY(container->getReserved().size(),3);
+  // TEST_EQUALITY(container->getReserved().size(),3);
+  TEST_EQUALITY(container->getReserved().size(),2);
   TEST_ASSERT(container->contains(dResp));
   TEST_ASSERT(container->contains(hResp));
-  TEST_ASSERT(container->contains(hResp2));
+  // TEST_ASSERT(container->contains(hResp2));
   TEST_ASSERT(!container->contains(cResp));
 
   container->buildResponseDataObjs();

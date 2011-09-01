@@ -61,6 +61,12 @@ public:
    virtual void globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) const = 0;
 };
 
+template <typename EvalT,typename TraitsT>
+class ResponseAggregator : public ResponseAggregatorBase<TraitsT> {
+public:
+   virtual ~ResponseAggregator() {}
+};
+
 }
 
 #endif

@@ -153,6 +153,7 @@ namespace panzer {
     ResponseId hResp  = buildResponse("Horse","Functional");
     RCP<ResponseLibrary<Traits> > rLibrary 
           = Teuchos::rcp(new ResponseLibrary<Traits>());
+    rLibrary->defineDefaultAggregators();
   
     out << "reserving responses" << std::endl;
     rLibrary->reserveVolumeResponse<EvalT>(dResp,"eblock-0_0");

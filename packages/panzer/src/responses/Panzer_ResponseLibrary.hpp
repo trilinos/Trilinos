@@ -11,6 +11,7 @@
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_Response.hpp"
+#include "Panzer_ResponseAggregator_Manager.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
 
@@ -45,14 +46,17 @@ public:
      */
    template <typename EvalT>
    bool isResponseType(const std::string & type) const
-   { return true; }
+   { //return true; 
+     return getAggregatorManager().template isAggregator<EvalT>(type);
+   }
 
    //! Get a particular aggregator 
    template <typename EvalT>
    const ResponseAggregatorBase<TraitsT> & getAggregator(const std::string & type) const
    {
-      static ResponseFunctional_Aggregator<EvalT,TraitsT> rfa;
-      return rfa;
+      // static ResponseFunctional_Aggregator<EvalT,TraitsT> rfa;
+      // return rfa;
+      return getAggregatorManager().template getAggregator<EvalT>(type);
    }
 
    /** \defgroup volume
@@ -114,6 +118,18 @@ public:
    //! Write out all volume containers to a stream
    void printVolumeContainers(std::ostream & os) const;
 
+   //! Access the response aggregator manager
+   ResponseAggregator_Manager<TraitsT> & getAggregatorManager()
+   { return respAggManager_; }
+
+   //! Access the response aggregator manager
+   const ResponseAggregator_Manager<TraitsT> & getAggregatorManager() const
+   { return respAggManager_; }
+
+   //! Define some default aggregators used in panzer
+   void defineDefaultAggregators()
+   { ResponseAggregator_Manager<TraitsT>::defineDefaultAggregators(getAggregatorManager()); }
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
@@ -124,6 +140,8 @@ private:
    // what is desired here. Direct access to the vector.
    typedef std::vector<Teuchos::RCP<ResponseContainerBase<TraitsT> > > RespContVector;
    typedef std::vector<Teuchos::RCP<PHX::FieldManager<TraitsT> > > FMVector;
+
+   ResponseAggregator_Manager<TraitsT> respAggManager_;
 
    std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
    std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > > volFieldManagers_;

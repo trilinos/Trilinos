@@ -17,8 +17,8 @@ namespace panzer {
   * setting up and transfering to the responses. This works
   * in concert with the response aggregator.
   */
-template <typename EvalT,typename TraitsT> class ResponseFunctional_Data; 
-template <typename EvalT,typename TraitsT> class ResponseFunctional_Aggregator; 
+template <typename EvalT,typename TraitsT> class ResponseFunctional_Data;
+template <typename EvalT,typename TraitsT> class ResponseFunctional_Aggregator;
 
 template <typename TraitsT> 
 class ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> 
@@ -91,7 +91,7 @@ private:
 
 template <typename TraitsT>
 class ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>
-   : public ResponseAggregatorBase<TraitsT> {
+   : public ResponseAggregator<panzer::Traits::Residual,TraitsT> {
 public:
    // useful for cloning and the factory mechanism
    ResponseFunctional_Aggregator();
@@ -125,6 +125,14 @@ public:
    void evaluateFields(panzer::Workset & wkst,ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data,
                                               const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const;
 
+};
+
+// Specialized for panzer::Traits
+class ResponseFunctional_Aggregator_Builder {
+public:
+   template <typename EvalT>
+   Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > build() const
+   { return Teuchos::null; }
 };
 
 }

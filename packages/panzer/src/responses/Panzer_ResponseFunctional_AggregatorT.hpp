@@ -118,6 +118,13 @@ globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) con
                      &dataVec2[0], &dataVec[0]);
 }
 
+template < >
+Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggregator_Builder::
+build<panzer::Traits::Residual>() const
+{ 
+   return Teuchos::rcp(new ResponseFunctional_Aggregator<panzer::Traits::Residual,panzer::Traits>); 
+}
+
 }
 
 #endif
