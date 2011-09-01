@@ -1,6 +1,11 @@
 #include"Isorropia_EpetraMatcher.hpp"
 #include"Isorropia_EpetraRedistributor.hpp"
+
+#ifdef HAVE_EPETRAEXT
 #include "EpetraExt_Reindex_CrsMatrix.h" 
+#include "EpetraExt_CrsMatrixIn.h"
+#endif
+
 
 using namespace std;
 
