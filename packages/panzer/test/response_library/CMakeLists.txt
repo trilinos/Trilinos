@@ -36,16 +36,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#   ResponseAssemblyTest
-#   SOURCES 
-#      response_assembly.cpp 
-#      ${RIG_SOURCES}
-#      ${UNIT_TEST_DRIVER}
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   )
-
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ResponseAggregatorTest
   SOURCES 

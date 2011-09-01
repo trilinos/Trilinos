@@ -77,10 +77,6 @@ APPEND_SET(HEADERS
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
-  Panzer_ResponseLibrary.hpp
-  Panzer_ResponseContainer.hpp
-  Panzer_ResponseContainer_Value.hpp
-  Panzer_ResponseContainer_Derivative.hpp
   Panzer_String_Utilities.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
@@ -137,8 +133,6 @@ APPEND_SET(HEADERS
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
   evaluators/Panzer_ScatterResidual_EpetraSG.hpp
   evaluators/Panzer_ScatterResidual_EpetraSGT.hpp
-  evaluators/Panzer_ScatterResponses.hpp
-  evaluators/Panzer_ScatterResponsesT.hpp
   evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraSG.hpp
@@ -176,8 +170,6 @@ APPEND_SET(SOURCES
   Panzer_ModelEvaluator_Epetra.cpp
   Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
-  Panzer_ResponseLibrary.cpp
-  Panzer_ResponseContainer_Value.cpp
   Panzer_String_Utilities.cpp
   Panzer_Traits.cpp
   Panzer_Version.cpp
