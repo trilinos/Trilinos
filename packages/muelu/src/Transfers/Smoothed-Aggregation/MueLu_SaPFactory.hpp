@@ -110,8 +110,8 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<Operator> A     = fineLevel.  NewGet< RCP<Operator> >("A", AFact_());
-      RCP<Operator> Ptent = coarseLevel.NewGet< RCP<Operator> >("Ptent", initialPFact_());
+      RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_);
+      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent", initialPFact_);
 
       //Build final prolongator
       RCP<Operator> finalP; // output
@@ -189,7 +189,7 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.NewSet("P", finalP, this);
+      coarseLevel.Set("P", finalP, this);
 
       return true;
     } //Build()
