@@ -131,7 +131,7 @@ namespace MueLu {
       
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelIDs, DefaultFactoryHandlers and references to previous level
-      static void createTwoLevelHierarchy(Level& coarseLevel, Level& fineLevel) {
+      static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
         Hierarchy H;
         H.SetLevel(rcpFromRef(fineLevel));   // rcpFromRef safe here
         H.SetLevel(rcpFromRef(coarseLevel)); // rcpFromRef safe here
