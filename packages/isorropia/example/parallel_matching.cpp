@@ -15,35 +15,16 @@ int main(int argc, char** argv) {
 	if(argc>2)
 	{	
 		int rc=0;
-		int localProc = 0;
-		
-		#ifdef HAVE_EPETRAEXT
-		/*#ifdef HAVE_MPI
-			int numProcs;
-		 	MPI_Init(&argc, &argv);
-		  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
-		  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-		  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
-		  	const Epetra_MpiComm Comm;
-		#else*/
+#ifdef HAVE_EPETRAEXT
 		  const Epetra_SerialComm Comm;
-		//#endif
 
 		  Epetra_CrsMatrix *matrixPtr;
 		  rc = EpetraExt::MatrixMarketFileToCrsMatrix(argv[1], Comm, matrixPtr);
 		  
 		  if (rc < 0){
-			 if (localProc==0){
-				cout << "error reading input file" << std::endl << "FAIL" << std::endl;
-			 }
-			 exit(1);
+            cout << "error reading input file" << std::endl;
+            return 1;
 		  }
-		#else
-		  fail = 0;
-		  if (localProc == 0){
-			 cout << "Test not run because it requires EPETRA_EXT" << std::endl;
-		  }
-		#endif
 		
 		Teuchos::ParameterList paramlist;
 		paramlist.set("Matching Algorithm",argv[2]);
@@ -54,27 +35,72 @@ int main(int argc, char** argv) {
         //Isorropia::Epetra::Isorropia_EpetraMatcher pm(r,paramlist);
         
         pm.match();
-        
-        /*std::cout<<*matrixPtr<<std::endl;
-        Epetra_Map * map = pm.getPermutedRowMap();
-        Teuchos::RCP<Epetra_Map> rcpMap(Teuchos::RCP<
-        Epetra_Map>(map,true));
-        Isorropia::Epetra::Redistributor redist(rcpMap);
-        Teuchos::RCP<Epetra_CrsMatrix> myMat=redist.redistribute(*matrixPtr);
-        std::cout<<*myMat<<std::endl;*/
 
-        //Epetra_Map defMap2(-1, 5, 0,matrixPtr->Comm());
-        //EpetraExt::ViewTransform<Epetra_CrsMatrix> * ReIdx_MatTrans2 =
-                               //new EpetraExt::CrsMatrix_Reindex( defMap2 ); 
-        //Epetra_CrsMatrix t2S = (*ReIdx_MatTrans2)(*myMat);
-        //ReIdx_MatTrans2->fwd(); 
-        //std::cout<<t2S<<std::endl;
+        // Get the result of the matching
+        int nmatch = pm.getNumberOfMatchedVertices();
+        int *mrows = new int[nmatch];
+        int *mcols = new int[nmatch];
+        int len;
+        pm.getMatchedColumnsForRowsCopy(nmatch, len, mrows);
+        pm.getMatchedRowsForColumnsCopy(nmatch, len, mcols);
+        
+        cout << endl << "Original Matrix:" << endl;
+        std::cout<<*matrixPtr<<std::endl;
+
+        // Create a new matrix with column permutation
+        int max_entries = matrixPtr->MaxNumEntries();
+        Epetra_CrsMatrix perm_matrix(Copy, matrixPtr->RowMap(), max_entries);
+        int n =  matrixPtr->NumGlobalRows();
+
+        double *values = new double[max_entries];
+        int *indices = new int[max_entries];
+        int num_entries;
+        for (int i = 0; i < n ; i++)
+        {
+            // All in serial Comm so 0..n is fine
+            matrixPtr->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
+                                        indices);
+            for (int j = 0; j < num_entries; j++) indices[j]=mcols[indices[j]];
+            perm_matrix.InsertGlobalValues(i, num_entries, values, indices);
+        }
+        perm_matrix.FillComplete();
+        cout << endl << "After Column permutation:" << endl;
+        cout << perm_matrix << endl;
+
+        Epetra_CrsMatrix perm_matrix2(Copy, matrixPtr->RowMap(), max_entries);
+
+        // Create a new matrix with row permutation
+        for (int i = 0; i < n ; i++)
+        {
+            // All in serial Comm so 0..n is fine
+            matrixPtr->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
+                                        indices);
+            perm_matrix2.InsertGlobalValues(mrows[i], num_entries,
+                                values, indices);
+        }
+        cout << endl << "After Row permutation:" << endl;
+        perm_matrix2.FillComplete();
+        cout << perm_matrix2 << endl;
+
+        delete[] values;
+        delete[] indices;
+        delete[] mrows;
+        delete[] mcols;
+
+#else
+		 fail = 0;
+         cout << "Matching test requires EpetraExt" << std::endl;
+         return 1;
+#endif
 	}
 	else
     {
 		cout<<endl<<" Usage: ./Isorropia_parallel_matching.exe <mtx file>" <<
              " <Algorithm>" << endl;
-        cout << "\t Algorithm: PHK, PHKDW, PDFS,PPF" << endl << endl;
+        cout << "\t Algorithm: PHK, PHKDW, PDFS,PPF" << endl;
+        cout << "Requires Isorropia to be compiled with OpenMP, OMP_NUM_THREADS"
+              << "set to at least one and the test requires EpetraExt." <<
+               endl << endl;
     }
 #else
     cout << "Matching in Isorropia requires OpenMP." << endl;

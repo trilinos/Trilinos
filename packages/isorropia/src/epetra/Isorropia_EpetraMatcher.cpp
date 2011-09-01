@@ -401,20 +401,22 @@ Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher()
 void Isorropia_EpetraMatcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateU_[0];    
-    size=MIN(size,len);
+    size=MIN(matched_,len);
     memcpy (array, ptr, size * sizeof(int));
 }
+
 void Isorropia_EpetraMatcher::getMatchedRowsForColumnsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateV_[0];
-    size=MIN(size,len);
+    size=MIN(matched_,len);
     memcpy (array, ptr, size * sizeof(int));
 }
 
 int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
 {
-    return 2*matched_;
+    return matched_;
 }
+
 Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
 {
     int *ptr=new int[U_];
@@ -422,20 +424,20 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
     for(int i=0;i<U_;i++)
         ptr[i]=(A_->RowMap()).GID(mateU_[i]);
    
-    std::cout<<"Ptr: ";
+    /*std::cout<<"Ptr: ";
     for(int i=0;i<U_;i++)
         std::cout<<ptr[i]<<",";
-    std::cout<<std::endl;
+    std::cout<<std::endl;*/
    
    if(A_->Comm().NumProc()==1)
    {
         Epetra_Map* map=new Epetra_Map(-1,U_,ptr,0,A_->Comm());
-        std::cout<<"Map created..!!"<<std::endl;
+        //std::cout<<"Map created..!!"<<std::endl;
         return map;
    }
    else
    {
-        std::cout<<"Shared Memmory.."<<std::endl;
+        std::cout<<"Original matrix is in distributed memory"<<std::endl;
         return NULL;
    }
 }
@@ -453,7 +455,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
     }
     else
     {
-        std::cout<<"Shared Memory.."<<std::endl;
+        std::cout<<"Original matrix is in distributed memory"<<std::endl;
         return NULL;
     }
 }
@@ -1160,6 +1162,7 @@ int Isorropia_EpetraMatcher::match()
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<totc<<std::endl;
 #endif
+    matched_ = totc;
     /*std::cout<<"MateU: ";
     for(int i=0; i<5;i++)
         std::cout<<mateU_[i]<<",";
