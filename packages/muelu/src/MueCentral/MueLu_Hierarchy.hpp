@@ -7,6 +7,7 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
 
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
@@ -86,8 +87,9 @@ namespace MueLu {
     }
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level>& GetLevel(int const levelID) {
-      return Levels_[levelID];
+    RCP<Level>& GetLevel(int const levelID) /* const */ {
+      TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "Hierarchy::GetLevel(): invalid input parameter value");
+      return Levels_[levelID-1];
     }
 
     LO GetNumberOfLevels() {
@@ -148,7 +150,7 @@ namespace MueLu {
       Teuchos::ParameterList status;
       status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels /*,status*/);
       if (SmooFact != Teuchos::null) {
-        SetSmoothers(*SmooFact,startLevel,numDesiredLevels);
+        SetSmoothers(*SmooFact,startLevel,numDesiredLevels-1);
       }
       return status;
 
@@ -219,7 +221,6 @@ namespace MueLu {
           Level & fineLevel = *Levels_[i];
 
           if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
-            std::cout << "Create new level" << std::endl;
             RCP<Level> coarseLevel = fineLevel.Build(*out_); // new coarse level, using copy constructor
             this->SetLevel(coarseLevel);                     // add to hierarchy
           }
@@ -267,16 +268,9 @@ namespace MueLu {
     controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome,
     however.
     */
-    void SetCoarsestSolver(SmootherFactory const &smooFact, PreOrPost const &pop = BOTH) {
-      RCP<SmootherPrototype> preSmoo;
-      RCP<SmootherPrototype> postSmoo;
+    void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
       LO clevel = GetNumberOfLevels()-1;
-
-      smooFact.Build(Levels_[clevel],preSmoo,postSmoo);
-      if (pop == PRE)       postSmoo = Teuchos::null;
-      else if (pop == POST) preSmoo  = Teuchos::null;
-      Levels_[clevel]->Set("PreSmoother", preSmoo);
-      Levels_[clevel]->Set("PostSmoother", postSmoo);
+      smooFact.BuildSmoother(*Levels_[clevel], pop);
     }
 
     /*! @brief Construct smoothers on all levels but the coarsest.
@@ -293,24 +287,24 @@ namespace MueLu {
     void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
     {
       if (numDesiredLevels == -1)
-        numDesiredLevels = GetNumberOfLevels()-startLevel;
+        numDesiredLevels = GetNumberOfLevels()-startLevel-1;
       LO lastLevel = startLevel + numDesiredLevels - 1;
 
       //checks
       if (startLevel >= GetNumberOfLevels())
         throw(Exceptions::RuntimeError("startLevel >= actual number of levels"));
 
-      if (lastLevel >= GetNumberOfLevels()) {
-        lastLevel = GetNumberOfLevels() - 1;
+      if (startLevel == GetNumberOfLevels() - 1)
+        throw(Exceptions::RuntimeError("startLevel == coarse level. Use SetCoarseSolver()"));
+
+      if (lastLevel >= GetNumberOfLevels() - 1) {
+        lastLevel = GetNumberOfLevels() - 2;
         MueLu_cout(Teuchos::VERB_HIGH)
           << "Warning: Coarsest Level will have a direct solve!" << std::endl;
       }
 
       for (int i=startLevel; i<=lastLevel; i++) {
-        RCP<SmootherPrototype> preSm, postSm;
-        smooFact.Build(Levels_[i], preSm, postSm);
-        if (preSm != Teuchos::null) Levels_[i]->Set("PreSmoother", preSm);
-        if (postSm != Teuchos::null) Levels_[i]->Set("PostSmoother", postSm);
+        smooFact.Build(*Levels_[i]);
       }
 
     } //SetSmoothers()
@@ -374,8 +368,6 @@ namespace MueLu {
                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")),X,B)
                 << std::endl;
         }
-        RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
-        RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
 
         //X.norm2(norms);
         if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -394,17 +386,25 @@ namespace MueLu {
         //If on the coarse level, do either smoothing (if defined) or a direct solve.
         if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
           {
-            bool emptySolve=true;
-            if (preSmoo != Teuchos::null) {preSmoo->Apply(X, B, false); emptySolve=false;}
-            if (postSmoo != Teuchos::null) {postSmoo->Apply(X, B, false); emptySolve=false;}
+            bool emptySolve = true;
+            if (Fine->IsAvailable("PreSmoother")) {
+              RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+              preSmoo->Apply(X, B, false);
+              emptySolve=false;
+            }
+            if (Fine->IsAvailable("PostSmoother")) {
+              RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+              postSmoo->Apply(X, B, false); 
+              emptySolve=false;
+            }
             if (emptySolve==true)
               *out_ << "WARNING:  no coarse grid solve!!" << std::endl;
           } else {
           //on an intermediate level
           RCP<Level> Coarse = Levels_[startLevel+1];
-          if (preSmoo != Teuchos::null) {
-            preSmoo->Apply(X, B, zeroGuess);
-          }
+
+          RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+          preSmoo->Apply(X, B, zeroGuess);
 
           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
 
@@ -435,10 +435,9 @@ namespace MueLu {
           P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
           X.update(1.0,*correction,1.0);
 
-          if (postSmoo != Teuchos::null) {
-            //X.norm2(norms);
-            postSmoo->Apply(X, B, false);
-          }
+          //X.norm2(norms);
+          RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+          postSmoo->Apply(X, B, false);
         }
         zeroGuess=false;
       } //for (LO i=0; i<nIts; i++)
@@ -464,3 +463,5 @@ namespace MueLu {
 
 #endif //ifndef MUELU_HIERARCHY_HPP
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
+
+//TODO: GetNumbertOfLevels() -> GetNumLevels()

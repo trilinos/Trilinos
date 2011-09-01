@@ -153,9 +153,29 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
       Teuchos::OSTab tab(out_);
 
       A_ = level.Get< RCP<Operator> >("A");
+
+      // output information
+      std::ostringstream buf; buf << level.GetLevelID();
+      std::string prefix = "Smoother (level " + buf.str() + ") : ";
+      LO rootRank = out_->getOutputToRootOnly();
+      out_->setOutputToRootOnly(0);
+      *out_ << prefix << "# global rows = " << A_->getGlobalNumRows()
+            << ", estim. global nnz = " << A_->getGlobalNumEntries() << std::endl;
+
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
       prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
+      if (ifpackType_ == "Chebyshev") {
+        Scalar maxEigenValue = list_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
+        if (maxEigenValue == -1.0) {
+          maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
+          list_.set("chebyshev: max eigenvalue",maxEigenValue);
+        }
+        *out_ << prefix << "Ifpack Chebyshev, degree " << list_.get("chebyshev: degree",1) << std::endl;
+        *out_ << prefix << "lambda_min=" << list_.get("chebyshev: min eigenvalue",-1.0)
+              << ", lambda_max=" << list_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
+      }
+      out_->setOutputToRootOnly(rootRank);
       prec_->SetParameters(list_);
       prec_->Compute();
 
@@ -176,7 +196,17 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
       Teuchos::ParameterList  ifpackList;
-      ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      if (ifpackType_ == "Chebyshev") {
+        ifpackList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      } else if (ifpackType_ == "point relaxation stand-alone") {
+        ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      }
+      else {
+        // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
+        // we should remove the if/else/elseif and just test if this
+        // option is supported by current ifpack2 preconditioner
+        throw(Exceptions::RuntimeError("IfpackSmoother::Apply(): Ifpack preconditioner '"+ifpackType_+"' not supported"));
+      }
       prec_->SetParameters(ifpackList);
 
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);

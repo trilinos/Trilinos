@@ -240,8 +240,19 @@ int main(int argc, char *argv[]) {
   std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
-    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+    if (smooType == "sgs") {
+      ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+      smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+    } else if (smooType == "cheby") {
+      ifpackList.set("chebyshev: degree", (LO) fineSweeps);
+      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+      ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
+      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+      ifpackList.set("chebyshev: zero starting solution", true);
+      smooProto = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
+    }
+#else
+  throw(MueLu::Exceptions::RuntimeError("Ifpack must be enabled."));
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
@@ -357,7 +368,7 @@ int main(int argc, char *argv[]) {
   
     {
       X->putScalar( (SC) 0.0);
-  
+
       H->PrintResidualHistory(true);
       mtime.push_back(M.getNewTimer("Fixed Point Solve"));
       mtime.back()->start();
@@ -422,33 +433,40 @@ int main(int argc, char *argv[]) {
 
     RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
     
-    // Perform solve
-    mtime.push_back(M.getNewTimer("Belos Solve"));
-    mtime.back()->start();
-    Belos::ReturnType ret = solver->solve();
-    mtime.back()->stop();
-
-    // Get the number of iterations for this solve.
-    int numIters = solver->getNumIters();
-    *out << "Number of iterations performed for this solve: " << numIters << std::endl;
-  
-    // Compute actual residuals.
-    std::vector<double> actual_resids( numrhs ); //TODO: double?
-    std::vector<double> rhs_norm( numrhs );
-
-    typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
-    typedef Belos::MultiVecTraits<SC,MV>     MVT;
-    
-    OPT::Apply( *belosOp, *belosX, *belosResid );
-    MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
-    MVT::MvNorm( *belosResid, actual_resids );
-    MVT::MvNorm( *belosRHS, rhs_norm );
+    Belos::ReturnType ret;
     bool badRes = false;
-    *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-    for ( int i=0; i<numrhs; i++) {
-      double actRes = actual_resids[i]/rhs_norm[i];
-      *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) { badRes = true; }
+
+    try{
+      // Perform solve
+      mtime.push_back(M.getNewTimer("Belos Solve"));
+      mtime.back()->start();
+      ret = solver->solve();
+      mtime.back()->stop();
+
+      // Get the number of iterations for this solve.
+      int numIters = solver->getNumIters();
+      *out << "Number of iterations performed for this solve: " << numIters << std::endl;
+    
+      // Compute actual residuals.
+      std::vector<double> actual_resids( numrhs ); //TODO: double?
+      std::vector<double> rhs_norm( numrhs );
+
+      typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
+      typedef Belos::MultiVecTraits<SC,MV>     MVT;
+      
+      OPT::Apply( *belosOp, *belosX, *belosResid );
+      MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
+      MVT::MvNorm( *belosResid, actual_resids );
+      MVT::MvNorm( *belosRHS, rhs_norm );
+      *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+      for ( int i=0; i<numrhs; i++) {
+        double actRes = actual_resids[i]/rhs_norm[i];
+        *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+        if (actRes > tol) { badRes = true; }
+      }
+    } //try
+    catch(...) {
+      *out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
     }
 
     // Check convergence

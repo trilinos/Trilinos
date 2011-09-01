@@ -61,7 +61,9 @@ namespace MueLuTests {
 
       UCAggFact.Build(fineLevel);
       fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
-      TentativePFactory::MakeTentative(fineLevel,coarseLevel);
+      TentativePFactory TentativePFact;
+
+      TentativePFact.Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
       coarseLevel.Get("Ptent",Ptent);
@@ -114,7 +116,8 @@ namespace MueLuTests {
 
     UCAggFact.Build(fineLevel);
     fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
-    TentativePFactory::MakeTentative(fineLevel,coarseLevel);
+    TentativePFactory tentativePFact;
+    tentativePFact.Build(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
     coarseLevel.Get("Ptent",Ptent);

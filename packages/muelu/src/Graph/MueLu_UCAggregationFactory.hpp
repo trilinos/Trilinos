@@ -91,7 +91,7 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_());
+      RCP<const Graph> graph = currentLevel.NewGet< RCP<Graph> >("Graph", graphFact_());
 
       // Build
       RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 

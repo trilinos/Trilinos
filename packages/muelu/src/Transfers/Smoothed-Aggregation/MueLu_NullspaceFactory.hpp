@@ -1,27 +1,16 @@
-#ifndef MUELU_COALESCEDROPFACTORY_HPP
-#define MUELU_COALESCEDROPFACTORY_HPP
+#ifndef MUELU_NULLSPACEFACTORY_HPP
+#define MUELU_NULLSPACEFACTORY_HPP
 
 #include "Xpetra_Operator.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class CoalesceDropFactory
-    @brief Factory for creating a graph base on a given matrix.
-
-    Factory for creating graphs from matrices with entries selectively dropped.
-  
-    - TODO This factory is very incomplete.
-    - TODO The Build method simply builds the matrix graph with no dropping.
-  */
-
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class CoalesceDropFactory : public SingleLevelFactoryBase {
+  class NullspaceFactory : public SingleLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -31,12 +20,13 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<FactoryBase> AFact = Teuchos::null)
+    NullspaceFactory(RCP<FactoryBase> AFact = Teuchos::null) 
       : AFact_(AFact)
     { }
 
     //! Destructor
-    virtual ~CoalesceDropFactory() {}
+    virtual ~NullspaceFactory() {}
+
     //@}
 
     //! Input
@@ -51,9 +41,12 @@ namespace MueLu {
     bool Build(Level &currentLevel) const {
       RCP<Operator> A = currentLevel.NewGet< RCP<Operator> >("A", AFact_());
 
-      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 
-      currentLevel.NewSet("Graph", graph, this);
+      RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
+      nullspace->putScalar(1.0);
+
+      currentLevel.NewSet("Nullspace", nullspace, this);
 
       return true; //??
 
@@ -63,10 +56,10 @@ namespace MueLu {
     //! A Factory
     RCP<FactoryBase> AFact_;
 
-  }; //class CoalesceDropFactory
+  }; //class NullspaceFactory
 
 } //namespace MueLu
 
-#define MUELU_COALESCEDROPFACTORY_SHORT
+#define MUELU_NULLSPACEFACTORY_SHORT
 
-#endif //ifndef MUELU_COALESCEDROPFACTORY_HPP
+#endif //ifndef MUELU_NULLSPACEFACTORY_HPP

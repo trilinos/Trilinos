@@ -692,16 +692,16 @@ private:
           B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
         }
 #else
-        std::vector<GlobalOrdinal> vecIndices;
+        std::vector<GlobalOrdinal> tempvecIndices(NumEntries);
         std::copy(Indices.getRawPtr(),
             Indices.getRawPtr()+NumEntries,
-            std::inserter(vecIndices,vecIndices.begin()));
-        std::vector<Scalar> vecValues;
+            std::inserter(tempvecIndices,tempvecIndices.begin()));
+        std::vector<Scalar> tempvecValues(NumEntries);
         std::copy(Values.getRawPtr(),
             Values.getRawPtr()+NumEntries,
-            std::inserter(vecValues,vecValues.begin()));
-        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&vecIndices[0], NumEntries);
-        Teuchos::ArrayView<Scalar>        tempValue(&vecValues[0],  NumEntries);
+            std::inserter(tempvecValues,tempvecValues.begin()));
+        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempvecIndices[0], NumEntries);
+        Teuchos::ArrayView<Scalar>        tempValue(&tempvecValues[0],  NumEntries);
         B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
 #endif
 
