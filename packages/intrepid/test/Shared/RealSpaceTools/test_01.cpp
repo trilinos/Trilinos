@@ -85,6 +85,10 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 50;
+#ifndef HAVE_INTREPID_DEBUG_INF_CHECK
+  endThrowNumber = beginThrowNumber + 45;
+#endif
+
 #endif
 
   *outStream \

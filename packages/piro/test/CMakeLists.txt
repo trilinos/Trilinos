@@ -82,7 +82,7 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  IF (Piro_ENABLE_Stokhos) 
+  IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_TriKota) 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       SGAnalysisDriver
       SOURCES 

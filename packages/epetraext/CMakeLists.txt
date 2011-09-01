@@ -94,10 +94,9 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_PETSC
   "Enable Epetra/PETSc adapters"
   OFF )
 
-ADD_OPTION_AND_DEFINE(TPL_ENABLE_HYPRE
-  HAVE_HYPRE
-  "Enable EpetraExt/Hypre adapters"
-  OFF )
+#Adding a define for when the TPL HYPRE is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_HYPRE "${${PACKAGE_NAME}_ENABLE_HYPRE}")
 
 IF(${PACKAGE_NAME}_ENABLE_HDF5)
   SET(${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT ON)
@@ -110,10 +109,9 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
   "Enable EpetraExt interface support for HDF5. This interface requires an already installed HDF5 library\; the include, the library path and the library name must be specified as well."
   ${${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT} )
 
-ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_PyTrilinos
-  HAVE_PYTRILINOS
-  "Enable certain python-compatible code only if PyTrilinos is enabled."
-  OFF )
+#Adding a define for when PyTrilinos is enabled.
+#This replaces an option that was reusing an existing name.
+SET(HAVE_PYTRILINOS "${Trilinos_ENABLE_PyTrilinos}")
 
 #
 # C) Add the libraries, tests, and examples

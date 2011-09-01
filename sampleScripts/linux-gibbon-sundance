@@ -1,5 +1,4 @@
 #!/bin/sh
-#!/bin/sh
 
 # ----------------------------------------------------------------------------
 # Set the location of the compilers and libraries. On a simple out-of-the-box
@@ -34,7 +33,10 @@ TRILINOS_SRC_DIR=${HOME}/Code/Trilinos
 # cannot be found, these tests will be disabled.
 TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 
-source ${HOME}/Code/Trilinos/sampleScripts/krlong-linux-common
+# The source command is a bash extension and isn't available on all
+# versions of /bin/sh. Use the "dot" instead.
+#source ${HOME}/Code/Trilinos/sampleScripts/krlong-linux-common
+. ${HOME}/Code/Trilinos/sampleScripts/krlong-linux-common
 
 exit 0
 

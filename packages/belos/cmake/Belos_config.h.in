@@ -1,25 +1,22 @@
-/* Define if want to build with epetraext enabled */
-#cmakedefine HAVE_BELOS_EPETRAEXT
-
-/* Define if want to build with amesos enabled */
+/* Define if want to build with Amesos enabled */
 #cmakedefine HAVE_BELOS_AMESOS
 
-/* Define if want to build with ifpack enabled */
+/* Define if want to build with IFPACK enabled */
 #cmakedefine HAVE_BELOS_IFPACK
 
-/* Define if want to build with epetra enabled */
+/* Define if want to build with Epetra enabled */
 #cmakedefine HAVE_BELOS_EPETRA
 
-/* Define if want to build with epetraext enabled */
+/* Define if want to build with EpetraExt enabled */
 #cmakedefine HAVE_BELOS_EPETRAEXT
 
-/* Define if want to build with ml enabled */
+/* Define if want to build with ML enabled */
 #cmakedefine HAVE_BELOS_ML
 
 /* Define if want to build with tpetra enabled */
 #cmakedefine HAVE_BELOS_TPETRA
 
-/* Define whether we have Tpetra MultiVector timers */
+/* Define whether we want to time Tpetra MultiVector operations */
 #cmakedefine HAVE_BELOS_TPETRA_TIMERS
 
 /* Define if want to build with thyra enabled */
@@ -61,6 +58,9 @@
 
 /* Define if we are building with Teuchos TimeMonitors enabled */
 #cmakedefine BELOS_TEUCHOS_TIME_MONITOR
+
+/* Define if we are building with experimental code enabled */
+#cmakedefine HAVE_BELOS_EXPERIMENTAL
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

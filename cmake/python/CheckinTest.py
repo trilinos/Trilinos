@@ -2,14 +2,6 @@
 #
 # ToDo:
 #
-#  (*) Augment the --extra-pull-from argument to allow specifying extra pulls
-#  for specific repos (i.e. different commands for different repos or on extra
-#  pull for some repos).  The idea would be to use some special character to
-#  specify the exact repo with something like
-#  (preCopyrightTrilinos)ssg:master'.  You would specify the main Trilinos
-#  repo with '()ssg:master'.  Using '(...)' would hopefully avoid any
-#  conflicts with the shell interpreter.
-#
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
@@ -305,10 +297,15 @@ class GitRepo:
 
 
 class BuildTestCase:
-  def __init__(self, name, runBuildTestCase, isDefaultBuild, extraCMakeOptions, buildIdx):
+  def __init__(self, name, runBuildTestCase, validPackageTypesList,
+    isDefaultBuild, skipCaseIfNoChangeFromDefaultEnables,
+    extraCMakeOptions, buildIdx \
+    ):
     self.name = name
     self.runBuildTestCase = runBuildTestCase
+    self.validPackageTypesList = validPackageTypesList
     self.isDefaultBuild = isDefaultBuild
+    self.skipCaseIfNoChangeFromDefaultEnables = skipCaseIfNoChangeFromDefaultEnables
     self.extraCMakeOptions = extraCMakeOptions
     self.skippedConfigureDueToNoEnables = False
     self.buildIdx = buildIdx
@@ -316,12 +313,14 @@ class BuildTestCase:
 
 
 def setBuildTestCaseInList(buildTestCaseList_inout,
-  name, runBuildTestCase, isDefaultBuild, extraCMakeOptions \
+  name, runBuildTestCase, validPackageTypesList, isDefaultBuild,
+  skipCaseIfNoChangeFromDefaultEnables, extraCMakeOptions \
   ):
   buildTestCaseList_inout.append(
-    BuildTestCase(name, runBuildTestCase, isDefaultBuild, extraCMakeOptions,
-      len(buildTestCaseList_inout)))
-  
+    BuildTestCase(name, runBuildTestCase, validPackageTypesList, isDefaultBuild,
+      skipCaseIfNoChangeFromDefaultEnables, extraCMakeOptions,
+      len(buildTestCaseList_inout) ) )
+
 
 def writeDefaultCommonConfigFile():
 
@@ -814,7 +813,9 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
   print "E.3) Send the email message ..."
   print ""
 
-  if inOptions.sendEmailTo and buildTestCase.skippedConfigureDueToNoEnables:
+  if inOptions.sendEmailTo and buildTestCase.skippedConfigureDueToNoEnables \
+     and inOptions.abortGracefullyIfNoEnables \
+     :
 
     print buildTestCaseName + ": Skipping sending build/test case email because" \
       +" there were no enables and --abort-gracefully-if-no-enables was set!"
@@ -894,20 +895,23 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   return summaryEmailSectionStr
 
 
-def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
+def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
+   skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
+   baseTestDir, verbose \
+   ):
 
   cmakePkgOptions = []
   enablePackagesList = []
     
   if inOptions.enablePackages:
     if verbose:
-      print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
+      print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ..."
     enablePackagesList = inOptions.enablePackages.split(',')
   else:
     for gitRepo in gitRepoList:
       diffOutFileName = baseTestDir+"/"+getModifiedFilesOutputFileName(gitRepo.repoName)
       if verbose:
-        print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
+        print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ..."
       if os.path.exists(diffOutFileName):
         updateOutputStr = open(diffOutFileName, 'r').read()
         #print "\nupdateOutputStr:\n", updateOutputStr
@@ -917,11 +921,35 @@ def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
         if verbose:
           print "\nThe file "+diffOutFileName+" does not exist!\n"
 
+  if verbose:
+    print "\nFull package enable list: [" + ','.join(enablePackagesList) + "]"
+
   if inOptions.disablePackages:
+    if verbose:
+      print "\nRemoving package enables: [" + inOptions.disablePackages + "]"
     for disablePackage in inOptions.disablePackages.split(","):
       packageIdx = findInSequence(enablePackagesList, disablePackage)
       if packageIdx >= 0:
         del enablePackagesList[packageIdx]
+
+  if verbose:
+    print "\nFiltering the set of enabled packages according to allowed package types ..."
+  origEnablePackagesList = enablePackagesList[:]
+  enablePackagesList = trilinosDependencies.filterPackageNameList(
+    enablePackagesList, validPackageTypesList, verbose)
+
+  if verbose:
+    print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
+
+  if isDefaultBuild:
+    print "\nSaving current set of default package enables for later comparison!"
+    inOptions.defaultPackageEnables = enablePackagesList[:]
+  elif skipCaseIfNoChangeFromDefaultEnables and enablePackagesList == inOptions.defaultPackageEnables:
+    #print "inOptions.enablePackagesList =", inOptions.defaultPackageEnables
+    #print "enablePackagesList =", enablePackagesList
+    print "\nEnable packages list is unchanged from default build," \
+      " disabling all packages for this build/test case!"
+    enablePackagesList = []
 
   if not enablePackagesList:
     return (cmakePkgOptions, enablePackagesList)
@@ -936,19 +964,19 @@ def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
 
   if inOptions.enableAllPackages == 'on':
     if verbose:
-      print "\nEnabling all packages on request ..."
+      print "\nEnabling all packages on request!"
     cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
 
   if inOptions.enableFwdPackages:
     if verbose:
-      print "\nEnabling forward packages on request ..."
+      print "\nEnabling forward packages on request!"
     cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
   else:
     cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
 
   if inOptions.disablePackages:
     if verbose:
-      print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
+      print "\nAdding hard disaled for specified packages '"+inOptions.disablePackages+"' ...\n"
     disablePackagesList = inOptions.disablePackages.split(',')
     for pkg in disablePackagesList:
       cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
@@ -1024,7 +1052,10 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
     if preConfigurePassed:
       (cmakePkgOptions, enablePackagesList) = \
-        getEnablesLists(inOptions, gitRepoList, baseTestDir, True)
+        getEnablesLists(inOptions, buildTestCase.validPackageTypesList, 
+          buildTestCase.isDefaultBuild,
+          buildTestCase.skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
+          baseTestDir, True)
   
     # A.3) Set the combined options
 
@@ -1053,9 +1084,9 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
       print "\nSkipping configure because pre-configure failed (see above)!\n"
 
-    elif (not enablePackagesList) and inOptions.abortGracefullyIfNoEnables:
+    elif not enablePackagesList:
 
-      print "\nSkipping configure because no packages are enabled and --abort-gracefully-if-no-enables!\n"
+      print "\nSkipping configure because no packages are enabled!\n"
       buildTestCase.skippedConfigureDueToNoEnables = True
   
     elif inOptions.doConfigure:
@@ -1240,7 +1271,11 @@ def runBuildTestCaseDriver(inOptions, gitRepoList, baseTestDir, buildTestCase, t
   return success
 
 
-def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestCaseName, inOptions):
+def checkBuildTestCaseStatus(buildTestCase, inOptions):
+
+  runBuildTestCaseBool = buildTestCase.runBuildTestCase
+  buildTestCaseName = buildTestCase.name
+  skippedConfigureDueToNoEnables = buildTestCase.skippedConfigureDueToNoEnables
 
   statusMsg = None
   timeInMin = -1.0
@@ -1250,6 +1285,13 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestCaseName, inOptions)
     buildTestCaseOkayToCommit = True
     statusMsg = \
       "Test case "+buildTestCaseName+" was not run! => Does not affect push readiness!"
+    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
+
+  if skippedConfigureDueToNoEnables:
+    buildTestCaseActionsPass = True
+    buildTestCaseOkayToCommit = True
+    statusMsg = \
+      "Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
   if not os.path.exists(buildTestCaseName) and not performAnyBuildTestActions(inOptions):
@@ -1263,8 +1305,8 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestCaseName, inOptions)
     buildTestCaseOkayToCommit = False
     statusMsg = "The directory "+buildTestCaseName+" does not exist!"
 
-  emailsuccessFileName = buildTestCaseName+"/"+getEmailSuccessFileName()
-  if os.path.exists(emailsuccessFileName):
+  emailSuccessFileName = buildTestCaseName+"/"+getEmailSuccessFileName()
+  if os.path.exists(emailSuccessFileName):
     buildTestCaseActionsPass = True
   else:
     buildTestCaseActionsPass = False
@@ -1484,10 +1526,13 @@ def checkinTest(inOptions):
     inOptions.ctestOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.ctestOptions
 
   assertExtraBuildConfigFiles(inOptions.extraBuilds)
+  assertExtraBuildConfigFiles(inOptions.ssExtraBuilds)
 
   if not inOptions.skipDepsUpdate:
     removeIfExists(getTrilinosDependenciesXmlFileName())
     removeIfExists(getTrilinosDependenciesXmlGenerateOutputFileName())
+
+  setattr(inOptions, "defaultPackageEnables", [])
 
   if inOptions.extraRepos:
     print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
@@ -1509,14 +1554,16 @@ def checkinTest(inOptions):
     else:
       print "\nSkipping update of dependencies XML file on request!"
     trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
-    trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
-    if trilinosDepsXmlFileOverride:
-      print "\ntrilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride
-      trilinosDepsXmlFile = trilinosDepsXmlFileOverride
   else:
     # No extra repos so you can just use the default list of Trilinos
     # packages
     trilinosDepsXmlFile = defaultTrilinosDepsXmlInFile
+
+  trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
+  if trilinosDepsXmlFileOverride:
+    print "\ntrilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride
+    trilinosDepsXmlFile = trilinosDepsXmlFileOverride
+
 
   global trilinosDependencies
   trilinosDependencies = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
@@ -1553,7 +1600,8 @@ def checkinTest(inOptions):
     ]
 
   setBuildTestCaseInList( buildTestCaseList,
-    "MPI_DEBUG", inOptions.withMpiDebug, True,
+    "MPI_DEBUG", inOptions.withMpiDebug,
+    ["PS"], True, False,
     commonConfigOptions +
     [
       "-DTPL_ENABLE_MPI:BOOL=ON",
@@ -1567,9 +1615,11 @@ def checkinTest(inOptions):
     )
 
   setBuildTestCaseInList( buildTestCaseList,
-    "SERIAL_RELEASE", inOptions.withSerialRelease, True,
+    "SERIAL_RELEASE", inOptions.withSerialRelease,
+    ["PS"], True, False,
     commonConfigOptions +
     [
+      "-DTPL_ENABLE_MPI:BOOL=OFF",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
       "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
       "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
@@ -1577,9 +1627,17 @@ def checkinTest(inOptions):
     ]
     )
 
+  if inOptions.ssExtraBuilds:
+    for ssExtraBuild in inOptions.ssExtraBuilds.split(','):
+      setBuildTestCaseInList(buildTestCaseList, ssExtraBuild, True,
+        ["PS", "SS"],  False, True, [])
+
+  allValidPackageTypesList = ["PS", "SS", "EX"]
+
   if inOptions.extraBuilds:
     for extraBuild in inOptions.extraBuilds.split(','):
-      setBuildTestCaseInList(buildTestCaseList, extraBuild, True, False, [])
+      setBuildTestCaseInList(buildTestCaseList, extraBuild, True,
+        allValidPackageTypesList,  False, False, [])
   
   try:
 
@@ -1871,6 +1929,7 @@ def checkinTest(inOptions):
     okayToPush = False
     forcedCommitPush = False
     abortedCommitPush = False
+    atLeastOneConfigureBuildAttemptPassed = False
 
     if inOptions.doPushReadinessCheck:
 
@@ -1883,7 +1942,8 @@ def checkinTest(inOptions):
       shortCommitEmailBodyExtra = ""
 
       (cmakePkgOptions, enabledPackagesList) = \
-        getEnablesLists(inOptions, gitRepoList, baseTestDir, False)
+        getEnablesLists(inOptions, allValidPackageTypesList, False, False,
+        gitRepoList, baseTestDir, False)
 
       enableStatsListStr = getEnableStatusList(inOptions, enabledPackagesList)
       commitEmailBodyExtra += enableStatsListStr
@@ -1897,7 +1957,7 @@ def checkinTest(inOptions):
         buildTestCase = buildTestCaseList[i]
         buildTestCaseName = buildTestCase.name
         (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin) = \
-          checkBuildTestCaseStatus(buildTestCase.runBuildTestCase, buildTestCaseName, inOptions)
+          checkBuildTestCaseStatus(buildTestCase, inOptions)
         buildTestCaseStatusStr = str(i)+") "+buildTestCaseName+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
           buildTestCaseStatusStr += " => Not ready to push!"
@@ -1910,6 +1970,16 @@ def checkinTest(inOptions):
           success = False
         if not buildTestCaseOkayToCommit:
           okayToCommit = False
+        #print "buildTestCaseOkayToCommit =", buildTestCaseOkayToCommit
+        if buildTestCase.runBuildTestCase and buildTestCaseOkayToCommit \
+           and not buildTestCase.skippedConfigureDueToNoEnables \
+           :
+           #print "Setting atLeastOneConfigureBuildAttemptPassed=True"
+           atLeastOneConfigureBuildAttemptPassed = True
+
+      if not atLeastOneConfigureBuildAttemptPassed:
+        print "\nThere were no successfuly attempts to configure/build/test!"
+        okayToCommit = False
 
       if not okayToCommit:
         print "\nAt least one of the actions (update, configure, built, test)" \
@@ -2231,6 +2301,8 @@ def checkinTest(inOptions):
       allConfiguresAbortedDueToNoEnablesGracefullAbort = True
       for buildTestCase in buildTestCaseList:
         if not buildTestCase.skippedConfigureDueToNoEnables:
+          #print "buildTestCase.name =", buildTestCase.name
+          #print "buildTestCase.skippedConfigureDueToNoEnables =", buildTestCase.skippedConfigureDueToNoEnables
           allConfiguresAbortedDueToNoEnablesGracefullAbort = False
 
       if not pullPassed:

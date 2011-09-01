@@ -249,7 +249,7 @@ namespace Belos {
 	  // OutputManager's chosen verbosity level, you may or may
 	  // not see the results of the test.
 	  //
-	  // FIXME (mfh 22 Jan 2011) For now, these results have to be
+	  // NOTE (mfh 22 Jan 2011) For now, these results have to be
 	  // inspected visually.  We should add a simple automatic
 	  // test.
 	  debugOut << "Orthogonality of V[0:" << (numBlocks-1) 
@@ -1111,11 +1111,11 @@ namespace Belos {
 
 	} // test for
 
-	// FIXME (mfh 05 Nov 2010) Since Belos::MsgType is an enum,
+	// NOTE (mfh 05 Nov 2010) Since Belos::MsgType is an enum,
 	// doing bitwise logical computations on Belos::MsgType values
 	// (such as "Debug | Errors") and passing the result into
 	// MyOM->stream() confuses the compiler.  As a result, we have
-	// to do weird casts to make it work.
+	// to do some type casts to make it work.
 	const int msgType = (numerr > 0) ? 
 	  (static_cast<int>(Debug) | static_cast<int>(Errors)) :
 	  static_cast<int>(Debug);

@@ -875,14 +875,6 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_121(const Epetra
   return 0;
 }
 
-
-int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite){
-  for(Teuchos::ParameterList::ConstIterator param=source.begin(); param!=source.end(); param++)
-    if ( dest.isParameter(source.name(param)) == false || OverWrite )
-      dest.setEntry(source.name(param),source.entry(param));
-  return 0;
-}
-
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWrite)
 {  

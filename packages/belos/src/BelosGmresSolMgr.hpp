@@ -60,7 +60,7 @@
 namespace Belos {
 
   /// \class GmresSolMgr
-  /// \author MarkHoemmen
+  /// \author Mark Hoemmen
   /// \brief Solver manager for CA-GMRES and standard GMRES.
   ///
   template<class Scalar, class MV, class OP>
@@ -96,19 +96,10 @@ namespace Belos {
       setParametersImpl (params);
     }
 
-    /// \brief Default constructor.  
-    ///
-    /// \note I'm not a fan of default construction for heavyweight
-    /// "solve this problem" classes like this one, since it tends to
-    /// violate the "construction is initialization" preferred C++
-    /// idiom.  Nevertheless, we have to support default construction
-    /// syntactically, in order to inherit from SolverManager.
+    //! Default constructor; defers setting parameters.
     GmresSolMgr() 
     {
-      throw std::logic_error("We are required to support default construction "
-			     "syntactically, but nothing requires us to support "
-			     "it at runtime!  Remember RAII:  Resource "
-			     "Allocation Is Initialization.");
+      throw std::logic_error("TODO: implement deferring setting parameters until solve()");
     }
 
     //! Destructor, defined virtual for safe inheritance.

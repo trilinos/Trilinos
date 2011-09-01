@@ -523,7 +523,7 @@ namespace Belos {
     // Validate parameters' values in params, and add default values
     // for parameters that are not in params.
     //
-    // FIXME (mfh 06 Dec 2010) This throws
+    // NOTE (mfh 06 Dec 2010) This throws
     // Teuchos::Exceptions::InvalidParameterName if params has a
     // parameter that defaults doesn't have (not vice versa).  (That
     // would mean the user provided "extra" parameters.)  We should

@@ -29,11 +29,14 @@
 // @HEADER
 
 #include "MockModelEval_C.hpp"
+#include "Piro_ConfigDefs.hpp"
 
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
 
+#ifdef Piro_ENABLE_Stokhos
 #include "Stokhos_Epetra.hpp"
+#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -164,12 +167,15 @@ MockModelEval_C::createInArgs() const
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x, true);
 
+#ifdef Piro_ENABLE_Stokhos
   inArgs.setSupports(IN_ARG_x_sg, true);
   inArgs.setSupports(IN_ARG_x_dot_sg, true);
   inArgs.setSupports(IN_ARG_p_sg, 0, true); // 1 SG parameter vector
   inArgs.setSupports(IN_ARG_sg_basis, true);
   inArgs.setSupports(IN_ARG_sg_quadrature, true);
   inArgs.setSupports(IN_ARG_sg_expansion, true);
+#endif
+
   return inArgs;
 }
 
@@ -188,12 +194,14 @@ MockModelEval_C::createOutArgs() const
   outArgs.setSupports(OUT_ARG_DgDx, 0, DERIV_TRANS_MV_BY_ROW);
   outArgs.setSupports(OUT_ARG_DgDp, 0, 0, DERIV_MV_BY_COL);
 
+#ifdef Piro_ENABLE_Stokhos
   outArgs.setSupports(OUT_ARG_f_sg, true);
   outArgs.setSupports(OUT_ARG_W_sg, true);
   outArgs.setSupports(OUT_ARG_g_sg, 0, true);
   outArgs.setSupports(OUT_ARG_DfDp_sg, 0, DERIV_MV_BY_COL);
   outArgs.setSupports(OUT_ARG_DgDx_sg, 0, DERIV_TRANS_MV_BY_ROW);
   outArgs.setSupports(OUT_ARG_DgDp_sg, 0, 0, DERIV_MV_BY_COL);
+#endif
 
   return outArgs;
 }
@@ -271,6 +279,7 @@ MockModelEval_C::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   // Stochastic calculation
   //
 
+#ifdef Piro_ENABLE_Stokhos
   // Parse InArgs
   RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
     inArgs.get_sg_basis();
@@ -346,4 +355,5 @@ MockModelEval_C::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       (*dgdp_sg)[block][0][0] = p[block];
     }
   }
+#endif
 } 

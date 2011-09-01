@@ -70,6 +70,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Claps                 claps                          SS
   AztecOO               aztecoo                        PS
   Galeri                galeri                         PS
+  Amesos2               amesos2                        EX
   Amesos                amesos                         PS
   Pamgen                pamgen                         PS
   SEACAS                seacas                         SS # Depends on netcdf, optionally hdf5, xdmf, pamgen

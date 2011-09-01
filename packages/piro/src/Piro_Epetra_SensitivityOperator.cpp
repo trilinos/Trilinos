@@ -35,10 +35,6 @@
 #include "Epetra_Vector.h"
 #include "NOX_Epetra_MultiVector.H"
 
-#include "Stokhos_MatrixFreeOperator.hpp"
-#include "Stokhos_EpetraMultiVectorOperator.hpp"
-#include "Stokhos_EpetraOperatorOrthogPoly.hpp"
-
 Piro::Epetra::SensitivityOperator::
 SensitivityOperator(
   const Teuchos::RCP<const Epetra_Map>& g_map_,

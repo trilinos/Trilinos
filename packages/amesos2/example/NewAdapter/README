@@ -1,0 +1,45 @@
+======================
+ New Adapter Examples
+======================
+
+:author: Eric T Bavier <etbavie@sandia.gov>
+:date:   Mon Jul 19 16:30:07 CDT 2010
+
+
+The files in this directory are meant to provide an example to
+developers for how to add new Matrix and MultiVector adapters to
+Amesos2.
+
+There are 4 files for each Matrix and MultiVector, of which only 2
+need editing:
+
+1. In Amesos2_NewMatrixAdapter_decl.hpp and
+   Amesos2_NewMultiVecAdapter_decl.hpp the public typedef statements
+   may need to be changed.  Similarly, the matrix adapter may itself
+   need to be templated to reflect any template parameters of the type
+   being wrapped.
+
+2. In Amesos2_NewMatrixAdapter_def.hpp and
+   Amesos2_NewMultiVecAdapter_def.hpp, all function definitions will
+   need to be provided.  Some functions are declared to return or
+   accept Tpetra-type objects.  When wrapping the underlying object's
+   function calls, appropriate type conversions (explicit or implicit)
+   will need to take place before return'ing.
+
+Of course the text "NewMatrix" and "NewMultiVector" in the filenames
+and within the files themselves will need to be changed to reflect the
+class that is being adapted.
+
+Finally, the new adapters will need to be added to Amesos2 by either
+
+- Adding::
+
+    #include "Amesos2_NewMatrixAdapter_decl.hpp"
+
+  to Amesos2_MatrixAdapter.hpp
+
+- Adding::
+
+    #include "Amesos2_NewMultiVecAdapter_decl.hpp"
+
+  to Amesos2_MultiVecAdapter.hpp
