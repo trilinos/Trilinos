@@ -44,7 +44,7 @@ double   *s;			/* approximate eigenvector of T */
     extern double SRESTOL;      /* limit on relative residual tol for evec of T */
     extern double DOUBLE_MAX;	/* maximum double precision value */
     int       i;		/* index */
-    double    residual;		/* how well recurrence gives eigenvector */
+    double    residual=0.0;	/* how well recurrence gives eigenvector */
     double    temp;		/* used to compute residual */
     double   *work;		/* temporary work vector allocated within if used */
     double    w[MAXDIMS + 1];	/* holds eigenvalue for tinvit */

@@ -285,7 +285,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
 int get_elem_info(const int req, const E_Type etype)
 {
 
-  int answer;
+  int answer=0;
 
   switch(etype)		/* Switch over the element type */
   {
@@ -1481,7 +1481,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
                     int ss_node_list[])
 
 {
-  int i;
+  int i=0;
 
   /*
    * This function returns a list of global node numbers forming a
@@ -1817,7 +1817,7 @@ int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
                   int mirror_node_list[])
 
 {
-  int   i;
+  int i=0;
 
   /*
    * the following arrays are the conversion from the side to

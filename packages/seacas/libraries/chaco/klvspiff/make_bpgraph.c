@@ -25,10 +25,10 @@ int      *pnleft;		/* number of nodes in left half */
 int      *pnright;		/* number of nodes in right half */
 int       using_vwgts;		/* are vertices weighted? */
 {
-    int      *loc2glob;		/* maps bp number to full graph */
-    int      *pointers;		/* start/stop of adjacency lists */
-    int      *indices;		/* adjacency list for each vertex */
-    int      *vwgts;		/* saves vwgts so they can be overwritten */
+    int      *loc2glob=NULL;	/* maps bp number to full graph */
+    int      *pointers=NULL;	/* start/stop of adjacency lists */
+    int      *indices=NULL;	/* adjacency list for each vertex */
+    int      *vwgts=NULL;	/* saves vwgts so they can be overwritten */
     int       nleft, nright;	/* # vertices in halves of bipartite graph */
     int       nedges;		/* number of edges in bipartite graph */
     int       vtx;		/* vertex in graph */

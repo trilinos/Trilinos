@@ -34,7 +34,7 @@ int       using_vwgts;		/* are vertex weights being used? */
     double    grad_norm;	/* norm of the gradient */
     double    grad_min;		/* acceptable gradient for convergence */
     double    a, b, c;		/* temporary values */
-    double    funcf, funcc;	/* values of function to be minimized */
+    double    funcf=0.0, funcc;	/* values of function to be minimized */
     double    step_size;	/* norm of step */
     double    step_max;		/* maximum allowed step */
     double    step_min;		/* minimum step => convergence */
@@ -43,7 +43,7 @@ int       using_vwgts;		/* are vertex weights being used? */
     double    hess_min;		/* value for hessian if < 0 */
     double    hess_tol;		/* smallest possible positive hess_min */
     double    hfact;		/* scales minimum tolerated hessian */
-    double    w, ws;		/* vertex weight squared or to the 1.5 */
+    double    w, ws=0;		/* vertex weight squared or to the 1.5 */
     double    mult;		/* multiplier for constraint violation */
     double    max_constraint;	/* maximum allowed value for constraint */
     double    eval;		/* smallest eigenvalue of Hessian */
@@ -65,6 +65,7 @@ int kk;
     void      evals3();
 
     /* Set parameters. */
+    best[0]=best[1]=best[2]=0.0;
     a = sqrt((double) nvtxs);
     step_max = PI / 4;
     early_step_min = 2.0e-4;

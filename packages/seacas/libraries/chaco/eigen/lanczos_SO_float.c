@@ -91,7 +91,7 @@ int       vwgt_max;		/* largest vertex weight */
     int       pausemode;	/* which Lanczos pausing criterion to use */
     int       pause;		/* whether to pause */
     int       temp;		/* used to prevent redundant index computations */
-    int    *old_assignment;	/* set # of each vtx on previous pause, length n+1 */ 
+    int    *old_assignment=NULL;/* set # of each vtx on previous pause, length n+1 */ 
     int    *assgn_pntr;	/* pntr to assignment vector */
     int    *old_assgn_pntr;	/* pntr to previous assignment vector */
     int       assigndiff;	/* # of differences between old and new assignment */

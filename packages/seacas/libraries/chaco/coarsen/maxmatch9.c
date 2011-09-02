@@ -28,7 +28,7 @@ int       using_ewgts;		/* are edge weights being used? */
     int       vtx;		/* vertex to process next */
     int       neighbor;		/* neighbor of a vertex */
     int       best;		/* best match found so far */
-    float     same, best_same;	/* maximum # neighbors in common so far */
+    float     same=0, best_same;	/* maximum # neighbors in common so far */
     float     best_ewgt;	/* edge weight of possible matching edge */
     int       nmerged;		/* number of edges in matching */
     int       i, j, k;		/* loop counters */

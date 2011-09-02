@@ -112,7 +112,7 @@ long      seed;			/* for random graph mutations */
     int       nsets_tot;	/* total number of sets */
     int       bits;		/* used in computing hops */
     int       flag;		/* return code from check_input */
-    int       old_perturb;	/* saves original pertubation flag */
+    int       old_perturb=0;	/* saves original pertubation flag */
     int       i, j, k;		/* loop counters */
     double    seconds();
     void      setrandom(long int seed);

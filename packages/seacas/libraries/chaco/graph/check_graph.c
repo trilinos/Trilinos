@@ -18,7 +18,7 @@ int       nedges;		/* number of edges */
 {
     extern FILE *Output_File;   /* output file or null */
     float     eweight;		/* edge weight */
-    double    wgt_sum;		/* sum of edge weights */
+    double    wgt_sum=0.0;		/* sum of edge weights */
     int       flag;		/* flag for error free graph */
     int       no_edge_count;	/* warning flag for isolated vertex */
     int       bad_vwgt_count;	/* number of vertices with bad vwgts */

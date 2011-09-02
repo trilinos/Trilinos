@@ -131,7 +131,7 @@ void load_lb_info(void)
  */
 {
 
-  int    iproc, lb_exoid, i, vec_indx, ijump, do_proc, send_to;
+  int    iproc, lb_exoid=0, i, vec_indx, ijump, do_proc, send_to;
   int   *Integer_Vector = NULL;   /* Data structure for sending int data to  *
 			           * processors                              */
   int   *Int_Space = NULL, *Int_Node_Num, *Bor_Node_Num, *Ext_Node_Num;

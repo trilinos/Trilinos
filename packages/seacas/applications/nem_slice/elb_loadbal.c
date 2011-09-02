@@ -134,13 +134,13 @@ int generate_loadbal(MACHINE_PTR machine,
                      char *argv[])
 {
   char   *assignfile = NULL;
-  int     ecnt, cnt, cnt2, flag, arch, refine, num_level, totalproc=0, glob_method;
+  int     ecnt, cnt, cnt2, flag, arch, refine, num_level=0, totalproc=0, glob_method=0;
   int     nnodes, ncnt, iproc, iloop, nloops, adjp, elemp, start_proc;
   int    *tmp_start=NULL, *tmp_adj=NULL, *tmp_vwgts=NULL, tmp_nv;
   int    *nprocg=NULL, *nelemg=NULL, *nadjg=NULL, max_vtx, max_adj, group;
   int    *elem_map=NULL, dim[1], tmpdim[3], tmp_arch, tmp_lev;
-  int  *tmp_v2p;
-  float  *x_ptr, *y_ptr, *z_ptr;
+  int    *tmp_v2p=NULL;
+  float  *x_ptr=NULL, *y_ptr=NULL, *z_ptr=NULL;
   float  *x_node_ptr=NULL, *y_node_ptr=NULL, *z_node_ptr=NULL;
   float  *x_elem_ptr=NULL, *y_elem_ptr=NULL, *z_elem_ptr=NULL;
   float  *tmp_x=NULL, *tmp_y=NULL, *tmp_z=NULL;
@@ -148,7 +148,7 @@ int generate_loadbal(MACHINE_PTR machine,
   long    seed=1;
   double *goal=NULL;
   double  time1, time2;
-  FILE   *fp;
+  FILE   *fp=NULL;
   /* unused variable int *adj_ptr=NULL; */
 
   /* Variables used in Chaco */

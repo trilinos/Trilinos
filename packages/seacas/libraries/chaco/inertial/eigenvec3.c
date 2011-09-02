@@ -141,7 +141,7 @@ double   *res;			/* returned error estimate */
     double    norm;		/* norm of eigenvector */
     double    res1, res2, res3;	/* elements of residual vector */
     double    tol = 1.0e-6;	/* smaller value assumed to be zero */
-    int       imax, jmax;	/* indices of max value in matrix */
+    int       imax=-1, jmax=-1;	/* indices of max value in matrix */
     int       i, j;		/* loop counters */
 
     for (i = 0; i < 3; i++)

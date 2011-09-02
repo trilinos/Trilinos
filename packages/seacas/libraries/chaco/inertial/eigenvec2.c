@@ -18,6 +18,8 @@ double   *eval2;		/* middle eigenvalue */
     double    xmax;		/* largest matrix element */
     int       i, j;		/* loop counters */
 
+    M[0][0]=M[1][0]=M[0][1]=M[1][1]=0.0;
+    
     xmax = 0.0;
     for (i = 0; i < 2; i++) {
 	for (j = i; j < 2; j++) {

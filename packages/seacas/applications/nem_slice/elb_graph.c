@@ -244,9 +244,9 @@ int find_adjacency(PROB_INFO_PTR problem,
   int     ncnt, ecnt, cnt, i, elem, node, inode, entry;
   int     nnodes, iret, nsides, nscnt;
   int     hflag1, hflag2, tflag1, tflag2;
-  int    *pt_list, nelem;
-  int    *hold_elem, nhold;
-  int    *tmp_element;
+  int    *pt_list=NULL, nelem;
+  int    *hold_elem=NULL, nhold;
+  int    *tmp_element=NULL;
   int     side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
   int     side_cnt, sid;
   int     element_3d = 0;
