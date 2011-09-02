@@ -47,7 +47,7 @@ C=================================================================
 
 C local variables
       INTEGER NEID, IO_WS, CPU_WS, T_PASS, T_FAIL, DBG_FLAG, IERR
-      CHARACTER TESTDIR*256, FNAME*256, YO*6
+      CHARACTER FNAME*256, YO*6
       REAL VERSION
 
       YO = 'NETEST'
@@ -769,7 +769,8 @@ C=================================================================
 
       INCLUDE 'ne_test.inc'
 
-      INTEGER IPROC, NUM_IN, NUM_BN, NUM_EN, NUM_IE, NUM_BE, NUM_NCM, NUM_ECM
+      INTEGER IPROC, NUM_IN, NUM_BN, NUM_EN, NUM_IE, NUM_BE,
+     *  NUM_NCM, NUM_ECM
 
       DO 150 IPROC = 0,(NPROCF-1)
         CALL NEGLBP(NEID, NUM_IN, NUM_BN, NUM_EN, NUM_IE, NUM_BE,
