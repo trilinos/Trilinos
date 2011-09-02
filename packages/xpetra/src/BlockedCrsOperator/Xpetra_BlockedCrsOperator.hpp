@@ -692,6 +692,7 @@ private:
           B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
         }
 #else
+
         std::vector<GlobalOrdinal> tempvecIndices(NumEntries);
         std::copy(Indices.getRawPtr(),
             Indices.getRawPtr()+NumEntries,
