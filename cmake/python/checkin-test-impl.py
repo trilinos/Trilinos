@@ -130,20 +130,21 @@ Detailed Documentation:
 
 There are two basic configurations that are tested by default:
 MPI_DEBUG and SERIAL_RELEASE.  Both of these configurations only test
-Primary Stable Code (see --extra-builds and --ss-extra-builds for
-testing other types of code).  Several configure options are varied in
-these two builds to try to catch as much conditional configuration
-behavior as possible.  If nothing else, please at least do the
-MPI_DEBUG build since that will cover the most code and best supports
-day-to-day development efforts.  However, if you are changing code
-that might break the serial build or break non-debug code, please
-allow the SERIAL_RELEASE build to be run as well.  Note that the
-MPI_DEBUG build actually uses -DCMAKE_BUILD_TYPE=RELEASE with
--DTrilinos_ENABLE_DEBUG=ON to use optimized compiler options but with
-runtime debug checking turned on.  This helps to make the tests run
-faster but still builds and runs the runtime debug checking code.
-Therefore, you should not use the MPI_DEBUG configure options when
-building a debug version for yourself to do debugging.
+Primary Stable Code (see --extra-builds, --ss-extra-builds and
+'Handling of PS and SS Code' for more details)).  Several configure
+options are varied in these two builds to try to catch as much
+conditional configuration behavior as possible.  If nothing else,
+please at least do the MPI_DEBUG build since that will cover the most
+code and best supports day-to-day development efforts.  However, if
+you are changing code that might break the serial build or break
+non-debug code, please allow the SERIAL_RELEASE build to be run as
+well.  Note that the MPI_DEBUG build actually uses
+-DCMAKE_BUILD_TYPE=RELEASE with -DTrilinos_ENABLE_DEBUG=ON to use
+optimized compiler options but with runtime debug checking turned on.
+This helps to make the tests run faster but still builds and runs the
+runtime debug checking code.  Therefore, you should not use the
+MPI_DEBUG configure options when building a debug version for yourself
+to do debugging.
 
 
 The following approximate steps are performed by this script:
@@ -476,6 +477,81 @@ the command-line arguments below, and some experimentation will be enough to
 get you going using this script for all of pre-checkin testing and pushes.  If
 that is not sufficient, send email to trilinos-framework@software.sandia.gov
 to ask for help.
+
+
+Handling of PS and SS Code:
+---------------------------
+
+This script will only process PS (Primary Stable) packages in the
+default MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid
+problems of side-effects of turning on SS packages that would impact
+PS packages (e.g. SS Phalanx getting enabled that enables SS Boost
+which turns on support for Boost in PS Teuchos producing different
+code which might work but the pure PS build without Boost of Teuchos
+may actually be broken and not know it).  Therefore, any non PS
+packages that are enabled (either implicity through changed files or
+explicitly in --enable-packages) will be turned off in the MP_DEBUG
+and SERIAL_RELEASE builds.  If none of the enabled packages are PS,
+then they will all be disabled and the MPI_DEBUG and SERIAL_RELEASE
+builds will be skipped.
+
+In order to better support the development of SS and EX packages, this
+script allows you to define some extra builds that will be invoked and
+used to determine overall pass/fail before a potential push.  The
+option --ss-extra-builds is used to specify extra builds that will
+test SS packages (and also PS packages if any are enabled).  However,
+if no SS packages are enabled, the builds are skipped.
+
+Finally, the option --extra-builds will test all enabled packages
+reguardless of their categorization.
+
+A few use cases might help better demonstrate the behavior.  Consider
+the following input arguments specifying extra builds:
+
+  --ss-extra-packages=MPI_DEBUG_SS --extra-packages=INTEL_DEBUG
+
+and the packages Techos, Phalanx, and Meros where Teuchos is PS,
+Phalanx is SS, and Meros is EX.
+
+Here is what packages would be enabled in each of the builds
+MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_SS, and INTEL_DEBUG and which
+builds would be skipped:
+
+A) --enable-packages=Teuchos:
+   MPI_DEBUG:       [Teuchos]
+   SERIAL_RELEASE:  [Teuchos]
+   MPI_DEBUG_SS:    [Teuchos]     Skipped, no SS packages!
+   INTEL_DEBUG:     [Teuchos]     Always enabled!
+
+B) --enable-packages=Phalanx:
+   MPI_DEBUG:       []            Skipped, no PS packages!
+   SERIAL_RELEASE:  []            Skipped, no PS packages!
+   MPI_DEBUG_SS:    [Phalanx]
+   INTEL_DEBUG:     [Phalanx]
+
+C) --enable-packages=Meros:
+   MPI_DEBUG:       []            Skipped, no PS packages!
+   SERIAL_RELEASE:  []            Skipped, no PS packages!
+   MPI_DEBUG_SS:    []            Skipped, no SS packages!
+   INTEL_DEBUG:     [Meros]
+
+D) --enable-packages=Teuchos,Phalanx:
+   MPI_DEBUG:       [Teuchos]
+   SERIAL_RELEASE:  [Teuchos]
+   MPI_DEBUG_SS:    [Teuchos,Phalanx]
+   INTEL_DEBUG:     [Teuchos,Phalanx]
+
+E) --enable-packages=Teuchos,Phalanx,Meros:
+   MPI_DEBUG:       [Teuchos]
+   SERIAL_RELEASE:  [Teuchos]
+   MPI_DEBUG_SS:    [Teuchos,Phalanx]
+   INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
+
+Above, the --ss-enable-builds=MPI_DEBUG_SS build was skipped in use
+case 'A' because it did not contain any SS packages beyond what was in
+the set of PS packages.  However, the --extra-builds=INTEL_DEBUG build
+is always performed with all of the enabled packages.  This logic
+given above in order to understand the output given in the script.
 
 
 Conventions for Command-Line Arguments:
