@@ -10,6 +10,14 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
+/*
+  Comments:
+    1) Chebyshev smoothing must pass for any number of processors.
+    2) Gauss-Seidel must pass for 1 and 4 processors.
+    3) For any processor count except 1 and 4, the Gauss-Seidel test will
+       report "passing", but this is only because the Teuchos test macro is skipped.
+*/
+
 namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
@@ -38,52 +46,69 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, GaussSeidel)
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
-      {
+    {
+      out << "version: " << MueLu::Version() << std::endl;
+      out << "Tests interface to Ifpack2's Gauss-Seidel preconditioner." << std::endl;
+      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
 
-        //FIXME this will probably fail in parallel b/c it becomes block Jacobi
+      RCP<Teuchos::ParameterList>  ifpack2List = rcp(new Teuchos::ParameterList());
+      ifpack2List->set("relaxation: type", "Gauss-Seidel");
+      ifpack2List->set("relaxation: sweeps", (int) 1);
+      ifpack2List->set("relaxation: damping factor", (double) 1.0);
+      ifpack2List->set("relaxation: zero starting solution", false);
+      RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("RELAXATION",*ifpack2List) );
+      Level aLevel;
+      MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
 
-        out << "version: " << MueLu::Version() << std::endl;
-        out << "Tests interface to Ifpack2's Gauss-Seidel preconditioner." << std::endl;
+      RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      aLevel.Set("A",Op);
 
-        Teuchos::ParameterList  ifpack2List;
-        ifpack2List.set("relaxation: type", "Gauss-Seidel");
-        ifpack2List.set("relaxation: sweeps", (int) 1);
-        ifpack2List.set("relaxation: damping factor", (double) 1.0);
-        ifpack2List.set("relaxation: zero starting solution", false);
-        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("RELAXATION",ifpack2List) );
+      RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
+      RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getRangeMap(),1);
 
-        Level aLevel;
-        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
+      smoother->Setup(aLevel);
 
-        RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-        aLevel.Set("A",Op);
+      Teuchos::Array<ST::magnitudeType> norms(1);
 
-        RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
-        RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
+      X->putScalar( (SC) 1.0);
+      RHS->putScalar( (SC) 0.0);
 
-        smoother->Setup(aLevel);
+      out << "Applying one GS sweep" << std::endl;
+      smoother->Apply(*X,*RHS);
+      norms = Utils::ResidualNorm(*Op,*X,*RHS);
+      switch (comm->getSize()) {
+        case 1:
+        case 4:
+          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],5.773502691896257e-01,1e-12,out,success);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } //switch
 
-        X->setSeed(846930886);
-        X->randomize();
-        Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-
-        X->putScalar( (SC) 0.0);
-
-        out << "Applying one GS sweep" << std::endl;
-        smoother->Apply(*X,*RHS);
-        Teuchos::Array<ST::magnitudeType> norms(1);
-        norms = Utils::ResidualNorm(*Op,*X,*RHS);
-        TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],6.04555396884098,1e-12,out,success);
-
-        //int numIts = 50;
-        //not implemented smoother->SetNIts(numIts);
-        //TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),50,out,success);
-        //out << "Applying " << numIts << " GS sweeps" << std::endl;
-        X->putScalar( (SC) 0.0);
-        smoother->Apply(*X,*RHS);
-        norms = Utils::ResidualNorm(*Op,*X,*RHS);
-        TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],0.00912675857196253,1e-12,out,success);
-      }
+      ifpack2List = rcp(new Teuchos::ParameterList());
+      ifpack2List->set("relaxation: type", "Gauss-Seidel");
+      ifpack2List->set("relaxation: sweeps", (int) 10);
+      ifpack2List->set("relaxation: damping factor", (double) 1.0);
+      ifpack2List->set("relaxation: zero starting solution", false);
+      out << "Applying " << ifpack2List->get("relaxation: sweeps", (int) 1) << " GS sweeps" << std::endl;
+      X->putScalar( (SC) 1.0);
+      smoother = rcp( new Ifpack2Smoother("RELAXATION",*ifpack2List) );
+      smoother->Setup(aLevel);
+      smoother->Apply(*X,*RHS);
+      norms = Utils::ResidualNorm(*Op,*X,*RHS);
+      switch (comm->getSize()) {
+        case 1:
+          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],8.326553652741774e-02,1e-12,out,success);
+          break;
+        case 4:
+          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],8.326553653078517e-02,1e-12,out,success);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } //switch
+    }
   } //GaussSeidel
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, Chebyshev)
@@ -96,9 +121,10 @@ namespace MueLuTests {
         out << "Tests interface to Ifpack2's Chebyshev preconditioner." << std::endl;
 
         Teuchos::ParameterList  ifpack2List;
-        ifpack2List.set("chebyshev: degree", (int) 1);
-        ifpack2List.set("chebyshev: max eigenvalue", (double) 2.0);
+        ifpack2List.set("chebyshev: degree", (int) 3);
+        ifpack2List.set("chebyshev: max eigenvalue", (double) 1.98476);
         ifpack2List.set("chebyshev: min eigenvalue", (double) 1.0);
+        ifpack2List.set("chebyshev: ratio eigenvalue", (double) 20);
         ifpack2List.set("chebyshev: zero starting solution", false);
         RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpack2List) );
 
@@ -109,44 +135,30 @@ namespace MueLuTests {
         aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
-        RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
+        RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getRangeMap(),1);
+        RCP<MultiVector> RES = MultiVectorFactory::Build(Op->getRangeMap(),1);
         RHS->putScalar( (SC) 0.0);
+        X->putScalar(1.0);
 
         smoother->Setup(aLevel);
 
-        X->setSeed(846930886);
-        X->randomize();
         Teuchos::Array<ST::magnitudeType> norms(1);
         X->norm2(norms);
-        X->scale(1/norms[0]);
-        X->norm2(norms);
         out << "||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-        //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-
-        int numIts = 1;
-        out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
-        //not implemented smoother->SetNIts(numIts);
+        //int numIts = 3;
+        //smoother->SetNIts(numIts); //Not implemented
+        //TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),numIts,out,success);
+        out << "Applying degree " << ifpack2List.get("chebyshev: degree",-1) << " Chebyshev smoother" << std::endl;
+        X->putScalar(1.0);
+        out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
         smoother->Apply(*X,*RHS);
-        X->norm2(norms);
-        out << "||X_1|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
-        TEUCHOS_TEST_EQUALITY(norms[0]<0.7,true,out,success);  //FIXME should calculate reduction analytically
-
-        // numIts = 10;
-        // not implemented smoother->SetNIts(numIts);
-        // TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),10,out,success);
-        out << "Applying degree " << numIts << " Chebyshev smoother" << std::endl;
-        X->setSeed(846930886);
-        X->randomize();
-        X->norm2(norms);
-        X->scale(1/norms[0]);
-        X->norm2(norms);
-        out << "||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
-        smoother->Apply(*X,*RHS);
-        X->norm2(norms);
-        out << "||X_" << std::setprecision(2) << numIts << "|| = " << std::setiosflags(std::ios::fixed) <<
+        Op->apply(*X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        RES->norm2(norms);
+        out << "||RES|| = " << std::setiosflags(ios::fixed) <<
           std::setprecision(20) << norms[0] << std::endl;
-        TEUCHOS_TEST_EQUALITY(norms[0]<0.25,true,out,success);  //FIXME should calculate reduction analytically
+        TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],5.269156e-01,1e-7,out,success);  //Compare to residual reported by ML
+
       }
   } //Chebyshev
 
