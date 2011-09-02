@@ -241,7 +241,8 @@ namespace MueLu {
         {
           outputter.outputField(*it);
           outputter.outputField(*kt);
-          outputter.outputField(countTable_.Get<int>(*it,*kt/*Teuchos::rcp(*kt,false).get()*/));  // TODO: fix me
+          int reqcount = countTable_.Get<int>(*it,*kt);
+          outputter.outputField(reqcount);  // TODO: fix me
           outputter.nextRow();
         }
       }

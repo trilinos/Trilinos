@@ -92,18 +92,17 @@ namespace MueLu {
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string ename, const T &entry, const FactoryBase* factory) {
-        // handling of factory==NULL??? // fixme
         Needs::SetData<T>(ename, entry, factory);
     } //Set
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string& ename, const T &entry, Teuchos::RCP<const FactoryBase> factory) {
-        // handling of Teuchos::null??? // fixme
         Needs::SetData<T>(ename, entry, factory.get());
     }
 
     //! Store need label and its associated data. This does not increment the storage counter.
+    /* */
     template <class T>
     void Set(const std::string& ename, const T &entry) {
         Needs::SetData<T>(ename, entry, NULL);  // no factory
@@ -125,7 +124,7 @@ namespace MueLu {
             Teuchos::RCP<const FactoryBase> defRCPFactoryBase = Teuchos::rcpFromRef(defFactoryBase);
             if(defRCPFactoryBase==Teuchos::null || defRCPFactoryBase.get() == NULL)
               std::cout << "ERROR: no default factory found for " << ename << std::endl;
-            return Get<T>(ename,defRCPFactoryBase);
+            return Get<T>(ename,defRCPFactoryBase.get());
           }
           else
           {
