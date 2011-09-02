@@ -43,103 +43,126 @@
 #ifndef BELOS_LINEAR_PROBLEM_HPP
 #define BELOS_LINEAR_PROBLEM_HPP
 
-/*! \file BelosLinearProblem.hpp
-    \brief Class which describes the linear problem to be solved by the iterative solver.
-*/
-
+/// \file BelosLinearProblem.hpp 
+/// \brief Class which describes the linear problem to be solved by
+///   the iterative solver.
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-
-/*! \class Belos::LinearProblem  
-  \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
-  general information needed for solving a linear system of equations.  
-*/
 
 namespace Belos {
 
   //! @name LinearProblem Exceptions
   //@{
   
-  /** \brief Exception thrown to signal error with the Belos::LinearProblem object.
-   */
-  class LinearProblemError : public BelosError
-  {public: LinearProblemError(const std::string& what_arg) : BelosError(what_arg) {}};
+  /// \class LinearProblemError
+  /// \brief Exception thrown to signal error with the Belos::LinearProblem object.
+  class LinearProblemError : public BelosError {
+  public: 
+    LinearProblemError (const std::string& what_arg) : 
+      BelosError(what_arg) {}
+  };
   
   //@}
-  
+
+  /// \class LinearProblem  
+  /// \brief A linear system to solve, and its associated information.
+  ///
+  /// This class encapsulates the general information needed for
+  /// solving a linear system of equations using an iterative method.
+  ///
+  /// \tparam ScalarType The type of the entries in the matrix and
+  ///   vectors.
+  /// \tparam MV The (multi)vector type.
+  /// \tparam OP The operator type.  (Operators are functions that
+  ///   take a multivector as input and compute a multivector as
+  ///   output.)
   template <class ScalarType, class MV, class OP>
   class LinearProblem {
-   
   public:
     
     //! @name Constructors/Destructor
     //@{ 
-    //!  Default Constructor.
-    /*! Creates an empty Belos::LinearProblem instance. The operator A, left-hand-side X
-      and right-hand-side B must be set using the setOperator(), setLHS() and setRHS()
-      methods respectively.
-    */
-    LinearProblem(void);
+
+    /// \brief Default constructor.
+    ///
+    /// Creates an empty Belos::LinearProblem instance.  The operator
+    /// A, left-hand-side X and right-hand-side B must be set using
+    /// the \c setOperator(), \c setLHS(), and \c setRHS() methods
+    /// respectively.
+    LinearProblem (void);
     
-    //! Unpreconditioned linear system constructor.
-    /*! Creates an unpreconditioned LinearProblem instance with the 
-      Belos::Operator (\c A), initial guess (\c X), and right hand side (\c B). 
-      Preconditioners can be set using the setLeftPrec() and setRightPrec() methods, and
-      scaling can also be set using the setLeftScale() and setRightScale() methods.
-    */
-    LinearProblem(const Teuchos::RCP<const OP> &A, 
-		  const Teuchos::RCP<MV> &X, 
-		  const Teuchos::RCP<const MV> &B
-		  );
+    /// \brief Unpreconditioned linear system constructor.
+    ///
+    /// Creates an unpreconditioned LinearProblem instance with the
+    /// operator (\c A), initial guess (\c X), and right hand side (\c
+    /// B).  Preconditioners can be set using the \c setLeftPrec() and
+    /// \c setRightPrec() methods, and scaling can also be set using
+    /// the \c setLeftScale() and \c setRightScale() methods.
+    LinearProblem (const Teuchos::RCP<const OP> &A, 
+		   const Teuchos::RCP<MV> &X, 
+		   const Teuchos::RCP<const MV> &B);
     
-    //! Copy Constructor.
-    /*! Makes copy of an existing LinearProblem instance.
-     */
-    LinearProblem(const LinearProblem<ScalarType,MV,OP>& Problem);
+    /// \brief Copy constructor.
+    ///
+    /// Makes a copy of an existing LinearProblem instance.
+    LinearProblem (const LinearProblem<ScalarType,MV,OP>& Problem);
     
-    //! Destructor.
-    /*! Completely deletes a LinearProblem object.  
-     */
-    virtual ~LinearProblem(void);
+    //! Destructor; completely deletes a LinearProblem object.
+    virtual ~LinearProblem (void);
+
     //@}
     
     //! @name Set methods
     //@{ 
     
-    //! Set Operator A of linear problem AX = B.
-    /*! Sets a pointer to an Operator.  No copy of the operator is made.
-     */
-    void setOperator(const Teuchos::RCP<const OP> &A) { A_ = A; isSet_=false; }
+    /// \brief Set the operator A of the linear problem \f$AX = B\f$.
+    /// 
+    /// The operator is set by pointer; no copy of the operator is made.
+    void setOperator (const Teuchos::RCP<const OP> &A) { 
+      A_ = A; 
+      isSet_=false; 
+    }
     
-    //! Set left-hand-side X of linear problem AX = B.
-    /*! Sets a pointer to a MultiVec.  No copy of the object is made.
-     */
-    void setLHS(const Teuchos::RCP<MV> &X) { X_ = X; isSet_=false; }
+    /// \brief Set left-hand-side X of linear problem \f$AX = B\f$.
+    ///
+    /// Setting the "left-hand side" sets the starting vector (also
+    /// called "initial guess") of an iterative method.  The
+    /// multivector is set by pointer; no copy of the object is made.
+    void setLHS (const Teuchos::RCP<MV> &X) { 
+      X_ = X; 
+      isSet_=false; 
+    }
     
-    //! Set right-hand-side B of linear problem AX = B.
-    /*! Sets a pointer to a MultiVec.  No copy of the object is made.
-     */
-    void setRHS(const Teuchos::RCP<const MV> &B) { B_ = B; isSet_=false; }
+    /// \brief Set right-hand-side B of linear problem \f$AX = B\f$.
+    ///
+    /// The multivector is set by pointer; no copy of the object is
+    /// made.
+    void setRHS (const Teuchos::RCP<const MV> &B) { 
+      B_ = B; 
+      isSet_=false; 
+    }
     
-    //! Set left preconditioning operator (\c LP) of linear problem AX = B.
-    /*! Sets a pointer to an Operator.  No copy of the operator is made.
-     */
+    /// \brief Set left preconditioner (\c LP) of linear problem \f$AX = B\f$.
+    ///
+    /// The operator is set by pointer; no copy of the operator is made.
     void setLeftPrec(const Teuchos::RCP<const OP> &LP) {  LP_ = LP; }
-    
-    //! Set right preconditioning operator (\c RP) of linear problem AX = B.
-    /*! Sets a pointer to an Operator.  No copy of the operator is made.
-     */
+
+    /// \brief Set right preconditioner (\c RP) of linear problem \f$AX = B\f$.
+    ///
+    /// The operator is set by pointer; no copy of the operator is made.
     void setRightPrec(const Teuchos::RCP<const OP> &RP) { RP_ = RP; }
-    
-    //! Inform the linear problem that the solver is finished with the current linear system.
-    /*! \note This method is <b> only </b> to be used by the solver to inform the linear problem that it is
-      finished with this block of linear systems.  The next time the Curr(RHS/LHS)Vec() is called, the next
-      linear system will be returned.  Computing the next linear system isn't done in this method in case the 
-      blocksize is changed.
-    */
-    void setCurrLS();
+
+    /// Tell the linear problem that the solver is finished with the current linear system.
+    ///
+    /// \note This method is <b>only</b> to be used by the solver to
+    ///   inform the linear problem that it is finished with the
+    ///   current block of linear systems.  The next time that
+    ///   Curr{RHS, LHS}Vec() is called, the next linear system will
+    ///   be returned.  Computing the next linear system isn't done in
+    ///   this method in case the blocksize is changed.
+    void setCurrLS ();
 
     /// \brief Tell the linear problem which linear system(s) need to be solved next.
     ///
@@ -150,32 +173,81 @@ namespace Belos {
     /// vectors in the RHS/LHS multivector.  An entry of \c index may
     /// also be -1, which means this column of the linear system is
     /// augmented using a random vector.
-    void setLSIndex(const std::vector<int>& index); 
+    void setLSIndex (const std::vector<int>& index); 
     
-    //! Inform the linear problem that the operator is Hermitian.
-    /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
-      However, this should not be set to true if the preconditioner is not Hermitian, or symmetrically
-      applied.
-    */
-    void setHermitian(){ isHermitian_ = true; }
+    /// \brief Tell the linear problem that the operator is Hermitian.
+    ///
+    /// This knowledge may allow the operator to take advantage of the
+    /// linear problem symmetry.  However, this should not be set to
+    /// true if the preconditioner is not Hermitian, or symmetrically
+    /// applied.
+    void setHermitian() { isHermitian_ = true; }
    
-    //! Set the label prefix used by the timers in this object.  The default is "Belos".
-    /*! \note The timers are created during the first call to setProblem().  Any calls to this method to change 
-        the label after that will not change the label used in the timer.
-    */ 
-    void setLabel(const std::string& label) { label_ = label; }
+    /// \brief Set the label prefix used by the timers in this object.  
+    ///
+    /// The default label prefix is "Belos".  The timers are created
+    /// during the first call to \c setProblem().  Any calls to this
+    /// method to change the label after that will not change the
+    /// label used in the timer.
+    void setLabel (const std::string& label) { label_ = label; }
 
-    //! Compute the new solution to the linear system given the /c update.
-    /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
-      This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
-      the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
-      updating the linear problem.
-    */
-    Teuchos::RCP<MV> updateSolution( const Teuchos::RCP<MV>& update = Teuchos::null,
-				    bool updateLP = false,
-                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
+    /// \brief Compute the new solution to the linear system using the
+    ///   given update vector.
+    ///
+    /// Let \f$\delta\f$ be the update vector, \f$\alpha\f$ the scale
+    /// factor, and \f$x\f$ the current solution.  If there is a right
+    /// preconditioner \f$M_R^{-1}\f$, then we compute the new
+    /// solution as \f$x + \alpha M_R^{-1} \delta\f$.  Otherwise, if
+    /// there is no right preconditioner, we compute the new solution
+    /// as \f$x + \alpha \delta\f$.
+    ///
+    /// This method always returns the new solution.  If updateLP is
+    /// false, it computes the new solution as a deep copy, without
+    /// modifying the internally stored current solution.  If updateLP
+    /// is true, it computes the new solution in place, and returns a
+    /// pointer to the internally stored solution.
+    ///
+    /// \param update [in/out] The solution update vector.  If null,
+    ///   this method returns a pointer to the new solution.
+    ///
+    /// \param updateLP [in] This is ignored if the update vector is
+    ///   null.  Otherwise, if updateLP is true, the following things
+    ///   happen: (a) this LinearProblem's stored solution is updated
+    ///   in place, and (b) the next time \c GetCurrResVecs() is
+    ///   called, a new residual will be computed.  If updateLP is
+    ///   false, then the new solution is computed and returned as a
+    ///   copy, without modifying this LinearProblem's stored current
+    ///   solution.  The default behavior keeps the linear problem
+    ///   from having to recompute the residual vector every time the
+    ///   solution is updated.
+    ///
+    /// \param scale [in] The factor \f$\alpha\f$ by which to multiply
+    ///   the solution update vector when computing the update.  This
+    ///   is ignored if the update vector is null.
+    ///
+    /// \param A pointer to the new solution. 
+    ///
+    Teuchos::RCP<MV> 
+    updateSolution (const Teuchos::RCP<MV>& update = Teuchos::null,
+		    bool updateLP = false,
+		    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one());    
 
-    //! Compute the new solution to the linear system given the /c update without updating the linear problem.
+    /// \brief Compute the new solution to the linear system using the
+    ///   given update vector.
+    ///
+    /// This method does the same thing as calling the three-argument
+    /// version of updateSolution() with updateLP = false.  It does
+    /// not update the linear problem.
+    ///
+    /// \param update [in/out] The solution update vector.  If null,
+    ///   this method returns a pointer to the new solution.
+    ///
+    /// \param scale [in] The factor \f$\alpha\f$ by which to multiply
+    ///   the solution update vector when computing the update.  This
+    ///   is ignored if the update vector is null.
+    ///
+    /// \param A pointer to the new solution. 
+    ///
     Teuchos::RCP<MV> updateSolution( const Teuchos::RCP<MV>& update = Teuchos::null,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
     { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
@@ -185,85 +257,113 @@ namespace Belos {
     //! @name Set / Reset method
     //@{ 
     
-    //! Setup the linear problem manager.
-    /*! This is useful for solving the linear system with another right-hand side or getting
-      the linear problem prepared to solve the linear system that was already passed in.  
-      The internal flags will be set as if the linear system manager was just initialized 
-      and the initial residual will be computed.
-    */
-    bool setProblem( const Teuchos::RCP<MV> &newX = Teuchos::null, const Teuchos::RCP<const MV> &newB = Teuchos::null );
+    /// \brief Set up the linear problem manager.
+    ///
+    /// Call this method if you want to solve the linear system with a
+    /// different left- or right-hand side, or if you want to prepare
+    /// the linear problem to solve the linear system that was already
+    /// passed in.  (In the latter case, call this method with the
+    /// default arguments.)  The internal flags will be set as if the
+    /// linear system manager was just initialized, and the initial
+    /// residual will be computed.
+    ///
+    /// \param newX [in/out] If you want to solve the linear system
+    ///   with a different left-hand side, pass it in here.
+    ///   Otherwise, set this to null (the default value).
+    ///
+    /// \param newB [in] If you want to solve the linear system with a
+    ///   different right-hand side, pass it in here.  Otherwise, set
+    ///   this to null (the default value).
+    ///
+    /// \return Whether the linear problem was successfully set up.
+    ///   Successful setup requires at least that the matrix operator
+    ///   A, the left-hand side X, and the right-hand side B all be
+    ///   non-null.
+    bool 
+    setProblem (const Teuchos::RCP<MV> &newX = Teuchos::null, 
+		const Teuchos::RCP<const MV> &newB = Teuchos::null);
 
     //@}
     
     //! @name Accessor methods
     //@{ 
     
-    //! Get a pointer to the operator A.
+    //! A pointer to the operator A.
     Teuchos::RCP<const OP> getOperator() const { return(A_); }
     
-    //! Get a pointer to the left-hand side X.
+    //! A pointer to the left-hand side X.
     Teuchos::RCP<MV> getLHS() const { return(X_); }
     
-    //! Get a pointer to the right-hand side B.
+    //! A pointer to the right-hand side B.
     Teuchos::RCP<const MV> getRHS() const { return(B_); }
     
-    //! Get a pointer to the initial residual vector.
-    /*! \note This is the unpreconditioned residual.
-     */
+    //! A pointer to the initial unpreconditioned residual vector.
     Teuchos::RCP<const MV> getInitResVec() const { return(R0_); }
     
-    //! Get a pointer to the preconditioned initial residual vector.
-    /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
-     */
+    /// \brief A pointer to the preconditioned initial residual vector.
+    ///
+    /// \note This is the preconditioned residual if the linear system
+    ///   is left preconditioned.
     Teuchos::RCP<const MV> getInitPrecResVec() const { return(PR0_); }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
-      being solved for.  
+      being solved.  
       <ol>
-      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
-      <li> If there is no linear system to solve, this method will return a NULL pointer
+      <li> If the solution has been updated by the solver, then this
+           vector is current ( see \c isSolutionUpdated() ).
+      <li> If there is no linear system to solve, this method will
+           return a null pointer.
       </ol>
     */
     Teuchos::RCP<MV> getCurrLHSVec();
     
     //! Get a pointer to the current right-hand side of the linear system.
     /*! This method is called by the solver of any method that is interested in the current linear system
-      being solved for.  
+      being solved.  
       <ol>
-      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
-      <li> If there is no linear system to solve, this method will return a NULL pointer
+      <li> If the solution has been updated by the solver, then this
+           vector is current ( see \c isSolutionUpdated() ).
+      <li> If there is no linear system to solve, this method will
+           return a null pointer.  
       </ol>
     */	
     Teuchos::RCP<const MV> getCurrRHSVec();
     
-    //! Get a pointer to the left preconditioning operator.
+    //! Get a pointer to the left preconditioner.
     Teuchos::RCP<const OP> getLeftPrec() const { return(LP_); };
     
-    //! Get a pointer to the right preconditioning operator.
+    //! Get a pointer to the right preconditioner.
     Teuchos::RCP<const OP> getRightPrec() const { return(RP_); };
     
-    //! Get the 0-based index vector indicating the current linear systems being solved for.
-    /*! Since the block size is independent of the number of right-hand sides for
-      some solvers (GMRES, CG, etc.), it is important to know which linear systems
-      are being solved for.  That may mean you need to update the information
-      about the norms of your initial residual vector for weighting purposes.  This
-      information can keep you from querying the solver for information that rarely
-      changes.
-      \note The length of the returned index vector is the number of right-hand sides being solved for.
-            If an entry of the index vector is -1, then that linear system is an augmented linear
-	    system and doesn't need to be considered for convergence.
-      \note The index vector returned from this method is valid if isProblemSet() returns true.
-    */
+    /// \brief The 0-based vector of indices of the linear system(s)
+    ///   currently being solved.
+    ///
+    /// Since the block size is independent of the number of
+    /// right-hand sides for some solvers (GMRES, CG, etc.), it is
+    /// important to know which linear systems are being solved.  That
+    /// may mean you need to update the information about the norms of
+    /// your initial residual vector for weighting purposes.  This
+    /// information can keep you from querying the solver for
+    /// information that rarely changes.
+    ///
+    /// \note The length of the returned index vector is the number of
+    /// right-hand sides currently being solved.  If an entry of the
+    /// index vector is -1, then that linear system is an augmented
+    /// linear system and doesn't need to be considered for convergence.
+    /// 
+    /// \note The index vector returned from this method is valid if
+    ///   \c isProblemSet() returns true.
     const std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
-    //! Get the number of linear systems that have been set with this LinearProblem object.
-    /* This can be used by status test classes to determine if the solver manager has advanced 
-       and is solving another linear system.
-    */
+    /// \brief The number of linear systems that have been set.
+    ///
+    /// This can be used by status test classes to determine if the
+    /// solver manager has advanced and is solving another linear
+    /// system.
     int getLSNumber() const { return(lsNum_); }
 
-    /*! \brief Return the timers for this object.
+    /*! \brief The timers for this object.
      *
      * The timers are ordered as follows:
      *   - time spent applying operator
@@ -400,12 +500,26 @@ namespace Belos {
     //! Number of linear systems that have been loaded in this linear problem object.
     int lsNum_;
 
-    //! Booleans to keep track of linear problem attributes/status.
+    //! @name Booleans to keep track of linear problem attributes and status.
+    //@{ 
+
+    //! Is there a left scaling?
     bool Left_Scale_;
+
+    //! Is there a right scaling?
     bool Right_Scale_;
+
+    //! Has the linear problem to solve been set?
     bool isSet_;
+
+    /// Whether the operator A is symmetric (in real arithmetic, or
+    /// Hermitian in complex arithmetic).
     bool isHermitian_;
+
+    //! Has the current approximate solution been updated?
     bool solutionUpdated_;    
+
+    //@}
    
     //! Linear problem label that prefixes the timer labels.
     std::string label_;
@@ -586,59 +700,83 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const Teuchos::RCP<MV>& update, 
-							   bool updateLP,
-							   ScalarType scale )
+  Teuchos::RCP<MV> 
+  LinearProblem<ScalarType,MV,OP>::
+  updateSolution (const Teuchos::RCP<MV>& update, 
+		  bool updateLP,
+		  ScalarType scale)
   { 
-    Teuchos::RCP<MV> newSoln;
-    if (update != Teuchos::null) {
-      if (updateLP == true) {
-	if (RP_!=Teuchos::null) {
-	  //
-	  // Apply the right preconditioner before computing the current solution.
-	  Teuchos::RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	  {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
-#endif
-	    OPT::Apply( *RP_, *update, *TrueUpdate ); 
-	  }
-	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
-	} 
-	else {
-	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ ); 
-	}
-	solutionUpdated_ = true; 
+    using Teuchos::RCP;
+    using Teuchos::null;
+
+    RCP<MV> newSoln;
+    if (update.is_null())
+      { // The caller didn't supply an update vector, so we assume
+	// that the current solution curX_ is unchanged, and return a
+	// pointer to it.
 	newSoln = curX_;
       }
-      else {
-	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	if (RP_!=Teuchos::null) {
-	  //
-	  // Apply the right preconditioner before computing the current solution.
-	  Teuchos::RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	  {
+    else // the update vector is NOT null.
+      { 
+	if (updateLP) // The caller wants us to update the linear problem.
+	  { 
+	    if (RP_.is_null()) 
+	      { // There is no right preconditioner.
+		// curX_ := curX_ + scale * update.
+		MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ ); 
+	      }
+	    else 
+	      { // There is indeed a right preconditioner, so apply it
+		// before computing the new solution.
+		RCP<MV> rightPrecUpdate = 
+		  MVT::Clone (*update, MVT::GetNumberVecs (*update));
+		{
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+		  Teuchos::TimeMonitor PrecTimer (*timerPrec_);
 #endif
-	    OPT::Apply( *RP_, *update, *trueUpdate ); 
+		  OPT::Apply( *RP_, *update, *rightPrecUpdate ); 
+		}
+		// curX_ := curX_ + scale * rightPrecUpdate.
+		MVT::MvAddMv( 1.0, *curX_, scale, *rightPrecUpdate, *curX_ ); 
+	      } 
+	    solutionUpdated_ = true; 
+	    newSoln = curX_;
 	  }
-	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
-	} 
-	else {
-	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
-	}
+	else 
+	  { // Rather than updating our stored current solution curX_,
+	    // we make a copy and compute the new solution in the
+	    // copy, without modifying curX_.
+	    newSoln = MVT::Clone (*update, MVT::GetNumberVecs (*update));
+	    if (RP.is_null())
+	      { // There is no right preconditioner.
+		// newSoln := curX_ + scale * update.
+		MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
+	      }
+	    else 
+	      { // There is indeed a right preconditioner, so apply it
+		// before computing the new solution.
+		RCP<MV> rightPrecUpdate = 
+		  MVT::Clone (*update, MVT::GetNumberVecs (*update));
+		{
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+		  Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
+		  OPT::Apply( *RP_, *update, *rightPrecUpdate ); 
+		}
+		// newSoln := curX_ + scale * rightPrecUpdate.
+		MVT::MvAddMv( 1.0, *curX_, scale, *rightPrecUpdate, *newSoln ); 
+	      } 
+	  }
       }
-    }
-    else {
-      newSoln = curX_;
-    }
     return newSoln;
   }
   
 
   template <class ScalarType, class MV, class OP>
-  bool LinearProblem<ScalarType,MV,OP>::setProblem( const Teuchos::RCP<MV> &newX, const Teuchos::RCP<const MV> &newB )
+  bool 
+  LinearProblem<ScalarType,MV,OP>::
+  setProblem (const Teuchos::RCP<MV> &newX, 
+	      const Teuchos::RCP<const MV> &newB)
   {
     // Create timers if the haven't been created yet.
     if (timerOp_ == Teuchos::null) {
@@ -730,9 +868,18 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
-    Teuchos::RCP<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
-    bool leftPrec = LP_!=Teuchos::null;
-    bool rightPrec = RP_!=Teuchos::null;
+    using Teuchos::null;
+    using Teuchos::RCP;
+
+    const bool leftPrec = LP_ != null;
+    const bool rightPrec = RP_ != null;
+
+    // We only need a temporary vector for intermediate results if
+    // there is a left or right preconditioner.  We really should just
+    // keep this temporary vector around instead of allocating it each
+    // time.
+    RCP<MV> ytemp = (leftPrec || rightPrec) ? MVT::Clone (y, MVT::GetNumberVecs (y)) : null;
+
     //
     // No preconditioning.
     // 
