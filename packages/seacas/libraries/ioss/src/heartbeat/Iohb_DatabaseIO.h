@@ -64,92 +64,109 @@ namespace Iohb {
   enum Format{DEFAULT=0,SPYHIS=1};
 
   class IOFactory : public Ioss::IOFactory
-    {
-    public:
-      static const IOFactory* factory();
-    private:
-      IOFactory();
-      Ioss::DatabaseIO* make_IO(const std::string& filename,
-				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator) const;
-    };
+  {
+  public:
+    static const IOFactory* factory();
+  private:
+    IOFactory();
+    Ioss::DatabaseIO* make_IO(const std::string& filename,
+			      Ioss::DatabaseUsage db_usage,
+			      MPI_Comm communicator) const;
+  };
 
   class DatabaseIO : public Ioss::DatabaseIO
-    {
-    public:
-      DatabaseIO(Ioss::Region *region, const std::string& filename,
-		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
-      ~DatabaseIO();
+  {
+  public:
+    DatabaseIO(Ioss::Region *region, const std::string& filename,
+	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
+    ~DatabaseIO();
 
-      int node_global_to_local(int /* global */, bool /* must_exist */) const {return 0;}
-      int element_global_to_local(int /* global */) const {return 0;}
+    int node_global_to_local(int /* global */, bool /* must_exist */) const {return 0;}
+    int element_global_to_local(int /* global */) const {return 0;}
 
-      // Check capabilities of input/output database...
-      bool supports_nodal_fields()   const {return false;}
-      bool supports_side_fields()    const {return false;}
-      bool supports_element_fields() const {return false;}
-      bool supports_nodelist_fields() const {return false;}
+    // Check capabilities of input/output database...  Returns an
+    // unsigned int with the supported Ioss::EntityTypes or'ed
+    // together. If "return_value & Ioss::EntityType" is set, then the
+    // database supports that type (e.g. return_value & Ioss::FACESET)
+    unsigned entity_field_support() const;
 
-      void read_meta_data() {}
+    void read_meta_data() {}
 
-      bool begin(Ioss::State state);
-      bool   end(Ioss::State state);
+    bool begin(Ioss::State state);
+    bool   end(Ioss::State state);
 
-      bool begin_state(Ioss::Region *region, int state, double time);
-      bool   end_state(Ioss::Region *region, int state, double time);
+    bool begin_state(Ioss::Region *region, int state, double time);
+    bool   end_state(Ioss::Region *region, int state, double time);
 
-    private:
-      void initialize(const Ioss::Region *region) const;
+  private:
+    void initialize(const Ioss::Region *region) const;
       
-      int get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
 
-      int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
+    int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+			   void *data, size_t data_size) const;
 
-      int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+    // Private member functions
+    DatabaseIO(const DatabaseIO& from); // do not implement
+    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
-      int put_field_internal(const Ioss::Region* region, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+    std::ostream *logStream;
+    Layout *layout_;
+    Layout *legend_;
 
-      int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+    std::string tsFormat;
+    int precision_;
+    bool showLabels;
+    bool showLegend;
 
-      int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
-
-      // Private member functions
-      DatabaseIO(const DatabaseIO& from); // do not implement
-      DatabaseIO& operator=(const DatabaseIO& from); // do not implement
-
-      std::ostream *logStream;
-      Layout *layout_;
-      Layout *legend_;
-
-      std::string tsFormat;
-      int precision_;
-      bool showLabels;
-      bool showLegend;
-
-      bool initialized_;
-      enum Format fileFormat;
-    };
+    bool initialized_;
+    bool streamNeedsDelete;
+    enum Format fileFormat;
+  };
 }
 #endif // IOSS_Iohb_DatabaseIO_h

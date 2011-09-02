@@ -50,8 +50,8 @@ Block::Block(const Ioss::ElementBlock &other)
   attributeCount = other.get_property("attribute_count").get_int();
   offset_ = other.get_offset();
   std::string el_type = other.get_property("topology_type").get_string();
-  if (other.property_exists("original_element_type")) {
-    el_type = other.get_property("original_element_type").get_string();
+  if (other.property_exists("original_topology_type")) {
+    el_type = other.get_property("original_topology_type").get_string();
   }
 
   std::strncpy(elType, el_type.c_str(), MAX_STR_LENGTH);

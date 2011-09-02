@@ -63,6 +63,9 @@
 
 namespace {
 
+  template<typename T>  struct remove_pointer     { typedef T type; };
+  template<typename T>  struct remove_pointer<T*> { typedef T type; };
+  
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
@@ -80,15 +83,32 @@ namespace {
   void show_step(int istep, double time);
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+
+  template <typename T>
+  void transfer_fields(const std::vector<T*>& entities,
+		       Ioss::Region &output_region,
+		       Ioss::Field::RoleType role,
+		       const Globals &globals);
 
   void transfer_fields(Ioss::GroupingEntity *ige,
 		       Ioss::GroupingEntity *oge,
 		       Ioss::Field::RoleType role,
 		       const std::string &prefix = "");
+
+  template <typename T>
+  void transfer_field_data(const std::vector<T*>& entities,
+			   Ioss::Region &output_region,
+			   Ioss::Field::RoleType role,
+			   const Globals &globals);
 
   void transfer_field_data(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge,
@@ -339,9 +359,17 @@ namespace {
 
     // Get all properties of input database...
     transfer_properties(&region, &output_region);
+
     transfer_nodeblock(region, output_region, globals.debug);
-    transfer_elementblock(region, output_region, globals.debug);
+    transfer_edgeblocks(region, output_region, globals.debug);
+    transfer_faceblocks(region, output_region, globals.debug);
+    transfer_elementblocks(region, output_region, globals.debug);
+
     transfer_nodesets(region, output_region, globals.debug);
+    transfer_edgesets(region, output_region, globals.debug);
+    transfer_facesets(region, output_region, globals.debug);
+    transfer_elemsets(region, output_region, globals.debug);
+
     transfer_sidesets(region, output_region, globals.debug);
     transfer_commsets(region, output_region, globals.debug);
 
@@ -353,83 +381,33 @@ namespace {
     output_region.begin_mode(Ioss::STATE_MODEL);
 
     // Transfer MESH field_data from input to output...
-    {
-      Ioss::NodeBlock *nb = region.get_node_blocks()[0];
-      assert(nb != NULL);
+    transfer_field_data(region.get_node_blocks(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_node_blocks(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-      if (nb != NULL) {
-	std::string name = nb->name();
-	if (globals.debug) OUTPUT << name << ", ";
+    transfer_field_data(region.get_edge_blocks(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_edge_blocks(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-	// Find the corresponding output element_block...
-	Ioss::NodeBlock *onb = output_region.get_node_block(name);
-	assert(onb != NULL);
-	transfer_field_data(nb, onb, Ioss::Field::MESH);
-	transfer_field_data(nb, onb, Ioss::Field::ATTRIBUTE);
-      }
-      if (globals.debug) OUTPUT << '\n';
-    }
+    transfer_field_data(region.get_face_blocks(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_face_blocks(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-    // Now do the same for element blocks...
-    {
-      Ioss::ElementBlockContainer ebs = region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator I = ebs.begin();
+    transfer_field_data(region.get_element_blocks(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_element_blocks(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-      while (I != ebs.end()) {
-	std::string name = (*I)->name();
-	if (globals.debug) OUTPUT << name << ", ";
+    transfer_field_data(region.get_nodesets(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_nodesets(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-	// Find the corresponding output element_block...
-	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	assert(oeb != NULL);
+    transfer_field_data(region.get_edgesets(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_edgesets(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-	if (oeb != NULL) {
-	  transfer_field_data(*I, oeb, Ioss::Field::MESH);
-	  transfer_field_data(*I, oeb, Ioss::Field::ATTRIBUTE);
-	}
-	++I;
-      }
-      if (globals.debug) OUTPUT << '\n';
-    }
+    transfer_field_data(region.get_facesets(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_facesets(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-    // Node Sets
-    {
-      Ioss::NodeSetContainer nss = region.get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I = nss.begin();
-      while (I != nss.end()) {
-	std::string name     = (*I)->name();
-	if (globals.debug) OUTPUT << name << ", ";
+    transfer_field_data(region.get_elementsets(), output_region, Ioss::Field::MESH,      globals);
+    transfer_field_data(region.get_elementsets(), output_region, Ioss::Field::ATTRIBUTE, globals);
 
-	// Find matching output nodeset
-	Ioss::NodeSet *ons = output_region.get_nodeset(name);
-	if (ons != NULL) {
-	  transfer_field_data(*I, ons, Ioss::Field::MESH);
-	  transfer_field_data(*I, ons, Ioss::Field::ATTRIBUTE);
-	}
-	++I;
-      }
-      if (globals.debug) OUTPUT << '\n';
-    }
-
-    // Comm Sets
-    {
-      Ioss::CommSetContainer css = region.get_commsets();
-      Ioss::CommSetContainer::const_iterator I = css.begin();
-      while (I != css.end()) {
-	std::string name  = (*I)->name();
-	if (globals.debug) OUTPUT << name << ", ";
-
-	// Find matching output commset
-	Ioss::CommSet *ocs = output_region.get_commset(name);
-	if (ocs != NULL) {
-	  transfer_field_data(*I, ocs, Ioss::Field::MESH);
-	  transfer_field_data(*I, ocs, Ioss::Field::ATTRIBUTE);
-	  transfer_field_data(*I, ocs, Ioss::Field::COMMUNICATION);
-	}
-	++I;
-      }
-      if (globals.debug) OUTPUT << '\n';
-    }
+    transfer_field_data(region.get_commsets(), output_region, Ioss::Field::MESH,          globals);
+    transfer_field_data(region.get_commsets(), output_region, Ioss::Field::ATTRIBUTE,     globals);
+    transfer_field_data(region.get_commsets(), output_region, Ioss::Field::COMMUNICATION, globals);
 
     // Side Sets
     {
@@ -473,108 +451,57 @@ namespace {
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       if (!globals.debug) {
 	OUTPUT << "\n Number of time steps on database     =" << std::setw(9)
-				<< region.get_property("state_count").get_int() << "\n\n";
+	       << region.get_property("state_count").get_int() << "\n\n";
       }
 
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+
+      // For each 'TRANSIENT' field in the node blocks and element
+      // blocks, transfer to the output node and element blocks.
+      transfer_fields(&region, &output_region, Ioss::Field::TRANSIENT);
+
+      transfer_fields(region.get_node_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_edge_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_face_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_element_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+
+      transfer_fields(region.get_nodesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_edgesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_facesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_fields(region.get_elementsets(), output_region, Ioss::Field::TRANSIENT, globals);
+
+      // Side Sets
       {
-	// For each 'TRANSIENT' field in the node blocks and element
-	// blocks, transfer to the output node and element blocks.
+	Ioss::SideSetContainer fss = region.get_sidesets();
+	Ioss::SideSetContainer::const_iterator I = fss.begin();
+	while (I != fss.end()) {
+	  std::string name     = (*I)->name();
+	  if (globals.debug) OUTPUT << name << ", ";
 
-	// Region
-	{
-	  transfer_fields(&region, &output_region, Ioss::Field::TRANSIENT);
-	}
+	  // Find matching output sideset
+	  Ioss::SideSet *ofs = output_region.get_sideset(name);
 
-	// Node Blocks...
-	{
-	  Ioss::NodeBlockContainer ebs = region.get_node_blocks();
-	  Ioss::NodeBlockContainer::const_iterator i = ebs.begin();
-	  while (i != ebs.end()) {
-	    std::string name      = (*i)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
+	  if (ofs != NULL) {
+	    transfer_fields(*I, ofs, Ioss::Field::TRANSIENT);
 
-	    // Find the corresponding output node_block...
-	    Ioss::NodeBlock *oeb = output_region.get_node_block(name);
-	    if (oeb != NULL) {
-	      transfer_fields(*i, oeb, Ioss::Field::TRANSIENT);
-	      if (globals.do_transform_fields)
-		transform_fields(*i, oeb, Ioss::Field::TRANSIENT);
-	    }
-	    ++i;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
+	    Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
+	    Ioss::SideBlockContainer::const_iterator J = fbs.begin();
+	    while (J != fbs.end()) {
 
-	// Element Blocks...
-	{
-	  Ioss::ElementBlockContainer ebs = region.get_element_blocks();
-	  Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
-	  while (i != ebs.end()) {
-	    std::string name      = (*i)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
+	      // Find matching output sideblock
+	      std::string fbname = (*J)->name();
+	      if (globals.debug) OUTPUT << fbname << ", ";
+	      Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
-	    // Find the corresponding output element_block...
-	    Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	    if (oeb != NULL) {
-	      transfer_fields(*i, oeb, Ioss::Field::TRANSIENT);
-	    }
-	    ++i;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
-
-	// Node Sets
-	{
-	  Ioss::NodeSetContainer nss = region.get_nodesets();
-	  Ioss::NodeSetContainer::const_iterator i = nss.begin();
-	  while (i != nss.end()) {
-	    std::string name     = (*i)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
-
-	    // Find matching output nodeset
-	    Ioss::NodeSet *ons = output_region.get_nodeset(name);
-	    if (ons != NULL) {
-	      transfer_fields(*i, ons, Ioss::Field::TRANSIENT);
-	    }
-	    ++i;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
-
-	// Side Sets
-	{
-	  Ioss::SideSetContainer fss = region.get_sidesets();
-	  Ioss::SideSetContainer::const_iterator I = fss.begin();
-	  while (I != fss.end()) {
-	    std::string name     = (*I)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
-
-	    // Find matching output sideset
-	    Ioss::SideSet *ofs = output_region.get_sideset(name);
-
-	    if (ofs != NULL) {
-	      transfer_fields(*I, ofs, Ioss::Field::TRANSIENT);
-
-	      Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
-	      Ioss::SideBlockContainer::const_iterator J = fbs.begin();
-	      while (J != fbs.end()) {
-
-		// Find matching output sideblock
-		std::string fbname = (*J)->name();
-		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
-
-		if (ofb != NULL) {
-		  transfer_fields(*J, ofb, Ioss::Field::TRANSIENT);
-		}
-		++J;
+	      if (ofb != NULL) {
+		transfer_fields(*J, ofb, Ioss::Field::TRANSIENT);
 	      }
+	      ++J;
 	    }
-	    ++I;
 	  }
-	  if (globals.debug) OUTPUT << '\n';
+	  ++I;
 	}
+	if (globals.debug) OUTPUT << '\n';
       }
       if (globals.debug) OUTPUT << "END STATE_DEFINE_TRANSIENT... " << '\n';
       output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -586,9 +513,6 @@ namespace {
     // and transfer fields to output database...
 
     int step_count = region.get_property("state_count").get_int();
-
-    Ioss::NodeBlockContainer nbs = region.get_node_blocks();
-    Ioss::ElementBlockContainer ebs = region.get_element_blocks();
 
     for (int istep = 1; istep <= step_count; istep++) {
       double time = region.get_state_time(istep);
@@ -602,93 +526,49 @@ namespace {
 
       output_region.begin_state(ostep);
       region.begin_state(istep);
+
+      transfer_field_data(&region, &output_region, Ioss::Field::TRANSIENT);
+
+      transfer_field_data(region.get_node_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_edge_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_face_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_element_blocks(), output_region, Ioss::Field::TRANSIENT, globals);
+
+      transfer_field_data(region.get_nodesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_edgesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_facesets(), output_region, Ioss::Field::TRANSIENT, globals);
+      transfer_field_data(region.get_elementsets(), output_region, Ioss::Field::TRANSIENT, globals);
+
+      // Side Sets
       {
-	transfer_field_data(&region, &output_region, Ioss::Field::TRANSIENT);
-	{
-	  // Output node block TRANSIENT fields...
-	  Ioss::NodeBlockContainer::const_iterator I = nbs.begin();
-
-	  while (I != nbs.end()) {
-	    Ioss::NodeBlock *nb = *I;
-	    ++I;
-	    std::string name       = nb->name();
-
-	    // Find the corresponding output node_block...
-	    Ioss::NodeBlock *onb = output_region.get_node_block(name);
-	    if (onb != NULL) {
-	      transfer_field_data(nb, onb, Ioss::Field::TRANSIENT);
-	      if (globals.do_transform_fields)
-		transform_field_data(nb, onb, Ioss::Field::TRANSIENT);
-	    }
-	  }
-	}
-
-	{
-	  // Output element block TRANSIENT fields...
-	  Ioss::ElementBlockContainer::const_iterator I = ebs.begin();
-
-	  while (I != ebs.end()) {
-	    Ioss::ElementBlock *eb = *I;
-	    ++I;
-	    std::string name       = eb->name();
-
-	    // Find the corresponding output element_block...
-	    Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	    if (oeb != NULL) {
-	      transfer_field_data(eb, oeb, Ioss::Field::TRANSIENT);
-	    }
-	  }
-	}
-
-	// Node Sets
-	{
-	  Ioss::NodeSetContainer nss = region.get_nodesets();
-	  Ioss::NodeSetContainer::const_iterator I = nss.begin();
-	  while (I != nss.end()) {
-	    std::string name     = (*I)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
-
-	    // Find matching output nodeset
-	    Ioss::NodeSet *ons = output_region.get_nodeset(name);
-	    if (ons != NULL) {
-	      transfer_field_data(*I, ons, Ioss::Field::TRANSIENT);
-	    }
-	    ++I;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
-
-	// Side Sets
-	{
-	  Ioss::SideSetContainer fss = region.get_sidesets();
-	  Ioss::SideSetContainer::const_iterator I = fss.begin();
-	  while (I != fss.end()) {
-	    std::string name     = (*I)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
+	Ioss::SideSetContainer fss = region.get_sidesets();
+	Ioss::SideSetContainer::const_iterator I = fss.begin();
+	while (I != fss.end()) {
+	  std::string name     = (*I)->name();
+	  if (globals.debug) OUTPUT << name << ", ";
 	  
-	    // Find matching output sideset
-	    Ioss::SideSet *ofs = output_region.get_sideset(name);
+	  // Find matching output sideset
+	  Ioss::SideSet *ofs = output_region.get_sideset(name);
 	  
-	    if (ofs != NULL) {
-	      transfer_field_data(*I, ofs, Ioss::Field::TRANSIENT);
+	  if (ofs != NULL) {
+	    transfer_field_data(*I, ofs, Ioss::Field::TRANSIENT);
 	    
-	      Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
-	      Ioss::SideBlockContainer::const_iterator J = fbs.begin();
-	      while (J != fbs.end()) {
+	    Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
+	    Ioss::SideBlockContainer::const_iterator J = fbs.begin();
+	    while (J != fbs.end()) {
 	      
-		// Find matching output sideblock
-		std::string fbname = (*J)->name();
-		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
+	      // Find matching output sideblock
+	      std::string fbname = (*J)->name();
+	      if (globals.debug) OUTPUT << fbname << ", ";
+	      Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 	      
-		if (ofb != NULL) {
-		  transfer_field_data(*J, ofb, Ioss::Field::TRANSIENT, "", false);
-		}
-		++J;
+	      if (ofb != NULL) {
+		transfer_field_data(*J, ofb, Ioss::Field::TRANSIENT, "", false);
 	      }
+	      ++J;
 	    }
-	    ++I;
 	  }
+	  ++I;
 	}
       }
       region.end_state(istep);
@@ -725,33 +605,91 @@ namespace {
     if (debug) OUTPUT << '\n';
   }
 
-  void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  template <typename T>
+  void transfer_fields(const std::vector<T*>& entities, Ioss::Region &output_region, Ioss::Field::RoleType role, const Globals &globals)
   {
-    Ioss::ElementBlockContainer ebs = region.get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
-    int total_elements = 0;
-    while (i != ebs.end()) {
+    typename std::vector<T*>::const_iterator i = entities.begin();
+    while (i != entities.end()) {
       std::string name      = (*i)->name();
-      if (debug) OUTPUT << name << ", ";
-      std::string type      = (*i)->get_property("topology_type").get_string();
-      int    num_elem  = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
-      total_elements += num_elem;
-
-      Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type,
-						      num_elem, num_attrib);
-      output_region.add(eb);
-      transfer_properties(*i, eb);
-      transfer_fields(*i, eb, Ioss::Field::MESH);
-      transfer_fields(*i, eb, Ioss::Field::ATTRIBUTE);
+      if (globals.debug) OUTPUT << name << ", ";
+      
+      // Find the corresponding output node_block...
+      Ioss::GroupingEntity *oeb = output_region.get_entity(name, (*i)->type());
+      if (oeb != NULL) {
+	transfer_fields(*i, oeb, role);
+	if (globals.do_transform_fields)
+	  transform_fields(*i, oeb, role);
+      }
       ++i;
     }
-    if (!debug) {
-      OUTPUT << " Number of elements                   =" << std::setw(9) << total_elements << "\n";
-      OUTPUT << " Number of element blocks             =" << std::setw(9) << ebs.size() << "\n\n";
-    } else {
-      OUTPUT << '\n';
+    if (globals.debug) OUTPUT << '\n';
+  }
+
+  template <typename T>
+  void transfer_field_data(const std::vector<T*>& entities, Ioss::Region &output_region, Ioss::Field::RoleType role,
+			   const Globals &globals)
+  {
+    typename std::vector<T*>::const_iterator i = entities.begin();
+    while (i != entities.end()) {
+      T *entity = *i; ++i;
+      std::string name = entity->name();
+
+      // Find the corresponding output block...
+      Ioss::GroupingEntity *output = output_region.get_entity(name, entity->type());
+      if (output != NULL) {
+	transfer_field_data(entity, output, role);
+	if (globals.do_transform_fields)
+	  transform_field_data(entity, output, role);
+      }
     }
+  }
+
+  template <typename T>
+  void transfer_blocks(std::vector<T*>& blocks, Ioss::Region &output_region, bool debug)
+  {
+    if (!blocks.empty()) {
+      typename std::vector<T*>::const_iterator i = blocks.begin();
+      int total_entities = 0;
+      while (i != blocks.end()) {
+	std::string name      = (*i)->name();
+	if (debug) OUTPUT << name << ", ";
+	std::string type      = (*i)->get_property("topology_type").get_string();
+	int    count  = (*i)->get_property("entity_count").get_int();
+	total_entities += count;
+	
+	T* block = new T(output_region.get_database(), name, type, count);
+	output_region.add(block);
+	transfer_properties(*i, block);
+	transfer_fields(*i, block, Ioss::Field::MESH);
+	transfer_fields(*i, block, Ioss::Field::ATTRIBUTE);
+	++i;
+      }
+      if (!debug) {
+	OUTPUT << " Number of " << std::setw(14) << (*blocks.begin())->type_string() << "s            ="
+	       << std::setw(9) << blocks.size() << "\t"
+	       << "Length of entity list   =" << std::setw(9) << total_entities << "\n";
+      } else {
+	OUTPUT << '\n';
+      }
+    }
+  }
+
+  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::ElementBlockContainer ebs = region.get_element_blocks();
+    transfer_blocks(ebs, output_region, debug);
+  }
+
+  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::EdgeBlockContainer ebs = region.get_edge_blocks();
+    transfer_blocks(ebs, output_region, debug);
+  }
+
+  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::FaceBlockContainer ebs = region.get_face_blocks();
+    transfer_blocks(ebs, output_region, debug);
   }
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
@@ -789,36 +727,66 @@ namespace {
       ++i;
     }
     if (!debug) {
-      OUTPUT << " Number of element side sets          =" << std::setw(9) << fss.size() << "\n";
-      OUTPUT << "     Number of element sides          =" << std::setw(9) << total_sides << "\n";
+      OUTPUT << " Number of        SideSets            =" << std::setw(9) << fss.size() << "\t"
+	     << "Number of element sides =" << std::setw(9) << total_sides << "\n";
     } else {
       OUTPUT << '\n';
+    }
+  }
+
+  template <typename T>
+  void transfer_sets(std::vector<T*> &sets, Ioss::Region &output_region, bool debug)
+  {
+    if (!sets.empty()) {
+      typename std::vector<T*>::const_iterator i = sets.begin();
+      int total_entities = 0;
+      while (i != sets.end()) {
+	std::string name      = (*i)->name();
+	if (debug) OUTPUT << name << ", ";
+	int    count     = (*i)->get_property("entity_count").get_int();
+	total_entities += count;
+	T* set = new T(output_region.get_database(), name, count);
+	output_region.add(set);
+	transfer_properties(*i, set);
+	transfer_fields(*i, set, Ioss::Field::MESH);
+	transfer_fields(*i, set, Ioss::Field::ATTRIBUTE);
+	++i;
+      }
+
+      if (!debug) {
+	OUTPUT << " Number of " << std::setw(14) << (*sets.begin())->type_string() << "s            ="
+	       << std::setw(9) << sets.size() << "\t"
+	       << "Length of entity list   =" << std::setw(9) << total_entities << "\n";
+      } else {
+	OUTPUT << '\n';
+      }
+
+      
     }
   }
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
     Ioss::NodeSetContainer      nss = region.get_nodesets();
-    Ioss::NodeSetContainer::const_iterator i = nss.begin();
-    int total_nodes = 0;
-    while (i != nss.end()) {
-      std::string name      = (*i)->name();
-      if (debug) OUTPUT << name << ", ";
-      int    count     = (*i)->get_property("entity_count").get_int();
-      total_nodes += count;
-      Ioss::NodeSet *ns = new Ioss::NodeSet(output_region.get_database(), name, count);
-      output_region.add(ns);
-      transfer_properties(*i, ns);
-      transfer_fields(*i, ns, Ioss::Field::MESH);
-      transfer_fields(*i, ns, Ioss::Field::ATTRIBUTE);
-      ++i;
-    }
-    if (!debug) {
-      OUTPUT << " Number of nodal point sets           =" << std::setw(9) << nss.size() << "\n";
-      OUTPUT << "     Length of node list              =" << std::setw(9) << total_nodes << "\n";
-    } else {
-      OUTPUT << '\n';
-    }
+    transfer_sets(nss, output_region, debug);
+  }
+
+  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::EdgeSetContainer      nss = region.get_edgesets();
+    transfer_sets(nss, output_region, debug);
+  }
+
+  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::FaceSetContainer      nss = region.get_facesets();
+    transfer_sets(nss, output_region, debug);
+  }
+
+  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::ElementSetContainer      nss = region.get_elementsets();
+    transfer_sets(nss, output_region, debug);
   }
 
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
@@ -991,8 +959,8 @@ namespace {
     // Iterate through properties and transfer to output database...
     Ioss::NameList::const_iterator I;
     for (I = names.begin(); I != names.end(); ++I) {
-//       if (*I == "original_block_order" && oge->property_exists(*I))
-//        oge->property_erase("original_block_order");
+      //       if (*I == "original_block_order" && oge->property_exists(*I))
+      //        oge->property_erase("original_block_order");
       if (!oge->property_exists(*I))
 	oge->property_add(ige->get_property(*I));
     }

@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
+#ifndef IOSS_Ioss_FaceSet_h
+#define IOSS_Ioss_FaceSet_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntitySet.h>
@@ -40,19 +40,21 @@
 namespace Ioss {
   class DatabaseIO;
 
-  class NodeSet : public EntitySet {
+  class FaceSet : public EntitySet {
   public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
+    FaceSet(); // Used for template typing only
+    FaceSet(const DatabaseIO *io_database, const std::string& name,
+	    size_t number_faces);
 
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
+    std::string type_string() const {return "FaceSet";}
+    EntityType type() const {return FACESET;}
       
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
+
+    virtual void block_membership(std::vector<std::string> &block_membership);
 
   protected:
     int internal_get_field_data(const Field& field,

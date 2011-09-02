@@ -30,37 +30,44 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
+#include <Ioss_ElementSet.h>
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_EntitySet.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_Property.h>
+#include <Ioss_Field.h>
+#include <Ioss_Utils.h>
 #include <string>
 
-namespace Ioss {
-  class DatabaseIO;
-
-  class NodeSet : public EntitySet {
-  public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
-
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
-      
-    // Handle implicit properties -- These are calcuated from data stored
-    // in the grouping entity instead of having an explicit value assigned.
-    // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
-
-  protected:
-    int internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-    int internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-  };
+namespace {
+  const std::string SCALAR() { return std::string("scalar");}
 }
-#endif
+
+Ioss::ElementSet::ElementSet()
+  : Ioss::EntitySet(NULL, "invalid", 0)
+{}
+
+Ioss::ElementSet::ElementSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
+		       size_t number_elements)
+  : Ioss::EntitySet(io_database, my_name, number_elements)
+{}
+
+int Ioss::ElementSet::internal_get_field_data(const Ioss::Field& field,
+				      void *data, size_t data_size) const
+{
+  return get_database()->get_field(this, field, data, data_size);
+}
+
+int Ioss::ElementSet::internal_put_field_data(const Ioss::Field& field,
+				      void *data, size_t data_size) const
+{
+  return get_database()->put_field(this, field, data, data_size);
+}
+
+Ioss::Property Ioss::ElementSet::get_implicit_property(const std::string& my_name) const
+{
+  return Ioss::GroupingEntity::get_implicit_property(my_name);
+}
+
+void Ioss::ElementSet::block_membership(std::vector<std::string> &block_members)
+{
+}

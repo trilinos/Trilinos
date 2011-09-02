@@ -333,7 +333,6 @@ namespace {
       std::string name      = (*i)->name();
       if (debug) std::cerr  << name << ", ";
       int    num_elem  = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= 0;
       total_elements += num_elem;
 
       std::string type;
@@ -343,8 +342,7 @@ namespace {
       else
 	type = "wedge";
       
-      Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type,
-						      num_elem, num_attrib);
+      Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
       output_region.add(eb);
       ++i;
     }

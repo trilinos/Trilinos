@@ -50,7 +50,7 @@
 
 namespace Ioss {
   class GroupingEntity;
-  class EntityBlock;
+  class SideBlock;
   class Region;
   class Field;
   
@@ -90,7 +90,7 @@ namespace Ioss {
      * nodes_per_element at end of name (if not already there), and
      * does some other transformations to remove some exodusII ambiguity.
      */
-    static std::string fixup_element_type(const std::string &base, int nodes_per_element, int spatial);
+    static std::string fixup_type(const std::string &base, int nodes_per_element, int spatial);
 
     static std::string uppercase(const std::string &name);
     static std::string lowercase(const std::string &name);
@@ -124,7 +124,7 @@ namespace Ioss {
 			     const Ioss::Field &field, const std::string& inout);
 
     static void calculate_sideblock_membership(IntVector &face_is_member,
-					       const EntityBlock *ef_blk,
+					       const SideBlock *ef_blk,
 					       const int *element, const int *sides,
 					       int number_sides,
 					       const Region *region);

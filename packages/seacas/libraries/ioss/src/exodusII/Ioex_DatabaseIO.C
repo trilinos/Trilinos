@@ -187,11 +187,10 @@ namespace {
 
   void add_map_fields(int exoid, Ioss::ElementBlock *block, int my_element_count);
 
-#ifndef NDEBUG
-  bool check_block_order(const Ioss::ElementBlockContainer &blocks);
-#endif
-  void check_variable_consistency(size_t gv_count, size_t nv_count, size_t ev_count,
-				  size_t nsv_count, size_t ssv_count,
+  template <typename T>
+  bool check_block_order(const std::vector<T*> &blocks);
+
+  void check_variable_consistency(const ex_var_params &exo_params,
 				  int my_processor, const std::string &filename,
 				  const Ioss::ParallelUtils &util);
 
@@ -228,6 +227,16 @@ namespace {
   }
   
   void check_attribute_index_order(Ioss::GroupingEntity *block);
+
+  template <typename T>
+  void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T*>& entities,
+			     const char suffix_separator);
+
+  template <typename T>
+  void generate_block_truth_table(Ioex::VariableNameMap &variables,
+				  Ioex::IntVector &truth_table,
+				  std::vector<T*> &blocks,
+				  char field_suffix_separator);
 }
 
 namespace Ioex {
@@ -235,16 +244,15 @@ namespace Ioex {
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator),
     exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER),
-    maximumNameLength(32), spatialDimension(0), nodeCount(0), elementCount(0),
-    nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-    nodeCmapIds(NULL), nodeCmapNodeCnts(NULL),
-    elemCmapIds(NULL), elemCmapElemCnts(NULL), commsetNodeCount(0),
-    commsetElemCount(0),
-    elementTruthTable(NULL), nodesetTruthTable(NULL), sidesetTruthTable(NULL),
-    timeLastFlush(0),
-    sequentialNG2L(true), sequentialEG2L(true), fileExists(false),
-    minimizeOpenFiles(false), blockAdjacenciesCalculated(false), nodeConnectivityStatusCalculated(false)
+    maximumNameLength(32), spatialDimension(0),
+    nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
+    commsetNodeCount(0), commsetElemCount(0),
+    timeLastFlush(0), fileExists(false),
+    minimizeOpenFiles(false), blockAdjacenciesCalculated(false),
+    nodeConnectivityStatusCalculated(false)
   {
+    m_groupCount[EX_GLOBAL]     = 1; // To make some common code work more cleanly.
+    m_groupCount[EX_NODE_BLOCK] = 1; // To make some common code work more cleanly.
 
     // A history file is only written on processor 0...
     if (db_usage == Ioss::WRITE_HISTORY)
@@ -258,16 +266,9 @@ namespace Ioex {
 #endif
     
     if (!is_input()) {
-      //      maximumNameLength = 127;
-      
       if (util().get_environment("EX_MINIMIZE_OPEN_FILES", isParallel)) {
 	std::cerr << "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment variable is set.\n";
 	minimizeOpenFiles = true;
-      }
-
-      if (util().get_environment("EX_SURFACE_SPLIT_BACKWARD_COMPATIBILITY", isParallel)) {
-	std::cerr << "IOEX: Splitting surfaces because EX_SURFACE_SPLIT_BACKWARD_COMPATIBILITY environment variable is set.\n";
-	surfaceSplitBackwardCompatibility = true;
       }
 
       if (util().get_environment("EX_MODE", exodusMode, isParallel)) {
@@ -276,7 +277,6 @@ namespace Ioex {
       }
     }
 
-    
     // Don't open output files until they are actually going to be
     // written to.  This is needed for proper support of the topology
     // files and auto restart so we don't overwrite a file with data we
@@ -287,16 +287,15 @@ namespace Ioex {
   {
     try {
       free_file_pointer();
-    
-      delete [] elementTruthTable;
-      delete [] nodesetTruthTable;
-      delete [] sidesetTruthTable;
-      delete [] nodeCmapIds;
-      delete [] nodeCmapNodeCnts;
-      delete [] elemCmapIds;
-      delete [] elemCmapElemCnts;
     } catch (...) {
     }
+  }
+
+  unsigned DatabaseIO::entity_field_support() const
+  {
+    return Ioss::NODEBLOCK | Ioss::EDGEBLOCK | Ioss::FACEBLOCK | Ioss::ELEMENTBLOCK |
+      Ioss::NODESET   | Ioss::EDGESET   | Ioss::FACESET   | Ioss::ELEMENTSET   |
+      Ioss::SIDESET   | Ioss::SIDEBLOCK | Ioss::REGION    | Ioss::SUPERELEMENT;
   }
 
   bool DatabaseIO::ok(bool write_message) const
@@ -525,12 +524,20 @@ namespace Ioex {
     }
 
     get_step_times();
+
+    get_nodeblocks();
+    get_edgeblocks();
+    get_faceblocks();
     get_elemblocks();
+    
     check_side_topology();
     
-    get_nodeblocks();
     get_sidesets();
     get_nodesets();
+    get_edgesets();
+    get_facesets();
+    get_elemsets();
+    
     get_commsets();
 
     add_region_fields();
@@ -545,17 +552,30 @@ namespace Ioex {
   {
     // Add properties and fields to the 'owning' region.
     // Also defines member variables of this class...
-
-    char the_title[max_line_length+1];
-    std::memset(the_title, 0, max_line_length+1);
-
-    int error = ex_get_init(get_file_pointer(), the_title, &spatialDimension,
-			    &nodeCount, &elementCount, &elementBlockCount,
-			    &nodesetCount, &sidesetCount);
+    ex_init_params info;
+    int error = ex_get_init_ext(get_file_pointer(), &info);
     if (error < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-    nodeBlockCount = 1;
+    spatialDimension = info.num_dim;
+    nodeCount = info.num_nodes;
+    edgeCount = info.num_edge;
+    faceCount = info.num_face;
+    elementCount = info.num_elem;
+
+    m_groupCount[EX_NODE_BLOCK] = 1;
+    m_groupCount[EX_EDGE_BLOCK] = info.num_edge_blk;
+    m_groupCount[EX_FACE_BLOCK] = info.num_face_blk;
+    m_groupCount[EX_ELEM_BLOCK] = info.num_elem_blk;
+
+    m_groupCount[EX_NODE_SET] = info.num_node_sets;
+    m_groupCount[EX_EDGE_SET] = info.num_edge_sets;
+    m_groupCount[EX_FACE_SET] = info.num_face_sets;
+    m_groupCount[EX_ELEM_SET] = info.num_elem_sets;
+
+    m_groupCount[EX_SIDE_SET] = info.num_side_sets;
+    
+
 
     if (nodeCount == 0) {
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
@@ -583,7 +603,7 @@ namespace Ioex {
       IOSS_ERROR(errmsg);
     }
 
-    if (elementCount > 0 && elementBlockCount <= 0) {
+    if (elementCount > 0 && m_groupCount[EX_ELEM_BLOCK] <= 0) {
       // NOTE: Code will not continue past this call...
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
@@ -592,7 +612,7 @@ namespace Ioex {
     }
 
     Ioss::Region *this_region = get_region();
-    this_region->property_add(Ioss::Property(std::string("title"), the_title));
+    this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
 					     spatialDimension));
   }
@@ -795,6 +815,24 @@ namespace Ioex {
     assert(elementCount == num_internal_elems + num_border_elems);
   }
 
+  const Ioss::MapContainer& DatabaseIO::get_map(ex_entity_type type) const
+  {
+    if (type == EX_NODE_BLOCK || type == EX_NODE_SET) {
+      return get_node_map();
+    } else if (type == EX_ELEM_BLOCK || type == EX_ELEM_SET) {
+      return get_element_map();
+    } else if (type == EX_FACE_BLOCK || type == EX_FACE_SET) {
+      return get_face_map();
+    } else if (type == EX_EDGE_BLOCK || type == EX_EDGE_SET) {
+      return get_edge_map();
+    }
+    std::ostringstream errmsg;
+    errmsg << "INTERNAL ERROR: Invalid map type. "
+           << "Something is wrong in the Ioex::DatabaseIO::get_map() function. "
+           << "Please report.\n";
+    IOSS_ERROR(errmsg);
+  }
+
   const Ioss::MapContainer& DatabaseIO::get_node_map() const
   {
     // Allocate space for node number map and read it in...
@@ -803,7 +841,8 @@ namespace Ioex {
       nodeMap.resize(nodeCount+1);
 
       if (is_input()) {
-	bool backward_compat = get_node_global_id_backward_compatibility() && !isParallel && dbUsage == Ioss::READ_MODEL;
+	bool backward_compat = get_node_global_id_backward_compatibility() &&
+	  !isParallel && dbUsage == Ioss::READ_MODEL;
 	if (!backward_compat) {
 	  Ioss::SerializeIO	serializeIO__(this);
 	  // Check whether there is a "original_global_id_map" map on
@@ -850,21 +889,17 @@ namespace Ioex {
 
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
-	sequentialNG2L = true;
+	nodeMap[0] = -1;
 	for (int i=1; i < nodeCount+1; i++) {
 	  if (i != nodeMap[i]) {
-	    sequentialNG2L = false;
 	    nodeMap[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialNG2L) {
+	if (nodeMap[0] == 1) {
 	  Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], nodeCount, 0,
-				       "node", myProcessor);
-	} else {
-	  // Sequential map
-	  nodeMap[0] = -1;
+				       "NodeBlock", myProcessor);
 	}
 
       } else {
@@ -887,7 +922,8 @@ namespace Ioex {
       elementMap.resize(elementCount+1);
 
       if (is_input()) {
-	bool backward_compat = get_node_global_id_backward_compatibility() && !isParallel && dbUsage == Ioss::READ_MODEL;
+	bool backward_compat = get_node_global_id_backward_compatibility() &&
+	  !isParallel && dbUsage == Ioss::READ_MODEL;
 	if (!backward_compat) {
 	  Ioss::SerializeIO	serializeIO__(this);
 	  
@@ -917,7 +953,7 @@ namespace Ioex {
 	  }
 
 	  if (!map_read) {
-	    int error = ex_get_elem_num_map(get_file_pointer(), &elementMap[1]);
+	    int error = ex_get_id_map(get_file_pointer(), EX_ELEM_MAP, &elementMap[1]);
 	    if (error < 0) {
 	      // Clear out the vector...
 	      Ioss::MapContainer().swap(elementMap);
@@ -935,23 +971,18 @@ namespace Ioex {
 
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
-	sequentialEG2L = true;
+	elementMap[0] = -1;
 	for (int i=1; i < elementCount+1; i++) {
 	  if (i != elementMap[i]) {
-	    sequentialEG2L = false;
 	    elementMap[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialEG2L) {
+	if (elementMap[0] == 1) {
 	  Ioss::Map::build_reverse_map(&reverseElementMap,
 				       &elementMap[1], elementCount, 0,
 				       "element", myProcessor);
-	} else {
-	  // Sequential map
-	  sequentialEG2L = true;
-	  elementMap[0] = -1;
 	}
 
       } else {
@@ -960,11 +991,100 @@ namespace Ioex {
 	  elementMap[i] = i;
 	}
 	// Sequential map
-	sequentialEG2L = true;
 	elementMap[0] = -1;
       }
     }
     return elementMap;
+  }
+
+  const Ioss::MapContainer& DatabaseIO::get_face_map() const
+  {
+    // Allocate space for face number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (faceMap.empty()) {
+      faceMap.resize(faceCount+1);
+
+      if (is_input()) {
+	Ioss::SerializeIO	serializeIO__(this);
+	
+	int error = ex_get_id_map(get_file_pointer(), EX_FACE_MAP, &faceMap[1]);
+	if (error < 0) {
+	  // Clear out the vector...
+	  Ioss::MapContainer().swap(faceMap);
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
+	
+	// Check for sequential face map.
+	// If not, build the reverse G2L face map...
+	faceMap[0] = -1;
+	for (int i=1; i < faceCount+1; i++) {
+	  if (i != faceMap[i]) {
+	    faceMap[0] = 1;
+	    break;
+	  }
+	}
+	
+	if (faceMap[0] == 1) {
+	  Ioss::Map::build_reverse_map(&reverseFaceMap,
+				       &faceMap[1], faceCount, 0,
+				       "face", myProcessor);
+	}
+	
+      } else {
+	// Output database; faceMap not set yet... Build a default map.
+	for (int i=1; i < faceCount+1; i++) {
+	  faceMap[i] = i;
+	}
+	// Sequential map
+	faceMap[0] = -1;
+      }
+    }
+    return faceMap;
+  }
+
+  const Ioss::MapContainer& DatabaseIO::get_edge_map() const
+  {
+    // Allocate space for edge number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (edgeMap.empty()) {
+      edgeMap.resize(edgeCount+1);
+
+      if (is_input()) {
+	Ioss::SerializeIO	serializeIO__(this);
+	
+	int error = ex_get_id_map(get_file_pointer(), EX_EDGE_MAP, &edgeMap[1]);
+	if (error < 0) {
+	  // Clear out the vector...
+	  Ioss::MapContainer().swap(edgeMap);
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
+	
+	// Check for sequential edge map.
+	// If not, build the reverse G2L edge map...
+	edgeMap[0] = -1;
+	for (int i=1; i < edgeCount+1; i++) {
+	  if (i != edgeMap[i]) {
+	    edgeMap[0] = 1;
+	    break;
+	  }
+	}
+	
+	if (edgeMap[0] == 1) {
+	  Ioss::Map::build_reverse_map(&reverseEdgeMap,
+				       &edgeMap[1], edgeCount, 0,
+				       "edge", myProcessor);
+	}
+	
+      } else {
+	// Output database; edgeMap not set yet... Build a default map.
+	for (int i=1; i < edgeCount+1; i++) {
+	  edgeMap[i] = i;
+	}
+	// Sequential map
+	edgeMap[0] = -1;
+      }
+    }
+    return edgeMap;
   }
 
   void DatabaseIO::get_nodeblocks() 
@@ -972,148 +1092,171 @@ namespace Ioex {
     // For exodusII, there is only a single node block which contains
     // all of the nodes.
     // The default id assigned is '1' and the name is 'nodeblock_1'
+
     std::string block_name = "nodeblock_1";
     Ioss::NodeBlock *block = new Ioss::NodeBlock(this, block_name,
 						 nodeCount, spatialDimension);
     block->property_add(Ioss::Property("id", 1));
     // Check for results variables.
-    add_results_fields(EX_NODAL, block, nodeCount);
+
+    int num_attr = 0;
+    int ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
+    if (ierr < 0)
+      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+    add_attribute_fields(EX_NODE_BLOCK, block, num_attr, "");
+    add_results_fields(EX_NODE_BLOCK, block);
 
     get_region()->add(block);
   }
 
-  void DatabaseIO::get_elemblocks() 
+  void DatabaseIO::get_elemblocks()
   {
-    // Attributes of an element block are:
+    get_blocks(EX_ELEM_BLOCK, 0);
+  }
+  
+  void DatabaseIO::get_faceblocks()
+  {
+    get_blocks(EX_FACE_BLOCK, 1);
+  }
+  
+  void DatabaseIO::get_edgeblocks()
+  {
+    get_blocks(EX_EDGE_BLOCK, 2);
+  }
+  
+  void DatabaseIO::get_blocks(ex_entity_type entity_type, int rank_offset)
+  {
+    // Attributes of an X block are:  (X = element, face, or edge)
     // -- id
     // -- name
-    // -- element type
-    // -- number of elements
-    // -- number of attributes per element
-    // -- number of nodes per element (derivable from type)
-    // -- number of faces per element (derivable from type)
-    // -- number of edges per element (derivable from type)
+    // -- X type
+    // -- number of Xs
+    // -- number of attributes per X
+    // -- number of nodes per X (derivable from type)
+    // -- number of faces per X (derivable from type)
+    // -- number of edges per X (derivable from type)
 
-    // In a parallel execution, it is possible that an element block will have
-    // no elements on a particular processor...
+    // In a parallel execution, it is possible that an X block will have
+    // no Xs on a particular processor...
 
     // NOTE: This routine may be called multiple times on a single database.
     //       make sure it is not dependent on being called one time only...
 
-    // Get exodusII element block metadata
-    if (elementBlockCount == 0)
+    // Get exodusII X block metadata
+    if (m_groupCount[entity_type] == 0)
       return;
 
-    Ioss::IntVector element_block_ids(elementBlockCount);
+    Ioss::IntVector X_block_ids(m_groupCount[entity_type]);
 
     int error;
     {
       Ioss::SerializeIO	serializeIO__(this);
 
-      error = ex_get_ids(get_file_pointer(), EX_ELEM_BLOCK, TOPTR(element_block_ids));
+      error = ex_get_ids(get_file_pointer(), entity_type, TOPTR(X_block_ids));
       if (error < 0) {
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
     }
 
+    size_t all_X_type_length = m_groupCount[entity_type] * (MAX_STR_LENGTH+1);
+    std::vector<char> all_X_type(all_X_type_length);
 
-    size_t all_element_type_length = elementBlockCount * (MAX_STR_LENGTH+1);
-    std::vector<char> all_element_type(all_element_type_length);
-
-    Ioss::IntVector attributes(elementBlockCount);
-    Ioss::IntVector my_node_count(elementBlockCount);
-    Ioss::IntVector local_element_count(elementBlockCount);
-    Ioss::IntVector global_element_count(elementBlockCount);
+    Ioss::IntVector counts(m_groupCount[entity_type] * 4);
+    Ioss::IntVector local_X_count(m_groupCount[entity_type]);
+    Ioss::IntVector global_X_count(m_groupCount[entity_type]);
     int iblk ;
 
     {
       Ioss::SerializeIO	serializeIO__(this);
 
-      for ( iblk = 0; iblk < elementBlockCount; iblk++) {
-	int id = element_block_ids[iblk];
-	int number_elements;
-	int nodes_per_element;
-	int attributes_per_element;
+      for ( iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
+	int index = 4*iblk;
+	int id = X_block_ids[iblk];
+	int number_Xs   = 0;
+	int nodes_per_X = 0;
+	int edges_per_X = 0;
+	int faces_per_X = 0;
+	int attributes_per_X = 0;
 
-	char * const element_type = TOPTR(all_element_type) + iblk * (MAX_STR_LENGTH+1);
+	char * const X_type = TOPTR(all_X_type) + iblk * (MAX_STR_LENGTH+1);
 
-	error = ex_get_elem_block(get_file_pointer(), id,
-				  element_type,
-				  &number_elements, &nodes_per_element,
-				  &attributes_per_element);
+	error = ex_get_block(get_file_pointer(), entity_type, id, X_type,
+			     &number_Xs, &nodes_per_X, &edges_per_X, &faces_per_X,
+			     &attributes_per_X);
 	if (error < 0) {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
 
-	local_element_count[iblk] = number_elements;
+	local_X_count[iblk] = number_Xs;
 
-	if (number_elements == 0) {
-	  attributes[iblk] = 0;
-	  my_node_count[iblk] = 0;
-	  std::memset(element_type, 0, MAX_STR_LENGTH + 1);
+	counts[index+0] = nodes_per_X;
+	counts[index+1] = edges_per_X;
+	counts[index+2] = faces_per_X;
+	counts[index+3] = attributes_per_X;
+
+	if (number_Xs == 0) {
+	  counts[index+0] = 0;
+	  counts[index+3] = 0;
+	  std::memset(X_type, 0, MAX_STR_LENGTH + 1);
 	} else {
-	  attributes[iblk] = attributes_per_element;
-	  my_node_count[iblk] = nodes_per_element;
+	  counts[index+0] = nodes_per_X;
+	  counts[index+3] = attributes_per_X;
 	}
       }
     }
 
     // This is a collective call...
-    util().attribute_reduction(all_element_type_length, TOPTR(all_element_type));
+    util().attribute_reduction(all_X_type_length, TOPTR(all_X_type));
 
-    // The element attribute count will either be 0 if there are no
-    // elements in the element block on this processor, or it will be
-    // the number of attributes (> 0). Therefore, if we take the 'max'
-    // over all processors, each processor will then have the correct
-    // attribute count...
     // This is a collective call...
-    util().global_array_minmax(attributes, Ioss::ParallelUtils::DO_MAX);
+    util().global_array_minmax(counts, Ioss::ParallelUtils::DO_MAX);
 
-    // Similar for number of nodes per element...
-    // This is a collective call... Could combine with previous call to eliminate one call...
-    util().global_array_minmax(my_node_count, Ioss::ParallelUtils::DO_MAX);
-
-    // Determine global element count for each element block....
+    // Determine global X count for each X block....
     // Can also get this from an nemesis call, but the data may not always be there in all cases.
-    util().global_count(local_element_count, global_element_count);
+    util().global_count(local_X_count, global_X_count);
     
-    // The 'offset' is used to map an element location within an element
-    // block to the element 'file descriptor'.  For example, the file
-    // descriptor of the 37th element in the 4th block is calculated by:
+    // The 'offset' is used to map an X location within an X
+    // block to the X 'file descriptor'.  For example, the file
+    // descriptor of the 37th X in the 4th block is calculated by:
     // file_descriptor = offset of block 4 + 37 This can also be used to
-    // determine which element block an element with a file_descriptor
-    // maps into. An particular element block contains all elements in
+    // determine which X block an X with a file_descriptor
+    // maps into. An particular X block contains all Xs in
     // the range:
-    //     offset < file_descriptor <= offset+number_elements_per_block
+    //     offset < file_descriptor <= offset+number_Xs_per_block
     int offset = 0;
     int used_blocks = 0;
     
-    for ( iblk = 0; iblk < elementBlockCount; iblk++) {
-      int id = element_block_ids[iblk];
-      std::string alias = Ioss::Utils::encode_entity_name("block", id);
-      char * const element_type = TOPTR(all_element_type) + iblk * (MAX_STR_LENGTH+1);
+    for ( iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
+      int index = 4*iblk;
+      int nodes_per_X = counts[index+0];
+      int edges_per_X = counts[index+1];
+      int faces_per_X = counts[index+2];
+      int attributes        = counts[index+3];
 
-      Ioss::ElementBlock *block = NULL;
+      int id = X_block_ids[iblk];
+      std::string alias = Ioss::Utils::encode_entity_name("block", id);
+      char * const X_type = TOPTR(all_X_type) + iblk * (MAX_STR_LENGTH+1);
+
       std::string block_name;
       {
 	Ioss::SerializeIO	serializeIO__(this);
-	block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block", maximumNameLength);
+	block_name = get_entity_name(get_file_pointer(), entity_type, id, "block", maximumNameLength);
       }
 
-      std::string save_type = element_type;
-      std::string type = Ioss::Utils::fixup_element_type(element_type, my_node_count[iblk],
-							 spatialDimension);
-      if (local_element_count[iblk] == 0 && type == "") {
-	// For an empty block, exodusII does not store the element
+      std::string save_type = X_type;
+      std::string type = Ioss::Utils::fixup_type(X_type, nodes_per_X, spatialDimension-rank_offset);
+      if (local_X_count[iblk] == 0 && type == "") {
+	// For an empty block, exodusII does not store the X
 	// type information and returns "NULL" If there are no
-	// elements on any processors for this block, it will have
+	// Xs on any processors for this block, it will have
 	// an empty type which is invalid and will throw an
-	// exception in the ElementBlock constructor. Try to discern
-	// the correct element type based on the block_name.
+	// exception in the XBlock constructor. Try to discern
+	// the correct X type based on the block_name.
 	std::vector<std::string> tokens;
 	Ioss::tokenize(block_name, "_", tokens);
 	if (tokens.size() >= 2) {
-	  // Check whether last token names an element topology type...
+	  // Check whether last token names an X topology type...
 	  const Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(tokens[tokens.size()-1], true);
 	  if (topology != NULL) {
 	    type = topology->name();
@@ -1123,19 +1266,51 @@ namespace Ioex {
       
       if (type == "null" || type == "") {
 	// If we have no idea what the topology type for an empty
-	// element block is, call it "unknown"
+	// X block is, call it "unknown"
 	type = "unknown";
 	
-	// If there are no elements on any processor for this block and
+	// If there are no Xs on any processor for this block and
 	// we have no idea what the topology type is, skip it...
-	if (global_element_count[iblk] == 0) {
+	if (global_X_count[iblk] == 0) {
 	  continue;
 	}
       }
       
-      block = new Ioss::ElementBlock(this, block_name, type,
-				     local_element_count[iblk],
-				     attributes[iblk]);
+      Ioss::EntityBlock *block = NULL;
+      if (entity_type == EX_ELEM_BLOCK) {
+	Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, local_X_count[iblk]);
+	block = eblock;
+	get_region()->add(eblock);
+      } else if (entity_type == EX_FACE_BLOCK) {
+	Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, local_X_count[iblk]);
+	get_region()->add(fblock);
+	block = fblock;
+      } else if (entity_type == EX_EDGE_BLOCK) {
+	Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, local_X_count[iblk]);
+	get_region()->add(eblock);
+	block = eblock;
+      } else {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Invalid type in get_blocks()";
+	IOSS_ERROR(errmsg);
+      }
+
+      // See which connectivity options were defined for this block.
+      // X -> Node is always defined.
+      // X -> Face?
+      if (faces_per_X > 0 && rank_offset < 1) {
+	std::string storage = "Real["+Ioss::Utils::to_string(faces_per_X)+"]";
+	block->field_add(Ioss::Field("connectivity_face",
+				     Ioss::Field::INTEGER, storage, Ioss::Field::MESH,
+				     local_X_count[iblk]));
+      }
+      // X -> Edge?
+      if (edges_per_X > 0 && rank_offset < 2) {
+	std::string storage = "Real["+Ioss::Utils::to_string(edges_per_X)+"]";
+	block->field_add(Ioss::Field("connectivity_edge",
+				     Ioss::Field::INTEGER, storage, Ioss::Field::MESH,
+				     local_X_count[iblk]));
+      }
 
       block->property_add(Ioss::Property("id", id));
       
@@ -1143,24 +1318,23 @@ namespace Ioex {
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
       
       if (save_type != "null" && save_type != "") {
-	if (block->property_exists("original_element_type")) {
-	  if (block->get_property("original_element_type").get_string() != save_type) {
-	    block->property_erase("original_element_type");
-	    block->property_add(Ioss::Property("original_element_type", save_type));
+	if (block->property_exists("original_topology_type")) {
+	  if (block->get_property("original_topology_type").get_string() != save_type) {
+	    block->property_erase("original_topology_type");
+	    block->property_add(Ioss::Property("original_topology_type", save_type));
 	  }
 	} else {
 	  if (block->get_property("topology_type").get_string() != save_type) {
-	    // Maintain original element type on output database if possible.
-	    block->property_add(Ioss::Property("original_element_type", save_type));
+	    // Maintain original X type on output database if possible.
+	    block->property_add(Ioss::Property("original_topology_type", save_type));
 	  }
 	}
       }
       
-      block->property_add(Ioss::Property("global_entity_count", global_element_count[iblk]));
+      block->property_add(Ioss::Property("global_entity_count", global_X_count[iblk]));
       
-      add_attribute_fields(block, attributes[iblk], type);
       
-      offset += local_element_count[iblk];
+      offset += local_X_count[iblk];
       
       // See if this block is "omitted" by the calling code.
       // This only affects the generation of surfaces...
@@ -1172,22 +1346,20 @@ namespace Ioex {
 	  block->property_add(Ioss::Property(std::string("omitted"), 1));
 	}
       }
-      get_region()->add(block);
       if (block_name != alias) {
 	get_region()->add_alias(block_name, alias);
       }
     
-      // Check for results variables.
-      add_results_fields(EX_ELEM_BLOCK, block, local_element_count[iblk], iblk);
+      // Check for additional variables.
+      add_attribute_fields(entity_type, block, attributes, type);
+      add_results_fields(entity_type, block, iblk);
       
-      {
+      if (entity_type == EX_ELEM_BLOCK) {
 	Ioss::SerializeIO	serializeIO__(this);
-	add_map_fields(get_file_pointer(), block, local_element_count[iblk]);
+	add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)block, local_X_count[iblk]);
       }
     }
-    elementBlockCount = used_blocks;
-    assert(elementCount == offset);
-    assert(elementBlockCount == (int)get_region()->get_element_blocks().size());
+    m_groupCount[entity_type] = used_blocks;
   }
 
   void DatabaseIO::get_block_adjacencies(const Ioss::ElementBlock *eb,
@@ -1204,7 +1376,7 @@ namespace Ioex {
 
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(check_block_order(element_blocks));
-    for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+    for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 
       Ioss::ElementBlock *leb = element_blocks[iblk];
       int lblk_position  = leb->get_property("original_block_order").get_int();
@@ -1224,9 +1396,9 @@ namespace Ioex {
 
     blockAdjacenciesCalculated = true;
     
-    if (elementBlockCount == 1) {
-      blockAdjacency.resize(elementBlockCount);
-      blockAdjacency[0].resize(elementBlockCount);
+    if (m_groupCount[EX_ELEM_BLOCK] == 1) {
+      blockAdjacency.resize(m_groupCount[EX_ELEM_BLOCK]);
+      blockAdjacency[0].resize(m_groupCount[EX_ELEM_BLOCK]);
       blockAdjacency[0][0] = 0;
       return;
     }
@@ -1241,7 +1413,7 @@ namespace Ioex {
 
     {
       Ioss::SerializeIO	serializeIO__(this);
-      for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+      for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 	Ioss::ElementBlock *eb = element_blocks[iblk];
 	int blk_position =  eb->get_property("original_block_order").get_int();
 	int id =            eb->get_property("id").get_int();
@@ -1289,7 +1461,7 @@ namespace Ioex {
       // Use 'int' as basic type...
       size_t id_size  = 1;
       size_t word_size = sizeof(int) * 8;
-      size_t bits_size = (elementBlockCount+word_size-1)/word_size;
+      size_t bits_size = (m_groupCount[EX_ELEM_BLOCK]+word_size-1)/word_size;
       std::vector<unsigned> send(proc_node.size() * (id_size + bits_size));
       std::vector<unsigned> recv(proc_node.size() * (id_size + bits_size));
       
@@ -1398,7 +1570,7 @@ namespace Ioex {
       for (size_t i=0; i < proc_node.size(); i++) {
 	int glob_id = recv[offset++];
 	int loc_id = node_global_to_local(glob_id, true) -1;
-	for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+	for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 	  size_t wrd_off = iblk / word_size;
 	  size_t bit     = iblk % word_size;
 	  if (recv[offset+wrd_off] & (1 << bit)) {
@@ -1411,9 +1583,9 @@ namespace Ioex {
 #endif    
     
     // Convert from inv_con arrays to block adjacency...
-    blockAdjacency.resize(elementBlockCount);
-    for (int iblk = 0; iblk < elementBlockCount; iblk++) {
-      blockAdjacency[iblk].resize(elementBlockCount);
+    blockAdjacency.resize(m_groupCount[EX_ELEM_BLOCK]);
+    for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
+      blockAdjacency[iblk].resize(m_groupCount[EX_ELEM_BLOCK]);
     }
 
     for (int i = 0; i < nodeCount; i++) {
@@ -1431,12 +1603,12 @@ namespace Ioex {
     if (isParallel) {
       // Sync across all processors...
       size_t word_size = sizeof(int) * 8;
-      size_t bits_size = (elementBlockCount+word_size-1)/word_size;
+      size_t bits_size = (m_groupCount[EX_ELEM_BLOCK]+word_size-1)/word_size;
 
-      std::vector<unsigned> data(elementBlockCount * bits_size);
+      std::vector<unsigned> data(m_groupCount[EX_ELEM_BLOCK] * bits_size);
       int offset = 0;
-      for (int jblk = 0; jblk < elementBlockCount; jblk++) {
-	for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+      for (int jblk = 0; jblk < m_groupCount[EX_ELEM_BLOCK]; jblk++) {
+	for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 	  if (blockAdjacency[jblk][iblk] == 1) {
 	    size_t wrd_off = iblk / word_size;
 	    size_t bit     = iblk % word_size;
@@ -1446,13 +1618,13 @@ namespace Ioex {
 	offset += bits_size;
       }
 
-      std::vector<unsigned> out_data(elementBlockCount * bits_size);
+      std::vector<unsigned> out_data(m_groupCount[EX_ELEM_BLOCK] * bits_size);
       MPI_Allreduce((void*)TOPTR(data), TOPTR(out_data), static_cast<int>(data.size()),
 		    MPI_UNSIGNED, MPI_BOR, util().communicator());
 
       offset = 0;
-      for (int jblk = 0; jblk < elementBlockCount; jblk++) {
-	for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+      for (int jblk = 0; jblk < m_groupCount[EX_ELEM_BLOCK]; jblk++) {
+	for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 	  if (blockAdjacency[jblk][iblk] == 0) {
 	    size_t wrd_off = iblk / word_size;
 	    size_t bit     = iblk % word_size;
@@ -1467,8 +1639,8 @@ namespace Ioex {
 #endif
     
     // Make it symmetric...
-    for (int iblk = 0; iblk < elementBlockCount; iblk++) {
-      for (int jblk = iblk; jblk < elementBlockCount; jblk++) {
+    for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
+      for (int jblk = iblk; jblk < m_groupCount[EX_ELEM_BLOCK]; jblk++) {
         blockAdjacency[jblk][iblk] = blockAdjacency[iblk][jblk];
       }
     }
@@ -1493,7 +1665,7 @@ namespace Ioex {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(check_block_order(element_blocks));
 
-    for (int i=0; i < elementBlockCount; i++) {
+    for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
       Ioss::ElementBlock *block = element_blocks[i];
       unsigned char status = 2;
       if (block_is_omitted(block)) {
@@ -1531,7 +1703,7 @@ namespace Ioex {
     // communication and get a good idea of the topologies that are in
     // the set.
 
-    if (sidesetCount > 0) {
+    if (m_groupCount[EX_SIDE_SET] > 0) {
       check_side_topology();
 
       // Get exodusII sideset metadata
@@ -1543,7 +1715,7 @@ namespace Ioex {
       SideSetMap fs_map;
       SideSetSet fs_set;
 
-      Ioss::IntVector side_set_ids(sidesetCount);
+      Ioss::IntVector side_set_ids(m_groupCount[EX_SIDE_SET]);
       {
 	Ioss::SerializeIO	serializeIO__(this);
 	int error = ex_get_ids(get_file_pointer(), EX_SIDE_SET, TOPTR(side_set_ids));
@@ -1551,17 +1723,17 @@ namespace Ioex {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
 
-	for (int i = 0; i < sidesetCount; i++) {
-	  char * ss_name = new char[maximumNameLength+1];
-	  error = ex_get_name(get_file_pointer(), EX_SIDE_SET, side_set_ids[i], ss_name);
+	for (int i = 0; i < m_groupCount[EX_SIDE_SET]; i++) {
+          std::vector<char> ss_name(maximumNameLength+1);
+	  error = ex_get_name(get_file_pointer(), EX_SIDE_SET, side_set_ids[i],
+                              TOPTR(ss_name));
 	  if (error < 0) {
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
 	  if (ss_name[0] != '\0') {
-	    Ioss::Utils::fixup_name(ss_name);
-	    decode_surface_name(fs_map, fs_set, ss_name);
+	    Ioss::Utils::fixup_name(TOPTR(ss_name));
+	    decode_surface_name(fs_map, fs_set, TOPTR(ss_name));
 	  }
-          delete [] ss_name;
 	}
       }
 
@@ -1581,7 +1753,7 @@ namespace Ioex {
 	}
       }
 
-      for (int iss = 0; iss < sidesetCount; iss++) {
+      for (int iss = 0; iss < m_groupCount[EX_SIDE_SET]; iss++) {
 	int id = side_set_ids[iss];
 	std::string sid = "";
 	int number_sides;
@@ -1706,7 +1878,7 @@ namespace Ioex {
 	    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
 	    assert(check_block_order(element_blocks));
 
-	    for (int i=0; i < elementBlockCount; i++) {
+	    for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
 	      Ioss::ElementBlock *block = element_blocks[i];
 	      if (!block_is_omitted(block)) {
 		std::string name = block->name();
@@ -1785,2661 +1957,3526 @@ namespace Ioex {
 	    if (side_topo->parametric_dimension() == topology_dimension-1 ||
 		split_type == Ioss::SPLIT_BY_DONT_SPLIT ) {
 #else
-	    if (true) {
+	      if (true) {
 #endif
-	      int my_side_count = (*I).second;
+		int my_side_count = (*I).second;
 
-	      std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
-	      if (side_set_name == "universal_sideset") {
-		side_block_name = side_set_name;
-	      } else {
-		if (sid == "")
-		  side_block_name = Ioss::Utils::encode_entity_name(side_block_name, id);
-		else {
-		  side_block_name += "_";
-		  side_block_name += sid;
+		std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
+		if (side_set_name == "universal_sideset") {
+		  side_block_name = side_set_name;
+		} else {
+		  if (sid == "")
+		    side_block_name = Ioss::Utils::encode_entity_name(side_block_name, id);
+		  else {
+		    side_block_name += "_";
+		    side_block_name += sid;
+		  }
 		}
-	      }
 
-	      Ioss::ElementBlock* block = NULL;
-	      // Need to get elem_topo....
-	      const Ioss::ElementTopology *elem_topo = NULL;
-	      if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
-		elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
-	      }
-	      else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
-		block = get_region()->get_element_block(topo_or_block_name);
-		if (block == NULL || block_is_omitted(block)) {
-		  std::ostringstream errmsg;
-		  errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name 
-			    << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
-		  IOSS_ERROR(errmsg);
+		Ioss::ElementBlock* block = NULL;
+		// Need to get elem_topo....
+		const Ioss::ElementTopology *elem_topo = NULL;
+		if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
+		  elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
 		}
-		elem_topo = block->topology();
+		else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
+		  block = get_region()->get_element_block(topo_or_block_name);
+		  if (block == NULL || block_is_omitted(block)) {
+		    std::ostringstream errmsg;
+		    errmsg << "INTERNAL ERROR: Could not find element block '" << topo_or_block_name 
+			   << "' Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+		    IOSS_ERROR(errmsg);
+		  }
+		  elem_topo = block->topology();
+		}
+		if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
+		  // Most likely this is "unknown", but can be a true
+		  // topology if there is only a single element block in
+		  // the model.
+		  elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
+		}
+		assert(elem_topo != NULL);
+
+		Ioss::SideBlock *side_block = new Ioss::SideBlock(this, side_block_name,
+								  side_topo->name(),
+								  elem_topo->name(),
+								  my_side_count);
+		side_set->add(side_block);
+
+		// Note that all sideblocks within a specific
+		// sideset might have the same id.
+		assert(side_block != NULL);
+		side_block->property_add(Ioss::Property("id", id));
+
+		// If splitting by element block, need to set the
+		// element block member on this side block.
+		if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
+		  side_block->set_parent_element_block(block);
+
+		}
+
+		// If we calculated whether the element side is
+		// consistent for all sides in this block, then
+		// tell the block which side it is, or that they are
+		// inconsistent. If it wasn't calculated above, then it
+		// will be calculated on the fly when/if requested.
+		// This is to avoid reading the sideset bulk data in
+		// cases where we don't need to read it, but if we are
+		// already reading it (to split the sidesets), then use
+		// the data when we have it.
+		if (side_map.size() > 0) {
+		  // Set a property indicating which element side
+		  // (1-based) all sides in this block are applied to.
+		  // If they are not all assigned to the same element
+		  // side, indicate this with a side equal to 0.
+		  //
+		  // (note: 'i' has already been incremented earlier in
+		  // the loop.  We need previous value here...)
+		  int side = global_side_counts[i-1+topo_map.size()];
+		  if (side == 999) side = 0;
+		  assert(side <= elem_topo->number_boundaries());
+		  side_block->set_consistent_side_number(side);
+		}
+
+		// Add an alias...
+		get_region()->add_alias(side_block);
+
+		if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
+		    && (number_distribution_factors > 0 || isParallel)
+		    && side_set_name != "universal_sideset") {
+		  std::string storage = "Real[";
+		  storage += Ioss::Utils::to_string(side_topo->number_nodes());
+		  storage += "]";
+		  side_block->field_add(Ioss::Field("distribution_factors",
+						    Ioss::Field::REAL, storage,
+						    Ioss::Field::MESH, my_side_count));
+		}
+
+		if (side_set_name == "universal_sideset") {
+		  side_block->field_add(Ioss::Field("side_ids",
+						    Ioss::Field::INTEGER, "scalar",
+						    Ioss::Field::MESH, my_side_count));
+		}
+
+		int num_attr = 0;
+		int ierr = ex_get_attr_param(get_file_pointer(), EX_SIDE_SET, 1, &num_attr);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      
+		// Add additional fields 
+		add_attribute_fields(EX_SIDE_SET, side_block, num_attr, "");
+		add_results_fields(EX_SIDE_SET, side_block, iss);
 	      }
-	      if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
-		// Most likely this is "unknown", but can be a true
-		// topology if there is only a single element block in
-		// the model.
-		elem_topo = Ioss::ElementTopology::factory(topo_or_block_name);
-	      }
-	      assert(elem_topo != NULL);
-
-	      Ioss::SideBlock *side_block = new Ioss::SideBlock(this, side_block_name,
-								side_topo->name(),
-								elem_topo->name(),
-								my_side_count);
-	      side_set->add(side_block);
-
-	      // Note that all sideblocks within a specific
-	      // sideset might have the same id.
-	      assert(side_block != NULL);
-	      side_block->property_add(Ioss::Property("id", id));
-
-	      // If splitting by element block, need to set the
-	      // element block member on this side block.
-	      if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
-		side_block->set_parent_element_block(block);
-
-	      }
-
-	      // If we calculated whether the element side is
-	      // consistent for all sides in this block, then
-	      // tell the block which side it is, or that they are
-	      // inconsistent. If it wasn't calculated above, then it
-	      // will be calculated on the fly when/if requested.
-	      // This is to avoid reading the sideset bulk data in
-	      // cases where we don't need to read it, but if we are
-	      // already reading it (to split the sidesets), then use
-	      // the data when we have it.
-	      if (side_map.size() > 0) {
-		// Set a property indicating which element side
-		// (1-based) all sides in this block are applied to.
-		// If they are not all assigned to the same element
-		// side, indicate this with a side equal to 0.
-		//
-		// (note: 'i' has already been incremented earlier in
-		// the loop.  We need previous value here...)
-		int side = global_side_counts[i-1+topo_map.size()];
-		if (side == 999) side = 0;
-		assert(side <= elem_topo->number_boundaries());
-		side_block->set_consistent_side_number(side);
-	      }
-
-	      // Add an alias...
-	      get_region()->add_alias(side_block);
-
-	      if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
-		  && (number_distribution_factors > 0 || isParallel)
-		  && side_set_name != "universal_sideset") {
-		std::string storage = "Real[";
-		storage += Ioss::Utils::to_string(side_topo->number_nodes());
-		storage += "]";
-		side_block->field_add(Ioss::Field("distribution_factors",
-						Ioss::Field::REAL, storage,
-						Ioss::Field::MESH, my_side_count));
-	      }
-
-	      if (side_set_name == "universal_sideset") {
-		side_block->field_add(Ioss::Field("side_ids",
-						Ioss::Field::INTEGER, "scalar",
-						Ioss::Field::MESH, my_side_count));
-	      }
-
-	      // Add results fields 
-	      add_results_fields(EX_SIDE_SET, side_block, my_side_count, iss);
 	    }
+	    ++I;
 	  }
-	  ++I;
 	}
       }
     }
-  }
 
-  void DatabaseIO::compute_block_membership(int id, std::vector<std::string> &block_membership) const
-  {
-    Ioss::IntVector block_ids(elementBlockCount);
-    if (elementBlockCount == 1) {
-      block_ids[0] = 1;
-    } else {
-      {
-	Ioss::SerializeIO	serializeIO__(this);
+    void DatabaseIO::compute_block_membership(int id, std::vector<std::string> &block_membership) const
+    {
+      Ioss::IntVector block_ids(m_groupCount[EX_ELEM_BLOCK]);
+      if (m_groupCount[EX_ELEM_BLOCK] == 1) {
+	block_ids[0] = 1;
+      } else {
+	{
+	  Ioss::SerializeIO	serializeIO__(this);
 	
-	int number_sides;
-	int number_distribution_factors;
-	int error = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
-				     &number_sides, &number_distribution_factors);
-	if (error < 0) {
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-      
-	if (number_sides > 0) {
-	  // Get the element and element side lists.
-	  Ioss::IntVector element(number_sides);
-	  Ioss::IntVector sides(number_sides);
-	
-	  int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
-	  if (ierr < 0)
+	  int number_sides;
+	  int number_distribution_factors;
+	  int error = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
+				       &number_sides, &number_distribution_factors);
+	  if (error < 0) {
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+      
+	  if (number_sides > 0) {
+	    // Get the element and element side lists.
+	    Ioss::IntVector element(number_sides);
+	    Ioss::IntVector sides(number_sides);
 	
-	  Ioss::ElementBlock *block = NULL;
-	  for (int iel = 0; iel < number_sides; iel++) {
-	    int elem_id = element[iel];
-	    if (block == NULL || !block->contains(elem_id)) {
-	      block = get_region()->get_element_block(elem_id);
-	      assert(block != NULL);
-	      int block_order = block->get_property("original_block_order").get_int();
-	      block_ids[block_order] = 1;
+	    int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	
+	    Ioss::ElementBlock *block = NULL;
+	    for (int iel = 0; iel < number_sides; iel++) {
+	      int elem_id = element[iel];
+	      if (block == NULL || !block->contains(elem_id)) {
+		block = get_region()->get_element_block(elem_id);
+		assert(block != NULL);
+		int block_order = block->get_property("original_block_order").get_int();
+		block_ids[block_order] = 1;
+	      }
 	    }
 	  }
 	}
-      }
 
+	// Synchronize among all processors....
+	if (isParallel) {
+	  util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
+	}
+      }
+      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      assert(check_block_order(element_blocks));
+
+      for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
+	if (block_ids[i] == 1) {
+	  Ioss::ElementBlock *block = element_blocks[i];
+	  if (!block_is_omitted(block)) {
+	    block_membership.push_back(block->name());
+	  }
+	}
+      }
+    }
+  
+    void DatabaseIO::compute_block_membership(Ioss::EntityBlock *efblock,
+					      std::vector<std::string> &block_membership) const
+    {
+      Ioss::IntVector block_ids(m_groupCount[EX_ELEM_BLOCK]);
+      if (m_groupCount[EX_ELEM_BLOCK] == 1) {
+	block_ids[0] = 1;
+      } else {
+	Ioss::IntVector element_side;
+	efblock->get_field_data("element_side", element_side);
+      
+	size_t number_sides = element_side.size() / 2;
+	Ioss::ElementBlock *block = NULL;
+	for (size_t iel = 0; iel < number_sides; iel++) {
+	  int elem_id = element_side[2*iel];  // Vector contains both element and side.
+	  elem_id = element_global_to_local(elem_id);
+	  if (block == NULL || !block->contains(elem_id)) {
+	    block = get_region()->get_element_block(elem_id);
+	    assert(block != NULL);
+	    int block_order = block->get_property("original_block_order").get_int();
+	    block_ids[block_order] = 1;
+	  }
+	}
+      }
+    
       // Synchronize among all processors....
       if (isParallel) {
 	util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
       }
-    }
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    assert(check_block_order(element_blocks));
-
-    for (int i=0; i < elementBlockCount; i++) {
-      if (block_ids[i] == 1) {
-	Ioss::ElementBlock *block = element_blocks[i];
-	if (!block_is_omitted(block)) {
-	  block_membership.push_back(block->name());
+    
+      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      assert(check_block_order(element_blocks));
+    
+      for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
+	if (block_ids[i] == 1) {
+	  Ioss::ElementBlock *block = element_blocks[i];
+	  if (!block_is_omitted(block)) {
+	    block_membership.push_back(block->name());
+	  }
 	}
       }
     }
-  }
   
-  void DatabaseIO::compute_block_membership(Ioss::EntityBlock *efblock,
-					    std::vector<std::string> &block_membership) const
-  {
-    Ioss::IntVector block_ids(elementBlockCount);
-    if (elementBlockCount == 1) {
-      block_ids[0] = 1;
-    } else {
-      Ioss::IntVector element_side;
-      efblock->get_field_data("element_side", element_side);
+    template <typename T>
+      void DatabaseIO::get_sets(ex_entity_type type, int count, const std::string &base, const T*)
+      {
+	// Attributes of a Xset are:
+	// -- id
+	// -- name
+	// -- number of nodes
+	// -- number of distribution factors (see next comment)
+	// ----the #distribution factors should equal #Xs or 0, any
+	//     other value does not make sense. If it is 0, then a substitute
+	//     list will be created returning 1.0 for the factor
+
+	// In a parallel execution, it is possible that a Xset will have
+	// no Xs or distribution factors on a particular processor...
+
+	// Get exodusII Xset metadata
+	if (count > 0) {
+	  Ioss::IntVector Xset_ids(count);
+	  Ioss::IntVector attributes(count);
+	  std::vector<T*> Xsets(count);
+
+	  {
+	    Ioss::SerializeIO	serializeIO__(this);
+	    int error = ex_get_ids(get_file_pointer(), type, TOPTR(Xset_ids));
+	    if (error < 0) {
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+
+	    for (int ins = 0; ins < count; ins++) {
+	      int id = Xset_ids[ins];
+	      int number_Xs;
+	      int number_distribution_factors;
+	  
+	      error = ex_get_set_param(get_file_pointer(), type, id,
+				       &number_Xs, &number_distribution_factors);
+	      if (error < 0) {
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+
+	      int num_attr = 0;
+	      int ierr = ex_get_attr_param(get_file_pointer(), type, id,
+					   &num_attr);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      attributes[ins] = num_attr;
+
+	      std::string Xset_name = get_entity_name(get_file_pointer(), type, id, base+"list",
+						      maximumNameLength);
+
+	      T* Xset = new T(this, Xset_name, number_Xs);
+	      Xsets[ins] = Xset;
+	      Xset->property_add(Ioss::Property("id", id));
+	      get_region()->add(Xset);
+	      get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"list", id));
+	      get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"set",  id));
+	    }
+	  }
+
+	  // The attribute count will either be 0 if there are no
+	  // entities in the grouping entity on this processor, or it will be
+	  // the number of attributes (> 0). Therefore, if we take the 'max'
+	  // over all processors, each processor will then have the correct
+	  // attribute count...
+	  // This is a collective call...
+	  util().global_array_minmax(attributes, Ioss::ParallelUtils::DO_MAX);
       
-      size_t number_sides = element_side.size() / 2;
-      Ioss::ElementBlock *block = NULL;
-      for (size_t iel = 0; iel < number_sides; iel++) {
-	int elem_id = element_side[2*iel];  // Vector contains both element and side.
-	elem_id = element_global_to_local(elem_id);
-	if (block == NULL || !block->contains(elem_id)) {
-	  block = get_region()->get_element_block(elem_id);
-	  assert(block != NULL);
-	  int block_order = block->get_property("original_block_order").get_int();
-	  block_ids[block_order] = 1;
+	  for (int ins = 0; ins < count; ins++) {
+	    add_attribute_fields(type, Xsets[ins], attributes[ins], "");
+	    add_results_fields(type, Xsets[ins], ins);
+	  }
 	}
       }
+
+    void DatabaseIO::get_nodesets()
+    {
+      get_sets(EX_NODE_SET, m_groupCount[EX_NODE_SET], "node", (Ioss::NodeSet*)NULL);
     }
-    
-    // Synchronize among all processors....
-    if (isParallel) {
-      util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
+
+    void DatabaseIO::get_edgesets()
+    {
+      get_sets(EX_EDGE_SET, m_groupCount[EX_EDGE_SET], "edge", (Ioss::EdgeSet*)NULL);
     }
+
+    void DatabaseIO::get_facesets()
+    {
+      get_sets(EX_FACE_SET, m_groupCount[EX_FACE_SET], "face", (Ioss::FaceSet*)NULL);
+    }
+
+    void DatabaseIO::get_elemsets()
+    {
+      get_sets(EX_ELEM_SET, m_groupCount[EX_ELEM_SET], "element", (Ioss::ElementSet*)NULL);
+    }
+
     
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    assert(check_block_order(element_blocks));
-    
-    for (int i=0; i < elementBlockCount; i++) {
-      if (block_ids[i] == 1) {
-	Ioss::ElementBlock *block = element_blocks[i];
-	if (!block_is_omitted(block)) {
-	  block_membership.push_back(block->name());
+    void DatabaseIO::get_commsets()
+    {
+      // Attributes of a commset are:
+      // -- id (property)
+      // -- name (property)
+      // -- number of node--CPU pairs (field)
+
+      // In a parallel execution, it is possible that a commset will have
+      // no nodes on a particular processor...
+
+      // If this is a serial execution, there will be no communication
+      // nodesets, just return an empty container.
+
+      if (isParallel) {
+	Ioss::SerializeIO	serializeIO__(this);
+	// This is a parallel run. There should be communications data
+	// Get nemesis commset metadata
+	int my_node_count = 0;
+	int elem_count = 0;
+
+	// NOTE: It is possible for a parallel run to have no
+	// communications maps if the decomposition occurs along contact
+	// surfaces.  In this case, we create empty node and element
+	// communication maps.
+	if (commsetNodeCount > 0 || commsetElemCount > 0) {
+	  if (commsetNodeCount > 0) {
+	    nodeCmapIds.resize(commsetNodeCount);
+	    nodeCmapNodeCnts.resize(commsetNodeCount);
+	  }
+	  if (commsetElemCount > 0) {
+	    elemCmapIds.resize(commsetElemCount);
+	    elemCmapElemCnts.resize(commsetElemCount);
+	  }
+
+	  int error = ne_get_cmap_params(get_file_pointer(),
+					 TOPTR(nodeCmapIds), TOPTR(nodeCmapNodeCnts),
+					 TOPTR(elemCmapIds), TOPTR(elemCmapElemCnts),
+					 myProcessor);
+	  if (error < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	  // Count nodes, elements, and convert counts to offsets.
+	  //
+	  for (int ics = 0; ics < commsetNodeCount; ics++) {
+	    my_node_count += nodeCmapNodeCnts[ics];
+	  }
+	  for (int ecs = 0; ecs < commsetElemCount; ecs++) {
+	    elem_count += elemCmapElemCnts[ecs];
+	  }
 	}
+	// Create a single node commset and a single element commset
+	Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node",
+						   my_node_count);
+	commset->property_add(Ioss::Property("id", 1));
+	get_region()->add(commset);
+
+	commset = new Ioss::CommSet(this, "commset_side", "side",
+				    elem_count);
+	commset->property_add(Ioss::Property("id", 1));
+	get_region()->add(commset);
       }
     }
-  }
-  
-  void DatabaseIO::get_nodesets()
-  {
-    // Attributes of a nodeset are:
-    // -- id
-    // -- name
-    // -- number of nodes
-    // -- number of distribution factors (see next comment)
-    // ----the #distribution factors should equal #nodes or 0, any
-    //     other value does not make sense. If it is 0, then a substitute
-    //     list will be created returning 1.0 for the factor
 
-    // In a parallel execution, it is possible that a nodeset will have
-    // no nodes or distribution factors on a particular processor...
+    int DatabaseIO::get_field_internal(const Ioss::Region* /* region */,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      // For now, assume that all TRANSIENT fields on a region
+      // are REDUCTION fields (1 value).  We need to gather these
+      // and output them all at one time.  The storage location is a
+      // 'globalVariables' array
+      {
+	size_t num_to_get = field.verify(data_size);
+	Ioss::SerializeIO	serializeIO__(this);
 
-    // Get exodusII nodeset metadata
-    if (nodesetCount > 0) {
-      Ioss::IntVector nodeset_ids(nodesetCount);
-      std::vector<Ioss::NodeSet*> nsets(nodesetCount);
+	Ioss::Field::RoleType role = field.get_role();
 
+	if (role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) {
+	  get_reduction_field(EX_GLOBAL, field, get_region(), data);
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
+	  IOSS_ERROR(errmsg);
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
       {
 	Ioss::SerializeIO	serializeIO__(this);
-	int error = ex_get_ids(get_file_pointer(), EX_NODE_SET, TOPTR(nodeset_ids));
-	if (error < 0) {
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
 
-	for (int ins = 0; ins < nodesetCount; ins++) {
-	  int id = nodeset_ids[ins];
-	  int number_nodes;
-	  int number_distribution_factors;
-	  
-	  error = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
-				   &number_nodes, &number_distribution_factors);
-	  if (error < 0) {
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
-
-	  std::string nodeset_name = get_entity_name(get_file_pointer(), EX_NODE_SET, id, "nodelist",
-						     maximumNameLength);
-	  Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, nodeset_name, number_nodes);
-	  nsets[ins] = nodeset;
-	  nodeset->property_add(Ioss::Property("id", id));
-	  get_region()->add(nodeset);
-	  get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
-	  get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
-	}
-      }
-
-      for (int ins = 0; ins < nodesetCount; ins++) {
-	add_results_fields(EX_NODE_SET, nsets[ins],
-			   nsets[ins]->get_property("entity_count").get_int(), ins);
-      }
-    }
-  }
-
-  void DatabaseIO::get_commsets()
-  {
-    // Attributes of a commset are:
-    // -- id (property)
-    // -- name (property)
-    // -- number of node--CPU pairs (field)
-
-    // In a parallel execution, it is possible that a commset will have
-    // no nodes on a particular processor...
-
-    // If this is a serial execution, there will be no communication
-    // nodesets, just return an empty container.
-
-    if (isParallel) {
-      Ioss::SerializeIO	serializeIO__(this);
-      // This is a parallel run. There should be communications data
-      // Get nemesis commset metadata
-      int my_node_count = 0;
-      int elem_count = 0;
-
-      // NOTE: It is possible for a parallel run to have no
-      // communications maps if the decomposition occurs along contact
-      // surfaces.  In this case, we create empty node and element
-      // communication maps.
-      if (commsetNodeCount > 0 || commsetElemCount > 0) {
-	if (commsetNodeCount > 0) {
-	  nodeCmapIds      = new int[commsetNodeCount];
-	  nodeCmapNodeCnts = new int[commsetNodeCount];
-	}
-	if (commsetElemCount > 0) {
-	  elemCmapIds      = new int[commsetElemCount];
-	  elemCmapElemCnts = new int[commsetElemCount];
-	}
-
-	int error = ne_get_cmap_params(get_file_pointer(),
-				       nodeCmapIds, nodeCmapNodeCnts,
-				       elemCmapIds, elemCmapElemCnts,
-				       myProcessor);
-	if (error < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	// Count nodes, elements, and convert counts to offsets.
-	//
-	for (int ics = 0; ics < commsetNodeCount; ics++) {
-	  my_node_count += nodeCmapNodeCnts[ics];
-	}
-	for (int ecs = 0; ecs < commsetElemCount; ecs++) {
-	  elem_count += elemCmapElemCnts[ecs];
-	}
-      }
-      // Create a single node commset and a single element commset
-      Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node",
-						 my_node_count);
-      commset->property_add(Ioss::Property("id", 1));
-      get_region()->add(commset);
-
-      commset = new Ioss::CommSet(this, "commset_side", "side",
-				  elem_count);
-      commset->property_add(Ioss::Property("id", 1));
-      get_region()->add(commset);
-    }
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::Region* /* region */,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    // For now, assume that all TRANSIENT fields on a region
-    // are REDUCTION fields (1 value).  We need to gather these
-    // and output them all at one time.  The storage location is a
-    // 'globalVariables' array
-    {
-      size_t num_to_get = field.verify(data_size);
-      Ioss::SerializeIO	serializeIO__(this);
-
-      Ioss::Field::RoleType role = field.get_role();
-
-      if (role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) {
-	get_reduction_field(EX_GLOBAL, field, get_region(), data);
-      } else {
-	std::ostringstream errmsg;
-	errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions";
-	IOSS_ERROR(errmsg);
-      }
-      return num_to_get;
-    }
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
 
 #ifndef NDEBUG
-	int my_node_count = field.raw_count();
-	assert(my_node_count == nodeCount);
+	  int my_node_count = field.raw_count();
+	  assert(my_node_count == nodeCount);
 #endif
 
-	Ioss::Field::RoleType role = field.get_role();
-	if (role == Ioss::Field::MESH) {
-	  if (field.get_name() == "mesh_model_coordinates") {
-	    // Data required by upper classes store x0, y0, z0, ... xn,
-	    // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
-	    // ..., yn, z0, ..., zn so we have to allocate some scratch
-	    // memory to read in the data and then map into supplied
-	    // 'data'
-	    std::vector<double> x(num_to_get);
-	    std::vector<double> y(num_to_get);
-	    std::vector<double> z;
-	    if (spatialDimension == 3)
-	      z.resize(num_to_get);
-
-	    // Cast 'data' to correct size -- double
-	    double *rdata = static_cast<double*>(data);
-
-	    int ierr = ex_get_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	    int index = 0;
-	    for (size_t i=0; i < num_to_get; i++) {
-	      rdata[index++] = x[i];
-	      rdata[index++] = y[i];
+	  Ioss::Field::RoleType role = field.get_role();
+	  if (role == Ioss::Field::MESH) {
+	    if (field.get_name() == "mesh_model_coordinates") {
+	      // Data required by upper classes store x0, y0, z0, ... xn,
+	      // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
+	      // ..., yn, z0, ..., zn so we have to allocate some scratch
+	      // memory to read in the data and then map into supplied
+	      // 'data'
+	      std::vector<double> x(num_to_get);
+	      std::vector<double> y(num_to_get);
+	      std::vector<double> z;
 	      if (spatialDimension == 3)
-		rdata[index++] = z[i];
-	    }
-	  }
+		z.resize(num_to_get);
 
-	  else if (field.get_name() == "ids") {
-	    // Map the local ids in this node block
-	    // (1...node_count) to global node ids.
-	    const Ioss::MapContainer &map = get_node_map();
-	    int *ids = static_cast<int*>(data);
+	      // Cast 'data' to correct size -- double
+	      double *rdata = static_cast<double*>(data);
 
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[1 + i];
-	    }
-	  }
-	  else if (field.get_name() == "connectivity") {
-	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
-	  }
-	  else if (field.get_name() == "node_connectivity_status") {
-	    compute_node_status();
-	    char *status = static_cast<char*>(data);
-	    std::copy(nodeConnectivityStatus.begin(), nodeConnectivityStatus.end(), status);
-	  }
-
-	  else {
-	    num_to_get = Ioss::Utils::field_warning(nb, field, "input");
-	  }
-
-	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this node block.
-	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	  // exist on the database as scalars with the appropriate
-	  // extensions.
-
-	  // Read in each component of the variable and transfer into
-	  // 'data'.  Need temporary storage area of size 'number of
-	  // nodes in this block.
-	  num_to_get = read_transient_field(EX_NODAL, field, nb, data);
-	}
-      }
-      return num_to_get;
-    }
-  }
-
-  int DatabaseIO::read_transient_field(ex_entity_type type,
-				       const Ioss::Field& field,
-				       const Ioss::GroupingEntity *ge,
-				       void *variables) const
-  {
-    const Ioss::VariableType *var_type = field.raw_storage();
-
-    // Read into a double variable since that is all ExodusII can store...
-    int num_entity = ge->get_property("entity_count").get_int();
-    std::vector<double> temp(num_entity);
-
-    int step = get_current_state();
-
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'nodeVariables' map
-    int comp_count = var_type->component_count();
-    int var_index=0;
-
-    for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
-
-      // Read the variable...
-      int id = get_id(ge, type, &ids_);
-      int ierr = 0;
-      if (type == EX_NODAL) {
-	var_index = nodalVariables.find(var_name)->second;
-      } else if (type == EX_ELEM_BLOCK) {
-	var_index = elementVariables.find(var_name)->second;
-      } else if (type == EX_NODE_SET) {
-	var_index = nodesetVariables.find(var_name)->second;
-      } else if (type == EX_SIDE_SET) {
-	var_index = sidesetVariables.find(var_name)->second;
-      }
-      assert(var_index > 0);
-      ierr = ex_get_var(get_file_pointer(), step, type,
-			var_index, id, num_entity, TOPTR(temp));
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-      // Transfer to 'variables' array.
-      int k = 0;
-      if (field.get_type() == Ioss::Field::INTEGER) {
-	int *ivar = static_cast<int*>(variables);
-	for (int j=i; j < num_entity*comp_count; j+=comp_count) {
-	  ivar[j] = static_cast<int>(temp[k++]);
-	}
-      } else if (field.get_type() == Ioss::Field::REAL) {
-	double *rvar = static_cast<double*>(variables);
-	for (int j=i; j < num_entity*comp_count; j+=comp_count) {
-	  rvar[j] = temp[k++];
-	}
-      } else {
-	std::ostringstream errmsg;
-	errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
-	       << "       Field '" << field.get_name() << "' is invalid.\n";
-	IOSS_ERROR(errmsg);
-      }
-      assert(k == num_entity);
-    }
-    return num_entity;
-  }
-
-  int DatabaseIO::read_ss_transient_field(const Ioss::Field& field,
-					  int id, void *variables,
-					  Ioss::IntVector &is_valid_side) const
-  {
-    int num_valid_sides = 0;
-    const Ioss::VariableType *var_type = field.raw_storage();
-    size_t my_side_count = is_valid_side.size();
-    std::vector<double> temp(my_side_count);
-
-    int step = get_current_state();
-
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'nodeVariables' map
-    int comp_count = var_type->component_count();
-    int var_index=0;
-
-    for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
-
-      // Read the variable...
-      int ierr = 0;
-      var_index = sidesetVariables.find(var_name)->second;
-      assert(var_index > 0);
-      ierr = ex_get_var(get_file_pointer(), step, EX_SIDE_SET,
-			var_index, id, my_side_count, TOPTR(temp));
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-      // Transfer to 'variables' array.
-      int j = i;
-      if (field.get_type() == Ioss::Field::INTEGER) {
-	int *ivar = static_cast<int*>(variables);
-	for (size_t k = 0; k < my_side_count; k++) {
-	  if (is_valid_side[k] == 1) {
-	    ivar[j] = static_cast<int>(temp[k]);
-	    j += comp_count;
-	  }
-	}
-      } else if (field.get_type() == Ioss::Field::REAL) {
-	double *rvar = static_cast<double*>(variables);
-	for (size_t k = 0; k < my_side_count; k++) {
-	  if (is_valid_side[k] == 1) {
-	    rvar[j] = temp[k];
-	    j += comp_count;
-	  }
-	}
-      } else {
-	std::ostringstream errmsg;
-	errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
-	       << "       Field '" << field.get_name() << "' is invalid.\n";
-	IOSS_ERROR(errmsg);
-      }
-      if (i+1 == comp_count)
-	num_valid_sides =  j / comp_count;
-    }
-    return num_valid_sides;
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
-
-	int ierr = 0;
-	int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
-	int my_element_count = eb->get_property("entity_count").get_int();
-	Ioss::Field::RoleType role = field.get_role();
-
-	if (role == Ioss::Field::MESH) {
-	  // Handle the MESH fields required for an ExodusII file model.
-	  // (The 'genesis' portion)
-
-	  if (field.get_name() == "connectivity") {
-	    int element_nodes = eb->get_property("topology_node_count").get_int();
-	    assert(field.raw_storage()->component_count() == element_nodes);
-
-	    // The connectivity is stored in a 1D array.
-	    // The element_node index varies fastet
-	    if (my_element_count > 0) {
-	      ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+	      int ierr = ex_get_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
 	      if (ierr < 0)
 		exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	      // Now, map the nodes in the connectivity from local to global ids
-	      const Ioss::MapContainer &map = get_node_map();
-	      if (!Ioss::Map::is_sequential(map)) {
-		int *connect = static_cast<int*>(data);
-		for (size_t i=0; i < num_to_get*element_nodes; i++)
-		  connect[i] = map[connect[i]];
+	      int index = 0;
+	      for (size_t i=0; i < num_to_get; i++) {
+		rdata[index++] = x[i];
+		rdata[index++] = y[i];
+		if (spatialDimension == 3)
+		  rdata[index++] = z[i];
 	      }
 	    }
-	  }
-	  else if (field.get_name() == "connectivity_raw") {
-	    // "connectivity_raw" has nodes in local id space (1-based)
-	    assert(field.raw_storage()->component_count() == eb->get_property("topology_node_count").get_int());
 
-	    // The connectivity is stored in a 1D array.
-	    // The element_node index varies fastet
-	    if (my_element_count > 0) {
-	      ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<int*>(data), NULL, NULL);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    else if (field.get_name() == "ids") {
+	      // Map the local ids in this node block
+	      // (1...node_count) to global node ids.
+	      const Ioss::MapContainer &map = get_node_map();
+	      int *ids = static_cast<int*>(data);
+
+	      for (size_t i=0; i < num_to_get; i++) {
+		ids[i] = map[1 + i];
+	      }
 	    }
-	  }
-	  else if (field.get_name() == "ids") {
-	    // Map the local ids in this element block
-	    // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	    const Ioss::MapContainer &map = get_element_map();
-	    int eb_offset = eb->get_offset();
-	    int *ids = static_cast<int*>(data);
-
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[eb_offset + 1 + i];
+	    else if (field.get_name() == "connectivity") {
+	      // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	    }
-	  }
-	  else if (field.get_name() == "skin") {
-	    // This is (currently) for the skinned body. It maps the
-	    // side element on the skin to the original element/local
-	    // side number.  It is a two component field, the first
-	    // component is the global id of the underlying element in
-	    // the initial mesh and its local side number (1-based).
-
-	    Ioss::IntVector element(my_element_count);
-	    Ioss::IntVector side(my_element_count);
-	    int *el_side = (int *)data;
-
-	    // FIX: Hardwired map ids....
-	    int eb_offset = eb->get_offset();
-	    ex_get_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
-				    TOPTR(element));
-	    ex_get_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
-				    TOPTR(side));
-
-	    int index = 0;
-	    for (int i=0; i < my_element_count; i++) {
-	      el_side[index++] = element[i];
-	      el_side[index++] = side[i];
+	    else if (field.get_name() == "connectivity_raw") {
+	      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	    }
+	    else if (field.get_name() == "node_connectivity_status") {
+	      compute_node_status();
+	      char *status = static_cast<char*>(data);
+	      std::copy(nodeConnectivityStatus.begin(), nodeConnectivityStatus.end(), status);
 	    }
 
-	  }
-	  else {
-	    num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	    else {
+	      num_to_get = Ioss::Utils::field_warning(nb, field, "input");
+	    }
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this node block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Read in each component of the variable and transfer into
+	    // 'data'.  Need temporary storage area of size 'number of
+	    // nodes in this block.
+	    num_to_get = read_transient_field(EX_NODE_BLOCK, m_variables[EX_NODE_BLOCK], field, nb, data);
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = read_attribute_field(EX_NODE_BLOCK, field, nb, data);
 	  }
 	}
+	return num_to_get;
+      }
+    }
 
-	else if (role == Ioss::Field::ATTRIBUTE) {
-	  if (my_element_count > 0) {
-	    int attribute_count = eb->get_property("attribute_count").get_int();
+    int DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
 
-	    std::string att_name = eb->name() + SEP() + field.get_name();
-	    int offset = (int)field.get_index();
-	    assert(offset > 0);
-	    assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
-	    if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
-	      // Read all attributes in one big chunk...
-	      ierr = ex_get_attr(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<double*>(data));
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-	    else {
-	      // Read a subset of the attributes.  If scalar, read one;
-	      // if higher-order (vector3d, ..) read each component and
-	      // put into correct location...
-	      if (field.raw_storage()->component_count() == 1) {
-		ierr = ex_get_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-				       offset, static_cast<double*>(data));
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  int ierr = 0;
+	  int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
+	  int my_element_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+
+	    if (field.get_name() == "connectivity") {
+	      int element_nodes = eb->get_property("topology_node_count").get_int();
+	      assert(field.raw_storage()->component_count() == element_nodes);
+
+	      // The connectivity is stored in a 1D array.
+	      // The element_node index varies fastet
+	      if (my_element_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<int*>(data), NULL, NULL);
 		if (ierr < 0)
 		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      } else {
-		// Multi-component...
-		// Need a local memory space to read data into and
-		// then push that into the user-supplied data block...
-		std::vector<double> local_data(my_element_count);
-		int comp_count = field.raw_storage()->component_count();
-		double *rdata = static_cast<double*>(data);
-		for (int i=0; i < comp_count; i++) {
-		  ierr = ex_get_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-					 offset+i, TOPTR(local_data));
-		  if (ierr < 0)
-		    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-		  int k = i;
-		  for (int j=0; j < my_element_count; j++) {
-		    rdata[k] = local_data[j];
-		    k += comp_count;
-		  }
+		// Now, map the nodes in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_node_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*element_nodes; i++)
+		    connect[i] = map[connect[i]];
 		}
 	      }
 	    }
-	  }
-	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this element block.
-	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	  // exist on the database as scalars with the appropriate
-	  // extensions.
+	    else if (field.get_name() == "connectivity_face") {
+	      int face_count = field.raw_storage()->component_count();
 
-	  // Read in each component of the variable and transfer into
-	  // 'data'.  Need temporary storage area of size 'number of
-	  // elements in this block.
-	  num_to_get = read_transient_field(EX_ELEM_BLOCK, field, eb, data);
-	} else if (role == Ioss::Field::REDUCTION) {
-	  num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+	      // The connectivity is stored in a 1D array.
+	      // The element_face index varies fastest
+	      if (my_element_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, NULL, static_cast<int*>(data));
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+		// Now, map the faces in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_face_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*face_count; i++)
+		    connect[i] = map[connect[i]];
+		}
+	      }
+	    }
+	    else if (field.get_name() == "connectivity_edge") {
+	      int edge_count = field.raw_storage()->component_count();
+
+	      // The connectivity is stored in a 1D array.
+	      // The element_edge index varies fastest
+	      if (my_element_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, static_cast<int*>(data), NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+		// Now, map the edges in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_edge_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*edge_count; i++)
+		    connect[i] = map[connect[i]];
+		}
+	      }
+	    }
+	    else if (field.get_name() == "connectivity_raw") {
+	      // "connectivity_raw" has nodes in local id space (1-based)
+	      assert(field.raw_storage()->component_count() == eb->get_property("topology_node_count").get_int());
+
+	      // The connectivity is stored in a 1D array.
+	      // The element_node index varies fastet
+	      if (my_element_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    }
+	    else if (field.get_name() == "ids") {
+	      // Map the local ids in this element block
+	      // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
+	      const Ioss::MapContainer &map = get_element_map();
+	      int eb_offset = eb->get_offset();
+	      int *ids = static_cast<int*>(data);
+
+	      for (size_t i=0; i < num_to_get; i++) {
+		ids[i] = map[eb_offset + 1 + i];
+	      }
+	    }
+	    else if (field.get_name() == "skin") {
+	      // This is (currently) for the skinned body. It maps the
+	      // side element on the skin to the original element/local
+	      // side number.  It is a two component field, the first
+	      // component is the global id of the underlying element in
+	      // the initial mesh and its local side number (1-based).
+
+	      Ioss::IntVector element(my_element_count);
+	      Ioss::IntVector side(my_element_count);
+	      int *el_side = (int *)data;
+
+	      // FIX: Hardwired map ids....
+	      int eb_offset = eb->get_offset();
+	      ex_get_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
+				      TOPTR(element));
+	      ex_get_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
+				      TOPTR(side));
+
+	      int index = 0;
+	      for (int i=0; i < my_element_count; i++) {
+		el_side[index++] = element[i];
+		el_side[index++] = side[i];
+	      }
+
+	    }
+	    else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	    }
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = read_attribute_field(EX_ELEM_BLOCK, field, eb, data);
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this element block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Read in each component of the variable and transfer into
+	    // 'data'.  Need temporary storage area of size 'number of
+	    // elements in this block.
+	    num_to_get = read_transient_field(EX_ELEM_BLOCK, m_variables[EX_ELEM_BLOCK], field, eb, data);
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+	  }
 	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::FaceBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  int ierr = 0;
+	  int id = get_id(eb, EX_FACE_BLOCK, &ids_);
+	  int my_face_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+
+	    if (field.get_name() == "connectivity") {
+	      int face_nodes = eb->get_property("topology_node_count").get_int();
+	      assert(field.raw_storage()->component_count() == face_nodes);
+
+	      // The connectivity is stored in a 1D array.
+	      // The face_node index varies fastet
+	      if (my_face_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_FACE_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+		// Now, map the nodes in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_node_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*face_nodes; i++)
+		    connect[i] = map[connect[i]];
+		}
+	      }
+	    }
+	    else if (field.get_name() == "connectivity_edge") {
+	      int edge_count = field.raw_storage()->component_count();
+
+	      // The connectivity is stored in a 1D array.
+	      // The face_edge index varies fastest
+	      if (my_face_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_FACE_BLOCK, id, NULL, static_cast<int*>(data), NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+		// Now, map the edges in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_edge_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*edge_count; i++)
+		    connect[i] = map[connect[i]];
+		}
+	      }
+	    }
+	    else if (field.get_name() == "connectivity_raw") {
+	      // "connectivity_raw" has nodes in local id space (1-based)
+	      assert(field.raw_storage()->component_count() == eb->get_property("topology_node_count").get_int());
+
+	      // The connectivity is stored in a 1D array.
+	      // The face_node index varies fastet
+	      if (my_face_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_FACE_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    }
+	    else if (field.get_name() == "ids") {
+	      // Map the local ids in this face block
+	      // (eb_offset+1...eb_offset+1+my_face_count) to global face ids.
+	      const Ioss::MapContainer &map = get_map(EX_FACE_BLOCK);
+	      int eb_offset = eb->get_offset();
+	      int *ids = static_cast<int*>(data);
+
+	      for (size_t i=0; i < num_to_get; i++) {
+		ids[i] = map[eb_offset + 1 + i];
+	      }
+	    }
+	    else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	    }
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = read_attribute_field(EX_FACE_BLOCK, field, eb, data);
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this element block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Read in each component of the variable and transfer into
+	    // 'data'.  Need temporary storage area of size 'number of
+	    // elements in this block.
+	    num_to_get = read_transient_field(EX_FACE_BLOCK, m_variables[EX_FACE_BLOCK], field, eb, data);
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  int ierr = 0;
+	  int id = get_id(eb, EX_EDGE_BLOCK, &ids_);
+	  int my_edge_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+
+	    if (field.get_name() == "connectivity") {
+	      int edge_nodes = eb->get_property("topology_node_count").get_int();
+	      assert(field.raw_storage()->component_count() == edge_nodes);
+
+	      // The connectivity is stored in a 1D array.
+	      // The edge_node index varies fastet
+	      if (my_edge_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_EDGE_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+		// Now, map the nodes in the connectivity from local to global ids
+		const Ioss::MapContainer &map = get_node_map();
+		if (!Ioss::Map::is_sequential(map)) {
+		  int *connect = static_cast<int*>(data);
+		  for (size_t i=0; i < num_to_get*edge_nodes; i++)
+		    connect[i] = map[connect[i]];
+		}
+	      }
+	    }
+	    else if (field.get_name() == "connectivity_raw") {
+	      // "connectivity_raw" has nodes in local id space (1-based)
+	      assert(field.raw_storage()->component_count() == eb->get_property("topology_node_count").get_int());
+
+	      // The connectivity is stored in a 1D array.
+	      // The edge_node index varies fastet
+	      if (my_edge_count > 0) {
+		ierr = ex_get_conn(get_file_pointer(), EX_EDGE_BLOCK, id, static_cast<int*>(data), NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    }
+	    else if (field.get_name() == "ids") {
+	      // Map the local ids in this edge block
+	      // (eb_offset+1...eb_offset+1+my_edge_count) to global edge ids.
+	      const Ioss::MapContainer &map = get_map(EX_EDGE_BLOCK);
+	      int eb_offset = eb->get_offset();
+	      int *ids = static_cast<int*>(data);
+
+	      for (size_t i=0; i < num_to_get; i++) {
+		ids[i] = map[eb_offset + 1 + i];
+	      }
+	    }
+	    else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	    }
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = read_attribute_field(EX_EDGE_BLOCK, field, eb, data);
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this element block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Read in each component of the variable and transfer into
+	    // 'data'.  Need temporary storage area of size 'number of
+	    // elements in this block.
+	    num_to_get = read_transient_field(EX_EDGE_BLOCK, m_variables[EX_EDGE_BLOCK], field, eb, data);
+
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::get_Xset_field_internal(ex_entity_type type,
+					    const Ioss::EntitySet *ns,
+					    const Ioss::Field& field,
+					    void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  int id = get_id(ns, type, &ids_);
+	  Ioss::Field::RoleType role = field.get_role();
+	  if (role == Ioss::Field::MESH) {
+
+	    if (field.get_name() == "ids") {
+	      int ierr = ex_get_set(get_file_pointer(), type, id, static_cast<int*>(data), NULL);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	      // Convert the local node ids to global ids
+	      const Ioss::MapContainer &map = get_map(type);
+	      if (!Ioss::Map::is_sequential(map)) {
+		int *ids = static_cast<int*>(data);
+		for (size_t i=0; i < num_to_get; i++) {
+		  ids[i] = map[ids[i]];
+		}
+	      }
+            } else if (field.get_name() == "orientation") {
+	      int ierr = ex_get_set(get_file_pointer(), type, id, NULL, static_cast<int*>(data));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    } else if (field.get_name() == "distribution_factors") {
+	      int number_nodes;
+	      int number_distribution_factors;
+
+	      int ierr = ex_get_set_param(get_file_pointer(), type, id,
+					  &number_nodes, &number_distribution_factors);
+	      if (number_distribution_factors == 0) {
+		double *rdata = static_cast<double*>(data);
+		for (size_t i=0; i < num_to_get; i++)
+		  rdata[i] = 1.0;
+	      } else {
+		ierr = ex_get_set_dist_fact(get_file_pointer(), type, id, static_cast<double*>(data));
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    } else {
+	      num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+	    }
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = read_attribute_field(type, field, ns, data);
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this node block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Read in each component of the variable and transfer into
+	    // 'data'.  Need temporary storage area of size 'number of
+	    // nodes in this block.
+	    num_to_get = read_transient_field(type, m_variables[type], field, ns, data);
+	  }
+	}
+	return num_to_get;
+      }
+    }
+					    
+    int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return get_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::EdgeSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return get_Xset_field_internal(EX_EDGE_SET, ns, field, data, data_size);
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::FaceSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return get_Xset_field_internal(EX_FACE_SET, ns, field, data, data_size);
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::ElementSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return get_Xset_field_internal(EX_ELEM_SET, ns, field, data, data_size);
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::SideSet* fs,
+				       const Ioss::Field& field,
+				       void */* data */, size_t data_size) const
+    {
+      size_t num_to_get = field.verify(data_size);
+      if (field.get_name() == "ids") {
+	// Do nothing, just handles an idiosyncracy of the GroupingEntity
+      } else {
+	num_to_get = Ioss::Utils::field_warning(fs, field, "input");
       }
       return num_to_get;
     }
-  }
 
-  int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
+    int DatabaseIO::get_field_internal(const Ioss::CommSet* cs,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+
+	if (num_to_get > 0) {
+	  int entity_count = cs->get_property("entity_count").get_int();
+
+	  // Return the <entity (node or side), processor> pair
+	  if (field.get_name() == "entity_processor") {
+
+	    // Check type -- node or side
+	    std::string type = cs->get_property("entity_type").get_string();
+
+	    // Allocate temporary storage space
+	    Ioss::IntVector entities(num_to_get);
+	    Ioss::IntVector procs(num_to_get);
+
+	    if (type == "node") {
+	      int cm_offset = 0;
+	      int i;
+	      for (i=0; i < commsetNodeCount; i++) {
+		int ierr = ne_get_node_cmap(get_file_pointer(), nodeCmapIds[i],
+					    &entities[cm_offset], &procs[cm_offset],
+					    myProcessor);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		cm_offset += nodeCmapNodeCnts[i];
+	      }
+	      assert(cm_offset == entity_count);
+
+	      // Convert local node id to global node id and store in 'data'
+	      int* entity_proc = static_cast<int*>(data);
+	      const Ioss::MapContainer &map = get_node_map();
+
+	      int j=0;
+	      for (i=0; i < entity_count; i++) {
+		int local_id = entities[i];
+		entity_proc[j++] = map[local_id];
+		entity_proc[j++] = procs[i];
+	      }
+	    } else if (type == "side") {
+	      Ioss::IntVector sides(entity_count);
+	      int cm_offset = 0;
+	      int i;
+	      for (i=0; i < commsetElemCount; i++) {
+		int ierr = ne_get_elem_cmap(get_file_pointer(), elemCmapIds[i],
+					    &entities[cm_offset], &sides[cm_offset],
+					    &procs[cm_offset], myProcessor);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		cm_offset += elemCmapElemCnts[i];
+	      }
+	      assert(cm_offset == entity_count);
+
+	      int* entity_proc = static_cast<int*>(data);
+	      const Ioss::MapContainer &map = get_element_map();
+
+	      int j=0;
+	      for (i=0; i < entity_count; i++) {
+		int local_id = entities[i];
+		entity_proc[j++] = 10*map[local_id]+sides[i];
+		entity_proc[j++] = procs[i];
+	      }
+	    } else {
+	      std::ostringstream errmsg;
+	      errmsg << "Invalid commset type " << type;
+	      IOSS_ERROR(errmsg);
+	    }
+
+	  } else {
+	    num_to_get = Ioss::Utils::field_warning(cs, field, "input");
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::get_field_internal(const Ioss::SideBlock* fb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
     {
       Ioss::SerializeIO	serializeIO__(this);
-
       size_t num_to_get = field.verify(data_size);
       if (num_to_get > 0) {
 
-	int id = get_id(ns, EX_NODE_SET, &ids_);
+	int id = get_id(fb, EX_SIDE_SET, &ids_);
+	size_t entity_count = fb->get_property("entity_count").get_int();
+	if (num_to_get != entity_count) {
+	  std::ostringstream errmsg;
+	  errmsg << "Partial field input not yet implemented for side blocks";
+	  IOSS_ERROR(errmsg);
+	}
+
+	int number_sides;
+	int number_distribution_factors;
+	int ierr = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
+				    &number_sides, &number_distribution_factors);
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      
 	Ioss::Field::RoleType role = field.get_role();
 	if (role == Ioss::Field::MESH) {
 
-	  if (field.get_name() == "ids") {
-	    int ierr = ex_get_set(get_file_pointer(), EX_NODE_SET, id, static_cast<int*>(data), NULL);
+
+	  // In exodusII, we may have split the sideset into multiple
+	  // side blocks if there are multiple side topologies in the
+	  // sideset.  Because of this, the passed in 'data' may not be
+	  // large enough to hold the data residing in the sideset and we
+	  // may need to allocate a temporary array...  This can be checked
+	  // by comparing the size of the sideset with the 'side_count' of
+	  // the side block.
+
+	  // Get size of data stored on the file...
+	  if (field.get_name() == "side_ids" &&
+	      fb->name() == "universal_sideset") {
+	    // The side ids are being stored as the distribution factor
+	    // field on the universal sideset.  There should be no other
+	    // side sets that request this field...  (Eventually,
+	    // create an id field to store this info.
+
+	    if (number_distribution_factors == static_cast<int>(num_to_get)) {
+	      std::vector<double> real_ids(num_to_get);
+	      ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, TOPTR(real_ids));
+	    
+	      // Need to convert 'double' to 'int' for Sierra use...
+	      int* ids = static_cast<int*>(data);
+	      for (size_t i = 0; i < num_to_get; i++) {
+		ids[i] = static_cast<int>(real_ids[i]);
+	      }
+	    }
+	  }
+
+	  else if (field.get_name() == "side_ids") {
+	  }
+
+	  else if (field.get_name() == "ids") {
+	    // In exodusII, the 'side set' is stored as a sideset.  A
+	    // sideset has a list of elements and a corresponding local
+	    // element side (1-based) The side id is: side_id =
+	    // 10*element_id + local_side_number This assumes that all
+	    // sides in a sideset are boundary sides.  Since we
+	    // only have a single array, we need to allocate an extra array
+	    // to store all of the data.  Note also that the element_id is
+	    // the global id but only the local id is stored so we need to
+	    // map from local_to_global prior to generating the side id...
+
+	    // Get the element number map (1-based)...
+	    const Ioss::MapContainer &map = get_element_map();
+
+	    // Allocate space for local side number, use 'data' as temporary
+	    // storage for element numbers and overwrite with the side
+	    // numbers.
+	    Ioss::IntVector sides;
+	    int *element = NULL;
+	    int *ids = static_cast<int*>(data);
+	    if (number_sides == static_cast<int>(entity_count)) {
+	      // Only 1 side block in this sideset
+	      sides.resize(entity_count);
+	      element = static_cast<int*>(data);
+	    } else {
+	      // Multiple side blocks in sideset. Need to allocate memory to
+	      // store sideset
+	      sides.resize(number_sides);
+	      element = new int[number_sides];
+	    }
+
+	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, element, TOPTR(sides));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	    // Convert the local node ids to global ids
-	    const Ioss::MapContainer &map = get_node_map();
-	    if (!Ioss::Map::is_sequential(map)) {
-	      int *ids = static_cast<int*>(data);
-	      for (size_t i=0; i < num_to_get; i++) {
-		ids[i] = map[ids[i]];
+	    if (number_sides == static_cast<int>(entity_count)) {
+	      for (size_t iel = 0; iel < entity_count; iel++) {
+		int new_id = 10*map[element[iel]] + sides[iel];
+		ids[iel] = new_id;
 	      }
-	    }
-	  } else if (field.get_name() == "distribution_factors") {
-	    int number_nodes;
-	    int number_distribution_factors;
-
-	    int ierr = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
-					&number_nodes, &number_distribution_factors);
-	    if (number_distribution_factors == 0) {
-	      double *rdata = static_cast<double*>(data);
-	      for (size_t i=0; i < num_to_get; i++)
-		rdata[i] = 1.0;
 	    } else {
-	      ierr = ex_get_set_dist_fact(get_file_pointer(), EX_NODE_SET, id, static_cast<double*>(data));
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      Ioss::IntVector is_valid_side(number_sides);
+	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, element, TOPTR(sides),
+							  number_sides, get_region());
+	      size_t ieb = 0;
+	      for (int iel = 0; iel < number_sides; iel++) {
+		if (is_valid_side[iel] == 1) {
+		  int new_id = 10*map[element[iel]] + sides[iel];
+		  ids[ieb++] = new_id;
+		}
+	      }
+	      assert(ieb == entity_count);
 	    }
+
+	    if (number_sides != static_cast<int>(entity_count))
+	      delete [] element;
+
+	  } else if (field.get_name() == "element_side") {
+	    // In exodusII, the 'side set' is stored as a sideset.  A sideset
+	    // has a list of elements and a corresponding local element side
+	    // (1-based)
+
+	    // Since we only have a single array, we need to allocate an extra
+	    // array to store all of the data.  Note also that the element_id
+	    // is the global id but only the local id is stored so we need to
+	    // map from local_to_global prior to generating the side  id...
+
+	    // Get the element number map (1-based)...
+	    const Ioss::MapContainer &map = get_element_map();
+
+	    // Allocate space for local side number and element numbers
+	    // numbers.
+	    int *element_side = static_cast<int*>(data);
+
+	    Ioss::IntVector element(number_sides);
+	    Ioss::IntVector sides(number_sides);
+
+	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    if (number_sides == static_cast<int>(entity_count)) {
+	      size_t index = 0;
+	      for (size_t iel = 0; iel < entity_count; iel++) {
+		element_side[index++] = map[element[iel]];
+		element_side[index++] = sides[iel];
+	      }
+	      assert(index/2 == entity_count);
+	    } else {
+	      Ioss::IntVector is_valid_side(number_sides);
+	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(sides),
+							  number_sides, get_region());
+
+	      size_t index = 0;
+	      for (int iel = 0; iel < number_sides; iel++) {
+		if (is_valid_side[iel] == 1) {
+		  // This side  belongs in the side block
+		  element_side[index++] = map[element[iel]];
+		  element_side[index++] = sides[iel];
+		}
+	      }
+	      assert(index/2 == entity_count);
+	    }
+
+	  } else if (field.get_name() == "element_side_raw") {
+	    // In exodusII, the 'side set' is stored as a sideset.  A sideset
+	    // has a list of elements and a corresponding local element side
+	    // (1-based)
+
+	    // Since we only have a single array, we need to allocate an extra
+	    // array to store all of the data.  Note also that the
+	    // element_id for the "raw" field is the local id, not the
+	    // global id. 
+
+	    // Allocate space for local side number and element numbers
+	    // numbers.
+	    int *element_side = static_cast<int*>(data);
+
+	    Ioss::IntVector element(number_sides);
+	    Ioss::IntVector sides(number_sides);
+
+	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    if (number_sides == static_cast<int>(entity_count)) {
+	      size_t index = 0;
+	      for (size_t iel = 0; iel < entity_count; iel++) {
+		element_side[index++] = element[iel];
+		element_side[index++] = sides[iel];
+	      }
+	      assert(index/2 == entity_count);
+	    } else {
+	      Ioss::IntVector is_valid_side(number_sides);
+	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(sides),
+							  number_sides, get_region());
+
+	      size_t index = 0;
+	      for (int iel = 0; iel < number_sides; iel++) {
+		if (is_valid_side[iel] == 1) {
+		  // This side  belongs in the side block
+		  element_side[index++] = element[iel];
+		  element_side[index++] = sides[iel];
+		}
+	      }
+	      assert(index/2 == entity_count);
+	    }
+
+	  } else if (field.get_name() == "connectivity") {
+	    // The side  connectivity needs to be generated 'on-the-fly' from
+	    // the element number and local side  of that element. A sideset
+	    // can span multiple element blocks, and contain multiple side
+	    // types; the side block contains side of similar topology.
+	    ierr = get_side_connectivity(fb, id, entity_count, 
+					 static_cast<int*>(data), data_size/sizeof(int), true);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	  } else if (field.get_name() == "connectivity_raw") {
+	    // The side  connectivity needs to be generated 'on-the-fly' from
+	    // the element number and local side  of that element. A sideset
+	    // can span multiple element blocks, and contain multiple side
+	    // types; the side block contains side of similar topology.
+	    ierr = get_side_connectivity(fb, id, entity_count, 
+					 static_cast<int*>(data), data_size/sizeof(int), false);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	  } else if (field.get_name() == "distribution_factors") {
+	    ierr = get_side_distributions(fb, id, entity_count, 
+					  static_cast<double*>(data), data_size/sizeof(double));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  } else {
-	    num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+	    num_to_get = Ioss::Utils::field_warning(fb, field, "input");
 	  }
 	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this node block.
+	  // Check if the specified field exists on this block.
 	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
 	  // exist on the database as scalars with the appropriate
 	  // extensions.
 
-	  // Read in each component of the variable and transfer into
-	  // 'data'.  Need temporary storage area of size 'number of
-	  // nodes in this block.
-	  num_to_get = read_transient_field(EX_NODE_SET, field, ns, data);
+	  if (number_sides == static_cast<int>(entity_count)) {
+	    num_to_get = read_transient_field(EX_SIDE_SET, m_variables[EX_SIDE_SET], field, fb, data);
+	  } else {
+	    // Need to read all values for the specified field and then
+	    // filter down to the elements actualy in this side block.
+
+	    // Determine which sides are member of this block
+	    Ioss::IntVector is_valid_side(number_sides);
+	    {
+	      //----
+	      Ioss::IntVector element(number_sides);
+	      Ioss::IntVector sides(number_sides);
+	      ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
+	      //----
+	      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb,
+							  TOPTR(element), TOPTR(sides),
+							  number_sides, get_region());
+	    }
+	  
+	    num_to_get = read_ss_transient_field(field, id, data, is_valid_side);
+	  }
 	}
       }
       return num_to_get;
     }
-  }
 
-  int DatabaseIO::get_field_internal(const Ioss::SideSet* fs,
-				     const Ioss::Field& field,
-				     void */* data */, size_t /* data_size */) const
-  {
-    size_t num_to_get = Ioss::Utils::field_warning(fs, field, "input");
-    return num_to_get;
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::CommSet* cs,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
+    int DatabaseIO::write_attribute_field(ex_entity_type type,
+					  const Ioss::Field& field,
+					  const Ioss::GroupingEntity *ge,
+					  void *data) const
     {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      size_t num_to_get = field.verify(data_size);
-
-      if (num_to_get > 0) {
-	int entity_count = cs->get_property("entity_count").get_int();
-
-	// Return the <entity (node or side), processor> pair
-	if (field.get_name() == "entity_processor") {
-
-	  // Check type -- node or side
-	  std::string type = cs->get_property("entity_type").get_string();
-
-	  // Allocate temporary storage space
-	  Ioss::IntVector entities(num_to_get);
-	  Ioss::IntVector procs(num_to_get);
-
-	  if (type == "node") {
-	    int cm_offset = 0;
-	    int i;
-	    for (i=0; i < commsetNodeCount; i++) {
-	      int ierr = ne_get_node_cmap(get_file_pointer(), nodeCmapIds[i],
-					  &entities[cm_offset], &procs[cm_offset],
-					  myProcessor);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      cm_offset += nodeCmapNodeCnts[i];
+      std::string att_name = ge->name() + SEP() + field.get_name();
+      int num_entity = ge->get_property("entity_count").get_int();
+      int offset = (int)field.get_index();
+      assert(offset > 0);
+    
+      int id = get_id(ge, type, &ids_);
+      int attribute_count = ge->get_property("attribute_count").get_int();
+      assert(offset > 0);
+      assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
+    
+      if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
+	// Write all attributes in one big chunk...
+	int ierr = ex_put_attr(get_file_pointer(), type, id, static_cast<double*>(data));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      }
+      else {
+	// Write a subset of the attributes.  If scalar, write one;
+	// if higher-order (vector3d, ..) write each component.
+	if (field.raw_storage()->component_count() == 1) {
+	  int ierr = ex_put_one_attr(get_file_pointer(), type, id,
+				     offset, static_cast<double*>(data));
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	} else {
+	  // Multi-component...  Need a local memory space to push
+	  // data into and then write that out to the file...
+	  std::vector<double> local_data(num_entity);
+	  int comp_count = field.raw_storage()->component_count();
+	  double *rdata = static_cast<double*>(data);
+	  for (int i=0; i < comp_count; i++) {
+	    int k = i;
+	    for (int j=0; j < num_entity; j++) {
+	      local_data[j] = rdata[k];
+	      k += comp_count;
 	    }
-	    assert(cm_offset == entity_count);
-
-	    // Convert local node id to global node id and store in 'data'
-	    int* entity_proc = static_cast<int*>(data);
-	    const Ioss::MapContainer &map = get_node_map();
-
-	    int j=0;
-	    for (i=0; i < entity_count; i++) {
-	      int local_id = entities[i];
-	      entity_proc[j++] = map[local_id];
-	      entity_proc[j++] = procs[i];
+	  
+	    int ierr = ex_put_one_attr(get_file_pointer(), type, id,
+				       offset+i, TOPTR(local_data));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+	}
+      }
+      return num_entity;
+    }
+  
+    int DatabaseIO::read_attribute_field(ex_entity_type type,
+					 const Ioss::Field& field,
+					 const Ioss::GroupingEntity *ge,
+					 void *data) const
+    {
+      int num_entity = ge->get_property("entity_count").get_int();
+      if (num_entity == 0)
+	return 0;
+    
+      int attribute_count = ge->get_property("attribute_count").get_int();
+      int id = get_id(ge, type, &ids_);
+    
+      std::string att_name = ge->name() + SEP() + field.get_name();
+      int offset = (int)field.get_index();
+      assert(offset > 0);
+      assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
+      if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
+	// Read all attributes in one big chunk...
+	int ierr = ex_get_attr(get_file_pointer(), type, id, static_cast<double*>(data));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      }
+      else {
+	// Read a subset of the attributes.  If scalar, read one;
+	// if higher-order (vector3d, ..) read each component and
+	// put into correct location...
+	if (field.raw_storage()->component_count() == 1) {
+	  int ierr = ex_get_one_attr(get_file_pointer(), type, id,
+				     offset, static_cast<double*>(data));
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	} else {
+	  // Multi-component...
+	  // Need a local memory space to read data into and
+	  // then push that into the user-supplied data block...
+	  std::vector<double> local_data(num_entity);
+	  int comp_count = field.raw_storage()->component_count();
+	  double *rdata = static_cast<double*>(data);
+	  for (int i=0; i < comp_count; i++) {
+	    int ierr = ex_get_one_attr(get_file_pointer(), type, id,
+				       offset+i, TOPTR(local_data));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  
+	    int k = i;
+	    for (int j=0; j < num_entity; j++) {
+	      rdata[k] = local_data[j];
+	      k += comp_count;
 	    }
-	  } else if (type == "side") {
-	    Ioss::IntVector sides(entity_count);
-	    int cm_offset = 0;
-	    int i;
-	    for (i=0; i < commsetElemCount; i++) {
-	      int ierr = ne_get_elem_cmap(get_file_pointer(), elemCmapIds[i],
-					  &entities[cm_offset], &sides[cm_offset],
-					  &procs[cm_offset], myProcessor);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      cm_offset += elemCmapElemCnts[i];
-	    }
-	    assert(cm_offset == entity_count);
+	  }
+	}
+      }
+      return num_entity;
+    }
 
-	    int* entity_proc = static_cast<int*>(data);
-	    const Ioss::MapContainer &map = get_element_map();
+    int DatabaseIO::read_transient_field(ex_entity_type type,
+					 const VariableNameMap &variables,
+					 const Ioss::Field& field,
+					 const Ioss::GroupingEntity *ge,
+					 void *data) const
+    {
+      const Ioss::VariableType *var_type = field.raw_storage();
 
-	    int j=0;
-	    for (i=0; i < entity_count; i++) {
-	      int local_id = entities[i];
-	      entity_proc[j++] = 10*map[local_id]+sides[i];
-	      entity_proc[j++] = procs[i];
+      // Read into a double variable since that is all ExodusII can store...
+      int num_entity = ge->get_property("entity_count").get_int();
+      std::vector<double> temp(num_entity);
+
+      int step = get_current_state();
+
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'nodeVariables' map
+      int comp_count = var_type->component_count();
+      int var_index=0;
+
+      for (int i=0; i < comp_count; i++) {
+	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+
+	// Read the variable...
+	int id = get_id(ge, type, &ids_);
+	int ierr = 0;
+	var_index = variables.find(var_name)->second;
+	assert(var_index > 0);
+	ierr = ex_get_var(get_file_pointer(), step, type,
+			  var_index, id, num_entity, TOPTR(temp));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	// Transfer to 'data' array.
+	int k = 0;
+	if (field.get_type() == Ioss::Field::INTEGER) {
+	  int *ivar = static_cast<int*>(data);
+	  for (int j=i; j < num_entity*comp_count; j+=comp_count) {
+	    ivar[j] = static_cast<int>(temp[k++]);
+	  }
+	} else if (field.get_type() == Ioss::Field::REAL) {
+	  double *rvar = static_cast<double*>(data);
+	  for (int j=i; j < num_entity*comp_count; j+=comp_count) {
+	    rvar[j] = temp[k++];
+	  }
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
+		 << "       Field '" << field.get_name() << "' is invalid.\n";
+	  IOSS_ERROR(errmsg);
+	}
+	assert(k == num_entity);
+      }
+      return num_entity;
+    }
+
+    int DatabaseIO::read_ss_transient_field(const Ioss::Field& field,
+					    int id, void *variables,
+					    Ioss::IntVector &is_valid_side) const
+    {
+      int num_valid_sides = 0;
+      const Ioss::VariableType *var_type = field.raw_storage();
+      size_t my_side_count = is_valid_side.size();
+      std::vector<double> temp(my_side_count);
+
+      int step = get_current_state();
+
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'nodeVariables' map
+      int comp_count = var_type->component_count();
+      int var_index=0;
+
+      for (int i=0; i < comp_count; i++) {
+	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+
+	// Read the variable...
+	int ierr = 0;
+	var_index = m_variables[EX_SIDE_SET].find(var_name)->second;
+	assert(var_index > 0);
+	ierr = ex_get_var(get_file_pointer(), step, EX_SIDE_SET,
+			  var_index, id, my_side_count, TOPTR(temp));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	// Transfer to 'variables' array.
+	int j = i;
+	if (field.get_type() == Ioss::Field::INTEGER) {
+	  int *ivar = static_cast<int*>(variables);
+	  for (size_t k = 0; k < my_side_count; k++) {
+	    if (is_valid_side[k] == 1) {
+	      ivar[j] = static_cast<int>(temp[k]);
+	      j += comp_count;
 	    }
-	  } else {
-	    std::ostringstream errmsg;
-	    errmsg << "Invalid commset type " << type;
-	    IOSS_ERROR(errmsg);
+	  }
+	} else if (field.get_type() == Ioss::Field::REAL) {
+	  double *rvar = static_cast<double*>(variables);
+	  for (size_t k = 0; k < my_side_count; k++) {
+	    if (is_valid_side[k] == 1) {
+	      rvar[j] = temp[k];
+	      j += comp_count;
+	    }
+	  }
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "IOSS_ERROR: Field storage type must be either integer or double.\n"
+		 << "       Field '" << field.get_name() << "' is invalid.\n";
+	  IOSS_ERROR(errmsg);
+	}
+	if (i+1 == comp_count)
+	  num_valid_sides =  j / comp_count;
+      }
+      return num_valid_sides;
+    }
+
+    int DatabaseIO::get_side_connectivity(const Ioss::SideBlock* fb,
+					  int id, int,
+					  int *fconnect,
+					  size_t /* data_size */,
+					  bool map_ids) const
+    {
+      // Get size of data stored on the file...
+      int ierr;
+      int number_sides;
+      int number_distribution_factors;
+      ierr = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
+			      &number_sides, &number_distribution_factors);
+      if (ierr < 0)
+	exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+      // Allocate space for element and local side number
+      assert(number_sides > 0);
+      //----
+      Ioss::IntVector element(number_sides);
+      Ioss::IntVector side(number_sides);
+
+      ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
+      if (ierr < 0)
+	exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      //----
+
+      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(side),
+						  number_sides, get_region());
+
+      Ioss::IntVector elconnect;
+      int elconsize = 0; // Size of currently allocated connectivity block
+      Ioss::ElementBlock *conn_block = NULL; // Block that we currently
+      // have connectivity for
+
+      Ioss::ElementBlock *block = NULL;
+
+      Ioss::MapContainer side_elem_map; // Maps the side into the elements
+      // connectivity array
+      int current_side = -1;
+      int nelnode = 0;
+      int nfnodes = 0;
+      int ieb = 0;
+      int offset = 0;
+      for (int iel = 0; iel < number_sides; iel++) {
+	if (is_valid_side[iel] == 1) {
+
+	  int elem_id = element[iel];
+
+	  // ensure we have correct connectivity
+	  block = get_region()->get_element_block(elem_id);
+	  if (conn_block != block) {
+	    int nelem = block->get_property("entity_count").get_int();
+	    nelnode = block->topology()->number_nodes();
+	    // Used to map element number into position in connectivity array.
+	    // E.g., element 97 is the (97-offset)th element in this block and
+	    // is stored in array index (97-offset-1).
+	    offset = block->get_offset() + 1;
+	    if (elconsize < nelem * nelnode) {
+	      elconsize = nelem * nelnode;
+	      elconnect.resize(elconsize);
+	    }
+	    if (map_ids) {
+	      get_field_internal(block, block->get_field("connectivity"),
+				 TOPTR(elconnect), nelem*nelnode*sizeof(int));
+	    } else {
+	      get_field_internal(block, block->get_field("connectivity_raw"),
+				 TOPTR(elconnect), nelem*nelnode*sizeof(int));
+	    }
+	    conn_block = block;
+	    current_side = -1;
 	  }
 
-	} else {
-	  num_to_get = Ioss::Utils::field_warning(cs, field, "input");
+	  // NOTE: Element connectivity is returned with nodes in global id space if "map_ids" false,
+	  //       otherwise it is in local space.
+	  if (current_side != side[iel]) {
+	    side_elem_map = block->topology()->boundary_connectivity(side[iel]);
+	    current_side = side[iel];
+	    nfnodes = block->topology()->boundary_type(side[iel])->number_nodes();
+	  }
+	  for (int inode = 0; inode < nfnodes; inode++) {
+	    int global_node = elconnect[(elem_id-offset)*nelnode +
+					side_elem_map[inode]];
+	    fconnect[ieb++] = global_node;
+	  }
 	}
       }
-      return num_to_get;
+      return ierr;
     }
-  }
 
-  int DatabaseIO::get_field_internal(const Ioss::SideBlock* fb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    Ioss::SerializeIO	serializeIO__(this);
-    size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
-
-      int id = get_id(fb, EX_SIDE_SET, &ids_);
-      size_t entity_count = fb->get_property("entity_count").get_int();
-      if (num_to_get != entity_count) {
-	std::ostringstream errmsg;
-	errmsg << "Partial field input not yet implemented for side blocks";
-	IOSS_ERROR(errmsg);
-      }
-
+    // Get distribution factors for the specified side block
+    int DatabaseIO::get_side_distributions(const Ioss::SideBlock* fb,
+					   int id, int my_side_count,
+					   double *dist_fact,
+					   size_t /* data_size */) const
+    {
+      // Allocate space for elements and local side numbers
+      // Get size of data stored on the file...
       int number_sides;
       int number_distribution_factors;
       int ierr = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
 				  &number_sides, &number_distribution_factors);
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      
-      Ioss::Field::RoleType role = field.get_role();
-      if (role == Ioss::Field::MESH) {
 
+      const Ioss::ElementTopology *ftopo = fb->topology();
+      int nfnodes = ftopo->number_nodes();
 
-	// In exodusII, we may have split the sideset into multiple
-	// side blocks if there are multiple side topologies in the
-	// sideset.  Because of this, the passed in 'data' may not be
-	// large enough to hold the data residing in the sideset and we
-	// may need to allocate a temporary array...  This can be checked
-	// by comparing the size of the sideset with the 'side_count' of
-	// the side block.
-
-	// Get size of data stored on the file...
-	if (field.get_name() == "side_ids" &&
-	    fb->name() == "universal_sideset") {
-	  // The side ids are being stored as the distribution factor
-	  // field on the universal sideset.  There should be no other
-	  // side sets that request this field...  (Eventually,
-	  // create an id field to store this info.
-
-	  if (number_distribution_factors == static_cast<int>(num_to_get)) {
-	    std::vector<double> real_ids(num_to_get);
-	    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, TOPTR(real_ids));
-	    
-	    // Need to convert 'double' to 'int' for Sierra use...
-	    int* ids = static_cast<int*>(data);
-	    for (size_t i = 0; i < num_to_get; i++) {
-	      ids[i] = static_cast<int>(real_ids[i]);
-	    }
-	  }
-	}
-
-	else if (field.get_name() == "side_ids") {
-	}
-
-	else if (field.get_name() == "ids") {
-	  // In exodusII, the 'side set' is stored as a sideset.  A
-	  // sideset has a list of elements and a corresponding local
-	  // element side (1-based) The side id is: side_id =
-	  // 10*element_id + local_side_number This assumes that all
-	  // sides in a sideset are boundary sides.  Since we
-	  // only have a single array, we need to allocate an extra array
-	  // to store all of the data.  Note also that the element_id is
-	  // the global id but only the local id is stored so we need to
-	  // map from local_to_global prior to generating the side id...
-
-	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_element_map();
-
-	  // Allocate space for local side number, use 'data' as temporary
-	  // storage for element numbers and overwrite with the side
-	  // numbers.
-	  Ioss::IntVector sides;
-	  int *element = NULL;
-	  int *ids = static_cast<int*>(data);
-	  if (number_sides == static_cast<int>(entity_count)) {
-	    // Only 1 side block in this sideset
-	    sides.resize(entity_count);
-	    element = static_cast<int*>(data);
-	  } else {
-	    // Multiple side blocks in sideset. Need to allocate memory to
-	    // store sideset
-	    sides.resize(number_sides);
-	    element = new int[number_sides];
-	  }
-
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, element, TOPTR(sides));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	  if (number_sides == static_cast<int>(entity_count)) {
-	    for (size_t iel = 0; iel < entity_count; iel++) {
-	      int new_id = 10*map[element[iel]] + sides[iel];
-	      ids[iel] = new_id;
-	    }
-	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, element, TOPTR(sides),
-							number_sides, get_region());
-	    size_t ieb = 0;
-	    for (int iel = 0; iel < number_sides; iel++) {
-	      if (is_valid_side[iel] == 1) {
-		int new_id = 10*map[element[iel]] + sides[iel];
-		ids[ieb++] = new_id;
-	      }
-	    }
-	    assert(ieb == entity_count);
-	  }
-
-	  if (number_sides != static_cast<int>(entity_count))
-	    delete [] element;
-
-	} else if (field.get_name() == "element_side") {
-	  // In exodusII, the 'side set' is stored as a sideset.  A sideset
-	  // has a list of elements and a corresponding local element side
-	  // (1-based)
-
-	  // Since we only have a single array, we need to allocate an extra
-	  // array to store all of the data.  Note also that the element_id
-	  // is the global id but only the local id is stored so we need to
-	  // map from local_to_global prior to generating the side  id...
-
-	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_element_map();
-
-	  // Allocate space for local side number and element numbers
-	  // numbers.
-	  int *element_side = static_cast<int*>(data);
-
-	  Ioss::IntVector element(number_sides);
-	  Ioss::IntVector sides(number_sides);
-
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	  if (number_sides == static_cast<int>(entity_count)) {
-	    size_t index = 0;
-	    for (size_t iel = 0; iel < entity_count; iel++) {
-	      element_side[index++] = map[element[iel]];
-	      element_side[index++] = sides[iel];
-	    }
-	    assert(index/2 == entity_count);
-	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(sides),
-							number_sides, get_region());
-
-	    size_t index = 0;
-	    for (int iel = 0; iel < number_sides; iel++) {
-	      if (is_valid_side[iel] == 1) {
-		// This side  belongs in the side block
-		element_side[index++] = map[element[iel]];
-		element_side[index++] = sides[iel];
-	      }
-	    }
-	    assert(index/2 == entity_count);
-	  }
-
-	} else if (field.get_name() == "element_side_raw") {
-	  // In exodusII, the 'side set' is stored as a sideset.  A sideset
-	  // has a list of elements and a corresponding local element side
-	  // (1-based)
-
-	  // Since we only have a single array, we need to allocate an extra
-	  // array to store all of the data.  Note also that the
-	  // element_id for the "raw" field is the local id, not the
-	  // global id. 
-
-	  // Allocate space for local side number and element numbers
-	  // numbers.
-	  int *element_side = static_cast<int*>(data);
-
-	  Ioss::IntVector element(number_sides);
-	  Ioss::IntVector sides(number_sides);
-
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	  if (number_sides == static_cast<int>(entity_count)) {
-	    size_t index = 0;
-	    for (size_t iel = 0; iel < entity_count; iel++) {
-	      element_side[index++] = element[iel];
-	      element_side[index++] = sides[iel];
-	    }
-	    assert(index/2 == entity_count);
-	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(sides),
-							number_sides, get_region());
-
-	    size_t index = 0;
-	    for (int iel = 0; iel < number_sides; iel++) {
-	      if (is_valid_side[iel] == 1) {
-		// This side  belongs in the side block
-		element_side[index++] = element[iel];
-		element_side[index++] = sides[iel];
-	      }
-	    }
-	    assert(index/2 == entity_count);
-	  }
-
-	} else if (field.get_name() == "connectivity") {
-	  // The side  connectivity needs to be generated 'on-the-fly' from
-	  // the element number and local side  of that element. A sideset
-	  // can span multiple element blocks, and contain multiple side
-	  // types; the side block contains side of similar topology.
-	  ierr = get_side_connectivity(fb, id, entity_count, 
-				       static_cast<int*>(data), data_size/sizeof(int));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	} else if (field.get_name() == "distribution_factors") {
-	  ierr = get_side_distributions(fb, id, entity_count, 
-					static_cast<double*>(data), data_size/sizeof(double));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	} else {
-	  num_to_get = Ioss::Utils::field_warning(fb, field, "input");
-	}
-      } else if (role == Ioss::Field::TRANSIENT) {
-	// Check if the specified field exists on this block.
-	// Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	// exist on the database as scalars with the appropriate
-	// extensions.
-
-	if (number_sides == static_cast<int>(entity_count)) {
-	  num_to_get = read_transient_field(EX_SIDE_SET, field, fb, data);
-	} else {
-	  // Need to read all values for the specified field and then
-	  // filter down to the elements actualy in this side block.
-
-	  // Determine which sides are member of this block
-	  Ioss::IntVector is_valid_side(number_sides);
-	  {
-//----
-	    Ioss::IntVector element(number_sides);
-	    Ioss::IntVector sides(number_sides);
-	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
-//----
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb,
-							TOPTR(element), TOPTR(sides),
-							number_sides, get_region());
-	  }
-	  
-	  num_to_get = read_ss_transient_field(field, id, data, is_valid_side);
-	}
-      }
-    }
-    return num_to_get;
-  }
-
-  int DatabaseIO::get_side_connectivity(const Ioss::EntityBlock* fb,
-					int id, int,
-					int *fconnect,
-					size_t /* data_size */) const
-  {
-    // Get size of data stored on the file...
-    int ierr;
-    int number_sides;
-    int number_distribution_factors;
-    ierr = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
-			    &number_sides, &number_distribution_factors);
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-    // Allocate space for element and local side number
-    assert(number_sides > 0);
-//----
-    Ioss::IntVector element(number_sides);
-    Ioss::IntVector side(number_sides);
-
-    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-//----
-
-    Ioss::IntVector is_valid_side(number_sides);
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(side),
-						number_sides, get_region());
-
-    Ioss::IntVector elconnect;
-    int elconsize = 0; // Size of currently allocated connectivity block
-    Ioss::ElementBlock *conn_block = NULL; // Block that we currently
-    // have connectivity for
-
-    Ioss::ElementBlock *block = NULL;
-
-    Ioss::MapContainer side_elem_map; // Maps the side into the elements
-    // connectivity array
-    int current_side = -1;
-    int nelnode = 0;
-    int nfnodes = 0;
-    int ieb = 0;
-    int offset = 0;
-    for (int iel = 0; iel < number_sides; iel++) {
-      if (is_valid_side[iel] == 1) {
-
-	int elem_id = element[iel];
-
-	// ensure we have correct connectivity
-	block = get_region()->get_element_block(elem_id);
-	if (conn_block != block) {
-	  int nelem = block->get_property("entity_count").get_int();
-	  nelnode = block->topology()->number_nodes();
-	  // Used to map element number into position in connectivity array.
-	  // E.g., element 97 is the (97-offset)th element in this block and
-	  // is stored in array index (97-offset-1).
-	  offset = block->get_offset() + 1;
-	  if (elconsize < nelem * nelnode) {
-	    elconsize = nelem * nelnode;
-	    elconnect.resize(elconsize);
-	  }
-	  get_field_internal(block, block->get_field("connectivity"),
-			     TOPTR(elconnect), nelem*nelnode*sizeof(int));
-	  conn_block = block;
-	  current_side = -1;
-	}
-
-	// NOTE: Element connectivity is returned with nodes in global id space
-	if (current_side != side[iel]) {
-	  side_elem_map = block->topology()->boundary_connectivity(side[iel]);
-	  current_side = side[iel];
-	  nfnodes = block->topology()->boundary_type(side[iel])->number_nodes();
-	}
-	for (int inode = 0; inode < nfnodes; inode++) {
-	  int global_node = elconnect[(elem_id-offset)*nelnode +
-				      side_elem_map[inode]];
-	  fconnect[ieb++] = global_node;
-	}
-      }
-    }
-    return ierr;
-  }
-
-  // Get distribution factors for the specified side block
-  int DatabaseIO::get_side_distributions(const Ioss::EntityBlock* fb,
-					 int id, int my_side_count,
-					 double *dist_fact,
-					 size_t /* data_size */) const
-  {
-    // Allocate space for elements and local side numbers
-    // Get size of data stored on the file...
-    int number_sides;
-    int number_distribution_factors;
-    int ierr = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
-				&number_sides, &number_distribution_factors);
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-    const Ioss::ElementTopology *ftopo = fb->topology();
-    int nfnodes = ftopo->number_nodes();
-
-    if (number_distribution_factors == 0) {
-      // Fill in the array with '1.0'...
-      for (int i=0; i < nfnodes * my_side_count; i++)
-	dist_fact[i] = 1.0;
-      return 0;
-    }
-
-    // Take care of the easy situation -- If 'side_count' ==
-    // 'number_sides' then the sideset is stored in a single sideblock
-    // and all distribution factors on the database are transferred
-    // 1-to-1 into 'dist_fact' array.
-    if (my_side_count == number_sides) {
-      return ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, dist_fact);
-    }
-
-    // Allocate space for distribution factors.
-    std::vector<double> dist(number_distribution_factors);
-    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, TOPTR(dist));
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-    // Another easy situation (and common for exodusII) is if the input
-    // distribution factors are all the same value (typically 1).  In
-    // that case, we only have to fill in the output array with that
-    // value.
-    {
-      double value = dist[0];
-      bool constant = true;
-      for (int i=1; i < number_distribution_factors; i++) {
-	if (dist[i] != value) {
-	  constant = false;
-	  break;
-	}
-      }
-      if (constant) {
-	if (value == 0.0)
-	  value = 1.0;  // Take care of some buggy mesh generators
-	for (int j=0; j < my_side_count * nfnodes; j++)
-	  dist_fact[j] = value;
+      if (number_distribution_factors == 0) {
+	// Fill in the array with '1.0'...
+	for (int i=0; i < nfnodes * my_side_count; i++)
+	  dist_fact[i] = 1.0;
 	return 0;
       }
-    }
 
-    // If we get to here, the underlying sideset contains multiple side
-    // topologies and the distribution factors are non-constant. Need to
-    // allocate space to store all distribution factors and then pull
-    // out those that are applied to sides with the correct topology.
-
-    // Allocate space for element and local side number (this is bulk
-    // data...)
-//----
-    Ioss::IntVector element(number_sides);
-    Ioss::IntVector side(number_sides);
-
-    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-//----
-
-    Ioss::IntVector is_valid_side(number_sides);
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(side),
-						number_sides, get_region());
-
-    int ieb = 0; // counter for distribution factors in this sideblock
-    int idb = 0; // counter for distribution factors read from database
-    Ioss::ElementBlock *block = NULL;
-
-    for (int iel = 0; iel < number_sides; iel++) {
-      int elem_id = element[iel];
-
-      if (block == NULL || !block->contains(elem_id)) {
-	block = get_region()->get_element_block(elem_id);
+      // Take care of the easy situation -- If 'side_count' ==
+      // 'number_sides' then the sideset is stored in a single sideblock
+      // and all distribution factors on the database are transferred
+      // 1-to-1 into 'dist_fact' array.
+      if (my_side_count == number_sides) {
+	return ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, dist_fact);
       }
 
-      if (block == NULL) {
-	std::ostringstream errmsg;
-	errmsg << "INTERNAL ERROR: Could not find element block containing element with id " << elem_id
-		  << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
-	IOSS_ERROR(errmsg);
-      }
-
-      const Ioss::ElementTopology *topo = block->topology()->boundary_type(side[iel]);
-
-      if (topo == NULL) {
-	std::ostringstream errmsg;
-	errmsg << "INTERNAL ERROR: Could not find topology of element block boundary. "
-		  << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
-	IOSS_ERROR(errmsg);
-      }
-
-      int nside_nodes = topo->number_nodes();
-
-      if (is_valid_side[iel] == 1) {
-	// This side belongs in the sideblock
-	for (int i=0; i < nside_nodes; i++) {
-	  dist_fact[ieb++] = dist[idb++];
-	}
-      } else {
-	// Skip over unused 'dist' factors
-	idb += topo->number_nodes();
-      }
-    }
-
-    assert(ieb == my_side_count * nfnodes);
-    // If the following assert fails, it may be due to bug in Patran
-    // which writes too many distribution factors to the database in a
-    // mixed element case. Note that this is checked earlier also with a
-    // better error message.
-    assert(idb == number_distribution_factors);
-    return 0;
-  }
-
-  //------------------------------------------------------------------------
-  int DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    // For now, assume that all TRANSIENT fields on a region
-    // are REDUCTION fields (1 value).  We need to gather these
-    // and output them all at one time.  The storage location is a
-    // 'globalVariables' array
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      Ioss::Field::RoleType role = field.get_role();
-      size_t num_to_get = field.verify(data_size);
-
-      if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
-	  num_to_get == 1) {
-	store_reduction_field(EX_GLOBAL, field, get_region(), data);
-      }
-      else if (num_to_get != 1) {
-	// There should have been a warning/error message printed to the
-	// log file earlier for this, so we won't print anything else
-	// here since it would be printed for each and every timestep....
-	;
-      } else {
-	std::ostringstream errmsg;
-	errmsg << "The variable named '" << field.get_name()
-	       << "' is of the wrong type. A region variable must be of type"
-	       << " TRANSIENT or REDUCTION.\n"
-	       << "This is probably an internal error; please notify gdsjaar@sandia.gov";
-	IOSS_ERROR(errmsg);
-      }
-      return num_to_get;
-    }
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
-
-	Ioss::Field::RoleType role = field.get_role();
-
-	if (role == Ioss::Field::MESH) {
-	  if (field.get_name() == "mesh_model_coordinates") {
-	    // Data required by upper classes store x0, y0, z0, ... xn, yn, zn
-	    // Data stored in exodusII file is x0, ..., xn, y0, ..., yn, z0, ..., zn
-	    // so we have to allocate some scratch memory to read in the data
-	    // and then map into supplied 'data'
-	    std::vector<double> x(num_to_get);
-	    std::vector<double> y(num_to_get);
-	    std::vector<double> z;
-	    if (spatialDimension == 3)
-	      z.resize(num_to_get);
-
-	    // Cast 'data' to correct size -- double
-	    double *rdata = static_cast<double*>(data);
-
-	    int index = 0;
-	    for (size_t i=0; i < num_to_get; i++) {
-	      x[i] = rdata[index++];
-	      y[i] = rdata[index++];
-	      if (spatialDimension == 3)
-		z[i] = rdata[index++];
-	    }
-	    int ierr = ex_put_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	  } else if (field.get_name() == "ids") {
-	    // The ids coming in are the global ids; their position is the
-	    // local id -1 (That is, data[0] contains the global id of local
-	    // node 1)
-
-	    // Another 'const-cast' since we are modifying the database just
-	    // for efficiency; which the client does not see...
-	    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-	    new_this->handle_node_ids(static_cast<int*>(data), num_to_get);
-	  } else if (field.get_name() == "connectivity") {
-	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
-	  } else if (field.get_name() == "node_connectivity_status") {
-	    // Do nothing, input only field.
-	  } else {
-	    return Ioss::Utils::field_warning(nb, field, "mesh output");
-	  }
-
-	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this node block.
-	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	  // exist on the database as scalars with the appropriate
-	  // extensions.
-
-	  // Transfer each component of the variable into 'data' and then
-	  // output.  Need temporary storage area of size 'number of
-	  // nodes in this block.
-	  write_nodal_transient_field(EX_NODAL, field, nb, num_to_get, data);
-
-	} else if (role == Ioss::Field::REDUCTION) {
-	  store_reduction_field(EX_NODAL, field, nb, data);
-	}
-      }
-      return num_to_get;
-    }
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      size_t num_to_get = field.verify(data_size);
-
-      if (num_to_get > 0) {
-	int ierr = 0;
-
-	// Get the element block id and element count
-	int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
-	int my_element_count = eb->get_property("entity_count").get_int();
-	Ioss::Field::RoleType role = field.get_role();
-
-	if (role == Ioss::Field::MESH) {
-	  // Handle the MESH fields required for an ExodusII file model.
-	  // (The 'genesis' portion)
-	  if (field.get_name() == "connectivity") {
-	    if (my_element_count > 0) {
-	      // Map element connectivity from global node id to local node id.
-	      // Do it in 'data' ...
-	      int* connect = static_cast<int*>(data);
-
-	      if (!sequentialNG2L) {
-		int element_nodes =
-		  eb->get_property("topology_node_count").get_int();
-		assert(field.transformed_storage()->component_count() == element_nodes);
-
-		for (size_t i=0; i < num_to_get * element_nodes; i++) {
-		  int global_id = connect[i];
-		  connect[i] = node_global_to_local(global_id, true);
-		}
-	      }
-	      ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, connect, NULL, NULL);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-	  } else if (field.get_name() == "connectivity_raw") {
-	    // Do nothing, input only field.
-	  } else if (field.get_name() == "ids") {
-	    // Another 'const-cast' since we are modifying the database just
-	    // for efficiency; which the client does not see...
-	    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-	    new_this->handle_element_ids(eb, static_cast<int*>(data), num_to_get);
-
-	  } else if (field.get_name() == "skin") {
-	    // This is (currently) for the skinned body. It maps the
-	    // side element on the skin to the original element/local
-	    // side number.  It is a two component field, the first
-	    // component is the global id of the underlying element in
-	    // the initial mesh and its local side number (1-based).
-
-	    Ioss::IntVector element(my_element_count);
-	    Ioss::IntVector side(my_element_count);
-	    int *el_side = (int *)data;
-
-	    int index = 0;
-	    for (int i=0; i < my_element_count; i++) {
-	      element[i] = el_side[index++];
-	      side[i]    = el_side[index++];
-	    }
-
-	    // FIX: Hardwired map ids....
-	    int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_ELEM_MAP);
-	    if (map_count == 0) {
-	      // This needs to be fixed... Currently hardwired....
-	      ierr = ex_put_map_param(get_file_pointer(), 0, 2);
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-
-	    int eb_offset = eb->get_offset();
-	    ierr = ex_put_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
-					   TOPTR(element));
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    ierr = ex_put_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
-					   TOPTR(side));
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	    if (map_count == 0) {
-	      ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 1, "skin:parent_element_id");
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 2, "skin:parent_element_side_number");
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-
-	  } else {
-	    num_to_get = Ioss::Utils::field_warning(eb, field, "mesh output");
-	  }
-	}
-
-	else if (role == Ioss::Field::ATTRIBUTE) {
-	  std::string att_name = eb->name() + SEP() + field.get_name();
-	  int offset = (int)field.get_index();
-	  assert(offset > 0);
-
-	  int attribute_count = eb->get_property("attribute_count").get_int();
-	  assert(offset > 0);
-	  assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
-	  
-	  if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
-	    // Write all attributes in one big chunk...
-	    ierr = ex_put_attr(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<double*>(data));
-	    if (ierr < 0)
-	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
-	  else {
-	    // Write a subset of the attributes.  If scalar, write one;
-	    // if higher-order (vector3d, ..) write each component.
-	    if (field.raw_storage()->component_count() == 1) {
-	      ierr = ex_put_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-				     offset, static_cast<double*>(data));
-	      if (ierr < 0)
-		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    } else {
-	      // Multi-component...  Need a local memory space to push
-	      // data into and then write that out to the file...
-	      std::vector<double> local_data(my_element_count);
-	      int comp_count = field.raw_storage()->component_count();
-	      double *rdata = static_cast<double*>(data);
-	      for (int i=0; i < comp_count; i++) {
-		int k = i;
-		for (int j=0; j < my_element_count; j++) {
-		  local_data[j] = rdata[k];
-		  k += comp_count;
-		}
-		
-		ierr = ex_put_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-				       offset+i, TOPTR(local_data));
-		if (ierr < 0)
-		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      }
-	    }
-	  }
-	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this element block.
-	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	  // exist on the database as scalars with the appropriate
-	  // extensions.
-
-	  // Transfer each component of the variable into 'data' and then
-	  // output.  Need temporary storage area of size 'number of
-	  // elements in this block.
-	  write_entity_transient_field(EX_ELEM_BLOCK, field, eb, my_element_count, data);
-
-	} else if (role == Ioss::Field::REDUCTION) {
-	  store_reduction_field(EX_ELEM_BLOCK, field, eb, data);
-	}
-      }
-      return num_to_get;
-    }
-  }
-
-  int DatabaseIO::handle_node_ids(int* ids, size_t num_to_get)
-  {
-    /*!
-     * There are two modes we need to support in this routine:
-     * 1. Initial definition of node map (local->global) and
-     * reverseNodeMap (global->local).
-     * 2. Redefinition of node map via 'reordering' of the original
-     * map when the nodes on this processor are the same, but their
-     * order is changed (or count because of ghosting)
-     *
-     * So, there will be two maps the 'nodeMap' map is a 'direct lookup'
-     * map which maps current local position to global id and the
-     * 'reverseNodeMap' is an associative lookup which maps the
-     * global id to 'original local'.  There is also a
-     * 'reorderNodeMap' which is direct lookup and maps current local
-     * position to original local.
-
-     * The ids coming in are the global ids; their position is the
-     * "local id-1" (That is, data[0] contains the global id of local
-     * node 1 in this node block).
-     *
-     * int local_position = reverseNodeMap[NodeMap[i+1]]
-     * (the nodeMap and reverseNodeMap are 1-based)
-     *
-     * To determine which map to update on a call to this function, we
-     * use the following hueristics:
-     * -- If the database state is 'STATE_MODEL:', then update the
-     *    'reverseNodeMap' and 'nodeMap'
-     *
-     * -- If the database state is not STATE_MODEL, then leave the
-     *    'reverseNodeMap' and 'nodeMap' alone since they correspond to the
-     *    information already written to the database. [May want to add a
-     *    STATE_REDEFINE_MODEL]
-     *
-     * -- In both cases, update the reorderNodeMap
-     *
-     * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
-     *       should be in the orginal order...
-     */
-
-    // The ids coming in are the global ids; their position is the
-    // local id -1 (That is, data[0] contains the global id of local
-    // node 1)
-
-    assert(static_cast<int>(num_to_get) == nodeCount);
-    
-    if (dbState == Ioss::STATE_MODEL) {
-      if (nodeMap.empty()) {
-	nodeMap.resize(nodeCount+1);
-	sequentialNG2L = true;
-	nodeMap[0] = -1;
-      }
-
-      if (sequentialNG2L) {
-	for (size_t i=0; i < num_to_get; i++) {
-	  nodeMap[i+1] = ids[i];
-	  if (static_cast<int>(i+1) != ids[i]) {
-	    assert(ids[i] != 0);
-	    sequentialNG2L = false;
-	    nodeMap[0] = 1;
-	  }
-	}
-      }
-
-      if (!sequentialNG2L || static_cast<int>(num_to_get) != nodeCount) {
-	sequentialNG2L = false;
-	Ioss::Map::build_reverse_map(&reverseNodeMap, ids, num_to_get, 0,
-				     "node", myProcessor);
-      }
-
-      // Only a single nodeblock and all set
-      if (static_cast<int>(num_to_get) == nodeCount) {
-	assert(sequentialNG2L || static_cast<int>(reverseNodeMap.size()) == nodeCount);
-      }
-      assert(get_region()->get_property("node_block_count").get_int() == 1);
-
-      // Write to the database...
-      int ierr = ex_put_node_num_map(get_file_pointer(), ids);
+      // Allocate space for distribution factors.
+      std::vector<double> dist(number_distribution_factors);
+      ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, TOPTR(dist));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-    }
 
-    build_node_reorder_map(ids, num_to_get);
-    return num_to_get;
-  }
-
-  int DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb,
-				     int* ids, size_t num_to_get)
-  {
-    /*!
-     * There are two modes we need to support in this routine:
-     * 1. Initial definition of element map (local->global) and
-     * reverseElementMap (global->local).
-     * 2. Redefinition of element map via 'reordering' of the original
-     * map when the elements on this processor are the same, but their
-     * order is changed.
-     *
-     * So, there will be two maps the 'elementMap' map is a 'direct lookup'
-     * map which maps current local position to global id and the
-     * 'reverseElementMap' is an associative lookup which maps the
-     * global id to 'original local'.  There is also a
-     * 'reorderElementMap' which is direct lookup and maps current local
-     * position to original local.
-
-     * The ids coming in are the global ids; their position is the
-     * local id -1 (That is, data[0] contains the global id of local
-     * element 1 in this element block).  The 'model-local' id is
-     * given by eb_offset + 1 + position:
-     *
-     * int local_position = reverseElementMap[ElementMap[i+1]]
-     * (the elementMap and reverseElementMap are 1-based)
-     *
-     * But, this assumes 1..numel elements are being output at the same
-     * time; we are actually outputting a blocks worth of elements at a
-     * time, so we need to consider the block offsets.
-     * So... local-in-block position 'i' is index 'eb_offset+i' in
-     * 'elementMap' and the 'local_position' within the element
-     * blocks data arrays is 'local_position-eb_offset'.  With this, the
-     * position within the data array of this element block is:
-     *
-     * int eb_position =
-     * reverseElementMap[elementMap[eb_offset+i+1]]-eb_offset-1
-     *
-     * To determine which map to update on a call to this function, we
-     * use the following hueristics:
-     * -- If the database state is 'Ioss::STATE_MODEL:', then update the
-     *    'reverseElementMap'.
-     * -- If the database state is not Ioss::STATE_MODEL, then leave
-     *    the 'reverseElementMap' alone since it corresponds to the
-     *    information already written to the database. [May want to add
-     *    a Ioss::STATE_REDEFINE_MODEL]
-     * -- Always update elementMap to match the passed in 'ids'
-     *    array.
-     *
-     * NOTE: the maps are built an element block at a time...
-     * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
-     *       should be in the orginal order...
-     */
-
-    // Overwrite this portion of the 'elementMap', but keep other
-    // parts as they were.  We are adding elements starting at position
-    // 'eb_offset+offset' and ending at
-    // 'eb_offset+offset+num_to_get'. If the entire block is being
-    // processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
-      sequentialEG2L = true;
-    }
-
-    assert(static_cast<int>(elementMap.size()) == elementCount+1);
-    elementMap[0] = -1;
-
-    int eb_offset = eb->get_offset();
-
-    for (size_t i=0; i < num_to_get; i++) {
-      int local_id = eb_offset + i + 1;
-      elementMap[local_id] = ids[i];
-      if (local_id != ids[i]) {
-	sequentialEG2L = false;
-	elementMap[0] = 1;
-	assert(ids[i] != 0);
+      // Another easy situation (and common for exodusII) is if the input
+      // distribution factors are all the same value (typically 1).  In
+      // that case, we only have to fill in the output array with that
+      // value.
+      {
+	double value = dist[0];
+	bool constant = true;
+	for (int i=1; i < number_distribution_factors; i++) {
+	  if (dist[i] != value) {
+	    constant = false;
+	    break;
+	  }
+	}
+	if (constant) {
+	  if (value == 0.0)
+	    value = 1.0;  // Take care of some buggy mesh generators
+	  for (int j=0; j < my_side_count * nfnodes; j++)
+	    dist_fact[j] = value;
+	  return 0;
+	}
       }
-    }
 
-    // Now, if the state is Ioss::STATE_MODEL, update the reverseElementMap
-    if (dbState == Ioss::STATE_MODEL) {
-      Ioss::Map::build_reverse_map(&reverseElementMap, ids, num_to_get,
-				   eb_offset, "element", myProcessor);
+      // If we get to here, the underlying sideset contains multiple side
+      // topologies and the distribution factors are non-constant. Need to
+      // allocate space to store all distribution factors and then pull
+      // out those that are applied to sides with the correct topology.
 
-      // Strongest assertion we can make is that size of map <=
-      // elementCount
-      assert(static_cast<int>(reverseElementMap.size()) <= elementCount);
+      // Allocate space for element and local side number (this is bulk
+      // data...)
+      //----
+      Ioss::IntVector element(number_sides);
+      Ioss::IntVector side(number_sides);
 
-      // Output this portion of the element number map
-      int ierr = ne_put_n_elem_num_map(get_file_pointer(), eb_offset+1, num_to_get, ids);
+      ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-    }
-    // Build the reorderElementMap which does a direct mapping from
-    // the current topologies local order to the local order stored in
-    // the database...  This is 0-based and used for remapping output
-    // TRANSIENT fields. (Will also need one on input once we read fields)
-    build_element_reorder_map(eb_offset, num_to_get);
-    return num_to_get;
-  }
+      //----
 
-  void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
-					       const Ioss::Field &field,
-					       const Ioss::NodeBlock */* ge */,
-					       int count, void *variables) const
-  {
-    Ioss::Field::BasicType ioss_type = field.get_type();
-    assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
-	   ioss_type == Ioss::Field::COMPLEX);
-    double *rvar = static_cast<double*>(variables);
-    int  *ivar = static_cast<int*>(variables);
+      Ioss::IntVector is_valid_side(number_sides);
+      Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(side),
+						  number_sides, get_region());
 
-    // Note that if the field's basic type is COMPLEX, then each component of
-    // the VariableType is a complex variable consisting of a real and
-    // imaginary part.  Since exodus cannot handle complex variables,
-    // we have to output a (real and imaginary) X (number of
-    // components) fields. For example, if V is a 3d vector of complex
-    // data, the data in the 'variables' array are v_x, v.im_x, v_y,
-    // v.im_y, v_z, v.im_z which need to be output in six separate
-    // exodus fields.  These fields were already defined in
-    // "write_results_metadata".
+      int ieb = 0; // counter for distribution factors in this sideblock
+      int idb = 0; // counter for distribution factors read from database
+      Ioss::ElementBlock *block = NULL;
 
-    const Ioss::VariableType *var_type = field.transformed_storage();
-    std::vector<double> temp(count);
+      for (int iel = 0; iel < number_sides; iel++) {
+	int elem_id = element[iel];
 
-    int step = get_current_state();
-    step = get_database_step(step);
+	if (block == NULL || !block->contains(elem_id)) {
+	  block = get_region()->get_element_block(elem_id);
+	}
 
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'nodalVariables' map
-    int comp_count = var_type->component_count();
-    int var_index=0;
-
-    int re_im = 1;
-    if (ioss_type == Ioss::Field::COMPLEX)
-      re_im = 2;
-    for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-      std::string field_name = field.get_name();
-      if (re_im == 2) {
-	field_name += complex_suffix[complex_comp];
-      }
-
-      for (int i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
-
-	if (nodalVariables.find(var_name) == nodalVariables.end()) {
+	if (block == NULL) {
 	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Could not find nodal variable '" << var_name << "'\n";
+	  errmsg << "INTERNAL ERROR: Could not find element block containing element with id " << elem_id
+		 << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
 	  IOSS_ERROR(errmsg);
 	}
 
-	var_index = nodalVariables.find(var_name)->second;
+	const Ioss::ElementTopology *topo = block->topology()->boundary_type(side[iel]);
 
-	// Transfer from 'variables' array.
-	int k = 0;
-	int num_out = 0;
-	for (int j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	  int where = reorderNodeMap[k++];
-	  if (where >= 0) {
-	    assert(where < count);
+	if (topo == NULL) {
+	  std::ostringstream errmsg;
+	  errmsg << "INTERNAL ERROR: Could not find topology of element block boundary. "
+		 << "Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
+	  IOSS_ERROR(errmsg);
+	}
+
+	int nside_nodes = topo->number_nodes();
+
+	if (is_valid_side[iel] == 1) {
+	  // This side belongs in the sideblock
+	  for (int i=0; i < nside_nodes; i++) {
+	    dist_fact[ieb++] = dist[idb++];
+	  }
+	} else {
+	  // Skip over unused 'dist' factors
+	  idb += topo->number_nodes();
+	}
+      }
+
+      assert(ieb == my_side_count * nfnodes);
+      // If the following assert fails, it may be due to bug in Patran
+      // which writes too many distribution factors to the database in a
+      // mixed element case. Note that this is checked earlier also with a
+      // better error message.
+      assert(idb == number_distribution_factors);
+      return 0;
+    }
+
+    //------------------------------------------------------------------------
+    int DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      // For now, assume that all TRANSIENT fields on a region
+      // are REDUCTION fields (1 value).  We need to gather these
+      // and output them all at one time.  The storage location is a
+      // 'globalVariables' array
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	Ioss::Field::RoleType role = field.get_role();
+	size_t num_to_get = field.verify(data_size);
+
+	if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
+	    num_to_get == 1) {
+	  store_reduction_field(EX_GLOBAL, field, get_region(), data);
+	}
+	else if (num_to_get != 1) {
+	  // There should have been a warning/error message printed to the
+	  // log file earlier for this, so we won't print anything else
+	  // here since it would be printed for each and every timestep....
+	  ;
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "The variable named '" << field.get_name()
+		 << "' is of the wrong type. A region variable must be of type"
+		 << " TRANSIENT or REDUCTION.\n"
+		 << "This is probably an internal error; please notify gdsjaar@sandia.gov";
+	  IOSS_ERROR(errmsg);
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    if (field.get_name() == "mesh_model_coordinates") {
+	      // Data required by upper classes store x0, y0, z0, ... xn, yn, zn
+	      // Data stored in exodusII file is x0, ..., xn, y0, ..., yn, z0, ..., zn
+	      // so we have to allocate some scratch memory to read in the data
+	      // and then map into supplied 'data'
+	      std::vector<double> x(num_to_get);
+	      std::vector<double> y(num_to_get);
+	      std::vector<double> z;
+	      if (spatialDimension == 3)
+		z.resize(num_to_get);
+
+	      // Cast 'data' to correct size -- double
+	      double *rdata = static_cast<double*>(data);
+
+	      int index = 0;
+	      for (size_t i=0; i < num_to_get; i++) {
+		x[i] = rdata[index++];
+		y[i] = rdata[index++];
+		if (spatialDimension == 3)
+		  z[i] = rdata[index++];
+	      }
+	      int ierr = ex_put_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    } else if (field.get_name() == "ids") {
+	      // The ids coming in are the global ids; their position is the
+	      // local id -1 (That is, data[0] contains the global id of local
+	      // node 1)
+
+	      // Another 'const-cast' since we are modifying the database just
+	      // for efficiency; which the client does not see...
+	      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+	      new_this->handle_node_ids(static_cast<int*>(data), num_to_get);
+	    } else if (field.get_name() == "connectivity") {
+	      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	    } else if (field.get_name() == "connectivity_raw") {
+	      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	    } else if (field.get_name() == "node_connectivity_status") {
+	      // Do nothing, input only field.
+	    } else {
+	      return Ioss::Utils::field_warning(nb, field, "mesh output");
+	    }
+
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this node block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Transfer each component of the variable into 'data' and then
+	    // output.  Need temporary storage area of size 'number of
+	    // nodes in this block.
+	    write_nodal_transient_field(EX_NODE_BLOCK, field, nb, num_to_get, data);
+
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    store_reduction_field(EX_NODE_BLOCK, field, nb, data);
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+
+	if (num_to_get > 0) {
+	  int ierr = 0;
+
+	  // Get the element block id and element count
+	  int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
+	  int my_element_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+	    if (field.get_name() == "connectivity") {
+	      if (my_element_count > 0) {
+		// Map element connectivity from global node id to local node id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+		
+		assert(!nodeMap.empty());
+		if (nodeMap[0] != -1) {
+		  int element_nodes =
+		    eb->get_property("topology_node_count").get_int();
+		  assert(field.transformed_storage()->component_count() == element_nodes);
+		  
+		  for (size_t i=0; i < num_to_get * element_nodes; i++) {
+		    int global_id = connect[i];
+		    connect[i] = node_global_to_local(global_id, true);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, connect, NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    } else if (field.get_name() == "connectivity_edge") {
+		if (my_element_count > 0) {
+		// Map element connectivity from global edge id to local edge id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+
+		if (edgeMap[0] != -1) {
+		  int element_edges = field.transformed_storage()->component_count();
+
+		  for (size_t i=0; i < num_to_get * element_edges; i++) {
+		    int global_id = connect[i];
+		    connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, connect, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		}
+	    } else if (field.get_name() == "connectivity_face") {
+		if (my_element_count > 0) {
+		// Map element connectivity from global face id to local face id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+
+		if (faceMap[0] != -1) {
+		  int element_faces = field.transformed_storage()->component_count();
+
+		  for (size_t i=0; i < num_to_get * element_faces; i++) {
+		    int global_id = connect[i];
+		    connect[i] = global_to_local(EX_FACE_BLOCK, global_id);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, NULL, connect);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    } else if (field.get_name() == "connectivity_raw") {
+	      // Do nothing, input only field.
+	    } else if (field.get_name() == "ids") {
+	      // Another 'const-cast' since we are modifying the database just
+	      // for efficiency; which the client does not see...
+	      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+	      new_this->handle_element_ids(eb, static_cast<int*>(data), num_to_get);
+
+	    } else if (field.get_name() == "skin") {
+	      // This is (currently) for the skinned body. It maps the
+	      // side element on the skin to the original element/local
+	      // side number.  It is a two component field, the first
+	      // component is the global id of the underlying element in
+	      // the initial mesh and its local side number (1-based).
+
+	      Ioss::IntVector element(my_element_count);
+	      Ioss::IntVector side(my_element_count);
+	      int *el_side = (int *)data;
+
+	      int index = 0;
+	      for (int i=0; i < my_element_count; i++) {
+		element[i] = el_side[index++];
+		side[i]    = el_side[index++];
+	      }
+
+	      // FIX: Hardwired map ids....
+	      int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_ELEM_MAP);
+	      if (map_count == 0) {
+		// This needs to be fixed... Currently hardwired....
+		ierr = ex_put_map_param(get_file_pointer(), 0, 2);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+
+	      int eb_offset = eb->get_offset();
+	      ierr = ex_put_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
+					     TOPTR(element));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      ierr = ex_put_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
+					     TOPTR(side));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	      if (map_count == 0) {
+		ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 1, "skin:parent_element_id");
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 2, "skin:parent_element_side_number");
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+
+	    } else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "mesh output");
+	    }
+	  
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = write_attribute_field(EX_ELEM_BLOCK, field, eb, data);
+	  
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this element block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Transfer each component of the variable into 'data' and then
+	    // output.  Need temporary storage area of size 'number of
+	    // elements in this block.
+	    write_entity_transient_field(EX_ELEM_BLOCK, field, eb, my_element_count, data);
+
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    store_reduction_field(EX_ELEM_BLOCK, field, eb, data);
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::FaceBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+
+	if (num_to_get > 0) {
+	  int ierr = 0;
+
+	  // Get the face block id and face count
+	  int id = get_id(eb, EX_FACE_BLOCK, &ids_);
+	  int my_face_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+	    if (field.get_name() == "connectivity") {
+	      if (my_face_count > 0) {
+		// Map face connectivity from global node id to local node id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+
+		assert(!nodeMap.empty());
+		if (nodeMap[0] != -1) {
+		  int face_nodes =
+		    eb->get_property("topology_node_count").get_int();
+		  assert(field.transformed_storage()->component_count() == face_nodes);
+
+		  for (size_t i=0; i < num_to_get * face_nodes; i++) {
+		    int global_id = connect[i];
+		    connect[i] = node_global_to_local(global_id, true);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_FACE_BLOCK, id, connect, NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    } else if (field.get_name() == "connectivity_edge") {
+		if (my_face_count > 0) {
+		// Map face connectivity from global edge id to local edge id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+
+		if (edgeMap[0] != -1) {
+		  int face_edges = field.transformed_storage()->component_count();
+
+		  for (size_t i=0; i < num_to_get * face_edges; i++) {
+		    int global_id = connect[i];
+		    connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_FACE_BLOCK, id, NULL, connect, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		}
+	    } else if (field.get_name() == "connectivity_raw") {
+	      // Do nothing, input only field.
+	    } else if (field.get_name() == "ids") {
+	      // Another 'const-cast' since we are modifying the database just
+	      // for efficiency; which the client does not see...
+	      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+	      new_this->handle_face_ids(eb, static_cast<int*>(data), num_to_get);
+
+	    } else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "mesh output");
+	    }
+	  
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = write_attribute_field(EX_FACE_BLOCK, field, eb, data);
+	  
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this face block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Transfer each component of the variable into 'data' and then
+	    // output.  Need temporary storage area of size 'number of
+	    // faces in this block.
+	    write_entity_transient_field(EX_FACE_BLOCK, field, eb, my_face_count, data);
+
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    store_reduction_field(EX_FACE_BLOCK, field, eb, data);
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* eb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	size_t num_to_get = field.verify(data_size);
+
+	if (num_to_get > 0) {
+	  int ierr = 0;
+
+	  // Get the edge block id and edge count
+	  int id = get_id(eb, EX_EDGE_BLOCK, &ids_);
+	  int my_edge_count = eb->get_property("entity_count").get_int();
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+	    // Handle the MESH fields required for an ExodusII file model.
+	    // (The 'genesis' portion)
+	    if (field.get_name() == "connectivity") {
+	      if (my_edge_count > 0) {
+		// Map edge connectivity from global node id to local node id.
+		// Do it in 'data' ...
+		int* connect = static_cast<int*>(data);
+
+		assert(!nodeMap.empty());
+		if (nodeMap[0] != -1) {
+		  int edge_nodes =
+		    eb->get_property("topology_node_count").get_int();
+		  assert(field.transformed_storage()->component_count() == edge_nodes);
+
+		  for (size_t i=0; i < num_to_get * edge_nodes; i++) {
+		    int global_id = connect[i];
+		    connect[i] = node_global_to_local(global_id, true);
+		  }
+		}
+		ierr = ex_put_conn(get_file_pointer(), EX_EDGE_BLOCK, id, connect, NULL, NULL);
+		if (ierr < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	    } else if (field.get_name() == "connectivity_raw") {
+	      // Do nothing, input only field.
+	    } else if (field.get_name() == "ids") {
+	      // Another 'const-cast' since we are modifying the database just
+	      // for efficiency; which the client does not see...
+	      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+	      new_this->handle_edge_ids(eb, static_cast<int*>(data), num_to_get);
+
+	    } else {
+	      num_to_get = Ioss::Utils::field_warning(eb, field, "mesh output");
+	    }
+	  
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = write_attribute_field(EX_EDGE_BLOCK, field, eb, data);
+	  
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this edge block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Transfer each component of the variable into 'data' and then
+	    // output.  Need temporary storage area of size 'number of
+	    // edges in this block.
+	    write_entity_transient_field(EX_EDGE_BLOCK, field, eb, my_edge_count, data);
+
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    store_reduction_field(EX_EDGE_BLOCK, field, eb, data);
+	  }
+	}
+	return num_to_get;
+      }
+    }
+
+    int DatabaseIO::handle_node_ids(int* ids, size_t num_to_get)
+    {
+      /*!
+       * There are two modes we need to support in this routine:
+       * 1. Initial definition of node map (local->global) and
+       * reverseNodeMap (global->local).
+       * 2. Redefinition of node map via 'reordering' of the original
+       * map when the nodes on this processor are the same, but their
+       * order is changed (or count because of ghosting)
+       *
+       * So, there will be two maps the 'nodeMap' map is a 'direct lookup'
+       * map which maps current local position to global id and the
+       * 'reverseNodeMap' is an associative lookup which maps the
+       * global id to 'original local'.  There is also a
+       * 'reorderNodeMap' which is direct lookup and maps current local
+       * position to original local.
+
+       * The ids coming in are the global ids; their position is the
+       * "local id-1" (That is, data[0] contains the global id of local
+       * node 1 in this node block).
+       *
+       * int local_position = reverseNodeMap[NodeMap[i+1]]
+       * (the nodeMap and reverseNodeMap are 1-based)
+       *
+       * To determine which map to update on a call to this function, we
+       * use the following hueristics:
+       * -- If the database state is 'STATE_MODEL:', then update the
+       *    'reverseNodeMap' and 'nodeMap'
+       *
+       * -- If the database state is not STATE_MODEL, then leave the
+       *    'reverseNodeMap' and 'nodeMap' alone since they correspond to the
+       *    information already written to the database. [May want to add a
+       *    STATE_REDEFINE_MODEL]
+       *
+       * -- In both cases, update the reorderNodeMap
+       *
+       * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
+       *       should be in the orginal order...
+       */
+      assert(static_cast<int>(num_to_get) == nodeCount);
+    
+      if (dbState == Ioss::STATE_MODEL) {
+	if (nodeMap.empty()) {
+	  nodeMap.resize(nodeCount+1);
+	  nodeMap[0] = -1;
+	}
+
+	if (nodeMap[0] == -1) {
+	  for (size_t i=0; i < num_to_get; i++) {
+	    nodeMap[i+1] = ids[i];
+	    if (static_cast<int>(i+1) != ids[i]) {
+	      assert(ids[i] != 0);
+	      nodeMap[0] = 1;
+	    }
+	  }
+	}
+
+	if (nodeMap[0] != -1 || static_cast<int>(num_to_get) != nodeCount) {
+	  Ioss::Map::build_reverse_map(&reverseNodeMap, ids, num_to_get, 0,
+				       "node", myProcessor);
+	}
+
+	// Only a single nodeblock and all set
+	if (static_cast<int>(num_to_get) == nodeCount) {
+	  assert(nodeMap[0] == -1 || static_cast<int>(reverseNodeMap.size()) == nodeCount);
+	}
+	assert(get_region()->get_property("node_block_count").get_int() == 1);
+
+	// Write to the database...
+	int ierr = ex_put_node_num_map(get_file_pointer(), ids);
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      }
+
+      build_node_reorder_map(ids, num_to_get);
+      return num_to_get;
+    }
+
+    namespace {
+      template <typename T>
+      void generate_block_truth_table(VariableNameMap &variables,
+				      IntVector &truth_table,
+				      std::vector<T*> &blocks,
+				      char field_suffix_separator)
+      {
+	size_t block_count = blocks.size();
+	size_t var_count = variables.size();
+      
+	if (var_count == 0 || block_count == 0)
+	  return;
+      
+	truth_table.resize(block_count*var_count);
+      
+	// Fill in the truth table.  It is conceptually a two-dimensional array of
+	// the form 'array[num_blocks][num_element_var]'.  In C++,
+	// the values for the first block are first, followed by
+	// next block, ...
+	size_t offset = 0;
+	typename std::vector<T*>::const_iterator I;
+	for (I=blocks.begin(); I != blocks.end(); ++I) {
+	  // Get names of all transient and reduction fields...
+	  Ioss::NameList results_fields;
+	  (*I)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+	  (*I)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+	
+	  Ioss::NameList::const_iterator IF;
+	  for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	    std::string field_name = *IF;
+	  
+	    Ioss::Field field = (*I)->get_field(field_name);
+	    const Ioss::VariableType *var_type = field.transformed_storage();
+	    Ioss::Field::BasicType ioss_type = field.get_type();
+	  
+	    int re_im = 1;
+	    if (ioss_type == Ioss::Field::COMPLEX)
+	      re_im = 2;
+	    for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+	      field_name = field.get_name();
+	      if (re_im == 2) {
+		field_name += complex_suffix[complex_comp];
+	      }
+	    
+	      for (int i=1; i <= var_type->component_count(); i++) {
+		std::string var_string = var_type->label_name(field_name, i, field_suffix_separator);
+		// Find position of 'var_string' in 'variables'
+		VariableNameMap::iterator VN = variables.find(var_string);
+		if (VN != variables.end()) {
+		  // Index '(*VN).second' is 1-based...
+		  truth_table[offset + (*VN).second-1] = 1;
+		}
+	      }
+	    }
+	  }
+	  offset += var_count;
+	}
+	assert(offset == var_count * block_count);
+      }
+    
+      int internal_global_to_local(Ioss::ReverseMapContainer &reverseEntityMap, bool sequential,
+				   size_t entity_count, int global)
+      {
+	int local = global;
+	if (!sequential) {
+	  std::pair<RMapI, RMapI> iter = std::equal_range(reverseEntityMap.begin(),
+							  reverseEntityMap.end(),
+							  global,
+							  Ioss::IdPairCompare());
+	  if (iter.first == iter.second) {
+	    std::ostringstream errmsg;
+	    errmsg << "Element with global id equal to " << global
+		   << " does not exist in this mesh on this processor\n";
+	    IOSS_ERROR(errmsg);
+	  }
+	  local = (iter.first)->second;
+	}
+	if (local > (int)entity_count || local <= 0) {
+	  std::ostringstream errmsg;
+	  errmsg << "Entity (element, face, edge, node) with global id equal to " << global
+		 << " returns a local id of " << local
+		 << " which is invalid. This should not happen, please report.\n";
+	  IOSS_ERROR(errmsg);
+	}
+	return local;
+      }
+
+      void build_entity_reorder_map(Ioss::MapContainer &entityMap,
+				    Ioss::ReverseMapContainer &reverseEntityMap,
+				    Ioss::MapContainer &reorderEntityMap,
+				    int start, int count)
+      {
+	// Note: To further add confusion, the reorderEntityaMap is 0-based
+	// and the reverseEntityMap and entityMap are 1-baed. This is
+	// just a consequence of how they are intended to be used...
+	//
+	// start is based on a 0-based array -- start of the reorderMap to build.
+      
+	if (reorderEntityMap.empty())
+	  reorderEntityMap.resize(entityMap.size()-1);
+      
+	int my_end = start+count;
+	for (int i=start; i < my_end; i++) {
+	  int global_id = entityMap[i+1];
+	  int orig_local_id = internal_global_to_local(reverseEntityMap, entityMap[0] == -1, entityMap.size()-1, global_id) - 1;
+	
+	  // If we assume that partial output is not being used (it
+	  // currently isn't in Sierra), then the reordering should only be
+	  // a permutation of the original ordering within this entity block...
+	  assert(orig_local_id >= start && orig_local_id <= my_end);
+	  reorderEntityMap[i] = orig_local_id;
+	}
+      }
+    
+      int handle_block_ids(const Ioss::EntityBlock *eb,
+			   ex_entity_type map_type,
+			   Ioss::State db_state,
+			   Ioss::MapContainer &entityMap,
+			   Ioss::ReverseMapContainer &reverseEntityMap,
+			   Ioss::MapContainer &reorderEntityMap,
+			   int* ids, size_t num_to_get, int file_pointer, int my_processor)
+      {
+	/*!
+	 * NOTE: "element" is generic for "element", "face", or "edge"
+	 *
+	 * There are two modes we need to support in this routine:
+	 * 1. Initial definition of element map (local->global) and
+	 * reverseElementMap (global->local).
+	 * 2. Redefinition of element map via 'reordering' of the original
+	 * map when the elements on this processor are the same, but their
+	 * order is changed.
+	 *
+	 * So, there will be two maps the 'elementMap' map is a 'direct lookup'
+	 * map which maps current local position to global id and the
+	 * 'reverseElementMap' is an associative lookup which maps the
+	 * global id to 'original local'.  There is also a
+	 * 'reorderElementMap' which is direct lookup and maps current local
+	 * position to original local.
+
+	 * The ids coming in are the global ids; their position is the
+	 * local id -1 (That is, data[0] contains the global id of local
+	 * element 1 in this element block).  The 'model-local' id is
+	 * given by eb_offset + 1 + position:
+	 *
+	 * int local_position = reverseElementMap[ElementMap[i+1]]
+	 * (the elementMap and reverseElementMap are 1-based)
+	 *
+	 * But, this assumes 1..numel elements are being output at the same
+	 * time; we are actually outputting a blocks worth of elements at a
+	 * time, so we need to consider the block offsets.
+	 * So... local-in-block position 'i' is index 'eb_offset+i' in
+	 * 'elementMap' and the 'local_position' within the element
+	 * blocks data arrays is 'local_position-eb_offset'.  With this, the
+	 * position within the data array of this element block is:
+	 *
+	 * int eb_position =
+	 * reverseElementMap[elementMap[eb_offset+i+1]]-eb_offset-1
+	 *
+	 * To determine which map to update on a call to this function, we
+	 * use the following hueristics:
+	 * -- If the database state is 'Ioss::STATE_MODEL:', then update the
+	 *    'reverseElementMap'.
+	 * -- If the database state is not Ioss::STATE_MODEL, then leave
+	 *    the 'reverseElementMap' alone since it corresponds to the
+	 *    information already written to the database. [May want to add
+	 *    a Ioss::STATE_REDEFINE_MODEL]
+	 * -- Always update elementMap to match the passed in 'ids'
+	 *    array.
+	 *
+	 * NOTE: the maps are built an element block at a time...
+	 * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
+	 *       should be in the orginal order...
+	 */
+
+	// Overwrite this portion of the 'elementMap', but keep other
+	// parts as they were.  We are adding elements starting at position
+	// 'eb_offset+offset' and ending at
+	// 'eb_offset+offset+num_to_get'. If the entire block is being
+	// processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
+
+	int eb_offset = eb->get_offset();
+
+	for (size_t i=0; i < num_to_get; i++) {
+	  int local_id = eb_offset + i + 1;
+	  entityMap[local_id] = ids[i];
+	  if (local_id != ids[i]) {
+	    entityMap[0] = 1;
+	    assert(ids[i] != 0);
+	  }
+	}
+
+	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
+	if (db_state == Ioss::STATE_MODEL) {
+	  Ioss::Map::build_reverse_map(&reverseEntityMap, ids, num_to_get,
+				       eb_offset, eb->type_string(), my_processor);
+
+	  // Output this portion of the entity number map
+	  int ierr = ex_put_partial_id_map(file_pointer, map_type, eb_offset+1, num_to_get, ids);
+	  if (ierr < 0)
+	    exodus_error(file_pointer, __LINE__, my_processor);
+	}
+	// Build the reorderEntityMap which does a direct mapping from
+	// the current topologies local order to the local order
+	// stored in the database...  This is 0-based and used for
+	// remapping output and input TRANSIENT fields.
+	build_entity_reorder_map(entityMap, reverseEntityMap, reorderEntityMap,
+                                 eb_offset, num_to_get);
+	return num_to_get;
+      }
+    }
+  
+    int  DatabaseIO::global_to_local(ex_entity_type type, int global) const
+    {
+      if (type == EX_NODE_BLOCK || type == EX_NODE_SET) {
+	assert(!nodeMap.empty());
+	return internal_global_to_local(reverseNodeMap, nodeMap[0] == -1, nodeCount, global);
+      } else if (type == EX_ELEM_BLOCK || type == EX_ELEM_SET) {
+	assert(!elementMap.empty());
+	return internal_global_to_local(reverseElementMap, elementMap[0] == -1, elementCount, global);
+      } else if (type == EX_FACE_BLOCK || type == EX_FACE_SET) {
+	assert(!faceMap.empty());
+	return internal_global_to_local(reverseFaceMap, faceMap[0] == -1, faceCount, global);
+      } else if (type == EX_EDGE_BLOCK || type == EX_EDGE_SET) {
+	assert(!edgeMap.empty());
+	return internal_global_to_local(reverseEdgeMap, edgeMap[0] == -1, edgeCount, global);
+      }
+      return 0;
+    }
+
+    int DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb,
+                                       int* ids, size_t num_to_get)
+    {
+      if (elementMap.empty()) {
+	elementMap.resize(elementCount+1);
+	elementMap[0] = -1;
+      }
+      return handle_block_ids(eb, EX_ELEM_MAP, dbState,
+			      elementMap, reverseElementMap, reorderElementMap,
+			      ids, num_to_get, get_file_pointer(), myProcessor);
+    }
+
+    int DatabaseIO::handle_face_ids(const Ioss::FaceBlock *eb, int* ids, size_t num_to_get)
+    {
+      if (faceMap.empty()) {
+	faceMap.resize(faceCount+1);
+	faceMap[0] = -1;
+      }
+      return handle_block_ids(eb, EX_FACE_MAP, dbState,
+			      faceMap, reverseFaceMap, reorderFaceMap,
+			      ids, num_to_get, get_file_pointer(), myProcessor);
+    }
+
+    int DatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, int* ids, size_t num_to_get)
+    {
+      if (edgeMap.empty()) {
+	edgeMap.resize(edgeCount+1);
+	edgeMap[0] = -1;
+      }
+      return handle_block_ids(eb, EX_EDGE_MAP, dbState,
+			      edgeMap, reverseEdgeMap, reorderEdgeMap,
+			      ids, num_to_get, get_file_pointer(), myProcessor);
+    }
+
+    void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
+						 const Ioss::Field &field,
+						 const Ioss::NodeBlock */* ge */,
+						 int count, void *variables) const
+    {
+      Ioss::Field::BasicType ioss_type = field.get_type();
+      assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
+	     ioss_type == Ioss::Field::COMPLEX);
+      double *rvar = static_cast<double*>(variables);
+      int  *ivar = static_cast<int*>(variables);
+
+      // Note that if the field's basic type is COMPLEX, then each component of
+      // the VariableType is a complex variable consisting of a real and
+      // imaginary part.  Since exodus cannot handle complex variables,
+      // we have to output a (real and imaginary) X (number of
+      // components) fields. For example, if V is a 3d vector of complex
+      // data, the data in the 'variables' array are v_x, v.im_x, v_y,
+      // v.im_y, v_z, v.im_z which need to be output in six separate
+      // exodus fields.  These fields were already defined in
+      // "write_results_metadata".
+
+      const Ioss::VariableType *var_type = field.transformed_storage();
+      std::vector<double> temp(count);
+
+      int step = get_current_state();
+      step = get_database_step(step);
+
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'm_variables[EX_NODE_BLOCK]' map
+      int comp_count = var_type->component_count();
+      int var_index=0;
+
+      int re_im = 1;
+      if (ioss_type == Ioss::Field::COMPLEX)
+	re_im = 2;
+      for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+	std::string field_name = field.get_name();
+	if (re_im == 2) {
+	  field_name += complex_suffix[complex_comp];
+	}
+
+	for (int i=0; i < comp_count; i++) {
+	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+
+	  if (m_variables[EX_NODE_BLOCK].find(var_name) == m_variables[EX_NODE_BLOCK].end()) {
+	    std::ostringstream errmsg;
+	    errmsg << "ERROR: Could not find nodal variable '" << var_name << "'\n";
+	    IOSS_ERROR(errmsg);
+	  }
+
+	  var_index = m_variables[EX_NODE_BLOCK].find(var_name)->second;
+
+	  // Transfer from 'variables' array.
+	  int k = 0;
+	  int num_out = 0;
+	  for (int j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
+	    int where = reorderNodeMap[k++];
+	    if (where >= 0) {
+	      assert(where < count);
+	      if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+		temp[where] = rvar[j];
+	      else
+		temp[where] = ivar[j];
+	      num_out++;
+	    }
+	  }
+	  assert(k == count);
+	  assert(num_out == nodeCount);
+
+	  // Write the variable...
+	  int ierr = ex_put_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0, num_out, TOPTR(temp));
+	  if (ierr < 0) {
+	    std::ostringstream errmsg;
+	    errmsg << "ERROR: Problem outputting nodal variable '" << var_name
+		   << "' with index = " << var_index << " to file "
+		   << util().decode_filename(get_filename(), isParallel) << "\n";
+	    IOSS_ERROR(errmsg);
+	  }
+	}
+      }
+    }
+
+    void DatabaseIO::write_entity_transient_field(ex_entity_type type,
+						  const Ioss::Field& field,
+						  const Ioss::GroupingEntity *ge,
+						  int count,
+						  void *variables) const
+    {
+      const Ioss::VariableType *var_type = field.transformed_storage();
+      std::vector<double> temp(count);
+
+      int step = get_current_state();
+      step = get_database_step(step);
+
+      int eb_offset = 0;
+      if (ge->type() == Ioss::ELEMENTBLOCK) {
+	const Ioss::ElementBlock *elb = dynamic_cast<const Ioss::ElementBlock*>(ge);
+	assert(elb != NULL);
+	eb_offset = elb->get_offset();
+      }
+
+      Ioss::Field::BasicType ioss_type = field.get_type();
+      assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
+	     ioss_type == Ioss::Field::COMPLEX);
+      double *rvar = static_cast<double*>(variables);
+      int  *ivar = static_cast<int*>(variables);
+
+      // Note that if the field's basic type is COMPLEX, then each component of
+      // the VariableType is a complex variable consisting of a real and
+      // imaginary part.  Since exodus cannot handle complex variables,
+      // we have to output a (real and imaginary) X (number of
+      // components) fields. For example, if V is a 3d vector of complex
+      // data, the data in the 'variables' array are v_x, v.im_x, v_y,
+      // v.im_y, v_z, v.im_z which need to be output in six separate
+      // exodus fields.  These fields were already defined in
+      // "write_results_metadata".
+
+
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'm_variables[type]' map
+      int comp_count = var_type->component_count();
+      int var_index=0;
+
+      int re_im = 1;
+      if (ioss_type == Ioss::Field::COMPLEX)
+	re_im = 2;
+      for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+	std::string field_name = field.get_name();
+	if (re_im == 2) {
+	  field_name += complex_suffix[complex_comp];
+	}
+
+	for (int i=0; i < comp_count; i++) {
+	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+
+	  var_index = m_variables[type].find(var_name)->second;
+	  assert(var_index > 0);
+
+	  // Transfer from 'variables' array.  Note that the
+	  // 'reorderElementMap has '1..numel' ids in it, but the 'temp'
+	  // array is stored in 'element block local id space', so we need
+	  // to add/subtract the element block offset to keep things
+	  // straight.
+	  int k = eb_offset;
+	  int where = 0;
+	  for (int j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
+	    // Map to storage location.
+
+	    if (type == EX_ELEM_BLOCK)
+	      where = reorderElementMap[k++] - eb_offset;
+	    else
+	      where = k++;
+
+	    assert(where >= 0 && where < count);
 	    if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
 	      temp[where] = rvar[j];
 	    else
 	      temp[where] = ivar[j];
-	    num_out++;
 	  }
-	}
-	assert(k == count);
-	assert(num_out == nodeCount);
+	  assert(k-eb_offset == count);
 
-	// Write the variable...
-	int ierr = ex_put_var(get_file_pointer(), step, EX_NODAL, var_index, 0, num_out, TOPTR(temp));
-	if (ierr < 0) {
-	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Problem outputting nodal variable '" << var_name
-		 << "' with index = " << var_index << " to file "
-		 << util().decode_filename(get_filename(), isParallel) << "\n";
-	  IOSS_ERROR(errmsg);
+	  // Write the variable...
+	  int id = get_id(ge, type, &ids_);
+	  int ierr;
+	  if (type == EX_SIDE_SET) {
+	    int offset = ge->get_property("set_offset").get_int();
+	    ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, TOPTR(temp));
+	  } else {
+	    ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, TOPTR(temp));
+	  }
+
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
       }
     }
-  }
 
-  void DatabaseIO::write_entity_transient_field(ex_entity_type type,
-						const Ioss::Field& field,
-						const Ioss::GroupingEntity *ge,
-						int count,
-						void *variables) const
-  {
-    assert(type == EX_ELEM_BLOCK || type == EX_NODE_SET || type == EX_SIDE_SET);
+    void DatabaseIO::store_reduction_field(ex_entity_type type, 
+					   const Ioss::Field& field,
+					   const Ioss::GroupingEntity *ge,
+					   void *variables) const
+    {
+      const Ioss::VariableType *var_type = field.transformed_storage();
 
-    const Ioss::VariableType *var_type = field.transformed_storage();
-    std::vector<double> temp(count);
+      Ioss::Field::BasicType ioss_type = field.get_type();
+      assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
+	     ioss_type == Ioss::Field::COMPLEX);
+      double *rvar = static_cast<double*>(variables);
+      int  *ivar = static_cast<int*>(variables);
 
-    int step = get_current_state();
-    step = get_database_step(step);
+      // Note that if the field's basic type is COMPLEX, then each component of
+      // the VariableType is a complex variable consisting of a real and
+      // imaginary part.  Since exodus cannot handle complex variables,
+      // we have to output a (real and imaginary) X (number of
+      // components) fields. For example, if V is a 3d vector of complex
+      // data, the data in the 'variables' array are v_x, v.im_x, v_y,
+      // v.im_y, v_z, v.im_z which need to be output in six separate
+      // exodus fields.  These fields were already defined in
+      // "write_results_metadata".
 
-    int eb_offset = 0;
-    if (ge->type() == Ioss::ELEMENTBLOCK) {
-      const Ioss::ElementBlock *elb = dynamic_cast<const Ioss::ElementBlock*>(ge);
-      assert(elb != NULL);
-      eb_offset = elb->get_offset();
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'm_variables[EX_GLOBAL]' map
+      int comp_count = var_type->component_count();
+      int var_index=0;
+
+      int re_im = 1;
+      if (field.get_type() == Ioss::Field::COMPLEX)
+	re_im = 2;
+      for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+	std::string field_name = field.get_name();
+	if (re_im == 2) {
+	  field_name += complex_suffix[complex_comp];
+	}
+
+	for (int i=0; i < comp_count; i++) {
+	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+
+	  // If this is not a global variable, prepend the name to avoid
+	  // name collisions...
+	  if (type != EX_GLOBAL) {
+	    var_name = ge->name() + ":" + var_name;
+	  }
+	  assert(m_variables[EX_GLOBAL].find(var_name) != m_variables[EX_GLOBAL].end());
+	  var_index = m_variables[EX_GLOBAL].find(var_name)->second;
+
+	  assert(static_cast<int>(globalValues.size()) >= var_index);
+
+	  // Transfer from 'variables' array.
+	  if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+	    globalValues[var_index-1] = rvar[i];
+	  else
+	    globalValues[var_index-1] = ivar[i];
+	}
+      }
     }
 
-    Ioss::Field::BasicType ioss_type = field.get_type();
-    assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
-	   ioss_type == Ioss::Field::COMPLEX);
-    double *rvar = static_cast<double*>(variables);
-    int  *ivar = static_cast<int*>(variables);
+    void DatabaseIO::get_reduction_field(ex_entity_type,
+					 const Ioss::Field& field,
+					 const Ioss::GroupingEntity */* ge */,
+					 void *variables) const
+    {
+      const Ioss::VariableType *var_type = field.raw_storage();
 
-    // Note that if the field's basic type is COMPLEX, then each component of
-    // the VariableType is a complex variable consisting of a real and
-    // imaginary part.  Since exodus cannot handle complex variables,
-    // we have to output a (real and imaginary) X (number of
-    // components) fields. For example, if V is a 3d vector of complex
-    // data, the data in the 'variables' array are v_x, v.im_x, v_y,
-    // v.im_y, v_z, v.im_z which need to be output in six separate
-    // exodus fields.  These fields were already defined in
-    // "write_results_metadata".
+      Ioss::Field::BasicType ioss_type = field.get_type();
+      assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER);
+      double *rvar = static_cast<double*>(variables);
+      int  *ivar = static_cast<int*>(variables);
 
-
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'elementVariables' map
-    int comp_count = var_type->component_count();
-    int var_index=0;
-
-    int re_im = 1;
-    if (ioss_type == Ioss::Field::COMPLEX)
-      re_im = 2;
-    for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-      std::string field_name = field.get_name();
-      if (re_im == 2) {
-	field_name += complex_suffix[complex_comp];
-      }
-
+      // get number of components, cycle through each component
+      // and add suffix to base 'field_name'.  Look up index
+      // of this name in 'm_variables[EX_GLOBAL]' map
+      int comp_count = var_type->component_count();
       for (int i=0; i < comp_count; i++) {
+	std::string field_name = field.get_name();
 	std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
 
-	if (type == EX_ELEM_BLOCK)
-	  var_index = elementVariables.find(var_name)->second;
-	else if (type == EX_NODE_SET)
-	  var_index = nodesetVariables.find(var_name)->second;
-	else if (type == EX_SIDE_SET)
-	  var_index = sidesetVariables.find(var_name)->second;
+	assert(m_variables[EX_GLOBAL].find(var_name) != m_variables[EX_GLOBAL].end());
+	int var_index = m_variables[EX_GLOBAL].find(var_name)->second;
 
-	assert(var_index > 0);
+	assert(static_cast<int>(globalValues.size()) >= var_index);
 
-	// Transfer from 'variables' array.  Note that the
-	// 'reorderElementMap has '1..numel' ids in it, but the 'temp'
-	// array is stored in 'element block local id space', so we need
-	// to add/subtract the element block offset to keep things
-	// straight.
-	int k = eb_offset;
-	int where = 0;
-	for (int j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	  // Map to storage location.
+	// Transfer to 'variables' array.
+	if (ioss_type == Ioss::Field::REAL)
+	  rvar[i] = globalValues[var_index-1];
+	else
+	  ivar[i] = static_cast<int>(globalValues[var_index-1]);
+      }
+    }
 
-	  if (type == EX_ELEM_BLOCK)
-	    where = reorderElementMap[k++] - eb_offset;
-	  else
-	    where = k++;
-
-	  assert(where >= 0 && where < count);
-	  if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
-	    temp[where] = rvar[j];
-	  else
-	    temp[where] = ivar[j];
-	}
-	assert(k-eb_offset == count);
-
-	// Write the variable...
-	int id = get_id(ge, type, &ids_);
-	int ierr;
-	if (!surfaceSplitBackwardCompatibility && type == EX_SIDE_SET) {
-	  int offset = ge->get_property("set_offset").get_int();
-	  ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, TOPTR(temp));
-	} else {
-	  ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, TOPTR(temp));
-	}
-
+    void DatabaseIO::write_reduction_fields() const
+    {
+      int step = get_current_state();
+      step = get_database_step(step);
+      size_t count = globalValues.size();
+      if (count > 0) {
+	int ierr = ex_put_glob_vars(get_file_pointer(), step, count,
+				    (double*)TOPTR(globalValues));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
     }
-  }
 
-  void DatabaseIO::store_reduction_field(ex_entity_type type, 
-					 const Ioss::Field& field,
-					 const Ioss::GroupingEntity *ge,
-					 void *variables) const
-  {
-    const Ioss::VariableType *var_type = field.transformed_storage();
-
-    Ioss::Field::BasicType ioss_type = field.get_type();
-    assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
-	   ioss_type == Ioss::Field::COMPLEX);
-    double *rvar = static_cast<double*>(variables);
-    int  *ivar = static_cast<int*>(variables);
-
-    // Note that if the field's basic type is COMPLEX, then each component of
-    // the VariableType is a complex variable consisting of a real and
-    // imaginary part.  Since exodus cannot handle complex variables,
-    // we have to output a (real and imaginary) X (number of
-    // components) fields. For example, if V is a 3d vector of complex
-    // data, the data in the 'variables' array are v_x, v.im_x, v_y,
-    // v.im_y, v_z, v.im_z which need to be output in six separate
-    // exodus fields.  These fields were already defined in
-    // "write_results_metadata".
-
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'globalVariables' map
-    int comp_count = var_type->component_count();
-    int var_index=0;
-
-    int re_im = 1;
-    if (field.get_type() == Ioss::Field::COMPLEX)
-      re_im = 2;
-    for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-      std::string field_name = field.get_name();
-      if (re_im == 2) {
-	field_name += complex_suffix[complex_comp];
+    void DatabaseIO::read_reduction_fields() const
+    {
+      int step = get_current_state();
+      size_t count = globalValues.size();
+      if (count > 0) {
+	int ierr = ex_get_glob_vars(get_file_pointer(), step, count,
+				    TOPTR(globalValues));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
+    }
 
-      for (int i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+    int DatabaseIO::put_Xset_field_internal(ex_entity_type type,
+					    const Ioss::EntitySet* ns,
+					    const Ioss::Field& field,
+					    void *data, size_t data_size) const
+    {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	ex_update(get_file_pointer());
 
-	// If this is not a global variable, prepend the name to avoid
-	// name collisions...
-	if (type != EX_GLOBAL) {
-	  var_name = ge->name() + ":" + var_name;
+	int entity_count = ns->get_property("entity_count").get_int();
+	size_t num_to_get = field.verify(data_size);
+	if (num_to_get > 0) {
+
+	  int id = get_id(ns, type, &ids_);
+	  Ioss::Field::RoleType role = field.get_role();
+
+	  if (role == Ioss::Field::MESH) {
+
+	    if (field.get_name() == "ids") {
+	      // Map node id from global node id to local node id.
+	      // Do it in 'data' ...
+	      int* ids = static_cast<int*>(data);
+
+	      assert(!nodeMap.empty());
+	      if (nodeMap[0] != -1) {
+		for (size_t i=0; i < num_to_get; i++) {
+		  int global_id = ids[i];
+		  ids[i] = node_global_to_local(global_id, true);
+		}
+	      }
+	      int ierr = ex_put_set(get_file_pointer(), type, id, static_cast<int*>(data), NULL);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+           } else if (field.get_name() == "orientation") {
+	      int ierr = ex_put_set(get_file_pointer(), type, id, NULL, static_cast<int*>(data));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    } else if (field.get_name() == "distribution_factors") {
+	      int ierr = ex_put_set_dist_fact(get_file_pointer(), type, id, static_cast<double*>(data));
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	    } else {
+	      num_to_get = Ioss::Utils::field_warning(ns, field, "output");
+	    }
+	  } else if (role == Ioss::Field::TRANSIENT) {
+	    // Check if the specified field exists on this element block.
+	    // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	    // exist on the database as scalars with the appropriate
+	    // extensions.
+
+	    // Transfer each component of the variable into 'data' and then
+	    // output.  Need temporary storage area of size 'number of
+	    // elements in this block.
+	    write_entity_transient_field(type, field, ns, entity_count, data);
+
+	  } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = write_attribute_field(type, field, ns, data);
+	  
+	  } else if (role == Ioss::Field::REDUCTION) {
+	    store_reduction_field(type, field, ns, data);
+	  }
 	}
-	assert(globalVariables.find(var_name) != globalVariables.end());
-	var_index = globalVariables.find(var_name)->second;
-
-	assert(static_cast<int>(globalValues.size()) >= var_index);
-
-	// Transfer from 'variables' array.
-	if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
-	  globalValues[var_index-1] = rvar[i];
-	else
-	  globalValues[var_index-1] = ivar[i];
+	return num_to_get;
       }
     }
-  }
 
-  void DatabaseIO::get_reduction_field(ex_entity_type,
+    int DatabaseIO::put_field_internal(const Ioss::NodeSet* ns,
 				       const Ioss::Field& field,
-				       const Ioss::GroupingEntity */* ge */,
-				       void *variables) const
-  {
-    const Ioss::VariableType *var_type = field.raw_storage();
-
-    Ioss::Field::BasicType ioss_type = field.get_type();
-    assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER);
-    double *rvar = static_cast<double*>(variables);
-    int  *ivar = static_cast<int*>(variables);
-
-    // get number of components, cycle through each component
-    // and add suffix to base 'field_name'.  Look up index
-    // of this name in 'globalVariables' map
-    int comp_count = var_type->component_count();
-    for (int i=0; i < comp_count; i++) {
-      std::string field_name = field.get_name();
-      std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
-
-      assert(globalVariables.find(var_name) != globalVariables.end());
-      int var_index = globalVariables.find(var_name)->second;
-
-      assert(static_cast<int>(globalValues.size()) >= var_index);
-
-      // Transfer to 'variables' array.
-      if (ioss_type == Ioss::Field::REAL)
-	rvar[i] = globalValues[var_index-1];
-      else
-	ivar[i] = static_cast<int>(globalValues[var_index-1]);
+				       void *data, size_t data_size) const
+    {
+      return put_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
     }
-  }
 
-  void DatabaseIO::write_reduction_fields() const
-  {
-    int step = get_current_state();
-    step = get_database_step(step);
-    size_t count = globalValues.size();
-    if (count > 0) {
-      int ierr = ex_put_glob_vars(get_file_pointer(), step, count,
-				  (double*)TOPTR(globalValues));
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
+    int DatabaseIO::put_field_internal(const Ioss::EdgeSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return put_Xset_field_internal(EX_EDGE_SET, ns, field, data, data_size);
     }
-  }
 
-  void DatabaseIO::read_reduction_fields() const
-  {
-    int step = get_current_state();
-    size_t count = globalValues.size();
-    if (count > 0) {
-      int ierr = ex_get_glob_vars(get_file_pointer(), step, count,
-				  TOPTR(globalValues));
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
+    int DatabaseIO::put_field_internal(const Ioss::FaceSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return put_Xset_field_internal(EX_FACE_SET, ns, field, data, data_size);
     }
-  }
 
-  int DatabaseIO::put_field_internal(const Ioss::NodeSet* ns,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
+    int DatabaseIO::put_field_internal(const Ioss::ElementSet* ns,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      return put_Xset_field_internal(EX_ELEM_SET, ns, field, data, data_size);
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::SideSet* fs,
+				       const Ioss::Field& field,
+				       void */* data */, size_t data_size) const
+    {
+      size_t num_to_get = field.verify(data_size);
+      if (field.get_name() == "ids") {
+	// Do nothing, just handles an idiosyncracy of the GroupingEntity
+      } else {
+	num_to_get = Ioss::Utils::field_warning(fs, field, "output");
+      }
+      return num_to_get;
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::CommSet* cs,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
+    {
+      size_t num_to_get = field.verify(data_size);
+      size_t entity_count = cs->get_property("entity_count").get_int();
+
+      assert(num_to_get == entity_count);
+      if (num_to_get == 0)
+	return 0;
+
+      // Return the <entity (node or side), processor> pair
+      if (field.get_name() == "entity_processor") {
+
+	// Check type -- node or side
+	std::string type = cs->get_property("entity_type").get_string();
+
+	// Allocate temporary storage space
+	Ioss::IntVector entities(entity_count);
+	Ioss::IntVector procs(entity_count);
+
+	if (type == "node") {
+	  // Convert global node id to local node id and store in 'entities'
+	  int* entity_proc = static_cast<int*>(data);
+	  int j=0;
+	  for (size_t i=0; i < entity_count; i++) {
+	    int global_id = entity_proc[j++];
+	    entities[i] = node_global_to_local(global_id, true);
+	    procs[i] = entity_proc[j++];
+	  }
+
+	  if (commsetNodeCount > 0) {
+	    int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
+					TOPTR(entities), TOPTR(procs), myProcessor);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+
+	  if (commsetNodeCount == 1) {
+	    // NOTE: The internal and border node maps must be output in one call.
+	    //       In this routine, we only have one commset at a time and can't
+	    //       construct the entire map at one time.  This is not really needed,
+	    //       so for now we just skip if there is more than one commset.  If
+	    //       this information is really needed, need to cache the information
+	    //       until all commsets have been processed.  Also need to change
+	    //       write_communication_metada() [Maybe, unless client sets correct
+	    //       properties.]
+
+	    // Construct the node map (internal vs. border).
+	    // Border nodes are those in the communication map (use entities array)
+	    // Internal nodes are the rest.  Allocate array to hold all nodes,
+	    // initialize all to '1', then zero out the nodes in 'entities'.
+	    // Iterate through array again and consolidate all '1's
+	    Ioss::IntVector internal(nodeCount);
+	    for (int ij=0; ij < nodeCount; ij++)
+	      internal[ij] = 1;
+	    for (size_t J=0; J < entity_count; J++)
+	      internal[entities[J]-1] = 0;
+
+	    int b = 0;
+	    for (int ij=0; ij < nodeCount; ij++) {
+	      if (internal[ij] == 0) {
+		entities[b++] = ij+1;
+	      }
+	    }
+
+	    int k = 0;
+	    for (int ij=0; ij < nodeCount; ij++) {
+	      if (internal[ij] == 1) {
+		internal[k++] = ij+1;
+	      }
+	    }
+
+#ifndef NDEBUG
+	    int border_nodes   = 0;
+	    int internal_nodes = 0;
+	    if (get_region()->property_exists("border_node_count")) {
+	      border_nodes = get_region()->get_property("border_node_count").get_int();
+	      assert(border_nodes   == b);
+	    }
+
+	    if (get_region()->property_exists("internal_node_count")) {
+	      internal_nodes = get_region()->
+		get_property("internal_node_count").get_int();
+	      assert(internal_nodes == k);
+	    }
+#endif
+
+	    int ierr = ne_put_node_map(get_file_pointer(), TOPTR(internal), TOPTR(entities), NULL,
+				       myProcessor);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+
+	} else if (type == "side") {
+	  Ioss::IntVector sides(entity_count);
+	  int* entity_proc = static_cast<int*>(data);
+	  int j=0;
+	  for (size_t i=0; i < entity_count; i++) {
+	    // Assume klugy side id generation.
+	    int global_id = entity_proc[j] / 10;
+	    entities[i] = element_global_to_local(global_id);
+	    sides[i] = entity_proc[j++] % 10;
+	    procs[i] = entity_proc[j++];
+	  }
+
+#if 0
+	  int offset = 0;
+	  for (int ics=0; ics < commsetElemCount; ics++) {
+	    int ierr = ne_put_elem_cmap(get_file_pointer(), elemCmapIds[ics],
+					&entities[offset], &sides[offset],
+					&procs[offset], myProcessor);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    offset += elemCmapElemCnts[ics];
+	  }
+#else
+	  int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
+				      TOPTR(entities), TOPTR(sides), TOPTR(procs), myProcessor);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+#endif
+
+	  // Construct the element map (internal vs. border).
+	  // Border elements are those in the communication map (use entities array)
+	  // Internal elements are the rest.  Allocate array to hold all elements,
+	  // initialize all to '1', then zero out the elements in 'entities'.
+	  // Iterate through array again and consolidate all '1's
+	  Ioss::IntVector internal(elementCount);
+	  for (j=0; j < elementCount; j++)
+	    internal[j] = 1;
+	  for (size_t ij=0; ij < entity_count; ij++)
+	    internal[entities[ij]-1] = 0;
+
+	  int b = 0;
+	  for (j=0; j < elementCount; j++) {
+	    if (internal[j] == 0) {
+	      entities[b++] = j+1;
+	    }
+	  }
+
+	  int k = 0;
+	  for (j=0; j < elementCount; j++) {
+	    if (internal[j] == 1) {
+	      internal[k++] = j+1;
+	    }
+	  }
+
+#ifndef NDEBUG
+	  int border_elems   = 0;
+	  int internal_elems = 0;
+	  if (get_region()->property_exists("border_elem_count")) {
+	    border_elems =
+	      get_region()->get_property("border_elem_count").get_int();
+	    assert(border_elems   == b);
+	  }
+
+	  if (get_region()->property_exists("internal_elem_count")) {
+	    internal_elems =
+	      get_region()->get_property("internal_elem_count").get_int();
+	    assert(internal_elems == k);
+	  }
+#endif
+
+	  ierr = ne_put_elem_map(get_file_pointer(), TOPTR(internal),
+				 TOPTR(entities), myProcessor);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "Invalid commset type " << type;
+	  IOSS_ERROR(errmsg);
+	}
+      } else {
+	num_to_get = Ioss::Utils::field_warning(cs, field, "output");
+      }
+      return num_to_get;
+    }
+
+    int DatabaseIO::put_field_internal(const Ioss::SideBlock* fb,
+				       const Ioss::Field& field,
+				       void *data, size_t data_size) const
     {
       Ioss::SerializeIO	serializeIO__(this);
-      ex_update(get_file_pointer());
-
-      int entity_count = ns->get_property("entity_count").get_int();
       size_t num_to_get = field.verify(data_size);
       if (num_to_get > 0) {
 
-	int id = get_id(ns, EX_NODE_SET, &ids_);
+	int id = get_id(fb, EX_SIDE_SET, &ids_);
+
+	int entity_count = fb->get_property("entity_count").get_int();
+	int offset = 0;
+	offset = fb->get_property("set_offset").get_int();
+      
 	Ioss::Field::RoleType role = field.get_role();
 
 	if (role == Ioss::Field::MESH) {
+	  if (field.get_name() == "side_ids" &&
+	      fb->name() == "universal_sideset") {
+	    // The side ids are being stored as the distribution factor
+	    // field on the universal sideset.  There should be no other
+	    // side sets that request this field...  (Eventually,
+	    // create an id field to store this info.
 
-	  if (field.get_name() == "ids") {
-	    // Map node id from global node id to local node id.
-	    // Do it in 'data' ...
+	    // Need to convert 'ints' to 'double' for storage on mesh...
 	    int* ids = static_cast<int*>(data);
-
-	    if (!sequentialNG2L) {
-	      for (size_t i=0; i < num_to_get; i++) {
-		int global_id = ids[i];
-		ids[i] = node_global_to_local(global_id, true);
-	      }
+	    std::vector<double> real_ids(num_to_get);
+	    for (size_t i = 0; i < num_to_get; i++) {
+	      real_ids[i] = static_cast<double>(ids[i]);
 	    }
-	    int ierr = ex_put_set(get_file_pointer(), EX_NODE_SET, id, static_cast<int*>(data), NULL);
+	    //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, TOPTR(real_ids));
+	    int ierr = ne_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+
+	  else if (field.get_name() == "side_ids") {
+	  }
+
+	  else if (field.get_name() == "ids") {
+	    // =============================================================
+	    // NOTE: Code is currently commented out since we have
+	    // redundant ways of getting the data (element/side) out to
+	    // the database.  The 'ids' field method relies on a numbering
+	    // kluge, so for now trying the 'element_side' field...
+	    // =============================================================
+	  } 
+
+	  else if (field.get_name() == "distribution_factors") {
+	    int ierr;
+	    int df_offset = fb->get_property("set_df_offset").get_int();
+	    int df_count  = fb->get_property("distribution_factor_count").get_int();
+	    ierr = ne_put_n_side_set_df(get_file_pointer(), id, df_offset+1, df_count, static_cast<double*>(data));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	  } else if (field.get_name() == "distribution_factors") {
-	    int ierr = ex_put_set_dist_fact(get_file_pointer(), EX_NODE_SET, id, static_cast<double*>(data));
+	  } else if (field.get_name() == "element_side") {
+	    // In exodusII, the 'side block' is stored as a sideset.  A
+	    // sideset has a list of elements and a corresponding local
+	    // element side (1-based)
+
+	    // The 'data' passed into the function is stored as a
+	    // 2D vector e0,f0,e1,f1,... (e=element, f=side)
+
+	    // To avoid overwriting the passed in data, we allocate
+	    // two arrays to store the data for this sideset.
+
+	    // The element_id passed in is the global id; we need to
+	    // output the local id.
+
+	    // Allocate space for local side number and element numbers
+	    // numbers.
+	    Ioss::IntVector element(num_to_get);
+	    Ioss::IntVector side(num_to_get);
+	    int *el_side = (int *)data;
+
+	    int index = 0;
+	    for (size_t i=0; i < num_to_get; i++) {
+	      element[i] = element_global_to_local(el_side[index++]);
+	      side[i]    = el_side[index++];
+	    }
+
+	    int ierr;
+	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
+	  } else if (field.get_name() == "element_side_raw") {
+	    // In exodusII, the 'side block' is stored as a sideset.  A
+	    // sideset has a list of elements and a corresponding local
+	    // element side (1-based)
+
+	    // The 'data' passed into the function is stored as a
+	    // 2D vector e0,f0,e1,f1,... (e=element, f=side)
+
+	    // To avoid overwriting the passed in data, we allocate
+	    // two arrays to store the data for this sideset.
+
+	    // The element_id passed in is the local id.
+
+	    // Allocate space for local side number and element numbers numbers.
+	    Ioss::IntVector element(num_to_get);
+	    Ioss::IntVector side(num_to_get);
+	    int *el_side = (int *)data;
+
+	    int index = 0;
+	    for (size_t i=0; i < num_to_get; i++) {
+	      element[i] = el_side[index++];
+	      side[i]    = el_side[index++];
+	    }
+
+	    int ierr;
+	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	  } else if (field.get_name() == "connectivity") {
+	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	  } else if (field.get_name() == "connectivity_raw") {
+	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	  } else {
-	    num_to_get = Ioss::Utils::field_warning(ns, field, "output");
+	    num_to_get = Ioss::Utils::field_warning(fb, field, "output");
 	  }
 	} else if (role == Ioss::Field::TRANSIENT) {
-	  // Check if the specified field exists on this element block.
+	  // Check if the specified field exists on this block.
 	  // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
 	  // exist on the database as scalars with the appropriate
 	  // extensions.
 
 	  // Transfer each component of the variable into 'data' and then
 	  // output.  Need temporary storage area of size 'number of
-	  // elements in this block.
-	  write_entity_transient_field(EX_NODE_SET, field, ns, entity_count, data);
+	  // entities in this block.
+	  write_entity_transient_field(EX_SIDE_SET, field, fb, entity_count, data);
 
+	} else if (role == Ioss::Field::ATTRIBUTE) {
+	  num_to_get = write_attribute_field(EX_SIDE_SET, field, fb, data);
+	
 	} else if (role == Ioss::Field::REDUCTION) {
-	  store_reduction_field(EX_NODE_SET, field, ns, data);
+	  store_reduction_field(EX_SIDE_SET, field, fb, data);
 	}
       }
       return num_to_get;
     }
-  }
 
-  int DatabaseIO::put_field_internal(const Ioss::SideSet* fs,
-				     const Ioss::Field& field,
-				     void */* data */, size_t /* data_size */) const
-  {
-    size_t num_to_get = Ioss::Utils::field_warning(fs, field, "output");
-    return num_to_get;
-  }
+    // ------------------------------------------------------------------------
+    // Node and Element mapping functions.  The ExodusII database
+    // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
+    // Sierra wants entities in a global system. These routines
+    // take care of the mapping from local <-> global
 
-  int DatabaseIO::put_field_internal(const Ioss::CommSet* cs,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    size_t num_to_get = field.verify(data_size);
-    size_t entity_count = cs->get_property("entity_count").get_int();
+    int DatabaseIO::local_to_global(ex_entity_type type, int local)  const
+    {
+      const Ioss::MapContainer &map = get_map(type);
+      int global = map[local];
+      return global;
+    }
 
-    assert(num_to_get == entity_count);
-    if (num_to_get == 0)
-      return 0;
+    int DatabaseIO::node_local_to_global(int local)  const
+    {
+      assert(local <= nodeCount && local > 0);
+      const Ioss::MapContainer &node_map = get_node_map();
+      int global = node_map[local];
+      return global;
+    }
 
-    // Return the <entity (node or side), processor> pair
-    if (field.get_name() == "entity_processor") {
+    int DatabaseIO::element_local_to_global(int local)  const
+    {
+      assert(local <= elementCount && local > 0);
+      const Ioss::MapContainer &element_map = get_element_map();
+      int global = element_map[local];
+      return global;
+    }
 
-      // Check type -- node or side
-      std::string type = cs->get_property("entity_type").get_string();
+    bool DatabaseIO::begin(Ioss::State state)
+    {
+      dbState = state;
+      return true;
+    }
 
-      // Allocate temporary storage space
-      Ioss::IntVector entities(entity_count);
-      Ioss::IntVector procs(entity_count);
+    bool DatabaseIO::end(Ioss::State state)
+    {
+      // Transitioning out of state 'state'
+      assert(state == dbState);
+      switch (state) {
+      case Ioss::STATE_DEFINE_MODEL:
+	if (!is_input())
+	  write_meta_data();
+	break;
+      case Ioss::STATE_DEFINE_TRANSIENT:
+	if (!is_input())
+	  write_results_metadata();
+	break;
+      default: // ignore everything else...
+	break;
+      }
 
-      if (type == "node") {
-	// Convert global node id to local node id and store in 'entities'
-	int* entity_proc = static_cast<int*>(data);
-	int j=0;
-	for (size_t i=0; i < entity_count; i++) {
-	  int global_id = entity_proc[j++];
-	  entities[i] = node_global_to_local(global_id, true);
-	  procs[i] = entity_proc[j++];
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	if (!is_input()) {
+	  ex_update(get_file_pointer());
+	  if (minimizeOpenFiles)
+	    free_file_pointer(); 
 	}
+	dbState = Ioss::STATE_UNKNOWN;
+      }
 
-	if (commsetNodeCount > 0) {
-	  int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
-				      TOPTR(entities), TOPTR(procs), myProcessor);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
+      return true;
+    }
 
-	if (commsetNodeCount == 1) {
-	  // NOTE: The internal and border node maps must be output in one call.
-	  //       In this routine, we only have one commset at a time and can't
-	  //       construct the entire map at one time.  This is not really needed,
-	  //       so for now we just skip if there is more than one commset.  If
-	  //       this information is really needed, need to cache the information
-	  //       until all commsets have been processed.  Also need to change
-	  //       write_communication_metada() [Maybe, unless client sets correct
-	  //       properties.]
+    // Default versions do nothing at this time...
+    // Will be used for global variables...
+    bool DatabaseIO::begin_state(Ioss::Region */* region */, int state, double time)
+    {
+      Ioss::SerializeIO	serializeIO__(this);
 
-	  // Construct the node map (internal vs. border).
-	  // Border nodes are those in the communication map (use entities array)
-	  // Internal nodes are the rest.  Allocate array to hold all nodes,
-	  // initialize all to '1', then zero out the nodes in 'entities'.
-	  // Iterate through array again and consolidate all '1's
-	  Ioss::IntVector internal(nodeCount);
-	  for (int ij=0; ij < nodeCount; ij++)
-	    internal[ij] = 1;
-	  for (size_t J=0; J < entity_count; J++)
-	    internal[entities[J]-1] = 0;
-
-	  int b = 0;
-	  for (int ij=0; ij < nodeCount; ij++) {
-	    if (internal[ij] == 0) {
-	      entities[b++] = ij+1;
-	    }
-	  }
-
-	  int k = 0;
-	  for (int ij=0; ij < nodeCount; ij++) {
-	    if (internal[ij] == 1) {
-	      internal[k++] = ij+1;
-	    }
-	  }
-
-#ifndef NDEBUG
-	  int border_nodes   = 0;
-	  int internal_nodes = 0;
-	  if (get_region()->property_exists("border_node_count")) {
-	    border_nodes = get_region()->get_property("border_node_count").get_int();
-	    assert(border_nodes   == b);
-	  }
-
-	  if (get_region()->property_exists("internal_node_count")) {
-	    internal_nodes = get_region()->
-	      get_property("internal_node_count").get_int();
-	    assert(internal_nodes == k);
-	  }
-#endif
-
-	  int ierr = ne_put_node_map(get_file_pointer(), TOPTR(internal), TOPTR(entities), NULL,
-				     myProcessor);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-
-      } else if (type == "side") {
-	Ioss::IntVector sides(entity_count);
-	int* entity_proc = static_cast<int*>(data);
-	int j=0;
-	for (size_t i=0; i < entity_count; i++) {
-	  // Assume klugy side id generation.
-	  int global_id = entity_proc[j] / 10;
-	  entities[i] = element_global_to_local(global_id);
-	  sides[i] = entity_proc[j++] % 10;
-	  procs[i] = entity_proc[j++];
-	}
-
-#if 0
-	int offset = 0;
-	for (int ics=0; ics < commsetElemCount; ics++) {
-	  int ierr = ne_put_elem_cmap(get_file_pointer(), elemCmapIds[ics],
-				      &entities[offset], &sides[offset],
-				      &procs[offset], myProcessor);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  offset += elemCmapElemCnts[ics];
-	}
-#else
-	int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
-				    TOPTR(entities), TOPTR(sides), TOPTR(procs), myProcessor);
+      state = get_database_step(state);
+      if (!is_input()) {
+	int ierr = ex_put_time(get_file_pointer(), state, &time);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+#ifdef REDS
+	// This flush is a workaround for an issue on redstorm-s.  In a
+	// 1600 processor run, 1 or 2 of the restart files had a time
+	// value of 0.0 on the file even though it was verified that the
+	// time value in the ex_put_time call above was the correct
+	// time. Adding this ex_update call "fixed" this problem and
+	// gives valid time values on all of the restart files.
+	if (dbUsage != Ioss::WRITE_HISTORY)
+	  ex_update(get_file_pointer());
 #endif
 
-	// Construct the element map (internal vs. border).
-	// Border elements are those in the communication map (use entities array)
-	// Internal elements are the rest.  Allocate array to hold all elements,
-	// initialize all to '1', then zero out the elements in 'entities'.
-	// Iterate through array again and consolidate all '1's
-	Ioss::IntVector internal(elementCount);
-	for (j=0; j < elementCount; j++)
-	  internal[j] = 1;
-	for (size_t ij=0; ij < entity_count; ij++)
-	  internal[entities[ij]-1] = 0;
-
-	int b = 0;
-	for (j=0; j < elementCount; j++) {
-	  if (internal[j] == 0) {
-	    entities[b++] = j+1;
-	  }
-	}
-
-	int k = 0;
-	for (j=0; j < elementCount; j++) {
-	  if (internal[j] == 1) {
-	    internal[k++] = j+1;
-	  }
-	}
-
-#ifndef NDEBUG
-	int border_elems   = 0;
-	int internal_elems = 0;
-	if (get_region()->property_exists("border_elem_count")) {
-	  border_elems =
-	    get_region()->get_property("border_elem_count").get_int();
-	  assert(border_elems   == b);
-	}
-
-	if (get_region()->property_exists("internal_elem_count")) {
-	  internal_elems =
-	    get_region()->get_property("internal_elem_count").get_int();
-	  assert(internal_elems == k);
-	}
-#endif
-
-	ierr = ne_put_elem_map(get_file_pointer(), TOPTR(internal),
-			       TOPTR(entities), myProcessor);
-	if (ierr < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	// Zero global variable array...
+	std::fill(globalValues.begin(), globalValues.end(), 0.0);
 
       } else {
-	std::ostringstream errmsg;
-	errmsg << "Invalid commset type " << type;
-	IOSS_ERROR(errmsg);
+	// Store reduction variables
+	read_reduction_fields();
       }
-    } else {
-      num_to_get = Ioss::Utils::field_warning(cs, field, "output");
-    }
-    return num_to_get;
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock* fb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    Ioss::SerializeIO	serializeIO__(this);
-    size_t num_to_get = field.verify(data_size);
-    if (num_to_get > 0) {
-
-      int id = get_id(fb, EX_SIDE_SET, &ids_);
-
-      int entity_count = fb->get_property("entity_count").get_int();
-      int offset = 0;
-      if (!surfaceSplitBackwardCompatibility)
-	offset = fb->get_property("set_offset").get_int();
-      
-      Ioss::Field::RoleType role = field.get_role();
-
-      if (role == Ioss::Field::MESH) {
-	if (field.get_name() == "side_ids" &&
-	    fb->name() == "universal_sideset") {
-	  // The side ids are being stored as the distribution factor
-	  // field on the universal sideset.  There should be no other
-	  // side sets that request this field...  (Eventually,
-	  // create an id field to store this info.
-
-	  // Need to convert 'ints' to 'double' for storage on mesh...
-	  int* ids = static_cast<int*>(data);
-	  std::vector<double> real_ids(num_to_get);
-	  for (size_t i = 0; i < num_to_get; i++) {
-	    real_ids[i] = static_cast<double>(ids[i]);
-	  }
-	  //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, TOPTR(real_ids));
-	  int ierr = ne_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-
-	else if (field.get_name() == "side_ids") {
-	}
-
-	else if (field.get_name() == "ids") {
-	  // =============================================================
-	  // NOTE: Code is currently commented out since we have
-	  // redundant ways of getting the data (element/side) out to
-	  // the database.  The 'ids' field method relies on a numbering
-	  // kluge, so for now trying the 'element_side' field...
-	  // =============================================================
-	} 
-
-	else if (field.get_name() == "distribution_factors") {
-	  int ierr;
-	  if (!surfaceSplitBackwardCompatibility) {
-	    int df_offset = fb->get_property("set_df_offset").get_int();
-	    int df_count  = fb->get_property("distribution_factor_count").get_int();
-	    ierr = ne_put_n_side_set_df(get_file_pointer(), id, df_offset+1, df_count, static_cast<double*>(data));
-	  } else {
-	    ierr = ex_put_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, static_cast<double*>(data));
-	  }
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	} else if (field.get_name() == "element_side") {
-	  // In exodusII, the 'side block' is stored as a sideset.  A
-	  // sideset has a list of elements and a corresponding local
-	  // element side (1-based)
-
-	  // The 'data' passed into the function is stored as a
-	  // 2D vector e0,f0,e1,f1,... (e=element, f=side)
-
-	  // To avoid overwriting the passed in data, we allocate
-	  // two arrays to store the data for this sideset.
-
-	  // The element_id passed in is the global id; we need to
-	  // output the local id.
-
-	  // Allocate space for local side number and element numbers
-	  // numbers.
-	  Ioss::IntVector element(num_to_get);
-	  Ioss::IntVector side(num_to_get);
-	  int *el_side = (int *)data;
-
-	  int index = 0;
-	  for (size_t i=0; i < num_to_get; i++) {
-	    element[i] = element_global_to_local(el_side[index++]);
-	    side[i]    = el_side[index++];
-	  }
-
-	  int ierr;
-	  if (!surfaceSplitBackwardCompatibility) {
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
-	  } else {
-	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
-	  }
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	} else if (field.get_name() == "element_side_raw") {
-	  // In exodusII, the 'side block' is stored as a sideset.  A
-	  // sideset has a list of elements and a corresponding local
-	  // element side (1-based)
-
-	  // The 'data' passed into the function is stored as a
-	  // 2D vector e0,f0,e1,f1,... (e=element, f=side)
-
-	  // To avoid overwriting the passed in data, we allocate
-	  // two arrays to store the data for this sideset.
-
-	  // The element_id passed in is the local id.
-
-	  // Allocate space for local side number and element numbers numbers.
-	  Ioss::IntVector element(num_to_get);
-	  Ioss::IntVector side(num_to_get);
-	  int *el_side = (int *)data;
-
-	  int index = 0;
-	  for (size_t i=0; i < num_to_get; i++) {
-	    element[i] = el_side[index++];
-	    side[i]    = el_side[index++];
-	  }
-
-	  int ierr;
-	  if (!surfaceSplitBackwardCompatibility) {
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
-	  } else {
-	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(side));
-	  }
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-	} else if (field.get_name() == "connectivity") {
-	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
-	} else {
-	  num_to_get = Ioss::Utils::field_warning(fb, field, "output");
-	}
-      } else if (role == Ioss::Field::TRANSIENT) {
-	// Check if the specified field exists on this block.
-	// Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-	// exist on the database as scalars with the appropriate
-	// extensions.
-
-	// Transfer each component of the variable into 'data' and then
-	// output.  Need temporary storage area of size 'number of
-	// entities in this block.
-	write_entity_transient_field(EX_SIDE_SET, field, fb, entity_count, data);
-
-      } else if (role == Ioss::Field::REDUCTION) {
-	store_reduction_field(EX_SIDE_SET, field, fb, data);
-      }
-    }
-    return num_to_get;
-  }
-
-  // ------------------------------------------------------------------------
-  // Node and Element mapping functions.  The ExodusII database
-  // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
-  // Sierra wants entities in a global system. These routines
-  // take care of the mapping from local <-> global
-
-  int DatabaseIO::node_local_to_global(int local)  const
-  {
-    assert(local <= nodeCount && local > 0);
-    const Ioss::MapContainer &node_map = get_node_map();
-    int global = node_map[local];
-    return global;
-  }
-
-  int DatabaseIO::element_local_to_global(int local)  const
-  {
-    assert(local <= elementCount && local > 0);
-    const Ioss::MapContainer &element_map = get_element_map();
-    int global = element_map[local];
-    return global;
-  }
-
-  bool DatabaseIO::begin(Ioss::State state)
-  {
-    dbState = state;
-    return true;
-  }
-
-  bool DatabaseIO::end(Ioss::State state)
-  {
-    // Transitioning out of state 'state'
-    assert(state == dbState);
-    switch (state) {
-    case Ioss::STATE_DEFINE_MODEL:
-      if (!is_input())
-	write_meta_data();
-      break;
-    case Ioss::STATE_DEFINE_TRANSIENT:
-      if (!is_input())
-	write_results_metadata();
-      break;
-    default: // ignore everything else...
-      break;
+      return true;
     }
 
+    bool DatabaseIO::end_state(Ioss::Region*, int, double time)
     {
       Ioss::SerializeIO	serializeIO__(this);
 
       if (!is_input()) {
-	ex_update(get_file_pointer());
+	write_reduction_fields();
+	finalize_write(time);
 	if (minimizeOpenFiles)
 	  free_file_pointer(); 
-       }
-      dbState = Ioss::STATE_UNKNOWN;
+      }
+      return true;
     }
 
-    return true;
-  }
-
-  // Default versions do nothing at this time...
-  // Will be used for global variables...
-  bool DatabaseIO::begin_state(Ioss::Region */* region */, int state, double time)
-  {
-    Ioss::SerializeIO	serializeIO__(this);
-
-    state = get_database_step(state);
-    if (!is_input()) {
-      int ierr = ex_put_time(get_file_pointer(), state, &time);
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-#ifdef REDS
-      // This flush is a workaround for an issue on redstorm-s.  In a
-      // 1600 processor run, 1 or 2 of the restart files had a time
-      // value of 0.0 on the file even though it was verified that the
-      // time value in the ex_put_time call above was the correct
-      // time. Adding this ex_update call "fixed" this problem and
-      // gives valid time values on all of the restart files.
-      if (dbUsage != Ioss::WRITE_HISTORY)
-	ex_update(get_file_pointer());
-#endif
-
-      // Zero global variable array...
-      std::fill(globalValues.begin(), globalValues.end(), 0.0);
-
-    } else {
-      // Store reduction variables
-      read_reduction_fields();
-    }
-    return true;
-  }
-
-  bool DatabaseIO::end_state(Ioss::Region*, int, double time)
-  {
-    Ioss::SerializeIO	serializeIO__(this);
-
-    if (!is_input()) {
-      write_reduction_fields();
-      finalize_write(time);
-      if (minimizeOpenFiles)
-	free_file_pointer(); 
-    }
-    return true;
-  }
-
-  void DatabaseIO::write_meta_data()
-  {
-    Ioss::Region *region = get_region();
-
-    // Get count of nodes, element blocks, nodesets, sidesets, ...
-    std::vector<Ioex::Block>   blocks;
-    std::vector<Ioex::NodeSet> nsets;
-    std::vector<Ioex::SideSet> sidesets;
-
-    char the_title[max_line_length+1];
-
-    // Title...
-    if (region->property_exists("title")) {
-      std::string title_str = region->get_property("title").get_string();
-      std::strncpy(the_title, title_str.c_str(), max_line_length);
-    } else {
-      std::strncpy(the_title, "Sierra Output Default Title", max_line_length);
-    }
-    the_title[max_line_length] = '\0';
-
+    void DatabaseIO::write_meta_data()
     {
+      Ioss::Region *region = get_region();
+
       Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
-      spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
       nodeCount =        node_blocks[0]->get_property("entity_count").get_int();
-    }
-    
-    // Element Blocks --
-    {
-      Ioss::ElementBlockContainer element_blocks =
-	region->get_element_blocks();
-      assert(check_block_order(element_blocks));
-      Ioss::ElementBlockContainer::const_iterator I;
-      // Set ids of all entities that have "id" property...
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-	set_id(*I, EX_ELEM_BLOCK, &ids_);
+      spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
+
+      char the_title[max_line_length+1];
+
+      // Title...
+      if (region->property_exists("title")) {
+	std::string title_str = region->get_property("title").get_string();
+	std::strncpy(the_title, title_str.c_str(), max_line_length);
+      } else {
+	std::strncpy(the_title, "Sierra Output Default Title", max_line_length);
       }
-      
-      elementCount = 0;
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-	elementCount += (*I)->get_property("entity_count").get_int();
-	// Set ids of all entities that do not have "id" property...
-	get_id(*I, EX_ELEM_BLOCK, &ids_);
-	Ioex::Block T(*(*I));
-	if (std::find(blocks.begin(), blocks.end(), T) == blocks.end()) {
-	  blocks.push_back(T);
+      the_title[max_line_length] = '\0';
+
+
+      Ioex::Mesh mesh(spatialDimension, the_title);
+      Ioex::NodeBlock N(*node_blocks[0]);
+      mesh.nodeblocks.push_back(N);
+
+      // Edge Blocks --
+      {
+	Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
+	assert(check_block_order(edge_blocks));
+	Ioss::EdgeBlockContainer::const_iterator I;
+	// Set ids of all entities that have "id" property...
+	for (I=edge_blocks.begin(); I != edge_blocks.end(); ++I) {
+	  set_id(*I, EX_EDGE_BLOCK, &ids_);
 	}
+      
+	edgeCount = 0;
+	for (I=edge_blocks.begin(); I != edge_blocks.end(); ++I) {
+	  edgeCount += (*I)->get_property("entity_count").get_int();
+	  // Set ids of all entities that do not have "id" property...
+	  get_id(*I, EX_EDGE_BLOCK, &ids_);
+	  Ioex::EdgeBlock T(*(*I));
+	  if (std::find(mesh.edgeblocks.begin(), mesh.edgeblocks.end(), T) == mesh.edgeblocks.end()) {
+	    mesh.edgeblocks.push_back(T);
+	  }
+	}
+	m_groupCount[EX_EDGE_BLOCK] = mesh.edgeblocks.size();
       }
-      elementBlockCount = blocks.size();
-    }
     
-    // SideSets ...
-    if (surfaceSplitBackwardCompatibility) {
-      Ioss::SideSetContainer ssets = region->get_sidesets();
-	set_sideblock_ids(ssets, sidesets, util(), &ids_);
-    } else {
+      // Face Blocks --
+      {
+	Ioss::FaceBlockContainer face_blocks = region->get_face_blocks();
+	assert(check_block_order(face_blocks));
+	Ioss::FaceBlockContainer::const_iterator I;
+	// Set ids of all entities that have "id" property...
+	for (I=face_blocks.begin(); I != face_blocks.end(); ++I) {
+	  set_id(*I, EX_FACE_BLOCK, &ids_);
+	}
+      
+	faceCount = 0;
+	for (I=face_blocks.begin(); I != face_blocks.end(); ++I) {
+	  faceCount += (*I)->get_property("entity_count").get_int();
+	  // Set ids of all entities that do not have "id" property...
+	  get_id(*I, EX_FACE_BLOCK, &ids_);
+	  Ioex::FaceBlock T(*(*I));
+	  if (std::find(mesh.faceblocks.begin(), mesh.faceblocks.end(), T) == mesh.faceblocks.end()) {
+	    mesh.faceblocks.push_back(T);
+	  }
+	}
+	m_groupCount[EX_FACE_BLOCK] = mesh.faceblocks.size();
+      }
+    
+      // Element Blocks --
+      {
+	Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+	assert(check_block_order(element_blocks));
+	Ioss::ElementBlockContainer::const_iterator I;
+	// Set ids of all entities that have "id" property...
+	for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
+	  set_id(*I, EX_ELEM_BLOCK, &ids_);
+	}
+      
+	elementCount = 0;
+	for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
+	  elementCount += (*I)->get_property("entity_count").get_int();
+	  // Set ids of all entities that do not have "id" property...
+	  get_id(*I, EX_ELEM_BLOCK, &ids_);
+	  Ioex::ElemBlock T(*(*I));
+	  if (std::find(mesh.elemblocks.begin(), mesh.elemblocks.end(), T) == mesh.elemblocks.end()) {
+	    mesh.elemblocks.push_back(T);
+	  }
+	}
+	m_groupCount[EX_ELEM_BLOCK] = mesh.elemblocks.size();
+      }
+    
+      // Nodesets ...
+      {
+	Ioss::NodeSetContainer nodesets = region->get_nodesets();
+	Ioss::NodeSetContainer::const_iterator I;
+	for (I=nodesets.begin(); I != nodesets.end(); ++I) {
+	  set_id(*I, EX_NODE_SET, &ids_);
+	}
+
+	for (I=nodesets.begin(); I != nodesets.end(); ++I) {
+	  get_id(*I, EX_NODE_SET, &ids_);
+	  const Ioex::NodeSet T(*(*I));
+	  if (std::find(mesh.nodesets.begin(), mesh.nodesets.end(), T) == mesh.nodesets.end()) {
+	    mesh.nodesets.push_back(T);
+	  }
+	}
+	m_groupCount[EX_NODE_SET] = mesh.nodesets.size();
+      }
+
+      // Edgesets ...
+      {
+	Ioss::EdgeSetContainer edgesets = region->get_edgesets();
+	Ioss::EdgeSetContainer::const_iterator I;
+	for (I=edgesets.begin(); I != edgesets.end(); ++I) {
+	  set_id(*I, EX_EDGE_SET, &ids_);
+	}
+
+	for (I=edgesets.begin(); I != edgesets.end(); ++I) {
+	  get_id(*I, EX_EDGE_SET, &ids_);
+	  const Ioex::EdgeSet T(*(*I));
+	  if (std::find(mesh.edgesets.begin(), mesh.edgesets.end(), T) == mesh.edgesets.end()) {
+	    mesh.edgesets.push_back(T);
+	  }
+	}
+	m_groupCount[EX_EDGE_SET] = mesh.edgesets.size();
+      }
+
+      // Facesets ...
+      {
+	Ioss::FaceSetContainer facesets = region->get_facesets();
+	Ioss::FaceSetContainer::const_iterator I;
+	for (I=facesets.begin(); I != facesets.end(); ++I) {
+	  set_id(*I, EX_FACE_SET, &ids_);
+	}
+
+	for (I=facesets.begin(); I != facesets.end(); ++I) {
+	  get_id(*I, EX_FACE_SET, &ids_);
+	  const Ioex::FaceSet T(*(*I));
+	  if (std::find(mesh.facesets.begin(), mesh.facesets.end(), T) == mesh.facesets.end()) {
+	    mesh.facesets.push_back(T);
+	  }
+	}
+	m_groupCount[EX_FACE_SET] = mesh.facesets.size();
+      }
+
+      // Elementsets ...
+      {
+	Ioss::ElementSetContainer elementsets = region->get_elementsets();
+	Ioss::ElementSetContainer::const_iterator I;
+	for (I=elementsets.begin(); I != elementsets.end(); ++I) {
+	  set_id(*I, EX_ELEM_SET, &ids_);
+	}
+
+	for (I=elementsets.begin(); I != elementsets.end(); ++I) {
+	  get_id(*I, EX_ELEM_SET, &ids_);
+	  const Ioex::ElemSet T(*(*I));
+	  if (std::find(mesh.elemsets.begin(), mesh.elemsets.end(), T) == mesh.elemsets.end()) {
+	    mesh.elemsets.push_back(T);
+	  }
+	}
+	m_groupCount[EX_ELEM_SET] = mesh.elemsets.size();
+      }
+
+      // SideSets ...
       Ioss::SideSetContainer ssets = region->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
       
@@ -4483,373 +5520,261 @@ namespace Ioex {
       for (I=ssets.begin(); I != ssets.end(); ++I) {
 	// Add a SideSet corresponding to this SideSet/SideBlock
 	Ioex::SideSet T(*(*I));
-	if (std::find(sidesets.begin(), sidesets.end(), T) == sidesets.end()) {
-	  sidesets.push_back(T);
+	if (std::find(mesh.sidesets.begin(), mesh.sidesets.end(), T) == mesh.sidesets.end()) {
+	  mesh.sidesets.push_back(T);
 	}
       }
-    }
-    sidesetCount = sidesets.size();
+      m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
 
-    // Nodesets ...
-    {
-      Ioss::NodeSetContainer nodesets = region->get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I;
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	set_id(*I, EX_NODE_SET, &ids_);
-      }
+      gather_communication_metadata(&mesh.comm);
 
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	get_id(*I, EX_NODE_SET, &ids_);
-	const Ioex::NodeSet T(*(*I));
-	if (std::find(nsets.begin(), nsets.end(), T) == nsets.end()) {
-	  nsets.push_back(T);
-	}
-      }
-      nodesetCount = nsets.size();
-    }
-
-    Ioex::Mesh mesh(spatialDimension, nodeCount, elementCount,
-		    elementBlockCount, nodesetCount, sidesetCount,
-		    the_title);
-
-    Ioex::CommunicationMetaData comm_meta;
-    gather_communication_metadata(&comm_meta);
-
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      if (myProcessor == 0) {
-	put_qa();
-	put_info();
-      }
-      
-      // Write the metadata to the exodusII file...
-      Ioex::Internals data(get_file_pointer(), maximumNameLength);
-      int ierr = data.write_meta_data(mesh, blocks, nsets, sidesets, comm_meta);
-
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-      // Write element block attribute names (if any)...
-      write_attribute_names();
-
-      // Write coordinate names...
-      char const *labels[3];
-      labels[0] = "x";
-      labels[1] = "y";
-      labels[2] = "z";
-      ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-    }
-  }
-
-  void DatabaseIO::write_attribute_names()
-  {
-    // For each block, determine the attribute fields and the correct
-    // order. Write the names of these fields.  However, be aware that
-    // the field "attribute" always exists to contain all attributes
-    // and its name should not be used even if it is the only
-    // attribute field.
-    Ioss::ElementBlockContainer::const_iterator I;
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-      Ioss::ElementBlock *block = *I;
-      std::string block_name = block->name();
-      int attribute_count = block->get_property("attribute_count").get_int();
-      if (attribute_count > 0) {
-	
-	check_attribute_index_order(block);
-	
-	std::vector<char*> names(attribute_count);
-	std::vector<std::string> names_str(attribute_count);
-	
-	// Get the attribute fields...
-	Ioss::NameList results_fields;
-	block->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
-
-	Ioss::NameList::const_iterator IF;
-	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
-	  const Ioss::Field &field = block->get_fieldref(field_name);
-	  assert(field.get_index() != 0);
-	  
-	  if (field_name == "attribute") {
-	    field.set_index(1);
-	    continue;
-	  }
-
-	  const Ioss::VariableType *type = field.raw_storage();
-	  int comp_count = type->component_count();
-	  int field_offset = field.get_index();
-	  for (int i=0; i < comp_count; i++) {
-	    names_str[field_offset-1+i] = type->label_name(field_name, i+1, fieldSuffixSeparator);
-	    names[field_offset-1+i] = (char*)names_str[field_offset-1+i].c_str();
-	  }
-	}
-	int block_id = block->get_property("id").get_int();
-	int ierr = ex_put_attr_names(get_file_pointer(), EX_ELEM_BLOCK, block_id, TOPTR(names));
-	if (ierr < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-    }
-  }
-
-  void DatabaseIO::gather_communication_metadata(Ioex::CommunicationMetaData *meta)
-  {
-    if (isParallel) {
-
-      meta->processorCount = util().parallel_size();
-      meta->processorId = myProcessor;
-      meta->globalNodes    = 1; // Just need a nonzero value.
-      meta->globalElements = 1; // Just need a nonzero value.
-
-      if (get_region()->property_exists("global_node_count")) {
-	meta->globalNodes = get_region()->get_property("global_node_count").get_int();
-      }
-
-      if (get_region()->property_exists("global_element_count")) {
-	meta->globalElements = get_region()->get_property("global_element_count").get_int();
-      }
-
-      // ========================================================================
-      // Load balance parameters (NEMESIS, p15)
-      meta->nodesInternal = nodeCount;
-      meta->nodesBorder   = 0;
-      meta->nodesExternal = 0; // Shadow nodes == 0 for now
-      meta->elementsInternal = elementCount;
-      meta->elementsBorder   = 0;
-
-      // Now, see if any of the above are redefined by a property...
-      if (get_region()->property_exists("internal_node_count")) {
-	meta->nodesInternal = get_region()->
-	  get_property("internal_node_count").get_int();
-      }
-
-      if (get_region()->property_exists("border_node_count")) {
-	meta->nodesBorder = get_region()->
-	  get_property("border_node_count").get_int();
-      }
-
-      if (get_region()->property_exists("internal_element_count")) {
-	meta->elementsInternal = get_region()->
-	  get_property("internal_element_count").get_int();
-      }
-
-      if (get_region()->property_exists("border_element_count")) {
-	meta->elementsBorder = get_region()->
-	  get_property("border_element_count").get_int();
-      }
-
-      Ioss::CommSetContainer comm_sets = get_region()->get_commsets();
-      Ioss::CommSetContainer::const_iterator I = comm_sets.begin();
-      while (I != comm_sets.end()) {
-
-	Ioss::CommSet *cs = *I;
-
-	std::string type = cs->get_property("entity_type").get_string();
-	size_t count = cs->get_property("entity_count").get_int();
-	int id = get_id(cs, (ex_entity_type)0, &ids_);
-
-	if (type == "node") {
-	  meta->nodeMap.push_back(Ioex::CommunicationMap(id, count, 'n'));
-	} else if (type == "side") {
-	  meta->elementMap.push_back(Ioex::CommunicationMap(id, count, 'e'));
-	} else {
-	  std::ostringstream errmsg;
-	  errmsg << "Internal Program Error...";
-	  IOSS_ERROR(errmsg);
-	}
-	++I;
-      }
-    }
-    commsetNodeCount = meta->nodeMap.size();
-    commsetElemCount = meta->elementMap.size();
-  }
-
-  void DatabaseIO::add_region_fields()
-  {
-    int field_count = add_results_fields(EX_GLOBAL, get_region(), 1);
-    globalValues.resize(field_count);
-  }
-
-  int DatabaseIO::add_results_fields(ex_entity_type type,
-				     Ioss::GroupingEntity *entity,
-				     int count, int position)
-  {
-    int nvar = 0;
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-    }
-
-    if (nvar > 0) {
-      int *truth_table = NULL;
-      int block_count = 0;
-      // If this is for an element block, we need to make sure we have
-      // the element truth table first so we can tell whether the
-      // variable exists for this element block...
-      if (type == EX_ELEM_BLOCK && elementTruthTable == NULL) {
-	elementTruthTable = new int[elementBlockCount*nvar];
-	truth_table = elementTruthTable;
-	block_count = elementBlockCount;
-      }
-      else if (type == EX_NODE_SET && nodesetTruthTable == NULL) {
-	nodesetTruthTable = new int[nodesetCount*nvar];
-	truth_table = nodesetTruthTable;
-	block_count = nodesetCount;
-      }
-      else if (type == EX_SIDE_SET && sidesetTruthTable == NULL) {
-	sidesetTruthTable = new int[sidesetCount*nvar];
-	truth_table = sidesetTruthTable;
-	block_count = sidesetCount;
-      }
-
-      // Read and store the truth table (Should be there since we only
-      // get to this routine if there are variables...)
-      if (truth_table != NULL) {
-	{
-	  Ioss::SerializeIO	serializeIO__(this);
-
-	  int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, truth_table);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-
-	// If parallel, then synchronize the truth table among all processors...
-	// Need to know that block_X has variable_Y even if block_X is
-	// empty on a specific processor...  The truth table contains 0
-	// if the variable doesn't exist and 1 if it does, so we just
-	// take the maximum at each location...
-	// This is a collective call...
-	if (isParallel) {
-	  util().global_array_minmax(truth_table, block_count * nvar,
-				     Ioss::ParallelUtils::DO_MAX);
-	}
-      }
-
-      // Get the variable names and add as fields. Need to decode these
-      // into vector/tensor/... eventually, for now store all as
-      // scalars.
-
-      
-      char **names = get_exodus_names(nvar, maximumNameLength);
-
-      // Read the names...
-      // (Currently, names are read for every block.  We could save them...)
       {
 	Ioss::SerializeIO	serializeIO__(this);
 
-	int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
+	if (myProcessor == 0) {
+	  put_qa();
+	  put_info();
+	}
+      
+	// Write the metadata to the exodusII file...
+	Ioex::Internals data(get_file_pointer(), maximumNameLength);
+	int ierr = data.write_meta_data(mesh);
+
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	// Convert to lowercase.
-	for (int i=0; i < nvar; i++) {
-	  Ioss::Utils::fixup_name(names[i]);
+	// Write attribute names (if any)...
+	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),       fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),       fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),    fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),    fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),    fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),    fieldSuffixSeparator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(), fieldSuffixSeparator);
+      
+	// Write coordinate names...
+	char const *labels[3];
+	labels[0] = "x";
+	labels[1] = "y";
+	labels[2] = "z";
+	ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+      }
+    }
+
+    void DatabaseIO::gather_communication_metadata(Ioex::CommunicationMetaData *meta)
+    {
+      if (isParallel) {
+
+	meta->processorCount = util().parallel_size();
+	meta->processorId = myProcessor;
+	meta->globalNodes    = 1; // Just need a nonzero value.
+	meta->globalElements = 1; // Just need a nonzero value.
+
+	if (get_region()->property_exists("global_node_count")) {
+	  meta->globalNodes = get_region()->get_property("global_node_count").get_int();
 	}
 
-	// Add to VariableNameMap elementVariables, nodalVariables,
-	// or globalVariables so can determine exodusII index given a
-	// Sierra field name.  exodusII index is just 'i+1'
-	for (int i=0; i < nvar; i++) {
-	  if (type == EX_ELEM_BLOCK) {
-	    elementVariables.insert(VNMValuePair(std::string(names[i]), i+1));
-	  } else if (type == EX_NODAL) {
-	    nodalVariables.insert(VNMValuePair(std::string(names[i]),   i+1));
-	  } else if (type == EX_NODE_SET) {
-	    nodesetVariables.insert(VNMValuePair(std::string(names[i]), i+1));
-	  } else if (type == EX_SIDE_SET) {
-	    sidesetVariables.insert(VNMValuePair(std::string(names[i]), i+1));
-	  } else if (type == EX_GLOBAL) {
-	    globalVariables.insert(VNMValuePair(std::string(names[i]),  i+1));
+	if (get_region()->property_exists("global_element_count")) {
+	  meta->globalElements = get_region()->get_property("global_element_count").get_int();
+	}
+
+	// ========================================================================
+	// Load balance parameters (NEMESIS, p15)
+	meta->nodesInternal = nodeCount;
+	meta->nodesBorder   = 0;
+	meta->nodesExternal = 0; // Shadow nodes == 0 for now
+	meta->elementsInternal = elementCount;
+	meta->elementsBorder   = 0;
+
+	// Now, see if any of the above are redefined by a property...
+	if (get_region()->property_exists("internal_node_count")) {
+	  meta->nodesInternal = get_region()->
+	    get_property("internal_node_count").get_int();
+	}
+
+	if (get_region()->property_exists("border_node_count")) {
+	  meta->nodesBorder = get_region()->
+	    get_property("border_node_count").get_int();
+	}
+
+	if (get_region()->property_exists("internal_element_count")) {
+	  meta->elementsInternal = get_region()->
+	    get_property("internal_element_count").get_int();
+	}
+
+	if (get_region()->property_exists("border_element_count")) {
+	  meta->elementsBorder = get_region()->
+	    get_property("border_element_count").get_int();
+	}
+
+	Ioss::CommSetContainer comm_sets = get_region()->get_commsets();
+	Ioss::CommSetContainer::const_iterator I = comm_sets.begin();
+	while (I != comm_sets.end()) {
+
+	  Ioss::CommSet *cs = *I;
+
+	  std::string type = cs->get_property("entity_type").get_string();
+	  size_t count = cs->get_property("entity_count").get_int();
+	  int id = get_id(cs, (ex_entity_type)0, &ids_);
+
+	  if (type == "node") {
+	    meta->nodeMap.push_back(Ioex::CommunicationMap(id, count, 'n'));
+	  } else if (type == "side") {
+	    meta->elementMap.push_back(Ioex::CommunicationMap(id, count, 'e'));
+	  } else {
+	    std::ostringstream errmsg;
+	    errmsg << "Internal Program Error...";
+	    IOSS_ERROR(errmsg);
+	  }
+	  ++I;
+	}
+      }
+      commsetNodeCount = meta->nodeMap.size();
+      commsetElemCount = meta->elementMap.size();
+    }
+
+    void DatabaseIO::add_region_fields()
+    {
+      int field_count = add_results_fields(EX_GLOBAL, get_region());
+      globalValues.resize(field_count);
+    }
+
+    int DatabaseIO::add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity, int position)
+    {
+      return internal_add_results_fields(type, entity, position, m_groupCount[type], m_truthTable[type], m_variables[type]);
+    }
+
+    int DatabaseIO::internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity, int position,
+						int block_count, IntVector &truth_table, Ioex::VariableNameMap &variables)
+    {
+      int nvar = 0;
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      }
+
+      if (nvar > 0) {
+	if (truth_table.empty()) {
+	  truth_table.resize(block_count * nvar);
+	}
+      
+	// Read and store the truth table (Should be there since we only
+	// get to this routine if there are variables...)
+	if (!truth_table.empty()) {
+	  {
+	    Ioss::SerializeIO	serializeIO__(this);
+
+	    if (type == EX_NODE_BLOCK || type == EX_GLOBAL) {
+	      // These types don't have a truth table in the exodus api...
+	      // They do in Ioss just for some consistency...
+	      std::fill(truth_table.begin(), truth_table.end(), 1);
+	    }
+	    else {
+	      int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, &truth_table[0]);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+	  }
+
+	  // If parallel, then synchronize the truth table among all processors...
+	  // Need to know that block_X has variable_Y even if block_X is
+	  // empty on a specific processor...  The truth table contains 0
+	  // if the variable doesn't exist and 1 if it does, so we just
+	  // take the maximum at each location...
+	  // This is a collective call...
+	  if (isParallel) {
+	    util().global_array_minmax(truth_table, Ioss::ParallelUtils::DO_MAX);
 	  }
 	}
 
-	// Add as fields...
-	if (type == EX_ELEM_BLOCK) truth_table = elementTruthTable;
-	if (type == EX_NODE_SET)   truth_table = nodesetTruthTable;
-	if (type == EX_SIDE_SET)   truth_table = sidesetTruthTable;
+	// Get the variable names and add as fields. Need to decode these
+	// into vector/tensor/... eventually, for now store all as
+	// scalars.
+	char **names = get_exodus_names(nvar, maximumNameLength);
 
-	int offset = position*nvar;
-	int *local_truth = NULL;
-	if (truth_table != NULL)
-	  local_truth = &truth_table[offset];
+	// Read the names...
+	// (Currently, names are read for every block.  We could save them...)
+	{
+	  Ioss::SerializeIO	serializeIO__(this);
 
-	std::vector<Ioss::Field> fields;
-	get_fields(count, names, nvar, Ioss::Field::TRANSIENT,
-		   fieldSuffixSeparator, local_truth, fields);
+	  int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	std::vector<Ioss::Field>::const_iterator IF;
-	for (IF = fields.begin(); IF != fields.end(); ++IF) {
-	  Ioss::Field field = *IF;
-	  entity->field_add(field);
-	}
+	  // Add to VariableNameMap so can determine exodusII index given a
+	  // Sierra field name.  exodusII index is just 'i+1'
+	  for (int i=0; i < nvar; i++) {
+	    Ioss::Utils::fixup_name(names[i]);
+	    variables.insert(VNMValuePair(std::string(names[i]),   i+1));
+	  }
+
+	  int offset = position*nvar;
+	  int *local_truth = NULL;
+	  if (!truth_table.empty())
+	    local_truth = &truth_table[offset];
+
+	  std::vector<Ioss::Field> fields;
+	  int count = entity->get_property("entity_count").get_int();
+	  get_fields(count, names, nvar, Ioss::Field::TRANSIENT,
+		     fieldSuffixSeparator, local_truth, fields);
+
+	  std::vector<Ioss::Field>::const_iterator IF;
+	  for (IF = fields.begin(); IF != fields.end(); ++IF) {
+	    entity->field_add(*IF);
+	  }
 	  
-	for (int i=0; i < nvar; i++) {
-	  // Verify that all names were used for a field...
-	  assert(names[i][0] == '\0' || local_truth[i] == 0);
-	  delete [] names[i];
+	  for (int i=0; i < nvar; i++) {
+	    // Verify that all names were used for a field...
+	    assert(names[i][0] == '\0' || local_truth[i] == 0);
+	    delete [] names[i];
+	  }
+	  delete [] names;
 	}
-	delete [] names;
       }
+      return nvar;
     }
-    return nvar;
-  }
 
-  void DatabaseIO::write_results_metadata()
-  {
-    int glob_index = 0;
-    glob_index = gather_names(EX_GLOBAL, get_region(), glob_index, true);
-    assert(glob_index == static_cast<int>(globalVariables.size()));
-
+    void DatabaseIO::write_results_metadata()
     {
+      int glob_index = 0;
+      glob_index = gather_names(EX_GLOBAL, m_variables[EX_GLOBAL], get_region(),
+                                glob_index, true);
+      assert(glob_index == static_cast<int>(m_variables[EX_GLOBAL].size()));
+
       Ioss::NodeBlockContainer node_blocks = get_region()->get_node_blocks();
       assert(node_blocks.size() == 1);
-      Ioss::NodeBlockContainer::const_iterator I;
+      internal_write_results_metadata(EX_NODE_BLOCK, node_blocks, glob_index);
 
-      int index = 0;
-      for (I=node_blocks.begin(); I != node_blocks.end(); ++I) {
-	glob_index = gather_names(EX_NODAL, *I, glob_index, true);
-	index = gather_names(EX_NODAL, *I, index, false);
-      }
-      assert(index == static_cast<int>(nodalVariables.size()));
-    }
+      Ioss::EdgeBlockContainer edge_blocks = get_region()->get_edge_blocks();
+      internal_write_results_metadata(EX_EDGE_BLOCK, edge_blocks, glob_index);
 
-    {
-      Ioss::ElementBlockContainer element_blocks =
-	get_region()->get_element_blocks();
-      assert(check_block_order(element_blocks));
-      Ioss::ElementBlockContainer::const_iterator I;
+      Ioss::FaceBlockContainer face_blocks = get_region()->get_face_blocks();
+      internal_write_results_metadata(EX_FACE_BLOCK, face_blocks, glob_index);
 
-      int index = 0;
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-	glob_index = gather_names(EX_ELEM_BLOCK, *I, glob_index, true);
-	index = gather_names(EX_ELEM_BLOCK, *I, index, false);
-      }
-      assert(index == static_cast<int>(elementVariables.size()));
-      generate_truth_table(EX_ELEM_BLOCK);
-    }
+      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      internal_write_results_metadata(EX_ELEM_BLOCK, element_blocks, glob_index);
 
-    {
       Ioss::NodeSetContainer nodesets = get_region()->get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I;
+      internal_write_results_metadata(EX_NODE_SET, nodesets, glob_index);
 
-      int index = 0;
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	glob_index = gather_names(EX_NODE_SET, *I, glob_index, true);
-	index = gather_names(EX_NODE_SET, *I, index, false);
-      }
-      assert(index == static_cast<int>(nodesetVariables.size()));
-      generate_truth_table(EX_NODE_SET);
-    }
+      Ioss::EdgeSetContainer edgesets = get_region()->get_edgesets();
+      internal_write_results_metadata(EX_EDGE_SET, edgesets, glob_index);
 
-    {
-      int index = 0;
+      Ioss::FaceSetContainer facesets = get_region()->get_facesets();
+      internal_write_results_metadata(EX_FACE_SET, facesets, glob_index);
+
+      Ioss::ElementSetContainer elementsets = get_region()->get_elementsets();
+      internal_write_results_metadata(EX_ELEM_SET, elementsets, glob_index);
+
+      {
+	int index = 0;
 	Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
 	Ioss::SideSetContainer::const_iterator I;
 	for (I=sidesets.begin(); I != sidesets.end(); ++I) {
@@ -4857,724 +5782,571 @@ namespace Ioex {
 	  Ioss::SideBlockContainer::const_iterator J;
 
 	  for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
-	    glob_index = gather_names(EX_SIDE_SET, *J, glob_index, true);
-	    index = gather_names(EX_SIDE_SET, *J, index, false);
+	    glob_index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], *J, glob_index, true);
+	    index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], *J, index, false);
 	  }
 	}
-      assert(index == static_cast<int>(sidesetVariables.size()));
-      generate_truth_table(EX_SIDE_SET);
-    }
+	assert(index == static_cast<int>(m_variables[EX_SIDE_SET].size()));
+	generate_sideset_truth_table();
+      }
 
-    {
+      ex_var_params exo_params;
+      exo_params.num_glob = m_variables[EX_GLOBAL].size();
+      exo_params.num_node = m_variables[EX_NODE_BLOCK].size();
+      exo_params.num_edge = m_variables[EX_EDGE_BLOCK].size();
+      exo_params.num_face = m_variables[EX_FACE_BLOCK].size();
+      exo_params.num_elem = m_variables[EX_ELEM_BLOCK].size();
+      exo_params.num_nset = m_variables[EX_NODE_SET].size();
+      exo_params.num_eset = m_variables[EX_EDGE_SET].size();
+      exo_params.num_fset = m_variables[EX_FACE_SET].size();
+      exo_params.num_sset = m_variables[EX_SIDE_SET].size();
+      exo_params.num_elset= m_variables[EX_ELEM_SET].size();
+    
+      exo_params.edge_var_tab  = &m_truthTable[EX_EDGE_BLOCK][0];
+      exo_params.face_var_tab  = &m_truthTable[EX_FACE_BLOCK][0];
+      exo_params.elem_var_tab  = &m_truthTable[EX_ELEM_BLOCK][0];
+      exo_params.nset_var_tab  = &m_truthTable[EX_NODE_SET][0];
+      exo_params.eset_var_tab  = &m_truthTable[EX_EDGE_SET][0];
+      exo_params.fset_var_tab  = &m_truthTable[EX_FACE_SET][0];
+      exo_params.sset_var_tab  = &m_truthTable[EX_SIDE_SET][0];
+      exo_params.elset_var_tab = &m_truthTable[EX_ELEM_SET][0];
+    
       if (isParallel) {
 	// Check consistency among all processors.  They should all
 	// have the same number of each variable type...
-	// The called function will thrown an exception if the counts differ.
-	check_variable_consistency(globalVariables.size(),
-				   nodalVariables.size(),
-				   elementVariables.size(),
-				   nodesetVariables.size(),
-				   sidesetVariables.size(),
-				   myProcessor, get_filename(), util());
+	// The called function will throw an exception if the counts differ.
+	check_variable_consistency(exo_params, myProcessor, get_filename(), util());
       }
 
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+
+	int ierr = ex_put_all_var_param_ext(get_file_pointer(), &exo_params);
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+	globalValues.resize(m_variables[EX_GLOBAL].size());
+	output_results_names(EX_GLOBAL, m_variables[EX_GLOBAL]);
+	if (nodeCount > 0)
+	  output_results_names(EX_NODE_BLOCK,    m_variables[EX_NODE_BLOCK]);
+	output_results_names(EX_EDGE_BLOCK, m_variables[EX_EDGE_BLOCK]);
+	output_results_names(EX_FACE_BLOCK, m_variables[EX_FACE_BLOCK]);
+	output_results_names(EX_ELEM_BLOCK, m_variables[EX_ELEM_BLOCK]);
+	output_results_names(EX_NODE_SET,   m_variables[EX_NODE_SET]);
+	output_results_names(EX_EDGE_SET,   m_variables[EX_EDGE_SET]);
+	output_results_names(EX_FACE_SET,   m_variables[EX_FACE_SET]);
+	output_results_names(EX_ELEM_SET,   m_variables[EX_ELEM_SET]);
+	output_results_names(EX_SIDE_SET,   m_variables[EX_SIDE_SET]);
+      }
     }
 
+    template <typename T>
+      void DatabaseIO::internal_write_results_metadata(ex_entity_type type,
+                                                      std::vector<T*> entities,
+                                                      int &glob_index)
     {
-      Ioss::SerializeIO	serializeIO__(this);
+      typename std::vector<T*>::const_iterator I;
 
-      // Defined the results variable metadata...
-      // Need special handling in the case where there are no nodes...
-      // This should be handled in exodusII API, but currently is not
-      size_t node_var_size = nodalVariables.size();
-      if (nodeCount == 0)
-	node_var_size = 0;
-      int ierr = ex_put_all_var_param(get_file_pointer(),
-				      globalVariables.size(),
-				      node_var_size,
-				      elementVariables.size(), elementTruthTable,
-				      nodesetVariables.size(), nodesetTruthTable,
-				      sidesetVariables.size(), sidesetTruthTable);
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-      globalValues.resize(globalVariables.size());
-      output_results_names(EX_GLOBAL, globalVariables);
-      if (nodeCount > 0)
-	output_results_names(EX_NODAL, nodalVariables);
-      output_results_names(EX_ELEM_BLOCK, elementVariables);
-      output_results_names(EX_NODE_SET,   nodesetVariables);
-      output_results_names(EX_SIDE_SET,   sidesetVariables);
-    }
-  }
-
-  int DatabaseIO::gather_names(ex_entity_type type,
-			       const Ioss::GroupingEntity *ge,
-			       int index, bool reduction)
-  {
-    int new_index = index;
-
-    bool nblock = (type == EX_NODAL);
-
-    // Get names of all transient and reduction fields...
-    Ioss::NameList results_fields;
-    if (reduction)
-      ge->field_describe(Ioss::Field::REDUCTION, &results_fields);
-
-    if (!reduction || type == EX_GLOBAL)
-      ge->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-
-    // NOTE: For exodusII, the convention is that the displacement
-    //       fields are the first 'ndim' fields in the file.
-    //       Try to find a likely displacement field
-    std::string disp_name;
-    bool has_disp = false;
-    if (!reduction && nblock && new_index == 0) {
-      has_disp = find_displacement_field(results_fields, ge, spatialDimension, &disp_name);
-      if (has_disp)
-	new_index += spatialDimension;
+      int index = 0;
+      for (I=entities.begin(); I != entities.end(); ++I) {
+        glob_index = gather_names(type, m_variables[type], *I, glob_index, true);
+        index = gather_names(type, m_variables[type], *I, index, false);
+      }
+      assert(index == static_cast<int>(m_variables[type].size()));
+      generate_block_truth_table(m_variables[type], m_truthTable[type], entities,
+                                 fieldSuffixSeparator);
     }
 
-    int save_index = 0;
-    Ioss::NameList::const_iterator IF;
+    int DatabaseIO::gather_names(ex_entity_type type,
+				 VariableNameMap &variables,
+				 const Ioss::GroupingEntity *ge,
+				 int index, bool reduction)
+    {
+      int new_index = index;
 
-    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-      std::string name = *IF;
+      bool nblock = (type == EX_NODE_BLOCK);
 
-      if (has_disp && name == disp_name && new_index != 0) {
-	save_index = new_index;
-	new_index = 0;
-      }
-
-      Ioss::Field field = ge->get_field(name);
-      const Ioss::VariableType *var_type = field.transformed_storage();
-
-      int re_im = 1;
-      if (field.get_type() == Ioss::Field::COMPLEX)
-	re_im = 2;
-      for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-	std::string field_name = field.get_name();
-	if (re_im == 2) {
-	  field_name += complex_suffix[complex_comp];
-	}
-
-	for (int i=1; i <= var_type->component_count(); i++) {
-	  std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
-
-	  // Add to 'VariableNameMap elementVariables' or
-	  // 'VariableNameMap nodalVariables' so can determine exodusII
-	  // index given a Sierra field name.  exodusII index is just 'i+1'
-	  if (reduction || type == EX_GLOBAL) {
-	    // If this is not a global (region) variable, need to prepend the block name
-	    // to avoid name collisions...
-	    if (type != EX_GLOBAL) {
-	      var_string = ge->name() + ":" + var_string;
-	    }
-	    if (globalVariables.find(var_string) == globalVariables.end()) {
-	      globalVariables.insert(VNMValuePair(var_string, ++new_index));
-	    }
-	  } else if (type == EX_NODAL) {
-	    if (nodalVariables.find(var_string) == nodalVariables.end()) {
-	      nodalVariables.insert(VNMValuePair(var_string, ++new_index));
-	    }
-	  } else if (type == EX_ELEM_BLOCK) {
-	    if (elementVariables.find(var_string) == elementVariables.end()) {
-	      elementVariables.insert(VNMValuePair(var_string, ++new_index));
-	    }
-	  } else if (type == EX_NODE_SET) {
-	    if (nodesetVariables.find(var_string) == nodesetVariables.end()) {
-	      nodesetVariables.insert(VNMValuePair(var_string, ++new_index));
-	    }
-	  } else if (type == EX_SIDE_SET) {
-	    if (sidesetVariables.find(var_string) == sidesetVariables.end()) {
-	      sidesetVariables.insert(VNMValuePair(var_string, ++new_index));
-	    }
-	  }
-	}
-      }
-      if (has_disp && name == disp_name) {
-	new_index = save_index;
-      }
-    }
-    return new_index;
-  }
-
-  void DatabaseIO::generate_truth_table(ex_entity_type type)
-  {
-    if (type == EX_ELEM_BLOCK)
-      generate_element_truth_table();
-    else if (type == EX_NODE_SET)
-      generate_nodeset_truth_table();
-    else if (type == EX_SIDE_SET)
-      generate_sideset_truth_table();
-  }
-
-  void DatabaseIO::generate_element_truth_table()
-  {
-    size_t var_count = elementVariables.size();
-
-    if (var_count == 0 || elementBlockCount == 0)
-      return;
-
-    // Member variable.  Will be deleted in destructor...
-    elementTruthTable = new int[elementBlockCount*var_count];
-
-    // Zero-fill truth table; set to '1' when variable found...
-    std::fill_n(elementTruthTable, elementBlockCount*var_count, 0);
-
-    // Fill in the truth table.  It is conceptually a two-dimensional array of
-    // the form 'array[num_element_blocks][num_element_var]'.  In C++,
-    // the values for the first element block are first, followed by
-    // next element block, ...
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator I;
-
-    assert(check_block_order(element_blocks));
-
-    size_t offset = 0;
-    for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
       // Get names of all transient and reduction fields...
       Ioss::NameList results_fields;
-      (*I)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-      (*I)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+      if (reduction)
+	ge->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
+      if (!reduction || type == EX_GLOBAL)
+	ge->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+
+      // NOTE: For exodusII, the convention is that the displacement
+      //       fields are the first 'ndim' fields in the file.
+      //       Try to find a likely displacement field
+      std::string disp_name;
+      bool has_disp = false;
+      if (!reduction && nblock && new_index == 0) {
+	has_disp = find_displacement_field(results_fields, ge, spatialDimension, &disp_name);
+	if (has_disp)
+	  new_index += spatialDimension;
+      }
+
+      int save_index = 0;
       Ioss::NameList::const_iterator IF;
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
 
-	Ioss::Field field = (*I)->get_field(field_name);
+      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	std::string name = *IF;
+
+	if (has_disp && name == disp_name && new_index != 0) {
+	  save_index = new_index;
+	  new_index = 0;
+	}
+
+	Ioss::Field field = ge->get_field(name);
 	const Ioss::VariableType *var_type = field.transformed_storage();
-	Ioss::Field::BasicType ioss_type = field.get_type();
 
 	int re_im = 1;
-	if (ioss_type == Ioss::Field::COMPLEX)
+	if (field.get_type() == Ioss::Field::COMPLEX)
 	  re_im = 2;
 	for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-	  field_name = field.get_name();
+	  std::string field_name = field.get_name();
 	  if (re_im == 2) {
 	    field_name += complex_suffix[complex_comp];
 	  }
 
 	  for (int i=1; i <= var_type->component_count(); i++) {
 	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
-	    // Find position of 'var_string' in 'elementVariables'
-	    VariableNameMap::iterator VN = elementVariables.find(var_string);
-	    if (VN != elementVariables.end()) {
-	      // Index '(*VN).second' is 1-based...
-	      elementTruthTable[offset + (*VN).second-1] = 1;
+
+	    // Add to 'VariableNameMap variables' so can determine
+	    // exodusII index given a Sierra field name.  exodusII index
+	    // is just 'i+1'
+	    if (reduction || type == EX_GLOBAL) {
+	      // If this is not a global (region) variable, need to prepend the block name
+	      // to avoid name collisions...
+	      if (type != EX_GLOBAL) {
+		var_string = ge->name() + ":" + var_string;
+	      }
+	    }
+	  
+	    if (variables.find(var_string) == variables.end()) {
+	      variables.insert(VNMValuePair(var_string, ++new_index));
 	    }
 	  }
 	}
+	if (has_disp && name == disp_name) {
+	  new_index = save_index;
+	}
       }
-      offset += var_count;
+      return new_index;
     }
-    assert(offset == var_count * elementBlockCount);
-  }
 
-  void DatabaseIO::generate_sideset_truth_table()
-  {
-    size_t var_count = sidesetVariables.size();
+    void DatabaseIO::generate_sideset_truth_table()
+    {
+      size_t var_count = m_variables[EX_SIDE_SET].size();
 
-    if (var_count == 0 || sidesetCount == 0)
-      return;
+      if (var_count == 0 || m_groupCount[EX_SIDE_SET] == 0)
+	return;
 
-    // Member variable.  Will be deleted in destructor...
-    sidesetTruthTable = new int[sidesetCount*var_count];
+      // Member variable.  Will be deleted in destructor...
+      m_truthTable[EX_SIDE_SET].resize(m_groupCount[EX_SIDE_SET]*var_count);
 
-    // Zero-fill truth table; set to '1' when variable found...
-    std::fill_n(sidesetTruthTable, sidesetCount*var_count, 0);
+      // Fill in the truth table.  It is conceptually a two-dimensional array of
+      // the form 'array[num_blocks][num_var]'.  In C++,
+      // the values for the first block are first, followed by
+      // next block, ...
+      size_t offset = 0;
 
-    // Fill in the truth table.  It is conceptually a two-dimensional array of
-    // the form 'array[num_blocks][num_var]'.  In C++,
-    // the values for the first block are first, followed by
-    // next block, ...
-    size_t offset = 0;
+      Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
+      Ioss::SideSetContainer::const_iterator I;
 
-    Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
-    Ioss::SideSetContainer::const_iterator I;
+      for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+	Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+	Ioss::SideBlockContainer::const_iterator J;
 
-    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
-      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
-      Ioss::SideBlockContainer::const_iterator J;
+	bool found_one = false;
+	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	  // See if this sideblock has a corresponding entry in the sideset list.
+	  if ((*J)->property_exists("invalid"))
+	    continue;
 
-      bool found_one = false;
-      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
-	// See if this sideblock has a corresponding entry in the sideset list.
-	if ((*J)->property_exists("invalid"))
-	  continue;
+	  found_one = true;
+	  // Get names of all transient and reduction fields...
+	  Ioss::NameList results_fields;
+	  (*J)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+	  (*J)->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
-	found_one = true;
-	// Get names of all transient and reduction fields...
-	Ioss::NameList results_fields;
-	(*J)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-	(*J)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+	  Ioss::NameList::const_iterator IF;
+	  for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	    std::string field_name = *IF;
 
-	Ioss::NameList::const_iterator IF;
-	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
+	    Ioss::Field field = (*J)->get_field(field_name);
+	    const Ioss::VariableType *var_type = field.transformed_storage();
+	    Ioss::Field::BasicType ioss_type = field.get_type();
 
-	  Ioss::Field field = (*J)->get_field(field_name);
-	  const Ioss::VariableType *var_type = field.transformed_storage();
-	  Ioss::Field::BasicType ioss_type = field.get_type();
+	    int re_im = 1;
+	    if (ioss_type == Ioss::Field::COMPLEX)
+	      re_im = 2;
+	    for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+	      field_name = field.get_name();
+	      if (re_im == 2) {
+		field_name += complex_suffix[complex_comp];
+	      }
 
-	  int re_im = 1;
-	  if (ioss_type == Ioss::Field::COMPLEX)
-	    re_im = 2;
-	  for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-	    field_name = field.get_name();
-	    if (re_im == 2) {
-	      field_name += complex_suffix[complex_comp];
-	    }
-
-	    for (int i=1; i <= var_type->component_count(); i++) {
-	      std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
-	      // Find position of 'var_string' in 'elementVariables'
-	      VariableNameMap::iterator VN = sidesetVariables.find(var_string);
-	      if (VN != sidesetVariables.end()) {
-		// Index '(*VN).second' is 1-based...
-		sidesetTruthTable[offset + (*VN).second-1] = 1;
+	      for (int i=1; i <= var_type->component_count(); i++) {
+		std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+		// Find position of 'var_string' in 'm_variables[]'
+		VariableNameMap::iterator VN = m_variables[EX_SIDE_SET].find(var_string);
+		if (VN != m_variables[EX_SIDE_SET].end()) {
+		  // Index '(*VN).second' is 1-based...
+		  m_truthTable[EX_SIDE_SET][offset + (*VN).second-1] = 1;
+		}
 	      }
 	    }
 	  }
 	}
-	if (found_one && surfaceSplitBackwardCompatibility)
-	  offset += var_count;
-      }
-      if (!surfaceSplitBackwardCompatibility)
 	offset += var_count;
+      }
+      assert(offset == var_count * m_groupCount[EX_SIDE_SET]);
     }
-    assert(offset == var_count * sidesetCount);
-  }
 
-  void DatabaseIO::generate_nodeset_truth_table()
-  {
-    size_t var_count = nodesetVariables.size();
+    void
+      DatabaseIO::output_results_names(ex_entity_type type,
+				       VariableNameMap &variables) const
+    {
+      size_t var_count = variables.size();
 
-    if (var_count == 0 || nodesetCount == 0)
-      return;
+      if (var_count > 0) {
+	// Push into a char** array...
+	std::vector<char*> var_names(var_count);
+	VariableNameMap::const_iterator J  = variables.begin();
+	VariableNameMap::const_iterator JE = variables.end();
+	while (J != JE) {
+	  size_t index = (*J).second;
+	  assert(index > 0 && index <= var_count);
+	  var_names[index-1] = (char*)(*J).first.c_str();
+	  ++J;
+	}
 
-    // Member variable.  Will be deleted in destructor...
-    nodesetTruthTable = new int[nodesetCount*var_count];
+	int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
+	if (ierr < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      }
+    }
 
-    // Zero-fill truth table; set to '1' when variable found...
-    std::fill_n(nodesetTruthTable, nodesetCount*var_count, 0);
+    void DatabaseIO::build_node_reorder_map(int *new_ids, int count)
+    {
+      // This routine builds a map that relates the current node id order
+      // to the original node ordering in affect at the time the file was
+      // created. That is, the node map used to define the topology of the
+      // model.  Now, if there are changes in node ordering at the
+      // application level, we build the node reorder map to map the
+      // current order into the original order.  An added complication is
+      // that this is more than just a reordering... It may be that the
+      // application has 'ghosted' nodes that it doesnt want put out on
+      // the database, so the reorder map must handle a node that is not
+      // in the original mesh and map that to an invalid value (currently
+      // using -1 as invalid value...)
 
-    // Fill in the truth table.  It is conceptually a two-dimensional array of
-    // the form 'array[num_blocks][num_var]'.  In C++,
-    // the values for the first block are first, followed by
-    // next block, ...
-    Ioss::NodeSetContainer nodesets = get_region()->get_nodesets();
-    Ioss::NodeSetContainer::const_iterator I;
 
-    size_t offset = 0;
-    for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-      // Get names of all transient and reduction fields...
-      Ioss::NameList results_fields;
-      (*I)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-      (*I)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+      // Note: To further add confusion,
+      // the reorderNodeMap and new_ids are 0-based
+      // the reverseNodeMap and nodeMap are 1-based. This is
+      // just a consequence of how they are intended to be used...
 
-      Ioss::NameList::const_iterator IF;
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
+      reorderNodeMap.resize(count);
 
-	Ioss::Field field = (*I)->get_field(field_name);
-	const Ioss::VariableType *var_type = field.transformed_storage();
-	Ioss::Field::BasicType ioss_type = field.get_type();
+      for (int i=0; i < count; i++) {
+	int global_id = new_ids[i];
 
-	int re_im = 1;
-	if (ioss_type == Ioss::Field::COMPLEX)
-	  re_im = 2;
-	for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
-	  field_name = field.get_name();
-	  if (re_im == 2) {
-	    field_name += complex_suffix[complex_comp];
-	  }
-	  
-	  for (int i=1; i <= var_type->component_count(); i++) {
-	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
-	    // Find position of 'var_string' in 'elementVariables'
-	    VariableNameMap::iterator VN = nodesetVariables.find(var_string);
-	    if (VN != nodesetVariables.end()) {
-	      // Index '(*VN).second' is 1-based...
-	      nodesetTruthTable[offset + (*VN).second-1] = 1;
-	    }
-	  }
+	// This will return 0 if node is not found in list.
+	int orig_local_id = node_global_to_local(global_id, false) - 1;
+
+	reorderNodeMap[i] = orig_local_id;
+      }
+    }
+
+    // Handle special output time requests -- primarily restart (cycle, keep, overwrite)
+    // Given the global region step, return the step on the database...
+    int DatabaseIO::get_database_step(int global_step) const
+    {
+      assert(overlayCount >= 0 && cycleCount >= 0);
+      if (overlayCount == 0 && cycleCount == 0)
+	return global_step;
+
+      int local_step = global_step - 1;
+      local_step /= (overlayCount + 1);
+      if (cycleCount > 0)
+	local_step %= cycleCount;
+      return local_step + 1;
+    }
+
+    void DatabaseIO::finalize_write(double sim_time)
+    {
+      // Attempt to ensure that all data written up to this point has
+      // actually made it out to disk.  We also write a special attribute
+      // to the file to indicate that the current timestep should be
+      // complete on the disk.
+      // The attribute is a GLOBAL attribute named "last_written_time"
+      // which is a double value which can be compared to the values in
+      // the time array to make sure they match.  If they don't, then
+      // hopefully the "last_written_time" is smaller than the time
+      // array value and indicates that the last step is corrupt.
+    
+      // Update the attribute.
+      Ioex::Internals data(get_file_pointer(), maximumNameLength);
+      data.update_last_time_attribute(sim_time);
+
+      // Flush the files buffer to disk...
+      // If a history file, then only flush if there is more
+      // than 10 seconds since the last flush to avoid
+      // the flush eating up cpu time for small fast jobs...
+      // NOTE: If decide to do this on all files, need to sync across
+      // processors to make sure they all flush at same time.
+
+      // GDS: 2011/03/30 -- Use for all non-parallel files, but shorten
+      // time for non history files.  Assume that can afford to lose ~10
+      // seconds worth of data...  (Flush was taking long time on some
+      // /scratch filesystems at SNL for short regression tests with
+      // lots of steps)
+      // GDS: 2011/07/27 -- shorten from 90 to 10.  Developers running
+      // small jobs were not able to view output until job
+      // finished. Hopefully the netcdf no-fsync fix along with this fix
+      // results in negligible impact on runtime with more syncs.
+
+      bool do_flush = true;
+      if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
+	assert (myProcessor == 0);
+	time_t cur_time = time(NULL);
+	if (cur_time - timeLastFlush >= 10) {
+	  timeLastFlush = cur_time;
+	  do_flush = true;
+	} else {
+	  do_flush = false;
 	}
       }
-      offset += var_count;
+      if (do_flush)
+	ex_update(get_file_pointer());
     }
-    assert(offset == var_count * nodesetCount);
-  }
 
-  void
-  DatabaseIO::output_results_names(ex_entity_type type,
-				   VariableNameMap &variables) const
-  {
-    size_t var_count = variables.size();
-
-    if (var_count > 0) {
-      // Push into a char** array...
-      std::vector<char*> var_names(var_count);
-      VariableNameMap::const_iterator J  = variables.begin();
-      VariableNameMap::const_iterator JE = variables.end();
-      while (J != JE) {
-	size_t index = (*J).second;
-	assert(index > 0 && index <= var_count);
-	var_names[index-1] = (char*)(*J).first.c_str();
-	++J;
-      }
-
-      int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
-      if (ierr < 0)
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-    }
-  }
-
-  void DatabaseIO::build_element_reorder_map(int start, int count)
-  {
-    // Note: To further add confusion, the reorderElementMap is 0-based
-    // and the reverseElementMap and elementMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-    //
-    // start is based on a 0-based array -- start of the reorderMap to build.
-
-    if (reorderElementMap.empty())
-      reorderElementMap.resize(elementCount);
-    assert(static_cast<int>(elementMap.size()) == elementCount+1);
-    assert(static_cast<int>(reverseElementMap.size()) <= elementCount); // Built in pieces
-
-    int my_end = start+count;
-    for (int i=start; i < my_end; i++) {
-      int global_id = elementMap[i+1];
-      int orig_local_id = element_global_to_local(global_id) - 1;
-
-      // If we assume that partial output is not being used (it
-      // currently isn't in Sierra), then the reordering should only be
-      // a permutation of the original ordering within this element block...
-      assert(orig_local_id >= start && orig_local_id <= my_end);
-      reorderElementMap[i] = orig_local_id;
-    }
-  }
-
-  void DatabaseIO::build_node_reorder_map(int *new_ids, int count)
-  {
-    // This routine builds a map that relates the current node id order
-    // to the original node ordering in affect at the time the file was
-    // created. That is, the node map used to define the topology of the
-    // model.  Now, if there are changes in node ordering at the
-    // application level, we build the node reorder map to map the
-    // current order into the original order.  An added complication is
-    // that this is more than just a reordering... It may be that the
-    // application has 'ghosted' nodes that it doesnt want put out on
-    // the database, so the reorder map must handle a node that is not
-    // in the original mesh and map that to an invalid value (currently
-    // using -1 as invalid value...)
-
-
-    // Note: To further add confusion,
-    // the reorderNodeMap and new_ids are 0-based
-    // the reverseNodeMap and nodeMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-
-    reorderNodeMap.resize(count);
-
-    for (int i=0; i < count; i++) {
-      int global_id = new_ids[i];
-
-      // This will return 0 if node is not found in list.
-      int orig_local_id = node_global_to_local(global_id, false) - 1;
-
-      reorderNodeMap[i] = orig_local_id;
-    }
-  }
-
-  // Handle special output time requests -- primarily restart (cycle, keep, overwrite)
-  // Given the global region step, return the step on the database...
-  int DatabaseIO::get_database_step(int global_step) const
-  {
-    assert(overlayCount >= 0 && cycleCount >= 0);
-    if (overlayCount == 0 && cycleCount == 0)
-      return global_step;
-
-    int local_step = global_step - 1;
-    local_step /= (overlayCount + 1);
-    if (cycleCount > 0)
-      local_step %= cycleCount;
-    return local_step + 1;
-  }
-
-  void DatabaseIO::finalize_write(double sim_time)
-  {
-    // Attempt to ensure that all data written up to this point has
-    // actually made it out to disk.  We also write a special attribute
-    // to the file to indicate that the current timestep should be
-    // complete on the disk.
-    // The attribute is a GLOBAL attribute named "last_written_time"
-    // which is a double value which can be compared to the values in
-    // the time array to make sure they match.  If they don't, then
-    // hopefully the "last_written_time" is smaller than the time
-    // array value and indicates that the last step is corrupt.
+    void Ioex::DatabaseIO::add_attribute_fields(ex_entity_type entity_type,
+						Ioss::GroupingEntity *block,
+						int attribute_count, const std::string& type)
+    {
+      /// \todo REFACTOR Some of the attribute knowledge should be at
+      /// the Ioss::ElementTopology level instead of here. That would
+      /// make it easier for an application to register a new element
+      /// type and its attributes.
     
-    // Update the attribute.
-    Ioex::Internals data(get_file_pointer(), maximumNameLength);
-    data.update_last_time_attribute(sim_time);
-
-    // Flush the files buffer to disk...
-    // If a history file, then only flush if there is more
-    // than 10 seconds since the last flush to avoid
-    // the flush eating up cpu time for small fast jobs...
-    // NOTE: If decide to do this on all files, need to sync across
-    // processors to make sure they all flush at same time.
-
-    // GDS: 2011/03/30 -- Use for all non-parallel files, but shorten
-    // time for non history files.  Assume that can afford to lose ~10
-    // seconds worth of data...  (Flush was taking long time on some
-    // /scratch filesystems at SNL for short regression tests with
-    // lots of steps)
-    // GDS: 2011/07/27 -- shorten from 90 to 10.  Developers running
-    // small jobs were not able to view output until job
-    // finished. Hopefully the netcdf no-fsync fix along with this fix
-    // results in negligible impact on runtime with more syncs.
-
-    bool do_flush = true;
-    if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
-      assert (myProcessor == 0);
-      time_t cur_time = time(NULL);
-      if (cur_time - timeLastFlush >= 10) {
-	timeLastFlush = cur_time;
-	do_flush = true;
-      } else {
-	do_flush = false;
-      }
-    }
-    if (do_flush)
-      ex_update(get_file_pointer());
-  }
-
-  void Ioex::DatabaseIO::add_attribute_fields(Ioss::ElementBlock *block,
-					      int attribute_count, const std::string& type)
-  {
-    /// \todo REFACTOR Some of the attribute knowledge should be at
-    /// the Ioss::ElementTopology level instead of here. That would
-    /// make it easier for an application to register a new element
-    /// type and its attributes.
+      // Attribute "Conventions" to be used if there are no attribute names on the database:
+      // from Table 1 in ExodusII manual
+      //
+      // Circle     1     Radius [Volume]
+      // Sphere     1     Radius [Volume]
+      // Truss      1     Area
+      // 2D Beam    3     Area, I, J
+      // 3D Beam    7     Area, I1, I2, J, V1, V2, V3 (V will be a 3D vector named "reference_axis")
+      // Shell      1     Thickness
+      //
+      // Additional conventions not defined in ExodusII manual:
+      // * If a "beam" has 1 attribute, call it "area"
+      // * Treat "bar" and "rod" as aliases for "truss"
+      // * Treat "trishell" as alias for "shell"
+      // * All "shell" or "trishell" elements -- If #attributes == #node/element, the
+      //                                         attribute is "nodal_thickness"
+      //
+      // If there are attribute names on the database, use those names. 
+      // Always create a variable "attribute" which contains a single
+      // field for all attributes...
     
-    // Attribute "Conventions" to be used if there are no attribute names on the database:
-    // from Table 1 in ExodusII manual
-    //
-    // Circle     1     Radius [Volume]
-    // Sphere     1     Radius [Volume]
-    // Truss      1     Area
-    // 2D Beam    3     Area, I, J
-    // 3D Beam    7     Area, I1, I2, J, V1, V2, V3 (V will be a 3D vector named "reference_axis")
-    // Shell      1     Thickness
-    //
-    // Additional conventions not defined in ExodusII manual:
-    // * If a "beam" has 1 attribute, call it "area"
-    // * Treat "bar" and "rod" as aliases for "truss"
-    // * Treat "trishell" as alias for "shell"
-    // * All "shell" or "trishell" elements -- If #attributes == #node/element, the
-    //                                         attribute is "nodal_thickness"
-    //
-    // If there are attribute names on the database, use those names. 
-    // Always create a variable "attribute" which contains a single
-    // field for all attributes...
-    
-    assert(block != NULL);
-    if (attribute_count > 0) {
-      std::string block_name = block->name();
-      int my_element_count = block->get_property("entity_count").get_int();
+      assert(block != NULL);
+      if (attribute_count > 0) {
+	std::string block_name = block->name();
+	int my_element_count = block->get_property("entity_count").get_int();
       
 
-      // Get the attribute names. May not exist or may be blank...
-      char **names = get_exodus_names(attribute_count, maximumNameLength);
-      int id = block->get_property("id").get_int();
-      {
-	Ioss::SerializeIO	serializeIO__(this);
-	if (block->get_property("entity_count").get_int() != 0) {
-	  int ierr = ex_get_attr_names(get_file_pointer(), EX_ELEM_BLOCK, id, &names[0]);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	// Get the attribute names. May not exist or may be blank...
+	char **names = get_exodus_names(attribute_count, maximumNameLength);
+	int id = block->get_property("id").get_int();
+	{
+	  Ioss::SerializeIO	serializeIO__(this);
+	  if (block->get_property("entity_count").get_int() != 0) {
+	    int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
+	    if (ierr < 0)
+	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
 	}
-      }
 
-      // Sync names across processors...
-      if (isParallel) {
-	std::vector<char> cname(attribute_count * (maximumNameLength+1));
-	if (block->get_property("entity_count").get_int() != 0) {
+	// Sync names across processors...
+	if (isParallel) {
+	  std::vector<char> cname(attribute_count * (maximumNameLength+1));
+	  if (block->get_property("entity_count").get_int() != 0) {
+	    for (int i=0; i < attribute_count; i++) {
+	      std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
+	    }
+	  }
+	  util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
 	  for (int i=0; i < attribute_count; i++) {
-	    std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
+	    std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
 	  }
 	}
-	util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
+      
+	// Convert to lowercase.
 	for (int i=0; i < attribute_count; i++) {
-	  std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
+	  fix_bad_name(names[i]);
+	  Ioss::Utils::fixup_name(names[i]);
 	}
-      }
       
-      // Convert to lowercase.
-      for (int i=0; i < attribute_count; i++) {
-	fix_bad_name(names[i]);
-	Ioss::Utils::fixup_name(names[i]);
-      }
-      
-      if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
-	std::vector<Ioss::Field> attributes;
-	get_fields(my_element_count, names, attribute_count,
-		   Ioss::Field::ATTRIBUTE, fieldSuffixSeparator, NULL,
-		   attributes);
-	int offset = 1;
-	std::vector<Ioss::Field>::const_iterator IF;
-	for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
-	  Ioss::Field field = *IF;
-	  block->field_add(field);
-	  const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
-	  tmp_field.set_index(offset);
-	  offset += field.raw_storage()->component_count();
+	if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
+	  std::vector<Ioss::Field> attributes;
+	  get_fields(my_element_count, names, attribute_count,
+		     Ioss::Field::ATTRIBUTE, fieldSuffixSeparator, NULL,
+		     attributes);
+	  int offset = 1;
+	  std::vector<Ioss::Field>::const_iterator IF;
+	  for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
+	    Ioss::Field field = *IF;
+	    block->field_add(field);
+	    const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
+	    tmp_field.set_index(offset);
+	    offset += field.raw_storage()->component_count();
+	  }
 	}
-      }
-      else {
-	// Attributes are not named....
-	// Try to assign some meaningful names based on conventions...
-	std::string att_name = "attribute";  // Default
-	int unknown_attributes = 0;
+	else {
+	  // Attributes are not named....
+	  // Try to assign some meaningful names based on conventions...
+	  std::string att_name = "attribute";  // Default
+	  int unknown_attributes = 0;
 	
-	if (type_match(type, "shell") || type_match(type, "trishell")) {
-	  if (attribute_count == block->get_property("topology_node_count").get_int()) {
-	    att_name = "nodal_thickness";
+	  if (type_match(type, "shell") || type_match(type, "trishell")) {
+	    if (attribute_count == block->get_property("topology_node_count").get_int()) {
+	      att_name = "nodal_thickness";
 	    
-	    std::string storage = "Real[";
-	    storage += Ioss::Utils::to_string(attribute_count);
-	    storage += "]";
+	      std::string storage = "Real[";
+	      storage += Ioss::Utils::to_string(attribute_count);
+	      storage += "]";
 	    
-	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
-					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
-	  } else {
-	    att_name = "thickness";
-	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
-	    unknown_attributes = attribute_count - 1;
-	  }
-
-	}
-
-	// NOTE: This must appear before the "sphere" check since
-	// sphere is substring of "sphere-mass"
-	// Want an exact match here, not substring match...
-	else if (Ioss::Utils::case_strcmp(type, "sphere-mass") == 0) {
-	  if (attribute_count != 10) {
-	    if (myProcessor == 0) {
-	      IOSS_WARNING << "For element block '" << block->name()
-			   << "' of type '" << type << "' there were "
-			   << attribute_count
-			   << " attributes instead of the expected 10 attributes "
-			   << "known to the IO Subsystem. "
-			   << " The attributes can be accessed as the field named 'attribute'";
+	      block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
+					   Ioss::Field::ATTRIBUTE, my_element_count, 1));
+	    } else {
+	      att_name = "thickness";
+	      block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, 1));
+	      unknown_attributes = attribute_count - 1;
 	    }
-	  } else {
-	    // First attribute is concentrated mass...
-	    size_t offset = 1;
-	    block->field_add(Ioss::Field("mass", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    offset += 1;
 
-	    // Next six attributes are moment of inertia -- symmetric tensor
-	    block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, SYM_TENSOR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    offset += 6;
-
-	    // Next three attributes are offset from node to CG
-	    block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    offset += 3;
 	  }
-	}
 
-	else if (type_match(type, "circle") || type_match(type, "sphere")) {
-	  att_name = "radius";
-	  size_t offset = 1;
-	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
-	  if (attribute_count > 1) {
-	    // Default second attribute (from sphgen3d) is "volume"
-	    // which is the volume of the cube which would surround a
-	    // sphere of the given radius.
-	    att_name = "volume";
+	  // NOTE: This must appear before the "sphere" check since
+	  // sphere is substring of "sphere-mass"
+	  // Want an exact match here, not substring match...
+	  else if (Ioss::Utils::case_strcmp(type, "sphere-mass") == 0) {
+	    if (attribute_count != 10) {
+	      if (myProcessor == 0) {
+		IOSS_WARNING << "For element block '" << block->name()
+			     << "' of type '" << type << "' there were "
+			     << attribute_count
+			     << " attributes instead of the expected 10 attributes "
+			     << "known to the IO Subsystem. "
+			     << " The attributes can be accessed as the field named 'attribute'";
+	      }
+	    } else {
+	      // First attribute is concentrated mass...
+	      size_t offset = 1;
+	      block->field_add(Ioss::Field("mass", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	      offset += 1;
+
+	      // Next six attributes are moment of inertia -- symmetric tensor
+	      block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, SYM_TENSOR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	      offset += 6;
+
+	      // Next three attributes are offset from node to CG
+	      block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	      offset += 3;
+	    }
+	  }
+
+	  else if (type_match(type, "circle") || type_match(type, "sphere")) {
+	    att_name = "radius";
+	    size_t offset = 1;
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, offset++));
+	    if (attribute_count > 1) {
+	      // Default second attribute (from sphgen3d) is "volume"
+	      // which is the volume of the cube which would surround a
+	      // sphere of the given radius.
+	      att_name = "volume";
+	      block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, offset++));
+	    }
+	    unknown_attributes = attribute_count - 2;
 	  }
-	  unknown_attributes = attribute_count - 2;
-	}
 
-	else if (type_match(type, "truss") ||
+	  else if (type_match(type, "truss") ||
 		   type_match(type, "bar")   ||
 		   type_match(type, "beam")   ||
 		   type_match(type, "rod")) {
-	  // Technically, truss, bar, rod should all only have 1 attribute; however,
-	  // there are some mesh generation codes that treat all of these types the
-	  // same and put "beam-type" attributes on bars...
-	  int index = 1;
-	  att_name = "area";
-	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	    // Technically, truss, bar, rod should all only have 1 attribute; however,
+	    // there are some mesh generation codes that treat all of these types the
+	    // same and put "beam-type" attributes on bars...
+	    int index = 1;
+	    att_name = "area";
+	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
-	  if (spatialDimension == 2 && attribute_count >= 3) {
-	    block->field_add(Ioss::Field("i", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
-	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
-	  }
-	  else if (spatialDimension == 3 && attribute_count >= 7) {
-	    block->field_add(Ioss::Field("i1", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
-	    block->field_add(Ioss::Field("i2", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
-	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
-	    block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, VECTOR3D(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    index += 3;
-	    if (attribute_count >= 10) { 
-	      // Next three attributes would (hopefully) be offset vector...
-	      // This is typically from a NASGEN model.
-	      block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
+	    if (spatialDimension == 2 && attribute_count >= 3) {
+	      block->field_add(Ioss::Field("i", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	      block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	    }
+	    else if (spatialDimension == 3 && attribute_count >= 7) {
+	      block->field_add(Ioss::Field("i1", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	      block->field_add(Ioss::Field("i2", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	      block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
+					   Ioss::Field::ATTRIBUTE, my_element_count, index++));
+	      block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, VECTOR3D(),
 					   Ioss::Field::ATTRIBUTE, my_element_count, index));
 	      index += 3;
+	      if (attribute_count >= 10) { 
+		// Next three attributes would (hopefully) be offset vector...
+		// This is typically from a NASGEN model.
+		block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
+					     Ioss::Field::ATTRIBUTE, my_element_count, index));
+		index += 3;
+	      }
+	    }
+	    unknown_attributes = attribute_count - index;
+	  }
+
+	  else {
+	    unknown_attributes = attribute_count;
+	  }
+
+	  if (unknown_attributes > 0) {
+	    att_name = "extra_attribute";
+	    std::string storage = "Real[";
+	    storage += Ioss::Utils::to_string(unknown_attributes);
+	    storage += "]";
+	    size_t index = attribute_count - unknown_attributes + 1;
+	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
+					 Ioss::Field::ATTRIBUTE, my_element_count, index));
+	  
+	    if (myProcessor == 0) {
+	      IOSS_WARNING << "For element block '" << block->name()
+			   << "' of type '" << type << "'\n\tthere were "
+			   << unknown_attributes << " attributes that are not known to the IO Subsystem\n\t"
+			   << "in addition to the " << attribute_count - unknown_attributes
+			   << " known. The extra attributes can be accessed\n\tas the field '"
+			   << att_name << "' with " << unknown_attributes << " components.\n\n";
 	    }
 	  }
-	  unknown_attributes = attribute_count - index;
 	}
 
-	else {
-	  unknown_attributes = attribute_count;
-	}
-
-	if (unknown_attributes > 0) {
-	  att_name = "extra_attribute";
-	  std::string storage = "Real[";
-	  storage += Ioss::Utils::to_string(unknown_attributes);
-	  storage += "]";
-	  size_t index = attribute_count - unknown_attributes + 1;
-	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
-				       Ioss::Field::ATTRIBUTE, my_element_count, index));
-	  
-	  if (myProcessor == 0) {
-	    IOSS_WARNING << "For element block '" << block->name()
-			 << "' of type '" << type << "'\n\tthere were "
-			 << unknown_attributes << " attributes that are not known to the IO Subsystem\n\t"
-			 << "in addition to the " << attribute_count - unknown_attributes
-			 << " known. The extra attributes can be accessed\n\tas the field '"
-			 << att_name << "' with " << unknown_attributes << " components.\n\n";
-	  }
-	}
-      }
-
-      // Always create a field called "attribute" containing data
-      // for all attributes on the mesh
-      std::string att_name = "attribute";  // Default
-      std::string storage = "Real[";
-      storage += Ioss::Utils::to_string(attribute_count);
-      storage += "]";
+	// Always create a field called "attribute" containing data
+	// for all attributes on the mesh
+	std::string att_name = "attribute";  // Default
+	std::string storage = "Real[";
+	storage += Ioss::Utils::to_string(attribute_count);
+	storage += "]";
       
       block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
 				   Ioss::Field::ATTRIBUTE, my_element_count, 1));
@@ -5586,6 +6358,59 @@ namespace Ioex {
 } // End of namespace
 
 namespace {
+  template <typename T>
+  void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T*>& entities,
+			     const char suffix_separator)
+  {
+    // For the entity, determine the attribute fields and the correct
+    // order. Write the names of these fields.  However, be aware that
+    // the field "attribute" always exists to contain all attributes
+    // and its name should not be used even if it is the only
+    // attribute field.
+    typename std::vector<T*>::const_iterator I;
+    for (I=entities.begin(); I != entities.end(); ++I) {
+      Ioss::GroupingEntity *ge = *I;
+      
+      std::string ge_name = ge->name();
+      int attribute_count = ge->get_property("attribute_count").get_int();
+      if (attribute_count > 0) {
+	
+	check_attribute_index_order(ge);
+	
+	std::vector<char*> names(attribute_count);
+	std::vector<std::string> names_str(attribute_count);
+	
+	// Get the attribute fields...
+	Ioss::NameList results_fields;
+	ge->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+	
+	Ioss::NameList::const_iterator IF;
+	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	  std::string field_name = *IF;
+	  const Ioss::Field &field = ge->get_fieldref(field_name);
+	  assert(field.get_index() != 0);
+	  
+	  if (field_name == "attribute") {
+	    field.set_index(1);
+	    continue;
+	  }
+	  
+	  const Ioss::VariableType *vtype = field.raw_storage();
+	  int comp_count = vtype->component_count();
+	  int field_offset = field.get_index();
+	  for (int i=0; i < comp_count; i++) {
+	    names_str[field_offset-1+i] = vtype->label_name(field_name, i+1, suffix_separator);
+	    names[field_offset-1+i] = (char*)names_str[field_offset-1+i].c_str();
+	  }
+	}
+	int ge_id = ge->get_property("id").get_int();
+	int ierr = ex_put_attr_names(exoid, type, ge_id, TOPTR(names));
+	if (ierr < 0)
+	  exodus_error(exoid, __LINE__, -1);
+      }
+    }
+  }
+  
   void check_attribute_index_order(Ioss::GroupingEntity *block)
   {
     int attribute_count = block->get_property("attribute_count").get_int();
@@ -6573,10 +7398,11 @@ void add_map_fields(int exoid, Ioss::ElementBlock *block, int my_element_count)
 }
 
 #ifndef NDEBUG
-bool check_block_order(const Ioss::ElementBlockContainer &blocks)
+template <typename T>
+bool check_block_order(const std::vector<T*> &blocks)
 {
   // Verify that element blocks are defined in sorted offset order...
-  Ioss::ElementBlockContainer::const_iterator I;
+  typename std::vector<T*>::const_iterator I;
 
   int eb_offset = -1;
   for (I=blocks.begin(); I != blocks.end(); ++I) {
@@ -6589,18 +7415,23 @@ bool check_block_order(const Ioss::ElementBlockContainer &blocks)
 }
 #endif
 
-  void check_variable_consistency(size_t gv_count, size_t nv_count, size_t ev_count,
-				  size_t nsv_count, size_t ssv_count,
+  void check_variable_consistency(const ex_var_params &exo_params,
 				  int my_processor, const std::string& filename,
 				  const Ioss::ParallelUtils &util)
   {
 #ifdef HAVE_MPI    
-    std::vector<int> var_counts(5);
-    var_counts[0] = gv_count;
-    var_counts[1] = nv_count;
-    var_counts[2] = ev_count;
-    var_counts[3] = nsv_count;
-    var_counts[4] = ssv_count;
+    const int num_types=10;
+    std::vector<int> var_counts(num_types);
+    var_counts[0] = exo_params.num_glob;
+    var_counts[1] = exo_params.num_node;
+    var_counts[2] = exo_params.num_edge;
+    var_counts[3] = exo_params.num_face;
+    var_counts[4] = exo_params.num_elem;
+    var_counts[5] = exo_params.num_nset;
+    var_counts[6] = exo_params.num_eset;
+    var_counts[7] = exo_params.num_fset;
+    var_counts[8] = exo_params.num_sset;
+    var_counts[9] = exo_params.num_elset;
     
     Ioss::IntVector all_counts;
     util.gather(var_counts, all_counts);
@@ -6608,31 +7439,26 @@ bool check_block_order(const Ioss::ElementBlockContainer &blocks)
     bool any_diff = false;
     std::ostringstream errmsg;
     if (my_processor == 0) {
-      bool diff[5];
+      bool diff[num_types];
       // See if any differ...
-      for (int iv = 0; iv < 5; iv++) {
+      for (int iv = 0; iv < 10; iv++) {
 	diff[iv] = false;
 	std::string type;
 	switch (iv) {
-	case 0:
-	  type = "global";
-	  break;
-	case 1:
-	  type = "nodal";
-	  break;
-	case 2:
-	  type = "element";
-	  break;
-	case 3:
-	  type = "nodeset";
-	  break;
-	case 4:
-	  type = "sideset";
-	  break;
+	case 0:  type = "global";     break;
+	case 1:  type = "nodal";      break;
+	case 2:  type = "edge";	      break;
+	case 3:  type = "face";	      break;
+	case 4:  type = "element";    break;
+	case 5:  type = "nodeset";    break;
+	case 6:  type = "edgeset";    break;
+	case 7:  type = "faceset";    break;
+	case 8:  type = "sideset";    break;
+	case 9:  type = "elementset"; break;
 	}
 	
 	for (int ip = 1; ip < util.parallel_size(); ip++) {
-	  if (var_counts[iv] != all_counts[ip*5+iv]) {
+	  if (var_counts[iv] != all_counts[ip*num_types+iv]) {
 	    any_diff = true;
 	    if (!diff[iv]) {
 	      Ioss::FileInfo db(filename);
@@ -6642,7 +7468,7 @@ bool check_block_order(const Ioss::ElementBlockContainer &blocks)
 		     << "       Database: " << db.tailname() << "\n"
 		     << "\tProcessor 0 count = " << var_counts[iv] << "\n";
 	    }
-	    errmsg << "\tProcessor " << ip << " count = " << all_counts[ip*5+iv] << "\n";
+	    errmsg << "\tProcessor " << ip << " count = " << all_counts[ip*num_types+iv] << "\n";
 	  }
 	}
       }

@@ -41,8 +41,16 @@
 #include <cstring>
 
 namespace Ioss {
+  class NodeBlock;
+  class EdgeBlock;
+  class FaceBlock;
   class ElementBlock;
+
   class NodeSet;
+  class EdgeSet;
+  class FaceSet;
+  class ElementSet;
+
   class SideBlock;
   class SideSet;
 }
@@ -79,58 +87,129 @@ namespace Ioss {
    * </ul>
    */
 namespace Ioex {
-  struct Mesh
+  struct NodeBlock
   {
-    Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
-	       blockCount(0), nodesetCount(0), sidesetCount(0) {}
+    NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0)
+    {}
 
-    Mesh(int dim, int nodes, int elements, int blocks, int nsets, int ssets,
-	 char* the_title)
-      :  dimensionality(dim), nodeCount(nodes), elementCount(elements),
-	 blockCount(blocks), nodesetCount(nsets), sidesetCount(ssets)
-    {
-      std::strncpy(title, the_title, MAX_LINE_LENGTH+1);
-      title[MAX_LINE_LENGTH] = '\0';
-    }
+    NodeBlock(const NodeBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+					attributeCount(other.attributeCount)
+    {}
 
-    char title[MAX_LINE_LENGTH+1];
-    int dimensionality;
-    int nodeCount;
-    int elementCount;
-    int blockCount;
-    int nodesetCount;
-    int sidesetCount;
+    NodeBlock(const Ioss::NodeBlock &other);
+
+    NodeBlock& operator=(const NodeBlock& other);
+
+    ~NodeBlock() {}
+
+    bool operator==(const NodeBlock&) const;
+    bool operator!=(const NodeBlock& other) const {return !(*this == other);}
+
+    std::string name;
+    int id;
+    int entityCount;
+    int attributeCount;
+    private:
   };
 
-  struct Block
+  struct EdgeBlock
   {
-    Block() : name(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0),
-	      offset_(-1)
+    EdgeBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), attributeCount(0)
     {
       std::strcpy(elType, "");
     }
 
-    Block(const Block &other) : name(other.name), id(other.id), elementCount(other.elementCount),
-				nodesPerElement(other.nodesPerElement),
-				attributeCount(other.attributeCount), offset_(other.offset_)
+    EdgeBlock(const EdgeBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+					nodesPerEntity(other.nodesPerEntity), attributeCount(other.attributeCount)
     {
       std::strcpy(elType, other.elType);
     }
 
-    Block(const Ioss::ElementBlock &other);
+    EdgeBlock(const Ioss::EdgeBlock &other);
 
-    Block& operator=(const Block& other);
+    EdgeBlock& operator=(const EdgeBlock& other);
 
-    ~Block() {}
+    ~EdgeBlock() {}
 
-    bool operator==(const Block&) const;
-    bool operator!=(const Block& other) const {return !(*this == other);}
+    bool operator==(const EdgeBlock&) const;
+    bool operator!=(const EdgeBlock& other) const {return !(*this == other);}
 
     char elType[MAX_STR_LENGTH+1];
     std::string name;
     int id;
-    int elementCount;
-    int nodesPerElement;
+    int entityCount;
+    int nodesPerEntity;
+    int attributeCount;
+    private:
+  };
+
+  struct FaceBlock
+  {
+    FaceBlock() : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0)
+    {
+      std::strcpy(elType, "");
+    }
+
+    FaceBlock(const FaceBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+					nodesPerEntity(other.nodesPerEntity), edgesPerEntity(other.edgesPerEntity),
+					attributeCount(other.attributeCount)
+    {
+      std::strcpy(elType, other.elType);
+    }
+
+    FaceBlock(const Ioss::FaceBlock &other);
+
+    FaceBlock& operator=(const FaceBlock& other);
+
+    ~FaceBlock() {}
+
+    bool operator==(const FaceBlock&) const;
+    bool operator!=(const FaceBlock& other) const {return !(*this == other);}
+
+    char elType[MAX_STR_LENGTH+1];
+    std::string name;
+    int id;
+    int entityCount;
+    int nodesPerEntity;
+    int edgesPerEntity;
+    int attributeCount;
+    private:
+  };
+
+  struct ElemBlock
+  {
+    ElemBlock() : name(""), id(0), entityCount(0),
+		  nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
+		  attributeCount(0), offset_(-1)
+    {
+      std::strcpy(elType, "");
+    }
+
+    ElemBlock(const ElemBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+					nodesPerEntity(other.nodesPerEntity),
+					edgesPerEntity(other.edgesPerEntity),
+					facesPerEntity(other.facesPerEntity),
+					attributeCount(other.attributeCount), offset_(other.offset_)
+    {
+      std::strcpy(elType, other.elType);
+    }
+
+    ElemBlock(const Ioss::ElementBlock &other);
+
+    ElemBlock& operator=(const ElemBlock& other);
+
+    ~ElemBlock() {}
+
+    bool operator==(const ElemBlock&) const;
+    bool operator!=(const ElemBlock& other) const {return !(*this == other);}
+
+    char elType[MAX_STR_LENGTH+1];
+    std::string name;
+    int id;
+    int entityCount;
+    int nodesPerEntity;
+    int edgesPerEntity;
+    int facesPerEntity;
     int attributeCount;
     int offset_;
     private:
@@ -138,22 +217,73 @@ namespace Ioex {
 
   struct NodeSet
   {
-    NodeSet() : name(""), id(0), nodeCount(0), dfCount(0) { }
+    NodeSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    NodeSet(const NodeSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
     NodeSet(const Ioss::NodeSet &other);
     bool operator==(const NodeSet&) const;
     bool operator!=(const NodeSet& other) const {return !(*this == other);}
 
     std::string name;
     int id;
-    int nodeCount;
+    int entityCount;
+    int attributeCount;
+    int dfCount;
+  };
+
+  struct EdgeSet
+  {
+    EdgeSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    EdgeSet(const EdgeSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+    EdgeSet(const Ioss::EdgeSet &other);
+    bool operator==(const EdgeSet&) const;
+    bool operator!=(const EdgeSet& other) const {return !(*this == other);}
+
+    std::string name;
+    int id;
+    int entityCount;
+    int attributeCount;
+    int dfCount;
+  };
+
+  struct FaceSet
+  {
+    FaceSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    FaceSet(const FaceSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+    FaceSet(const Ioss::FaceSet &other);
+    bool operator==(const FaceSet&) const;
+    bool operator!=(const FaceSet& other) const {return !(*this == other);}
+
+    std::string name;
+    int id;
+    int entityCount;
+    int attributeCount;
+    int dfCount;
+  };
+
+  struct ElemSet
+  {
+    ElemSet() : name(""), id(0), entityCount(0), dfCount(0) { }
+    ElemSet(const ElemSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+				    attributeCount(other.attributeCount), dfCount(other.dfCount) {}
+    ElemSet(const Ioss::ElementSet &other);
+    bool operator==(const ElemSet&) const;
+    bool operator!=(const ElemSet& other) const {return !(*this == other);}
+
+    std::string name;
+    int id;
+    int entityCount;
+    int attributeCount;
     int dfCount;
   };
 
   struct SideSet
   {
     SideSet() : name(""), id(0), sideCount(0), dfCount(0) { }
-    SideSet(const Ioss::SideBlock &other); // 3D
-    SideSet(const Ioss::SideSet   &other); // 3D
+    SideSet(const Ioss::SideBlock &other);
+    SideSet(const Ioss::SideSet   &other);
     bool operator==(const SideSet&) const;
     bool operator!=(const SideSet& other) const {return !(*this == other);}
 
@@ -210,27 +340,51 @@ namespace Ioex {
     int exodusFilePtr;
   };
 
+  class Mesh
+  {
+  public:
+    Mesh() :   dimensionality(0)
+      {}
+
+      Mesh(int dim, char* the_title)
+	:  dimensionality(dim)
+	{
+	  std::strncpy(title, the_title, MAX_LINE_LENGTH+1);
+	  title[MAX_LINE_LENGTH] = '\0';
+	}
+
+	char title[MAX_LINE_LENGTH+1];
+	int dimensionality;
+
+	std::vector<NodeBlock> nodeblocks;
+	std::vector<EdgeBlock> edgeblocks;
+	std::vector<FaceBlock> faceblocks;
+	std::vector<ElemBlock> elemblocks;
+	std::vector<NodeSet>   nodesets;
+	std::vector<EdgeSet>   edgesets;
+	std::vector<FaceSet>   facesets;
+	std::vector<ElemSet>   elemsets;
+	std::vector<SideSet>   sidesets;
+	CommunicationMetaData  comm;
+  };
+
   class Internals
   {
   public:
     Internals(int exoid, int maximum_name_length);
 
-    int write_meta_data(const Mesh &mesh,
-			const std::vector<Block>   &blocks,
-			const std::vector<NodeSet> &nodesets,
-			const std::vector<SideSet> &sidesets,
-			const CommunicationMetaData &comm);
+    int write_meta_data(const Mesh &mesh);
 
-  /*!  A restart file may contain an attribute which contains
-   *   information about the processor count and current processor id
-   *   * when the file was written.  This code checks whether that
-   *   information matches the current processor count and id.  If it
-   *   * exists, but doesn't match, a warning message is printed.
-   *   Eventually, this will be used to determine whether certain
-   *   decomposition-related data in the file is valid or has been
-   *   invalidated by a join/re-spread to a different number of
-   *   processors.
-   */
+    /*!  A restart file may contain an attribute which contains
+     *   information about the processor count and current processor id
+     *   * when the file was written.  This code checks whether that
+     *   information matches the current processor count and id.  If it
+     *   * exists, but doesn't match, a warning message is printed.
+     *   Eventually, this will be used to determine whether certain
+     *   decomposition-related data in the file is valid or has been
+     *   invalidated by a join/re-spread to a different number of
+     *   processors.
+     */
     bool check_processor_info(int processor_count, int processor_id);
 
     void update_last_time_attribute(double value);
@@ -242,14 +396,30 @@ namespace Ioex {
 
     int put_metadata(const Mesh &mesh,
 		     const CommunicationMetaData &comm);
-    int put_metadata(const std::vector<Block> &blocks);
+    int put_metadata(const std::vector<NodeBlock> &nodeblocks);
+    int put_metadata(const std::vector<EdgeBlock> &edgeblocks);
+    int put_metadata(const std::vector<FaceBlock> &faceblocks);
+    int put_metadata(const std::vector<ElemBlock> &elemblocks);
+
     int put_metadata(const std::vector<NodeSet> &nodesets);
+    int put_metadata(const std::vector<EdgeSet> &edgesets);
+    int put_metadata(const std::vector<FaceSet> &facesets);
+    int put_metadata(const std::vector<ElemSet> &elemsets);
+
     int put_metadata(const std::vector<SideSet> &sidesets);
 
     int put_non_define_data(const Mesh &mesh,
 			    const CommunicationMetaData &comm);
-    int put_non_define_data(const std::vector<Block> &blocks);
+    int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);
+    int put_non_define_data(const std::vector<EdgeBlock> &edgeblocks);
+    int put_non_define_data(const std::vector<FaceBlock> &faceblocks);
+    int put_non_define_data(const std::vector<ElemBlock> &elemblocks);
+
     int put_non_define_data(const std::vector<NodeSet> &nodesets);
+    int put_non_define_data(const std::vector<EdgeSet> &edgesets);
+    int put_non_define_data(const std::vector<FaceSet> &facesets);
+    int put_non_define_data(const std::vector<ElemSet> &elemsets);
+
     int put_non_define_data(const std::vector<SideSet> &sidesets);
 
     int max_name_length() const {return maximumNameLength;}

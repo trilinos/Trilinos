@@ -45,7 +45,7 @@
 static const std::string SCALAR("scalar");
 
 Ioss::SideSet::SideSet(const Ioss::DatabaseIO *io_database, const std::string& my_name)
-  : Ioss::GroupingEntity(io_database, my_name)
+  : Ioss::GroupingEntity(io_database, my_name, 0)
 {
   properties.add(Ioss::Property(this,
 			       "side_block_count", Ioss::Property::INTEGER));

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010
+// Copyright(C) 2011
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -30,29 +30,35 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
+#ifndef IOSS_Ioss_FaceBlock_h
+#define IOSS_Ioss_FaceBlock_h
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_EntitySet.h>
+#include <Ioss_Property.h>
+#include <Ioss_EntityBlock.h>
 #include <string>
+#include <assert.h>
 
 namespace Ioss {
   class DatabaseIO;
 
-  class NodeSet : public EntitySet {
+  class FaceBlock : public EntityBlock {
   public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
+    FaceBlock(const DatabaseIO *io_database,
+		 const std::string& name, const std::string& face_type,
+		 size_t number_faces);
 
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
-      
-    // Handle implicit properties -- These are calcuated from data stored
-    // in the grouping entity instead of having an explicit value assigned.
-    // An example would be 'element_block_count' for a region.
+    ~FaceBlock();
+
+    std::string type_string() const {return "FaceBlock";}
+    EntityType type() const {return FACEBLOCK;}
+
+    /// Handle implicit properties -- These are calcuated from data stored
+    /// in the grouping entity instead of having an explicit value assigned.
+    /// An example would be 'face_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
+
+    void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
 
   protected:
     int internal_get_field_data(const Field& field,
@@ -60,7 +66,6 @@ namespace Ioss {
 
     int internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
-
   };
 }
 #endif

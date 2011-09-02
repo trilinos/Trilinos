@@ -30,37 +30,31 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
-
-#include <Ioss_CodeTypes.h>
 #include <Ioss_EntitySet.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_ElementTopology.h>
+#include <Ioss_VariableType.h>
+#include <Ioss_Property.h>
+#include <Ioss_Field.h>
+
 #include <string>
+#include <assert.h>
 
-namespace Ioss {
-  class DatabaseIO;
+Ioss::EntitySet::EntitySet(const Ioss::DatabaseIO *io_database,
+			       const std::string& my_name,
+			       size_t entity_count)
+  : Ioss::GroupingEntity(io_database, my_name, entity_count)
+{
+  properties.add(Ioss::Property("distribution_factor_count",
+				static_cast<int>(entity_count)));
 
-  class NodeSet : public EntitySet {
-  public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
-
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
-      
-    // Handle implicit properties -- These are calcuated from data stored
-    // in the grouping entity instead of having an explicit value assigned.
-    // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
-
-  protected:
-    int internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-    int internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-  };
+  // Add the standard fields...
+  fields.add(Ioss::Field("distribution_factors",
+			 Ioss::Field::REAL, "scalar",
+			 Ioss::Field::MESH, entity_count));
 }
-#endif
+
+Ioss::Property Ioss::EntitySet::get_implicit_property(const std::string& my_name) const
+{
+  return Ioss::GroupingEntity::get_implicit_property(my_name);
+}

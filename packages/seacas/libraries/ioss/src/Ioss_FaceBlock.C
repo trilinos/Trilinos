@@ -30,37 +30,48 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
+#include <Ioss_FaceBlock.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_Property.h>
+#include <Ioss_Field.h>
+#include <Ioss_VariableType.h>
+#include <Ioss_ElementTopology.h>
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_EntitySet.h>
 #include <string>
 
-namespace Ioss {
-  class DatabaseIO;
-
-  class NodeSet : public EntitySet {
-  public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
-
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
-      
-    // Handle implicit properties -- These are calcuated from data stored
-    // in the grouping entity instead of having an explicit value assigned.
-    // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
-
-  protected:
-    int internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-    int internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
-
-  };
+Ioss::FaceBlock::FaceBlock(const Ioss::DatabaseIO *io_database,
+			   const std::string& my_name,
+			   const std::string& face_type,
+			   size_t number_faces)
+  : Ioss::EntityBlock(io_database, my_name, face_type, number_faces)
+{
+  if (topology()->master_element_name() != face_type &&
+      topology()->name() != face_type) {
+    // Maintain original face type on output database if possible.
+    properties.add(Ioss::Property("original_face_type", face_type));
+  }
 }
-#endif
+
+Ioss::FaceBlock::~FaceBlock() {}
+
+Ioss::Property Ioss::FaceBlock::get_implicit_property(const std::string& my_name) const
+{
+  return Ioss::EntityBlock::get_implicit_property(my_name);
+}
+
+int Ioss::FaceBlock::internal_get_field_data(const Ioss::Field& field,
+				      void *data, size_t data_size) const
+{
+  return get_database()->get_field(this, field, data, data_size);
+}
+
+int Ioss::FaceBlock::internal_put_field_data(const Ioss::Field& field,
+				      void *data, size_t data_size) const
+{
+  return get_database()->put_field(this, field, data, data_size);
+}
+
+void Ioss::FaceBlock::get_block_adjacencies(std::vector<std::string> &block_adjacency) const
+{
+  get_database()->get_block_adjacencies(this, block_adjacency);
+}

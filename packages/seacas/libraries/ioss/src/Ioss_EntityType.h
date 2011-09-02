@@ -35,14 +35,19 @@
 
 namespace Ioss {
   enum EntityType {NODEBLOCK    =    1,
-		   ELEMENTBLOCK =    2,
-		   NODESET      =    4,
-		   SIDESET      =   16,
-		   SURFACE      =   16, //: Same as sideset
-		   COMMSET      =   32,
-		   SIDEBLOCK    =  128,
-                   REGION       =  256,
-                   SUPERELEMENT =  512,
-                   INVALID_TYPE = 1024};
+		   EDGEBLOCK    =    2,
+		   FACEBLOCK    =    4,
+		   ELEMENTBLOCK =    8,
+		   NODESET      =   16,
+		   EDGESET      =   32,
+		   FACESET      =   64,
+		   ELEMENTSET   =  128,
+		   SIDESET      =  256,
+		   SURFACE      =  256, //: Same as sideset
+		   COMMSET      =  512,
+		   SIDEBLOCK    = 1024,
+                   REGION       = 2048,
+                   SUPERELEMENT = 4096,
+                   INVALID_TYPE = 8192};
 }
 #endif

@@ -50,8 +50,12 @@ namespace Ioss {
 void Ioss::Super::factory() {}
 
 // ========================================================================
+// Note that since a superelement is created for each node_count, it isn't
+// possible to precreate these element types statically, so they are created
+// as needed and therefore, they must be deleted at end of run hence the 'true'
+// argument to the ElementTopology constructor
 Ioss::Super::Super(const std::string &my_name, int node_count)
-  : Ioss::ElementTopology(my_name, "Unknown"), nodeCount(node_count),
+  : Ioss::ElementTopology(my_name, "Unknown", true), nodeCount(node_count),
     storageType(new St_Super(my_name, node_count))
 {}
 

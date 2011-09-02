@@ -84,7 +84,7 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
   : commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
     fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES), dbUsage(db_usage),
-    surfaceSplitBackwardCompatibility(false), nodeGlobalIdBackwardCompatibility(false),
+    nodeGlobalIdBackwardCompatibility(false),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
     singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || Ioss::SerializeIO::isEnabled()),
     doLogging(false)
@@ -97,154 +97,13 @@ Ioss::DatabaseIO::~DatabaseIO()
 {
 }
 
-// The get_field and put_field functions are just a wrapper around the
-// pure virtual get_field_internal and put_field_internal functions,
-// but this lets me add some debug/checking/common code to the
-// functions without having to do it in the calling code or in the
-// derived classes code.  This also fulfills the hueristic that a
-// public interface should not contain pure virtual functions.
-
-int Ioss::DatabaseIO::get_field(const Ioss::Region* reg, const Ioss::Field& field,
-				void *data, size_t data_size) const
+void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const
 {
-  assert(is_parallel_consistent(singleProcOnly, reg, field, util_));
+  assert(is_parallel_consistent(singleProcOnly, ge, field, util_));
   if (get_logging()) {
-    log_field(">", reg, field, singleProcOnly, util_);
+    log_field(">", ge, field, singleProcOnly, util_);
   }
-  return get_field_internal(reg, field, data, data_size);
 }
-
-int Ioss::DatabaseIO::get_field(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, nb, field, util_));
-  if (get_logging()) {
-    log_field(">", nb, field, singleProcOnly, util_);
-  }
-  return get_field_internal(nb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, eb, field, util_));
-  if (get_logging()) {
-    log_field(">", eb, field, singleProcOnly, util_);
-  }
-  return get_field_internal(eb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::SideBlock* fb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
-  if (get_logging()) {
-    log_field(">", fb, field, singleProcOnly, util_);
-  }
-  return get_field_internal(fb,  field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::NodeSet* ns, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, ns, field, util_));
-  if (get_logging()) {
-    log_field(">", ns, field, singleProcOnly, util_);
-  }
-  return get_field_internal(ns, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::SideSet* fs, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fs, field, util_));
-  if (get_logging()) {
-    log_field(">", fs, field, singleProcOnly, util_);
-  }
-  return get_field_internal(fs, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::CommSet* cs, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, cs, field, util_));
-  if (get_logging()) {
-    log_field(">", cs, field, singleProcOnly, util_);
-  }
-  return get_field_internal(cs, field, data, data_size);
-}
-
-
-int Ioss::DatabaseIO::put_field(const Ioss::Region* reg, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, reg, field, util_));
-  if (get_logging()) {
-    log_field("<", reg, field, singleProcOnly, util_);
-  }
-  return put_field_internal(reg, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, nb, field, util_));
-  if (get_logging()) {
-    log_field("<", nb, field, singleProcOnly, util_);
-  }
-  return put_field_internal(nb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, eb, field, util_));
-  if (get_logging()) {
-    log_field("<", eb, field, singleProcOnly, util_);
-  }
-  return put_field_internal(eb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::SideBlock* fb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
-  if (get_logging()) {
-    log_field("<", fb, field, singleProcOnly, util_);
-  }
-  return put_field_internal(fb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::NodeSet* ns, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, ns, field, util_));
-  if (get_logging()) {
-    log_field("<", ns, field, singleProcOnly, util_);
-  }
-  return put_field_internal(ns, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::SideSet* fs, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fs, field, util_));
-  if (get_logging()) {
-    log_field("<", fs, field, singleProcOnly, util_);
-  }
-  return put_field_internal(fs, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::CommSet* cs, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, cs, field, util_));
-  if (get_logging()) {
-    log_field("<", cs, field, singleProcOnly, util_);
-  }
-  return put_field_internal(cs, field, data, data_size);
-}
-
 
 // Default versions do nothing...
 bool Ioss::DatabaseIO::begin_state(Ioss::Region */* region */, int /* state */, double /* time */)

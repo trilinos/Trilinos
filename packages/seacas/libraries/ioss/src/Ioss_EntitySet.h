@@ -30,37 +30,39 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_NodeSet_h
-#define IOSS_Ioss_NodeSet_h
+#ifndef IOSS_Ioss_EntitySet_h
+#define IOSS_Ioss_EntitySet_h
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_EntitySet.h>
+#include <Ioss_Property.h>
+#include <Ioss_GroupingEntity.h>
 #include <string>
 
 namespace Ioss {
+  class ElementTopology;
+  class ElementSet;
   class DatabaseIO;
 
-  class NodeSet : public EntitySet {
+  class EntitySet : public GroupingEntity {
   public:
-    NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_nodes);
-
-    std::string type_string() const {return "NodeSet";}
-    EntityType type() const {return NODESET;}
-      
-    // Handle implicit properties -- These are calcuated from data stored
-    // in the grouping entity instead of having an explicit value assigned.
-    // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
+    virtual Property
+      get_implicit_property(const std::string& name) const = 0;
 
   protected:
-    int internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
+    EntitySet(const DatabaseIO *io_database,
+	      const std::string& name,
+	      size_t entity_count);
 
-    int internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
+  private:
+    EntitySet(const EntitySet&); // do not implement
+    EntitySet& operator=(const EntitySet&); // do not implement
 
+    ElementTopology *topology_;
+  protected:
+    void count_attributes() const;
+
+    size_t entityCount; ///< stored locally to avoid looking up property
+    mutable size_t attributeCount;
   };
 }
 #endif
