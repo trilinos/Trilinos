@@ -72,7 +72,7 @@ NOX.Epetra provides the following user-level classes:
 #undef HAVE_STDINT_H
 #endif
 #include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
 #include "Epetra_BLAS.h"

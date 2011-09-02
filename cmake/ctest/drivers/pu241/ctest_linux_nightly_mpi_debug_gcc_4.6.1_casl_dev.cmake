@@ -5,7 +5,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.gcc.4.6.1.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDev.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-packages-coupled.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/enable_casl_packages.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/enable_casl_packages.gcc.mpi.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)

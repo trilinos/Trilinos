@@ -61,7 +61,7 @@ The purpose of Isorropia is to ....
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 %}
 
 // General ignore directives

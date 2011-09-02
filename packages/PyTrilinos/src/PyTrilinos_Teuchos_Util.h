@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_PYTHONPARAMETER_H
-#define TEUCHOS_PYTHONPARAMETER_H
+#ifndef PYTRILINOS_TEUCHOS_UTIL_H
+#define PYTRILINOS_TEUCHOS_UTIL_H
 
 // Include python headers
 #include "Python.h"
@@ -187,4 +187,4 @@ PyObject * parameterListToNewPyDict(const Teuchos::ParameterList & plist,
 
 }    // Namespace PyTrilinos
 
-#endif // TEUCHOS_PYTHONPARAMETER_H
+#endif // PYTRILINOS_TEUCHOS_UTIL_H

@@ -42,7 +42,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Util.h"
 
-#include "Epetra_PyUtil.h"
+#include "PyTrilinos_Epetra_Util.h"
 
 %}
 

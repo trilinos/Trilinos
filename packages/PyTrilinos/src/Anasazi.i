@@ -96,7 +96,7 @@ package:
 #include "numpy_include.h"
 
 // Local includes
-#include "FILEstream.h"
+#include "PyTrilinos_FILEstream.h"
 
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
@@ -107,7 +107,7 @@ package:
 #undef HAVE_STDINT_H
 #endif
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #endif
 
 // Epetra includes
@@ -143,7 +143,7 @@ package:
 #include "Epetra_Time.h"
 
 // Epetra NumPy includes
-#include "Epetra_PyUtil.h"
+#include "PyTrilinos_Epetra_Util.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

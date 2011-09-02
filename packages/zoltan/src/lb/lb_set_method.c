@@ -106,8 +106,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = NULL;
 #else
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "OCTPART method selected but not compiled into Zoltan; "
-                       "Compile with ZOLTAN_OCT=1.");
+                     "OCTPART method selected but not compiled into Zoltan; "
+                     "Configure (via CMAKE) with -DZoltan_ENABLE_OCT:BOOL=ON.");
     error = ZOLTAN_FATAL;
     goto End;
 #endif

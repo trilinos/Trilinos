@@ -68,7 +68,7 @@ script in the example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Teuchos include
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // NOX includes
 #include "NOX_Version.H"

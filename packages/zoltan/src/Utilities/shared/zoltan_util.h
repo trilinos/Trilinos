@@ -85,6 +85,7 @@ extern "C" {
 
 #ifdef HAVE_DRUM
 #define ZOLTAN_DRUM
+#warning "WARNING Zoltan support for DRUM is deprecated and will not be available in Trilinos v11."
 #endif
 
 #ifdef HAVE_PARKWAY
@@ -93,6 +94,7 @@ extern "C" {
 
 #ifdef HAVE_ZOLTAN_OCT
 #define ZOLTAN_OCT
+#warning "WARNING Zoltan support for Octree Partitioning is deprecated and will not be available in Trilinos v11.  Consider using LB_METHOD=HSFC for similar results."
 #endif
 
 #else /* !AUTOTOOLS_BUILD */

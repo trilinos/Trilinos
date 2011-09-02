@@ -49,7 +49,7 @@ the Trilinos package LOCA:
 #include "numpy_include.h"
 
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Local Epetra includes
 #include "Epetra_NumPyVector.h"

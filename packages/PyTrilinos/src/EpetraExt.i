@@ -96,7 +96,7 @@ example subdirectory of the PyTrilinos package:
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "Teuchos_XMLObject.hpp"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
 #include "Epetra_ConfigDefs.h"
@@ -132,7 +132,7 @@ example subdirectory of the PyTrilinos package:
 // Epetra python includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-#include "Epetra_PyUtil.h"
+#include "PyTrilinos_Epetra_Util.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
@@ -164,7 +164,7 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_ModelEvaluator.h"
 
 // EpetraExt python includes
-#include "EpetraExt_PyUtil.h"
+#include "PyTrilinos_EpetraExt_Util.h"
 %}
 
 // PyTrilinos configuration

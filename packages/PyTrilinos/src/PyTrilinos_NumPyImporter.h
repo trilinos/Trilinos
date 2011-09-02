@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //              PyTrilinos: Python Interface to Trilinos
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2005) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -26,36 +26,35 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FILESTREAM_H
-#define FILESTREAM_H
+#ifndef PYTRILINOS_NUMPYIMPORTER_H
+#define PYTRILINOS_NUMPYIMPORTER_H
 
-#include <streambuf>
-#include <vector>
+#include "numpy_include.h"
 
 namespace PyTrilinos
 {
 
-class FILEstream : public std::streambuf
+// Singleton class that ensures that the numpy (macro) function
+// import_array() gets called once and only once.
+
+class NumPyImporter
 {
-public:
-  explicit FILEstream(FILE        *fptr,
-		      std::size_t buff_sz  = 256,
-		      std::size_t put_back =   8);
+protected:
+  // These are protected instead of private to keep compilers happy.
+  ~NumPyImporter() { }
+  NumPyImporter() {import_array();}
 
 private:
-  int_type underflow();
-  int_type overflow(int_type ch);
-  int_type sync();
-  // Copy ctor and assignment not allowed
-  FILEstream(const FILEstream &);
-  FILEstream &operator=(const FILEstream &);
+  NumPyImporter(const NumPyImporter & a_ref);
+  const NumPyImporter & operator = (const NumPyImporter & a_rhs);
 
 private:
-  FILE *fptr_;
-  const std::size_t put_back_;
-  std::vector<char> buffer_;
+  // The singleton, i.e. the only instance of this object is this
+  // attribute
+  static NumPyImporter m_singleton;
+  
 };
 
 }  // Namespace PyTrilinos
 
-#endif
+#endif // PYTRILINOS_NUMPYIMPORTER_H

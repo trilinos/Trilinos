@@ -32,21 +32,13 @@ USA
 
 #include <Isorropia_Epetra.hpp>
 
-#ifdef HAVE_EPETRA
-//#ifdef HAVE_MPI
-//#include <Epetra_MpiComm.h>
-//#else
 #include <Epetra_SerialComm.h>
-//#endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Import.h>
-#ifdef HAVE_EPETRAEXT
-#include <EpetraExt_CrsMatrixIn.h>
-#endif
+
 #ifdef ISORROPIA_HAVE_OMP
 #include <omp.h>
-#endif
 #endif
 
 #include <Isorropia_ConfigDefs.hpp>
@@ -54,7 +46,7 @@ USA
 #include <fstream>
 #include <string>
 #include <vector>
-#include<algorithm>
+#include <algorithm>
 
 #ifdef MIN
 #undef MIN
@@ -195,4 +187,3 @@ public:
 }
 }
 #endif
-

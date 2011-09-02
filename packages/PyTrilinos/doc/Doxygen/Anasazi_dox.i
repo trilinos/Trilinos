@@ -625,6 +625,21 @@ n:  [in] Number of values in r_evals, i_evals to be sorted. If n ==
 of r_evals and the length of i_evals. ";
 
 
+// File: structAnasazi_1_1BasicSort_1_1compAlg.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag2.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1sel1st.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1sel2nd.xml
+
+
 // File: classAnasazi_1_1BlockDavidson.xml
 %feature("docstring") Anasazi::BlockDavidson "
 
@@ -664,7 +679,7 @@ allocated for the solver basis. ";
 
 %feature("docstring")  Anasazi::BlockDavidson::~BlockDavidson "Anasazi::BlockDavidson< ScalarType, MV, OP >::~BlockDavidson()
 
-Anasazi::BlockDavidson destructor. ";
+AnasaziBlockDavidson destructor. ";
 
 /*  Solver methods  */
 
@@ -678,7 +693,7 @@ appropriate exception is thrown).
 iterate() will first determine whether the solver is uninitialized; if
 not, it will call initialize(). After initialization, the solver
 performs block Davidson iterations until the status test evaluates as
-::Passed, at which point the method returns to the caller.
+Passed, at which point the method returns to the caller.
 
 The block Davidson iteration proceeds as follows: The current residual
 (R) is preconditioned to form H
@@ -774,7 +789,7 @@ Get access to the current state of the eigensolver.
 The data is only valid if isInitialized() == true.
 
 The data for the preconditioned residual is only meaningful in the
-scenario that the solver throws a ::BlockDavidsonRitzFailure exception
+scenario that the solver throws a BlockDavidsonRitzFailure exception
 during iterate().
 
 A BlockDavidsonState object containing const pointers to the current
@@ -964,6 +979,9 @@ This method requests that the solver print out its current status to
 the given output stream. ";
 
 
+// File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
+
+
 // File: classAnasazi_1_1BlockDavidsonInitFailure.xml
 %feature("docstring") Anasazi::BlockDavidsonInitFailure "
 
@@ -1032,7 +1050,7 @@ StatusTestResNorm object.
 debugtest allows a user to specify additional monitoring of the
 iteration, encapsulated in a StatusTest object  If not specified via
 setDebugStatusTest(), debugtest is ignored.  In most cases, it should
-return ::Failed; if it returns ::Passed, solve() will throw an
+return Failed; if it returns Passed, solve() will throw an
 AnasaziError exception.
 
 Additionally, the solver manager will terminate solve() after a
@@ -1070,7 +1088,7 @@ the Krylov basis. Default: 2
 the underlying solver is allowed to perform. Default: 20
 
 \"Verbosity\" - a sum of MsgType specifying the verbosity. Default:
-::Errors
+Errors
 
 Convergence parameters (if using default convergence test; see
 setGlobalStatusTest())  \"Convergence Tolerance\" - a MagnitudeType
@@ -1147,13 +1165,13 @@ eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
 This method calls BlockDavidson::iterate(), which will return either
-because a specially constructed status test evaluates to ::Passed or
-an exception is thrown.
+because a specially constructed status test evaluates to Passed or an
+exception is thrown.
 
 A return from BlockDavidson::iterate() signifies one of the following
 scenarios: the maximum number of restarts has been exceeded. In this
 scenario, the solver manager will place  all converged eigenpairs into
-the eigenproblem and return ::Unconverged.
+the eigenproblem and return Unconverged.
 
 the locking conditions have been met. In this scenario, some of the
 current eigenpairs will be removed  from the eigensolver and placed
@@ -1165,12 +1183,12 @@ global convergence has been met. In this case, the most significant
 NEV eigenpairs in the solver and locked storage  have met the
 convergence criterion. (Here, NEV refers to the number of eigenpairs
 requested by the Eigenproblem.)  In this scenario, the solver manager
-will return ::Converged.
+will return Converged.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager. ";
 
 %feature("docstring")
@@ -1301,7 +1319,7 @@ exception is thrown).
 iterate() will first determine whether the solver is inintialized; if
 not, it will call initialize() using default arguments. After
 initialization, the solver performs Block Krylov-Schur iterations
-until the status test evaluates as ::Passed, at which point the method
+until the status test evaluates as Passed, at which point the method
 returns to the caller.
 
 The Block Krylov-Schur iteration proceeds as follows: The operator
@@ -1589,6 +1607,9 @@ Compute the Schur form of the projected eigenproblem from the current
 Krylov factorization. ";
 
 
+// File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
+
+
 // File: classAnasazi_1_1BlockKrylovSchurInitFailure.xml
 %feature("docstring") Anasazi::BlockKrylovSchurInitFailure "
 
@@ -1646,7 +1667,7 @@ Ritz values.
 debugtest allows a user to specify additional monitoring of the
 iteration, encapsulated in a StatusTest object  If not specified via
 setDebugStatusTest(), debugtest is ignored.  In most cases, it should
-return ::Failed; if it returns ::Passed, solve() will throw an
+return Failed; if it returns Passed, solve() will throw an
 AnasaziError exception.
 
 Additionally, the solver manager will terminate solve() after a
@@ -1746,24 +1767,24 @@ eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
 This method calls BlockKrylovSchur::iterate(), which will return
-either because a specially constructed status test evaluates to
-::Passed or an exception is thrown.
+either because a specially constructed status test evaluates to Passed
+or an exception is thrown.
 
 A return from BlockKrylovSchur::iterate() signifies one of the
 following scenarios: the maximum number of restarts has been exceeded.
 In this scenario, the solver manager will place  all converged
-eigenpairs into the eigenproblem and return ::Unconverged.
+eigenpairs into the eigenproblem and return Unconverged.
 
 global convergence has been met. In this case, the most significant
 NEV eigenpairs in the solver and locked storage  have met the
 convergence criterion. (Here, NEV refers to the number of eigenpairs
 requested by the Eigenproblem.)  In this scenario, the solver manager
-will return ::Converged.
+will return Converged.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager. ";
 
 %feature("docstring")
@@ -1812,27 +1833,6 @@ C++ includes: AnasaziBlockKrylovSchur.hpp ";
 %feature("docstring")
 Anasazi::BlockKrylovSchurState::BlockKrylovSchurState "Anasazi::BlockKrylovSchurState< ScalarType, MulVec
 >::BlockKrylovSchurState() ";
-
-
-// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
-
-
-// File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
-
-
-// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
-
-
-// File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1compAlg.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1compMag.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1compMag2.xml
 
 
 // File: classAnasazi_1_1DenseMatTraits.xml
@@ -1999,7 +1999,7 @@ typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > &theta)
 const =0
 
 Routine for computing the generalized eigenpairs of the symmetric
-pencil (KK, MM)
+pencil (KK, MM).
 
 Parameters:
 -----------
@@ -3031,9 +3031,9 @@ Gradient (LOBPCG) iteration, a preconditioned iteration for solving
 linear Hermitian eigenproblems.
 
 This implementation is a modification of the one found in A. Knyazev,
-\"Toward the optimal preconditioned eigensolver:         Locally
-optimal block preconditioner conjugate gradient method\", SIAM J. Sci.
-Comput., vol 23, n 2, pp. 517-541.
+\"Toward the optimal preconditioned eigensolver: Locally optimal block
+preconditioner conjugate gradient method\", SIAM J. Sci. Comput., vol
+23, n 2, pp. 517-541.
 
 The modification consists of the orthogonalization steps recommended
 in U. Hetmaniuk and R. Lehoucq, \"Basis Selection in LOBPCG\", Journal
@@ -3183,7 +3183,7 @@ Get the current state of the eigensolver.
 The data is only valid if isInitialized() == true. The data for the
 search directions P is only meaningful if hasP() == true. Finally, the
 data for the preconditioned residual (H) is only meaningful in the
-situation where the solver throws an ::LOBPCGRitzFailure exception
+situation where the solver throws an LOBPCGRitzFailure exception
 during iterate().
 
 An LOBPCGState object containing const views to the current solver
@@ -3374,6 +3374,9 @@ This method requests that the solver print out its current status to
 screen. ";
 
 
+// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
+
+
 // File: classAnasazi_1_1LOBPCGInitFailure.xml
 %feature("docstring") Anasazi::LOBPCGInitFailure "
 
@@ -3482,7 +3485,7 @@ StatusTestResNorm object.
 debugtest allows a user to specify additional monitoring of the
 iteration, encapsulated in a StatusTest object  If not specified via
 setDebugStatusTest(), debugtest is ignored.  In most cases, it should
-return ::Failed; if it returns ::Passed, solve() will throw an
+return Failed; if it returns Passed, solve() will throw an
 AnasaziError exception.
 
 Much of this behavior is controlled via parameters and options passed
@@ -3516,7 +3519,7 @@ attempt to recover in the case of a LOBPCGRitzFailure when full
 orthogonalization is disabled. Default: true
 
 \"Verbosity\" - a sum of MsgType specifying the verbosity. Default:
-::Errors
+Errors
 
 \"Init\" - a LOBPCGState<ScalarType,MV> struct used to initialize the
 LOBPCG eigensolver.
@@ -3597,13 +3600,13 @@ eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
 This method calls LOBPCG::iterate(), which will return either because
-a specially constructed status test evaluates to ::Passed or an
+a specially constructed status test evaluates to Passed or an
 exception is thrown.
 
 A return from LOBPCG::iterate() signifies one of the following
 scenarios: the maximum number of iterations has been exceeded. In this
 scenario, the solver manager will place  all converged eigenpairs into
-the eigenproblem and return ::Unconverged.
+the eigenproblem and return Unconverged.
 
 the locking conditions have been met. In this scenario, some of the
 current eigenpairs will be removed  from the eigensolver and placed
@@ -3615,7 +3618,7 @@ global convergence has been met. In this case, the most significant
 NEV eigenpairs in the solver and locked storage  have met the
 convergence criterion. (Here, NEV refers to the number of eigenpairs
 requested by the Eigenproblem.)  In this scenario, the solver manager
-will return ::Converged.
+will return Converged.
 
 an LOBPCGRitzFailure exception has been thrown. If full
 orthogonalization is enabled and recovery from this exception  is
@@ -3625,13 +3628,12 @@ residual, and search directions from the eigensolver,
 orthogonormalizing the basis composed of these  three, projecting the
 eigenproblem, and restarting the eigensolver with the solution of the
 project eigenproblem. Any  additional failure that occurs during this
-recovery effort will result in the eigensolver returning
-::Unconverged.
+recovery effort will result in the eigensolver returning Unconverged.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager ";
 
 %feature("docstring")  Anasazi::LOBPCGSolMgr::setGlobalStatusTest "void Anasazi::LOBPCGSolMgr< ScalarType, MV, OP
@@ -5071,7 +5073,7 @@ thrown).
 iterate() will first determine whether the solver is initialized; if
 not, it will call initialize() using default arguments. After
 initialization, the solver performs RTR iterations until the status
-test evaluates as ::Passed, at which point the method returns to the
+test evaluates as Passed, at which point the method returns to the
 caller.
 
 The RTR iteration proceeds as follows: the trust-region subproblem at
@@ -5317,6 +5319,9 @@ This method requests that the solver print out its current status to
 screen. ";
 
 
+// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
+
+
 // File: classAnasazi_1_1RTRInitFailure.xml
 %feature("docstring") Anasazi::RTRInitFailure "
 
@@ -5411,7 +5416,7 @@ i.e., smallest or largest algebraic eigenvalues.
 underlying RTR solver. Default: problem->getNEV()
 
 \"Verbosity\" - a sum of MsgType specifying the verbosity. Default:
-::Errors
+Errors
 
 Convergence parameters  \"Maximum Iterations\" - a int specifying the
 maximum number of iterations the underlying solver is allowed to
@@ -5462,10 +5467,10 @@ This method performs possibly repeated calls to the underlying
 eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager. ";
 
 
@@ -5480,12 +5485,6 @@ RTRBase::getState().
 C++ includes: AnasaziRTRBase.hpp ";
 
 %feature("docstring")  Anasazi::RTRState::RTRState "Anasazi::RTRState< ScalarType, MV >::RTRState() ";
-
-
-// File: structAnasazi_1_1BasicSort_1_1sel1st.xml
-
-
-// File: structAnasazi_1_1BasicSort_1_1sel2nd.xml
 
 
 // File: classAnasazi_1_1SimpleLOBPCGSolMgr.xml
@@ -5569,10 +5568,10 @@ This method performs possibly repeated calls to the underlying
 eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager ";
 
 
@@ -5692,10 +5691,10 @@ This method performs possibly repeated calls to the underlying
 eigensolver's iterate() routine until the problem has been solved (as
 decided by the solver manager) or the solver manager decides to quit.
 
-::ReturnType specifying: ::Converged: the eigenproblem was solved to
-the specification required by the solver manager.
+ReturnType specifying: Converged: the eigenproblem was solved to the
+specification required by the solver manager.
 
-::Unconverged: the eigenproblem was not solved to the specification
+Unconverged: the eigenproblem was not solved to the specification
 desired by the solver manager ";
 
 
@@ -5713,6 +5712,8 @@ this class.
 Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 
 C++ includes: AnasaziSolverUtils.hpp ";
+
+/*  Internal Typedefs  */
 
 /*  Constructor/Destructor  */
 
@@ -5801,7 +5802,7 @@ typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > &theta,
 int &nev, int esType=0)
 
 Routine for computing the first NEV generalized eigenpairs of the
-Hermitian pencil (KK, MM)
+Hermitian pencil (KK, MM).
 
 Parameters:
 -----------
@@ -5846,8 +5847,6 @@ Return the maximum coefficient of the matrix $M * X - MX$ scaled by
 the maximum coefficient of MX.
 
 When M is not specified, the identity is used. ";
-
-/*  Internal Typedefs  */
 
 
 // File: classAnasazi_1_1SortManager.xml
@@ -5945,7 +5944,7 @@ C++ includes: AnasaziSortManager.hpp ";
 // File: classAnasazi_1_1StatusTest.xml
 %feature("docstring") Anasazi::StatusTest "
 
-A pure virtual class for defining the status tests for the ::Anasazi
+A pure virtual class for defining the status tests for the Anasazi
 iterative solvers.
 
 StatusTest is an interface that can be implemented to create
@@ -6016,9 +6015,9 @@ Clears the results of the last status test.
 
 This should be distinguished from the reset() method, as it only
 clears the cached result from the last status test, so that a call to
-getStatus() will return ::Undefined. This is necessary for the SEQOR
-and SEQAND tests in the StatusTestCombo class, which may short circuit
-and not evaluate all of the StatusTests contained in them. ";
+getStatus() will return Undefined. This is necessary for the SEQOR and
+SEQAND tests in the StatusTestCombo class, which may short circuit and
+not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
 
@@ -6043,9 +6042,9 @@ necessary to determine the final outcome, short- circuiting on the
 first test that conclusively decides the outcome. More formally,
 StatusTestCombo::SEQAND runs the tests in the order they were given to
 the StatusTestCombo class and stops after the first test that
-evaluates ::Failed. StatusTestCombo::SEQOR run the tests in the order
+evaluates Failed. StatusTestCombo::SEQOR run the tests in the order
 they were given to the StatusTestCombo class and stops after the first
-test that evaluates ::Passed.
+test that evaluates Passed.
 
 C++ includes: AnasaziStatusTestCombo.hpp ";
 
@@ -6112,7 +6111,7 @@ Anasazi::StatusTestCombo< ScalarType, MV, OP >::setComboType(ComboType
 type)
 
 Set the maximum number of iterations. This also resets the test status
-to ::Undefined. ";
+to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestCombo::getComboType "ComboType Anasazi::StatusTestCombo< ScalarType, MV, OP
 >::getComboType() const
@@ -6124,7 +6123,7 @@ Anasazi::StatusTestCombo< ScalarType, MV, OP
 >::setTests(Teuchos::Array< Teuchos::RCP< StatusTest< ScalarType, MV,
 OP > > > tests)
 
-Set the tests This also resets the test status to ::Undefined. ";
+Set the tests This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestCombo::getTests "Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > >
 Anasazi::StatusTestCombo< ScalarType, MV, OP >::getTests() const
@@ -6137,7 +6136,7 @@ StatusTest< ScalarType, MV, OP > > test)
 
 Add a test to the combination.
 
-This also resets the test status to ::Undefined. ";
+This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestCombo::removeTest "void
 Anasazi::StatusTestCombo< ScalarType, MV, OP >::removeTest(const
@@ -6145,8 +6144,8 @@ Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &test)
 
 Removes a test from the combination, if it exists in the tester.
 
-This also resets the test status to ::Undefined, if a test was
-removed. ";
+This also resets the test status to Undefined, if a test was removed.
+";
 
 /*  Reset methods  */
 
@@ -6158,7 +6157,7 @@ configuration to the uninitialized state.
 
 The StatusTestCombo class has no internal state, but children classes
 might, so this method will call reset() on all child status tests. It
-also resets the test status to ::Undefined. ";
+also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestCombo::clearStatus "void
 Anasazi::StatusTestCombo< ScalarType, MV, OP >::clearStatus()
@@ -6167,7 +6166,7 @@ Clears the results of the last status test.
 
 This should be distinguished from the reset() method, as it only
 clears the cached result from the last status test, so that a call to
-getStatus() will return ::Undefined. This is necessary for the
+getStatus() will return Undefined. This is necessary for the
 StatusTestCombo::SEQOR and StatusTestCombo::SEQAND tests in the
 StatusTestCombo class, which may short circuit and not evaluate all of
 the StatusTests contained in them. ";
@@ -6258,7 +6257,7 @@ maxIters)
 
 Set the maximum number of iterations.
 
-This also resets the test status to ::Undefined. ";
+This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestMaxIters::getMaxIters "int
 Anasazi::StatusTestMaxIters< ScalarType, MV, OP >::getMaxIters()
@@ -6271,7 +6270,7 @@ negate)
 
 Set the negation policy for the status test.
 
-This also reset the test status to ::Undefined. ";
+This also reset the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestMaxIters::getNegate "bool
 Anasazi::StatusTestMaxIters< ScalarType, MV, OP >::getNegate() const
@@ -6300,9 +6299,9 @@ Clears the results of the last status test.
 
 This should be distinguished from the reset() method, as it only
 clears the cached result from the last status test, so that a call to
-getStatus() will return ::Undefined. This is necessary for the SEQOR
-and SEQAND tests in the StatusTestCombo class, which may short circuit
-and not evaluate all of the StatusTests contained in them. ";
+getStatus() will return Undefined. This is necessary for the SEQOR and
+SEQAND tests in the StatusTestCombo class, which may short circuit and
+not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
 
@@ -6346,8 +6345,8 @@ for more information.
 The last two parameters, described below, in addition to the verbosity
 level of the OutputManager, control when printing is called. When both
 the mod criterion and the printStates criterion are satisfied, the
-status test will be printed to the OutputManager with ::MsgType of
-::StatusTestDetails.
+status test will be printed to the OutputManager with MsgType of
+StatusTestDetails.
 
 Parameters:
 -----------
@@ -6358,9 +6357,9 @@ incremented. Printing may only occur when this counter is congruent to
 zero modulo mod. Default: 1 (attempt to print on every call to
 checkStatus())
 
-printStates:  A combination of ::TestStatus values for which the
-output may be printed. Default: ::Passed (attempt to print whenever
-checkStatus() will return ::Passed) ";
+printStates:  A combination of TestStatus values for which the output
+may be printed. Default: Passed (attempt to print whenever
+checkStatus() will return Passed) ";
 
 %feature("docstring")  Anasazi::StatusTestOutput::~StatusTestOutput "virtual Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::~StatusTestOutput()
@@ -6377,7 +6376,7 @@ Check and return status of underlying StatusTest.
 This method calls checkStatus() on the StatusTest object passed in the
 constructor. If appropriate, the method will follow this call with a
 call to print() on the underlying object, using the OutputManager
-passed via the constructor with verbosity level ::StatusTestDetails.
+passed via the constructor with verbosity level StatusTestDetails.
 
 The internal counter will be incremented during this call, but only
 after performing the tests to decide whether or not to print the
@@ -6390,8 +6389,7 @@ If the specified Teuchos::RCP for the child class is Teuchos::null,
 then calling checkStatus() will result in a StatusTestError exception
 being thrown.
 
-::TestStatus indicating whether the underlying test passed or failed.
-";
+TestStatus indicating whether the underlying test passed or failed. ";
 
 %feature("docstring")  Anasazi::StatusTestOutput::getStatus "TestStatus Anasazi::StatusTestOutput< ScalarType, MV, OP
 >::getStatus() const
@@ -6417,7 +6415,7 @@ Anasazi::StatusTestOutput< ScalarType, MV, OP
 
 Set child test.
 
-This also resets the test status to ::Undefined. ";
+This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestOutput::getChild "Teuchos::RCP<StatusTest<ScalarType,MV,OP> > Anasazi::StatusTestOutput<
 ScalarType, MV, OP >::getChild() const
@@ -6432,7 +6430,7 @@ Anasazi::StatusTestOutput< ScalarType, MV, OP >::reset()
 Informs the status test that it should reset its internal
 configuration to the uninitialized state.
 
-This resets the cached state to an ::Undefined state and calls reset()
+This resets the cached state to an Undefined state and calls reset()
 on the underlying test. It also resets the counter for the number of
 calls to checkStatus(). ";
 
@@ -6440,8 +6438,8 @@ calls to checkStatus(). ";
 Anasazi::StatusTestOutput< ScalarType, MV, OP >::clearStatus()
 
 Clears the results of the last status test. This resets the cached
-state to an ::Undefined state and calls clearStatus() on the
-underlying test. ";
+state to an Undefined state and calls clearStatus() on the underlying
+test. ";
 
 /*  Print methods  */
 
@@ -6467,7 +6465,7 @@ Eigensolver::getRitzRes2Norms()
 the scale: absolute or relative to magnitude of Ritz value
 
 the quorum: the number of vectors required for the test to evaluate as
-::Passed.
+Passed.
 
 C++ includes: AnasaziStatusTestResNorm.hpp ";
 
@@ -6520,8 +6518,7 @@ quorum)
 Set quorum.
 
 Setting quorum to -1 signifies that all residuals from the solver must
-meet the tolerance. This also resets the test status to ::Undefined.
-";
+meet the tolerance. This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestResNorm::getQuorum "int
 Anasazi::StatusTestResNorm< ScalarType, MV, OP >::getQuorum() const
@@ -6533,7 +6530,7 @@ Anasazi::StatusTestResNorm< ScalarType, MV, OP
 >::setTolerance(typename Teuchos::ScalarTraits< ScalarType
 >::magnitudeType tol)
 
-Set tolerance. This also resets the test status to ::Undefined. ";
+Set tolerance. This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestResNorm::getTolerance "Teuchos::ScalarTraits<ScalarType>::magnitudeType
 Anasazi::StatusTestResNorm< ScalarType, MV, OP >::getTolerance()
@@ -6546,7 +6543,7 @@ whichNorm)
 
 Set the residual norm to be used by the status test.
 
-This also resets the test status to ::Undefined. ";
+This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestResNorm::getWhichNorm "ResType Anasazi::StatusTestResNorm< ScalarType, MV, OP
 >::getWhichNorm()
@@ -6558,7 +6555,7 @@ Anasazi::StatusTestResNorm< ScalarType, MV, OP >::setScale(bool
 relscale)
 
 Instruct test to scale norms by eigenvalue estimates (relative scale).
-This also resets the test status to ::Undefined. ";
+This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestResNorm::getScale "bool
 Anasazi::StatusTestResNorm< ScalarType, MV, OP >::getScale()
@@ -6588,9 +6585,9 @@ Clears the results of the last status test.
 
 This should be distinguished from the reset() method, as it only
 clears the cached result from the last status test, so that a call to
-getStatus() will return ::Undefined. This is necessary for the SEQOR
-and SEQAND tests in the StatusTestCombo class, which may short circuit
-and not evaluate all of the StatusTests contained in them. ";
+getStatus() will return Undefined. This is necessary for the SEQOR and
+SEQAND tests in the StatusTestCombo class, which may short circuit and
+not evaluate all of the StatusTests contained in them. ";
 
 /*  Print methods  */
 
@@ -6606,7 +6603,7 @@ Output formatted description of stopping test to output stream. ";
 A status test for testing the norm of the eigenvectors residuals along
 with a set of auxiliary eigenvalues.
 
-The test evaluates to ::Passed when then the most significant of the
+The test evaluates to Passed when then the most significant of the
 eigenvalues all have a residual below a certain threshhold. The
 purpose of the test is to not only test convergence for some number of
 eigenvalues, but to test convergence for the correct ones.
@@ -6617,7 +6614,7 @@ norm to be used: 2-norm or OrthoManager::norm() or getRitzRes2Norms()
 the scale: absolute or relative to magnitude of Ritz value
 
 the quorum: the number of vectors required for the test to evaluate as
-::Passed.
+Passed.
 
 Finally, the user must specify the Anasazi::SortManager used for
 deciding significance.
@@ -6679,8 +6676,7 @@ Get the number of vectors that passed the test. ";
 Set quorum.
 
 Setting quorum to -1 signifies that all residuals from the solver must
-meet the tolerance. This also resets the test status to ::Undefined.
-";
+meet the tolerance. This also resets the test status to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::getQuorum "int Anasazi::StatusTestWithOrdering< ScalarType, MV, OP >::getQuorum()
 const
@@ -6709,9 +6705,9 @@ Clears the results of the last status test.
 
 This should be distinguished from the reset() method, as it only
 clears the cached result from the last status test, so that a call to
-getStatus() will return ::Undefined. This is necessary for the SEQOR
-and SEQAND tests in the StatusTestCombo class, which may short circuit
-and not evaluate all of the StatusTests contained in them. ";
+getStatus() will return Undefined. This is necessary for the SEQOR and
+SEQAND tests in the StatusTestCombo class, which may short circuit and
+not evaluate all of the StatusTests contained in them. ";
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::setAuxVals "void Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::setAuxVals(const std::vector< typename Teuchos::ScalarTraits<
@@ -6721,7 +6717,7 @@ Set the auxiliary eigenvalues.
 
 This routine sets only the real part of the auxiliary eigenvalues; the
 imaginary part is set to zero. This routine also resets the state to
-::Undefined. ";
+Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::setAuxVals "void Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::setAuxVals(const std::vector< typename Teuchos::ScalarTraits<
@@ -6731,7 +6727,7 @@ Teuchos::ScalarTraits< ScalarType >::magnitudeType > &ivals)
 Set the auxiliary eigenvalues.
 
 This routine sets both the real and imaginary parts of the auxiliary
-eigenvalues. This routine also resets the state to ::Undefined. ";
+eigenvalues. This routine also resets the state to Undefined. ";
 
 %feature("docstring")  Anasazi::StatusTestWithOrdering::getAuxVals "void Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::getAuxVals(std::vector< typename Teuchos::ScalarTraits< ScalarType
@@ -6997,7 +6993,7 @@ C++ includes: AnasaziTsqrOrthoManager.hpp ";
 Anasazi::TsqrMatOrthoManager::TsqrMatOrthoManager "Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
 >::TsqrMatOrthoManager()
 
-Default constructor (sets Op to Teuchos::null) ";
+Default constructor (sets Op to Teuchos::null). ";
 
 %feature("docstring")
 Anasazi::TsqrMatOrthoManager::TsqrMatOrthoManager "Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
@@ -7800,10 +7796,10 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_cfcf785d330e8f6cf9265ee0cf028086.xml
+// File: dir_8f983d347b184c700dae93e0e3738fe1.xml
 
 
-// File: dir_73432c73b202f8663e3fe783990d1240.xml
+// File: dir_af06fb6c54d4c652eacc03e73e36cb53.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml

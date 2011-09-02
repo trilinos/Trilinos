@@ -61,7 +61,7 @@ in addition to the following factory function:
 
 %{
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // NOX includes
 #include "NOX_StatusTest_Generic.H"

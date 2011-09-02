@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //              PyTrilinos: Python Interface to Trilinos
-//                 Copyright (2005) Sandia Corporation
+//                 Copyright (2008) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -26,12 +26,36 @@
 // ***********************************************************************
 // @HEADER
 
-#include "NumPyImporter.h"
+#ifndef PYTRILINOS_FILESTREAM_H
+#define PYTRILINOS_FILESTREAM_H
+
+#include <streambuf>
+#include <vector>
 
 namespace PyTrilinos
 {
 
-// Static initialization
-NumPyImporter NumPyImporter::m_singleton;
+class FILEstream : public std::streambuf
+{
+public:
+  explicit FILEstream(FILE        *fptr,
+		      std::size_t buff_sz  = 256,
+		      std::size_t put_back =   8);
+
+private:
+  int_type underflow();
+  int_type overflow(int_type ch);
+  int_type sync();
+  // Copy ctor and assignment not allowed
+  FILEstream(const FILEstream &);
+  FILEstream &operator=(const FILEstream &);
+
+private:
+  FILE *fptr_;
+  const std::size_t put_back_;
+  std::vector<char> buffer_;
+};
 
 }  // Namespace PyTrilinos
+
+#endif

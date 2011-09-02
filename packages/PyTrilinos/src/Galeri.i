@@ -125,7 +125,7 @@ example subdirectory of the PyTrilinos package:
 
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #endif
 
 // Galeri includes

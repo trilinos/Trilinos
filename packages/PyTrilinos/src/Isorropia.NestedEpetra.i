@@ -97,7 +97,7 @@ The purpose of Isorropia.Epetra is to ....
 #include "Epetra_NumPySerialSymDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 %}
 
 // Configuration

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_PYUTIL_H
-#define EPETRA_PYUTIL_H
+#ifndef PYTRILINOS_EPETRA_UTIL_H
+#define PYTRILINOS_EPETRA_UTIL_H
 
 // Include the Python prototypes
 #include "Python.h"
@@ -159,4 +159,4 @@ getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
 
 }  // Namespace PyTrilinos
 
-#endif // EPETRA_PYUTIL_H
+#endif // PYTRILINOS_EPETRA_UTIL_H

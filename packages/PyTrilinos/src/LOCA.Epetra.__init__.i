@@ -51,7 +51,7 @@ LOCA and Epetra.
 #include <vector>
 
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
 #include "Epetra_ConfigDefs.h"

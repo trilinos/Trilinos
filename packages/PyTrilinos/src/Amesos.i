@@ -110,7 +110,7 @@ exAmesos_Factory.py.
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
 #include "Teuchos_RefCountPtrDecl.hpp"
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #endif
 
 // Amesos includes

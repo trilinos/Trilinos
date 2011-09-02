@@ -59,7 +59,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "numpy_include.h"
 
 // Teuchos includes
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
 #include "Epetra_LocalMap.h"
@@ -88,7 +88,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #endif
 
 // Local Epetra includes
-#include "Epetra_PyUtil.h"
+#include "PyTrilinos_Epetra_Util.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

@@ -48,8 +48,8 @@
 // Local includes
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_Util.h"
-#include "Epetra_PyUtil.h"
-#include "PythonException.h"
+#include "PyTrilinos_Epetra_Util.h"
+#include "PyTrilinos_PythonException.h"
 #include "swigpyrun.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

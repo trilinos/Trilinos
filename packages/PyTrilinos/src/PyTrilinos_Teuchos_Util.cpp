@@ -27,7 +27,7 @@
 // @HEADER
 
 // Include files
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #include "swigpyrun.h"
 
 // Backward compatibility for python < 2.5

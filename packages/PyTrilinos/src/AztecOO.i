@@ -108,7 +108,7 @@ struct OperatorData
 
 // Optional Teuchos support
 #ifdef HAVE_AZTECOO_TEUCHOS
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #endif
 
 // Epetra includes

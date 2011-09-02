@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PythonException.h"
+#include "PyTrilinos_PythonException.h"
 
 namespace PyTrilinos
 {

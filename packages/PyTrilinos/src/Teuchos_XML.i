@@ -39,7 +39,7 @@
 #include "Teuchos_StringInputSource.hpp"
 
 // PyTrilinos includes
-#include "PythonException.h"
+#include "PyTrilinos_PythonException.h"
 %}
 
 // Teuchos imports

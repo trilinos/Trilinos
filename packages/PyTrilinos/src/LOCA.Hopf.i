@@ -32,7 +32,7 @@
 
 %{
 // Teuchos include
-#include "Teuchos_PythonParameter.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 #include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
