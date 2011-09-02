@@ -747,7 +747,7 @@ namespace Belos {
 	    // we make a copy and compute the new solution in the
 	    // copy, without modifying curX_.
 	    newSoln = MVT::Clone (*update, MVT::GetNumberVecs (*update));
-	    if (RP.is_null())
+	    if (RP_.is_null())
 	      { // There is no right preconditioner.
 		// newSoln := curX_ + scale * update.
 		MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
