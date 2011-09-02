@@ -1378,7 +1378,7 @@ int elemental_dist(LB_INFO_PTR lb,
 	    /* Find elements connnected to both node '0' and node 'ncnt+1' */
 	    nelem = find_inter(hold_elem, graph->sur_elem[side_nodes[(ncnt+1)]],
 			       nhold, graph->nsur_elem[side_nodes[(ncnt+1)]],
-			       2, pt_list);
+			       pt_list);
 
 	    if (nelem < 2)
 	      break;
@@ -1441,7 +1441,7 @@ int elemental_dist(LB_INFO_PTR lb,
 			       graph->sur_elem[side_nodes[node]],
 			       graph->nsur_elem[side_nodes[inode]],
 			       graph->nsur_elem[side_nodes[node]],
-			       2, pt_list);
+			       pt_list);
 
 	    if (nelem > 1) {
 	      if (ncnt == 0) {
@@ -2377,7 +2377,7 @@ int identify_mechanisms(
 					graph->sur_elem[side_nodes2[1]],
 					graph->nsur_elem[side_nodes2[0]],
 					graph->nsur_elem[side_nodes2[1]],
-					2, pt_list);
+					pt_list);
         
                     for(i = 0; i < nhold2; i++) 
                        hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
@@ -2386,7 +2386,7 @@ int identify_mechanisms(
                                        graph->sur_elem[side_nodes2[2]],
                                        nhold2,
                                        graph->nsur_elem[side_nodes2[2]],
-                                       2, pt_list);
+                                       pt_list);
 
                     if(nelem >= 1) {
                       count++;

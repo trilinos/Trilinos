@@ -876,7 +876,8 @@ namespace {
     int info_string_len = MAX_LINE_LENGTH;
 
     size_t num_info_records = ex_inquire_int(id,EX_INQ_INFO);
-    size_t extra_info = global_times.size() + 2 + 1;
+    //    size_t extra_info = global_times.size() + 2 + 1;
+    size_t extra_info = 2 + 1;
       
     char **info_records = get_name_array(num_info_records+extra_info, info_string_len);
 
@@ -887,6 +888,7 @@ namespace {
     // Add an info record for CONJOIN
     add_info_record(info_records[num_info_records], MAX_LINE_LENGTH);
 
+#if 0
     // Add time/part mapping...
     for (size_t i=0; i < global_times.size(); i++) {
       std::ostringstream os;
@@ -898,6 +900,7 @@ namespace {
       strncpy(info_records[num_info_records+1+i], os.str().c_str(), MAX_LINE_LENGTH);
       info_records[num_info_records+1+i][MAX_LINE_LENGTH] = '\0';
     }
+#endif
     
     error += ex_put_info(id_out,num_info_records+extra_info,info_records);
 

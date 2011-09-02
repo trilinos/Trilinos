@@ -152,7 +152,6 @@ int find_inter (
   const int set2[],		/* the second set of integers */
   const int length1,		/* the length of the first set */
   const int length2,		/* the length of the second set */
-  const int prob_type,		/* value indicating known info about lists */
   int inter_ptr[]		/* the values in the intersection */
 );
 

@@ -76,7 +76,6 @@ int bin_search_min(int list[], int num, int value);
         find_range                      int
         bin_search_min                  int
  	print_line			void
-	int_cmp                         int
         break_message_up                int
 
 ******************************************************************************/
@@ -1444,28 +1443,6 @@ void print_line (char *charstr, int ntimes)
   int i;
   for (i = 0; i < ntimes; i++) (void) printf("%c", *charstr);
   (void) printf("\n");
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
- int int_cmp(int *i1, int *i2)
-
-/*
-
-  Function which compares two integers and returns negative if its first
-  argument is less than the second, zero if equal and positive if greater.
-  Designed to be used by the stdlib functions bsearch and qsort.
-
-*/
-
-{
-
-  if (*i1 < *i2) return -1;
-  else if (*i1 == *i2) return 0;
-  else return 1;
-
 }
 
 /*****************************************************************************/

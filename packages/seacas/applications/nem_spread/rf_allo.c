@@ -138,17 +138,17 @@ va_dcl
    char *yo = "array_alloc";
    int	i, j;
    struct dim {
-      long	index;	/* Number of elements in the dimension	*/
-      long	total;	/* Total number of elements 		*/
-      long	size;	/* Size of a single element in bytes	*/
-      long	off;	/* offset from beginning of array	*/
+     size_t	index;	/* Number of elements in the dimension	*/
+     size_t	total;	/* Total number of elements 		*/
+     size_t	size;	/* Size of a single element in bytes	*/
+     size_t	off;	/* offset from beginning of array	*/
    }	dim[3];		/* Info about each dimension 		*/
 #ifndef __STDC__
    char *file;		/* Filename of source code from call.   */
    int lineno;		/* Line number of call.                 */
    int numdim;		/* Number of dimensions			*/
 #endif
-   long total;		/* Total size of the array		*/
+   size_t total;		/* Total size of the array		*/
    double *dfield;	/* ptr to avoid lint complaints		*/
    char *field;		/* The multi-dimensional array		*/
    char **ptr;		/* Pointer offset			*/
@@ -210,7 +210,7 @@ va_dcl
 
    total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-   dfield = (double *) smalloc((int) total, file, lineno);
+   dfield = (double *) smalloc(total, file, lineno);
    field = (char *) dfield;
 
    for (i=0; i<numdim - 1; i++) {

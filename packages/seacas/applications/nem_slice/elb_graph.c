@@ -540,7 +540,7 @@ int find_adjacency(PROB_INFO_PTR problem,
                                      graph->sur_elem[side_nodes[(ncnt+1)]],
                                      nhold,
                                      graph->nsur_elem[side_nodes[(ncnt+1)]],
-                                     2, pt_list);
+                                     pt_list);
 
                   /*  If less than 2 ( 0 or 1 ) elements only
                      touch nodes 0 and ncnt+1 then try next side node, i.e., 
@@ -574,7 +574,7 @@ int find_adjacency(PROB_INFO_PTR problem,
                                      graph->sur_elem[side_nodes[(ncnt+2)]],
                                      graph->nsur_elem[side_nodes[inode]],
                                      graph->nsur_elem[side_nodes[(ncnt+2)]],
-                                     2, pt_list);
+                                     pt_list);
 
                   /*
                    * If there are multiple elements in the intersection, then

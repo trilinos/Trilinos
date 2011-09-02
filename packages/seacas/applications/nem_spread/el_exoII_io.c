@@ -2595,7 +2595,6 @@ static void read_node_sets(int exoid, int *num_nodes_in_node_set,
   int  dups = 0;
   
   extern void find_message_info (int , int , int *, int *, int *);
-  extern int  int_cmp           (int *i1, int *i2);
 
   /*************************** Execution begins ******************************/
 

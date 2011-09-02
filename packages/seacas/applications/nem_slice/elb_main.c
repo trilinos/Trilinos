@@ -365,7 +365,8 @@ int main (int argc, char *argv[])
 
   if(problem.read_coords == ELB_TRUE)
   {
-    mesh.coords = malloc((mesh.num_dims)*(mesh.num_nodes)*sizeof(float));
+    size_t mem_req = (size_t)(mesh.num_dims)*(mesh.num_nodes)*sizeof(float);
+    mesh.coords = malloc(mem_req);
     if(!(mesh.coords))
     {
       Gen_Error(0, "fatal: insufficient memory for coordinates");
