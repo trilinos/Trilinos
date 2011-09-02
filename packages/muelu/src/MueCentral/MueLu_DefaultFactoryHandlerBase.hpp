@@ -32,7 +32,7 @@ namespace MueLu {
       return *factoryTable_.get(varName);
     }    
 
-    void SetDefaultFactory(const std::string & varName, const RCP<FactoryBase> & factory) {
+    void SetDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
       // TODO: if (varName already exist) ...
       factoryTable_.put(varName, factory);
     }
@@ -44,7 +44,7 @@ namespace MueLu {
     //@}
 
   protected:
-    Teuchos::Hashtable<std::string, RCP<FactoryBase> > factoryTable_;
+    Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_;
         
   }; // class DefaultFactoryHandlerBase
 

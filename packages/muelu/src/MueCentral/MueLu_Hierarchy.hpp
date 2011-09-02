@@ -212,6 +212,12 @@ namespace MueLu {
     {
 
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
+
+      // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
+      defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
+      defaultFactoryHandler_->SetDefaultFactory("R", rcpFromRef(PRFact));
+      defaultFactoryHandler_->SetDefaultFactory("A", rcpFromRef(AcFact));
+
       Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
       Xpetra::global_size_t totalNnz = fineNnz;
 
@@ -354,7 +360,6 @@ namespace MueLu {
     void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value=1
                  bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
     {
-
       //Teuchos::Array<Magnitude> norms(1);
       //Teuchos::OSTab tab(*out_);
       bool zeroGuess=InitialGuessIsZero;
