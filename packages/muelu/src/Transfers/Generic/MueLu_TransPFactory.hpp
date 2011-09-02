@@ -34,10 +34,9 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
 
     //! Constructor.
-    TransPFactory() {
-      //Teuchos::OSTab tab(this->out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Instantiating a new factory" << std::endl;
-    }
+    TransPFactory(RCP<FactoryBase> PFact = Teuchos::null)
+      : PFact_(PFact)
+    { }
 
     //! Destructor.
     virtual ~TransPFactory() {}
@@ -83,7 +82,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
       Teuchos::OSTab tab(this->out_);
       Teuchos::ParameterList matrixList;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
       //doesn't work -- bug in EpetraExt?
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
@@ -109,7 +108,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     }
     //@}
 
-
+    //! P Factory
+    RCP<FactoryBase> PFact_;
 
   }; //class TransPFactory
 

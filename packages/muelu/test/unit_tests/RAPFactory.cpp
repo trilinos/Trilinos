@@ -38,15 +38,16 @@ namespace MueLuTests {
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
+
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
 
-    TransPFactory transPFactory;
+    TransPFactory transPFactory(rcpFromRef(sapFactory)); //todo:rcpFromRef
     transPFactory.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
+    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
@@ -59,10 +60,10 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    RAPFactory rap;
+    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory)); //todo:rcpFromRef
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A");
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);

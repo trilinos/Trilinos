@@ -24,12 +24,11 @@ class RAPFactory : public TwoLevelFactoryBase {
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD,EE> &factory);
 
-  private:
-    bool implicitTranspose_;
-
   public:
     //@{ Constructors/Destructors.
-    RAPFactory() : implicitTranspose_(false) {}
+  RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null) 
+    : PFact_(PFact), RFact_(RFact),
+      implicitTranspose_(false) {}
 
     virtual ~RAPFactory() {}
     //@}
@@ -50,7 +49,7 @@ class RAPFactory : public TwoLevelFactoryBase {
 
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
 apTimer->start(true);
@@ -67,13 +66,14 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
         coarseLevel.Set("A",RAP);
       } else {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
 RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
 rapTimer->stop();
 MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
-        coarseLevel.Set("A",RAP);
+
+        coarseLevel.Set("A", RAP, this);
       }
 
       timer->stop();
@@ -86,6 +86,16 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
     void SetImplicitTranspose(bool const &implicit) {
       implicitTranspose_ = implicit;
     }
+
+
+private:
+  //! P Factory
+  RCP<FactoryBase> PFact_;
+
+  //! R Factory
+  RCP<FactoryBase> RFact_;
+  
+  bool implicitTranspose_;
 
 }; //class RAPFactory
 
