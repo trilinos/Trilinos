@@ -46,13 +46,6 @@
 #include <Kokkos_DeviceTPI_ParallelFor.hpp>
 #include <Kokkos_DeviceTPI_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceTPI.hpp>
-#include <Kokkos_DeviceTPI_ValueView.hpp>
-#include <Kokkos_DeviceTPI_MultiVectorView.hpp>
-#include <Kokkos_DeviceTPI_MDArrayView.hpp>
-#include <Kokkos_DeviceTPI_ParallelFor.hpp>
-#include <Kokkos_DeviceTPI_ParallelReduce.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <Kokkos_DeviceTPI_macros.hpp>

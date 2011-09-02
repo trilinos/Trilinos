@@ -6,7 +6,7 @@
 
 set INC_PATH="-I. -I../src -I../TPL"
 
-set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp UnitTestCuda.cpp ../TPL/gtest/gtest.cpp"
+set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp UnitTestCuda.cpp ../TPL/gtest/gtest-all.cc"
 
 set LIB=""
 
@@ -19,15 +19,13 @@ set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
 
 #-----------------------------------------------------------------------------
 
-echo "#define HAVE_PTHREAD" > ThreadPool_config.h
-
 set GCC_FLAGS="-Wall -Werror -O3 ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 
 g++ $GCC_FLAGS -o unit_test.exe *.o ${LIB}
 
-rm -f *.o *.a ThreadPool_config.h
+rm -f *.o *.a 
 
 #-----------------------------------------------------------------------------
 

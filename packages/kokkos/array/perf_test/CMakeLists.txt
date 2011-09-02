@@ -1,39 +1,48 @@
 INCLUDE(PackageAddExecutableAndTest)   
 
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
+
+SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
+SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
+
+IF(Kokkos_ENABLE_DeviceTPI)
+  LIST(APPEND SOURCES
+    PerfTestTPI.cpp
+  )
+  LIST(APPEND LIBRARIES
+    kokkosdevicetpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_DeviceTBB)
+  LIST( APPEND SOURCES
+    PerfTestTBB.cpp
+  )
+  LIST( APPEND LIBRARIES
+    kokkosdevicetbb tbb
+  )
+ENDIF()
 
 IF(Kokkos_ENABLE_DeviceCuda)
   PACKAGE_ADD_CUDA_LIBRARY(
-    perf_cudalib
+    perf_cuda
     SOURCES PerfTestCuda.cu
-    DEPLIBS kokkosdevicecuda
     )
-ELSE()
-  PACKAGE_ADD_LIBRARY(
-    perf_cudalib
-    SOURCES PerfTestCudaStub.cpp
-    )
+  LIST(APPEND SOURCES
+    PerfTestCuda.cpp
+  )
+  LIST(APPEND LIBRARIES
+    kokkosdevicecuda perf_cuda
+  )
 ENDIF()
-IF(Kokkos_ENABLE_DeviceTPI)
-  PACKAGE_ADD_LIBRARY(
-    perf_tpilib
-    SOURCES PerfTestTPI.cpp
-    DEPLIBS kokkosdevicetpi
-    )
-ELSE()
-  PACKAGE_ADD_LIBRARY(
-    perf_tpilib
-    SOURCES PerfTestTPIStub.cpp
-    )
-ENDIF()
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PerfTest
-  SOURCES PerfTestMain.cpp
+  SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  DEPLIBS perf_cudalib perf_tpilib kokkosdevicehost kokkosimpl 
+  PASS_REGULAR_EXPRESSION "[  PASSED  ]"
+  DEPLIBS ${LIBRARIES}
   )
- 

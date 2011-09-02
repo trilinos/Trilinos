@@ -4,19 +4,11 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set INC_PATH="-I../../../ThreadPool/src -I. -I../src"
+set INC_PATH="-I../TPL -I. -I../src"
 
-set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp PerfTestMain.cpp"
+set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp PerfTestMain.cpp PerfTestCuda.cpp ../TPL/gtest/gtest-all.cc"
 
 set LIB=""
-
-#-----------------------------------------------------------------------------
-
-#set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp  PerfTestTPI.cpp"
-
-#set LIB="${LIB} -lpthread"
-
-set GCC_SOURCES="${GCC_SOURCES} PerfTestTPIStub.cpp"
 
 #-----------------------------------------------------------------------------
 
@@ -27,17 +19,6 @@ set GCC_SOURCES="${GCC_SOURCES} PerfTestTPIStub.cpp"
 
 set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
 
-#----------------------------------------------------------------------------
-
-set GCC_SOURCES="${GCC_SOURCES} PerfTestTBBStub.cpp"
-
-#-----------------------------------------------------------------------------
-
-set GCC_SOURCES="${GCC_SOURCES} PerfTestFerryStub.cpp"
-
-#-----------------------------------------------------------------------------
-
-echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 
 set GCC_FLAGS="-Wall -Werror -O3 ${INC_PATH}"
 
@@ -45,7 +26,7 @@ g++ $GCC_FLAGS -c ${GCC_SOURCES}
 
 g++ $GCC_FLAGS -o perf_test.exe *.o ${LIB} 
 
-rm -f *.o *.a ThreadPool_config.h
+rm -f *.o *.a 
 
 #-----------------------------------------------------------------------------
 

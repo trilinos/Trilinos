@@ -1,10 +1,11 @@
 INCLUDE(PackageAddExecutableAndTest)   
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
-SET( SOURCES UnitTestMain.cpp UnitTestHost.cpp ../TPL/gtest/gtest.cpp )
-SET( LIBRARIES kokkos kokkosdevicehost kokkosimpl )
+SET(SOURCES UnitTestMain.cpp UnitTestHost.cpp ../TPL/gtest/gtest-all.cc)
+SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
 
 IF(Kokkos_ENABLE_DeviceTPI)
   LIST( APPEND SOURCES
