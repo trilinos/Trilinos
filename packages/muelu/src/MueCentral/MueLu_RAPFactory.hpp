@@ -50,7 +50,9 @@ class RAPFactory : public TwoLevelFactoryBase {
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
+
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
+
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
 apTimer->start(true);
       RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
@@ -59,22 +61,23 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
       //std::string filename="AP.dat";
       //Utils::Write(filename,AP);
 
+      RCP<Operator> RAP;
       if (implicitTranspose_) {
         //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,true,A,false);
         //filename = "PtA.dat";
         //Utils::Write(filename,AP);
-        RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
-        coarseLevel.Set("A",RAP);
+        RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
       } else {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
 RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
-        RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
+        RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
 rapTimer->stop();
 MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
 
-        coarseLevel.Set("A", RAP, this);
       }
+      
+      coarseLevel.Set("A", RAP, this);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));

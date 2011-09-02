@@ -94,7 +94,7 @@ namespace MueLuTests {
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
 
     //std::string filename = "A.dat";
@@ -116,11 +116,11 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
 
-    RAPFactory rap;
+    RAPFactory rap(rcpFromRef(sapFactory)); //todo: rcpFromRef
     rap.SetImplicitTranspose(true);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A");
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
