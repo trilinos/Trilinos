@@ -26,12 +26,8 @@ extern "C" {
 
 
 #ifdef ZOLTAN_PARMETIS
-/* Include ParMetis header files if necessary.
- * These include files must be available in the include path set in the
- * Zoltan configuration file.
- */
 #include <parmetis.h>
-#endif /* ZOLTAN_PARMETIS */
+#endif 
 
 #ifdef ZOLTAN_METIS
 #include <metis.h>

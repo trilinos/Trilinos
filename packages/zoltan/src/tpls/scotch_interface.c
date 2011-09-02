@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -566,13 +565,6 @@ int Zoltan_Scotch(
   int num_part = zz->LB.Num_Global_Parts;    /* passed to PT-Scotch. Don't             */
   MPI_Comm comm = zz->Communicator;          /* want to risk letting external packages */
                                              /* change our zz struct.                  */
-#ifndef ZOLTAN_SCOTCH
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-		     "Scotch requested but not compiled into library.");
-  return ZOLTAN_FATAL;
-
-#endif /* ZOLTAN_SCOTCH */
-
   ZOLTAN_TRACE_ENTER(zz, yo);
 
 #if TPL_USE_DATATYPE != TPL_SCOTCH_DATATYPES
@@ -930,4 +922,3 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 #ifdef __cplusplus
 }
 #endif
-

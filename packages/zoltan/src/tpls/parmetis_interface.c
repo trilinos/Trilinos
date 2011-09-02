@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -27,6 +26,17 @@ extern "C" {
 #include "third_library.h"
 #include "parmetis_interface.h"
 
+
+/*********** COMPATIBILITY CHECKING AT COMPILE TIME ************/
+#if (PARMETIS_MAJOR_VERSION < 3)
+#error "Specified version of ParMETIS is not compatible with Zoltan; upgrade to ParMETIS v3.1 or later, or build Zoltan without ParMETIS."
+#endif
+
+#if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION < 1)
+#error "Specified version of ParMETIS is not compatible with Zoltan; upgrade to ParMETIS v3.1 or later, or build Zoltan without ParMETIS."
+#endif
+
+/********** Workaround for memory bug in ParMETIS 3.1.0 **********/
 #ifndef PARMETIS_SUBMINOR_VERSION
 #define PARMETIS_SUBMINOR_VERSION 0
 #endif
@@ -35,7 +45,7 @@ extern "C" {
 #define  PARMETIS31_ALWAYS_FREES_VSIZE
 #endif
 
-  /**********  parameters structure for parmetis methods **********/
+/**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
   { "PARMETIS_METHOD", NULL, "STRING", 0 },
   { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
@@ -44,9 +54,6 @@ static PARAM_VARS Parmetis_params[] = {
   { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
   { "PARMETIS_FOLD", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
-
-static int Zoltan_Parmetis_Check_Error(ZZ *, char *, ZOLTAN_Third_Graph *,
-                                ZOLTAN_Third_Part *);
 
 static int pmv3method(char *alg);
 
@@ -107,7 +114,7 @@ int Zoltan_ParMetis(
   char alg[MAX_PARAM_STRING_LEN+1];
 
 #ifdef ZOLTAN_PARMETIS
-  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
+  MPI_Comm comm = zz->Communicator;/* don't risk letting external packages */
                                    /* change our zz struct.                  */
 #endif
 
@@ -129,13 +136,6 @@ int Zoltan_ParMetis(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
 #ifdef ZOLTAN_PARMETIS
-    /* Check for outdated/unsupported ParMetis versions. */
-#if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
-  if (zz->Proc == 0)
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by "
-                      "Zoltan. Please upgrade to ParMetis 3.1 (or later).");
-  ierr = ZOLTAN_WARN;
-#endif
 
 #if TPL_USE_DATATYPE != TPL_METIS_DATATYPES
 
@@ -226,12 +226,6 @@ int Zoltan_ParMetis(
 
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, 
                                  geo, &prt, &vsp);
-  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
-    Zoltan_Third_Exit(&gr, geo, &prt, &vsp, &part, NULL);
-    return (ierr);
-  }
-
-  ierr = Zoltan_Parmetis_Check_Error(zz, alg, &gr, &prt);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     Zoltan_Third_Exit(&gr, geo, &prt, &vsp, &part, NULL);
     return (ierr);
@@ -402,66 +396,6 @@ int Zoltan_ParMetis(
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return (ierr);
-}
-
-
-static int Zoltan_Parmetis_Check_Error(
-  ZZ *zz,
-  char *alg,
-  ZOLTAN_Third_Graph *gr,
-  ZOLTAN_Third_Part *prt
-)
-{
-
-#if (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0)
-  /* Special error checks to avoid incorrect results from ParMetis 3.0.
-   * ParMETIS 3.0 Partkway ignores partition sizes for problems with
-   * less than 10000 objects.
-   */
-  ZOLTAN_GNO_TYPE tmp_gno, gsum;
-  MPI_Datatype zoltan_gno_mpi_type;
-
-  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
-
-  if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts)
-      && (zz->Obj_Weight_Dim <= 1)) {
-    tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
-    MPI_Allreduce(&tmp_gno, &gsum, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
-    if (gsum < 10000) {
-      char str[256];
-      sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
-              "to ignore part sizes; uniform part sizes will be "
-              "produced. Please try a different load-balancing method.\n",
-              gsum);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, str);
-    }
-  }
-  if (strcmp(alg, "ADAPTIVEREPART") == 0) {
-    int gmax, maxpart = -1;
-    for (i = 0; i < gr->num_obj; i++)
-      if (prt->part[i] > maxpart) maxpart = (int)prt->part[i];
-    MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
-    if (gmax >= prt->num_part) {
-      sprintf(msg, "Part number %1d >= number of parts %1d.\n"
-              "ParMETIS 3.0 with %s will fail, please upgrade to 3.1 or later.",
-              gmax, prt->num_part, alg);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
-    }
-  }
-#endif /* (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0) */
-  if (gr->xadj[gr->num_obj] == 0) {
-#if (PARMETIS_MAJOR_VERSION == 2)
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
-                       "ParMETIS 2.0 will likely fail. Please "
-                       "upgrade to version 3.1 or later.");
-#elif (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
-    if (strcmp(alg, "ADAPTIVEREPART") == 0)
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
-                         "ParMETIS 3.0 will likely fail with method "
-                         "AdaptiveRepart. Please upgrade to 3.1 or later.");
-#endif
-  }
-  return (ZOLTAN_OK);
 }
 
 
@@ -931,4 +865,3 @@ char *val)                      /* value of variable */
 #ifdef __cplusplus
 }
 #endif
-

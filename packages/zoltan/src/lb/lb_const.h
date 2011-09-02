@@ -280,8 +280,12 @@ extern ZOLTAN_LB_FN Zoltan_Random;
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
 extern ZOLTAN_LB_FN Zoltan_Graph;
+#ifdef ZOLTAN_PARMETIS
 extern ZOLTAN_LB_FN Zoltan_ParMetis;
+#endif
+#if defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
 extern ZOLTAN_LB_FN Zoltan_Scotch;
+#endif
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
