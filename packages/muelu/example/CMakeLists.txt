@@ -1,4 +1,3 @@
 ADD_SUBDIRECTORY(Gallery)
 ADD_SUBDIRECTORY(MatrixVectorChecker)
 ADD_SUBDIRECTORY(Aggregation)
-ADD_SUBDIRECTORY(ExtendedHashtable)
