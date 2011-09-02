@@ -188,7 +188,6 @@ namespace MueLu {
             }
             
             // Level Set
-            std::cout << "POST" << std::endl;
             currentLevel.Set("PostSmoother", postSmoo/*, this*/); // TAW: TODO fix me
           }
         
