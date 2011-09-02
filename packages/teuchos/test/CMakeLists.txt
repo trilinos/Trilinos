@@ -15,7 +15,6 @@ ADD_SUBDIRECTORIES(
   LAPACK
   MemoryManagement
   ObjectBuilder
-  Polling
   Polynomial
   ScalarTraits
   TabularOutputter

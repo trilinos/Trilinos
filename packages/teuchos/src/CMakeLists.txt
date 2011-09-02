@@ -75,7 +75,6 @@ APPEND_SET(HEADERS
   Teuchos_Describable.hpp
   Teuchos_DummyObjectGetter.hpp
   Teuchos_ENull.hpp
-  Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
   Teuchos_ExpandScalarTypeMacros.hpp
   Teuchos_ExplicitInstantiationHelpers.hpp
@@ -92,10 +91,6 @@ APPEND_SET(HEADERS
   Teuchos_LAPACK_wrappers.hpp
   Teuchos_LabeledObject.hpp
   Teuchos_LocalTestingHelpers.hpp
-  Teuchos_MPIComm.hpp
-  Teuchos_MPIContainerComm.hpp
-  Teuchos_MPISession.hpp
-  Teuchos_MPITraits.hpp
   Teuchos_NullIteratorTraits.hpp
   Teuchos_Object.hpp
   Teuchos_ObjectBuilder.hpp
@@ -110,7 +105,6 @@ APPEND_SET(HEADERS
   Teuchos_ParameterListExceptions.hpp
   Teuchos_ParameterListNonAcceptor.hpp
   Teuchos_PerformanceMonitorBase.hpp
-  Teuchos_PerformanceMonitorUtils.hpp
   Teuchos_Polynomial.hpp
   Teuchos_PolynomialDecl.hpp
   Teuchos_PolynomialTraits.hpp
@@ -200,13 +194,10 @@ APPEND_SET(SOURCES
   Teuchos_Describable.cpp
   Teuchos_Dependency.cpp
   Teuchos_DependencySheet.cpp
-  Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
   Teuchos_LAPACK.cpp
   Teuchos_LabeledObject.cpp
-  Teuchos_MPIComm.cpp
-  Teuchos_MPISession.cpp
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
   Teuchos_ParameterList.cpp
@@ -215,7 +206,6 @@ APPEND_SET(SOURCES
   Teuchos_ParameterListAcceptorDefaultBase.cpp
   Teuchos_ParameterListNonAcceptor.cpp
   Teuchos_PerformanceMonitorBase.cpp
-  Teuchos_PerformanceMonitorUtils.cpp
   Teuchos_Ptr.cpp
   Teuchos_RCPNode.cpp
   Teuchos_Range1D.cpp
