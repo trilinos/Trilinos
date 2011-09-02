@@ -66,12 +66,12 @@ void test_device_cuda_init() {
 
 void test_cuda_hexgrad(int exp_beg, int exp_end)
 {
-  run_test_hexgrad< Kokkos::DeviceCuda>( beg , end );
+  run_test_hexgrad< Kokkos::DeviceCuda>( exp_beg , exp_end );
 }
 
-void test_cuda_gramschmidt(int exp_beg, int exp_end);
+void test_cuda_gramschmidt(int exp_beg, int exp_end)
 {
-  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( beg , end );
+  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( exp_beg , exp_end );
 }
 
 } // namespace Test

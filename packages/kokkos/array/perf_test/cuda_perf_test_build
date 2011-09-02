@@ -4,29 +4,29 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set INC_PATH="-I. -I../src -I../TPL"
+set INC_PATH="-I../TPL -I. -I../src"
 
-set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp UnitTestCuda.cpp ../TPL/gtest/gtest-all.cc"
+set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp PerfTestMain.cpp PerfTestCuda.cpp ../TPL/gtest/gtest-all.cc"
 
 set LIB=""
 
 #-----------------------------------------------------------------------------
 
- /usr/local/cuda/bin/nvcc -arch=sm_20 -g ${INC_PATH} -lib -o libCuda.a \
-        ../src/DeviceCuda/*.cu UnitTestCuda.cu 
+# /usr/local/cuda/bin/nvcc -arch=sm_20 --keep
+
+ /usr/local/cuda/bin/nvcc -arch=sm_20 ${INC_PATH} -lib -o libCuda.a \
+        ../src/DeviceCuda/*.cu PerfTestCuda.cu
 
 set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
 
-#-----------------------------------------------------------------------------
 
 set GCC_FLAGS="-Wall -Werror -O3 ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 
-g++ $GCC_FLAGS -o unit_test.exe *.o ${LIB}
+g++ $GCC_FLAGS -o perf_test.exe *.o ${LIB} 
 
 rm -f *.o *.a 
 
 #-----------------------------------------------------------------------------
-
 
