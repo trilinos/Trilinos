@@ -185,12 +185,13 @@ int findmaxspread(int l,
   int maxdim = 0;
   real max =-FLT_MAX;
   real min = FLT_MAX;
-  realmaxspread =-FLT_MAX;
+  real maxspread =-FLT_MAX;
+  int i,j;
 
-  for (int i=0; i < dimension; i++) {
+  for (i=0; i < dimension; i++) {
     max =-FLT_MAX;
     min = FLT_MAX;
-    for (int j=l; j <= u; j++) {
+    for (j=l; j <= u; j++) {
       real val = points[N*i+perm[j]];
       if (max < val) { 
         max = val;
@@ -214,14 +215,15 @@ int findmaxvariance(int l,
 {
   int maxdim = 0;
   real max_var = 0.0;
+  int i,j;
   
-  for (int i=0; i < dimension; i++) {
+  for (i=0; i < dimension; i++) {
     real prev_mean = 0.0;
     real mean = 0.0;
     real variance = 0.0;
     real count = 0.0;
 
-    for (int j=l; j <= u; j++) {
+    for (j=l; j <= u; j++) {
       real val = points[N*i+perm[j]];
       prev_mean = mean;
       count += 1.0;
