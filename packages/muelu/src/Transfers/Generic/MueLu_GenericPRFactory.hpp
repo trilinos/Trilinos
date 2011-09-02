@@ -90,10 +90,14 @@ class GenericPRFactory : public PRFactory {
       
       //FIXME cache output level here
 
-      PFact_->BuildP(fineLevel,coarseLevel);
-      if (RFact_ != Teuchos::null)
-        RFact_->BuildR(fineLevel,coarseLevel);
-
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
+      coarseLevel.Set< RCP<Operator> >("P", P, this);
+      //      PFact_->BuildP(fineLevel,coarseLevel);
+      //      if (RFact_ != Teuchos::null) {
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
+        coarseLevel.Set< RCP<Operator> >("R", R, this);
+        //        RFact_->BuildR(fineLevel,coarseLevel);
+        //}
       //FIXME restore output level here
       return true;
     }
