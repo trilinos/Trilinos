@@ -83,13 +83,13 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
         See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
-    IfpackSmoother(std::string const & type, Teuchos::ParameterList & list)
+    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & list, LO const &overlap=0)
       : ifpackType_(type), list_(list), out_(this->getOStream())
     {
-      overlap_ = list.get("Overlap",(LO) 0);
+      overlap_ = overlap;
       std::string label;
       if (type == "point relaxation stand-alone")
-        label = "Ifpack: " + list.get("relaxation: type","unknown relaxation");
+        label = "Ifpack: " + list_.get("relaxation: type","unknown relaxation");
       else
         label = "Ifpack: " + type;
       SmootherBase::SetType(label);
@@ -200,8 +200,12 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         ifpackList.set("chebyshev: zero starting solution", InitialGuessIsZero);
       } else if (ifpackType_ == "point relaxation stand-alone") {
         ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
-      }
-      else {
+      } else if  (ifpackType_ == "ILU") {
+         if (InitialGuessIsZero==false) {
+           Teuchos::OSTab tab(out_);
+           *out_ << "WARNING:  Ifpack2 ILUT has no provision for a nonzero initial guess." << std::endl;
+         }
+      } else {
         // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
         // we should remove the if/else/elseif and just test if this
         // option is supported by current ifpack2 preconditioner
@@ -211,7 +215,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
-
       prec_->ApplyInverse(epB,epX);
     }
 
