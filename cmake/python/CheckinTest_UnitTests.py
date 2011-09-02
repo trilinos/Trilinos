@@ -1024,7 +1024,8 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Skipping configure because no packages are enabled!\n" \
+      "Skipping MPI_DEBUG configure because no packages are enabled!\n" \
+      "Skipping SERIAL_RELEASE configure because no packages are enabled!\n" \
       +"subjectLine = .passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages.\n" \
       +"subjectLine = .passed: Trilinos/SERIAL_RELEASE: skipped configure, build, test due to no enabled packages.\n" \
       +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
@@ -1981,6 +1982,45 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_ss_extra_builds_skip_case_no_email_ps_only_pass(self):
+    
+    testName = "ss_extra_builds_skip_case_no_email_ps_only_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --without-serial-release" \
+      +" --skip-case-no-email --do-all --push " \
+      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Skipping sending final status email for MPI_DEBUG_SS because it had no packages enabled and --skip-case-no-email was set!\n" \
+      +"^DID PUSH\n" \
+      )
+
+
   def test_ss_extra_builds_ss_only_pass(self):
     
     testName = "ss_extra_builds_ss_only_pass"
@@ -2572,7 +2612,7 @@ class test_checkin_test(unittest.TestCase):
       +"ERROR: Illegal TPL enable -DTPL_ENABLE_MPI:BOOL=ON in ../MPI_DEBUG.config!\n" \
       +"ERROR: Illegal enable -DTrilinos_ENABLE_STK:BOOL=ON in ../MPI_DEBUG.config!\n" \
       +"ERROR: Illegal enable -DTrilinos_ENABLE_Phalanx=ON in ../MPI_DEBUG.config!\n" \
-      +"Skipping configure because pre-configure failed (see above)!\n" \
+      +"Skipping MPI_DEBUG configure because pre-configure failed (see above)!\n" \
       +"0) MPI_DEBUG => FAILED: pre-configure failed => Not ready to push!\n" \
       +"Configure: FAILED\n" \
       +"FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \

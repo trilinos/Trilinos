@@ -668,6 +668,18 @@ clp.add_option(
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
+  "--skip-case-send-email", dest="skipCaseSendEmail", action="store_true",
+  help="If set then if a build/test case is skipped for some reason (i.e." \
+  +" because no packages are enabled) then an email will go out for that case." \
+  +" [default]" )
+clp.add_option(
+  "--skip-case-no-email", dest="skipCaseSendEmail", action="store_false",
+  help="If set then if a build/test case is skipped for some reason (i.e." \
+  +" because no packages are enabled) then no email will go out for that case." \
+  +" [default]",
+  default=True )
+
+clp.add_option(
   "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
   help="If set, then emails will get sent out for all operations. [default]" )
 clp.add_option(
@@ -863,6 +875,10 @@ if options.withoutDefaultBuilds:
 print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
 print "  --extra-builds='"+options.extraBuilds+"' \\"
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
+if options.skipCaseSendEmail:
+  print "  --skip-case-send-email \\"
+else:
+  print "  --skip-case-no-email \\"
 if not options.sendEmailOnlyOnFailure:
   print "  --send-email-for-all \\"
 else:
