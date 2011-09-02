@@ -971,10 +971,13 @@ do_dimension_reduction(
       // 		 basis, new_order+1));
     }
     for (int i=0; i<p_opa.size(); i++) {
+      std::cout << "p_opa[" << i << "] = " << p_opa[i] << std::endl;
       new_coordinate_bases[i] = Teuchos::rcp(
 	new Stokhos::StieltjesPCEBasis<int,double>(
 	  new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
 	  false, false, true, Cijk));
+      // std::cout << "new_coordinate_bases[" << i << "] = " << std::endl
+      // 		<< *new_coordinate_bases[i] << std::endl;
     }
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
       Teuchos::rcp(
