@@ -1,0 +1,620 @@
+\chapter{MEMORY MANAGER}
+The purpose of the memory manager utilities is to allow an applications
+programmer to write standard, readable FORTRAN-77 code while employing
+dynamic memory management for REAL, INTEGER, LOGICAL and CHARACTER type
+arrays.
+
+Because the array sizes in most programs are problem dependent, a
+program's memory requirements are not known until the program is running.
+Since FORTRAN-77 does not provide for dynamic memory allocation, the
+programmer has to either predict the maximum memory requirement or use
+machine dependent requests for memory.  In addition, dynamic memory
+allocation is an error prone exercise which tends to make the source code
+difficult to read and maintain.
+
+In SUPES, the memory manager utilities are written in standard FORTRAN-77
+and provide an interface which encourages readable coding and efficient use
+of memory resources.  Machine dependencies are isolated through the use of
+the extension library (Chapter~\ref{sec:extlib}). All memory
+requests are in terms of {\em numeric storage units} for numeric data
+(integer, real, or logical) and {\em character storage units} for
+character data~\cite{ansi}.
+
+An important design feature of the memory manager is that the memory manager
+can be supported even when the system-dependent dynamic memory request
+routines are not implemented on a system.  In this case, the memory manager
+will operate, allocating space from a user-supplied work array.  This mode
+is described as dynamic allocation of static memory. Thus, modification of a
+user's application program is minimal on systems where dynamic memory is not
+implemented. 
+
+All user entry points to memory manager routines begin with either ``MD''
+or ``MC.'' In most cases, the ``MD'' routines are used for numeric data,
+while the ``MC'' routines are for character data. In some cases, however,
+the routines are interchangeable. These routines are documented as synonyms.
+
+In this document, the term ``Mx'' is used to refer simultaneously to
+both ``MD'' and ``MC'' routines. Thus, MxRSRV is a reference to both MDRSRV
+and MCRSRV subroutines.
+
+The memory manager utility is divided into three categories; basic routines,
+advanced routines, and development aids.  These categories will be discussed
+in sections \ref{sec:mbas} through \ref{sec:mdev}.
+
+
+\section{Indexing System}
+In order to use the memory manager properly, the user must first understand
+the concept of using a base array with indices for accessing memory
+address locations.
+At the core of this concept is FORTRAN's convention of passing
+SUBROUTINE array references by address.
+The memory manager references all memory addresses relative
+to the addresses of user-supplied base
+arrays---one each for numeric and character data. A reference
+to memory is made in terms of a pointer to these base arrays.
+Specifically,
+the memory manager determines an indexing parameter by first determining the
+offset of the appropriate memory location relative to the address
+of the correct base
+array.
+The index is then computed in terms of the proper storage units
+(either character or numeric).
+Note that the resulting
+indexes may take on a wide range of
+values, including negative numbers.
+
+The base arrays must comply with the following rules:
+\begin{enumerate}
+\item Numeric base arrays {\em must} be of type INTEGER, REAL, or LOGICAL.  Modified
+word length storage arrays such as INTEGER\last 2 or REAL\last 8 will result
+in invalid indexes with no error message.
+
+\item Character base arrays {\em must} be declared CHARACTER\last 1.
+\end{enumerate}
+
+The following FORTRAN statements define valid base arrays:
+\begin{verbatim}
+DIMENSION NUMBAS(1)
+CHARACTER*1 CHRBAS(1)
+\end{verbatim}
+Only one base array from each category (numeric and character) may
+be used in a program.
+
+In order to use memory allocated by the memory manager, the user merely
+needs to pass the base array with the correct offsetting
+index to a subprogram.
+For example, for a base arrays NUMBAS and CHRBAS
+and indexes IP1 and IP2, a subroutine call would be:
+
+\verb+CALL SUBBIE ( NUMBAS(IP1), CHRBAS(IP2) )+
+
+Although the programmer is not restricted to using the allocated memory in
+subprograms only, the recommended usage for the memory manager is to
+allocate dynamic arrays in the main program and then pass them to
+subroutines.
+
+
+\section{Basic Routines}\label{sec:mbas}
+The basic memory manager routines are those which are most commonly used and
+require little understanding of the internal workings of the utility.
+
+\subsection{Initialize (MDINIT/MCINIT)}
+The memory manager {\em must} be initialized with a calls to MDINIT and
+MCINIT before any memory can be allocated.  The main purpose of the
+initialization is to determine the location of the numeric and character
+base arrays in memory. MDINIT must be called first, and MCINIT second. In
+the case where character dynamic memory is not used, MCINIT need not be
+called. When calling MxINIT, the user must pass (explicitly or
+implicitly) subscript 1 of the base array. 
+\begin{verbatim}
+CALL MDINIT (NUMBAS(1))
+CALL MCINIT (CHRBAS(1))
+\end{verbatim}
+
+\begin{argy}{NUMBAS}{INTEGER, LOGICAL or REAL Array or Array Element}{Read
+Only}
+This array is used as a base reference to all dynamically allocated
+numeric memory.
+\end{argy}
+
+\begin{argy}{CHRBAS}{CHARACTER\last 1 Array or Array Element}{Read Only}
+This array is used as a base reference to all dynamically allocated
+character memory.
+\end{argy}
+
+\subsection{Define Dynamic Array (MDRSRV/MCRSRV)}
+MxRSRV declares new dynamic arrays.  The user specifies the space
+required, and an index to the new space is returned.  Note that, by
+default, the contents of the new storage are not initialized to any specific
+value. MxFILL may be used for data initialization. 
+\begin{verbatim}
+CALL MDRSRV (NAME, NEWIDX, NEWLEN)
+CALL MCRSRV (NAME, NEWIDX, NEWLEN)
+\end{verbatim}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the new dynamic array. The memory manager will add this
+name to its internal dictionary; each array must have a unique name.  The
+first eight characters beginning with a nonblank are
+used for comparison.
+This comparison is case-insensitive and embedded blanks are
+significant.
+\end{argy}
+
+\begin{argy}{NEWIDX}{INTEGER}{Write Only}
+This is the index to storage allocated to this dynamic array relative to
+the base array. The index for numeric data is to be used with the numeric
+array supplied to MDINIT, and character data is to be used with the
+character array supplied to MCINIT.
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Read Only}
+This is the length to be reserved for the new array. Any nonnegative number
+is acceptable.  A zero length does not cause any storage to be allocated and
+returns an index equal to one. The value of NEWLEN is in terms of numeric
+storage units for numeric data and character storage units for character
+data.
+\end{argy}
+
+\subsection{Delete Dynamic Array (MDDEL/MCDEL)}
+MDDEL and MCDEL release the memory that is allocated to a dynamic array for
+numeric and character storage, respectively.
+\begin{verbatim}
+CALL MDDEL (NAME)
+CALL MCDEL (NAME)
+\end{verbatim}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array which is to be deleted.  The array
+name must match an existing name in the dictionary and be of the correct
+type (numeric or character) for the operation. The first eight characters
+beginning with a nonblank are used for comparison.
+This comparison is case-insensitive and embedded blanks are
+significant.
+\end{argy}
+
+\subsection{Reserve Memory Block (MDGET/MCGET)}
+MDGET and MCGET reserve a contiguous block of memory without associating the
+block of memory with an array.  MxGET should be called prior to a
+series of calls to MxRSRV to improve efficiency and to reduce memory
+fragmentation.  Further discussion of the operation of MxGET is
+found in section~\ref{sec:table}.
+\begin{verbatim}
+CALL MDGET (MNGET)
+CALL MCGET (MNGET)
+\end{verbatim}
+
+\begin{argy}{MNGET}{INTEGER}{Read only}
+This specifies the desired contiguous block size in numeric storage units
+for MDGET or character storage units for MCGET.
+\end{argy}
+
+\subsection{Release Unallocated Memory (MDGIVE/MCGIVE)}
+MxGIVE 
+causes the memory manager to return unused storage to the operating
+system, if possible. MDGIVE and MCGIVE are synonyms.
+\begin{verbatim}
+CALL MDGIVE ()
+CALL MCGIVE ()
+\end{verbatim}
+
+\subsection{Obtain Statistics (MDSTAT/MCSTAT)}
+MxSTAT returns memory manager statistics.  MxSTAT provides a method
+for error checking, and thus should be used after other calls to the memory
+manager to assure no errors have occurred. MDSTAT and MCSTAT are synonyms.
+\begin{verbatim}
+CALL MDSTAT (MNERRS, MNUSED)
+CALL MCSTAT (MNERRS, MNUSED)
+\end{verbatim}
+
+\begin{argy}{MNERRS}{INTEGER}{Write Only}
+This is the total number of errors detected by the memory manager during the
+current execution. 
+\end{argy}
+
+\begin{argy}{MNUSED}{INTEGER}{Write Only}
+This is the total number of storage units that are currently allocated to
+dynamic arrays. MDSTAT returns the numeric storage in numeric storage units,
+and MCSTAT returns the character storage in character storage units. If any
+storage has been requested in the deferred mode and not yet allocated by the
+memory manager (Section~\ref{sec:wait}), this storage is counted as though 
+it were actually allocated.
+\end{argy}
+
+\subsection{Print Error Summary (MDEROR/MCEROR)}
+MxEROR prints a summary of all errors detected by the memory
+manager.  The return status of the last memory manager routine called is
+also printed. MxEROR should be called any time an error is
+detected by a call to MxSTAT.
+Table~\ref{tab:ecode} lists the error codes.
+MDEROR and MCEROR are synonyms. 
+\begin{table}[htbp]
+\centering
+\caption{Memory Manager Error Codes} \label{tab:ecode}
+\begin{tabular}{|rcl|} \hline \hline
+\multicolumn{3}{|c|}{ERROR CODES}\\ \hline
+  1 &  &  SUCCESSFUL COMPLETION\\
+  2 &  &  UNABLE TO GET REQUESTED SPACE FROM SYSTEM\\
+  3 &  &  DATA MANAGER NOT INITIALIZED\\
+  4 &  &  DATA MANAGER WAS PREVIOUSLY INITIALIZED\\
+  5 &  &  NAME NOT FOUND IN DICTIONARY\\
+  6 &  &  NAME ALREADY EXISTS IN DICTIONARY\\
+  7 &  &  ILLEGAL LENGTH REQUEST\\
+  8 &  &  UNKNOWN DATA TYPE\\
+  9 & \last&  DICTIONARY IS FULL\\
+ 10 & \last&  VOID TABLE IS FULL\\
+ 11 & \last&  MEMORY BLOCK TABLE IS FULL\\
+ 12 & \last&  OVERLAPPING VOIDS - INTERNAL ERROR\\
+ 13 & \last&  OVERLAPPING MEMORY BLOCKS - INTERNAL ERROR\\
+ 14 & \last&  INVALID MEMORY BLOCK - EXTENSION LIBRARY ERROR\\
+ 15 &  &  INVALID ERROR CODE\\
+ 16 &  &  INVALID INPUT NAME\\
+ 17 &  &  ILLEGAL CALL WHILE IN DEFER MODE\\
+ 18 &  &  NAME IS OF WRONG TYPE FOR OPERATION\\ \hline \hline
+\multicolumn{3}{c}{\last These are not user errors.}\\
+\end{tabular}
+\end{table}
+
+Several of the error codes listed in Table~\ref{tab:ecode} are not a result
+of a user error, but are used to signal an internal error, or that an
+internal array is full. For example, the table which records the names of
+the arrays allocated with MxRSRV may not be large enough for the
+application. In this case, the memory manager subroutines must be modified
+to accommodate the user. A local support person should perform this task. 
+\begin{verbatim}
+CALL MDEROR (IUNIT)
+CALL MCEROR (IUNIT)
+\end{verbatim}
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the FORTRAN unit number of the output device. 
+\end{argy}
+
+
+\subsection{Enable data initialization (MDFILL/MCFILL)}
+MxFILL defines a fill/initialization pattern that is to be used
+for newly allocated storage. MDFILL and MCFILL are in effect until canceled
+by MDFOFF and MCFOFF, respectively.  MDFILL and MCFILL operate
+independently.
+\begin{verbatim}
+CALL MDFILL (NUMDAT)
+CALL MCFILL (CHRDAT)
+\end{verbatim}
+
+\begin{argy}{NUMDAT}{INTEGER, REAL or LOGICAL}{Read Only}
+This is the initialization datum for new storage al\-lo\-cat\-ed with MDRSRV
+or extended with MDLONG. The memory manager makes no attempt to identify the
+type (INTEGER, REAL, or LOGICAL) of either the initialization datum or of a
+newly allocated array. Instead, the bit of the initialization datum is
+stored without interpretation. This pattern is then used to initialize new
+storage. Since the internal machine representation of REAL data is different
+than INTEGER data (or LOGICAL data), the user may experience unexpected
+results when dynamic memory is used as a numeric type which is different
+from the type of the initialization datum. 
+\end{argy}
+
+\begin{argy}{CHRDAT}{CHARACTER\last(\last)}{Read Only}
+This is the initialization data for new storage al\-lo\-cat\-ed with MCRSRV or
+extended with MCLONG. Only the first character of CHRDAT is used.
+\end{argy}
+
+\subsection{Cancel Data Initialization (MDFOFF/MCFOFF)}
+MDFOFF and MCFOFF cancel the data initialization for numeric and character
+data, respectively.  MDFOFF and MCFOFF operate independently.
+\begin{verbatim}
+CALL MDFOFF ()
+CALL MCFOFF ()
+\end{verbatim}
+
+\subsection{Basic Example}
+\begin{verbatim}
+    DIMENSION BASE(1)
+    CHARACTER*1 CBASE(1)
+    CALL MDINIT (BASE(1))
+    CALL MCINIT (CBASE(1))
+    CALL MDGET (20)
+    CALL MDFILL (0.)
+    CALL MCFILL ('Z')
+    CALL MDRSRV ('FIRST',  I1, 10)
+    CALL MDRSRV ('SECOND', I2, 10)
+    CALL MCRSRV ('THIRD',  I3, 10)
+    CALL MDDEL ('SECOND')
+    CALL MDGIVE ()
+    CALL MDSTAT (MNERRS, MNUSED)
+    IF (MNERRS .NE. 0) THEN
+       CALL MDEROR (6)
+       STOP
+    END IF
+    CALL SUBPRG (BASE(I1), CBASE(I3))
+\end{verbatim}
+
+\section{Advanced Routines}
+The advanced routines are supplied to give added capability to the user who
+is interested in more sophisticated manipulation of memory.  These routines
+are never necessary, but may be very desirable.
+
+\subsection{Rename Dynamic Array (MDNAME/MCNAME)}
+MxNAME renames a dynamic array from NAME1 to NAME2.  The location
+of the array is not changed, nor is its length. MDNAME is used for numeric
+arrays and MCNAME is used for character arrays.
+\begin{verbatim}
+CALL MDNAME (NAME1, NAME2)
+CALL MCNAME (NAME1, NAME2)
+\end{verbatim}
+
+\begin{argy}{NAME1}{CHARACTER\last(\last)}{Read Only}
+This is the old name of the array.  The first eight characters after the
+first nonblank are
+used for comparison.
+This comparison is case-insensitive and embedded blanks are
+significant.
+\end{argy}
+
+\begin{argy}{NAME2}{CHARACTER\last(\last)}{Read Only}
+This is the new name of the array.  The first eight characters starting
+from a nonblank are
+used for the new name.
+This comparison is case-insensitive and embedded blanks are
+significant.
+\end{argy}
+
+\subsection{Adjust Dynamic Array Length (MDLONG/MCLONG)}
+MxLONG changes the length of a dynamic array.  The memory manager
+will relocate the array and move its data if storage cannot be extended at
+the array's current location.  The user should assume that MxLONG 
+invalidates the previous index to this array if the array is extended. 
+MDLONG is used for numeric arrays and MCLONG is used for character arrays.
+\begin{verbatim}
+CALL MDLONG (NAME, NEWIDX, NEWLEN)
+CALL MCLONG (NAME, NEWIDX, NEWLEN)
+\end{verbatim}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array which the user wishes to extend or
+shorten.
+\end{argy}
+
+\begin{argy}{NEWIDX}{INTEGER}{Write Only}
+This is the new index to the dynamic array.
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Read Only}
+This is the new length for the dynamic array in numeric storage units for
+MDLONG and in character storage units for MCLONG.
+\end{argy}
+
+\subsection{Locate Dynamic Array (MDFIND/MCFIND)}
+MxFIND 
+returns the index and length of storage allocated to a dynamic
+array.  This routine would be used if the index from an earlier call to
+MxRSRV was not available in a particular program segment. MDFIND
+is used for numeric arrays and MCFIND is used for character arrays.
+\begin{verbatim}
+CALL MDFIND (NAME, NEWIDX, NEWLEN)
+CALL MCFIND (NAME, NEWIDX, NEWLEN)
+\end{verbatim}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array to be located.
+\end{argy}
+
+\begin{argy}{NEWIDX}{INTEGER}{Write Only}
+This is the index to the dynamic array relative to the user's reference
+array. Because an index can take any value, the returned value cannot be
+used as an indication of success or failure of MxFIND. MxSTAT should always
+be used for error checking.
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Write Only}
+This is the length of the dynamic array in numeric or character storage
+units for MDFIND and MCFIND, respectively.
+\end{argy}
+
+\subsection{Compress Storage (MDCOMP/MCCOMP)}
+MxCOMP causes fragmented memory to be consolidated.  Note that
+this may cause array storage locations to change.  It is important to
+realize that all indexes must be recalculated by calling MxFIND 
+after a compress operation.  A call to MxCOMP prior to
+MxGIVE will result in the return of the maximum memory to the system.
+MDCOMP and MCCOMP are synonyms. 
+\begin{verbatim}
+CALL MDCOMP ()
+CALL MCCOMP ()
+\end{verbatim}
+
+\subsection{Error Flag Query (MDERPT/MCERPT)}
+MxERPT requests the memory manager to report the number of errors
+accumulated for a particular error flag. A programmer may use this to
+determine more detailed information than what is available from
+MxSTAT. MDERPT and MCERPT are synonyms.
+\begin{verbatim}
+CALL MDERPT (IFLAG, NERRS)
+CALL MCERPT (IFLAG, NERRS)
+\end{verbatim}
+
+\begin{argy}{IFLAG}{INTEGER}{Read Only}
+IFLAG specifies the flag number for which the user wishes an error count. A
+list of the error flags can be printed by calling MxEROR.
+\end{argy}
+
+\begin{argy}{NERRS}{INTEGER}{Write Only}
+NERSS will contain the error count.
+\end{argy}
+
+\subsection{Modify Error Count (MDEFIX/MCEFIX)}
+MxEFIX allows the error count for a particular error flag to be
+set to a specified value. MDEFIX and MCEFIX are synonyms.
+\begin{verbatim}
+CALL MDEFIX (IFLAG, NERRS)
+CALL MCEFIX (IFLAG, NERRS)
+\end{verbatim}
+
+\begin{argy}{IFLAG}{INTEGER}{Read Only}
+IFLAG specifies the number of the error flag which will be set.
+See Table~\ref{tab:ecode} for a list and description of these flags.
+\end{argy}
+
+\begin{argy}{NERRS}{INTEGER}{Read Only}
+NERRS is the new value for the error count.
+\end{argy}
+
+\subsection{Report Last Error (MDLAST/MCLAST)}
+MxLAST requests the flag number of the last error.
+MDLAST and MCLAST are synonyms.
+\begin{verbatim}
+CALL MDLAST (IFLAG)
+CALL MCLAST (IFLAG)
+\end{verbatim}
+
+\begin{argy}{IFLAG}{INTEGER}{Write Only}
+IFLAG is the number of the last error caused by a previous call to the
+memory manager. 
+\end{argy}
+
+\subsection{Enable Deferred Memory Mode (MDWAIT/MCWAIT)} \label{sec:wait}
+MxWAIT enables the deferred memory mode of the memory manager. In
+this mode, any requests for additional memory with MxRSRV are
+satisfied only if a system call is not required. If a system call is
+required, the request for memory is deferred and will be satisfied when the
+deferred mode is canceled by calling MxEXEC or a call to
+MxLONG requires a system call for memory for an existing array.
+MDWAIT and MCWAIT are synonyms. 
+
+Because the deferred mode may not actually provide array space at the time a
+call to MxRSRV is made, the base array pointer re\-turn\-ed by
+MxRSRV may not be valid. In fact, for a deferred request, an invalid
+index is intentionally returned so that the requested array space cannot
+be erroneously used. When the deferred memory requests are eventually
+satisfied (by calling MxEXEC), the indexes are automatically,
+asynchronously updated by the memory manager. Thus, upon return from
+MxEXEC the indexes used in MxRSRV will have a valid value. 
+
+The deferred mode is provided as a means of reducing the sometimes
+time-consuming calls to the operating system for new memory. A similar
+efficiency could be realized by judicious use of MxGET, but the
+deferred mode relieves the user of the burden of adding all memory requests
+before calling MxRSRV. The deferred mode is a sophisticated
+capability and should not be enabled if the user does not understand its
+implications. 
+
+The deferred mode must be used as follows:
+\begin{enumerate}
+\item The deferred mode begins with a call to MxWAIT.
+\item Except for MxPRNT, all memory manager calls are permissible
+in the deferred mode.
+\item Indexes returned by MxRSRV, MxFIND, and MxLONG
+may not be assigned to other variables while the deferred mode is
+in effect. 
+\item Dynamic memory may not be accessed while the deferred mode is in
+effect.
+\item The deferred mode is canceled by calling MxEXEC.
+\end{enumerate}
+\begin{verbatim}
+CALL MDWAIT ()
+CALL MCWAIT ()
+\end{verbatim}
+
+\subsection{Execute Deferred Memory Requests (MDEXEC/MCEXEC)}
+MxEXEC causes all deferred mode memory requests to be satisfied
+with a single call to the operating system for the required memory. The
+deferred mode is also canceled. MDEXEC and MCEXEC are synonyms.
+
+After returning from MxEXEC, all indexes to array space which was
+deferred are updated.
+\begin{verbatim}
+CALL MDEXEC ()
+CALL MCEXEC ()
+\end{verbatim}
+
+\subsection{Report storage information (MDMEMS/MCMEMS)}
+MxMEMS reports numeric or character storage information. This information
+may be useful for planning storage strategies during code development
+and for flow control during code execution.
+\begin{verbatim}
+CALL MDMEMS (NSUA, NSUD, NSUV, NSULV)
+CALL MCMEMS (NSUA, NSUD, NSUV, NSULV)
+\end{verbatim}
+
+\begin{argy}{NSUA}{INTEGER}{Write Only}
+NSUA is the number of numeric/character storage units currently allocated
+and not deferred.
+\end{argy}
+
+\begin{argy}{NSUD}{INTEGER}{Write Only}
+NSUD is the number of numeric/character storage units currently deferred.
+\end{argy}
+
+\begin{argy}{NSUV}{INTEGER}{Write Only}
+NSUV is the amount of void space in numeric or character storage units. Note
+that MDMEMS and MCMEMS may be reporting the same space for NSUV, but in
+different units.
+\end{argy}
+
+\begin{argy}{NSULV}{INTEGER}{Write Only} 
+NSULV is the size of the largest void space in numeric or character storage
+units. Note that MDMEMS and MCMEMS may be reporting the same space for
+NSULV, but in different units. 
+\end{argy} 
+
+\section{Development Aids}\label{sec:mdev}
+The routines in this section are designed to aid the programmer during
+development of a program, and probably would not be used during execution of
+a mature program, except as a response to a memory manager error.
+
+\subsection{List Storage Tables (MDLIST/MCLIST)}
+MxLIST prints the contents of the memory manager's internal
+tables. Section~\ref{sec:table} describes these tables. MDLIST and MCLIST
+are synonyms. 
+\begin{verbatim}
+CALL MDLIST (IUNIT)
+CALL MCLIST (IUNIT)
+\end{verbatim}
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the FORTRAN unit number of the output device.
+\end{argy}
+
+\subsection{Print Dynamic Array (MDPRNT/MCPRNT)}
+MxPRNT prints the contents of an individual numeric and
+character array, respectively.
+\begin{verbatim}
+CALL MDPRNT (NAME, IUNIT, TYPE)
+CALL MCPRNT (NAME, IUNIT, NGRUP)
+\end{verbatim}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the array to be printed.
+\end{argy}
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the FORTRAN unit number of the output device.
+\end{argy}
+
+\begin{argy}{TYPE}{CHARACTER\last(\last)}{Read Only}
+TYPE indicates the data type of the data to be printed; "R" for REAL, or
+"I" for INTEGER.  Note that this is not necessarily the declared type of the
+base array.
+\end{argy}
+
+\begin{argy}{NGRUP}{INTEGER}{Read Only}
+NGRUP controls the number of characters that are grouped together without
+intervening spaces. Since the storage is declared as a CHARACTER\last 1
+array, NGRUP allows the user to format the output consistent with longer
+character strings.
+\end{argy}
+
+\subsection{Debug Printing (MDDEBG/MCDEBG)}
+Debug printing causes error messages to be printed by the memory manager at
+the time an error is detected. The default is no debug printing --- errors
+are detected, but are only reported when re\-quest\-ed by MxSTAT and
+MxERPT. MDDEBG and MCDEBG are synonyms.
+\begin{verbatim}
+CALL MDDEBG (IUNIT)
+CALL MCDEBG (IUNIT)
+\end{verbatim}
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+IUNIT controls debug printing. A negative or zero value
+turns debug printing off. A positive value of IUNIT will cause any error
+messages to be printed to FORTRAN unit number IUNIT.
+\end{argy}

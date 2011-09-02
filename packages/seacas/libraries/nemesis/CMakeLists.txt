@@ -1,6 +1,7 @@
 INCLUDE(SubPackageMacros)
 INCLUDE(PackageLibraryMacros)
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(FortranSettings)
 
 SUBPACKAGE(Nemesis)
 

@@ -1,0 +1,79 @@
+Notes on this version of SUPES:
+
+	0)  SUPES is a set of utilities that are used by Sandia's 1500
+ 	    directorate personnel in a variety of software packages.
+	    These utilities contain a top-level set of routines,
+	    written in ANSI Fortran 77, that allow one to dynamically
+	    allocate and manage memory as well as to utilize a free field
+            input reader (thus simplifying the user interface in interactive mode).
+	    Obviously, attacking this problem will require some system-dependent
+	    utilities be accessed by the top-level routines.  Note that the one
+	    result of this effort is that a port of any 1500 generated code
+	    merely requires that the SUPES library be ported.
+
+	1)  This newest version of SUPES has the extension library written
+	    in the C programming language.  This was done for a number of
+            reasons.  Among them are that we will now be able to run with
+            only one version of the source for all of the architectures that we
+            will be supporting, and the ease in which a port will be made 
+            possible.  The former case is made possible through the liberal
+	    use of C Preprocessor compiler directives while the latter by
+	    comparison with the existing code itself.
+
+	2)  One should note that there are only a couple of areas that will
+	    be critical in achieving a port of the extension library.  First,
+	    one will have to be able to find the procedure for interfacing
+	    between a Fortran calling module and a C subprogram module.
+	    That is, what the naming convention for the associated C module
+	    will have to be in order to be called from a Fortran driver.
+	    This interface appears to be a highly system dependent one.
+	    Also one will need to determine how the particular machine interprets
+	    strings passed in Fortran argument lists to C modules.  Hint:
+	    in general thay are *NOT* pointers to NULL terminated character arrays.
+	    To view concrete examples of these consider the following segment
+	    from the source file ``extime.c'':
+
+		#if defined (unix)
+		# if defined (sun)
+		
+		#     include <sys/time.h>
+		      extime_( string, len )
+		      char string[];
+		      long int len;
+		
+		# else				/* Not Sun */
+		#  if defined (CRAY)
+		
+		#     include <time.h>
+		#     include <fortran.h>
+		      EXTIME( string )
+		      _fcd string;
+		
+		#  endif			/* Unicos */
+		# endif				/* Sun */
+		#else				/* Not UNIX */
+		# if defined (VMS)
+		
+		#     include time
+		#     include descrip
+		      extime( string )
+		      struct dsc$descriptor_s *string;
+		
+		# else				/* not VMS */
+		
+		# endif				/* VMS */
+		#endif				/* UNIX */
+----------------------------------		
+	    Again, there are a number of observations to be made here:
+	       a) The string passing mechanisms are different for each
+                  architecture.  
+	       b) The convention of including ``header''  files is
+		  addressed on a machine to machine basis.  I found that
+	          this was the most expedient way to handle them.
+	       c) The ``defined'' quantities being checked in the
+		  compiler directives are often predefined for each
+		  machine.  In general, one must check in the manual pages
+		  for either ``cpp'', the C preprocessor, or for the
+		  C compiler itself.
+
+	    John Red-Horse 10/19/89.

@@ -1,0 +1,78 @@
+XCOMM  Copyright (c) 2008 Sandia Corporation.  Under the terms of Contract
+XCOMM  DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM  certain rights in this software
+XCOMM  
+XCOMM  Redistribution and use in source and binary forms, with or without
+XCOMM  modification, are permitted provided that the following conditions are
+XCOMM  met:
+XCOMM  
+XCOMM      * Redistributions of source code must retain the above copyright
+XCOMM        notice, this list of conditions and the following disclaimer.
+XCOMM  
+XCOMM      * Redistributions in binary form must reproduce the above
+XCOMM        copyright notice, this list of conditions and the following
+XCOMM        disclaimer in the documentation and/or other materials provided
+XCOMM        with the distribution.
+XCOMM  
+XCOMM      * Neither the name of Sandia Corporation nor the names of its
+XCOMM        contributors may be used to endorse or promote products derived
+XCOMM        from this software without specific prior written permission.
+XCOMM  
+XCOMM  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM  
+
+XCOMM   $Id: Imakefile,v 1.6 2005/11/15 22:56:03 gdsjaar Exp $
+
+CODE = gjoin
+
+#if NeedsDoubleEscape
+DEFINES = -DNeedsDoubleEscape
+#endif
+
+#if defined(AlphaArchitecture)
+F77DEBUGFLAGS = -g
+#endif
+
+SRCS1 = \
+chgint.f comand.f dbmir1.f dbmirr.f dorot.f  expxyz.f \
+fixmap.f getall.f gjoin2.f indexx.f inigen.f initin.f \
+intcnt.f irennp.f matxyz.f mirss.f  movint.f movrea.f \
+munelb.f muness.f munnps.f munxyz.f offset.f \
+ordix.f  ordstr.f outlog.f \
+rdgen.f  renelb.f renix.f  rotxyz.f setitl.f \
+setsta.f wrgen.f  zmess.f  zmfixd.f zmmap.f  zmnps.f  \
+zmxyz.f  dbpini.f
+
+SRCSF = \
+prtnps.F prtess.F prtelb.F
+
+SRCSf = ${SRCSF:.F=.f}
+OBJS1 = ${SRCS1:.f=.o}
+OBJSF = ${SRCSF:.F=.o}
+
+SRCS = $(SRCS1) $(SRCSF)
+OBJS = $(OBJS1) $(OBJSF)
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallProgram($(CODE),$(BINDIR))
+InstallProgram(gjoin2,$(BINDIR))
+
+gjoin2: gjoin
+	$(CP) gjoin gjoin2
+
+CleanupCapF($(SRCSf))
+ExtraStuffToClean(gjoin2)
+DependTarget()
+

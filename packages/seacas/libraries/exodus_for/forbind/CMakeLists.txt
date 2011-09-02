@@ -1,0 +1,27 @@
+INCLUDE(PackageLibraryMacros)
+INCLUDE(FortranSettings)
+
+INCLUDE_DIRECTORIES(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_BINARY_DIR}/include"
+)
+
+SET(SOURCES "")
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_GLOB(SOURCES ${DIR}/src/*.c ${DIR}/src/*.F)
+
+SET(HEADERS
+  include/exodusII.inc
+  include/exodusII_int.inc
+)
+
+PACKAGE_ADD_LIBRARY(
+	exodus_for
+	HEADERS	${HEADERS}
+	SOURCES ${SOURCES}
+	DEPLIBS exodus
+)
+
+PACKAGE_ADD_TEST_DIRECTORIES(test)
+

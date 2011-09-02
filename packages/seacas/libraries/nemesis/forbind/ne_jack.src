@@ -1,0 +1,1498 @@
+/*
+ * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.  
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile: ne_jack.src,v $
+ *
+ * $Author: gdsjaar $
+ *
+ * $Date: 2007/10/31 21:39:17 $
+ *
+ * $Revision: 1.14 $
+ *
+ *====================================================================*/
+%*
+%*  Meta-source for various versions of NemesisI FORTRAN jacket library.
+%*
+%*  Patterned after the exo_jack.src ExodusII library.
+%*
+%*  02/03/97 M.M. St. John
+%*
+%*  After minor preprocessing via a sed script, this file becomes source
+%*  to the m4 macro processor for a C library to be called from FORTRAN.
+%*  The main differences between this source and C are the way function
+%*  prototypes are declared.  All such declarations occur in lines beginning
+%*  with the "%" character.  A sed script converts these into calls to m4
+%*  macros for handling the various conventions for calling C functions from
+%*  FORTRAN.  Formal parameters corresponding to FORTRAN character strings
+%*  must be declared using the pseudo type "string".  Appending "len" to the
+%*  name of such variables is the convention used for variables representing
+%*  the FORTRAN length of string parameters.
+%*
+%*  For example, the following input
+%*
+%*  % void
+%*  % ncadel (
+%*  %    int *cdfid,                    /* netCDF ID */
+%*  %    int *varid,                    /* variable ID */
+%*  %    string attname,                /* attribute name */
+%*  %    int *rcode                     /* returned error code */
+%*  %    )
+%*  % {
+%*
+%*  will be converted to the following m4 macro calls:
+%*
+%*  void`'M4__dnl
+%*  M4__PROTO(`ncadel',
+%*      `INTSTAR(cdfid)',
+%*      `INTSTAR(varid)',
+%*      `STRING(attname)',
+%*      `INTSTAR(rcode)'
+%*  )
+%*  {M4__LOCALS
+%*
+%*  which may be converted to the following C, using sun.m4 and common.m4
+%*
+%*  void
+%*  ncadel_ (cdfid, varid, attname, rcode, attnamelen)
+%*      int *cdfid;
+%*      int *varid;
+%*      char *attname;
+%*      int attnamelen;
+%*      int *rcode;
+%*  {
+%*
+/*
+ * OVERVIEW
+ *
+ * This file contains jacket routines written in C for interfacing Fortran
+ * NemesisI function calls to the actual C binding for NemsisI.  This code
+ * is written explicitly for M4__SYSTEM.  In general, these functions handle
+ * character-string parameter conventions, convert between
+ * column-major-order arrays and row-major-order arrays, and map between
+ * array indices beginning at one and array indices beginning at zero.
+ *
+ */
+
+/* LINTLIBRARY */
+#include        <ctype.h>
+#include        <string.h>
+#include        <stdio.h>
+#include        <stdlib.h>
+#include        "netcdf.h"
+#include        "exodusII.h"
+#include        "exodusII_int.h"
+#include        "ne_nemesisI.h"
+#include        "ne_nemesisI_int.h"
+
+M4__STRING_DESCRIPTOR_INCLUDES
+
+M4__FORTRAN_DEFINES
+extern int ncopts;   /* default is (NC_FATAL | NC_VERBOSE) */
+extern int exerrval; /* global int that contains a Exodus-specific error code */
+
+/* blank fill C string to make FORTRAN string */
+void
+ne_fcdcpy (fstring, fslen, sstring)
+    char *fstring;              /* output string to be blank-filled */
+    int fslen;                  /* length of output string */
+    char *sstring;              /* input string, null-terminated */
+{
+    int i, len = strlen(sstring);
+
+    for (i = 0; i < len; i++)
+        *(fstring + i) = *(sstring + i);
+    for (i = len; i < fslen; i++)
+        *(fstring + i) = ' ';
+}
+
+/* ne_lenstr - string length (w/o trailing blanks) */
+int ne_lenstr (char *string)
+{
+  char *ptr;
+
+  ptr=string+strlen(string);    /* start at end of string including blanks */
+  while (*(--ptr) == ' ');      /* skip blanks */
+  return(ptr-string+1);         /* return trimmed length of string */
+}
+
+/* copy function used to copy strings and strip trailing blanks */
+void
+ne_fstrncpy (target, source, maxlen)
+    char *target;               /* space to be copied into */
+    char *source;               /* string to be copied */
+    int maxlen;                 /* maximum length of *source */
+{
+    while (maxlen-- && *source != '\0')
+        *target++ = *source++;
+    while (*(--target) == ' '); /* strip blanks */
+    *(++target) = '\0';         /* insert new EOS marker */
+}
+
+/*
+ * NOTE: there were some other helper functions in exo_jack.src
+ * that might be needed for future functions in the NEMESIS API.
+ * However, in the interest of saving space I am removing these
+ * for now. The functions are:
+ *   nstrncpy      - copy string terminated with blanks
+ *   fstra2cstra   - copy 1D Fortran string arrays into C string arrays
+ *   cstra2fstra   - copy 1D C string arrays into Fortran string arrays
+ *   fstra2cstra2d - copy 2D Fortran string arrays into C string arrays
+ *   cstra2fstra2d - copy 2D C string arrays into Fortran string arrays
+ *   dimprod       - Compute product of dimensions
+ *   itob          - convert array of bytes stored in ints to array of bytes
+ *   itos          - convert array of shorts stored in ints to array of shorts
+ * 
+ * any of these functions can be copied from exo_jack.src in the future
+ * if they are needed.
+ */
+
+/* ------------ M4__SYSTEM FORTRAN jackets for NEMESIS I Functions ---------- */
+
+/*
+ *  Get initial information from nemesis file
+ */
+% void
+% negii (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nproc,           /* Number of processors */
+%     int  *nproc_in_f,      /* Number of procs in this file */
+%     string ftype,          /* NEMESIS file type (parallel or scaler) */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  int slen;
+  char *file_type;
+
+  /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
+              the Fortran programmer passed it. It is best at
+              this time to hard code it per NEPII spec. */
+  slen = 1;
+  if (ftypelen != 1)
+  {
+    slen = ftypelen;
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
+            ftypelen, *idne);
+    ex_err("negii",errmsg,EX_MSG);
+#endif
+  }
+
+  file_type = (char *) malloc((slen+1)*sizeof(char));
+
+  if ((*ierr = ne_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to get initial information from file id %d",
+	    *idne);
+    ex_err("negii",errmsg,EX_MSG);
+  }
+
+  if (*ierr == 0)
+    ne_fcdcpy (ftype, slen, file_type);
+
+  free(file_type);
+}
+
+/*
+ *  Write initial information from nemesis file
+ */
+% void
+% nepii (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nproc,           /* Number of processors */
+%     int  *nproc_in_f,      /* Number of procs in this file */
+%     string ftype,          /* NEMESIS file type (parallel or scaler) */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  int slen;
+  char *file_type;
+
+  /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
+              the Fortran programmer passed it. It is best at
+              this time to hard code it per NEPII spec. */
+  slen = 1;
+  if (ftypelen != 1)
+  {
+    slen = ftypelen;
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
+            ftypelen, *idne);
+    ex_err("nepii",errmsg,EX_MSG);
+#endif
+  }
+
+  file_type = (char *) malloc((slen+1)*sizeof(char));
+
+  (void) ne_fstrncpy (file_type, ftype, slen);
+
+  if ((*ierr = ne_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to put initial information in file id %d",
+	    *idne);
+    ex_err("nepii",errmsg,EX_MSG);
+  }
+
+  free(file_type);
+}
+
+/*
+ * Read initial global information
+ */
+% void
+% negig (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nnodes_g,        /* Number of global FEM nodes */
+%     int  *nelems_g,        /* Number of global FEM elements */
+%     int  *nelem_blks_g,    /* Number of global elem blocks */
+%     int  *nnode_sets_g,    /* Number of global node sets */
+%     int  *nside_sets_g,    /* Number of global side sets */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_init_global(*idne, nnodes_g, nelems_g, nelem_blks_g,
+                                  nnode_sets_g, nside_sets_g)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read initial global information from file id %d",
+	    *idne);
+    ex_err("negig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write initial global information
+ */
+% void
+% nepig (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nnodes_g,        /* Number of global FEM nodes */
+%     int  *nelems_g,        /* Number of global FEM elements */
+%     int  *nelem_blks_g,    /* Number of global elem blocks */
+%     int  *nnode_sets_g,    /* Number of global node sets */
+%     int  *nside_sets_g,    /* Number of global side sets */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr =  ne_put_init_global(*idne, *nnodes_g, *nelems_g, *nelem_blks_g,
+                                   *nnode_sets_g, *nside_sets_g)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store initial global information in file id %d",
+	    *idne);
+    ex_err("nepig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read load balance parameters
+ */
+% void
+% neglbp (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nint_nodes,      /* Number of internal FEM nodes */
+%     int  *nbor_nodes,      /* Number of border FEM nodes */
+%     int  *next_nodes,      /* Number of external FEM nodes */
+%     int  *nint_elems,      /* Number of internal FEM elems */
+%     int  *nbor_elems,      /* Number of border FEM elems */
+%     int  *nnode_cmaps,     /* Number of nodal comm maps */
+%     int  *nelem_cmaps,     /* Number of elemental comm maps */
+%     int  *processor,       /* Processor ID */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_loadbal_param(*idne, nint_nodes, nbor_nodes,
+                                    next_nodes, nint_elems, nbor_elems,
+                                    nnode_cmaps, nelem_cmaps, *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read load balance parameters from file id %d",
+	    *idne);
+    ex_err("neglbp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write load balance parameters
+ */
+% void
+% neplbp (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nint_nodes,      /* Number of internal FEM nodes */
+%     int  *nbor_nodes,      /* Number of border FEM nodes */
+%     int  *next_nodes,      /* Number of external FEM nodes */
+%     int  *nint_elems,      /* Number of internal FEM elems */
+%     int  *nbor_elems,      /* Number of border FEM elems */
+%     int  *nnode_cmaps,     /* Number of nodal comm maps */
+%     int  *nelem_cmaps,     /* Number of elemental comm maps */
+%     int  *processor,       /* Processor ID */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_loadbal_param(*idne, *nint_nodes, *nbor_nodes,
+                                    *next_nodes, *nint_elems, *nbor_elems,
+                                    *nnode_cmaps, *nelem_cmaps,
+                                    *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store load balance parameters in file id %d",
+	    *idne);
+    ex_err("neplbp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write concatenated load balance parameters
+ */
+% void
+% neplbpc (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *nint_nodes,      /* Number of internal node IDs */
+%     int  *nbor_nodes,      /* Number of border node IDs */
+%     int  *next_nodes,      /* Number of external node IDs */
+%     int  *nint_elems,      /* Number of internal elem IDs */
+%     int  *nbor_elems,      /* Number of border elem IDs */
+%     int  *nnode_cmaps,     /* Number of nodal comm maps */
+%     int  *nelem_cmaps,     /* Number of elem comm maps */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_loadbal_param_cc(*idne, nint_nodes, nbor_nodes,
+                                       next_nodes, nint_elems, nbor_elems,
+                                       nnode_cmaps, nelem_cmaps)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store load balance parameters in file id %d",
+	    *idne);
+    ex_err("neplbpc",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global node set parameters
+ */
+% void
+% negnspg (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ns_ids_glob,     /* Global IDs of node sets */
+%     int  *ns_n_cnt_glob,   /* Count of nodes in node sets */
+%     int  *ns_df_cnt_glob,  /* Count of dist. factors in ns */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_ns_param_global(*idne, ns_ids_glob, ns_n_cnt_glob,
+                                      ns_df_cnt_glob)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read global node set parameters from file id %d",
+	    *idne);
+    ex_err("negnspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global node set parameters
+ */
+% void
+% nepnspg (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *global_ids,      /* Vector of global node-set IDs */
+%     int  *global_n_cnts,   /* Vector of node counts in node-sets */
+%     int  *global_df_cnts,  /* Vector of dist factor counts in node-sets */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_ns_param_global(*idne, global_ids, global_n_cnts,
+                                      global_df_cnts)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store global node set parameters in file id %d",
+	    *idne);
+    ex_err("nepnspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global side set parameters
+ */
+% void
+% negsspg (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ss_ids_glob,     /* Global IDs of side sets */
+%     int  *ss_n_cnt_glob,   /* Count of nodes in side sets */
+%     int  *ss_df_cnt_glob,  /* Count of dist. factors in ss */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_ss_param_global(*idne, ss_ids_glob, ss_n_cnt_glob,
+                                      ss_df_cnt_glob)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read global side set parameters from file id %d",
+	    *idne);
+    ex_err("negsspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global side set parameters
+ */
+% void
+% nepsspg (
+%     int  *idne,           /* NEMESIS file ID */
+%     int  *global_ids,     /* Vector of global side-set IDs */
+%     int  *global_el_cnts, /* Vector of element/side counts in each side set */
+%     int  *global_df_cnts, /* Vector of dist. factor counts in each side set */
+%     int  *ierr            /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_ss_param_global(*idne, global_ids, global_el_cnts,
+                                      global_df_cnts)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store global side set parameters in file id %d",
+	    *idne);
+    ex_err("nepsspg",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read global element block information
+ */
+% void
+% negebig (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *el_blk_ids,      /* Vector of global element IDs  */
+%     int  *el_blk_cnts,     /* Vector of global element counts  */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read global element block info from file id %d",
+	    *idne);
+    ex_err("negebig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write global element block information
+ */
+% void
+% nepebig (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *el_blk_ids,      /* Vector of global element IDs  */
+%     int  *el_blk_cnts,     /* Vector of global element counts  */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to store global element block info in file id %d",
+	    *idne);
+    ex_err("nepebig",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read side set element list and side set side list
+ */
+% void
+% negnss (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ss_id,           /* Side-set ID to read */
+%     int  *start_side_num,  /* Starting element number */
+%     int  *num_sides,       /* Number of sides to read */
+%     int  *ss_elem_list,    /* List of element IDs */
+%     int  *ss_side_list,    /* List of side IDs */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_side_set(*idne, *ss_id, *start_side_num, *num_sides,
+                                 ss_elem_list, ss_side_list)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to read side set element list from file id %d",
+	    *idne);
+    ex_err("negnss",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write side set element list and side set side list
+ */
+% void
+% nepnss (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ss_id,           /* Side-set ID to write */
+%     int  *start_side_num,  /* Starting element number */
+%     int  *num_sides,       /* Number of sides to write */
+%     int  *ss_elem_list,    /* List of element IDs */
+%     int  *ss_side_list,    /* List of side IDs */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_side_set(*idne, *ss_id, *start_side_num, *num_sides,
+                                 ss_elem_list, ss_side_list)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to write side set element list to file id %d",
+	    *idne);
+    ex_err("nepnss",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read side set distribution factor
+ */
+% void
+% negnssd (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *ss_id,           /* Side-set ID */
+%     int   *start_num,       /* Starting df number */
+%     int   *num_df_to_get    /* Number of df's to read */
+%     real *ss_df,           /* Distribution factors */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_side_set_df(*idne, *ss_id, *start_num,
+                                    *num_df_to_get, ss_df)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to read side set dist factor from file id %d",
+	    *idne);
+    ex_err("negnssd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write side set distribution factor
+ */
+% void
+% nepnssd (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *ss_id,           /* Side-set ID */
+%     int   *start_num,       /* Starting df number */
+%     int   *num_df_to_get    /* Number of df's to write */
+%     real *ss_df,           /* Distribution factors */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_side_set_df(*idne, *ss_id, *start_num,
+                                    *num_df_to_get, ss_df)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to write side set dist factor to file id %d",
+	    *idne);
+    ex_err("nepnssd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read node set list for a single node set
+ */
+% void
+% negnns (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ns_id,           /* Node set ID */
+%     int  *start_node_num,  /* Node index to start reading at */
+%     int  *num_node,        /* Number of nodes to read */
+%     int  *ns_node_list,    /* List of nodes in node set */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_node_set(*idne, *ns_id, *start_node_num,
+                                 *num_node, ns_node_list)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to read node set node list from file id %d",
+	    *idne);
+    ex_err("negnns",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write node set list for a single node set
+ */
+% void
+% nepnns (
+%     int  *idne,            /* NEMESIS file ID */
+%     int  *ns_id,           /* Node set ID */
+%     int  *start_node_num,  /* Node index to start writing at */
+%     int  *num_node,        /* Number of nodes to write */
+%     int  *ns_node_list,    /* List of nodes in node set */
+%     int  *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_node_set(*idne, *ns_id, *start_node_num,
+                                 *num_node, ns_node_list)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to write node set node list to file id %d",
+	    *idne);
+    ex_err("nepnns",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read node set distribution factor
+ */
+% void
+% negnnsd (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *ns_id,           /* Node-set ID */
+%     int   *start_num,       /* Starting df number */
+%     int   *num_df_to_get    /* Number of df's to read */
+%     real *ns_df,           /* Distribution factors */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_node_set_df(*idne, *ns_id, *start_num,
+                                    *num_df_to_get, ns_df)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to read node set dist factor from file id %d",
+	    *idne);
+    ex_err("negnnsd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write node set distribution factor
+ */
+% void
+% nepnnsd (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *ns_id,           /* Node-set ID */
+%     int   *start_num,       /* Starting df number */
+%     int   *num_df_to_get    /* Number of df's to write */
+%     real *ns_df,           /* Distribution factors */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_node_set_df(*idne, *ns_id, *start_num,
+                                    *num_df_to_get, ns_df)) != 0)
+
+  {
+    sprintf(errmsg,
+	    "Error: failed to write node set dist factor to file id %d",
+	    *idne);
+    ex_err("nepnnsd",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read coordinates of the nodes
+ */
+% void
+% negcor (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *start_node_num,  /* Starting position to read from */
+%     int   *num_nodes,       /* Number of coords to read */
+%     real *x_coor,          /* Vector of X coordinates */
+%     real *y_coor,          /* Vector of Y coordinates */
+%     real *z_coor,          /* Vector of Z coordinates */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_coord(*idne, *start_node_num, *num_nodes,
+                              x_coor, y_coor, z_coor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read node coordinates from file id %d",
+	    *idne);
+    ex_err("negcor",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write coordinates of the nodes
+ */
+% void
+% nepcor (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *start_node_num,  /* Starting position to read from */
+%     int   *num_nodes,       /* Number of coords to read */
+%     real *x_coor,          /* Vector of X coordinates */
+%     real *y_coor,          /* Vector of Y coordinates */
+%     real *z_coor,          /* Vector of Z coordinates */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_coord(*idne, *start_node_num, *num_nodes,
+                              x_coor, y_coor, z_coor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write node coordinates to file id %d",
+	    *idne);
+    ex_err("nepcor",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read an element block's connectivity list
+ */
+% void
+% negnec (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_blk_id,     /* Element block ID */
+%     int   *start_elem_num,  /* Starting position to read from */
+%     int   *num_elems,       /* Number of elements to read */
+%     int   *connect,         /* Connectivity vector */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_elem_conn(*idne, *elem_blk_id, *start_elem_num,
+                                  *num_elems, connect)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read element block connectivity from file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write an element block's connectivity list
+ */
+% void
+% nepnec (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_blk_id,     /* Element block ID */
+%     int   *start_elem_num,  /* Starting position to write to */
+%     int   *num_elems,       /* Number of elements to write */
+%     int   *connect,         /* Connectivity vector */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_elem_conn(*idne, *elem_blk_id, *start_elem_num,
+                                  *num_elems, connect)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write element block connectivity to file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read an element block's attributes
+ */
+% void
+% negneat (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_blk_id,     /* Element block ID */
+%     int   *start_elem_num,  /* Starting position to read from */
+%     int   *num_elems,       /* Number of elements to read */
+%     real *attrib,          /* Attribute */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_elem_attr(*idne, *elem_blk_id, *start_elem_num,
+                                  *num_elems, attrib)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read element block attribute from file id %d",
+	    *idne);
+    ex_err("negneat",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write an element block's attributes
+ */
+% void
+% nepneat (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_blk_id,     /* Element block ID */
+%     int   *start_elem_num,  /* Starting position to write to */
+%     int   *num_elems,       /* Number of elements to write */
+%     real *attrib,          /* Attribute */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_elem_attr(*idne, *elem_blk_id, *start_elem_num,
+                                  *num_elems, attrib)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write element block attribute to file id %d",
+	    *idne);
+    ex_err("nepneat",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element type for a specific element block
+ */
+% void
+% negelt (
+%     int    *idne,            /* NEMESIS file ID */
+%     int    *elem_blk_id,     /* Element block ID */
+%     string elem_type,        /* The name of the element type */
+%     int    *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  int slen;
+  char *etype;
+
+  /* WARNING: ftypelen SHOULD be MAX_STR_LENGTH, but may not be depending
+              on how the Fortran programmer passed it. It is best at
+              this time to hard code it per NEMESIS spec. */
+  slen = MAX_STR_LENGTH;
+  if (elem_typelen != MAX_STR_LENGTH)
+  {
+    slen = elem_typelen;
+#if defined(EXODUS_STRING_LENGTH_WARNING)
+    sprintf(errmsg,"Warning: element type string length is %d in file id %d\n",
+            elem_typelen, *idne);
+    ex_err("negelt",errmsg,EX_MSG);
+#endif
+  }
+
+  etype = (char *) malloc((slen+1)*sizeof(char));
+
+  if ((*ierr = ne_get_elem_type(*idne, *elem_blk_id, etype)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read element block type from file id %d",
+	    *idne);
+    ex_err("negelt",errmsg,EX_MSG);
+  }
+
+  if (*ierr == 0)
+    ne_fcdcpy (elem_type, slen, etype);
+
+  free(etype);
+}
+
+/*
+ * Read a variable for an element block
+ */
+% void
+% negnev (
+%         int   *idne,              /* NEMESIS file ID */
+%         int   *time_step,         /* time index */
+%         int   *elem_var_index,    /* elemental variable index */
+%         int   *elem_blk_id,       /* elemental block id */
+%         int   *num_elem_this_blk, /* number of elements in block */
+%         int   *start_elem_num,    /* Starting position to read from */
+%         int   *num_elem,          /* Number of elements to read */
+%         real *elem_var_vals,     /* variable values */
+%         int   *ierr               /* returned error code */
+%         )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_elem_var(*idne, *time_step, *elem_var_index,
+                                  *elem_blk_id, *num_elem_this_blk,
+                                  *start_elem_num, *num_elem,
+                                  elem_var_vals)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read element block variable from file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write a variable slab for an element block
+ */
+% void
+% nepevs (
+%         int   *idne,              /* NEMESIS file ID */
+%         int   *time_step,         /* time index */
+%         int   *elem_var_index,    /* elemental variable index */
+%         int   *elem_blk_id,       /* elemental block id */
+%         int   *start_pos,         /* Starting position to read from */
+%         int   *num_vals,          /* Number of elements to read */
+%         real *elem_var_vals,     /* variable values */
+%         int   *ierr               /* returned error code */
+%         )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_elem_var_slab(*idne, *time_step, *elem_var_index,
+                                    *elem_blk_id, *start_pos, *num_vals,
+                                    elem_var_vals)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write elem block variable slab to file id %d",
+	    *idne);
+    ex_err("negnec",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the values of a single nodal variable for a single time step
+ */
+% void
+% negnnv (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *time_step,       /* whole time step number */
+%     int   *nodal_var_index, /* index of desired nodal var */
+%     int   *start_node_num,  /* starting node number */
+%     int   *num_nodes,       /* number of nodes to read */
+%     real *nodal_vars,      /* array of nodal var values */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_nodal_var(*idne, *time_step, *nodal_var_index,
+                                  *start_node_num, *num_nodes,
+                                  nodal_vars)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read nodal variable from file id %d",
+	    *idne);
+    ex_err("negnnv",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write nodal variable slab
+ */
+% void
+% nepnvs (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *time_step,       /* The time step index */
+%     int   *nodal_var_index, /* Nodal variable index */
+%     int   *start_pos,       /* Start position for write */
+%     int   *num_vals,        /* Number of nodal variables */
+%     real *nodal_var_vals,  /* Nodal variable values */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_nodal_var_slab(*idne, *time_step, *nodal_var_index,
+                                     *start_pos, *num_vals,
+                                     nodal_var_vals)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write nodal variable slab to file id %d",
+	    *idne);
+    ex_err("nepnvs",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element numbering map
+ */
+% void
+% negnenm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *starte,          /* starting element number */
+%     int   *num_ent,         /* number of elements to read */
+%     int   *elem_map,        /* vector for element map */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_elem_num_map(*idne, *starte, *num_ent, elem_map)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read element numbering map from file id %d",
+	    *idne);
+    ex_err("negnenm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the element numbering map
+ */
+% void
+% nepnenm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *starte,          /* starting element number */
+%     int   *num_ent,         /* number of elements to write */
+%     int   *elem_map,        /* vector for element map */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_elem_num_map(*idne, *starte, *num_ent, elem_map)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write element numbering map to file id %d",
+	    *idne);
+    ex_err("nepnenm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the node numbering map
+ */
+% void
+% negnnnm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *startn,          /* starting node number */
+%     int   *num_ent,         /* number of nodes to read */
+%     int   *node_map,        /* vector for node map */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_n_node_num_map(*idne, *startn, *num_ent, node_map)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read node numbering map from file id %d",
+	    *idne);
+    ex_err("negnnnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the node numbering map
+ */
+% void
+% nepnnnm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *startn,          /* starting node number */
+%     int   *num_ent,         /* number of nodes to write */
+%     int   *node_map,        /* vector for node map */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_n_node_num_map(*idne, *startn, *num_ent, node_map)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write node numbering map to file id %d",
+	    *idne);
+    ex_err("nepnnnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the node map for a processor
+ */
+% void
+% negnm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *node_mapi,       /* Internal FEM node IDs */
+%     int   *node_mapb,       /* Border FEM node IDs */
+%     int   *node_mape,       /* External FEM node IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_node_map(*idne, node_mapi, node_mapb, node_mape,
+                               *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read processor node map from file id %d",
+	    *idne);
+    ex_err("negnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write a node map for a processor
+ */
+% void
+% nepnm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *node_mapi,       /* Internal FEM node IDs */
+%     int   *node_mapb,       /* Border FEM node IDs */
+%     int   *node_mape,       /* External FEM node IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_node_map(*idne, node_mapi, node_mapb, node_mape,
+                               *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write processor node map to file id %d",
+	    *idne);
+    ex_err("nepnm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the element map for a processor
+ */
+% void
+% negem (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_mapi,       /* Internal FEM element IDs */
+%     int   *elem_mapb,       /* Border FEM element IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_elem_map(*idne, elem_mapi, elem_mapb, *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read processor element map from file id %d",
+	    *idne);
+    ex_err("negem",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the element map for a processor
+ */
+% void
+% nepem (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *elem_mapi,       /* Internal FEM element IDs */
+%     int   *elem_mapb,       /* Border FEM element IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_elem_map(*idne, elem_mapi, elem_mapb, *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write processor element map to file id %d",
+	    *idne);
+    ex_err("nepem",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the communications map parameters for a single processor
+ */
+% void
+% negcmp (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *ncmap_ids,       /* Node map IDs */
+%     int   *ncmap_node_cnts, /* Nodes in nodal comm */
+%     int   *ecmap_ids,       /* Elem map IDs */
+%     int   *ecmap_elem_cnts, /* Elems in elemental comm */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_cmap_params(*idne, ncmap_ids, ncmap_node_cnts,
+                                  ecmap_ids, ecmap_elem_cnts, *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read comm map parameters from file id %d",
+	    *idne);
+    ex_err("negcmp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the communications map parameters for a single processor
+ */
+% void
+% nepcmp (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *nmap_ids,        /* Node map IDs */
+%     int   *nmap_node_cnts,  /* Nodes in nodal comm */
+%     int   *emap_ids,        /* Elem map IDs */
+%     int   *emap_elem_cnts,  /* Elems in elemental comm */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_cmap_params(*idne, nmap_ids, nmap_node_cnts,
+                                  emap_ids, emap_elem_cnts, *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write comm map parameters to file id %d",
+	    *idne);
+    ex_err("nepcmp",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the communications map parameters for all processors
+ */
+% void
+% nepcmpc (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *nmap_ids,        /* Node map IDs */
+%     int   *nmap_node_cnts,  /* Nodes in nodal comm */
+%     int   *nproc_ptrs,      /* Pointer into array for node maps */
+%     int   *emap_ids,        /* Elem map IDs */
+%     int   *emap_elem_cnts,  /* Elems in elemental comm */
+%     int   *eproc_ptrs,      /* Pointer into array for elem maps */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_cmap_params_cc(*idne, nmap_ids, nmap_node_cnts,
+                                     nproc_ptrs, emap_ids, emap_elem_cnts,
+                                     eproc_ptrs)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write comm map parameters to file id %d",
+	    *idne);
+    ex_err("nepcmpc",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the nodal communications map for a single processor
+ */
+% void
+% negncm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *map_id,          /* Nodal comm map ID */
+%     int   *node_ids,        /* FEM node IDs */
+%     int   *proc_ids,        /* Processor IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_node_cmap(*idne, *map_id, node_ids, proc_ids,
+                                *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read nodal communications map from file id %d",
+	    *idne);
+    ex_err("negncm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the nodal communications map for a single processor
+ */
+% void
+% nepncm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *map_id,          /* Nodal comm map ID */
+%     int   *node_ids,        /* FEM node IDs */
+%     int   *proc_ids,        /* Processor IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_node_cmap(*idne, *map_id, node_ids, proc_ids,
+                                *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write nodal communications map to file id %d",
+	    *idne);
+    ex_err("nepncm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Read the elemental communications map for a single processor
+ */
+% void
+% negecm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *map_id,          /* Nodal comm map ID */
+%     int   *elem_ids,        /* Vector of element IDs */
+%     int   *side_ids,        /* Vector of side IDs */
+%     int   *proc_ids,        /* Vector of processor IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_get_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids,
+                                *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to read elemental comm map from file id %d",
+	    *idne);
+    ex_err("negecm",errmsg,EX_MSG);
+  }
+}
+
+/*
+ * Write the elemental communications map for a single processor
+ */
+% void
+% nepecm (
+%     int   *idne,            /* NEMESIS file ID */
+%     int   *map_id,          /* Nodal comm map ID */
+%     int   *elem_ids,        /* Vector of element IDs */
+%     int   *side_ids,        /* Vector of side IDs */
+%     int   *proc_ids,        /* Vector of processor IDs */
+%     int   *processor,       /* This processor ID */
+%     int   *ierr             /* returned error code */
+%     )
+% {
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((*ierr = ne_put_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids,
+                                *processor)) != 0)
+  {
+    sprintf(errmsg,
+	    "Error: failed to write elemental comm map to file id %d",
+	    *idne);
+    ex_err("nepecm",errmsg,EX_MSG);
+  }
+}
+

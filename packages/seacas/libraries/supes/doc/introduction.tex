@@ -1,0 +1,75 @@
+\chapter{INTRODUCTION} 
+The Software Utilities Package for the Engineering
+Sciences (SUPES) is a collection of subprograms which perform frequently
+used non-numerical services for the engineering applications programmer.
+The
+three functional categories of SUPES are: (1) input command parsing, (2) dynamic
+memory management, and (3) system dependent utilities.  The subprograms in
+categories one and two are written in standard FORTRAN-77~\cite{ansi},
+while the subprograms
+in category three are written in the C programming language.
+Thus providing a standardized FORTRAN interface to
+several system dependent features across a variety of hardware configurations
+while using a single set of source files.
+This feature can be viewed as a maintenance aid from
+several perspectives.
+Among these are:
+there is only one set of source files to account for,
+it allows one to standardize the build procedure,
+and it provides a clearer starting point for any future ports.
+In fact,
+a build procedure is now part of the standard SUPES distribution and
+is documented in Chapter~\ref{sec:install}.
+Further,
+the system dependent modules set an appropriate template for the
+porting of SUPES to other hardware and/or software configurations.
+
+Applications programmers face many similar user and system interface problems
+during code development.  Because ANSI standard FORTRAN does not address many of
+these problems, each programmer solves these problems for his/her own code.
+SUPES aids the programmer by: 
+\begin{enumerate} 
+
+\item Providing a library of useful subprograms.
+
+\item Defining a standard interface format for common utilities.
+
+\item Providing a single point for debugging of common utilities.  That
+is, SUPES has to be debugged only once and then is ready for use
+by any code.
+\end{enumerate}
+
+Use of SUPES by the applications programmer can expand a code's capability,
+reduce errors, minimize support effort and reduce development time.  Because
+SUPES was designed to be reliable and supportable, there are some features
+that are not included.  (1) It is not extremely sophisticated, rather it is
+reliable and maintainable.  (2) Except for the extension library (Chapter
+4), it is not system dependent.  (3) It does not take advantage of extended
+system capabilities since they may not be available on a wide range of
+operating systems.  (4) It is not written to maximize cpu speed.
+
+It is the intention of the authors to maintain SUPES on all scientific
+computer systems commonly used by Engineering Sciences Directorate (1500)
+staff.
+Currently these systems include:
+\begin{enumerate}
+\item Sun 3 and Sun 4 running SunOS operating system version 4.0.3 and later,
+
+\item VAXen running VMS version 4.5 and later,
+
+\item Cray X/MP and Y/MP running UNICOS version 5.0 and later, and
+
+\item Alliant F/X 8 running Concentrix 5.0.0.
+\end{enumerate}
+A notable omission to the above list is the Cray running either CTSS
+or the COS operating systems.
+These configurations still require the FORTRAN source code for the extension
+library that was provided in previous
+implementations of SUPES~\cite{SUPES}.
+This code continues to be included in the current standard SUPES distribution,
+though a build procedure designed for these systems is not.
+Specific ports of the SUPES utilities to new machines and/or operating systems will be
+added to the original source files as the need arises.
+Other Sandia personnel may obtain copies of SUPES from the
+authors.  SUPES will also be available to non-Sandia personnel through the
+National Energy Software Center.

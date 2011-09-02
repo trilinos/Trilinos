@@ -1,0 +1,104 @@
+# Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+# retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.  
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+# script to save dump files.
+#
+# testwt - single precision write test
+echo "testwt ..."
+echo "begin testwt" >> test.output
+testwt >> test.output
+echo "end testwt" >> test.output
+ncdump -d5,5 test.exo > test.dmp
+
+# testrd - single precision read test
+echo "testrd ..."
+testrd > testrd.dmp 
+
+# testcp_ss - single-to-single precision copy test
+echo "testcp_ss ..."
+echo "begin testcp_ss" >> test.output
+testcp >> test.output
+echo "end testcp_ss" >> test.output
+ncdump -d5,5 testcp.exo > testcp_ss.dmp 
+
+# testcp_sd - single-to-double precision copy test
+echo "testcp_sd ..."
+echo "begin testcp_sd" >> test.output
+testcpd >> test.output
+echo "end testcp_sd" >> test.output
+ncdump -d5,5 testcpd.exo > testcp_sd.dmp 
+
+# testwt1 - single precision write test with multiple side sets
+echo "testwt1 ..."
+echo "begin testwt1" >> test.output
+testwt1 >> test.output
+echo "end testwt1" >> test.output
+ncdump -d5,5 test.exo > test1.dmp 
+
+# testrd1 - single precision read test with multiple side sets
+echo "testrd1 ..."
+testrd1 > testrd1.dmp 
+
+# testwtd - double precision write test
+echo "testwtd ..."
+echo "begin testwtd" >> test.output
+testwtd >> test.output
+echo "end testwtd" >> test.output
+ncdump -d5,5 test.exo > testd.dmp 
+
+# testrdd - double precision read test
+echo "testrdd ..."
+testrdd > testrdd.dmp 
+
+# testcp_dd - double-to-double precision copy test
+echo "testcp_dd ..."
+echo "begin testcp_dd" >> test.output
+testcpd >> test.output
+echo "end testcp_dd" >> test.output
+ncdump -d5,5 testcpd.exo > testcp_dd.dmp 
+
+# testcp_ds - double-to-single precision copy test
+echo "testcp_ds ..."
+echo "begin testcp_ds" >> test.output
+testcp >> test.output
+echo "end testcp_ds" >> test.output
+ncdump -d5,5 testcp.exo > testcp_ds.dmp 
+
+# testwt2 - single precision write 2 files (simultaneously open) test
+echo "testwt2 ..."
+echo "begin testwt2" >> test.output
+testwt2 >> test.output
+echo "end testwt2" >> test.output
+ncdump -d5,5 test.exo > test2-1.dmp 
+ncdump -d5,5 test2.exo > test2-2.dmp
+

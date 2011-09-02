@@ -1,0 +1,123 @@
+# Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+# retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.  
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+# script to run all tests and compare them to saved dump files.
+#
+# To run the tests with valgrind checking, uncomment the next line and comment the
+# following line. Can also define other prefixes if wanted.
+
+#set PREFIX = "valgrind --tool=memcheck"
+set PREFIX = ""
+set SRCDIR = .
+set NCDUMP = @<BINDIR>@/ncdump
+
+# testwt - single precision write test
+echo "************************************************************************"
+echo "************************************************************************"
+echo "testwt ..."
+echo "begin testwt" > test.output
+${PREFIX} ${SRCDIR}/testwt >> test.output
+echo "end testwt" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | diff - test.dmp | tee testwt.res
+
+# testrd - single precision read test
+echo "testrd ..."
+echo "testrd ... [Expect ex_create NOCLOBBER error from this test]"
+${PREFIX} ${SRCDIR}/testrd | grep -v version | diff - testrd.dmp | tee testrd.res
+
+# testcp_ss - single-to-single precision copy test
+echo "testcp_ss ..."
+echo "begin testcp_ss" >> test.output
+${PREFIX} ${SRCDIR}/testcp >> test.output
+echo "end testcp_ss" >> test.output
+${NCDUMP} -d5,5 testcp.exo | grep -v version | diff - testcp_ss.dmp | tee testcp_ss.res
+
+# testcpln - single-to-single, large to normal copy test
+echo "testcpln ..."
+echo "begin testcpln" >> test.output
+${PREFIX} ${SRCDIR}/testcpln >> test.output
+echo "end testcpln" >> test.output
+${NCDUMP} -d5,5 testcp.exo | grep -v version | diff - testcpln.dmp | tee testcpln.res
+
+# testcpnl - single-to-single, normal to large copy test
+echo "testcpnl ..."
+echo "begin testcpnl" >> test.output
+${PREFIX} ${SRCDIR}/testcpnl >> test.output
+echo "end testcpnl" >> test.output
+${NCDUMP} -d5,5 testcpnl.exo | grep -v version | diff - testcpnl.dmp | tee testcpnl.res
+
+# testwt1 - single precision write test with multiple side sets
+echo "testwt1 ..."
+echo "testwt1 ... [Expect WEDGE6 warning from this test]"
+echo "begin testwt1" >> test.output
+${PREFIX} ${SRCDIR}/testwt1 >> test.output
+echo "end testwt1" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | diff - test1.dmp | tee testwt1.res
+
+# testrd1 - single precision read test with multiple side sets
+echo "testrd1 ..."
+echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
+${PREFIX} ${SRCDIR}/testrd1 | grep -v version | diff - testrd1.dmp | tee testrd1.res
+
+# testwtd - double precision write test
+echo "testwtd ..."
+echo "begin testwtd" >> test.output
+${PREFIX} ${SRCDIR}/testwtd >> test.output
+echo "end testwtd" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | diff - testd.dmp | tee testwtd.res
+
+# testrdd - double precision read test
+echo "testrdd ..."
+${PREFIX} ${SRCDIR}/testrdd | grep -v version | diff - testrdd.dmp | tee testrdd.res
+
+# testwt2 - single precision write 2 files (simultaneously open) test
+echo "testwt2 ..."
+echo "begin testwt2" >> test.output
+${PREFIX} ${SRCDIR}/testwt2 >> test.output |&grep -v "property name string" 
+echo "end testwt2" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | diff - test2-1.dmp | tee testwt2-1.res
+${NCDUMP} -d5,5 test2.exo | grep -v version | diff - test2-2.dmp | tee testwt2-2.res
+
+echo "testwt_nsid ..."
+echo "begin testwt_nsid" > test.output
+${PREFIX} ${SRCDIR}/testwt_nsid >> test.output
+echo "end testwt_nsid" >> test.output
+${NCDUMP} -d5,5 test-nsided.exo | grep -v version | diff - test-nsided.dmp | tee testwt_nsid.res
+
+# testrd_nsid - single precision read test
+echo "testrd_nsid ..."
+${PREFIX} ${SRCDIR}/testrd_nsid | grep -v version | diff - testrd_nsid.dmp | tee testrd_nsid.res
+
+echo "************************************************************************"
+echo "************************************************************************"
+

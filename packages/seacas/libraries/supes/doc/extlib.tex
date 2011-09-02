@@ -1,0 +1,373 @@
+\chapter{EXTENSION LIBRARY} \label{sec:extlib}
+The SUPES Extension Library provides a uniform interface to
+necessary operating system functions which are not included in the ANSI
+FORTRAN-77 standard.
+While the Extension Library itself is implemented in the C programming language,
+the interface from a FORTRAN calling program is implemented in
+the same manner as in previous versions of SUPES~\cite{SUPES}.
+Thus, in the sections below which describe the calling sequence,
+the calls are defined accordingly.
+This package makes it possible to maintain many codes on
+different operating systems with a single point of support for system
+dependencies.
+Moreover,
+this maintenance is done via a single set of source files which
+should not only reduce the time involved in bookkeeping,
+but allow for the procedures for building a SUPES library to be codified
+as well.
+These routines provide very basic operating system support;
+they are not intended to implement clever features of a favorite system, to
+make FORTRAN behave like a more elegant language, or to improve execution
+efficiency.
+
+Each module included in the SUPES Extension Library must satisfy the
+following criteria:
+\begin{enumerate}
+\item The routine must provide a service which is beneficial to a wide
+range of users.
+
+\item This task cannot be accomplished via standard FORTRAN.
+
+\item This capability must be generic to scientific computers.  Extension
+library routines must be supportable on virtually any system.
+\end{enumerate}
+
+The SUPES Extension Library routines are designed to minimize the
+effort required to implement this software on a new operating system.
+This is especially true given that the current single set of source files handle
+a variety of system architectures and software configurations,
+making those files useful as starting points for a new port.
+Operating system dependencies have
+been isolated at the lowest possible level with the major difficulty
+of a specific port being that of supplying the proper FORTRAN interface
+with each C subprogram module.
+To make the above comments more concrete,
+consider the following section of code excerpted from the source
+file \verb+exdate.c+:
+\begin{verbatim}
+        #include <errno.h>
+        
+        #if defined (unix)
+        # if defined (alliant)
+        
+        #     include <sys/types.h>
+        #     include <sys/time.h>
+              exdate_( string )         /* Sadly, on the Alliant, */
+                                        /* strings are not passed */
+                                        /* similar to the SUN. */
+              char *string;
+        
+        # endif                         /* Alliant */
+        # if defined (sun)
+        
+        #     include <sys/time.h>
+              exdate_( string, len )
+              char *string;
+              long len;
+        
+        # else                          /* Not Sun */
+        #  if defined (CRAY)
+        
+        #     include <sys/types.h>
+        #     include <time.h>
+        #     include <fortran.h>
+              EXDATE( string )
+              _fcd string;
+        
+        #  endif                        /* Unicos */
+        # endif                         /* Sun */
+        #else                           /* Not UNIX */
+        # if defined (VMS)
+        
+        #include time
+        #include descrip
+              exdate( string )
+              struct dsc$descriptor_s *string; /* We know that the VAX saves */
+                                               /* FORTRAN char arrays */
+                                               /* as descriptors. */
+        
+        # else                          /* not VMS */
+
+        # endif                         /* VMS */
+        #endif                          /* UNIX */
+\end{verbatim}		
+The passages beginning with \verb+#if defined+ query the
+system at compile time through the use of a pre-processor
+to determine the hardware/software configuration.
+It should be obvious that the FORTRAN-C interfacing is
+a nontrivial step.
+Specifically,
+note how each machine defines the module name,
+as well as the argument types in some cases,
+differently.
+One must exercise a great deal of caution, when attempting
+to implement a port, to correctly predict how this step is to done.
+It is hoped that the examples provided in the form of the source
+files will give the necessary hints at where to start on such a
+venture.
+Often the appropriate symbols are defined automatically.
+To find out which one's are, just consult the compiler
+and pre-processor (\verb+cpp+) documentation
+for your particular application.
+On each of the machines listed,
+the call is invoked via the uniform FORTRAN call:
+\begin{verbatim}
+CALL EXDATE( STRING )
+\end{verbatim}
+
+\section{User Interface Routines}
+This section prescribes the calling sequence for FORTRAN Extension routines
+that are meant to be called directly from application programs.
+
+\subsection{Get Today's Date (EXDATE)}
+
+\verb+CALL EXDATE( STRING )+
+
+\begin{argy}{STRING}{CHARACTER\last8}{Write Only}
+Current date formatted as ``MM/DD/YY'' where ``MM'', ``DD'', and ``YY'' are
+two digit integers representing the month, day, and year, respectively.  For
+example, ``07/04/86'' would be returned on July 4, 1986. 
+\end{argy}
+
+\subsection{Get Time of Day (EXTIME)}
+
+\verb+CALL EXTIME( STRING )+
+
+\begin{argy}{STRING}{CHARACTER\last8}{Write Only}
+Current time formatted as ``HH:MM:SS'' where ``HH'', ``MM'', and ``SS'' are
+two digit integers representing the hour (00-24), minute, and second,
+respectively.  For example, ``16:30:00'' would be returned at 4:30 PM. 
+\end{argy}
+
+\subsection{Get Accumulated Processor Time (EXCPUS)}
+
+\verb+CALL EXCPUS( CPUSEC )+
+
+\begin{argy}{CPUSEC}{REAL}{Write Only}
+Accumulated CPU time in seconds.  The base time is undefined; only relative
+times are valid.  This is an unweighted value which measures performance
+rather than cost. 
+\end{argy}
+
+\subsection{Get Operating Environment Parameters (EXPARM)}
+
+\verb+CALL EXPARM( HARD,SOFT,MODE,KCSU,KNSU,IDAU )+
+
+\begin{argy}{HARD}{CHARACTER\last8}{Write Only}
+System Hardware ID.  For example, ``CRAY-1/S''.
+\end{argy}
+
+\begin{argy}{SOFT}{CHARACTER\last8}{Write Only}
+System Software ID.  For example, ``COS 1.11''.
+\end{argy}
+
+\begin{argy}{MODE}{INTEGER}{Write Only}
+Job mode: 0 = batch, 1=interactive.  For this purpose, an interactive
+environment means that the user can respond to unanticipated questions. 
+\end{argy}
+
+\begin{argy}{KCSU}{INTEGER}{Write Only}
+Number of character storage units per base system unit.
+\end{argy}
+
+\begin{argy}{KNSU}{INTEGER}{Write Only}
+Number of numeric storage units per base system unit.
+\end{argy}
+
+\begin{argy}{IDAU}{INTEGER}{Write Only}
+Units of storage which define the size of unformatted direct access I/O
+records: 0 = character, 1 = numeric.
+(For a more in-depth discussion of this topic, the reader is
+referred to the VAX FORTRAN manual,
+section 13.1.21.)
+\end{argy}
+
+The ANSI FORTRAN standard defines a character storage unit as the amount of
+memory required to store one CHARACTER element.  A numeric storage unit is
+the amount of memory required to store one INTEGER, LOGICAL, or REAL
+element.  For this routine, a base system unit is defined as the smallest
+unit of memory which holds an integral number of both character and numeric
+storage units.
+
+The last three parameters above can be used to calculate the proper value
+for the RECL specifier on the OPEN statement for a direct access I/O unit.
+For example, if NUM is the number of numeric values to be contained on a
+record and IDAU=0, set RECL = ( NUM * (KCSU + KNSU-1) ) / KCSU.
+
+
+\subsection{Get Unit File Name or Symbol Value (EXNAME)}
+
+\verb+CALL EXNAME( IUNIT,NAME,LN )+
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+Unit number if IUNIT $>$ 0, or symbol ID if IUNIT $\leq$ 0.
+\end{argy}
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Write Only}
+File name or symbol value obtained from the operating system. It is assumed
+that the unit/file name or symbol/value linkage will be passed to this
+routine at program activation. 
+\end{argy}
+
+\begin{argy}{LN}{INTEGER}{Write Only}
+Effective length of the string returned in NAME.  Zero indicates that no
+name or value was available. 
+\end{argy}
+
+This routine provides a standard interface for establishing execution time
+unit/file connection on operating systems (such as CTSS) which do not
+support pre-connection of FORTRAN I/O units.  The returned string is used
+with the FILE specifier in an OPEN statement, as in the following example.
+\begin{verbatim}
+      CALL EXNAME( 10,NAME,LN )
+      OPEN( 10,FILE=NAME(1:LN),... )
+\end{verbatim}
+The symbol mode of this routine provides a standard path through which to
+pass messages at program activation.  An example use is identifying the
+target graphics device for a code which supports multiple devices.
+
+\section{Utility Support Routines}
+The routines prescribed in this section are intended primarily to support
+the SUPES free field input and memory manager utilities.  While calling
+these routines directly will not disturb the internal operation of these
+other facilities, the use of EXMEMY (section~\ref{sec:exmemy}) in
+conjunction with the memory manager is discouraged. 
+
+\subsection{Convert String to Uppercase (EXUPCS)} \label{sec:exupcs}
+
+\verb+CALL EXUPCS( STRING )+
+
+\begin{argy}{STRING}{CHARACTER\last(\last)}{Read and Write}
+Character string for which lowercase letters will be translated to
+uppercase.  All other characters which are not in the printable ASCII character
+set are converted to spaces. 
+\end{argy}
+
+\subsection{Prompt/Read/Echo Input Record (EXREAD)} \label{sec:exread}
+
+\verb+CALL EXREAD( PROMPT,INPUT,IOSTAT )+
+
+\begin{argy}{PROMPT}{CHARACTER\last(\last)}{Read Only}
+Prompt string.
+\end{argy}
+
+\begin{argy}{INPUT}{CHARACTER\last(\last)}{Write Only}
+Input record from standard input device.
+\end{argy}
+
+\begin{argy}{IOSTAT}{INTEGER}{Write Only}
+ANSI FORTRAN I/O status:\\
+\begin{tabular}{cccl}
+IOSTAT &$<$ & 0 & End of File\\
+IOSTAT &=   & 0 & Normal\\
+IOSTAT &$>$ & 0 & Error\\
+\end{tabular}
+\end{argy}
+
+This routine will prompt for input if the standard input device is
+interactive.  In any case, the input line will be echoed to the standard
+output device with the prompt string as a prefix.
+
+
+\subsection{Evaluate Numeric Storage Location (IXLNUM)}
+
+\verb+NUMLOC = IXLNUM( NUMVAR )+
+
+\begin{argy}{NUMVAR}{INTEGER or REAL}{Read Only}
+Any numeric variable.
+\end{argy}
+
+\begin{argy}{NUMLOC}{INTEGER}{Write Only}
+Numeric location of NUMVAR.  This value is an address measured in ANSI
+FORTRAN numeric storage units. 
+\end{argy}
+
+
+\subsection{Evaluate Character Storage Location (IXLCHR)}
+
+\verb+CHRLOC = IXLCHR( CHRVAR )+
+
+\begin{argy}{CHRVAR}{CHARACTER}{Read Only}
+Any character variable.
+\end{argy}
+
+\begin{argy}{CHRLOC}{INTEGER}{Write Only}
+Character location of CHRVAR.  This value is an address measured in ANSI
+FORTRAN character storage units. 
+\end{argy}
+
+
+\subsection{Get/Release Memory Block (EXMEMY)} \label{sec:exmemy}
+
+\verb+CALL EXMEMY( MEMREQ,LOCBLK,MEMRTN )+
+
+\begin{argy}{MEMREQ}{INTEGER}{Read Only}
+Number of numeric storage units to allocate if MEMREQ $>$ 0, or release if
+MEMREQ $<$ 0. 
+\end{argy}
+
+\begin{argy}{LOCBLK}{INTEGER}{Read (release) or Write (allocate)}
+Numeric location of memory block.  This value is an address measured in ANSI
+FORTRAN numeric storage units. Only memory previously allocated to the
+caller via EXMEMY can be released via EXMEMY. 
+\end{argy}
+
+\begin{argy}{MEMRTN}{INTEGER}{Write Only}
+Size of memory block returned in numeric storage units.
+\end{argy}
+
+In allocate mode, MEMRTN $<$ MEMREQ indicates that a sufficient amount of
+storage could not be obtained from the operating system.  MEMRTN $>$ MEMREQ
+indicates that the operating system rounded up the storage request.
+
+In release mode, memory will always be released from the high end of the
+block downward.  MEMRTN = 0 indicates that the entire block was returned to
+the operating system.
+
+
+\section{Skeleton Library} \label{sec:skel}
+The Skeleton Library is an integral part of the SUPES Extension Library
+architecture.  Each library module has a skeleton version which is written
+in fully standard FORTRAN.  These routines are operational, though {\em not}
+functional.  The skeleton routines can serve as temporary
+placeholders for use when developing
+the Extension Library on a new system.
+Such an approach allows one to achieve
+interim support during the development period so that the functional version
+of each module can be developed individually, if necessary.
+
+Application codes which call SUPES Extension Library routines should be
+structured to work with the Skeleton Library, albeit at a reduced level,
+whenever possible.  This provides a consistent migration path for supporting
+these codes on a new system.  The consequences of skeletal support for the
+Extension Library on higher level SUPES utilities is clearly documented in
+this report.
+
+
+\subsection{Skeleton Routine Specifications}
+The results produced by each Skeleton Library module are prescribed below.
+\begin{enumerate}
+\item EXDATE returns the string ``00/00/00''.
+
+\item EXTIME returns the string ``00:00:00''.
+
+\item EXCPUS returns zero.
+
+\item EXPARM returns blank strings for hardware and software IDs, a zero which
+indicates batch mode, and unity for the three storage parameters.
+
+\item EXNAME returns a null string; the result string is undefined and the
+   length returned is zero.
+
+\item EXUPCS converts all non-ANSI characters to spaces.
+
+\item EXREAD simply reads from the standard input device.
+
+\item IXLNUM returns unity.
+
+\item IXLCHR returns unity.
+
+\item EXMEMY allocates memory from the named COMMON block /EXTLIB/.  The size
+   of this static pool defaults to 1024, but can be changed by modifying a
+   PARAMETER statement.
+\end{enumerate}

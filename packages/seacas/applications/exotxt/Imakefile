@@ -1,0 +1,20 @@
+XCOMM $Id: Imakefile,v 1.6 2005/11/15 22:56:03 gdsjaar Exp $
+
+CODE = exotxt
+
+SRCS = \
+dbicon.f dbielb.f dbign.f  dbinam.f  dbiqa.f  dbiste.f \
+dbivtt.f dbpini.f dbvini.f exotxt2.f rwpval.f wrelb.f  \
+wress.f  wrinit.f wrmap.f  wrname.f  wrnps.f  wrqa.f   \
+wrstep.f wrxyz.f
+
+OBJS = ${SRCS:.f=.o}
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+
+DependTarget()
+

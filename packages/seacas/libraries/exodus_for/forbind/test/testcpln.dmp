@@ -1,0 +1,241 @@
+netcdf testcp {
+dimensions:
+	len_string = 33 ;
+	len_line = 81 ;
+	four = 4 ;
+	time_step = UNLIMITED ; // (0 currently)
+	len_name = 33 ;
+	num_dim = 3 ;
+	num_nodes = 26 ;
+	num_elem = 5 ;
+	num_el_blk = 5 ;
+	num_node_sets = 2 ;
+	num_side_sets = 5 ;
+	num_el_in_blk1 = 1 ;
+	num_nod_per_el1 = 4 ;
+	num_att_in_blk1 = 1 ;
+	num_el_in_blk2 = 1 ;
+	num_nod_per_el2 = 4 ;
+	num_att_in_blk2 = 1 ;
+	num_el_in_blk3 = 1 ;
+	num_nod_per_el3 = 8 ;
+	num_att_in_blk3 = 1 ;
+	num_el_in_blk4 = 1 ;
+	num_nod_per_el4 = 4 ;
+	num_att_in_blk4 = 1 ;
+	num_el_in_blk5 = 1 ;
+	num_nod_per_el5 = 6 ;
+	num_att_in_blk5 = 1 ;
+	num_nod_ns1 = 5 ;
+	num_nod_ns2 = 3 ;
+	num_side_ss1 = 2 ;
+	num_df_ss1 = 4 ;
+	num_side_ss2 = 2 ;
+	num_df_ss2 = 4 ;
+	num_side_ss3 = 7 ;
+	num_side_ss4 = 4 ;
+	num_side_ss5 = 5 ;
+variables:
+	float time_whole(time_step) ;
+	int eb_status(num_el_blk) ;
+	int eb_prop1(num_el_blk) ;
+		eb_prop1:name = "ID" ;
+	int ns_status(num_node_sets) ;
+	int ns_prop1(num_node_sets) ;
+		ns_prop1:name = "ID" ;
+	int ss_status(num_side_sets) ;
+	int ss_prop1(num_side_sets) ;
+		ss_prop1:name = "ID" ;
+	float coord(num_dim, num_nodes) ;
+	char eb_names(num_el_blk, len_name) ;
+	char ns_names(num_node_sets, len_name) ;
+	char ss_names(num_side_sets, len_name) ;
+	char coor_names(num_dim, len_name) ;
+	int elem_map(num_elem) ;
+	float attrib1(num_el_in_blk1, num_att_in_blk1) ;
+	char attrib_name1(num_att_in_blk1, len_name) ;
+	int connect1(num_el_in_blk1, num_nod_per_el1) ;
+		connect1:elem_type = "quad" ;
+	float attrib2(num_el_in_blk2, num_att_in_blk2) ;
+	char attrib_name2(num_att_in_blk2, len_name) ;
+	int connect2(num_el_in_blk2, num_nod_per_el2) ;
+		connect2:elem_type = "quad" ;
+	float attrib3(num_el_in_blk3, num_att_in_blk3) ;
+	char attrib_name3(num_att_in_blk3, len_name) ;
+	int connect3(num_el_in_blk3, num_nod_per_el3) ;
+		connect3:elem_type = "hex" ;
+	float attrib4(num_el_in_blk4, num_att_in_blk4) ;
+	char attrib_name4(num_att_in_blk4, len_name) ;
+	int connect4(num_el_in_blk4, num_nod_per_el4) ;
+		connect4:elem_type = "tetra" ;
+	float attrib5(num_el_in_blk5, num_att_in_blk5) ;
+	char attrib_name5(num_att_in_blk5, len_name) ;
+	int connect5(num_el_in_blk5, num_nod_per_el5) ;
+		connect5:elem_type = "wedge" ;
+	int eb_prop2(num_el_blk) ;
+		eb_prop2:_FillValue = 0 ;
+		eb_prop2:name = "MATL" ;
+	int eb_prop3(num_el_blk) ;
+		eb_prop3:_FillValue = 0 ;
+		eb_prop3:name = "DENSITY" ;
+	int node_ns1(num_nod_ns1) ;
+	float dist_fact_ns1(num_nod_ns1) ;
+	int node_ns2(num_nod_ns2) ;
+	float dist_fact_ns2(num_nod_ns2) ;
+	int ns_prop2(num_node_sets) ;
+		ns_prop2:_FillValue = 0 ;
+		ns_prop2:name = "FACE" ;
+	int ns_prop3(num_node_sets) ;
+		ns_prop3:name = "VELOCITY" ;
+	int elem_ss1(num_side_ss1) ;
+	int side_ss1(num_side_ss1) ;
+	float dist_fact_ss1(num_df_ss1) ;
+	int elem_ss2(num_side_ss2) ;
+	int side_ss2(num_side_ss2) ;
+	float dist_fact_ss2(num_df_ss2) ;
+	int elem_ss3(num_side_ss3) ;
+	int side_ss3(num_side_ss3) ;
+	int elem_ss4(num_side_ss4) ;
+	int side_ss4(num_side_ss4) ;
+	int elem_ss5(num_side_ss5) ;
+	int side_ss5(num_side_ss5) ;
+	int ss_prop2(num_side_sets) ;
+		ss_prop2:_FillValue = 0 ;
+		ss_prop2:name = "COLOR" ;
+
+// global attributes:
+		:floating_point_word_size = 4 ;
+		:file_size = 0 ;
+		:title = "This is a test" ;
+		:maximum_name_length = 32 ;
+data:
+
+ eb_status = 0, 0, 0, 0, 0 ;
+
+ eb_prop1 = 0, 0, 0, 0, 0 ;
+
+ ns_status = 0, 0 ;
+
+ ns_prop1 = 0, 0 ;
+
+ ss_status = 0, 0, 0, 0, 0 ;
+
+ ss_prop1 = 0, 0, 0, 0, 0 ;
+
+ coord =
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;
+
+ eb_names =
+  "",
+  "",
+  "",
+  "",
+  "" ;
+
+ ns_names =
+  "",
+  "" ;
+
+ ss_names =
+  "",
+  "",
+  "",
+  "",
+  "" ;
+
+ coor_names =
+  "",
+  "",
+  "" ;
+
+ elem_map = 0, 0, 0, 0, 0 ;
+
+ attrib1 =
+  0 ;
+
+ attrib_name1 =
+  "" ;
+
+ connect1 =
+  0, 0, 0, 0 ;
+
+ attrib2 =
+  0 ;
+
+ attrib_name2 =
+  "" ;
+
+ connect2 =
+  0, 0, 0, 0 ;
+
+ attrib3 =
+  0 ;
+
+ attrib_name3 =
+  "" ;
+
+ connect3 =
+  0, 0, 0, 0, 0, 0, 0, 0 ;
+
+ attrib4 =
+  0 ;
+
+ attrib_name4 =
+  "" ;
+
+ connect4 =
+  0, 0, 0, 0 ;
+
+ attrib5 =
+  0 ;
+
+ attrib_name5 =
+  "" ;
+
+ connect5 =
+  0, 0, 0, 0, 0, 0 ;
+
+ eb_prop2 = _, _, _, _, _ ;
+
+ eb_prop3 = _, _, _, _, _ ;
+
+ node_ns1 = 0, 0, 0, 0, 0 ;
+
+ dist_fact_ns1 = 0, 0, 0, 0, 0 ;
+
+ node_ns2 = 0, 0, 0 ;
+
+ dist_fact_ns2 = 0, 0, 0 ;
+
+ ns_prop2 = _, _ ;
+
+ ns_prop3 = 0, 0 ;
+
+ elem_ss1 = 0, 0 ;
+
+ side_ss1 = 0, 0 ;
+
+ dist_fact_ss1 = 0, 0, 0, 0 ;
+
+ elem_ss2 = 0, 0 ;
+
+ side_ss2 = 0, 0 ;
+
+ dist_fact_ss2 = 0, 0, 0, 0 ;
+
+ elem_ss3 = 0, 0, 0, 0, 0, 0, 0 ;
+
+ side_ss3 = 0, 0, 0, 0, 0, 0, 0 ;
+
+ elem_ss4 = 0, 0, 0, 0 ;
+
+ side_ss4 = 0, 0, 0, 0 ;
+
+ elem_ss5 = 0, 0, 0, 0, 0 ;
+
+ side_ss5 = 0, 0, 0, 0, 0 ;
+
+ ss_prop2 = _, _, _, _, _ ;
+}

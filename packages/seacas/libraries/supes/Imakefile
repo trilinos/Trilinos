@@ -1,0 +1,37 @@
+XCOMM $Id: Imakefile,v 1.6 1998/04/27 22:37:56 rwstotz Exp $
+
+#define IHaveSubdirs
+
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
+
+#define ExtraOptions	"CCOPTIONS=$(CCOPTIONS)" \
+			"F77OPTIONS=$(F77OPTIONS)"
+
+#ifdef PARALLEL
+CCOPTIONS  = ParallelCCOptions
+F77OPTIONS = ParallelF77Options
+LIBDIR     = $(PLIBDIR)
+#endif
+
+SUBDIRS = ext_lib/portable fre_fld mem_mgr
+
+TESTS = exttest memtest ffrtest 
+
+AllTarget(libsupes.a)
+
+NamedTargetSubdirs(libsupes.a,$(SUBDIRS),"making supes ",PassDebugFlags ExtraOptions,libsupes.a)
+
+NormalFortranTarget(exttest,exttest.o,libsupes.a,libsupes.a,NullParameter)
+NormalFortranTarget(memtest,memtest.o,libsupes.a,libsupes.a,NullParameter)
+NormalFortranTarget(ffrtest,ffrtest.o,libsupes.a,libsupes.a,NullParameter)
+
+InstallLibrary(supes,$(LIBDIR))
+
+#if Parallel
+InstallParallelLibrary(supes,$(PLIBDIR))
+#endif
+
