@@ -522,67 +522,107 @@ namespace Belos {
   }
 
   
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::initialize(PseudoBlockGmresIterState<ScalarType,MV> newstate)
+  void 
+  PseudoBlockGmresIter<ScalarType,MV,OP>::
+  initialize (PseudoBlockGmresIterState<ScalarType,MV> newstate)
   {
-    // Get the number of right-hand sides we're solving for now.
-    int numRHS = MVT::GetNumberVecs(*(lp_->getCurrLHSVec()));
-    numRHS_ = numRHS;
+    using Teuchos::RCP;
+
+    // (Re)set the number of right-hand sides, by interrogating the
+    // current LinearProblem to solve.
+    this->numRHS_ = MVT::GetNumberVecs (*(lp_->getCurrLHSVec()));
 
     // NOTE:  In PseudoBlockGmresIter, V and Z are required!!!  
-    // inconsitent multivectors widths and lengths will not be tolerated, and
+    // Inconsistent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
-    std::string errstr("Belos::PseudoBlockGmresIter::initialize(): Specified multivectors must have a consistent length and width.");
+    std::string errstr ("Belos::PseudoBlockGmresIter::initialize(): "
+			"Specified multivectors must have a consistent "
+			"length and width.");
 
-    // Check that we have V and Z.
-    TEST_FOR_EXCEPTION((int)newstate.V.size()==0 || (int)newstate.Z.size()==0, std::invalid_argument,
-                       "Belos::PseudoBlockGmresIter::initialize(): V and/or Z is not specified.");
+    // Check that newstate has V and Z arrays with nonzero length.
+    TEST_FOR_EXCEPTION((int)newstate.V.size()==0 || (int)newstate.Z.size()==0, 
+		       std::invalid_argument,
+                       "Belos::PseudoBlockGmresIter::initialize(): "
+		       "V and/or Z was not specified in the input state; "
+		       "the V and/or Z arrays have length zero.");
 
-    // Get the multivector that is not null.
-    Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-    Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
-    Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-    TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-                       "Belos::PseudoBlockGmresIter::initialize(): linear problem does not specify multivectors to clone from.");
+    // In order to create basis multivectors, we have to clone them
+    // from some already existing multivector.  We require that at
+    // least one of the right-hand side B and left-hand side X in the
+    // LinearProblem be non-null.  Thus, we can clone from either B or
+    // X.  We prefer to close from B, since B is in the range of the
+    // operator A and the basis vectors should also be in the range of
+    // A (the first basis vector is a scaled residual vector).
+    // However, if B is not given, we will try our best by cloning
+    // from X.
+    RCP<const MV> lhsMV = lp_->getLHS();
+    RCP<const MV> rhsMV = lp_->getRHS();
 
-    // Check the new dimension is not more that the maximum number of allowable blocks.  
-    TEST_FOR_EXCEPTION( newstate.curDim > numBlocks_+1,
-                        std::invalid_argument, errstr );
+    // If the right-hand side is null, we make do with the left-hand
+    // side, otherwise we use the right-hand side.
+    RCP<const MV> vectorInBasisSpace = rhsMV.is_null() ? lhsMV : rhsMV;
+    //RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+
+    TEST_FOR_EXCEPTION(vectorInBasisSpace.is_null(), 
+		       std::invalid_argument,
+                       "Belos::PseudoBlockGmresIter::initialize(): "
+		       "The linear problem to solve does not specify multi"
+		       "vectors from which we can clone basis vectors.  The "
+		       "right-hand side(s), left-hand side(s), or both should "
+		       "be nonnull.");
+
+    // Check the new dimension is not more that the maximum number of
+    // allowable blocks.
+    TEST_FOR_EXCEPTION(newstate.curDim > numBlocks_+1, 
+		       std::invalid_argument, 
+		       errstr);
     curDim_ = newstate.curDim;
 
-    // Initialize the state storage
-    // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
+    // Initialize the state storage.  If the subspace has not be
+    // initialized before, generate it using the right-hand side or
+    // left-hand side from the LinearProblem lp_ to solve.
     V_.resize(numRHS_);
     for (int i=0; i<numRHS_; ++i) {
-      // Create a new vector if we need to.
-      if (V_[i] == Teuchos::null || MVT::GetNumberVecs(*V_[i]) < numBlocks_+1 ) {
-        V_[i] = MVT::Clone(*tmp,numBlocks_+1);
+      // Create a new vector if we need to.  We "need to" if the
+      // current vector V_[i] is null, or if it doesn't have enough
+      // columns.
+      if (V_[i].is_null() || MVT::GetNumberVecs(*V_[i]) < numBlocks_ + 1) {
+        V_[i] = MVT::Clone (*vectorInBasisSpace, numBlocks_ + 1);
       }
-      // Check that the newstate vector is consistent.
+      // Check that the newstate vector newstate.V[i] has dimensions
+      // consistent with those of V_[i].
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
                           std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
                           std::invalid_argument, errstr );
-      
+      //
+      // If newstate.V[i] and V_[i] are not identically the same
+      // vector, then copy newstate.V[i] into V_[i].  
+      //
       int lclDim = MVT::GetNumberVecs(*newstate.V[i]);
       if (newstate.V[i] != V_[i]) {
-        // Cnly copy over the first block and print a warning.
+        // Only copy over the first block and print a warning.
         if (curDim_ == 0 && lclDim > 1) {
-          om_->stream(Warnings) << "Belos::PseudoBlockGmresIter::initialize(): the solver was initialized with a kernel of " 
-                                << lclDim << std::endl << "The block size however is only " << 1 << std::endl
-                                << "The last " << lclDim - 1 << " vectors will be discarded." << std::endl;
+          om_->stream(Warnings) 
+	    << "Belos::PseudoBlockGmresIter::initialize(): the solver was "
+	    << "initialized with a kernel of " << lclDim 
+	    << std::endl 
+	    << "The block size however is only " << 1 
+	    << std::endl
+	    << "The last " << lclDim - 1 << " vectors will be discarded." 
+	    << std::endl;
         }
-        std::vector<int> nevind(curDim_+1);
-        for (int j=0; j<curDim_+1; j++) nevind[j] = j;
-        Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
-        Teuchos::RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
+        std::vector<int> nevind (curDim_ + 1);
+        for (int j = 0; j < curDim_ + 1; ++j) 
+	  nevind[j] = j;
+
+        RCP<const MV> newV = MVT::CloneView (*newstate.V[i], nevind);
+        RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
         const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
         const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-        MVT::MvAddMv( one, *newV, zero, *newV, *lclV );
+        MVT::MvAddMv (one, *newV, zero, *newV, *lclV);
 
         // Done with local pointers
         lclV = Teuchos::null;

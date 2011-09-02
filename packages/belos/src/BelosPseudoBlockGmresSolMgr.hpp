@@ -241,13 +241,20 @@ namespace Belos {
     //! @name Set methods
     //@{
    
-    //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    //! Set the linear problem to solve.
+    void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+      problem_ = problem; 
+    }
    
     //! Set the parameters the solver manager should use to solve the linear problem. 
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params);
 
-    /** \brief. */
+    /// \brief Set a custom status test.
+    ///
+    /// A custom status test is not required.  If you decide to set
+    /// one, the current implementation will apply it sequentially
+    /// (short-circuiting OR, like the || operator in C++) after
+    /// Pseudoblock GMRES' standard convergence test.
     virtual void setUserConvStatusTest(
       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
       );
@@ -290,15 +297,15 @@ namespace Belos {
     /** \name Overridden from Teuchos::Describable */
     //@{
     
-    /** \brief Method to return description of the block GMRES solver manager */
+    //! Return a description of the pseudoblock GMRES solver manager.
     std::string description() const;
     
     //@}
     
   private:
 
-    // Method to convert std::string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( const std::string& scaleType ) {
+    //! Convert the string to its corresponding enumerated type for residual scaling.
+    Belos::ScaleType convertStringToScaleType (const std::string& scaleType) {
       if (scaleType == "Norm of Initial Residual") {
         return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of Preconditioned Initial Residual") {
@@ -312,17 +319,30 @@ namespace Belos {
             "Belos::PseudoBlockGmresSolMgr(): Invalid residual scaling type.");
     }
 
-    // Method for checking current status test against defined linear problem.
+    /// \brief Check current status tests against current linear problem.
+    ///
+    /// (Re)create all the status tests, based on the current solve
+    /// parameters and the current linear problem to solve.  This is
+    /// necessary whenever the linear problem is set or changed via \c
+    /// setProblem(), because the residual norm test to use depends on
+    /// whether or not the (new) linear problem defines a left
+    /// preconditioner.  Furthermore, include the user's custom
+    /// convergence test if they set one via \c
+    /// setUserConvStatusTest().
+    ///
+    /// \return False if we were able to (re)create all the status
+    ///   tests correctly, else true.  The \c solve() routine may call
+    ///   this method.  If it does, it checks the return value.
     bool checkStatusTest();
     
-    // Linear problem.
+    //! The current linear problem to solve.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
 
-    // Status test.
+    // Status tests.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > userConvStatusTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
