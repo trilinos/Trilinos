@@ -45,14 +45,12 @@ static PARAM_VARS Parmetis_params[] = {
   { "PARMETIS_FOLD", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
 
-int Zoltan_Parmetis_Check_Error (ZZ *zz,
-				 char *alg,
-				 ZOLTAN_Third_Graph *gr,
-				 ZOLTAN_Third_Part *prt);
+static int Zoltan_Parmetis_Check_Error(ZZ *, char *, ZOLTAN_Third_Graph *,
+                                ZOLTAN_Third_Part *);
 
-static  int pmv3method( char *alg);
+static int pmv3method(char *alg);
 
-int mylog2(int x)
+static int mylog2(int x)
 {
   int i = 0;
 
@@ -60,8 +58,8 @@ int mylog2(int x)
   return (i-1);
 }
 
-int
-Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_itr, ZOLTAN_Output_Order*);
+static int Zoltan_Parmetis_Parse(ZZ*, int *, char*, float*, double *, 
+                                 ZOLTAN_Output_Order*);
 
 
   /**********************************************************/
@@ -69,23 +67,23 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_
   /**********************************************************/
 
 int Zoltan_ParMetis(
-		    ZZ *zz,               /* Zoltan structure */
-		    float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
-					     containing the percentage of work to be
-					     assigned to each partition.               */
-		    int *num_imp,         /* number of objects to be imported */
-		    ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
-		    ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
-		    int **imp_procs,      /* list of processors to import from */
-		    int **imp_to_part,    /* list of partitions to which imported objects are
-					     assigned.  */
-		    int *num_exp,         /* number of objects to be exported */
-		    ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
-		    ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
-		    int **exp_procs,      /* list of processors to export to */
-		    int **exp_to_part     /* list of partitions to which exported objects are
-					     assigned. */
-		    )
+  ZZ *zz,               /* Zoltan structure */
+  float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
+                           containing the percentage of work to be
+                           assigned to each partition.               */
+  int *num_imp,         /* number of objects to be imported */
+  ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to which imported objects are
+                           assigned.  */
+  int *num_exp,         /* number of objects to be exported */
+  ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part     /* list of partitions to which exported objects are
+                           assigned. */
+)
 {
   char *yo = "Zoltan_ParMetis";
   int ierr;
@@ -123,7 +121,7 @@ int Zoltan_ParMetis(
 
 #ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-		     "ParMetis requested but not compiled into library.");
+                     "ParMetis requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
 #endif /* ZOLTAN_PARMETIS */
@@ -134,7 +132,8 @@ int Zoltan_ParMetis(
     /* Check for outdated/unsupported ParMetis versions. */
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (zz->Proc == 0)
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by "
+                      "Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
 #endif
 
@@ -149,8 +148,8 @@ int Zoltan_ParMetis(
   if ((sizeof(indextype) != sizeof(idxtype)) ||
       (sizeof(weighttype) != sizeof(idxtype)) || i){
 
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
-          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Not supported: Multiple 3rd party "
+                       "libraries with incompatible data types.");
     return ZOLTAN_FATAL;
   }
 
@@ -160,8 +159,8 @@ int Zoltan_ParMetis(
 
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
-		    imp_gids, imp_lids, imp_procs, imp_to_part,
-		    exp_gids, exp_lids, exp_procs, exp_to_part);
+                    imp_gids, imp_lids, imp_procs, imp_to_part,
+                    exp_gids, exp_lids, exp_procs, exp_to_part);
 
   prt.input_part_sizes = prt.part_sizes = part_sizes;
 
@@ -191,7 +190,7 @@ int Zoltan_ParMetis(
 
 
   /* Some algorithms use geometry data */
-  if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
+  if (strncmp(alg, "PARTGEOM", 8) == 0){          /* PARTGEOM & PARTGEOMKWAY */
     geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom));
     memset (geo, 0, sizeof(ZOLTAN_Third_Geom));
     /* ParMETIS will crash if geometric method and some procs have no nodes. */
@@ -208,7 +207,7 @@ int Zoltan_ParMetis(
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
-    /* Start timer */
+  /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
   if (get_times){
     MPI_Barrier(zz->Communicator);
@@ -225,7 +224,8 @@ int Zoltan_ParMetis(
 #endif /* PARMETIS31_ALWAYS_FREES_VSIZE */
 
 
-  ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
+  ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, 
+                                 geo, &prt, &vsp);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     Zoltan_Third_Exit(&gr, geo, &prt, &vsp, &part, NULL);
     return (ierr);
@@ -262,7 +262,7 @@ int Zoltan_ParMetis(
 
       printf("Debug: Size(s) for part %1d = ", i);
       for (j=0; j<ncon; j++)
-	printf("%f ", prt.part_sizes[i*ncon+j]);
+        printf("%f ", prt.part_sizes[i*ncon+j]);
       printf("\n");
     }
   }
@@ -271,7 +271,7 @@ int Zoltan_ParMetis(
   for (i = 0; i < num_part*ncon; i++)
     if (prt.part_sizes[i] == 0) 
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Zero-sized part(s) requested! "
-			    "ParMETIS 3.x will likely fail. Please use a "
+                            "ParMETIS 3.x will likely fail. Please use a "
                             "different method, or remove the zero-sized "
                             "parts from the problem.");
 
@@ -295,39 +295,44 @@ int Zoltan_ParMetis(
 
     /* First check for ParMetis 3 routines */
     if (strcmp(alg, "PARTKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+                                  "ParMETIS_V3_PartKway");
       ParMETIS_V3_PartKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-			   &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
-			   imb_tols, options, &edgecut, prt.part, &comm);
+                           &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
+                           imb_tols, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeomKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+                                  "ParMETIS_V3_PartGeomKway");
       ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
                                &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
                                &num_part, prt.part_sizes,
-			       imb_tols, options, &edgecut, prt.part, &comm);
+                               imb_tols, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOM") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeom");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+                                  "ParMETIS_V3_PartGeom");
       ParMETIS_V3_PartGeom(gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "ADAPTIVEREPART") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_AdaptiveRepart");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+                                  "ParMETIS_V3_AdaptiveRepart");
       ParMETIS_V3_AdaptiveRepart(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
                                  vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
                                  &num_part, prt.part_sizes, imb_tols,
-				 &itr, options, &edgecut, prt.part, &comm);
+                                 &itr, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "REFINEKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_RefineKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+                                  "ParMETIS_V3_RefineKway");
       ParMETIS_V3_RefineKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-			     &wgtflag, &numflag, &ncon, &num_part,
+                             &wgtflag, &numflag, &ncon, &num_part,
                              prt.part_sizes, imb_tols,
-			     options, &edgecut, prt.part, &comm);
+                             options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else {
@@ -339,14 +344,15 @@ int Zoltan_ParMetis(
   }
 #endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_METIS
-    /* TODO: I don't know how to set balance ! */
+  /* TODO: I don't know how to set balance ! */
   if (IS_LOCAL_GRAPH(gr.graph_type)) {
     /* Check for Metis routines */
     if (strcmp(alg, "PARTKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library METIS_WPartGraphKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library "
+                                  "METIS_WPartGraphKway");
       METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, 
                             gr.vwgt, gr.ewgts, &wgtflag,
-			    &numflag, &num_part, prt.part_sizes, 
+                            &numflag, &num_part, prt.part_sizes, 
                             options, &edgecut, prt.part);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
@@ -364,17 +370,20 @@ int Zoltan_ParMetis(
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
 
-  if (gr.final_output) { /* Do final output now because after the data will not be coherent:
-			    unscatter only unscatter part data, not graph */
+  if (gr.final_output) { 
+    /* Do final output now because after the data will not be coherent:
+       unscatter only unscatter part data, not graph */
     ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp, use_timers, itr);
   }
   /* Ignore the timings of Final Ouput */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
-  ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
+  ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, 
+                                  geo, &prt, &vsp, NULL, &part);
 
-  Zoltan_Third_Export_User(&part, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
-			   num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+  Zoltan_Third_Export_User(&part, 
+                           num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+                           num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
 
   /* Get a time here */
   if (get_times) times[4] = Zoltan_Time(zz->Timer);
@@ -396,10 +405,12 @@ int Zoltan_ParMetis(
 }
 
 
-int Zoltan_Parmetis_Check_Error (ZZ *zz,
-				 char *alg,
-				 ZOLTAN_Third_Graph *gr,
-				 ZOLTAN_Third_Part *prt)
+static int Zoltan_Parmetis_Check_Error(
+  ZZ *zz,
+  char *alg,
+  ZOLTAN_Third_Graph *gr,
+  ZOLTAN_Third_Part *prt
+)
 {
 
 #if (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0)
@@ -419,9 +430,9 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
-	      "to ignore part sizes; uniform part sizes will be "
-	      "produced. Please try a different load-balancing method.\n",
-	      gsum);
+              "to ignore part sizes; uniform part sizes will be "
+              "produced. Please try a different load-balancing method.\n",
+              gsum);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, str);
     }
   }
@@ -432,8 +443,8 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
     MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
     if (gmax >= prt->num_part) {
       sprintf(msg, "Part number %1d >= number of parts %1d.\n"
-	      "ParMETIS 3.0 with %s will fail, please upgrade to 3.1 or later.",
-	      gmax, prt->num_part, alg);
+              "ParMETIS 3.0 with %s will fail, please upgrade to 3.1 or later.",
+              gmax, prt->num_part, alg);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
     }
   }
@@ -441,23 +452,27 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
   if (gr->xadj[gr->num_obj] == 0) {
 #if (PARMETIS_MAJOR_VERSION == 2)
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
-		       "ParMETIS 2.0 will likely fail. Please "
-		       "upgrade to version 3.1 or later.");
+                       "ParMETIS 2.0 will likely fail. Please "
+                       "upgrade to version 3.1 or later.");
 #elif (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
     if (strcmp(alg, "ADAPTIVEREPART") == 0)
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
-			 "ParMETIS 3.0 will likely fail with method "
-			 "AdaptiveRepart. Please upgrade to 3.1 or later.");
+                         "ParMETIS 3.0 will likely fail with method "
+                         "AdaptiveRepart. Please upgrade to 3.1 or later.");
 #endif
   }
   return (ZOLTAN_OK);
 }
 
 
-int
-Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
-		      float* itr, double *pmv3_itr,
-		      ZOLTAN_Output_Order *ord)
+static int Zoltan_Parmetis_Parse(
+  ZZ* zz, 
+  int *options, 
+  char* alg,
+  float* itr, 
+  double *pmv3_itr,
+  ZOLTAN_Output_Order *ord
+)
 {
   static char * yo = "Zoltan_Parmetis_Parse";
 
@@ -481,19 +496,19 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
     if(ord == NULL) {
     /* Map LB_APPROACH to suitable PARMETIS_METHOD */
       if (!strcasecmp(zz->LB.Approach, "partition")){
-	strcpy(alg, "PARTKWAY");
+        strcpy(alg, "PARTKWAY");
       }
       else if (!strcasecmp(zz->LB.Approach, "repartition")){
-	strcpy(alg, "ADAPTIVEREPART");
-	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
+        strcpy(alg, "ADAPTIVEREPART");
+        *pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
       }
       else if (!strcasecmp(zz->LB.Approach, "refine")){
-	strcpy(alg, "REFINEKWAY");
+        strcpy(alg, "REFINEKWAY");
       }
       else { /* If no LB_APPROACH is set, use repartition */
-	strcpy(alg, "ADAPTIVEREPART");
-	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
+        strcpy(alg, "ADAPTIVEREPART");
+        *pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
       }
     }
@@ -530,7 +545,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       options[PMV3_OPTION_SEED] = seed;
       options[PMV3_OPT_USE_OBJ_SIZE] = use_obj_size;
       if (ord == NULL)
-	*itr = (float)*pmv3_itr;
+        *itr = (float)*pmv3_itr;
     }
 
     /* If ordering, use ordering method instead of load-balancing method */
@@ -556,19 +571,18 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
     return(ZOLTAN_OK);
 }
 
-
-
+/***************************************************************************/
 
 static int pmv3method( char *alg)
-  {
-    /* Check if alg is a supported ParMetis 3.0 method */
-    return ((!strcmp(alg, "PARTKWAY"))
-	    || (!strcmp(alg, "PARTGEOMKWAY"))
-	    || (!strcmp(alg, "ADAPTIVEREPART"))
-	    || (!strcmp(alg, "REFINEKWAY"))
-	    || (!strcmp(alg, "NODEND"))
-            );
-  }
+{
+  /* Check if alg is a supported ParMetis 3.0 method */
+  return ((!strcmp(alg, "PARTKWAY"))
+          || (!strcmp(alg, "PARTGEOMKWAY"))
+          || (!strcmp(alg, "ADAPTIVEREPART"))
+          || (!strcmp(alg, "REFINEKWAY"))
+          || (!strcmp(alg, "NODEND"))
+          );
+}
 
 
 /***************************************************************************
@@ -578,14 +592,14 @@ static int pmv3method( char *alg)
 
 int Zoltan_ParMetis_Order(
   ZZ *zz,               /* Zoltan structure */
-  int num_obj,		/* Number of (local) objects to order. */
+  int num_obj,          /* Number of (local) objects to order. */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
-  /* The application must allocate enough space */
+                        /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
-/* The application must allocate enough space */
-  ZOLTAN_ID_PTR rank,		/* rank[i] is the rank of gids[i] */
+                        /* The application must allocate enough space */
+  ZOLTAN_ID_PTR rank,   /* rank[i] is the rank of gids[i] */
   int *iperm,
-  ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
+  ZOOS *order_opt       /* Ordering options, parsed by Zoltan_Order */
 )
 {
   static char *yo = "Zoltan_ParMetis_Order";
@@ -625,7 +639,8 @@ int Zoltan_ParMetis_Order(
       (sizeof(weighttype) != sizeof(idxtype)) || i){
 
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
-          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+          "Not supported: Multiple 3rd party libraries with incompatible "
+          "data types.");
     return ZOLTAN_FATAL;
   }
 #endif
@@ -658,7 +673,8 @@ int Zoltan_ParMetis_Order(
   }
   if (n != num_obj){
     /* Currently this is a fatal error. */
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input num_obj does not equal the number of objects.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input num_obj does not equal the "
+                                     "number of objects.");
     return(ZOLTAN_FATAL);
   }
 
@@ -679,7 +695,8 @@ int Zoltan_ParMetis_Order(
   gr.get_data = 1;
 
   if (IS_LOCAL_GRAPH(gr.graph_type) && zz->Num_Proc > 1) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Serial ordering on more than 1 process: set ParMetis instead.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Serial ordering on more than 1 process: "
+                                     "set ParMetis instead.");
     return(ZOLTAN_FATAL);
   }
 
@@ -701,7 +718,7 @@ int Zoltan_ParMetis_Order(
   /* Allocate space for separator sizes */
 
   if (IS_GLOBAL_GRAPH(gr.graph_type)) {
-    if (Zoltan_TPL_Order_Init_Tree (&zz->TPL_Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
+    if (Zoltan_TPL_Order_Init_Tree(&zz->TPL_Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
       /* Not enough memory */
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -741,7 +758,7 @@ int Zoltan_ParMetis_Order(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
 
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy, 
-			&numflag, options, ord.rank, ord.sep_sizes, &comm);
+                        &numflag, options, ord.rank, ord.sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
 
   }
@@ -786,22 +803,22 @@ int Zoltan_ParMetis_Order(
       zz->TPL_Order.ancestor[start+1] = start + 2;
       start+=2;
       do {
-	converttab[start] = father;
-	if (father %2 == 0) {
-	  int nextoffset;
-	  int level;
+        converttab[start] = father;
+        if (father %2 == 0) {
+          int nextoffset;
+          int level;
 
-	  level = mylog2(2*zz->Num_Proc - 1 - father);
-	  nextoffset = (1<<(levelmax-level));
-	  zz->TPL_Order.ancestor[start] = start+nextoffset;
-	  start++;
-	  break;
-	}
-	else {
-	  zz->TPL_Order.ancestor[start] = start+1;
-	  start++;
-	  father = zz->Num_Proc + father/2;
-	}
+          level = mylog2(2*zz->Num_Proc - 1 - father);
+          nextoffset = (1<<(levelmax-level));
+          zz->TPL_Order.ancestor[start] = start+nextoffset;
+          start++;
+          break;
+        }
+        else {
+          zz->TPL_Order.ancestor[start] = start+1;
+          start++;
+          father = zz->Num_Proc + father/2;
+        }
       } while (father < 2*zz->Num_Proc - 1);
     }
 
@@ -882,33 +899,33 @@ int Zoltan_ParMetis_Set_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
-    int status, i;
-    PARAM_UTYPE result;         /* value returned from Check_Param */
-    int index;                  /* index returned from Check_Param */
-    char *valid_methods[] = {
-        "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM",
-        "REPARTLDIFFUSION", "REPARTGDIFFUSION",
-        "REPARTREMAP", "REPARTMLREMAP",
-        "REFINEKWAY", "ADAPTIVEREPART",
-        "NODEND", /* for nested dissection ordering */
-         NULL };
+  int status, i;
+  PARAM_UTYPE result;         /* value returned from Check_Param */
+  int index;                  /* index returned from Check_Param */
+  char *valid_methods[] = {
+      "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM",
+      "REPARTLDIFFUSION", "REPARTGDIFFUSION",
+      "REPARTREMAP", "REPARTMLREMAP",
+      "REFINEKWAY", "ADAPTIVEREPART",
+      "NODEND", /* for nested dissection ordering */
+       NULL };
 
-    status = Zoltan_Check_Param(name, val, Parmetis_params, &result, &index);
+  status = Zoltan_Check_Param(name, val, Parmetis_params, &result, &index);
 
-    if (status == 0){
-      /* OK so far, do sanity check of parameter values */
+  if (status == 0){
+    /* OK so far, do sanity check of parameter values */
 
-      if (strcmp(name, "PARMETIS_METHOD") == 0){
-        status = 2;
-        for (i=0; valid_methods[i] != NULL; i++){
-          if (strcmp(val, valid_methods[i]) == 0){
-            status = 0;
-            break;
-          }
+    if (strcmp(name, "PARMETIS_METHOD") == 0){
+      status = 2;
+      for (i=0; valid_methods[i] != NULL; i++){
+        if (strcmp(val, valid_methods[i]) == 0){
+          status = 0;
+          break;
         }
       }
     }
-    return(status);
+  }
+  return(status);
 }
 
 #ifdef __cplusplus
