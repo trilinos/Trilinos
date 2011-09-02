@@ -16,6 +16,7 @@ SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
   Nemesis         "NeutronicsExt/denovo/src/nemesis"  GIT  casl-dev.ornl.gov:/git-root/nemesis        NOPACKAGES  Continuous
   CASLBOA         ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_boa       ""  Continuous
   CASLRAVE        ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_rave      ""  Continuous
+  RELAP5Ext       ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_relap5    ""  Continuous
   LIMEExt         ""                                  GIT  software.sandia.gov:/space/git/LIMEExt     ""  Continuous
   PSSDriversExt   ""                                  GIT  casl-dev.ornl.gov:/git-root/casl_vripss    ""  Continuous
   )
