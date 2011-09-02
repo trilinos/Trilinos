@@ -92,7 +92,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
       RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
 
-      coarseLevel.Set("R", R);
+      coarseLevel.Set("R", R, this);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
