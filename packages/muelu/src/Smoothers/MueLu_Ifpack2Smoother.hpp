@@ -83,10 +83,10 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
         See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
     */
-    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList & list)
+    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & list, LO const &overlap=0)
       : ifpack2Type_(type), list_(list), out_(this->getOStream())
     {
-      overlap_ = list.get("Overlap",(LO) 0);
+      overlap_ = overlap;
       std::string label;
 //       if (type == "point relaxation stand-alone")
 //         label = "Ifpack2: " + list.get("relaxation: type","unknown relaxation");
@@ -119,7 +119,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 //       if (ifpackType_ == "point relaxation stand-alone") list_.set("relaxation: sweeps", nIts);
 //       else if (ifpackType_ == "Chebyshev")               list_.set("chebyshev: degree", nIts);
 //       prec_->SetParameters(list_);
-      throw(Exceptions::NotImplemented("Not Implemented"));
+      throw(Exceptions::NotImplemented("Ifpack2Smoother::SetNIts() is not Implemented"));
     }
 
     /*! @brief Get the number of smoothing sweeps.
