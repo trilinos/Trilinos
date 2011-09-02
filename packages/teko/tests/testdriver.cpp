@@ -49,7 +49,6 @@
 #include <string>
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
