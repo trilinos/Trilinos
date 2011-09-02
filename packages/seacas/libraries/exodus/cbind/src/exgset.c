@@ -153,16 +153,18 @@ int ex_get_set (int   exoid,
   }
 
 
-  /* read in the entry list and extra list arrays */
-  status = nc_get_var_int(exoid, entry_list_id, set_entry_list);
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to get entry list for %s %d in file id %d",
-	    ex_name_of_object(set_type), set_id,exoid);
-    ex_err("ex_get_set",errmsg,exerrval);
-    return (EX_FATAL);
+  /* read in the entry list and extra list arrays unless they are NULL */
+  if (set_entry_list) {
+    status = nc_get_var_int(exoid, entry_list_id, set_entry_list);
+    
+    if (status != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to get entry list for %s %d in file id %d",
+	      ex_name_of_object(set_type), set_id,exoid);
+      ex_err("ex_get_set",errmsg,exerrval);
+      return (EX_FATAL);
+    }
   }
 
   /* only do extra list for edge, face and side sets */

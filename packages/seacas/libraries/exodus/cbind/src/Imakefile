@@ -86,7 +86,7 @@ SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 	exgnsi.c   expelb.c    exgncor.c \
         expncor.c  exgnoatt.c  expnoatt.c \
 	expnvar.c  exgnvar.c   expnnv.c   exgnnv.c exgcssc.c \
-	expecpp.c  exgecpp.c
+	expecpp.c  exgecpp.c   exppidm.c
 
 OBJS = ${SRCS:.c=.o}
 
