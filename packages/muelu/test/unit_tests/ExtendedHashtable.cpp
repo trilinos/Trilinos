@@ -11,7 +11,7 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST(ExtendedHashtable, rcpTests)
+  TEUCHOS_UNIT_TEST(ExtendedHashtable, ptrTests)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -31,52 +31,30 @@ namespace MueLuTests {
     // an extended hashtable
     RCP<MueLu::UTILS::ExtendedHashtable> exh = Teuchos::rcp(new MueLu::UTILS::ExtendedHashtable());
 
-    exh->Set<RCP<Operator> >("op",Op,sapFactory);
-    RCP<Operator> test = exh->Get<RCP<Operator> > ("op",sapFactory);
+
+    exh->Set<RCP<Operator> >("op",Op,sapFactory.get());
+    RCP<Operator> test = exh->Get<RCP<Operator> > ("op",sapFactory.get());
     TEUCHOS_TEST_EQUALITY_CONST( test, Op, out, success );
 
+    exh->Set("op",22,sapFactory.get());
+    int test2 = exh->Get<int> ("op",sapFactory.get());
+    TEUCHOS_TEST_EQUALITY_CONST( test2, 22, out, success );
 
-    exh->Set<RCP<Operator> >("op",Op,sapFactory2);
-    test = exh->Get<RCP<Operator> > ("op",sapFactory2);
-    TEUCHOS_TEST_EQUALITY_CONST( test, Op, out, success );
+    exh->Set("op",Op,sapFactory2.get());
+    RCP<Operator> test3 = exh->Get<RCP<Operator> > ("op",sapFactory2.get());
+    TEUCHOS_TEST_EQUALITY_CONST( test3, Op, out, success );
+    TEUCHOS_TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int", out, success );
 
+    exh->Remove("op",sapFactory2.get());
+    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  true, out, success );
+    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false, out, success );
 
-    exh->Set("op2",24,Teuchos::null);
-    int test2 = exh->Get<int>("op2",Teuchos::null);
-    TEUCHOS_TEST_EQUALITY_CONST( test2, 24, out, success );
+    exh->Remove("op",sapFactory.get());
+    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  false, out, success );
+    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false, out, success );
 
-    exh->Set("op2",12,Teuchos::null);
-    test2 = exh->Get<int>("op2",Teuchos::null);
-    TEUCHOS_TEST_EQUALITY_CONST( test2, 12, out, success );
-
-    exh->Remove("op",sapFactory2);
-    exh->Remove("op",sapFactory);
-
-    exh->Set<std::string>("op","xxx",sapFactory2);
-    std::string test3 = exh->Get<std::string> ("op",sapFactory2);
-    TEUCHOS_TEST_EQUALITY_CONST( test3, "xxx", out, success );
 
   }
-
-  /*TEUCHOS_UNIT_TEST(SaPFactory, GetSetMethods)
-  {
-    out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    sapFactory->SetDampingFactor( (Scalar)4/3 );
-    TEUCHOS_TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true, out, success);
-    sapFactory->TentativeWithQR(true);
-    TEUCHOS_TEST_EQUALITY( sapFactory->TentativeWithQR(), true, out, success);
-    sapFactory->ReUseP(true);
-    TEUCHOS_TEST_EQUALITY( sapFactory->ReUseP(), true, out, success);
-    sapFactory->ReUsePtent(true);
-    TEUCHOS_TEST_EQUALITY( sapFactory->ReUsePtent(), true, out, success);
-    sapFactory->SetDiagonalView("roomWithAView");
-    TEUCHOS_TEST_EQUALITY( sapFactory->GetDiagonalView(), "roomWithAView", out, success);
-    TEST_THROW( sapFactory->SetUseAFiltered(true), MueLu::Exceptions::NotImplemented ); //FIXME
-
-  } //GetSetMethods*/
-
 
 }//namespace MueLuTests
 
