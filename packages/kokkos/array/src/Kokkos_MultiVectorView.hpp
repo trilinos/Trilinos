@@ -217,6 +217,11 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
   Impl::multivector_require_equal_dimension( dst.length() , dst.count() ,
                                              src.length() , src.count() );
 
+#if 0
+  Impl::MultiVectorDeepCopy<ValueType,
+                            DeviceDst,dst_type::Contiguous,
+                            DeviceSrc,src_type::Contiguous>::run( dst , src );
+#endif
   Impl::MultiVectorDeepCopy<ValueType,
                             DeviceDst,dst_type::Contiguous,
                             DeviceSrc,src_type::Contiguous>::run( dst , src );

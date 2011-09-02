@@ -60,20 +60,19 @@
 
 namespace Test {
 
-void run_test_cuda_hexgrad( int beg , int end )
-{
+void test_device_cuda_init() {
   Kokkos::DeviceCuda::initialize();
-  Test::run_test_hexgrad< Kokkos::DeviceCuda>( beg , end );
-};
-
-void run_test_cuda_gramschmidt( int beg , int end )
-{
-  Kokkos::DeviceCuda::initialize();
-  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( beg , end );
-};
-
 }
 
+void test_cuda_hexgrad(int exp_beg, int exp_end)
+{
+  run_test_hexgrad< Kokkos::DeviceCuda>( beg , end );
+}
 
+void test_cuda_gramschmidt(int exp_beg, int exp_end);
+{
+  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( beg , end );
+}
 
+} // namespace Test
 
