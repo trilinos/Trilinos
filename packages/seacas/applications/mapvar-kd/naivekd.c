@@ -216,7 +216,6 @@ void InsertNode(TreePtr P,
 {
   int succ;
   TreePtr Son,Q;
-  int index = P->Index;
 
   /* check for root */
   if (Root == NULL) {

@@ -58,8 +58,6 @@ namespace Ioss {
     /// An example would be 'face_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
 
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
-
   protected:
     int internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;

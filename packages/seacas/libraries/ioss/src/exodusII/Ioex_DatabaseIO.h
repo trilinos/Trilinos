@@ -143,7 +143,7 @@ namespace Ioex {
 			       std::vector<std::string> &block_adjacency) const;
 
     void compute_block_membership(int id, std::vector<std::string> &block_membership) const;
-    void compute_block_membership(Ioss::EntityBlock *efblock,
+    void compute_block_membership(Ioss::SideBlock *efblock,
 				  std::vector<std::string> &block_membership) const;
 
   private:

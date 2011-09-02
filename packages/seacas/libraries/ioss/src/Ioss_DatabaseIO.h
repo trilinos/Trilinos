@@ -141,15 +141,14 @@ namespace Ioss {
       
       void set_block_omissions(const std::vector<std::string> &omissions);
       
-      virtual void get_block_adjacencies(const Ioss::EntityBlock *eb,
-					 std::vector<std::string> &block_adjacency) const {}
       virtual void get_block_adjacencies(const Ioss::ElementBlock *eb,
 					 std::vector<std::string> &block_adjacency) const {}
       virtual void compute_block_membership(int id,
 					    std::vector<std::string> &block_membership) const {}
 
-      virtual void compute_block_membership(Ioss::EntityBlock *efblock,
-					    std::vector<std::string> &block_membership) const {}
+      virtual void compute_block_membership(Ioss::SideBlock *efblock,
+                                           std::vector<std::string> &block_membership) const {}
+ 
 
       /*!
        * The owning region of this database.

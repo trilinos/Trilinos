@@ -2131,7 +2131,7 @@ namespace Ioex {
       }
     }
   
-    void DatabaseIO::compute_block_membership(Ioss::EntityBlock *efblock,
+    void DatabaseIO::compute_block_membership(Ioss::SideBlock *efblock,
 					      std::vector<std::string> &block_membership) const
     {
       Ioss::IntVector block_ids(m_groupCount[EX_ELEM_BLOCK]);

@@ -71,8 +71,3 @@ int Ioss::EdgeBlock::internal_put_field_data(const Ioss::Field& field,
 {
   return get_database()->put_field(this, field, data, data_size);
 }
-
-void Ioss::EdgeBlock::get_block_adjacencies(std::vector<std::string> &block_adjacency) const
-{
-  get_database()->get_block_adjacencies(this, block_adjacency);
-}

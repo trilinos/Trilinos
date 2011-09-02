@@ -414,6 +414,7 @@ namespace {
 
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
+#if 0
 	std::vector<std::string> blocks;
 	(*i)->get_block_adjacencies(blocks);
 	OUTPUT << "\tAdjacent to  " << blocks.size() << " edge block(s):\t";
@@ -421,6 +422,7 @@ namespace {
 	while (b != blocks.end()) {
 	  OUTPUT << *b++ << "  ";
 	}
+#endif
 	info_fields(*i, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
 	OUTPUT << "\n";
       }
@@ -454,6 +456,7 @@ namespace {
 
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
+#if 0
 	std::vector<std::string> blocks;
 	(*i)->get_block_adjacencies(blocks);
 	OUTPUT << "\tAdjacent to  " << blocks.size() << " face block(s):\t";
@@ -461,6 +464,7 @@ namespace {
 	while (b != blocks.end()) {
 	  OUTPUT << *b++ << "  ";
 	}
+#endif
 	info_fields(*i, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
 	OUTPUT << "\n";
       }
