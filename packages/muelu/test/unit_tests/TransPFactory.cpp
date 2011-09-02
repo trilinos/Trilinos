@@ -44,11 +44,11 @@ namespace MueLuTests {
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    TransPFactory transPFact;
+    TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
     transPFact.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
+    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFact);
 
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result2  = MultiVectorFactory::Build(R->getRangeMap(),1);
