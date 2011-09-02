@@ -169,7 +169,7 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj *plan=NULL;
   ZOLTAN_GNO_TYPE *listgno=NULL;
   char *buffer=NULL, *rbuffer=NULL, *b=NULL, *b_end=NULL;
-  double *coordbuf=NULL, *coordrecbuf=NULL, *cb=NULL, *cb_end=NULL;
+  double *coordbuf=NULL, *coordrecbuf=NULL;
   int *ahvertex=NULL;
   int *msg_size=NULL;     /* TODO64 - would we ever need ZOLTAN_GNO_TYPE for message sizes? */
   double *coorcount = NULL; /* No. of vertices represented by the corresponding c_hg->coor */

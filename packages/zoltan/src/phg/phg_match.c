@@ -2427,7 +2427,6 @@ for (i =0; i < hg->nVtx; i++)
     hgp->matching = pmatching_agg_ipm;
     sprintf(hgp->redm_str, "agg");
   }
-  if (zz->Proc == 0) printf("KDDKDD GEOM_MATCHING %d %d %x\n", hg->info, hgp->geometric_levels, hgp->matching);
 
  End:
   Zoltan_Destroy(&zz2);
