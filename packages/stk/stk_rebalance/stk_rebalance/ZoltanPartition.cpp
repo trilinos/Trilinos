@@ -14,8 +14,7 @@
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-/* The Zoltan Include file has an odd name: lbi_ */
-#include <lbi_const.h>
+#include <zoltan.h>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -97,7 +96,7 @@ void fill_name_conversion( Parameters & name_conversion )
   general.set("OCTREE METHOD"              , "OCT_METHOD");
   general.set("OCTREE MIN ENTITIES"         , "OCT_MINOBJECTS");
   general.set("OCTREE MAX ENTITIES"         , "OCT_MAXOBJECTS");
-  // These values are never changed, but must
+//  // These values are never changed, but must
   // be set so default values work correctly.
   general.set("NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES");
   general.set("NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES");
@@ -158,8 +157,8 @@ void fill_default_values( Parameters & values )
   default_values.set("REUSE CUTS"                 , "1");
   default_values.set("OVER ALLOCATE MEMORY"       , "1.1");
   default_values.set("ALGORITHM DEBUG LEVEL"      , "0");
-  default_values.set("OCTREE MIN ENTITIES"        , "1");
-  default_values.set("OCTREE MAX ENTITIES"        , "1");
+//  default_values.set("OCTREE MIN ENTITIES"        , "1");
+//  default_values.set("OCTREE MAX ENTITIES"        , "1");
   default_values.set("NUMBER GLOBAL ID ENTRIES"   , "2");
   default_values.set("NUMBER LOCAL ID ENTRIES"    , "2");
   default_values.set("ENTITY WEIGHT DIMENSION"    , "1");
