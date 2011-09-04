@@ -134,8 +134,8 @@ int Zoltan_HUND(
   int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  int *rank,            /* rank[i] is the rank of gids[i] */
-  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
+  ZOLTAN_ID_PTR rank            /* rank[i] is the rank of gids[i] */
+  /* int *iperm            /\* iperm[rank[i]]=i, only for sequential ordering *\/ */
   );
 #endif /* CEDRIC_2D_PARTITIONS */
 

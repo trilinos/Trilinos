@@ -70,12 +70,12 @@ int Zoltan_CColAMD(
   int nPart,
   int *num_obj,
   ZOLTAN_ID_PTR *gid,
-  int **rank
+  ZOLTAN_ID_PTR *rank
   );
 */
 #else /* SIMPLE_HUND */
 static int
-HUND_Order_simple(ZZ* zz, int num_local_gid, ZOLTAN_ID_TYPE * part, int numParts, int* sizeParts, ZOLTAN_ID_TYPE* dperm); /* result is stored into a DD */
+HUND_Order_simple(ZZ* zz, int num_local_gid, ZOLTAN_ID_PTR part, int numParts, int* sizeParts, ZOLTAN_ID_PTR dperm); /* result is stored into a DD */
 #endif
 
 int Zoltan_HUND(
@@ -84,8 +84,8 @@ int Zoltan_HUND(
   int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  ZOLTAN_ID_TYPE *rank,  /* rank[i] is the rank of gids[i] */
-  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
+  ZOLTAN_ID_PTR rank  /* rank[i] is the rank of gids[i] */
+  /* int *iperm           /\* iperm[rank[i]]=i, only for sequential ordering *\/ */
 )
 {
   char *yo = "Zoltan_HUND";
@@ -151,9 +151,6 @@ int Zoltan_HUND(
         &procExport,    /* Process to which I send each of the vertices */
         &partExport);  /* Partition to which each vertex will belong */
 
-  if (iperm != NULL)
-    memcpy (iperm, partExport, num_obj*sizeof(int));
-
   ZOLTAN_FREE(&gidExport);
   ZOLTAN_FREE(&lidExport);
   ZOLTAN_FREE(&procExport);
@@ -190,7 +187,7 @@ int Zoltan_HUND(
   */
 #endif /* SIMPLE_HUND */
 
-  Zoltan_DD_Update (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)dperm, NULL,  part, num_local_gid);
+  Zoltan_DD_Update (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)dperm, NULL,  NULL /* part */, num_local_gid);
   ZOLTAN_FREE(&dperm);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&local_gid);

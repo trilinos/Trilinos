@@ -216,7 +216,7 @@ int Zoltan_Order (
 #endif /* ZOLTAN_SCOTCH */
 #ifdef ZOLTAN_HUND
   else if (!strcasecmp(opt.method, "HUND")) {
-    ierr = Zoltan_HUND(zz, num_gid_entries, num_obj, gids, permuted_global_ids, NULL);
+    ierr = Zoltan_HUND(zz, num_gid_entries, num_obj, gids, permuted_global_ids);
     goto End;
   }
 #endif /* ZOLTAN_HUND */
