@@ -2,6 +2,7 @@
 #define MUELU_NEEDS_HPP
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TestForException.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -116,7 +117,10 @@ namespace MueLu {
       DecrementCounter(ename,factory);
 
       // desallocation if counter gets zero
-      if (countTable_.Get<int>(ename,factory) == 0) // todo: handle keepAll
+      int numReq = -1;
+      countTable_.Get<int>(ename,numReq,factory);
+      if(numReq==-1) throw(Exceptions::RuntimeError("Release: error reading countTable_(" + ename + ")"));
+      if (numReq == 0) // todo: handle keepAll
       {
         countTable_.Remove(ename,factory);
         dataTable_.Remove(ename,factory);
@@ -292,7 +296,10 @@ namespace MueLu {
             throw(Exceptions::RuntimeError(msg));
       }
 
-      return countTable_.Get<int>(ename,factory);
+      int numReq = -1;
+      countTable_.Get<int>(ename,numReq,factory);
+      if(numReq==-1) throw(Exceptions::RuntimeError("NumRequests: number of requests for " + ename + " cannot be determined. Error."));
+      return numReq;
     } //
 
     bool SetupPhase(bool bSetup)
@@ -339,9 +346,11 @@ namespace MueLu {
      * */
     void IncrementCounter(const std::string& ename, const FactoryBase* factory)
     {
-      if(countTable_.Get<int>(ename,factory) != -1) // counter not disabled (no debug mode)
+      int currentCount = -2;
+      countTable_.Get<int>(ename,currentCount,factory);
+      if(currentCount == -2) std::cout << "ERROR in IncrementCounter " << std::endl;
+      if(currentCount != -1) // counter not disabled (no debug mode)
       {
-        int currentCount = countTable_.Get<int>(ename,factory);
         countTable_.Set(ename,++currentCount,factory);
       }
     }
@@ -357,11 +366,13 @@ namespace MueLu {
      * */
     void DecrementCounter(const std::string& ename, const FactoryBase* factory)
     {
-      if(countTable_.Get<int>(ename,factory) != -1) // counter not disabled (no debug mode)
-      {
-        int currentCount = countTable_.Get<int>(ename,factory);
-        countTable_.Set(ename,--currentCount,factory);
-      }
+        int currentCount = -2;
+        countTable_.Get<int>(ename,currentCount,factory);
+        if(currentCount == -2) std::cout << "ERROR in DecrementCounter " << std::endl;
+        if(currentCount != -1) // counter not disabled (no debug mode)
+        {
+          countTable_.Set(ename,--currentCount,factory);
+        }
     }
 
     //@}

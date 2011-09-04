@@ -33,15 +33,18 @@ namespace MueLuTests {
 
 
     exh->Set<RCP<Operator> >("op",Op,sapFactory.get());
-    RCP<Operator> test = exh->Get<RCP<Operator> > ("op",sapFactory.get());
+    RCP<Operator> test = Teuchos::null;
+    exh->Get<RCP<Operator> >("op",test, sapFactory.get());
     TEUCHOS_TEST_EQUALITY_CONST( test, Op, out, success );
 
     exh->Set("op",22,sapFactory.get());
-    int test2 = exh->Get<int> ("op",sapFactory.get());
+    int test2 = -1;
+    exh->Get<int> ("op",test2,sapFactory.get());
     TEUCHOS_TEST_EQUALITY_CONST( test2, 22, out, success );
 
     exh->Set("op",Op,sapFactory2.get());
-    RCP<Operator> test3 = exh->Get<RCP<Operator> > ("op",sapFactory2.get());
+    RCP<Operator> test3 = Teuchos::null;
+    exh->Get<RCP<Operator> > ("op",test3,sapFactory2.get());
     TEUCHOS_TEST_EQUALITY_CONST( test3, Op, out, success );
     TEUCHOS_TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int", out, success );
 
@@ -52,7 +55,6 @@ namespace MueLuTests {
     exh->Remove("op",sapFactory.get());
     TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  false, out, success );
     TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false, out, success );
-
 
   }
 

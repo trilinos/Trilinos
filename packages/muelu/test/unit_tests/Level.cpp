@@ -29,6 +29,8 @@ namespace MueLuTests {
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
+    aLevel.Set("xxx",23);
+    int fff = aLevel.Get<int>("xxx");
     aLevel.Request("A");
     aLevel.Set("A",A);
     RCP<Operator> newA = aLevel.Get< RCP<Operator> >("A");

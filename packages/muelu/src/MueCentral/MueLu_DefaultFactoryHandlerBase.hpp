@@ -32,6 +32,14 @@ namespace MueLu {
       return *factoryTable_.get(varName);
     }    
 
+    //! GetDefaultFactoryRCP
+    // Returns RCP of default factory handler
+    // Factory freed at the end of FillHierarchy() //->TODO
+    virtual RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string & varName) {
+      // TODO: try/catch + better exception msg if not found
+      return factoryTable_.get(varName);
+    }
+
     void SetDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
       // TODO: if (varName already exist) ...
       factoryTable_.put(varName, factory);

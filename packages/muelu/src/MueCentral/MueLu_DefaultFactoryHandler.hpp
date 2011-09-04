@@ -58,6 +58,11 @@ namespace MueLu {
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName);
     }
 
+    virtual RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string & varName) {
+    	GetDefaultFactory(varName);	// call GetDefaultFactory, that generates default factories if necessary
+    	return DefaultFactoryHandlerBase::GetDefaultFactoryRCP(varName);
+    }
+
     //TODO GetDefaultObject, for Smoothers
 
     //@}
