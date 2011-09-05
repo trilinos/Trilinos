@@ -128,7 +128,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   RAPFactory    AcFact;
 
   out << "Providing both factories to FillHierarchy." << std::endl;
-  //  H.FillHierarchy(PRFact,AcFact); //TODOTODOTODOTODOTODOTODOTODO
+  H.FillHierarchy(PRFact,AcFact);
 } //FillHierarchy_BothFactories
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
