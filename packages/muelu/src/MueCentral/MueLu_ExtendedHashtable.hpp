@@ -284,7 +284,7 @@ private:
         return (i->second);
     }
 
-    inline
+    /*inline
     Teuchos::ParameterEntry* getEntryPtr(const std::string& ename, const FactoryBase* factory)
     {
         dataMapType& mapData = dataTable_[ename];
@@ -303,7 +303,7 @@ private:
         if (i == mapData.end() )
             return NULL;
         return &entry(i);
-    }
+    }*/
 
     //@}
 
