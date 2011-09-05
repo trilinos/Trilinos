@@ -29,8 +29,15 @@ namespace MueLuTests {
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
-    aLevel.Set("xxx",23);
-    int fff = aLevel.Get<int>("xxx");
+    aLevel.Set("Hitchhiker's Guide",42);
+    int fff = aLevel.Get<int>("Hitchhiker's Guide");
+    TEUCHOS_TEST_EQUALITY(fff, 42, out, success);
+    aLevel.Set("PI",3.14159265);
+    double ggg = aLevel.Get<double>("PI");
+    TEUCHOS_TEST_EQUALITY(ggg, 3.14159265, out, success);
+    aLevel.Set("Hello MueLu", std::string("Greetings to MueMat"));
+    std::string hhh = aLevel.Get<std::string>("Hello MueLu");
+    TEUCHOS_TEST_EQUALITY(hhh, "Greetings to MueMat", out, success);
     aLevel.Request("A");
     aLevel.Set("A",A);
     RCP<Operator> newA = aLevel.Get< RCP<Operator> >("A");
@@ -45,6 +52,8 @@ namespace MueLuTests {
     TEUCHOS_TEST_EQUALITY(newP, A, out, success);
     aLevel.SetLevelID(42);
     TEUCHOS_TEST_EQUALITY(aLevel.GetLevelID(), 42, out, success); //TODO: test default value of LevelID
+
+    aLevel.print(std::cout);
 
     /*
       RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();

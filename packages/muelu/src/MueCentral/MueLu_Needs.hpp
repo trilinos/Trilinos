@@ -229,7 +229,7 @@ namespace MueLu {
       //std::cout << foo.dataTable_ << std::endl;
     } //RawPrint
 
-    void Print(std::ostream &out)
+    /*void Print(std::ostream &out)
     {
       Teuchos::TabularOutputter outputter(out);
       outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT,Teuchos::TabularOutputter::GENERAL,12);
@@ -250,7 +250,71 @@ namespace MueLu {
           outputter.nextRow();
         }
       }
+    }*/
+
+    //! @name I/O Functions
+    //@{
+
+    /*! \brief Printing method for level.*/
+    std::ostream& print(std::ostream& os) const
+    {
+        Teuchos::TabularOutputter outputter(os);
+        outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT,Teuchos::TabularOutputter::GENERAL,32);
+        outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+        outputter.pushFieldSpec("req", Teuchos::TabularOutputter::INT,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
+        outputter.pushFieldSpec("type", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
+        outputter.pushFieldSpec("data", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
+        outputter.outputHeader();
+
+        std::vector<std::string> ekeys = countTable_.keys();
+        for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
+        {
+            std::vector<const MueLu::FactoryBase*> ehandles = countTable_.handles(*it);
+            for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+            {
+                outputter.outputField(*it);   // variable name
+                outputter.outputField(*kt);   // factory ptr
+                int reqcount = 0;             // request counter
+                countTable_.Get<int>(*it,reqcount,*kt);
+                outputter.outputField(reqcount);
+                                              // variable type
+                std::string strType = dataTable_.GetType(*it,*kt);
+                if(strType.find("Xpetra::Operator")!=std::string::npos)
+                {
+                    outputter.outputField("Operator");
+                    outputter.outputField(" ");
+                }
+                else if(strType == "int")
+                {
+                    outputter.outputField(strType);
+                    int data = 0; dataTable_.Get<int>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else if(strType == "double")
+                {
+                    outputter.outputField(strType);
+                    double data = 0.0; dataTable_.Get<double>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else if(strType == "string")
+                {
+                    outputter.outputField(strType);
+                    std::string data = ""; dataTable_.Get<std::string>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else
+                {
+                    outputter.outputField(strType);
+                    outputter.outputField("unknown");
+                }
+
+                outputter.nextRow();
+            }
+        }
+        return os;
     }
+
+    //@}
 
     //! Test whether a need's value has been saved.
     bool IsAvailable(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
@@ -379,20 +443,21 @@ namespace MueLu {
 
   }; //class Needs
 
-  /*
+
   //! NeedsTable pretty print
-  std::ostream& operator<<(std::ostream &os, Needs const &foo) {
-  std::cout << "name  |  #requests  |  value" << std::endl;
+  /*std::ostream& operator<<(std::ostream &os, Needs const &foo) {
+  /*std::cout << "name  |  #requests  |  value" << std::endl;
   std::cout << "============================" << std::endl;
   for (Teuchos::ParameterList::ConstIterator param=foo.countTable_.begin(); param!=foo.countTable_.end() ; param++) {
   const std::string pname = foo.countTable_.name(param);
   const int& numRequests = foo.countTable_.get<int>(pname);
   const Teuchos::ParameterEntry &someEntry = foo.dataTable_.getEntry(pname);
   std::cout << pname << " | " << numRequests << " | " << someEntry << std::endl;
-  }
-  return os;
-  }
-  */
+  }*/
+  //foo.print(os);
+  //return os;
+  //}
+
 
 } //namespace MueLu
 
