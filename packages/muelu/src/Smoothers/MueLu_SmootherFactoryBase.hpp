@@ -2,6 +2,7 @@
 #define MUELU_SMOOTHERFACTORYBASE_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Types.hpp"
 
 namespace MueLu {
@@ -19,9 +20,6 @@ namespace MueLu {
   class SmootherFactoryBase : public SingleLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
-
-  private:
-    bool DoCoarsest_;
 
   public:
     //@{ Constructors/Destructors.

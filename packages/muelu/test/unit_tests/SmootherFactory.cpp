@@ -133,8 +133,8 @@ namespace MueLuTests {
         //same prototype for pre and post smoothers
         smooFactory->Build(*aLevel);
         {
-          RCP<SmootherPrototype> preSmoo = aLevel->Get< RCP<SmootherPrototype> >("PreSmoother");
-          RCP<SmootherPrototype> postSmoo = aLevel->Get< RCP<SmootherPrototype> >("PostSmoother");
+          RCP<SmootherPrototype> preSmoo = aLevel->Get< RCP<SmootherPrototype> >("PreSmoother", smooFactory);
+          RCP<SmootherPrototype> postSmoo = aLevel->Get< RCP<SmootherPrototype> >("PostSmoother", smooFactory);
           TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
           TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
         }
@@ -143,8 +143,8 @@ namespace MueLuTests {
         smooFactory = rcp(new SmootherFactory(smooProto1,smooProto2) );
         smooFactory->Build(*aLevel);
         {
-          RCP<SmootherPrototype> preSmoo = aLevel->Get< RCP<SmootherPrototype> >("PreSmoother");
-          RCP<SmootherPrototype> postSmoo = aLevel->Get< RCP<SmootherPrototype> >("PostSmoother");
+          RCP<SmootherPrototype> preSmoo = aLevel->Get< RCP<SmootherPrototype> >("PreSmoother", smooFactory);
+          RCP<SmootherPrototype> postSmoo = aLevel->Get< RCP<SmootherPrototype> >("PostSmoother", smooFactory);
           TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
           TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Jacobi",out,success);
         }
