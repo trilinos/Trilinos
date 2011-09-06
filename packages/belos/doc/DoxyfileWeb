@@ -101,7 +101,21 @@ FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = ../epetra/example \
+                         ../epetra/example/BlockCG/BlockCGEpetraExFile.cpp \
+                         ../epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp \
+                         ../epetra/example/BlockCG/PseudoBlockCGEpetraExFile.cpp \
+                         ../epetra/example/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp \
+                         ../epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp \
+                         ../epetra/example/GCRODR/GCRODREpetraExFile.cpp \
+                         ../epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp \
+                         ../epetra/example/RCG/RCGEpetraExFile.cpp \
+                         ../epetra/example/TFQMR/TFQMREpetraExFile.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             =
 INPUT_FILTER           = 
