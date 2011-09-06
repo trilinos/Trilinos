@@ -19,7 +19,7 @@ SET(SOURCES
    bs.f      elton1.f  flgrad.f  inielt.f  intrpn.f  mke.f     opnfil.f  rdb1.f    shapef.f  srchgt.f  stran.f   vol.f)
 
 PACKAGE_ADD_LIBRARY(mapvar_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(mapvar NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES mapvar.f DEPLIBS mapvar_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(mapvar NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES mapvar.f DEPLIBS mapvar_app_lib COMM serial)
 install_executable(mapvar)
 
 SUBPACKAGE_POSTPROCESS()

@@ -45,7 +45,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${forbind_OLDTESTS} )
-    PACKAGE_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX SOURCES ${testName}.f LINKER_LANGUAGE CXX DEPLIBS exodus_for)
+    PACKAGE_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX LINKER_LANGUAGE Fortran SOURCES ${testName}.f DEPLIBS exodus_for)
   ENDFOREACH ( testName )
 
   PACKAGE_ADD_ADVANCED_TEST(

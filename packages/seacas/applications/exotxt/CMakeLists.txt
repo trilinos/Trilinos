@@ -17,7 +17,7 @@ SET(SOURCES
    dbign.f   dbiste.f  dbvini.f  wrelb.f   wrmap.f   wrqa.f)
 
 PACKAGE_ADD_LIBRARY(exotxt_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(exotxt NOEXEPREFIX NOEXESUFFIX SOURCES exotxt.f DEPLIBS exotxt_app_lib supes suplib exodus_for)
+PACKAGE_ADD_EXECUTABLE(exotxt NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES exotxt.f DEPLIBS exotxt_app_lib supes suplib exodus_for)
 install_executable(exotxt)
 
 SUBPACKAGE_POSTPROCESS()

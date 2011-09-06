@@ -22,7 +22,7 @@ SET(SOURCES
    bldptn.f    debug.f     extq.f      initlz.f    optkd.c     rundat.blk  srchh.f     toldat.blk)
 
 PACKAGE_ADD_LIBRARY(mapvar-kd_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(mapvar-kd NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES mapvar-kd.f DEPLIBS mapvar-kd_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(mapvar-kd NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES mapvar-kd.f DEPLIBS mapvar-kd_app_lib COMM serial)
 install_executable(mapvar-kd)
 
 SUBPACKAGE_POSTPROCESS()

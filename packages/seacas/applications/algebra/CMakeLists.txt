@@ -22,7 +22,7 @@ SET(SOURCES
    chkfnc.f   dbielb.f   dbpnam.f   doif.f     lnkfnc.f   mlist.f    opnlog.f   remel.f    shptim.f   uhist.f    zmnps.f)
 
 PACKAGE_ADD_LIBRARY(algebra_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(algebra NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES algebra.f DEPLIBS algebra_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(algebra NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} LINKER_LANGUAGE Fortran SOURCES algebra.f DEPLIBS algebra_app_lib COMM serial)
 install_executable(algebra)
 
 SUBPACKAGE_POSTPROCESS()

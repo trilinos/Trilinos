@@ -17,7 +17,7 @@ SET(SOURCES prtelb.F prtess.F prtnps.F
    dbmir1.f dorot.f  getall.f inigen.f irennp.f movint.f muness.f offset.f outlog.f renix.f  setsta.f zmfixd.f zmxyz.f)
 
 PACKAGE_ADD_LIBRARY(gjoin_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial)
 
 install_executable(gjoin)
 

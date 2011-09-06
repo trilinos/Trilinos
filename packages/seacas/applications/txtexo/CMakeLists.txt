@@ -16,7 +16,7 @@ SET(SOURCES
    rdeb1.f   rdess.f   rdmap.f   rdnps.f   rwname.f  rwpval1.f rwstep.f)
 
 PACKAGE_ADD_LIBRARY(txtexo_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for exodus)
-PACKAGE_ADD_EXECUTABLE(txtexo NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES txtexo.f DEPLIBS txtexo_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(txtexo NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES txtexo.f DEPLIBS txtexo_app_lib COMM serial)
 install_executable(txtexo)
 
 SUBPACKAGE_POSTPROCESS()

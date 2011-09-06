@@ -18,7 +18,7 @@ SET(SOURCES
    ckelb.f  comand.f numstr.f prelb.f  prglob.f prname.f prqa.f   prvers.f rdelb.f  rdnam1.f rdqa.f   rixint.f selset.f)
 
 PACKAGE_ADD_LIBRARY(grope_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES grope.f DEPLIBS grope_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES grope.f DEPLIBS grope_app_lib COMM serial)
 
 install_executable(grope)
 
