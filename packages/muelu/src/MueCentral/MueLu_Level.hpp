@@ -92,6 +92,7 @@ public:
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string ename, const T &entry, const FactoryBase* factory) {
+      //      TEST_FOR_EXCEPTION(not null, or reference instead);
         Needs::SetData<T>(ename, entry, factory);
     } //Set
 

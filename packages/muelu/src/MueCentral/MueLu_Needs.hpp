@@ -446,7 +446,7 @@ namespace MueLu {
 
   //! NeedsTable pretty print
   /*std::ostream& operator<<(std::ostream &os, Needs const &foo) {
-  /*std::cout << "name  |  #requests  |  value" << std::endl;
+  std::cout << "name  |  #requests  |  value" << std::endl;
   std::cout << "============================" << std::endl;
   for (Teuchos::ParameterList::ConstIterator param=foo.countTable_.begin(); param!=foo.countTable_.end() ; param++) {
   const std::string pname = foo.countTable_.name(param);
