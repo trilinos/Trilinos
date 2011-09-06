@@ -4,7 +4,7 @@ SEACAS uses the following TPLS, some are optional:
 
 * netcdf -- http://www.unidata.ucar.edu/software/netcdf/index.html
   - used by exodus and nemesis (and ioss since it uses exodus and nemesis)
-  - see exodus/README for some details on modifications recommended for netcdf.
+  - see libraries/exodus/README for some details on modifications recommended for netcdf.
 
 * xdmf -- http://xdmf.org/index.php/Main_Page
   - optionally used for ioss.  A DoD HPC code output format.
@@ -21,12 +21,20 @@ CMake defines used to build SEACAS:
   
   EXODUS:  
     If the exodus library should be built, then add the defines:
-      -D SEACAS_ENABLE_EXODUS:BOOL=TRUE 
-      -D TPL_ENABLE_netcdf:BOOL=ON 
-      -D TPL_Netcdf_INCLUDE_DIRS:PATH={path to netcdf includes}
+      -D Trilinos_ENABLE_SEACAS:BOOL=ON 
+      -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
       -D Netcdf_LIBRARY_DIRS:PATH={path to netcdf library}
+      -D TPL_ENABLE_Netcdf:BOOL=ON
+      -D TPL_Netcdf_INCLUDE_DIRS:PATH={path to netcdf includes}
     This will also enable exodus support in the ioss library.
       
+    If using a netcdf library that is built with --enable-netcdf-4,
+    then you also need to tell it to link with the hdf5
+    libraries. There is not really a good way to do this; the best
+    option is:
+
+    -D Trilinos_EXTRA_LINK_FLAGS="-L{path_to_hdf5_libraries} -lhdf5_hl -lhdf5 -lz -lm"
+
   PAMGEN: 
     For pamgen support in ioss, add the defines:
       -D Trilinos_ENABLE_Pamgen:BOOL=TRUE 
@@ -54,31 +62,41 @@ export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
 
 #MPI=ON
 MPI=OFF
+
+if [ "$MPI" == "ON" ]
+then
+  CXX=${MPI_BASE_DIR}/bin/mpiCC
+  CC=${MPI_BASE_DIR}/bin/mpicc
+  FC=${MPI_BASE_DIR}/bin/mpif77
+else
+  CXX=/opt/local/bin/g++-mp-4.5
+  CC=/opt/local/bin/gcc-mp-4.5
+  FC=/opt/local/bin/gcc-gfortran-mp-4.5
+fi
+
 ACCESS=/home/gdsjaar/src/SEACAS.git/netcdf-tmp/
 
 cmake  \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
+-D CMAKE_C_COMPILER:FILEPATH=${CC} \
+-D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
 -D CMAKE_INSTALL_PREFIX:PATH=../install_gnu4.2.4ip \
--D CMAKE_BUILD_TYPE:STRING=DEBUG \
--D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
--D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
--D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
--D CMAKE_Fortran_COMPILER:FILEPATH=$FORTRAN_COMPILER \
--D DART_TESTING_TIMEOUT:STRING=600 \
--D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
--D Trilinos_ENABLE_TESTS:BOOL=ON \
--D Trilinos_ENABLE_SEACAS:BOOL=ON \
--D Trilinos_ENABLE_STK:BOOL=OFF \
--D Trilinos_ENABLE_Pamgen:BOOL=OFF \
--D TPL_ENABLE_MPI:BOOL=OFF \
--D TPL_ENABLE_Netcdf:BOOL=ON \
--D TPL_Netcdf_INCLUDE_DIRS:PATH=$ACCESS/include \
--D Netcdf_LIBRARY_DIRS:PATH=$ACCESS/lib \
--D SEACAS_ENABLE_XDMF:BOOL=FALSE \
--D SEACAS_ENABLE_EXODUS:BOOL=TRUE \
 -D CMAKE_INSTALL_PREFIX:PATH=/scratch/gdsjaar/TrilinosTest \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D Netcdf_LIBRARY_DIRS:PATH=${ACCESS}/lib \
+-D TPL_Boost_INCLUDE_DIRS:PATH=/Users/gdsjaar/src/Sierra/votd/TPLs_src/boost/ \
+-D TPL_ENABLE_MATLAB:BOOL=OFF \
 -D TPL_ENABLE_MPI:BOOL=${MPI} \
--D Trilinos_ENABLE_MPI:BOOL=${MPI} \
--D SEACAS_ENABLE_APPLICATIONS:BOOL=ON \
+-D TPL_ENABLE_Netcdf:BOOL=ON \
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=${ACCESS}/include \
+-D Trilinos_EXTRA_LINK_FLAGS="-L${ACCESS}/lib -lhdf5_hl -lhdf5 -lz -lm" \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+-D Trilinos_ENABLE_Pamgen:BOOL=ON \
+-D Trilinos_ENABLE_SEACAS:BOOL=ON \
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
 $EXTRA_ARGS \
 ../
 
