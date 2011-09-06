@@ -65,7 +65,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & list)
       : amesos2Type_(type), list_(list), out_(this->getOStream())
     {
-      SmootherBase::SetType(type);
+      //      SmootherBase::SetType(type);
       SmootherPrototype::IsSetup(false);
     }
 
