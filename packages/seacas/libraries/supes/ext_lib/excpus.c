@@ -54,7 +54,7 @@
 #undef linux
 #endif             /* interix */
 
-#if defined(aix) || defined(__VACPP__) || defined(hpux) || defined (sun) || defined (sgi) || defined (__osf__) || defined(linux) || defined (__APPLE__) || defined(__CYGWIN__) || defined(p6)
+#if defined(aix) || defined(__VACPP__) || defined(hpux) || defined (sun) || defined (sgi) || defined (__osf__) || defined(__linux__) || defined (__APPLE__) || defined(__CYGWIN__) || defined(p6)
 
 #if defined(__NO_CYGWIN_OPTION__)
 #include <windows.h>

@@ -395,7 +395,7 @@ void exparm( char *hard, char *soft, FTNINT *mode,
 #endif/* Darwin (Power Macintosh)*/
 
 /********************************************************************/
-#if defined (linux) || defined (interix) 
+#if defined (__linux__) || defined (interix) 
   struct utsname SysInfo;
   char hardname[MAXCHAR];
   char softname[MAXCHAR];
