@@ -456,14 +456,18 @@ void Zoltan_Print_Configuration(char *indent)
 
 #ifdef ZOLTAN_PTSCOTCH
   printf("%sThird party library: PTScotch ", indent);
-  printf("version %d.%d.%d\n", 
-         SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #ifdef SCOTCH_VERSION
+    printf("version %d.%d.%d\n", 
+           SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #endif
 #endif
 
 #ifdef ZOLTAN_SCOTCH
   printf("%sThird party library: Scotch ", indent);
-  printf("version %d.%d.%d\n", 
-         SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #ifdef SCOTCH_VERSION
+    printf("version %d.%d.%d\n", 
+           SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #endif
 #endif
 }
 
