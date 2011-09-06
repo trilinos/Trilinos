@@ -46,7 +46,7 @@ public:
      */
    template <typename EvalT>
    bool isResponseType(const std::string & type) const
-   { //return true; 
+   { 
      return getAggregatorManager().template isAggregator<EvalT>(type);
    }
 
@@ -54,8 +54,6 @@ public:
    template <typename EvalT>
    const ResponseAggregatorBase<TraitsT> & getAggregator(const std::string & type) const
    {
-      // static ResponseFunctional_Aggregator<EvalT,TraitsT> rfa;
-      // return rfa;
       return getAggregatorManager().template getAggregator<EvalT>(type);
    }
 
