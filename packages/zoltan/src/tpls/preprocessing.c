@@ -788,7 +788,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 
 /****************************************************************************/
 /*
- * Scale and round float weights to integer (non-negative) weights
+ * Scale and round float weights to weighttype
  * subject to sum(weights) <= max_wgt_sum.
  * Only scale if deemed necessary.
  *
@@ -801,7 +801,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
  */
 
 static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
-                 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm)
+                 int mode, weighttype max_wgt_sum, int debug_level, MPI_Comm comm)
 {
   int i, j, tmp, ierr, proc;
   int *nonint, *nonint_local;

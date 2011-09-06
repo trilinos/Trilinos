@@ -22,161 +22,129 @@ extern "C" {
 
 #include "zoltan_util.h"
 
+/****************************************************************************/
+/*  TPL-Specific settings for data types                                    */
 /*
- * "indextype" is the type used for global IDs and indices in the graph data structure.
- * "weighttype" is the type used for weights.  If there is only one third party library
- * linked in for graph algorithms, define indextype and weighttype to match the types
- * used by that library.
+ * "indextype" is the type used for global numbers and indices in the graph 
+ *  data structure.
+ * "weighttype" is the type used for weights.  
+ * 
+ * If there is only one third party library used for graph algorithms, 
+ * define indextype and weighttype to match the types used by that library.
  *
- * If more than one such library is linked in, arbitrarily choose one.  At runtime if
- * either the indextype or weighttype is not compatible with the graph library API, then
- * print an error message.
+ * If more than one library is linked in, arbitrarily choose one. At runtime, if
+ * either the indextype or weighttype is not compatible with the graph library 
+ * API, return an error.
  *
- * If there are no third party graph/ordering libraries then let indextype be ZOLTAN_ID_TYPE 
- * and let "weighttype" be float.
- *
+ * If there are no third party graph/ordering libraries, let indextype be 
+ * ZOLTAN_GNO_TYPE and let "weighttype" be float.
  */
+
+/* KDDKDD Use ZOLTAN_GNO_TYPE or ZOLTAN_ID_TYPE???? */
 
 #define TPL_SCOTCH_DATATYPES   1
 #define TPL_METIS_DATATYPES    2
 #define TPL_ZOLTAN_DATATYPES   3
 
 #undef TPL_USE_DATATYPE
-
 #undef indextype
 #undef weighttype
 
-#ifdef ZOLTAN_PARMETIS
-#define __parmetis__ 1
-#else
-#define __parmetis__ 0
-#endif
-
 #ifdef ZOLTAN_METIS
-#define __metis__ 1
+  #include "metis.h"
+  #define __metis__ 1
 #else
-#define __metis__ 0
+  #define __metis__ 0
 #endif
 
-#ifdef ZOLTAN_SCOTCH
-#define __scotch__ 1
+#ifdef ZOLTAN_PARMETIS
+  #include "parmetis.h"
+  #define __parmetis__ 1
 #else
-#define __scotch__ 0
+  #define __parmetis__ 0
 #endif
 
 #ifdef ZOLTAN_PTSCOTCH
-#define __ptscotch__ 1
+  #include "ptscotch.h"
+  #define __ptscotch__ 1
 #else
-#define __ptscotch__ 0
+  #define __ptscotch__ 0
 #endif
 
-#if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ == 1
+#ifdef ZOLTAN_SCOTCH
+  #ifndef ZOLTAN_PTSCOTCH
+    #include "scotch.h"
+  #endif
+  #define __scotch__ 1
+#else
+  #define __scotch__ 0
+#endif
 
-  #ifdef ZOLTAN_PARMETIS
-    #include<parmetis.h>
-    #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
-  #endif
-  #ifdef ZOLTAN_METIS
-    #include<metis.h>
-    #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
-  #endif
-  #ifdef ZOLTAN_SCOTCH
-    #include<scotch.h>
-    #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
-  #endif
-  #ifdef ZOLTAN_PTSCOTCH
-    #include<ptscotch.h>
-    #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
-  #endif
+#if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ == 0
+  /* No graph TPLs used; use Zoltan values */
+  #define TPL_USE_DATATYPE TPL_ZOLTAN_DATATYPES
+  #define indextype ZOLTAN_GNO_TYPE
+  #define weighttype float
+  #define TPL_FLOAT_WEIGHT
+  #define TPL_IDX_SPEC ZOLTAN_GNO_SPEC
+  #define TPL_WGT_SPEC "%f"
+
+#elif (__ptscotch__ + __scotch__ > 0) && (__parmetis__ + __metis__  == 0)
+  /* Using only Scotch/PTScotch */
+  #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
+
+#elif (__parmetis__ + __metis__ > 0) && (__ptscotch__ + __scotch__ == 0)
+  /* Using only METIS/ParMETIS */
+  #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
 
 #else
-
-  #if __parmetis__ + __metis__ > 0
-    #if __parmetis__ == 1
-       #include<parmetis.h>
-    #else
-       #include<metis.h>
-    #endif
-    #if __parmetis__ + __metis__ ==  __parmetis__ + __metis__ + __ptscotch__ + __scotch__
-      #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
-    #endif
-  #endif
-
-  #if __ptscotch__ + __scotch__ > 0
-    #if __ptscotch__ == 1
-       #include<ptscotch.h>
-    #else
-       #include<scotch.h>
-    #endif
-    #if __ptscotch__ + __scotch__ ==  __parmetis__ + __metis__ + __ptscotch__ + __scotch__
-      #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
-    #endif
-  #endif
-
+  /* Using both METIS/ParMETIS and Scotch/PTScotch; let METIS datatypes rule */
+  #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
 #endif
 
-#ifndef TPL_USE_DATATYPE
-  #if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ == 0
-    #define TPL_USE_DATATYPE TPL_ZOLTAN_DATATYPES
-  #else
-    #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
-  #endif
-#endif
 
 #if TPL_USE_DATATYPE == TPL_METIS_DATATYPES
 
-  #define indextype idxtype
-  #define weighttype idxtype
-
-  #ifdef IDXTYPE_INT
+  #if PARMETIS_MAJOR_VERSION == 3
+    /* Assume IDXTYPE_INT in ParMETIS v3.x */
+    #ifndef IDXTYPE_INT
+      /* typedef short idxtype; IDXTYPE_INT is not defined in parmetis.h */
+      #error "ParMETIS short idxtype is not supported in Zoltan; define IDXTYPE_INT in parmetis.h."
+    #endif
+    #define indextype idxtype
+    #define weighttype idxtype
+    #define TPL_INTEGRAL_WEIGHT
+    #define MAX_WGT_SUM (INT_MAX/8)
     #define TPL_IDX_SPEC "%d"
     #define TPL_WGT_SPEC "%d"
-  #else
-    #define TPL_IDX_SPEC "%hd"
-    #define TPL_WGT_SPEC "%hd"
+
+  #else /* PARMETIS_MAJOR_VERSION == 4 */
+    #define indextype idx_t
+    #define weighttype idx_t
+    #define TPL_INTEGRAL_WEIGHT
+    #if IDXTYPEWIDTH == 32  /* defined in parmetis.h */
+      #define MAX_WGT_SUM (int32_t/8)
+      #define TPL_IDX_SPEC "%d"
+      #define TPL_WGT_SPEC "%d"
+    #elif IDXTYPEWIDTH == 64 /* defined in parmetis.h */
+      #define MAX_WGT_SUM (int64_t/8)
+      #define TPL_IDX_SPEC "%ld"
+      #define TPL_WGT_SPEC "%ld"
+    #endif
   #endif
 
+#elif TPL_USE_DATATYPE == TPL_SCOTCH_DATATYPES
+
+  #define indextype SCOTCH_Num
+  #define weighttype SCOTCH_Num
+  #define MAX_WGT_SUM (INT_MAX/8)  /* KDDKDD Same for 32 and 64 bit? */
+  #define TPL_IDX_SPEC SCOTCH_NUMSTRING
+  #define TPL_WGT_SPEC SCOTCH_NUMSTRING
   #define TPL_INTEGRAL_WEIGHT
 
-#else
-  #if TPL_USE_DATATYPE == TPL_SCOTCH_DATATYPES
-
-    #define indextype SCOTCH_Num
-    #define weighttype SCOTCH_Num
-    #define TPL_IDX_SPEC SCOTCH_NUMSTRING
-    #define TPL_WGT_SPEC SCOTCH_NUMSTRING
-
-    #define TPL_INTEGRAL_WEIGHT
-
-  #else
-
-    #define indextype ZOLTAN_ID_TYPE
-    #define weighttype float
-    #define TPL_IDX_SPEC ZOLTAN_ID_SPEC
-    #define TPL_WGT_SPEC "%f"
-
-    #define TPL_FLOAT_WEIGHT
-
-  #endif
-
 #endif
 
-/* ParMETIS data types and definitions. */
-/* #define IDXTYPE_IS_SHORT in order to use short as the idxtype.
- * Make sure these defs are consistent with those in your
- * ParMetis installation ! It is strongly recommended to use
- * integers, not shorts, if you load balance with weights.
-*/
-
-#ifdef IDXTYPE_IS_SHORT
-/* typedef short idxtype; This should have been done in parmetis.h */
-#define IDX_DATATYPE    MPI_SHORT
-#define MAX_WGT_SUM (SHRT_MAX/8)
-#else /* the default for idxtype is int; this is recommended */
-/* typedef int idxtype; This should have been done in parmetis.h */
-#define IDX_DATATYPE    MPI_INT
-#define MAX_WGT_SUM (INT_MAX/8)
-#endif
+/**************************************************************************/
 
 
 /* Graph types, used as mask to set bit in graph_type */
