@@ -5,8 +5,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Ioss        libraries/ioss          SS  OPTIONAL
   Chaco       libraries/chaco         SS  OPTIONAL
   Aprepro_lib libraries/aprepro_lib   SS  OPTIONAL
-  Suplib      libraries/suplib        SS  OPTIONAL
   Supes       libraries/supes         SS  OPTIONAL
+  Suplib      libraries/suplib        SS  OPTIONAL
   Algebra     applications/algebra    SS  OPTIONAL
   Aprepro     applications/aprepro    SS  OPTIONAL
   Conjoin     applications/conjoin    SS  OPTIONAL
