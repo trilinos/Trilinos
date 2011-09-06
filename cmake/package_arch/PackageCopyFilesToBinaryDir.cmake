@@ -15,6 +15,7 @@ INCLUDE(ParseVariableArguments)
 #     SOURCE_FILES file1 file2 ...
 #     [SOURCE_DIR sourceDir]
 #     [DEST_DIR destDir]
+#     [TARGETDEPS targDep1 targDep2 ...]
 #     [EXEDEPS exeDep1 exeDep2 ...]
 #     [NOEXEPREFIX]
 #     [CATEGORIES <category1>  <category2> ...]
@@ -77,6 +78,10 @@ INCLUDE(ParseVariableArguments)
 #     destination files.  If omited, this takes the default value of 
 #     ${CMAKE_CURRENT_BINARY_DIR}
 #
+#   TARGETDEPS targDep1 targDep2 ...
+#     Listing of general CMake targets that these files will be added as
+#     dependencies to.
+#
 #   EXEDEPS exeDep1 exeDep2 ...
 #     Listing of executable targets that these files will be added as
 #     dependencies to.  By default the prefix '${PACKAGE_NAME}_' will
@@ -99,7 +104,7 @@ FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS;CATEGORIES"
+    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS;TARGETDEPS;CATEGORIES"
     #options
     "NOEXEPREFIX"
     ${ARGN}
@@ -228,6 +233,12 @@ FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
   IF (PARSE_EXEDEPS)
     FOREACH(EXEDEP ${PARSE_EXEDEPS})
       ADD_DEPENDENCIES(${PACKAGE_PREFIX}${EXEDEP} ${TARGET_NAME})
+    ENDFOREACH()
+  ENDIF()
+
+  IF (PARSE_TARGETDEPS)
+    FOREACH(TARGETDEP ${PARSE_TARGETDEPS})
+      ADD_DEPENDENCIES(${TARGETDEP} ${TARGET_NAME})
     ENDFOREACH()
   ENDIF()
 

@@ -824,6 +824,13 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
     print buildTestCaseName + ": Skipping sending build/test case email because" \
      + " it passed and --send-email-only-on-failure was set!"
+  
+  elif inOptions.sendEmailTo and buildTestCase.skippedConfigureDueToNoEnables \
+    and not inOptions.skipCaseSendEmail \
+    :
+
+    print "\nSkipping sending final status email for "+buildTestCase.name \
+      +" because it had no packages enabled and --skip-case-no-email was set!"
 
   elif inOptions.sendEmailTo:
 
@@ -889,7 +896,7 @@ def getTestCaseEmailSummary(testCaseName, testCaseNum):
 def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   summaryEmailSectionStr = ""
   for buildTestCase in buildTestCaseList:
-    if buildTestCase.runBuildTestCase:
+    if buildTestCase.runBuildTestCase and not buildTestCase.skippedConfigureDueToNoEnables:
       summaryEmailSectionStr += \
         getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
@@ -1082,11 +1089,11 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
     if inOptions.doConfigure and not preConfigurePassed:
 
-      print "\nSkipping configure because pre-configure failed (see above)!\n"
+      print "\nSkipping "+buildTestCaseName+" configure because pre-configure failed (see above)!\n"
 
     elif not enablePackagesList:
 
-      print "\nSkipping configure because no packages are enabled!\n"
+      print "\nSkipping "+buildTestCaseName+" configure because no packages are enabled!\n"
       buildTestCase.skippedConfigureDueToNoEnables = True
   
     elif inOptions.doConfigure:
@@ -2296,13 +2303,10 @@ def checkinTest(inOptions):
       print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
-      # Determine if all confiugres were aborted because no package enables
-      # and gracefull abort option was set
+      # Determine if all configures were aborted because no package enables
       allConfiguresAbortedDueToNoEnablesGracefullAbort = True
       for buildTestCase in buildTestCaseList:
         if not buildTestCase.skippedConfigureDueToNoEnables:
-          #print "buildTestCase.name =", buildTestCase.name
-          #print "buildTestCase.skippedConfigureDueToNoEnables =", buildTestCase.skippedConfigureDueToNoEnables
           allConfiguresAbortedDueToNoEnablesGracefullAbort = False
 
       if not pullPassed:
@@ -2389,7 +2393,7 @@ def checkinTest(inOptions):
 
         print "\nSkipping sending final email because it passed" \
           " and --send-email-only-on-failure was set!"
-  
+ 
       elif inOptions.sendEmailTo:
   
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
