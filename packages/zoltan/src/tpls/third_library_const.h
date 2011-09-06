@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <float.h>
 #include "zoltan_util.h"
 
 /****************************************************************************/
@@ -86,6 +88,7 @@ extern "C" {
   #define indextype ZOLTAN_GNO_TYPE
   #define weighttype float
   #define TPL_FLOAT_WEIGHT
+  #define MAX_WGT_SUM (FLT_MAX/8)
   #define TPL_IDX_SPEC ZOLTAN_GNO_SPEC
   #define TPL_WGT_SPEC "%f"
 
@@ -123,11 +126,11 @@ extern "C" {
     #define weighttype idx_t
     #define TPL_INTEGRAL_WEIGHT
     #if IDXTYPEWIDTH == 32  /* defined in parmetis.h */
-      #define MAX_WGT_SUM (int32_t/8)
+      #define MAX_WGT_SUM (INT32_MAX/8)
       #define TPL_IDX_SPEC "%d"
       #define TPL_WGT_SPEC "%d"
     #elif IDXTYPEWIDTH == 64 /* defined in parmetis.h */
-      #define MAX_WGT_SUM (int64_t/8)
+      #define MAX_WGT_SUM (INT64_MAX/8)
       #define TPL_IDX_SPEC "%ld"
       #define TPL_WGT_SPEC "%ld"
     #endif

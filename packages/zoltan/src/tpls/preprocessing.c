@@ -66,7 +66,7 @@ static int Zoltan_Preprocess_Scatter_Graph(ZZ *zz,
                                  ZOLTAN_Third_Geom *geo,
                                  ZOLTAN_Third_Vsize *vsp);
 static int scale_round_weights(float *, weighttype *, int, int,
-                               int, int, int, MPI_Comm);
+                               int, weighttype, int, MPI_Comm);
 
 /****************************************************************************/
 
@@ -569,7 +569,7 @@ static int Zoltan_Preprocess_Scale_Weights(
   }
 
   ierr = scale_round_weights(flt_wgt, *rnd_wgt, number, ndim, mode,
-                             (int) MAX_WGT_SUM, zz->Debug_Level, 
+                             MAX_WGT_SUM, zz->Debug_Level, 
                              zz->Communicator);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){

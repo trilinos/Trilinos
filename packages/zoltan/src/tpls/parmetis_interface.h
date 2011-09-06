@@ -24,20 +24,6 @@
 extern "C" {
 #endif
 
-
-#ifdef ZOLTAN_PARMETIS
-#include <parmetis.h>
-#endif 
-
-#ifdef ZOLTAN_METIS
-#include <metis.h>
-#else
-#ifdef ZOLTAN_PARMETIS
-/* We use one METIS function that is not in parmetis.h */
-extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
-#endif /* ZOLTAN_PARMETIS */
-#endif /* ZOLTAN_METIS */
-
 /* Guess the version number of ParMetis if not defined */
 /* PARMETIS_MAJOR_VERSION is only defined in version 3.0 and higher */
 #if (!defined(PARMETIS_MAJOR_VERSION))
