@@ -13,7 +13,7 @@
 namespace MueLuTests {
 
   //this macro declares the unit-test-class:
-  TEUCHOS_UNIT_TEST(Amesos, NotSetup)
+  TEUCHOS_UNIT_TEST(AmesosSmoother, NotSetup)
   {
     //we are now in a class method declared by the above macro, and
     //that method has these input arguments:
@@ -40,7 +40,7 @@ namespace MueLuTests {
       }
   }
 
-  TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
+  TEUCHOS_UNIT_TEST(AmesosSmoother, KLUSolve)
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {

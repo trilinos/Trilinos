@@ -55,7 +55,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES
-  Amesos.cpp
+  AmesosSmoother.cpp
   )
 ENDIF()
 
