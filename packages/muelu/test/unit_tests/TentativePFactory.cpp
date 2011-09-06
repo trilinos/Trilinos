@@ -16,7 +16,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory);
-    TEUCHOS_TEST_EQUALITY(tentPFact != Teuchos::null, true, out, success);
+    TEST_EQUALITY(tentPFact != Teuchos::null, true);
 
   } //Constructor
 
@@ -27,10 +27,10 @@ namespace MueLuTests {
     TentativePFactory tentPFact;
 
     bool flag = tentPFact.TentativeWithQR();
-    TEUCHOS_TEST_EQUALITY(flag, false, out, success);
+    TEST_EQUALITY(flag, false);
     tentPFact.TentativeWithQR(true);
     flag = tentPFact.TentativeWithQR();
-    TEUCHOS_TEST_EQUALITY(flag, true, out, success);
+    TEST_EQUALITY(flag, true);
   } //SetGetMethods
 
   //TODO test BuildP
@@ -86,7 +86,7 @@ namespace MueLuTests {
       diff->norm2(norms);
       for (LO i=0; i<NSdim; ++i) {
         out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-        TEUCHOS_TEST_EQUALITY(norms[i]<1e-12, true, out, success);
+        TEST_EQUALITY(norms[i]<1e-12, true);
       }
 
       //TODO check normalization of columns
@@ -145,7 +145,7 @@ namespace MueLuTests {
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEUCHOS_TEST_EQUALITY(norms[i]<1e-12, true, out, success);
+      TEST_EQUALITY(norms[i]<1e-12, true);
     }
 
   } //MakeTentative

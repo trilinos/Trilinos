@@ -60,23 +60,23 @@ namespace MueLuTests {
       switch (comm->getSize()) {
 
         case 1 :
-           TEUCHOS_TEST_EQUALITY(numAggs, 12, out, success);
-           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
+           TEST_EQUALITY(numAggs, 12);
+           TEST_EQUALITY(foundAggNotSize3, false);
            break;
 
         case 2:
-           TEUCHOS_TEST_EQUALITY(numAggs, 6, out, success);
-           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
+           TEST_EQUALITY(numAggs, 6);
+           TEST_EQUALITY(foundAggNotSize3, false);
            break;
 
         case 3:
-           TEUCHOS_TEST_EQUALITY(numAggs, 4, out, success);
-           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
+           TEST_EQUALITY(numAggs, 4);
+           TEST_EQUALITY(foundAggNotSize3, false);
            break;
 
         case 4:
-           TEUCHOS_TEST_EQUALITY(numAggs, 3, out, success);
-           TEUCHOS_TEST_EQUALITY(foundAggNotSize3, false, out, success);
+           TEST_EQUALITY(numAggs, 3);
+           TEST_EQUALITY(foundAggNotSize3, false);
            break;
 
         default:

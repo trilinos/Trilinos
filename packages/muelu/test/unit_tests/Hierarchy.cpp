@@ -23,7 +23,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 
   RCP<Hierarchy> H = rcp(new Hierarchy);
 
-  TEUCHOS_TEST_INEQUALITY(H, Teuchos::null, out, success);
+  TEST_INEQUALITY(H, Teuchos::null);
 
 } //Constructor
 
@@ -36,7 +36,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
   H.SetLevel(level);
   RCP<Level> dupLevel = H.GetLevel(1);
 
-  TEUCHOS_TEST_EQUALITY(level, dupLevel, out, success);
+  TEST_EQUALITY(level, dupLevel);
 
 }//SetAndGetLevel
 
@@ -52,7 +52,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,NumberOfLevels)
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
   H.SetLevel(levelThree);
-  TEUCHOS_TEST_EQUALITY(H.GetNumberOfLevels(), 3, out, success);
+  TEST_EQUALITY(H.GetNumberOfLevels(), 3);
 
 }//NumberOfLevels
 
@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   bool ToF = H.PrintResidualHistory();
   H.PrintResidualHistory(!ToF);
-  TEUCHOS_TEST_INEQUALITY(H.PrintResidualHistory(), ToF, out, success);
+  TEST_INEQUALITY(H.PrintResidualHistory(), ToF);
 } //FillHierarchy_NoFactoriesGiven
 
 #ifdef FAILING_ONE_PROC_TERMINATING_BADLY_DONT_KNOW_WHY
@@ -99,11 +99,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
   out << "Providing just PR factory to FillHierarchy." << std::endl;
   Teuchos::ParameterList status;
   status = H.FillHierarchy(PRFact);
-  TEUCHOS_TEST_EQUALITY(status.get("fine nnz",(Xpetra::global_size_t)-1), 295, out, success);
-  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Xpetra::global_size_t)-1), 422, out, success);
-  TEUCHOS_TEST_EQUALITY(status.get("start level",-1), 0, out, success);
-  TEUCHOS_TEST_EQUALITY(status.get("end level",-1), 1, out, success);
-  TEUCHOS_TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.43051,1e-5,out,success);
+  TEST_EQUALITY(status.get("fine nnz",(Xpetra::global_size_t)-1), 295);
+  TEST_EQUALITY(status.get("total nnz",(Xpetra::global_size_t)-1), 422);
+  TEST_EQUALITY(status.get("start level",-1), 0);
+  TEST_EQUALITY(status.get("end level",-1), 1);
+  TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.43051,1e-5);
 
 } //FillHierarchy_PRFactoryOnly
 #endif
@@ -152,15 +152,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
 //   H.SetSmoothers();
 
-//   TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
-//   TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel", out, success);
+//   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
+//   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
 
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smooProto = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
   H.SetSmoothers(*smooFactory);
-  //JGTODO  TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi", out, success);
-  //JGTODO  TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(),"Ifpack: Jacobi", out, success);
+  //JGTODO  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
+  //JGTODO  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
 #endif
     }
 } //SetSmoothers
@@ -194,12 +194,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
 
   RCP<SmootherBase>  preSmoo,postSmoo;
   preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
-  TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
-  //JGTODO  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEST_INEQUALITY(preSmoo, Teuchos::null);
+  //JGTODO  TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel");
   postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother",&SmooFactory);
 
-  TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
-  //JGTODO  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEST_INEQUALITY(postSmoo, Teuchos::null);
+  //JGTODO  TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel");
 
 #endif
     }
@@ -230,10 +230,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   RCP<SmootherBase> preSmoo;
   preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
 
-  TEUCHOS_TEST_INEQUALITY(preSmoo, Teuchos::null, out, success);
-  //JGTODO  TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEST_INEQUALITY(preSmoo, Teuchos::null);
+  //JGTODO  TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel");
 
-  TEUCHOS_TEST_EQUALITY(levelOne->IsAvailable("PostSmoother"), false, out, success);
+  TEST_EQUALITY(levelOne->IsAvailable("PostSmoother"), false);
 
 #endif
     }
@@ -261,13 +261,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
 
-  TEUCHOS_TEST_EQUALITY(levelOne->IsAvailable("PreSmoother"), false, out, success);
+  TEST_EQUALITY(levelOne->IsAvailable("PreSmoother"), false);
 
   RCP<SmootherBase> postSmoo;
   postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother", &SmooFactory);
 
-  TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
-  //JG TODO  TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+  TEST_INEQUALITY(postSmoo, Teuchos::null);
+  //JG TODO  TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel");
 #endif
     }
 } //SetCoarsestSolver
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-  TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
+  TEST_EQUALITY(norms[0]<1e-10, true);
 
 #endif
 #endif
@@ -496,7 +496,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
-  TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
+  TEST_EQUALITY(norms[0]<1e-10, true);
 
 #endif
 #endif
@@ -506,7 +506,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 }//namespace MueLuTests
 
 //Note from JG:
-// For UnitTest,  TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel", out, success);
+// For UnitTest,  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
 // should be replaced by
-// TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother"), preSmoother, out, success);
+// TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother"), preSmoother);
 // testing if preSmoother->GetType() == "Ifpack: Gauss-Seidel" should be a unit test of the class IfpackSmoother

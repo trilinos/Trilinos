@@ -21,7 +21,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<RAPFactory> rapFactory = rcp(new RAPFactory);
-    TEUCHOS_TEST_EQUALITY(rapFactory != Teuchos::null, true, out, success);
+    TEST_EQUALITY(rapFactory != Teuchos::null, true);
 
     out << *rapFactory << std::endl;
   } //Constructor test
@@ -76,7 +76,7 @@ namespace MueLuTests {
     out << "||X||_2 = " << normX << std::endl; 
     result1->norm2(normResult1);
     result2->norm2(normResult2);
-    TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
   } //Correctness test
 
   TEUCHOS_UNIT_TEST(RAPFactory, ImplicitTranspose)
@@ -133,7 +133,7 @@ namespace MueLuTests {
     out << "||X||_2 = " << normX << std::endl; 
     result1->norm2(normResult1);
     result2->norm2(normResult2);
-    TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
   } //Correctness test
 
 }//namespace MueLuTests

@@ -79,7 +79,7 @@ namespace MueLuTests {
       switch (comm->getSize()) {
         case 1:
         case 4:
-          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],5.773502691896257e-01,1e-12,out,success);
+          TEST_FLOATING_EQUALITY(norms[0],5.773502691896257e-01,1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -99,10 +99,10 @@ namespace MueLuTests {
       norms = Utils::ResidualNorm(*Op,*X,*RHS);
       switch (comm->getSize()) {
         case 1:
-          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],8.326553652741774e-02,1e-12,out,success);
+          TEST_FLOATING_EQUALITY(norms[0],8.326553652741774e-02,1e-12);
           break;
         case 4:
-          TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],8.326553653078517e-02,1e-12,out,success);
+          TEST_FLOATING_EQUALITY(norms[0],8.326553653078517e-02,1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -148,7 +148,7 @@ namespace MueLuTests {
 
         //int numIts = 3;
         //smoother->SetNIts(numIts); //Not implemented
-        //TEUCHOS_TEST_EQUALITY(smoother->GetNIts(),numIts,out,success);
+        //TEST_EQUALITY(smoother->GetNIts(),numIts);
         out << "Applying degree " << ifpack2List.get("chebyshev: degree",-1) << " Chebyshev smoother" << std::endl;
         X->putScalar(1.0);
         out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
@@ -157,7 +157,7 @@ namespace MueLuTests {
         RES->norm2(norms);
         out << "||RES|| = " << std::setiosflags(ios::fixed) <<
           std::setprecision(20) << norms[0] << std::endl;
-        TEUCHOS_TEST_FLOATING_EQUALITY(norms[0],5.269156e-01,1e-7,out,success);  //Compare to residual reported by ML
+        TEST_FLOATING_EQUALITY(norms[0],5.269156e-01,1e-7);  //Compare to residual reported by ML
 
       }
   } //Chebyshev
@@ -207,7 +207,7 @@ namespace MueLuTests {
 //         out << "||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
 //         norms = Utils::ResidualNorm(*Op,*X,*RHS);
 //         out << "||residual|| = " << norms[0] << std::endl;
-//         TEUCHOS_TEST_EQUALITY(norms[0]<1e-10,true,out,success);
+//         TEST_EQUALITY(norms[0]<1e-10,true);
         
       }
   } //ILU

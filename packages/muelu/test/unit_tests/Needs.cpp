@@ -15,7 +15,7 @@ namespace MueLuTests {
     //Teuchos::FancyOStream& out, bool& success
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Needs> needs = rcp(new Needs() );
-    TEUCHOS_TEST_EQUALITY(needs != Teuchos::null, true, out, success);
+    TEST_EQUALITY(needs != Teuchos::null, true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, NeedRequested)
@@ -23,9 +23,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEUCHOS_TEST_EQUALITY(needs.IsRequested(aNeed), false, out, success);
+    TEST_EQUALITY(needs.IsRequested(aNeed), false);
     needs.Request(aNeed);
-    TEUCHOS_TEST_EQUALITY(needs.IsRequested(aNeed), true, out, success);
+    TEST_EQUALITY(needs.IsRequested(aNeed), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, ValueIsAvailable)
@@ -33,9 +33,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEUCHOS_TEST_EQUALITY(needs.IsAvailable(aNeed), false, out, success);
+    TEST_EQUALITY(needs.IsAvailable(aNeed), false);
     needs.SetData(aNeed,42);
-    TEUCHOS_TEST_EQUALITY(needs.IsAvailable(aNeed), true, out, success);
+    TEST_EQUALITY(needs.IsAvailable(aNeed), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests_Exception)
@@ -52,7 +52,7 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     needs.Request(aNeed);
     needs.Request(aNeed);
-    TEUCHOS_TEST_EQUALITY(needs.NumRequests(aNeed), 2, out, success);
+    TEST_EQUALITY(needs.NumRequests(aNeed), 2);
   }
 
   TEUCHOS_UNIT_TEST(Needs, Get_Exception)
@@ -72,7 +72,7 @@ namespace MueLuTests {
     needs.SetData(aNeed,trueValue);
     double expectedValue = 0;
     needs.GetData(aNeed,expectedValue);
-    TEUCHOS_TEST_EQUALITY(trueValue,expectedValue, out, success);
+    TEST_EQUALITY(trueValue,expectedValue);
   }
 
   TEUCHOS_UNIT_TEST(Needs, Release_Exception)
@@ -107,8 +107,8 @@ namespace MueLuTests {
     double value = 0;
     needs.GetData(aNeed,value);
     needs.Release(aNeed);
-    TEUCHOS_TEST_EQUALITY(trueValue,value, out, success);
-    TEUCHOS_TEST_EQUALITY(needs.NumRequests(aNeed),1, out, success);
+    TEST_EQUALITY(trueValue,value);
+    TEST_EQUALITY(needs.NumRequests(aNeed),1);
     value = 0;
     needs.GetData(aNeed,value);
     needs.Release(aNeed);
@@ -130,7 +130,7 @@ namespace MueLuTests {
     needs.SetData("foobar",trueValue);
     RCP<foobarClass> value;
     needs.GetData("foobar",value);
-    TEUCHOS_TEST_EQUALITY(trueValue,value, out, success);
+    TEST_EQUALITY(trueValue,value);
   }
 
 }//namespace MueLuTests

@@ -74,7 +74,7 @@ namespace MueLuTests {
         smoother->Apply(*X,*RHS);
         res = Utils::ResidualNorm(*Op,*X,*RHS);
         out << "||final residual|| = " << res[0] << std::endl;
-        TEUCHOS_TEST_EQUALITY(res[0] < 1e-12,true,out,success);
+        TEST_EQUALITY(res[0] < 1e-12,true);
       }
   }
   

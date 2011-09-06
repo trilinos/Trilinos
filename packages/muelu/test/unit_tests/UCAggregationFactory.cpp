@@ -34,7 +34,7 @@ namespace {
       
       out << "version: " << MueLu::Version() << std::endl;
       RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
-      TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
+      TEST_EQUALITY(aggFact != Teuchos::null, true);
     } 
   } // Constructor
 
@@ -61,7 +61,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates, out);
+        printAggregates(*aggregates);
       }
 
       {
@@ -76,7 +76,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates, out);
+        printAggregates(*aggregates);
       }
 
       {
@@ -91,7 +91,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates, out);
+        printAggregates(*aggregates);
       }
     }
   } // Build

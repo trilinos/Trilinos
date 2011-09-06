@@ -16,10 +16,10 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    TEUCHOS_TEST_EQUALITY(sapFactory != Teuchos::null, true, out, success);
+    TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
     RCP<SaPFactory> sapFactory2 = rcp(new SaPFactory);
-    TEUCHOS_TEST_EQUALITY(sapFactory2 != Teuchos::null, true, out, success);
+    TEST_EQUALITY(sapFactory2 != Teuchos::null, true);
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -35,26 +35,26 @@ namespace MueLuTests {
     exh->Set<RCP<Operator> >("op",Op,sapFactory.get());
     RCP<Operator> test = Teuchos::null;
     exh->Get<RCP<Operator> >("op",test, sapFactory.get());
-    TEUCHOS_TEST_EQUALITY_CONST( test, Op, out, success );
+    TEST_EQUALITY_CONST( test, Op );
 
     exh->Set("op",22,sapFactory.get());
     int test2 = -1;
     exh->Get<int> ("op",test2,sapFactory.get());
-    TEUCHOS_TEST_EQUALITY_CONST( test2, 22, out, success );
+    TEST_EQUALITY_CONST( test2, 22 );
 
     exh->Set("op",Op,sapFactory2.get());
     RCP<Operator> test3 = Teuchos::null;
     exh->Get<RCP<Operator> > ("op",test3,sapFactory2.get());
-    TEUCHOS_TEST_EQUALITY_CONST( test3, Op, out, success );
-    TEUCHOS_TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int", out, success );
+    TEST_EQUALITY_CONST( test3, Op );
+    TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int" );
 
     exh->Remove("op",sapFactory2.get());
-    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  true, out, success );
-    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false, out, success );
+    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  true );
+    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false );
 
     exh->Remove("op",sapFactory.get());
-    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  false, out, success );
-    TEUCHOS_TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false, out, success );
+    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  false );
+    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false );
 
   }
 

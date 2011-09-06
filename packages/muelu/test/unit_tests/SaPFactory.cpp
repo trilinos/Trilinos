@@ -14,7 +14,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    TEUCHOS_TEST_EQUALITY(sapFactory != Teuchos::null, true, out, success);
+    TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
     out << *sapFactory << std::endl;
 
@@ -26,9 +26,9 @@ namespace MueLuTests {
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
     sapFactory->SetDampingFactor( (Scalar)4/3 );
-    TEUCHOS_TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true, out, success);
+    TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true);
     sapFactory->SetDiagonalView("roomWithAView");
-    TEUCHOS_TEST_EQUALITY( sapFactory->GetDiagonalView(), "roomWithAView", out, success);
+    TEST_EQUALITY( sapFactory->GetDiagonalView(), "roomWithAView");
 
   } //GetSetMethods
 

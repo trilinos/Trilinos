@@ -31,33 +31,33 @@ namespace MueLuTests {
 
     aLevel.Set("Hitchhiker's Guide",42);
     int fff = aLevel.Get<int>("Hitchhiker's Guide");
-    TEUCHOS_TEST_EQUALITY(fff, 42, out, success);
+    TEST_EQUALITY(fff, 42);
     aLevel.Set("PI",3.14159265);
     double ggg = aLevel.Get<double>("PI");
-    TEUCHOS_TEST_EQUALITY(ggg, 3.14159265, out, success);
+    TEST_EQUALITY(ggg, 3.14159265);
     aLevel.Set("Hello MueLu", std::string("Greetings to MueMat"));
     std::string hhh = aLevel.Get<std::string>("Hello MueLu");
-    TEUCHOS_TEST_EQUALITY(hhh, "Greetings to MueMat", out, success);
+    TEST_EQUALITY(hhh, "Greetings to MueMat");
     aLevel.Request("A");
     aLevel.Set("A",A);
     RCP<Operator> newA = aLevel.Get< RCP<Operator> >("A");
-    TEUCHOS_TEST_EQUALITY(newA, A, out, success);
+    TEST_EQUALITY(newA, A);
     aLevel.Request("R");
     aLevel.Set("R", A);
     RCP<Operator> newR = aLevel.Get< RCP<Operator> >("R");
-    TEUCHOS_TEST_EQUALITY(newR, A, out, success); //TODO from JG: must be tested using another matrix !
+    TEST_EQUALITY(newR, A); //TODO from JG: must be tested using another matrix !
     aLevel.Request("P");
     aLevel.Set("P", A);
     RCP<Operator> newP = aLevel.Get< RCP<Operator> >("P");
-    TEUCHOS_TEST_EQUALITY(newP, A, out, success);
+    TEST_EQUALITY(newP, A);
     aLevel.SetLevelID(42);
-    TEUCHOS_TEST_EQUALITY(aLevel.GetLevelID(), 42, out, success); //TODO: test default value of LevelID
+    TEST_EQUALITY(aLevel.GetLevelID(), 42); //TODO: test default value of LevelID
 
     aLevel.print(std::cout);
 
     /*
       RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
-      TEUCHOS_TEST_EQUALITY(aLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo, out, success);
+      TEST_EQUALITY(aLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo);
       //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, Operator>();
       */
 

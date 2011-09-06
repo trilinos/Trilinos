@@ -14,7 +14,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<CoalesceDropFactory> coalesceDropFact = rcp(new CoalesceDropFactory());
-    TEUCHOS_TEST_EQUALITY(coalesceDropFact != Teuchos::null, true, out, success);
+    TEST_EQUALITY(coalesceDropFact != Teuchos::null, true);
 
   } //Constructor
 
