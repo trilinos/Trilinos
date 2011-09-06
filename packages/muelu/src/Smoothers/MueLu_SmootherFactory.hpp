@@ -83,16 +83,14 @@ namespace MueLu {
       PostSmoother    = ChebySmoother(10,1/30)
       SmootherFactory = SmootherFactory([], PostSmoother);
     */
-    SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype=Teuchos::null, RCP<SmootherPrototype> postSmootherPrototype = Teuchos::null)
-    {
-      if (preSmootherPrototype == Teuchos::null)
-        throw(Exceptions::RuntimeError("Presmoother prototype cannot be null")); //TODO
-      preSmootherPrototype_ = preSmootherPrototype;
-      if (postSmootherPrototype == Teuchos::null)
-        postSmootherPrototype_ = preSmootherPrototype;
-      else
-        postSmootherPrototype_ = postSmootherPrototype;
-    }
+    //Note: Teuchos::null as parameter allowed (= no smoother) but must be explicitly defined (no parameter default value)
+    SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype)
+      : preSmootherPrototype_(preAndPostSmootherPrototype), postSmootherPrototype_(preAndPostSmootherPrototype)
+    { }
+
+    SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype)
+      : preSmootherPrototype_(preSmootherPrototype), postSmootherPrototype_(postSmootherPrototype)
+    { }
 
     virtual ~SmootherFactory() {}
     //@}
@@ -197,15 +195,19 @@ namespace MueLu {
     //@{
 
     //! Set smoother prototypes.
-    void SetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype)
-    {
+    void SetSmootherPrototypes(RCP<SmootherPrototype> &preAndPostSmootherPrototype) {
+      preSmootherPrototype_ = preAndPostSmootherPrototype;
+      postSmootherPrototype_ = preAndPostSmootherPrototype;
+    }
+
+    //! Set smoother prototypes.
+    void SetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype) {
       preSmootherPrototype_ = preSmootherPrototype;
       postSmootherPrototype_ = postSmootherPrototype;
     }
-
+    
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype)
-    {
+    void GetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype) const {
       preSmootherPrototype = preSmootherPrototype_;
       postSmootherPrototype = postSmootherPrototype_;
     }

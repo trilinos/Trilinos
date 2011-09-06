@@ -49,7 +49,7 @@ namespace MueLu {
         if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
-        if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory()));
+        if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
 
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
 
