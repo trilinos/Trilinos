@@ -34,10 +34,6 @@ typedef MueLu::FakeSmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
 typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase;
 #endif
 
-#ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
-typedef MueLu::SmootherFactoryBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactoryBase;
-#endif
-
 #ifdef MUELU_SMOOTHERFACTORY_SHORT
 typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory;
 #endif

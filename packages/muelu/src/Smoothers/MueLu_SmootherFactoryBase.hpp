@@ -12,14 +12,11 @@ namespace MueLu {
     @class Smoother factory base class.
     @brief Base class for smoother factories.
 
-    Has only one real capability, which is to record (for the Hierarchy class)
-    whether a smoother should be built on the coarsest level.
+    This interface inherits from SingleLevelFactoryBase and defines an additional Build method (BuildSmoother)
+    This new build method is used by Hierarchy for the CoarsestLevel.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SmootherFactoryBase : public SingleLevelFactoryBase {
-
-#include "MueLu_UseShortNames.hpp"
 
   public:
     //@{ Constructors/Destructors.
