@@ -156,11 +156,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 //   TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
 #ifdef HAVE_MUELU_IFPACK
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Jacobi");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smooProto = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
   H.SetSmoothers(*smooFactory);
   //JGTODO  TEUCHOS_TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi", out, success);
@@ -180,11 +176,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
 #ifdef HAVE_MUELU_IFPACK
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smoother = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
 
   std::cout << "ICI" << std::endl;
   SmootherFactory SmooFactory(smoother);
@@ -224,11 +216,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
 #ifdef HAVE_MUELU_IFPACK
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smoother = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   SmootherFactory SmooFactory(smoother);
 
   RCP<Level> levelOne = rcp(new Level());
@@ -262,11 +250,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
 #ifdef HAVE_MUELU_IFPACK
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smoother = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   SmootherFactory SmooFactory(smoother);
 
   RCP<Level> levelOne = rcp(new Level());
@@ -325,11 +309,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
 
 #ifdef HAVE_MUELU_IFPACK
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smoother = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
   H.FullPopulate(PRFact,AcFact,SmooFact,0,2);
 #endif
@@ -381,11 +361,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 2);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smooProto = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -479,11 +455,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
-  Teuchos::ParameterList  ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-  ifpackList.set("relaxation: sweeps", (LO) 2);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  RCP<SmootherPrototype> smooProto = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
