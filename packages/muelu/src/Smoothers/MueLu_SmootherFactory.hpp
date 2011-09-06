@@ -55,49 +55,43 @@ namespace MueLu {
       
       SYNTAX
 
-      SmootherFactory(PreSmootherPrototype_, PostSmootherPrototype_);
+      SmootherFactory(preSmootherPrototype_, postSmootherPrototype_);
       
-      PreSmootherPrototype_  - prototype for pre-smoothers  (SmootherPrototype)
-      PostSmootherPrototype_ - prototype for post-smoothers
-      (SmootherPrototype,optional,default=PreSmootherPrototype_)
+      preSmootherPrototype_  - prototype for pre-smoothers  (SmootherPrototype)
+      postSmootherPrototype_ - prototype for post-smoothers
+      (SmootherPrototype,optional,default=preSmootherPrototype_)
 
       EXAMPLES:
 
-      SmooFactory = SmootherFactory(ChebySmoother(5,1/30))
+      SmootherFactory = SmootherFactory(ChebySmoother(5,1/30))
 
       or 
 
       nIts        = 5;
       lambdaRatio = 1/30;
-      Smoo        = ChebySmoother()
-      Smoo        = Smoo.SetIts(nIts);
-      Smoo        = Smoo.SetLambdaRatio(1/30); 
-      SmooFactory = SmootherFactory(Smoo);
+      Smoother        = ChebySmoother()
+      Smoother        = Smoother.SetIts(nIts);
+      Smoother        = Smoother.SetLambdaRatio(1/30); 
+      SmootherFactory = SmootherFactory(Smoother);
 
       To use different smoothers for pre and post smoothing, two prototypes can be passed in as argument:
-      PreSmoo     = ChebySmoother(2, 1/30)
-      PostSmoo    = ChebySmoother(10,1/30)
-      SmooFactory = SmootherFactory(PreSmoo, PostSmoo);
+      PreSmoother     = ChebySmoother(2, 1/30)
+      PostSmoother    = ChebySmoother(10,1/30)
+      SmootherFactory = SmootherFactory(PreSmoother, PostSmoother);
 
       [] is also a valid smoother which do nothing:
-      PostSmoo    = ChebySmoother(10,1/30)
-      SmooFactory = SmootherFactory([], PostSmoo);
+      PostSmoother    = ChebySmoother(10,1/30)
+      SmootherFactory = SmootherFactory([], PostSmoother);
     */
-    SmootherFactory(RCP<SmootherPrototype> preProto=Teuchos::null, RCP<SmootherPrototype> postProto = Teuchos::null)
+    SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype=Teuchos::null, RCP<SmootherPrototype> postSmootherPrototype = Teuchos::null)
     {
-      if (preProto == Teuchos::null)
+      if (preSmootherPrototype == Teuchos::null)
         throw(Exceptions::RuntimeError("Presmoother prototype cannot be null")); //TODO
-      PreSmootherPrototype_ = preProto;
-      if (postProto == Teuchos::null)
-        PostSmootherPrototype_ = preProto;
+      preSmootherPrototype_ = preSmootherPrototype;
+      if (postSmootherPrototype == Teuchos::null)
+        postSmootherPrototype_ = preSmootherPrototype;
       else
-        PostSmootherPrototype_ = postProto;
-    }
-
-    //! Copy constructor.
-    SmootherFactory(SmootherFactory &smooFact)
-    {
-      throw(Exceptions::NotImplemented("copy constructor"));
+        postSmootherPrototype_ = postSmootherPrototype;
     }
 
     virtual ~SmootherFactory() {}
@@ -133,64 +127,64 @@ namespace MueLu {
       return BuildSmoother(currentLevel, BOTH);
     }
     
-    bool BuildSmoother(Level & currentLevel, PreOrPost const &pop = BOTH) const {
-      RCP<SmootherPrototype> preSmoo;
-      RCP<SmootherPrototype> postSmoo;
+    bool BuildSmoother(Level & currentLevel, PreOrPost const &PreOrPost = BOTH) const {
+      RCP<SmootherPrototype> preSmoother;
+      RCP<SmootherPrototype> postSmoother;
       
-      if ((pop == BOTH || pop == PRE) && (PreSmootherPrototype_ != Teuchos::null)) {
-        preSmoo = PreSmootherPrototype_->Copy();
-        //preSmoo = rcp( new SmootherPrototype(PreSmootherPrototype_) );
+      if ((PreOrPost == BOTH || PreOrPost == PRE) && (preSmootherPrototype_ != Teuchos::null)) {
+        preSmoother = preSmootherPrototype_->Copy();
+        //preSmoother = rcp( new SmootherPrototype(preSmootherPrototype_) );
         //TODO if outputlevel high enough
-        //TODO preSmoo.Print();
-        preSmoo->Setup(currentLevel);
+        //TODO preSmoother.Print();
+        preSmoother->Setup(currentLevel);
         
         // Level Set
-        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoo, this);
-        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoo);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother);
       }
       
-      if ((pop == BOTH || pop == POST) && (PostSmootherPrototype_ != Teuchos::null))
+      if ((PreOrPost == BOTH || PreOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
           {
-            if (pop == BOTH && PreSmootherPrototype_ == PostSmootherPrototype_) {
+            if (PreOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
               
               // Very simple reuse. TODO: should be done in MueMat too
-              postSmoo = preSmoo;
+              postSmoother = preSmoother;
               
-//            }  else if (pop == BOTH &&
-//                        PreSmootherPrototype_ != Teuchos::null &&
-//                        PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType()) {
+//            }  else if (PreOrPost == BOTH &&
+//                        preSmootherPrototype_ != Teuchos::null &&
+//                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
               
 //               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
               
 //               // YES: post-smoother == pre-smoother 
 //               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
-//               postSmoo = preSmoo->Copy();
+//               postSmoother = preSmoother->Copy();
 //               // If the post-smoother parameters are different from
 //               // pre-smoother, the parameters stored in the post-smoother
 //               // prototype are copied in the new post-smoother object.
-//               postSmoo->CopyParameters(PostSmootherPrototype_);
+//               postSmoother->CopyParameters(postSmootherPrototype_);
 //               // If parameters don't influence the Setup phase (it is the case
-//               // for Jacobi, Chebyshev...), PostSmoo is already setup. Nothing
+//               // for Jacobi, Chebyshev...), PostSmoother is already setup. Nothing
 //               // more to do. In the case of ILU, parameters of the smoother
 //               // are in fact the parameters of the Setup phase. The call to
 //               // CopyParameters resets the smoother (only if parameters are
 //               // different) and we must call Setup() again.
-//               postSmoo->Setup(currentLevel);
+//               postSmoother->Setup(currentLevel);
 
 //               // TODO: if CopyParameters do not exist, do setup twice.
 
             } else {
               
-              // NO reuse: pop==POST or post-smoother != pre-smoother
+              // NO reuse: PreOrPost==POST or post-smoother != pre-smoother
               // Copy the prototype and run the setup phase.
-              postSmoo = PostSmootherPrototype_->Copy();
-              postSmoo->Setup(currentLevel);
+              postSmoother = postSmootherPrototype_->Copy();
+              postSmoother->Setup(currentLevel);
               
             }
             
             // Level Set
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoo, this);
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoo);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother);
           }
         
         return true;//?
@@ -203,22 +197,22 @@ namespace MueLu {
     //@{
 
     //! Set smoother prototypes.
-    void SetSmootherPrototypes(RCP<SmootherPrototype> &preProto, RCP<SmootherPrototype> &postProto)
+    void SetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype)
     {
-      PreSmootherPrototype_ = preProto;
-      PostSmootherPrototype_ = postProto;
+      preSmootherPrototype_ = preSmootherPrototype;
+      postSmootherPrototype_ = postSmootherPrototype;
     }
 
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> &preProto, RCP<SmootherPrototype> &postProto)
+    void GetSmootherPrototypes(RCP<SmootherPrototype> &preSmootherPrototype, RCP<SmootherPrototype> &postSmootherPrototype)
     {
-      preProto = PreSmootherPrototype_;
-      postProto = PostSmootherPrototype_;
+      preSmootherPrototype = preSmootherPrototype_;
+      postSmootherPrototype = postSmootherPrototype_;
     }
 
   private:
-    RCP<SmootherPrototype> PreSmootherPrototype_;
-    RCP<SmootherPrototype> PostSmootherPrototype_;
+    RCP<SmootherPrototype> preSmootherPrototype_;
+    RCP<SmootherPrototype> postSmootherPrototype_;
 
     //@}
 
