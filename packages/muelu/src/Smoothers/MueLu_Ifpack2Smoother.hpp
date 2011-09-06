@@ -93,7 +93,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 //       else
       label = "Ifpack2: " + type;
 
-      SmootherBase::SetType(label);
+      //JGTODO      SmootherBase::SetType(label);
       SmootherPrototype::IsSetup(false);
     }
 
@@ -193,7 +193,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
         @param X initial guess
         @param B right-hand side
-        @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack2 implementation.
+        @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Ifpack2 implementation.
     */
     void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false)
     {

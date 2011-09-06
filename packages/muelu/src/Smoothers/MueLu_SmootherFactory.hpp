@@ -145,8 +145,8 @@ namespace MueLu {
         preSmoo->Setup(currentLevel);
         
         // Level Set
-        currentLevel.Set("PreSmoother", preSmoo, this);
-        currentLevel.Set("PreSmoother", preSmoo);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoo, this);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoo);
       }
       
       if ((pop == BOTH || pop == POST) && (PostSmootherPrototype_ != Teuchos::null))
@@ -156,28 +156,28 @@ namespace MueLu {
               // Very simple reuse. TODO: should be done in MueMat too
               postSmoo = preSmoo;
               
-            } else if (pop == BOTH &&
-                       PreSmootherPrototype_ != Teuchos::null &&
-                       PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType()) {
+//            }  else if (pop == BOTH &&
+//                        PreSmootherPrototype_ != Teuchos::null &&
+//                        PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType()) {
               
-              // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
+//               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
               
-              // YES: post-smoother == pre-smoother 
-              // => copy the pre-smoother to avoid the setup phase of the post-smoother.
-              postSmoo = preSmoo->Copy();
-              // If the post-smoother parameters are different from
-              // pre-smoother, the parameters stored in the post-smoother
-              // prototype are copied in the new post-smoother object.
-              postSmoo->CopyParameters(PostSmootherPrototype_);
-              // If parameters don't influence the Setup phase (it is the case
-              // for Jacobi, Chebyshev...), PostSmoo is already setup. Nothing
-              // more to do. In the case of ILU, parameters of the smoother
-              // are in fact the parameters of the Setup phase. The call to
-              // CopyParameters resets the smoother (only if parameters are
-              // different) and we must call Setup() again.
-              postSmoo->Setup(currentLevel);
+//               // YES: post-smoother == pre-smoother 
+//               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
+//               postSmoo = preSmoo->Copy();
+//               // If the post-smoother parameters are different from
+//               // pre-smoother, the parameters stored in the post-smoother
+//               // prototype are copied in the new post-smoother object.
+//               postSmoo->CopyParameters(PostSmootherPrototype_);
+//               // If parameters don't influence the Setup phase (it is the case
+//               // for Jacobi, Chebyshev...), PostSmoo is already setup. Nothing
+//               // more to do. In the case of ILU, parameters of the smoother
+//               // are in fact the parameters of the Setup phase. The call to
+//               // CopyParameters resets the smoother (only if parameters are
+//               // different) and we must call Setup() again.
+//               postSmoo->Setup(currentLevel);
 
-              // TODO: if CopyParameters do not exist, do setup twice.
+//               // TODO: if CopyParameters do not exist, do setup twice.
 
             } else {
               
@@ -189,8 +189,8 @@ namespace MueLu {
             }
             
             // Level Set
-            currentLevel.Set("PostSmoother", postSmoo, this);
-            currentLevel.Set("PostSmoother", postSmoo);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoo, this);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoo);
           }
         
         return true;//?
@@ -229,5 +229,3 @@ namespace MueLu {
 #define MUELU_SMOOTHERFACTORY_SHORT
 
 #endif //ifndef MUELU_SMOOTHERFACTORY_HPP
-
-// TODO: add a simpler test (PreSmoo==PostSmoo) to try to reuse directly presmoo for postsmoo even if CopyParameter is not implemented

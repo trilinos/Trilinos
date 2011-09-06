@@ -396,12 +396,12 @@ namespace MueLu {
           {
             bool emptySolve = true;
             if (Fine->IsAvailable("PreSmoother")) {
-              RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+              RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
               preSmoo->Apply(X, B, false);
               emptySolve=false;
             }
             if (Fine->IsAvailable("PostSmoother")) {
-              RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+              RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
               postSmoo->Apply(X, B, false); 
               emptySolve=false;
             }
@@ -411,7 +411,7 @@ namespace MueLu {
           //on an intermediate level
           RCP<Level> Coarse = Levels_[startLevel+1];
 
-          RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
 
           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
@@ -444,7 +444,7 @@ namespace MueLu {
           X.update(1.0,*correction,1.0);
 
           //X.norm2(norms);
-          RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
+          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
           postSmoo->Apply(X, B, false);
         }
         zeroGuess=false;

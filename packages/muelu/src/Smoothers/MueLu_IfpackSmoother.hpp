@@ -92,7 +92,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         label = "Ifpack: " + list_.get("relaxation: type","unknown relaxation");
       else
         label = "Ifpack: " + type;
-      SmootherBase::SetType(label);
+      //TODO      SmootherBase::SetType(label);
       SmootherPrototype::IsSetup(false);
     }
 
