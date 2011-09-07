@@ -6,7 +6,7 @@
 
 set INC_PATH="-I../../../../ThreadPool/src -I. -I../../src"
 
-set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp"
+set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp simple_hex_fixture.cpp"
 
 #-----------------------------------------------------------------------------
 
