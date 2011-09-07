@@ -31,7 +31,7 @@ namespace MueLu {
     //! Build pre-smoother and/or post-smoother
     virtual bool Build(Level & currentLevel) const = 0;
   
-    virtual bool BuildSmoother(Level & currentLevel, PreOrPost const &pop = BOTH) const = 0;
+    virtual bool BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const = 0;
     //@}
 
   }; //class SmootherFactoryBase

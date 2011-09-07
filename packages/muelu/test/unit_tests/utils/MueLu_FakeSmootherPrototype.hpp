@@ -17,13 +17,23 @@ namespace MueLu {
 
   public:
 
-    FakeSmootherPrototype(int param=0) : param_(param) {}
+    FakeSmootherPrototype(int param=0) : param_(param), numOfSetup_(0), numOfSetupCall_(0) {}
 
     virtual ~FakeSmootherPrototype() {}
 
-    virtual RCP<SmootherPrototype> Copy() const { return rcp(new FakeSmootherPrototype(*this)); }
+    virtual RCP<SmootherPrototype> Copy() const { 
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "Not a prototype. Do not copy"); // test not mandatory, but it is the only use case that we need.
+      return rcp(new FakeSmootherPrototype(*this)); 
+    }
 
-    void Setup(Level &) { SmootherPrototype::IsSetup(true); }
+    void Setup(Level &) { 
+      numOfSetupCall_++; 
+      if (SmootherPrototype::IsSetup()) return;
+
+      numOfSetup_++;
+
+      SmootherPrototype::IsSetup(true); 
+    }
 
     void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) { 
       TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
@@ -31,11 +41,16 @@ namespace MueLu {
     
     void SetParam(int param) { param_ = param; }
 
-    int GetParam(int param) const { return param_; }
+    int GetParam() const { return param_; }
+
+    int GetNumOfSetup() const { return numOfSetup_; }
+    int GetNumOfSetupCall() const { return numOfSetupCall_; }
 
   private:
     int param_;
   
+    int numOfSetup_;
+    int numOfSetupCall_;
   };
 
 }

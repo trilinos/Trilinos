@@ -395,12 +395,12 @@ namespace MueLu {
         if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
           {
             bool emptySolve = true;
-            if (Fine->IsAvailable("PreSmoother")) {
+            if (Fine->IsAvailable("PreSmoother")) { // important do use IsAvailable before Get here. Avoid building default smoother
               RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
               preSmoo->Apply(X, B, false);
               emptySolve=false;
             }
-            if (Fine->IsAvailable("PostSmoother")) {
+            if (Fine->IsAvailable("PostSmoother")) { // important do use IsAvailable before Get here. Avoid building default smoother
               RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
               postSmoo->Apply(X, B, false); 
               emptySolve=false;
@@ -411,6 +411,7 @@ namespace MueLu {
           //on an intermediate level
           RCP<Level> Coarse = Levels_[startLevel+1];
 
+          //TODO: add IsAvailable test to avoid building default smoother
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
 
@@ -444,6 +445,7 @@ namespace MueLu {
           X.update(1.0,*correction,1.0);
 
           //X.norm2(norms);
+          //TODO: add IsAvailable test to avoid building default smoother
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
           postSmoo->Apply(X, B, false);
         }
