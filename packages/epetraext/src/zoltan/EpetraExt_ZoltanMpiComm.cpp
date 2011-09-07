@@ -32,6 +32,7 @@
 namespace EpetraExt {
 
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiComm::ZoltanMpiComm(MPI_Comm Comm) : 
 	Epetra_Object("Epetra::MpiComm"),
 	MpiCommData_(new ZoltanMpiCommData(Comm))
@@ -39,6 +40,7 @@ ZoltanMpiComm::ZoltanMpiComm(MPI_Comm Comm) :
 }
 
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiComm::ZoltanMpiComm(const ZoltanMpiComm & Comm) : 
   Epetra_Object(Comm.Label()), 
   MpiCommData_(Comm.MpiCommData_)
@@ -47,22 +49,26 @@ ZoltanMpiComm::ZoltanMpiComm(const ZoltanMpiComm & Comm) :
 }
 
 //=============================================================================
+EPETRAEXT_DEPRECATED
 void ZoltanMpiComm::Barrier() const {
   MPI_Barrier(MpiCommData_->Comm_);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::Broadcast(double * Values, int Count, int Root) const {
   EPETRA_CHK_ERR(CheckInput(Values,Count));
   EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_DOUBLE, Root, MpiCommData_->Comm_));
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::Broadcast(int * Values, int Count, int Root) const {
   EPETRA_CHK_ERR(CheckInput(Values,Count));
   EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_INT, Root, MpiCommData_->Comm_));
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));
@@ -70,6 +76,7 @@ int ZoltanMpiComm::GatherAll(double * MyVals, double * AllVals, int Count) const
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));
@@ -77,6 +84,7 @@ int ZoltanMpiComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::SumAll(double * PartialSums, double * GlobalSums, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialSums,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalSums,Count));
@@ -84,6 +92,7 @@ int ZoltanMpiComm::SumAll(double * PartialSums, double * GlobalSums, int Count) 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialSums,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalSums,Count));
@@ -91,6 +100,7 @@ int ZoltanMpiComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialMaxs,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalMaxs,Count));
@@ -98,6 +108,7 @@ int ZoltanMpiComm::MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialMaxs,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalMaxs,Count));
@@ -105,6 +116,7 @@ int ZoltanMpiComm::MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::MinAll(double * PartialMins, double * GlobalMins, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialMins,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalMins,Count));
@@ -112,6 +124,7 @@ int ZoltanMpiComm::MinAll(double * PartialMins, double * GlobalMins, int Count) 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::MinAll(int * PartialMins, int * GlobalMins, int Count) const {
   EPETRA_CHK_ERR(CheckInput(PartialMins,Count));
   EPETRA_CHK_ERR(CheckInput(GlobalMins,Count));
@@ -119,6 +132,7 @@ int ZoltanMpiComm::MinAll(int * PartialMins, int * GlobalMins, int Count) const 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::ScanSum(double * MyVals, double * ScanSums, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(ScanSums,Count));
@@ -126,6 +140,7 @@ int ZoltanMpiComm::ScanSum(double * MyVals, double * ScanSums, int Count) const 
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 int ZoltanMpiComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(ScanSums,Count));
@@ -133,22 +148,26 @@ int ZoltanMpiComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
   return(0);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 Epetra_Distributor * ZoltanMpiComm:: CreateDistributor() const {
 
   Epetra_Distributor * dist = new ZoltanMpiDistributor(*this);
   return(dist);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 Epetra_Directory * ZoltanMpiComm:: CreateDirectory(const Epetra_BlockMap & map) const {
 
   Epetra_Directory * dir = new Epetra_BasicDirectory(map);
   return(dir);
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiComm::~ZoltanMpiComm()  {
 	CleanupData();
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 void ZoltanMpiComm::CleanupData() {
 	if(MpiCommData_ != 0) {
 		MpiCommData_->DecrementReferenceCount();
@@ -159,6 +178,7 @@ void ZoltanMpiComm::CleanupData() {
 	}
 }
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiComm & ZoltanMpiComm::operator= (const ZoltanMpiComm & Comm) {
 	if((this != &Comm) && (MpiCommData_ != Comm.MpiCommData_)) {
 		CleanupData();

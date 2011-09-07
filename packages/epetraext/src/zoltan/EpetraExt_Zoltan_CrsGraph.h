@@ -43,7 +43,7 @@ namespace EpetraExt {
 ///
 /** Generates an Epetra_CrsGraph based on the repartitioning algorithms of Zoltan
  */
-class Zoltan_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
+class EPETRAEXT_DEPRECATED Zoltan_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   const std::string partitionMethod_;
 

@@ -25,7 +25,7 @@ namespace Zoltan {
     will be generated.
 */
 
-class QueryObject
+class EPETRAEXT_DEPRECATED QueryObject
 {
 
 public:

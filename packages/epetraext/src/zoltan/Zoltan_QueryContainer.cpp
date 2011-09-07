@@ -35,16 +35,19 @@ int Zoltan::QueryContainer::CurrentObject = 0;
 
 std::map< int, Zoltan::QueryObject * > Zoltan::QueryContainer::StaticMap;
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryContainer::setQueryID( const int & id )
 {
   CurrentObject = id;
 }
 
+EPETRAEXT_DEPRECATED
 const int & Zoltan::QueryContainer::getQueryID()
 {
   return CurrentObject;
 }
 
+EPETRAEXT_DEPRECATED
 bool Zoltan::QueryContainer::registerQueryObject( const int & id, 
 		Zoltan::QueryObject * obj_ptr )
 {
@@ -60,6 +63,7 @@ bool Zoltan::QueryContainer::registerQueryObject( const int & id,
   }
 }
 
+EPETRAEXT_DEPRECATED
 Zoltan::QueryObject * Zoltan::QueryContainer::getQueryObject(
 	const int & id )
 {

@@ -32,6 +32,7 @@
 namespace EpetraExt {
 
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiCommData::ZoltanMpiCommData(MPI_Comm& Comm) 
 	: Comm_(Comm),
 		curTag_(minTag_)
@@ -42,6 +43,7 @@ ZoltanMpiCommData::ZoltanMpiCommData(MPI_Comm& Comm)
 }
 
 //=============================================================================
+EPETRAEXT_DEPRECATED
 ZoltanMpiCommData::~ZoltanMpiCommData() {
 	//cout << "--MCD destroyed, addr: " << this << endl; //DATA_DEBUG
 }

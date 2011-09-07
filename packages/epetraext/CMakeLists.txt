@@ -12,6 +12,8 @@ PACKAGE(EpetraExt)
 # B) Set up package-specific options
 #
 
+PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_TRANSFORM
   HAVE_TRANSFORM
   "Enable transform functionality."

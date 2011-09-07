@@ -32,6 +32,7 @@
 #include <Zoltan_QueryObject.h>
 
   //General Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Objects     (	void * data,
 						int * ierr )
 {
@@ -41,6 +42,7 @@ int Zoltan::QueryFunctions::Number_Objects     (	void * data,
   return obj_ptr->Number_Objects( data, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Object_List       (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -57,6 +59,7 @@ void Zoltan::QueryFunctions::Object_List       (	void * data,
 	local_ids, weight_dim, object_weights, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::First_Object       (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -73,6 +76,7 @@ int Zoltan::QueryFunctions::First_Object       (	void * data,
 	first_global_id, first_local_id, weight_dim, first_weight, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Next_Object        (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -92,6 +96,7 @@ int Zoltan::QueryFunctions::Next_Object        (	void * data,
 	weight_dim, next_weight, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Border_Objects    ( void * data,
 						      int number_neighbor_procs,
 						      int * ierr )
@@ -102,6 +107,7 @@ int Zoltan::QueryFunctions::Number_Border_Objects    ( void * data,
   return obj_ptr->Number_Border_Objects( data, number_neighbor_procs, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Border_Object_List     ( void * data,
 						     int num_gid_entries,
 						     int num_lid_entries,
@@ -121,6 +127,7 @@ void Zoltan::QueryFunctions::Border_Object_List     ( void * data,
 }
 
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::First_Border_Object     ( void * data,
 						     int num_gid_entries,
 						     int num_lid_entries,
@@ -139,6 +146,7 @@ int Zoltan::QueryFunctions::First_Border_Object     ( void * data,
 	first_weight, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Next_Border_Object      ( void * data,
 						     int num_gid_entries,
 						     int num_lid_entries,
@@ -160,6 +168,7 @@ int Zoltan::QueryFunctions::Next_Border_Object      ( void * data,
 }
 
   //Geometry Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Geometry_Objects    (	void * data,
 							int * ierr )
 {
@@ -169,6 +178,7 @@ int Zoltan::QueryFunctions::Number_Geometry_Objects    (	void * data,
   return obj_ptr->Number_Geometry_Objects( data, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Geometry_Values   (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -185,6 +195,7 @@ void Zoltan::QueryFunctions::Geometry_Values   (	void * data,
 }
 
   //Graph Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Edges       (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -199,6 +210,7 @@ int Zoltan::QueryFunctions::Number_Edges       (	void * data,
 	global_id, local_id, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Edge_List (	void * data,
 					int num_gid_entries,
 					int num_lid_entries,
@@ -219,6 +231,7 @@ void Zoltan::QueryFunctions::Edge_List (	void * data,
 }
 
   //Tree Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Coarse_Objects      (	void * data,
 							int * ierr )
 {
@@ -228,6 +241,7 @@ int Zoltan::QueryFunctions::Number_Coarse_Objects      (	void * data,
   return obj_ptr->Number_Coarse_Objects( data, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Coarse_Object_List        (	void * data,
 							int num_gid_entries,
 							int num_lid_entries,
@@ -249,6 +263,7 @@ void Zoltan::QueryFunctions::Coarse_Object_List        (	void * data,
 	in_order, in_vertex, out_vertex, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::First_Coarse_Object      ( void * data,
 						      int num_gid_entries,
 						      int num_lid_entries,
@@ -270,6 +285,7 @@ int Zoltan::QueryFunctions::First_Coarse_Object      ( void * data,
 	in_order, in_vertex, out_vertex, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Next_Coarse_Object       ( void * data,
 						      int num_gid_entries,
 						      int num_lid_entries,
@@ -293,6 +309,7 @@ int Zoltan::QueryFunctions::Next_Coarse_Object       ( void * data,
 	ierr );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryFunctions::Number_Children    (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -307,6 +324,7 @@ int Zoltan::QueryFunctions::Number_Children    (	void * data,
 	global_id, local_id, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Child_List        (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -331,6 +349,7 @@ void Zoltan::QueryFunctions::Child_List        (	void * data,
 	vertices, reference_type, in_vertex, out_vertex, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryFunctions::Child_Weight      (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,

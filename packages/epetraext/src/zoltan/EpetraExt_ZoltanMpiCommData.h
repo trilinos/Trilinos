@@ -41,7 +41,7 @@ namespace EpetraExt {
 		It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
-class ZoltanMpiCommData : public Epetra_Data {
+class EPETRAEXT_DEPRECATED ZoltanMpiCommData : public Epetra_Data {
 
   friend class ZoltanMpiComm;
 

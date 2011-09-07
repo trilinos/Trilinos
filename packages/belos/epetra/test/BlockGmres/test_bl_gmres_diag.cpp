@@ -181,9 +181,11 @@ public:
   Trilinos_Interface(const Teuchos::RCP<Vector_Operator>   pA_in,
 		     const Teuchos::RCP<const Epetra_Comm> pComm_in,
 		     const Teuchos::RCP<const Epetra_Map>  pMap_in)
-    : pA(pA_in), pComm(pComm_in), pMap(pMap_in) 
-  {
-  };
+    : pA (pA_in), 
+      pComm (pComm_in), 
+      pMap (pMap_in), 
+      use_transpose (false)
+  {}
   
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   

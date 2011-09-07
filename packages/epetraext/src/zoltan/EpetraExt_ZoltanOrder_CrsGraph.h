@@ -49,7 +49,7 @@ namespace EpetraExt {
  * from Zoltan
  */
 
-class ZoltanOrder_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
+class EPETRAEXT_DEPRECATED ZoltanOrder_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   Epetra_Map * NewRowMap_;
 

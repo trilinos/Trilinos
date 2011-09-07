@@ -49,6 +49,7 @@ using std::set;
 
 namespace EpetraExt {
 
+EPETRAEXT_DEPRECATED
 ZoltanOrder_CrsGraph::
 ~ZoltanOrder_CrsGraph()
 {
@@ -56,6 +57,7 @@ ZoltanOrder_CrsGraph::
   if( NewRowMap_ ) delete NewRowMap_;
 }
 
+EPETRAEXT_DEPRECATED
 ZoltanOrder_CrsGraph::NewTypeRef
 ZoltanOrder_CrsGraph::
 operator()( OriginalTypeRef orig )

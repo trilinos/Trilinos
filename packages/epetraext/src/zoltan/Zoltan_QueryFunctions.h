@@ -36,7 +36,7 @@
 
 namespace Zoltan {
 
-class QueryFunctions
+class EPETRAEXT_DEPRECATED QueryFunctions
 {
 
 public:

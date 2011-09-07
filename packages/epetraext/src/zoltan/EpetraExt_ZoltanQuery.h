@@ -44,7 +44,7 @@ namespace EpetraExt {
  * This object allows Zoltan to query an Epetra_CrsGraph object for it's
  * partitioning/ordering algorithms
  */
-class ZoltanQuery : public Zoltan::QueryObject
+class EPETRAEXT_DEPRECATED ZoltanQuery : public Zoltan::QueryObject
 {
 
   const Epetra_CrsGraph & graph_;

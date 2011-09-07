@@ -32,7 +32,7 @@ class MigrationObject;
  "callback" functionality used by Zoltan.
 */
 
-class LoadBalance
+class EPETRAEXT_DEPRECATED LoadBalance
 {
 
 public:

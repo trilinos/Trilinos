@@ -2,6 +2,18 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
+Trilinos 10.8:
+--------------
+
+* New multidimensional array sub-package in kokkos/array subdirectory.
+  The MDArrayView<Type,Device>, MultiVectorView<Type,Device>,
+  and ValueView<Type,Device> template classes manage allocated
+  memory on the 'Device' and perform compile-time selection of a
+  device-optimal mapping of array's multi-index space to data members.
+  Includes unit tests, performance tests, and example mini-applications.
+
+
+
 Trilinos 10.6.4:
 ----------------
 

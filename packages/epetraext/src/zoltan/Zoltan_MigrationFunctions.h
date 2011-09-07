@@ -36,7 +36,7 @@
 
 namespace Zoltan {
 
-class MigrationFunctions
+class EPETRAEXT_DEPRECATED MigrationFunctions
 {
 
 public:

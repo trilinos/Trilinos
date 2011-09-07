@@ -32,6 +32,7 @@
 #include <Zoltan_QueryObject.h>
 
   //General Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Objects        (	void * data,
 						int * ierr )
 {
@@ -43,6 +44,7 @@ int Zoltan::QueryObject::Number_Objects        (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Object_List  (	void * data,
 					int num_gid_entries,
 					int num_lid_entries,
@@ -59,6 +61,7 @@ void Zoltan::QueryObject::Object_List  (	void * data,
   *ierr = ZOLTAN_FATAL;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::First_Object  (	void * data,
 					int num_gid_entries,
 					int num_lid_entries,
@@ -77,6 +80,7 @@ int Zoltan::QueryObject::First_Object  (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Next_Object   ( void * data,
 					int num_gid_entries,
 					int num_lid_entries,
@@ -98,6 +102,7 @@ int Zoltan::QueryObject::Next_Object   ( void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Border_Objects (	void * data,
 						int number_neighbor_procs,
 						int * ierr )
@@ -111,6 +116,7 @@ int Zoltan::QueryObject::Number_Border_Objects (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Border_Object_List   (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -128,6 +134,7 @@ void Zoltan::QueryObject::Border_Object_List   (	void * data,
   *ierr = ZOLTAN_FATAL;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::First_Border_Object   (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -147,6 +154,7 @@ int Zoltan::QueryObject::First_Border_Object   (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Next_Border_Object    (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -170,6 +178,7 @@ int Zoltan::QueryObject::Next_Border_Object    (	void * data,
 }
 
   //Geometry Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Geometry_Objects       (	void * data,
 							int * ierr )
 {
@@ -181,6 +190,7 @@ int Zoltan::QueryObject::Number_Geometry_Objects       (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Geometry_Values      (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -197,6 +207,7 @@ void Zoltan::QueryObject::Geometry_Values      (	void * data,
 }
 
   //Graph Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Edges  (	void * data,
 					int num_gid_entities,
 					int num_lid_entities,
@@ -213,6 +224,7 @@ int Zoltan::QueryObject::Number_Edges  (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Edge_List    (	void * data,
 					int num_gid_entities,
 					int num_lid_entities,
@@ -233,6 +245,7 @@ void Zoltan::QueryObject::Edge_List    (	void * data,
 }
 
   //Tree Based Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Coarse_Objects (	void * data,
 						int * ierr )
 {
@@ -244,6 +257,7 @@ int Zoltan::QueryObject::Number_Coarse_Objects (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Coarse_Object_List   (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -265,6 +279,7 @@ void Zoltan::QueryObject::Coarse_Object_List   (	void * data,
   *ierr = ZOLTAN_FATAL;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::First_Coarse_Object   ( void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -288,6 +303,7 @@ int Zoltan::QueryObject::First_Coarse_Object   ( void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Next_Coarse_Object    ( void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -312,6 +328,7 @@ int Zoltan::QueryObject::Next_Coarse_Object    ( void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::QueryObject::Number_Children       (	void * data,
 						int num_gid_entities,
 						int num_lid_entities,
@@ -328,6 +345,7 @@ int Zoltan::QueryObject::Number_Children       (	void * data,
   return 0;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Child_List   (	void * data,
 					int num_gid_entities,
 					int num_lid_entities,
@@ -351,6 +369,7 @@ void Zoltan::QueryObject::Child_List   (	void * data,
   *ierr = ZOLTAN_FATAL;
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::QueryObject::Child_Weight (	void * data,
 					int num_gid_entities,
 					int num_lid_entities,

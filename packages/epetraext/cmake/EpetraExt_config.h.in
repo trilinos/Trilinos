@@ -77,3 +77,5 @@
 
 /* define if STL map key is required to be const */
 #cmakedefine MUST_CONST_STL_MAP_KEY
+
+@EPETRAEXT_DEPRECATED_DECLARATIONS@
