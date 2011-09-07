@@ -138,6 +138,14 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ENDFOREACH()
   ENDIF()
 
+  # The CPACK_RESOURCE_FILE_[LICENSE|README] files must end in one of
+  # .txt .rtf .html. Copy the README file to the binary directory with
+  # a .txt extension. This is only the case with the PackageMaker 
+  # generator, but it doesn't hurt to do it for other generators as
+  # well.
+  SET(Trilinos_LICENSE_AND_README "${Trilinos_BINARY_DIR}/README.txt")
+  FILE(COPY "${Trilinos_SOURCE_DIR}/README" DESTINATION ${Trilinos_LICENSE_AND_README})
+
   SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
   SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
   SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
@@ -145,8 +153,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   SET(CPACK_PACKAGE_NAME "trilinos")
   SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
   SET(CPACK_PACKAGE_VERSION "${Trilinos_VERSION}")
-  SET(CPACK_RESOURCE_FILE_README "${Trilinos_SOURCE_DIR}/README")
-  SET(CPACK_RESOURCE_FILE_LICENSE "${Trilinos_SOURCE_DIR}/README")
+  SET(CPACK_RESOURCE_FILE_README "${Trilinos_LICENSE_AND_README}")
+  SET(CPACK_RESOURCE_FILE_LICENSE "${Trilinos_LICENSE_AND_README}")
   SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
   SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
   SET(CPACK_COMPONENTS_ALL ${Trilinos_PACKAGES})
