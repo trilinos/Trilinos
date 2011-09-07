@@ -42,7 +42,7 @@
 // This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
 // Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
 // from the problem, if it exists, will be used instead of multiple
-// random right-hand-sides.  The initial guesses are all set to zero. 
+// random right-hand sides.  The initial guesses are all set to zero. 
 //
 // NOTE: No preconditioner is used in this example. 
 //
@@ -92,13 +92,17 @@ int main(int argc, char *argv[]) {
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
-  int maxrestarts = 15;      // number of restarts allowed 
   std::string filename("orsirr1_scaled.hb");
-  MT tol = 1.0e-5;           // relative residual tolerance
+  MT relResTol = 2.0e-4;     // relative residual tolerance
+  // Like CG, LSQR is a short recurrence method that 
+  // does not have the "n" step convergence property in finite precision arithmetic.
+  MT resGrowthFactor = 2.0;   // In this example, warn if |resid| > resGrowthFactor * relResTol
+  // With no preconditioner, this is only the difference between the "implicit" and the "explict
+  // residual.  
 
-
-
+  MT relMatTol = 1.4e-7;     // relative Matrix error, default value sqrt(eps)
+  MT maxCond  = 1.e+16;      // maximum condition number default value 1/eps
+  MT damp = 0.;              // regularization (or damping) parameter 
 
   Teuchos::CommandLineProcessor cmdp(false,true); // e.g. ./a.out --tol=.1 --filename=foo.hb
 
@@ -106,12 +110,13 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("lambda",&damp,"Regularization parameter");
+  cmdp.setOption("tol",&relResTol,"Relative residual tolerance");
+  cmdp.setOption("matrixTol",&relMatTol,"Relative error in Matrix");
+  cmdp.setOption("max-cond",&maxCond,"Maximum condition number");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by LSQR."); // must be one at this point
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
 
 
 
@@ -127,6 +132,8 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
   RCP<Epetra_Vector> vecB, vecX;
+  // Trilinos_Util_ReadMatrixMarket2Epetra vecX := 0,  vecB = A*randVec
+  // It is odd that the exact solution is discarded.
   EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
   A->OptimizeStorage();
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
@@ -137,10 +144,32 @@ int main(int argc, char *argv[]) {
     B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
     X->Seed();
     X->Random();
-    OPT::Apply( *A, *X, *B );
-    X->PutScalar( 0.0 );
+    OPT::Apply( *A, *X, *B ); // B := AX
+    X->PutScalar( 0.0 );   // annihilate X
   }
   else {
+    int locNumCol = Map->MaxLID() + 1;
+    int globNumCol = Map->MaxAllGID() + 1;
+    for( int li = 0; li < locNumCol; li++){   // assume consecutive lid
+      int gid = Map->GID(li);
+      double value = (double) ( globNumCol -1 - gid ); 
+      int numEntries = 1;
+      vecX->ReplaceGlobalValues( numEntries, &value, &gid );
+    }
+    bool Trans = false;
+    A->Multiply( Trans, *vecX, *vecB );
+    bool goodInitGuess = false;
+    if( goodInitGuess )
+      {
+        double value = 1.e-2;  // solution norm ~ n^(3/2) ~ 10^6
+        int numEntries = 1;   
+        int index = 0;
+        vecX->SumIntoMyValues(  numEntries, &value, &index); 
+      }
+    // no initial guess
+    vecX->PutScalar( 0.0 ); // code breaks with nonzero initial guess.  ok .. that's my job.
+    // Is the relative residual threshold reset when there is an initial guess? 
+    // If so, then where?
     X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
     B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
   }
@@ -151,13 +180,13 @@ int main(int argc, char *argv[]) {
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters == -1)
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  // this is how you talk to the linear solver!
-  ParameterList belosList;
-  belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
-  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  ParameterList belosList; // mechanism for configuring specific linear solver
+  belosList.set( "Block Size", blocksize );       // LSQR blocksize, must be one
+  belosList.set( "Lambda", damp );                // Regularization parameter
+  belosList.set( "Rel RHS Err", relResTol );      // Relative convergence tolerance requested
+  belosList.set( "Rel Mat Err", relMatTol );      // Maximum number of restarts allowed
+  belosList.set( "Condition limit", maxCond);     // upper bound for cond(A)
+  belosList.set( "Maximum Iterations", maxiters );// Maximum number of iterations allowed
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
     verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
@@ -182,7 +211,7 @@ int main(int argc, char *argv[]) {
   // ******************* Apply Single Vector LSQR **********************
   // *******************************************************************
   // Create an iterative solver manager.
-  RCP< Belos::SolverManager<double,MV,OP> > newSolver
+  RCP< Belos::LSQRSolMgr<double,MV,OP> > newSolver
     = rcp( new Belos::LSQRSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   if (proc_verbose) { // ******** Print a problem description *********
@@ -190,15 +219,28 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of restarts allowed: " << maxrestarts << std::endl;
-    std::cout << "Max number of Gmres iterations per linear system: " << maxiters << std::endl; 
-    std::cout << "Relative residual tolerance: " << tol << std::endl;
+    std::cout << "Max number of iterations for a linear system: " << maxiters << std::endl; 
+    std::cout << "Relative residual tolerance: " << relResTol << std::endl;
     std::cout << std::endl;
+    std::cout << "Solver's Description: " << std::endl;
+    std::cout << newSolver->description() << std::endl; // visually verify the parameter list
   }
   Belos::ReturnType ret = newSolver->solve(); // Perform solve
-  int numIters = newSolver->getNumIters(); // Get the number of iterations for the solve.
+  std::vector<double> solNorm( numrhs );      // get solution norm
+  MVT::MvNorm( *X, solNorm );
+  int numIters = newSolver->getNumIters();    // get number of solver iterations
+  MT condNum = newSolver->getMatCondNum(); 
+  MT matrixNorm= newSolver->getMatNorm();
+  MT resNorm = newSolver->getResNorm(); 
+  MT lsResNorm = newSolver->getMatResNorm();
+
   if (proc_verbose)
-    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl
+     << "matrix condition number: " << condNum << std::endl
+     << "matrix norm: " << matrixNorm << std::endl
+     << "residual norm: " << resNorm << std::endl
+     << "solution norm: " << solNorm[0] << std::endl
+     << "least squares residual Norm: " << lsResNorm << std::endl;
   bool badRes = false;                     // Compute the actual residuals.
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
@@ -212,12 +254,13 @@ int main(int argc, char *argv[]) {
     for ( int i=0; i<numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
       std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) badRes = true;
+      if (actRes > relResTol * resGrowthFactor)
+        { 
+          badRes = true;
+          if (verbose) std::cout << "residual norm > " << relResTol * resGrowthFactor <<  std::endl;	
+        }
     }
   }
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;	
@@ -225,5 +268,8 @@ int main(int argc, char *argv[]) {
   }
   if (proc_verbose)
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
   return 0; // Default return value
 } 

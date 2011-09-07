@@ -64,6 +64,39 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+// BEGIN mfh 07 Sep 2011
+// This is a hack.  Belos shouldn't depend on Ifpack.  We just want
+// to make sure that Ifpack knows how to apply transposes.
+#include "Ifpack_ILU.h"
+
+namespace {
+  // BIG HACK (mfh 07 Sep 2011)
+  //
+  // If op (presented as an Epetra_Operator) IS-AN EpetraPrecOp, ask op to apply
+  // the transpose (or not, depending on the Boolean) from now on.  We have to 
+  // do this hack because EpetraPrecOp's SetUseTranspose() is broken in a bad way
+  // (it silently does nothing).
+  void
+  setEpetraPrecOpTranspose (const Teuchos::RCP<const Epetra_Operator>& op, 
+                            const bool transpose)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    using Teuchos::rcp_dynamic_cast;
+
+    RCP<const Belos::EpetraPrecOp> epetraPrecOp = rcp_dynamic_cast<const Belos::EpetraPrecOp> (op, true);
+    RCP<Epetra_Operator> origOp = epetraPrecOp->getOp ();
+ 
+    const int errcode = origOp->SetUseTranspose (transpose);
+    if (errcode != 0) {
+      throw std::runtime_error ("Your Ifpack_ILU object doesn't know how to apply its transpose!");
+    }
+  }
+} // namespace (anonymous) 
+// END mfh 07 Sep 2011
+
+
 /*!	
   \class Belos::LSQRIter
   
@@ -104,6 +137,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 	    const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP> > &tester,
 		  Teuchos::ParameterList &params );
 
+// If either blocks or reorthogonalization exist, then 
 //                  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 
 
@@ -119,17 +153,16 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
    * test indicates the need to stop or an error occurs (in which case, an
    * std::exception is thrown).
    *
-   * iterate() will first determine whether the solver is initialized; if
-   * not, it will call initialize() using default arguments. After
-   * initialization, the solver performs LSQR iterations until the
-   * status test evaluates as ::Passed, at which point the method returns to
-   * the caller. 
+   * iterate() first determine whether the solver is initialized; if
+   * not, it will call initialize() without arguments. After
+   * initialization, iterate() iterates LSQR until the
+   * status test is Passed, and then returns to the caller. 
    *
    * The status test is queried at the beginning of the iteration.
    */
   void iterate();
 
-  /*! \brief Initialize the solver to an iterate, providing a complete state.
+  /*! \brief Initialize the solver to an iterate, completing the initial state.
    *
    * The %LSQRIter contains a certain amount of state, consisting of two bidiagonalization 
    * vectors, a descent direction, a damping value, and various estimates of errors and
@@ -140,7 +173,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
    */
   void initializeLSQR(LSQRIterationState<ScalarType,MV> newstate);
 
-  /*! \brief Initialize the solver.
+  /*! \brief The solver is initialized using initializeLSQR.
    */
   void initialize()
   {
@@ -157,10 +190,10 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
    */
   LSQRIterationState<ScalarType,MV> getState() const {
     LSQRIterationState<ScalarType,MV> state;
-    state.U = U_;
-    state.V = V_;
-    state.W = W_;
-    state.lambda = lambda_;
+    state.U = U_;  // right Lanczos vector
+    state.V = V_;  // left  Lanczos vector
+    state.W = W_;  // OP * V 
+    state.lambda = lambda_;  
     state.resid_norm = resid_norm_;
     state.frob_mat_norm = frob_mat_norm_;
     state.mat_cond_num = mat_cond_num_;
@@ -261,7 +294,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   Teuchos::RCP<MV> W_;
   //
   // Damping value
-  ScalarType lambda_;
+  MagnitudeType lambda_;
   //
   // Residual norm estimate
   ScalarType resid_norm_;
@@ -310,8 +343,25 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   {
     if (!stateStorageInitialized_) {
       // Check if there is any multivector to clone from.
+      Teuchos::RCP<const MV> rhsMV = lp_->getInitPrecResVec(); // RHS CurrRHSVec InitResVec
       Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
+      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> initGuessNorm(1); // begin testing
+      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> rhsNorm(1); // begin testing
+      MVT::MvNorm( *lhsMV, initGuessNorm );
+      MVT::MvNorm( *rhsMV, rhsNorm );
+      const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+      if( initGuessNorm[0] != MTzero )
+        { // Hurray, nonzero initial guess tested!   proc_verbose needed
+          Teuchos::RCP<const MV> currLhsMV = lp_->getCurrLHSVec();
+          std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> solNormCurr(1);
+          MVT::MvNorm( *currLhsMV, solNormCurr );
+          std::cout << "LSQR Iter stateStorageInit" << std::endl
+                    << "solution initial guess norm: " << initGuessNorm[0] << std::endl
+                    << "current solution norm: " << solNormCurr[0] << std::endl
+                    << "rhs norm: " << rhsNorm[0] << std::endl;
+        } else {
+          std::cout << "LSQR Iter stateStorageInit: rhs norm: " << rhsNorm[0] << std::endl;
+        }
       if (lhsMV == Teuchos::null || rhsMV == Teuchos::null) {
 	stateStorageInitialized_ = false;
 	return;
@@ -325,9 +375,9 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 	  TEST_FOR_EXCEPTION(rhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify right hand multivector to clone from.");
 	  TEST_FOR_EXCEPTION(lhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify left hand multivector to clone from.");
 
-	  U_ = MVT::Clone( *rhsMV, 1 );
-	  V_ = MVT::Clone( *lhsMV, 1 );
-	  W_ = MVT::Clone( *lhsMV, 1 );
+	  U_ = MVT::Clone( *rhsMV, 1 ); // LeftPrecond * rhs
+	  V_ = MVT::Clone( *lhsMV, 1 ); // zero
+	  W_ = MVT::Clone( *lhsMV, 1 ); // zero
 	}
 	
 	// State storage has now been initialized.
@@ -342,6 +392,8 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   template <class ScalarType, class MV, class OP>
   void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV> newstate)
   {
+    using Teuchos::RCP;
+
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
       setStateSize();
@@ -351,25 +403,96 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     
     std::string errstr("LSQRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
     // Compute initial bidiagonalization vectors and search direction
     //
-    Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-    Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
+    RCP<const MV> lhsMV = lp_->getLHS(); // so far, zero in all tests
+    RCP<const MV> rhsMV = lp_->getInitPrecResVec(); // RHS CurrRHSVec InitResVec
 
-    OPT::Apply(*(lp_->getOperator()), *lhsMV, *U_);
+
+    RCP<const OP> M_left = lp_->getLeftPrec();
+    RCP<const OP> A = lp_->getOperator();
+    RCP<const OP> M_right = lp_->getRightPrec();
+
+    // Regarding the initial guess:
+    Teuchos::RCP<MV> x = lp_->getCurrLHSVec();
+    // MVT::MvInit (*x, SCT::zero()); // annihilate initial guess 
+
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> solNorm(1);
+    MVT::MvNorm( *x, solNorm );
+    std::cout << "LSQR Iter Init solution norm " << solNorm[0] << std::endl;
+    // Apply the preconditioned operator: U := (M_L A M_R) X.
+    //
+    //OPT::Apply(*(lp_->getOperator()), *lhsMV, *U_);
+    RCP<MV> X = MVT::CloneCopy (*lhsMV); // temporary vector
+    const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    if (! M_right.is_null()  && solNorm[0] != MTzero )
+      {
+        RCP<MV> tempInDomainOfA = MVT::CloneCopy (*X);
+        OPT::Apply (*M_right, *tempInDomainOfA, *X); // may change X 
+      }
+    OPT::Apply (*A, *X, *U_);
+    if (! M_left.is_null())
+      {
+        RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
+        OPT::Apply (*M_left, *tempInRangeOfA, *U_); // U := L A R lhs 
+      }
+    // U := rhsMV - U.  This is the residual of the preconditioned operator.
+    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     MVT::MvAddMv( one, *rhsMV, -one, *U_, *U_);
-    OPT::Apply(*(lp_->getOperator()), *U_, *V_, CONJTRANS);
+    // E.g. if on entering initializeLSQR stateStorageInitialized_ 
+    // was false and lhs = 0, then U_ was just reset to initPrecResid
+    // debug print norm statements 
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> rhsNorm(1); 
+    MVT::MvNorm( *U_, rhsNorm );
+    std::cout << "initialize LSQR rhs norm: " << rhsNorm[0] << std::endl;
+
+
+    // Apply the (conjugate) transpose of the preconditioned operator:
+    //
+    // V := (M_L A M_R)^* U, which means
+    // V := M_R^* (A^* (M_L^* U)).
+    //
+    //OPT::Apply(*(lp_->getOperator()), *U_, *V_, CONJTRANS);
+    if ( M_left.is_null())
+      {
+        OPT::Apply (*A, *U_, *V_, CONJTRANS); // V_ = A' U_
+      }
+    else
+      {
+        RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
+
+        setEpetraPrecOpTranspose (M_left, true);
+        //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS); 
+        OPT::Apply (*M_left, *U_, *tempInRangeOfA);
+        setEpetraPrecOpTranspose (M_left, false);
+
+        OPT::Apply (*A, *tempInRangeOfA, *V_, CONJTRANS); // V_ = A' LeftPrec' U_
+      }
+    if (! M_right.is_null())
+      {
+        RCP<MV> tempInDomainOfA = MVT::CloneCopy (*V_);
+
+        setEpetraPrecOpTranspose (M_right, true);
+        //OPT::Apply (*M_right, *tempInDomainOfA, *V_, CONJTRANS); // V:= RtPrec' A' LeftPrec' U
+        OPT::Apply (*M_right, *tempInDomainOfA, *V_);
+        setEpetraPrecOpTranspose (M_right, false);
+      }
+
+    // debug print norm statements 
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> atrhsNorm(1); 
+    MVT::MvNorm( *V_, atrhsNorm );
+    std::cout << "initialize LSQR norm(V) =  " << atrhsNorm[0] << std::endl;
+
+    // W := V (copy the vector) 
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     MVT::MvAddMv( one, *V_, zero, *V_, *W_);
     
-    frob_mat_norm_ = zero;
-    mat_cond_num_ = zero;
-    sol_norm_ = zero;
+    frob_mat_norm_ = zero; // These are 
+    mat_cond_num_ = one;   // lower
+    sol_norm_ = zero;      // bounds. 
     
-    // The solver is initialized
+    // The solver is initialized.
     initialized_ = true;
   }
 
@@ -388,23 +511,40 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
     // Allocate memory for scalars.
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> alpha(1);
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> beta(1);
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> wnorm2(1);
-    ScalarType rhobar, phibar, cs1, phi, rho, cs, sn, theta, xxnorm = zero, common;
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> xi(1);
+    // xi is just a dummy scalar that I use for storing inner products without
+    // trampling important scalar (read SerialDenseMatrix) like alpha and beta.
+
+    // a sane thing to do would be to fix this.  But just wait.
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> wnorm2(1); 
+    ScalarType rhobar, phibar, cs1, phi, rho, cs, sn, theta, xxnorm = MTzero, common;
     ScalarType zetabar, sn1, psi, res = zero, bbnorm = zero, ddnorm = zero, gamma, tau;
     ScalarType cs2 = -one, sn2 = zero, gammabar, zeta = zero, delta;
     
-    // Allocate memory for working vectors.
-    // Operator applied to bidiagonalization vector
-    Teuchos::RCP<MV> AV;
-    // Transpose of operator applied to bidiagonalization vector
-    Teuchos::RCP<MV> AtU;
+    // The pair of work vectors AV and AtU are 
+    Teuchos::RCP<MV> AV; // used in applying A to V_ and
     AV = MVT::Clone( *U_, 1);
+    Teuchos::RCP<MV> AtU; // used in applying A^TRANS to U_ respectively.
     AtU = MVT::Clone( *V_, 1);
+
+    bool debugSerialLSQR = true; 
+    int numSave = 0;
+    if( debugSerialLSQR )
+      {
+        numSave = 2;
+      }
+    Teuchos::RCP<MV> allU; 
+    Teuchos::RCP<MV> allV; 
+    allV = MVT::Clone( *U_, numSave);
+    MVT::MvScale( *allV, zero );
+    allU = MVT::Clone( *V_, numSave);
+    MVT::MvScale( *allU, zero );
 
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -413,17 +553,24 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, LSQRIterateFailure,
                         "LSQRIter::iterate(): current linear system has more than one vector!" );
 
+    // In initializeLSQR,  among other things,  V = A' U.
     // Compute alpha and beta and scale bidiagonalization vectors
     MVT::MvNorm( *U_, beta );
     MVT::MvScale( *U_, one / beta[0] );
-    MVT::MvScale( *V_, one / beta[0] );
+    MVT::MvScale( *V_, one / beta[0] );  // scale V = A'U to normalize U
     MVT::MvNorm( *V_, alpha );
-    MVT::MvScale( *V_, one / alpha[0] );
-    MVT::MvScale( *W_, one / (beta[0] * alpha[0]) );
+    std::cout << "Lsqr from the top : alpha = "  << alpha[0] << std::endl;
+    MVT::MvScale( *V_, one / alpha[0] ); // V alpha = A' U to normalize V
+    MVT::MvScale( *W_, one / (beta[0] * alpha[0]) ); // W = V
+
+    using Teuchos::RCP;
+    RCP<const OP> M_left = lp_->getLeftPrec();
+    RCP<const OP> A = lp_->getOperator();
+    RCP<const OP> M_right = lp_->getRightPrec();
 
     rhobar = alpha[0];
     phibar = beta[0];
-    
+
     resid_norm_ = beta[0];
     mat_resid_norm_ = alpha[0] * beta[0];
     bnorm_ = beta[0];
@@ -434,28 +581,139 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     while (stest_->checkStatus(this) != Belos::Passed) {
       // Increment the iteration
       iter_++;
+      if( debugSerialLSQR )
+        {
+          if( iter_ > 1 )
+            {  // check orthogonality
+              int numVec = numSave;  // min( numSave, iter-1)
+              Teuchos::SerialDenseMatrix<int,ScalarType> vtv(numVec,1);
+              MVT::MvTransMv( one, *allV, *V_, vtv );
+              std::cout << "lsqr ortho test: vtv " << vtv << std::endl;
+              Teuchos::SerialDenseMatrix<int,ScalarType> utu(numVec,1);
+              MVT::MvTransMv( one, *allU, *U_, utu );
+              std::cout << "lsqr ortho test: utu " << utu << std::endl;
+            }
+          if( iter_ <= numSave )
+            { // save vectors 
+              std::vector<int> columnList(1);
+              columnList[0] = iter_ - 1;
+              Teuchos::RCP<MV> vCur = MVT::CloneViewNonConst(*allV,columnList);
+              Teuchos::RCP<MV> uCur = MVT::CloneViewNonConst(*allU,columnList);
+              MVT::MvAddMv( one, *V_, zero, *vCur, *vCur);
+              MVT::MvAddMv( one, *U_, zero, *uCur, *uCur);
+            }
+        }
 
-      // Perform the next step of the bidiagonalization to obtain the next U_ and V_ vectors
-      // and the scalars alpha and beta.  These satisfy the relations
-      // beta*U_ = AV - alpha*U_
-      // alpha*V_ = AtU - beta*V_
 
-      // AV := A * V_
-      OPT::Apply(*(lp_->getOperator()), *V_, *AV);
-      MVT::MvAddMv( one, *AV, -alpha[0], *U_, *U_ );
+      // Perform the next step of the bidiagonalization.
+      // The next U_ and V_ vectors and scalars alpha and beta satisfy 
+      // U_ betaNew := AV - U_ alphaOld ...
+
+      if ( M_right.is_null() )
+        {
+          OPT::Apply(*A, *V_, *AV); // AV := A * V_
+        }
+      else
+        {
+          RCP<MV> tempInDomainOfA = MVT::CloneCopy (*V_);
+          OPT::Apply (*M_right, *V_, *tempInDomainOfA); 
+          OPT::Apply(*A, *tempInDomainOfA, *AV); 
+        }
+
+      if (! M_left.is_null())
+        {
+          RCP<MV> tempInRangeOfA = MVT::CloneCopy (*AV);
+          OPT::Apply (*M_left, *tempInRangeOfA, *AV); // AV may change
+        }
+
+
+    if ( !M_left.is_null() && debugSerialLSQR && iter_ == 1)
+      { // confirm that V alpha = A' U  again
+
+       RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
+
+       setEpetraPrecOpTranspose (M_left, true);
+       //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
+       OPT::Apply (*M_left, *U_, *tempInRangeOfA);
+       setEpetraPrecOpTranspose (M_left, false);
+
+       OPT::Apply (*A, *tempInRangeOfA, *AtU, CONJTRANS);   // AtU = B'L'U
+       MVT::MvAddMv( one, *AtU, -alpha[0], *V_, *AtU );
+       MVT::MvNorm( *AtU, xi );
+       std::cout << "| V alpha - A' u |= "  << xi[0] << std::endl;
+       std::cout << std::endl;
+       std::cout << std::endl;
+       std::cout << std::endl;
+      }
+
+
+      if( debugSerialLSQR && iter_ == 1)
+        {
+          std::cout << "alpha is still = "  << alpha[0] << std::endl;
+
+          Teuchos::SerialDenseMatrix<int,ScalarType> utav(1,1);
+          MVT::MvTransMv( one, *AV, *U_, utav );
+          std::cout << "<AV, U> = alpha = " << utav << std::endl;
+
+          Teuchos::SerialDenseMatrix<int,ScalarType> uotuo(1,1);
+          MVT::MvTransMv( one, *U_, *U_, uotuo );
+          std::cout << "<U, U> = alpha = " << uotuo << std::endl;
+
+          Teuchos::RCP<MV> Unext; 
+          Unext = MVT::Clone( *U_, 1);
+          MVT::MvAddMv( one, *AV, -alpha[0], *U_, *Unext );
+          Teuchos::SerialDenseMatrix<int,ScalarType> untu(1,1);
+          MVT::MvTransMv( one, *Unext, *U_, untu );
+          std::cout << "<uNew, uCur> =  " << untu << std::endl;
+        } 
+
+      MVT::MvAddMv( one, *AV, -alpha[0], *U_, *U_ ); // uNew := Av - uOld alpha
       MVT::MvNorm( *U_, beta);
-      // Check that beta is a positive number!
+
+      if( debugSerialLSQR )
+        {
+          std::cout << "Lsqr " << iter_ << "|Av - u alpha| = " << beta[0] << std::endl;
+        } 
+
+      // Check that beta is a positive (i.e. nonzero) number
       TEST_FOR_EXCEPTION( SCT::real(beta[0]) <= zero, LSQRIterateFailure, "LSQRIter::iterate(): non-positive value for beta encountered!");
       bbnorm += alpha[0]*alpha[0] + beta[0]*beta[0] + lambda_*lambda_;
       MVT::MvScale( *U_, one / beta[0] );
 
-      // AtU := A^T * U_
-      OPT::Apply(*(lp_->getOperator()), *U_, *AtU, CONJTRANS);
+      if (M_left.is_null())
+        { // ... and V_ alphaNew := AtU - V_ betaNew
+          OPT::Apply(*A, *U_, *AtU, CONJTRANS);
+        }
+      else
+        {
+          RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
+
+          setEpetraPrecOpTranspose (M_left, true);
+          //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
+          OPT::Apply (*M_left, *U_, *tempInRangeOfA);
+          setEpetraPrecOpTranspose (M_left, false);
+
+          OPT::Apply(*A, *tempInRangeOfA, *AtU, CONJTRANS);
+        }
+      if (! M_right.is_null())
+        {
+          RCP<MV> tempInDomainOfA = MVT::CloneCopy (*AtU);
+
+          setEpetraPrecOpTranspose (M_right, true);
+          //OPT::Apply (*M_right, *tempInDomainOfA, *AtU, CONJTRANS); // AtU may change
+          OPT::Apply (*M_right, *tempInDomainOfA, *AtU);
+          setEpetraPrecOpTranspose (M_right, false);
+        }
+
       MVT::MvAddMv( one, *AtU, -beta[0], *V_, *V_ );
       MVT::MvNorm( *V_, alpha );
       // Check that alpha is a positive number!
       TEST_FOR_EXCEPTION( SCT::real(alpha[0]) <= zero, LSQRIterateFailure, "LSQRIter::iterate(): non-positive value for alpha encountered!");
       MVT::MvScale( *V_, one / alpha[0] );
+      if( debugSerialLSQR )
+        {
+          std::cout << "Lsqr " << iter_ << "alpha = "  << alpha[0] << std::endl;
+        }
 
       // Use a plane rotation to eliminate the damping parameter.  
       // This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
@@ -488,7 +746,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
       // Update the solution vector and search direction vector
       MVT::MvAddMv( phi / rho, *W_, one, *cur_soln_vec, *cur_soln_vec);
-      lp_->updateSolution();
+      //lp_->updateSolution(); // This does nothing at all.  Yay.
       MVT::MvNorm( *W_, wnorm2 );
       ddnorm += (one / rho)*(one / rho) * wnorm2[0]*wnorm2[0];
       MVT::MvAddMv( one, *V_, -theta / rho, *W_, *W_ );
