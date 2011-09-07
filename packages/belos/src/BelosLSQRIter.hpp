@@ -64,46 +64,11 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-// BEGIN mfh 07 Sep 2011
-//#define BELOS_BIG_STUPID_HACK 1
-#ifdef BELOS_BIG_STUPID_HACK
-#  undef BELOS_BIG_STUPID_HACK
-#endif // BELOS_BIG_STUPID_HACK
-
-#ifdef BELOS_BIG_STUPID_HACK
-namespace {
-  // BIG HACK (mfh 07 Sep 2011)
-  //
-  // If op (presented as an Epetra_Operator) IS-AN EpetraPrecOp, ask op to apply
-  // the transpose (or not, depending on the Boolean) from now on.  We have to 
-  // do this hack because EpetraPrecOp's SetUseTranspose() is broken in a bad way
-  // (it silently does nothing).
-  void
-  setEpetraPrecOpTranspose (const Teuchos::RCP<const Epetra_Operator>& op, 
-                            const bool transpose)
-  {
-    using Teuchos::rcp_const_cast;
-
-    const int errcode = rcp_const_cast<Epetra_Operator>(op)->SetUseTranspose (transpose);
-    if (errcode != 0) {
-      throw std::runtime_error ("Your Epetra_Operator object doesn't know how to apply its transpose!");
-    }
-  }
-} // namespace (anonymous) 
-
-#endif // BELOS_BIG_STUPID_HACK
-// END mfh 07 Sep 2011
-
-
 /*!	
   \class Belos::LSQRIter
-  
-  \brief This class implements the LSQR iteration.
-
+  \brief Implementation of the LSQR iteration
   \ingroup belos_solver_framework 
-
   \author David Day
-
 */
   
 namespace Belos {
@@ -460,27 +425,14 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
       {
         RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
-#ifdef BELOS_BIG_STUPID_HACK
-        setEpetraPrecOpTranspose (M_left, true);
-        OPT::Apply (*M_left, *U_, *tempInRangeOfA);
-        setEpetraPrecOpTranspose (M_left, false);
-#else
         OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS); 
-#endif // BELOS_BIG_STUPID_HACK
-
         OPT::Apply (*A, *tempInRangeOfA, *V_, CONJTRANS); // V_ = A' LeftPrec' U_
       }
     if (! M_right.is_null())
       {
         RCP<MV> tempInDomainOfA = MVT::CloneCopy (*V_);
 
-#ifdef BELOS_BIG_STUPID_HACK
-        setEpetraPrecOpTranspose (M_right, true);
-        OPT::Apply (*M_right, *tempInDomainOfA, *V_);
-        setEpetraPrecOpTranspose (M_right, false);
-#else
         OPT::Apply (*M_right, *tempInDomainOfA, *V_, CONJTRANS); // V:= RtPrec' A' LeftPrec' U
-#endif // BELOS_BIG_STUPID_HACK
       }
 
     // debug print norm statements 
@@ -636,14 +588,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
        RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
-#ifdef BELOS_BIG_STUPID_HACK
-       setEpetraPrecOpTranspose (M_left, true);
-       OPT::Apply (*M_left, *U_, *tempInRangeOfA);
-       setEpetraPrecOpTranspose (M_left, false);
-#else
        OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
-#endif // BELOS_BIG_STUPID_HACK
-
        OPT::Apply (*A, *tempInRangeOfA, *AtU, CONJTRANS);   // AtU = B'L'U
        MVT::MvAddMv( one, *AtU, -alpha[0], *V_, *AtU );
        MVT::MvNorm( *AtU, xi );
@@ -695,27 +640,14 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
         {
           RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
-#ifdef BELOS_BIG_STUPID_HACK
-          setEpetraPrecOpTranspose (M_left, true);
-          OPT::Apply (*M_left, *U_, *tempInRangeOfA);
-          setEpetraPrecOpTranspose (M_left, false);
-#else
           OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
-#endif // BELOS_BIG_STUPID_HACK
-
           OPT::Apply(*A, *tempInRangeOfA, *AtU, CONJTRANS);
         }
       if (! M_right.is_null())
         {
           RCP<MV> tempInDomainOfA = MVT::CloneCopy (*AtU);
 
-#ifdef BELOS_BIG_STUPID_HACK
-          setEpetraPrecOpTranspose (M_right, true);
-          OPT::Apply (*M_right, *tempInDomainOfA, *AtU);
-          setEpetraPrecOpTranspose (M_right, false);
-#else
           OPT::Apply (*M_right, *tempInDomainOfA, *AtU, CONJTRANS); // AtU may change
-#endif // BELOS_BIG_STUPID_HACK
         }
 
       MVT::MvAddMv( one, *AtU, -beta[0], *V_, *V_ );
