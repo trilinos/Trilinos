@@ -12,6 +12,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_OperatorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
@@ -31,6 +32,9 @@
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -50,6 +54,11 @@
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
 #define maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
+
+#ifdef HAVE_MUELU_ML
+#include "ml_operator.h"
+#include "ml_epetra_utils.h"
+#endif
 
 namespace MueLu {
 
@@ -228,8 +237,8 @@ namespace MueLu {
                                           bool doFillComplete=true,
                                           bool doOptimizeStorage=true)
     {
-      //FIXME 30 is likely a big overestimate
       RCP<Operator> C;
+      //TODO Can we come up with an estimate for nnz-per-row for result C?
       if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 1);
       else C = OperatorFactory::Build(A->getRowMap(), 1);
 
@@ -238,23 +247,87 @@ namespace MueLu {
       if (!B->isFillComplete())
         throw(Exceptions::RuntimeError("B is not fill-completed"));
 
-      if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-        RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
-        RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
+      if (C->getRowMap()->lib() == Xpetra::UseEpetra)
+      {
+#       ifndef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+        throw(Exceptions::RuntimeError("MueLu::TwoMatrixMultiply requires EpetraExt to be compiled."));
+#       else
+        RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
+        RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
-        
-        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
-  
-        if (i != 0) {
-          std::ostringstream buf;
-          buf << i;
-        std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-        }
-#else
-        throw(Exceptions::RuntimeError("MueLu must be compiled with EpetraExt."));
-#endif
+
+        //ML's multiply cannot implicitly tranpose either matrix.
+        bool canUseML=true;
+        if (transposeA || transposeB)
+          canUseML=false;
+
+        switch (canUseML) {
+
+          case true:
+            {
+            //if ML is not enabled, this case falls through to the EpetraExt multiply.
+#           if defined(HAVE_MUELU_ML)
+            //ML matrix multiply wrap that uses ML_Operator_WrapEpetraCrsMatrix
+            ML_Comm* comm;
+            ML_Comm_Create(&comm);
+            if (comm->ML_mypid == 0)
+              std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY ******" << std::endl;
+#           ifdef HAVE_MPI
+            // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
+            const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
+            if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#           endif
+            //in order to use ML, there must be no indices missing from the matrix column maps.
+            EpetraExt::CrsMatrix_SolverMap AcolMapTransform;
+            Epetra_CrsMatrix *transA = &(AcolMapTransform(*epA));
+            ML_Operator *mlA = ML_Operator_Create(comm);
+            ML_Operator_WrapEpetraCrsMatrix(transA,mlA);
+
+            EpetraExt::CrsMatrix_SolverMap BcolMapTransform;
+            Epetra_CrsMatrix *transB = &(BcolMapTransform(*epB));
+            ML_Operator *mlB = ML_Operator_Create(comm);
+            ML_Operator_WrapEpetraCrsMatrix(transB,mlB);
+
+            ML_Operator *mlAB = ML_Operator_Create(comm);
+            ML_2matmult(mlA,mlB,mlAB,ML_CSR_MATRIX);
+    
+            /* Wrap back */
+            int nnz;
+            double time;
+            Epetra_CrsMatrix *result;
+            ML_Operator2EpetraCrsMatrix(mlAB,result,nnz,false,time,0,false);
+            result->OptimizeStorage();
+            ML_Operator_Destroy(&mlA);
+            ML_Operator_Destroy(&mlB);
+            ML_Operator_Destroy(&mlAB);
+            ML_Comm_Destroy(&comm);
+
+            RCP<Epetra_CrsMatrix> epAB(result);
+            RCP<EpetraCrsMatrix> tmpC1 = rcp(new EpetraCrsMatrix(epAB));
+            RCP<CrsMatrix> tmpC2 = rcp_implicit_cast<CrsMatrix>(tmpC1);
+            RCP<CrsOperator> tmpC3 = rcp(new CrsOperator(tmpC2));
+            C = tmpC3;
+            }
+            break;
+#           endif //if HAVE_MUELU_ML
+
+          case false:
+            {
+            int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
+
+            if (i != 0) {
+              std::ostringstream buf;
+              buf << i;
+              std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
+              throw(Exceptions::RuntimeError(msg));
+            }
+            }
+            break;
+
+        } //switch (canUseML)
+
+#       endif //ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+
       } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
@@ -276,7 +349,7 @@ namespace MueLu {
                         (transposeA) ? A->getDomainMap() : A->getRangeMap(),
                         Xpetra::DoOptimizeStorage);
       }
-      
+
       return C;
     } //TwoMatrixMultiply()
 
