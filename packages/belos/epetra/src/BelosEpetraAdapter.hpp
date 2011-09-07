@@ -939,102 +939,17 @@ namespace Belos {
     
     /// \brief Specialization of Apply() for Epetra_Operator.
     ///
-    /// This method throws an EpetraOpFailure if you attempt to apply
-    /// the transpose and the underlying operator does not implement
-    /// the transpose.
+    /// This method throws an EpetraOpFailure on failure.  It fails in
+    /// either of the following two cases:
+    /// 1. If the operator's Epetra_Operator::Apply() method fails
+    ///    (which it indicates by returning a nonzero value).
+    /// 2. If you attempt to apply the transpose and the underlying
+    ///    operator does not implement the transpose.
     static void 
     Apply (const Epetra_Operator& Op, 
 	   const Epetra_MultiVector& x, 
 	   Epetra_MultiVector& y,
-	   ETrans trans=NOTRANS)
-    { 
-      int info = 0;
-
-      // Remember the original value of the transpose flag, so that we
-      // can restore it on exit.
-      //
-      // Do NOT change this behavior just because you don't want an
-      // exception to be thrown.  The semantics of OperatorTraits
-      // demand that the Apply() method be STATELESS, and that the
-      // 'trans' argument have its literal meaning.  If the underlying
-      // operator doesn't implement applying the transpose, then it is
-      // RIGHT for this method to throw an exception immediately,
-      // rather than to silently compute the wrong thing.  However, if
-      // you don't try to apply the transpose, then no exception will
-      // be thrown.
-      const bool originalTransposeFlag = Epetra_Op->UseTranspose ();
-
-      // Whether we want to apply the transpose of the operator.
-      // Recall that Epetra operators are always real-valued, never
-      // complex-valued, so the conjugate transpose means the same
-      // thing as the transpose.
-      const bool newTransposeFlag = (trans != NOTRANS);
-
-      // If necessary, set (or unset) the transpose flag to the value
-      // corresponding to 'trans'.
-      if (newTransposeFlag != originalTransposeFlag) {
-	// Toggle the transpose flag temporarily.  We will restore the
-	// original flag's value before this method exits.
-	info = const_cast<Epetra_Operator &>(Op).SetUseTranspose (newTransposeFlag);
-	TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-			   "Belos::OperatorTraits::Apply: Toggling the "
-			   "transpose flag of the operator failed, returning a "
-			   "nonzero error code of " << info << ".  That probably"
-			   " means that the Epetra_Operator object doesn't know "
-			   "how to apply its transpose.  Are you perhaps using a"
-			   " subclass of Epetra_Operator for which applying the "
-			   "transpose is not implemented?");
-      }
-
-      info = Op.Apply (x, y);
-      TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
-			 "Belos::OperatorTraits::Apply: Calling Apply() on the "
-			 "Epetra_Operator object failed, returning a nonzero "
-			 "error code of " << info << ".");
-
-      // SetUseTranspose() changes the state of the operator, so if
-      // applicable, we have to change the state back.
-      if (newTransposeFlag != originalTransposeFlag) {
-	info = const_cast<Epetra_Operator &>(Op).SetUseTranspose (originalTransposeFlag);
-	TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-			   "Belos::OperatorTraits::Apply: Resetting the original "
-			   "transpose flag value of the Epetra_Operator failed, "
-			   "returning a nonzero error code of " << info << ".  "
-			   "This is an unusual error, since we were able to call "
-			   "its SetUseTranspose method successfully before.  "
-			   "This suggests a bug in the subclass of Epetra_Operator "
-			   "which you are currently using.  This is probably not a "
-			   "Belos bug.");
-      }
-
-      // Make sure that the transpose flag has its original value.  If
-      // not, we throw std::logic_error instead of EpetraOpFailure,
-      // since that's definitely a bug.  It's safe to do this check
-      // whether or not we actually had to toggle the transpose flag.
-      // Any reasonable implementation of Epetra_Operator should make
-      // calling UseTranspose() cheap.
-      //
-      // Note to code maintainers: The reason we capture the value of
-      // UseTranspose() instead of just calling it twice, is that if
-      // the exception test really does trigger, then there is
-      // something fundamentally wrong.  If something is that wrong,
-      // then we want to avoid further calls to the operator's
-      // methods.  For example, it could be that the UseTranspose()
-      // method is erroneously changing the value of the flag, so if
-      // we call that method twice, it might have the right value on
-      // the second call.  This would make the resulting exception
-      // message confusing.
-      const bool finalTransposeFlag = Epetra_Op->UseTranspose ();
-      TEST_FOR_EXCEPTION(originalTransposeFlag != finalTransposeFlag,
-			 std::logic_error,
-			 "Belos::OperatorTraits::Apply: The value of the "
-			 "Epetra_Operator's transpose flag changed unexpectedly!"
-			 "  The original value at the top of this method was "
-			 << originalTransposeFlag << ", and its new value is "
-			 << finalTransposeFlag << ".  This suggests either a "
-			 "bug in Belos (in the implementation of this routine), "
-			 "or a bug in the operator.");
-    }
+	   ETrans trans=NOTRANS);
   };
 
 } // end of Belos namespace 
