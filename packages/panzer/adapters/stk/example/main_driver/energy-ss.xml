@@ -32,6 +32,17 @@
         </ParameterList>
     </ParameterList>
 
+    <ParameterList name="Volume Responses">
+        <ParameterList name="eblock-0_0">
+           <Parameter name="Volume Integral" type="string" value="Functional(Volume_Integral):Residual"/>
+        </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Response Models">
+       <ParameterList name="Volume Integral">
+       </ParameterList>
+    </ParameterList>
+
     <ParameterList name="Block ID to Physics ID Mapping">
         <Parameter name="eblock-0_0" type="string" value="solid"/>
     </ParameterList>

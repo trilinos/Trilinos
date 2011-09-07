@@ -127,6 +127,7 @@ void buildResponseMap(const Teuchos::ParameterList & p,std::map<std::string,std:
     
       respPair.first.name = respName;
       respPair.first.type = respType; 
+      respPair.first.label = paramName; // set label
       respPair.second.insert(tokens.begin(),tokens.end()); 
    }
 }

@@ -7,6 +7,7 @@
 #include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
+#include "Panzer_Integrator_Scalar.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -96,8 +97,28 @@ buildClosureModels(const std::string& model_id,
 	found = true;
       }
 
+    }
 
+    if (key == "Volume Integral") {
 
+        {
+	   input.set("Name", "Unit Value");
+	   input.set("Value", 1.0);
+	   input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	   RCP< Evaluator<panzer::Traits> > e = 
+   	     rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+   	   evaluators->push_back(e);
+        }
+
+        {
+	   input.set("Integral Name", "Volume_Integral");
+	   input.set("Integrand Name", "Unit Value");
+	   input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+
+	   RCP< Evaluator<panzer::Traits> > e = 
+   	     rcp(new panzer::Integrator_Scalar<EvalT,panzer::Traits>(input));
+   	   evaluators->push_back(e);
+        }
     }
 
     if (!found) {

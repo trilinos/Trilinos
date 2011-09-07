@@ -108,12 +108,14 @@ int main(int argc, char *argv[])
 
     Teuchos::RCP<Thyra::ModelEvaluator<double> > physics;
     Teuchos::RCP<Thyra::ModelEvaluator<double> > solver;
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm); 
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
+      rLibrary = me_factory.getResponseLibrary();
     }
     
     // solve the system
@@ -139,7 +141,6 @@ int main(int argc, char *argv[])
       //std::cout << *gx << std::endl;
       
     }
-    
 
   }
   catch (std::exception& e) {

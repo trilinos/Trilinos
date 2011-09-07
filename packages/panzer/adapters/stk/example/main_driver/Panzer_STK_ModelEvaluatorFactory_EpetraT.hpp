@@ -24,6 +24,7 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
+#include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
@@ -71,6 +72,8 @@ namespace panzer_stk {
       pl->sublist("Assembly");
       pl->sublist("Block ID to Physics ID Mapping");
       pl->sublist("Options");
+      pl->sublist("Volume Responses");
+      pl->sublist("Response Models");
       pl->sublist("User Data");
       pl->sublist("User Data").sublist("Panzer Data");
      
@@ -105,6 +108,7 @@ namespace panzer_stk {
 
     Teuchos::ParameterList & user_data_params = p.sublist("User Data");
     Teuchos::ParameterList & panzer_data_params = user_data_params.sublist("Panzer Data");
+    Teuchos::ParameterList & volume_responses = user_data_params.sublist("Volume Responses");
 
     // Build mesh factory and uncommitted mesh
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
@@ -226,6 +230,29 @@ namespace panzer_stk {
 	prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
 	fmb->writeVolumeGraphvizDependencyFiles(prefix, physicsBlocks);
       }
+    }
+
+    // build response library
+    /////////////////////////////////////////////////////////////
+
+    m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
+    addVolumeResponses(*m_response_library,*mesh,volume_responses);
+
+    {
+       bool write_dot_files = false;
+       std::string prefix = "Panzer_ResponseGraph_";
+       write_dot_files = p.sublist("Options").get("Write Volume Response Graphs",write_dot_files);
+       prefix = p.sublist("Options").get("Volume Response Graph Prefix",prefix);
+
+       Teuchos::ParameterList user_data(p.sublist("User Data"));
+       user_data.set<int>("Workset Size",workset_size);
+
+       m_response_library->buildVolumeFieldManagersFromResponses(volume_worksets,
+                                                                 physicsBlocks,
+  					                         *cm_factory,
+                                                                 p.sublist("Response Models"),
+  					                         *linObjFactory,
+  					                         user_data,write_dot_files,prefix);
     }
 
     // build solvers
@@ -463,6 +490,15 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
+  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseLibrary()
+  {
+    TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
+		       "Objects are not built yet!  Please call buildObjects() member function.");
+
+    return m_response_library;
+  }
+
+  template<typename ScalarT>
   bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(
                                    const panzer::DOFManager<int,int> & dofManager,std::string & fieldName) const
   {
@@ -506,6 +542,49 @@ namespace panzer_stk {
         if(dofManager.fieldInBlock(fieldName,blockId))
            fieldPatterns[blockId] =
               Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(dofManager.getFieldPattern(blockId,fieldName),true);
+     }
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
+                                                                 const panzer_stk::STK_Interface & mesh,
+                                                                 const Teuchos::ParameterList & pl) const
+  {
+     std::vector<std::string> validEBlocks;
+     mesh.getElementBlockNames(validEBlocks);
+
+     // loop over element blocks
+     for(Teuchos::ParameterList::ConstIterator itr=pl.begin();
+         itr!=pl.end();itr++) {
+        const std::string & eBlock = itr->first;
+        const Teuchos::ParameterEntry & paramEntry = itr->second;
+
+        // make formatting of this parameter list is correct
+        TEST_FOR_EXCEPTION(!paramEntry.isList(),
+                           Teuchos::Exceptions::InvalidParameterType,
+                           "panzer_stk::ModelEvaluatorFactory_Epetra: In the sublist \""+pl.name()+"\" only parameter"
+                           " lists are expected. Parmeter \""+eBlock+"\" is invalid!");
+        TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),(eBlock))!=validEBlocks.end(),
+                           Teuchos::Exceptions::InvalidParameterName,
+                           "panzer_stk::ModelEvaluatorFactory_Epetra: Cannot find element block "
+                           "specified in sublist \""+pl.name()+"\" named \"" +eBlock +"\"!");
+                       
+        // parse response list of responses
+        const Teuchos::ParameterList & respPL = Teuchos::any_cast<Teuchos::ParameterList>(paramEntry.getAny());
+        std::map<std::string,std::pair<panzer::ResponseId,std::set<std::string> > > responses;
+        panzer::buildResponseMap(respPL,responses);
+
+        // reserve each response for every evaluation type
+        for(std::map<std::string,std::pair<panzer::ResponseId,std::set<std::string> > >::const_iterator respItr=responses.begin();
+            respItr!=responses.end();++respItr) {
+           const panzer::ResponseId & rid = respItr->second.first;
+           const std::set<std::string> & evalTypes = respItr->second.second;
+ 
+           // add response for each evaluation type
+           for(std::set<std::string>::const_iterator eItr=evalTypes.begin();
+               eItr!=evalTypes.end();++eItr)
+              rLibrary.reserveVolumeResponse(rid,eBlock,*eItr);
+        }
      }
   }
 

@@ -274,7 +274,7 @@ globalReduction(const Teuchos::Comm<int> & comm)
        itr!=end;++itr) {
       // extract pieces
       std::string type = itr->first;
-      RCP<ResponseData<TraitsT> > dataObj = itr->second;
+      Teuchos::RCP<ResponseData<TraitsT> > dataObj = itr->second;
 
       // use aggregator register required evaluators
       const ResponseAggregatorBase<Traits> & aggregator 

@@ -118,7 +118,7 @@ buildVolumeFieldManagersFromResponses(
                         const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-                        const Teuchos::ParameterList& ic_block_closure_models,
+                        const Teuchos::ParameterList& response_block_closure_models,
                         const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file,
@@ -131,7 +131,12 @@ buildVolumeFieldManagersFromResponses(
    for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
       RCP<panzer::PhysicsBlock> pb = *blkItr;
       std::string blockId = pb->elementBlockID();
-      RespContVector & contVector = *rsvdVolResp_.find(blockId)->second;
+
+      // verify that block is relevant
+      typename std::map<std::string,Teuchos::RCP<RespContVector> >::iterator contItr = rsvdVolResp_.find(blockId);
+      if(contItr==rsvdVolResp_.end())
+         continue;
+      RespContVector & contVector = *contItr->second;
   
       // build a field manager object
       Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
@@ -139,14 +144,14 @@ buildVolumeFieldManagersFromResponses(
       
       // Choose model sublist for this element block
       std::string closure_model_name = "";
-      if (ic_block_closure_models.isSublist(blockId))
+      if (response_block_closure_models.isSublist(blockId))
         closure_model_name = blockId;
-      else if (ic_block_closure_models.isSublist("Default"))
+      else if (response_block_closure_models.isSublist("Default"))
         closure_model_name = "Default";
       else 
         TEST_FOR_EXCEPTION(true, std::logic_error, 
-                           "Failed to find initial condition for element block \"" << blockId << 
-                           "\".  You must provide an initial condition for each element block or set a default!" << ic_block_closure_models);
+                           "Failed to find response model for element block \"" << blockId << 
+                           "\".  You must provide a response model for each element block or set a default!" << response_block_closure_models);
      
       Teuchos::ParameterList tmp_user_data(user_data);
       tmp_user_data.set<bool>("Ignore Scatter",true);
@@ -154,7 +159,7 @@ buildVolumeFieldManagersFromResponses(
       // use the physics block to register evaluators
       pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
       pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, tmp_user_data);
-      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, ic_block_closure_models.sublist(closure_model_name), user_data);
+      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_block_closure_models.sublist(closure_model_name), user_data);
 
       for(std::size_t i=0;i<contVector.size();i++) {
 

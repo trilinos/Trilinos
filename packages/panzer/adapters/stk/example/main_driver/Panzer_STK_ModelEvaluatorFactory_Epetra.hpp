@@ -15,6 +15,7 @@
 #include "Panzer_STK_MeshFactory.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
@@ -39,7 +40,12 @@ namespace panzer_stk {
     
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
+
   protected:
+    void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
+                            const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
+
     //! build STK mesh factory from a mesh parameter list
     Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
 
@@ -69,6 +75,8 @@ namespace panzer_stk {
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_rome_me;
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
   };
 
 }
