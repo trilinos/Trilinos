@@ -55,8 +55,8 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON CACHE BOOL
     "Recursively enable all optional packages for set of enabled packages." )
 
-  SET( ${PROJECT_NAME}_INSTALL_ALL_EXECUTABLES OFF CACHE BOOL
-    "Enable the installation of all executables that are part of the packages." )
+  SET( ${PROJECT_NAME}_INSTALL_EXECUTABLES OFF CACHE BOOL
+    "Enable the installation of executables provided by the ${PROJECT_NAME} packages." )
   
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
     "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
