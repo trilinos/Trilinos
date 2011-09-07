@@ -474,13 +474,12 @@ EpetraPrecOp::ApplyInverse (const Epetra_MultiVector &X,
 //
 // ///////////////////////////////////////////////////////////////////
   
-template<>
 void
 OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
 Apply (const Epetra_Operator& Op, 
        const Epetra_MultiVector& x, 
        Epetra_MultiVector& y,
-       ETrans trans=NOTRANS)
+       ETrans trans)
 { 
   int info = 0;
 
@@ -495,7 +494,7 @@ Apply (const Epetra_Operator& Op,
   // this method to throw an exception immediately, rather than to
   // silently compute the wrong thing.  However, if you don't try to
   // apply the transpose, then no exception will be thrown.
-  const bool originalTransposeFlag = Epetra_Op->UseTranspose ();
+  const bool originalTransposeFlag = Op.UseTranspose ();
 
   // Whether we want to apply the transpose of the operator.  Recall
   // that Epetra operators are always real-valued, never complex-
@@ -556,7 +555,7 @@ Apply (const Epetra_Operator& Op,
   // the value of the flag, so if we call that method twice, it might
   // have the right value on the second call.  This would make the
   // resulting exception message confusing.
-  const bool finalTransposeFlag = Epetra_Op->UseTranspose ();
+  const bool finalTransposeFlag = Op.UseTranspose ();
   TEST_FOR_EXCEPTION(originalTransposeFlag != finalTransposeFlag,
 		     std::logic_error,
 		     "Belos::OperatorTraits::Apply: The value of the "
