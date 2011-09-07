@@ -24,7 +24,7 @@ namespace MueLuTests {
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
     TEUCHOS_TEST_EQUALITY(needs.IsRequested(aNeed), false, out, success);
-    needs.Request(aNeed);
+    needs.Request(aNeed,NULL);
     TEUCHOS_TEST_EQUALITY(needs.IsRequested(aNeed), true, out, success);
   }
 
@@ -50,8 +50,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    needs.Request(aNeed);
-    needs.Request(aNeed);
+    needs.Request(aNeed,NULL);
+    needs.Request(aNeed,NULL);
     TEUCHOS_TEST_EQUALITY(needs.NumRequests(aNeed), 2, out, success);
   }
 
@@ -79,7 +79,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
-    TEST_THROW( needs.Release("nonExistentNeed"), std::logic_error );
+    TEST_THROW( needs.Release("nonExistentNeed",NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, Release_Without_Request)
@@ -102,16 +102,16 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     double trueValue = 42;
     needs.SetData(aNeed,trueValue);
-    needs.Request(aNeed);
-    needs.Request(aNeed);
+    needs.Request(aNeed,NULL);         // TODO: write new test
+    needs.Request(aNeed,NULL);
     double value = 0;
     needs.GetData(aNeed,value);
-    needs.Release(aNeed);
+    needs.Release(aNeed,NULL);
     TEUCHOS_TEST_EQUALITY(trueValue,value, out, success);
     TEUCHOS_TEST_EQUALITY(needs.NumRequests(aNeed),1, out, success);
     value = 0;
     needs.GetData(aNeed,value);
-    needs.Release(aNeed);
+    needs.Release(aNeed,NULL);
     //try to get the need one too many times
     //JG TODO, disable for the moment    TEST_THROW( needs.Get(aNeed,value), std::logic_error );
   }

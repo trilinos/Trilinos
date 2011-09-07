@@ -67,10 +67,13 @@ class GenericPRFactory : public PRFactory {
     virtual ~GenericPRFactory() {}
     //@}
 
-    //! Input
+    //! Request methods
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+      coarseLevel.Request("P",PFact_);
+      coarseLevel.Request("R",RFact_);
+    }
 
     //@}
 

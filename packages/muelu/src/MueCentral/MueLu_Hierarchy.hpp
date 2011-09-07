@@ -240,7 +240,7 @@ namespace MueLu {
           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
           *out_ << "starting build of P's and R's"  << std::endl;
-          PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
+          //PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
           goodBuild = PRFact.Build(fineLevel, coarseLevel);
           if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
           if (!goodBuild) {
