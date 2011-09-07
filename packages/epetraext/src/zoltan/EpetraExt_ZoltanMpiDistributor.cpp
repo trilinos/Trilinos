@@ -32,6 +32,7 @@
 
 //==============================================================================
 // constructor
+EPETRAEXT_DEPRECATED
 EpetraExt::ZoltanMpiDistributor::ZoltanMpiDistributor(const EpetraExt::ZoltanMpiComm &Comm)
  : Epetra_Object("EpetraExt::ZoltanMpiDistributor"),
    plan_(0),
@@ -43,6 +44,7 @@ EpetraExt::ZoltanMpiDistributor::ZoltanMpiDistributor(const EpetraExt::ZoltanMpi
 
 //==============================================================================
 // constructor
+EPETRAEXT_DEPRECATED
 EpetraExt::ZoltanMpiDistributor::ZoltanMpiDistributor( const EpetraExt::ZoltanMpiDistributor &Distributor)
  : Epetra_Object("EpetraExt::ZoltanMpiDistributor"),
    plan_(0),
@@ -55,6 +57,7 @@ EpetraExt::ZoltanMpiDistributor::ZoltanMpiDistributor( const EpetraExt::ZoltanMp
 
 //==============================================================================
 // destructor
+EPETRAEXT_DEPRECATED
 EpetraExt::ZoltanMpiDistributor::~ZoltanMpiDistributor()
 {
   Zoltan_Comm_Destroy(&plan_);
@@ -63,6 +66,7 @@ EpetraExt::ZoltanMpiDistributor::~ZoltanMpiDistributor()
 //==============================================================================
 // CreateFromSends Method
 // - create communication plan given a known list of procs to send to
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::CreateFromSends (
  const int  &NumExportIDs,
  const int  *ExportPIDs,
@@ -77,6 +81,7 @@ int EpetraExt::ZoltanMpiDistributor::CreateFromSends (
 //==============================================================================
 // CreateFromRecvs Method
 // - create communication plan given a known list of procs to recv from
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::CreateFromRecvs (
  const int  &NumRemoteIDs,
  const int  *RemoteGIDs,
@@ -136,6 +141,7 @@ int EpetraExt::ZoltanMpiDistributor::CreateFromRecvs (
 
 //==============================================================================
 // Do method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::Do (
  char      *exports,
  int       size,
@@ -149,6 +155,7 @@ int EpetraExt::ZoltanMpiDistributor::Do (
 
 //==============================================================================
 // DoReverse method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoReverse (
  char      *exports,
  int       size,
@@ -164,6 +171,7 @@ int EpetraExt::ZoltanMpiDistributor::DoReverse (
     
 //==============================================================================
 // Do_Posts Method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoPosts (
  char      *exports,
  int       size,
@@ -176,6 +184,7 @@ int EpetraExt::ZoltanMpiDistributor::DoPosts (
     
 //==============================================================================
 // Do_Waits Method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoWaits ()
 {
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_, tag_, 0, 0, imports));
@@ -184,6 +193,7 @@ int EpetraExt::ZoltanMpiDistributor::DoWaits ()
 
 //==============================================================================--------------------------------------------
 // DoReverse_Posts Method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
  char      *exports,
  int       size,
@@ -196,6 +206,7 @@ int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
 
 //==============================================================================
 // DoReverse_Waits Method
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoReverseWaits ()
 {
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, 0, 0, 0, 0));
@@ -204,6 +215,7 @@ int EpetraExt::ZoltanMpiDistributor::DoReverseWaits ()
 
 //==============================================================================
 // Resize Method 
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::Resize (
  int *sizes)
 {
@@ -214,6 +226,7 @@ int EpetraExt::ZoltanMpiDistributor::Resize (
 
 //==============================================================================
 // Do method with variable size objects
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::Do (
  char       *exports,
  int        obj_size,
@@ -230,6 +243,7 @@ int EpetraExt::ZoltanMpiDistributor::Do (
 
 //==============================================================================
 // DoReverse method with variable size objects
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoReverse (
  char       *exports,
  int        obj_size,
@@ -244,6 +258,7 @@ int EpetraExt::ZoltanMpiDistributor::DoReverse (
    
 //==============================================================================
 // Do_Posts Method with variable size objects
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoPosts (
  char       *exports,
  int        obj_size,
@@ -259,6 +274,7 @@ int EpetraExt::ZoltanMpiDistributor::DoPosts (
 
 //==============================================================================
 // DoReverse_Posts Method with variable size objects
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
  char       *exports,
  int        obj_size,
@@ -272,6 +288,7 @@ int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
 
 //==============================================================================
 // Print method
+EPETRAEXT_DEPRECATED
 void EpetraExt::ZoltanMpiDistributor::Print( ostream & os) const
 {
   int i, j;

@@ -37,7 +37,7 @@ namespace Zoltan {
 
 class QueryObject;
 
-class QueryContainer
+class EPETRAEXT_DEPRECATED QueryContainer
 {
 
 public:

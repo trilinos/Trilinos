@@ -51,7 +51,7 @@ namespace EpetraExt {
   information and services needed for other Epetra classes to run on a parallel computer using MPI and using Zoltan comm library.
 */
 
-class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
+class EPETRAEXT_DEPRECATED ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
     
  public:
 

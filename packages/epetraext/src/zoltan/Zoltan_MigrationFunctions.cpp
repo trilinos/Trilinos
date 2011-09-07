@@ -31,6 +31,7 @@
 #include <Zoltan_MigrationContainer.h>
 #include <Zoltan_MigrationObject.h>
 
+EPETRAEXT_DEPRECATED
 int Zoltan::MigrationFunctions::Object_Size    (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -46,6 +47,7 @@ int Zoltan::MigrationFunctions::Object_Size    (	void * data,
 		global_id, local_id, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::MigrationFunctions::Pre_Migrate   (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -69,6 +71,7 @@ void Zoltan::MigrationFunctions::Pre_Migrate   (	void * data,
 	export_procs, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::MigrationFunctions::Mid_Migrate   (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -92,6 +95,7 @@ void Zoltan::MigrationFunctions::Mid_Migrate   (	void * data,
 	export_procs, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::MigrationFunctions::Post_Migrate  (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -115,6 +119,7 @@ void Zoltan::MigrationFunctions::Post_Migrate  (	void * data,
 	export_procs, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::MigrationFunctions::Pack_Object   (	void * data,
 						int num_gid_entries,
 						int num_lid_entries,
@@ -133,6 +138,7 @@ void Zoltan::MigrationFunctions::Pack_Object   (	void * data,
 	global_id, local_id, destination_processor, size, buffer, ierr );
 }
 
+EPETRAEXT_DEPRECATED
 void Zoltan::MigrationFunctions::Unpack_Object (	void * data,
 						int num_gid_entries,
 						ZOLTAN_ID_PTR global_id,

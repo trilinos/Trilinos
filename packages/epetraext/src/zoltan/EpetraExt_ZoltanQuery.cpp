@@ -34,6 +34,7 @@
 
 #include <algorithm>
 
+EPETRAEXT_DEPRECATED
 EpetraExt::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
                                      const Epetra_CrsGraph * tgraph,
                                      bool localEdgesOnly )
@@ -87,6 +88,7 @@ EpetraExt::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
 }
 
 //General Functions
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanQuery::Number_Objects        ( void * data,
                                                     int * ierr )
 {
@@ -95,6 +97,7 @@ int EpetraExt::ZoltanQuery::Number_Objects        ( void * data,
   return graph_.NumMyRows();
 }
 
+EPETRAEXT_DEPRECATED
 void EpetraExt::ZoltanQuery::Object_List  ( void * data,
                                         int num_gid_entries,
                                         int num_lid_entries,
@@ -116,6 +119,7 @@ void EpetraExt::ZoltanQuery::Object_List  ( void * data,
 }
 
 //Graph Based Functions
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
                                         int num_gid_entities,
                                         int num_lid_entities,
@@ -182,6 +186,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
   }
 }
 
+EPETRAEXT_DEPRECATED
 void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
                                         int num_gid_entities,
                                         int num_lid_entities,
@@ -258,6 +263,7 @@ std::cout << std::endl;
 
 }
 
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanQuery::Number_HG_Edges ( void * data,
 					  int * ierr )
 {
@@ -268,6 +274,7 @@ int EpetraExt::ZoltanQuery::Number_HG_Edges ( void * data,
   return num;
 }
 
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanQuery::Number_HG_Pins ( void * data,
 				         int * ierr )
 {
@@ -278,6 +285,7 @@ int EpetraExt::ZoltanQuery::Number_HG_Pins ( void * data,
   return num;
 }
 
+EPETRAEXT_DEPRECATED
 int EpetraExt::ZoltanQuery::HG_Edge_List   ( void * data,
                                          int num_gid_entries,
                                          int ewgt_dim,

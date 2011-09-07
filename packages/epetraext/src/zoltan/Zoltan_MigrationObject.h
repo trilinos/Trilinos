@@ -24,7 +24,7 @@ namespace Zoltan {
     be generated.
 */
 
-class MigrationObject
+class EPETRAEXT_DEPRECATED MigrationObject
 {
 
 public:

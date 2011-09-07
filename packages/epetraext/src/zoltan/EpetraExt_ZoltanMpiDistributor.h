@@ -46,7 +46,7 @@ class ZoltanMpiComm;
   Epetra_MpiComm class.
 */
 
-class ZoltanMpiDistributor: public Epetra_Object, public virtual Epetra_Distributor {
+class EPETRAEXT_DEPRECATED ZoltanMpiDistributor: public Epetra_Object, public virtual Epetra_Distributor {
     
   public:
 

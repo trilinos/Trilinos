@@ -33,6 +33,7 @@
 
 int Zoltan::LoadBalance::ObjectCount = 0;
 
+EPETRAEXT_DEPRECATED
 Zoltan::LoadBalance::LoadBalance( int argc,
                                   char ** argv,
                                   float * ver )
@@ -46,12 +47,14 @@ Zoltan::LoadBalance::LoadBalance( int argc,
   int tmpReturn = Zoltan_Initialize( argc, argv, ver );
 }
 
+EPETRAEXT_DEPRECATED
 Zoltan::LoadBalance::~LoadBalance()
 {
   Zoltan_Destroy( &LoadBalance_Ptr_ );
 }
 
  //Load Balance Calls
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Create( MPI_Comm communicator )
 {
   LoadBalance_Ptr_ = Zoltan_Create( communicator );
@@ -67,6 +70,7 @@ int Zoltan::LoadBalance::Create( MPI_Comm communicator )
 //Old callback support
 //--------------------------------
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_CallBack_Fn       ( ZOLTAN_FN_TYPE fn_type,
 	 					 void * fn_ptr,
 						 void * data )
@@ -79,150 +83,175 @@ int Zoltan::LoadBalance::Set_CallBack_Fn       ( ZOLTAN_FN_TYPE fn_type,
 //Individual callback registration
 //--------------------------------
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Edges_Fn      ( ZOLTAN_NUM_EDGES_FN * fn_ptr,
 						 void * data )
 {
   return Zoltan_Set_Num_Edges_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Edge_List_Fn      (	ZOLTAN_EDGE_LIST_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Edge_List_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Geom_Fn      (	ZOLTAN_NUM_GEOM_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Num_Geom_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Geom_Fn      (	ZOLTAN_GEOM_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Geom_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Obj_Fn      (	ZOLTAN_NUM_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Num_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Obj_List_Fn      (	ZOLTAN_OBJ_LIST_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Obj_List_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_First_Obj_Fn      (	ZOLTAN_FIRST_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_First_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Next_Obj_Fn      (	ZOLTAN_NEXT_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Next_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Border_Obj_Fn (	ZOLTAN_NUM_BORDER_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Num_Border_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Border_Obj_List_Fn ( ZOLTAN_BORDER_OBJ_LIST_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Border_Obj_List_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_First_Border_Obj_Fn ( ZOLTAN_FIRST_BORDER_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_First_Border_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Next_Border_Obj_Fn ( ZOLTAN_NEXT_BORDER_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Next_Border_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Coarse_Obj_Fn (	ZOLTAN_NUM_COARSE_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Num_Coarse_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Coarse_Obj_List_Fn ( ZOLTAN_COARSE_OBJ_LIST_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Coarse_Obj_List_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_First_Coarse_Obj_Fn ( ZOLTAN_FIRST_COARSE_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_First_Coarse_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Next_Coarse_Obj_Fn ( ZOLTAN_NEXT_COARSE_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Next_Coarse_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Num_Child_Fn      (	ZOLTAN_NUM_CHILD_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Num_Child_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Child_List_Fn ( ZOLTAN_CHILD_LIST_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Child_List_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Child_Weight_Fn ( ZOLTAN_CHILD_WEIGHT_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Child_Weight_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Pre_Migrate_Fn    (	ZOLTAN_PRE_MIGRATE_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Pre_Migrate_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Mid_Migrate_Fn    (	ZOLTAN_MID_MIGRATE_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Mid_Migrate_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Post_Migrate_Fn   (	ZOLTAN_POST_MIGRATE_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Post_Migrate_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Obj_Size_Fn       (	ZOLTAN_OBJ_SIZE_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Obj_Size_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Pack_Obj_Fn       (	ZOLTAN_PACK_OBJ_FN * fn_ptr,
 						void * data )
 {
   return Zoltan_Set_Pack_Obj_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Unpack_Obj_Fn     (	ZOLTAN_UNPACK_OBJ_FN * fn_ptr,
 						void * data )
 {
@@ -231,6 +260,7 @@ int Zoltan::LoadBalance::Set_Unpack_Obj_Fn     (	ZOLTAN_UNPACK_OBJ_FN * fn_ptr,
 
 #endif /* ZOLTAN_OLD_CALLBACK */
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_QueryObject( Zoltan::QueryObject * query_obj_ptr )
 {
   Zoltan::QueryContainer::registerQueryObject( ObjectID, query_obj_ptr );
@@ -342,6 +372,7 @@ int Zoltan::LoadBalance::Set_QueryObject( Zoltan::QueryObject * query_obj_ptr )
   return ZOLTAN_OK;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_MigrationObject( 
 			Zoltan::MigrationObject * migration_obj_ptr )
 {
@@ -384,6 +415,7 @@ int Zoltan::LoadBalance::Set_MigrationObject(
   return ZOLTAN_OK;
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Set_Param( const std::string & param, const std::string & value )
 {
   return Zoltan_Set_Param( LoadBalance_Ptr_,
@@ -391,6 +423,7 @@ int Zoltan::LoadBalance::Set_Param( const std::string & param, const std::string
                            const_cast<char*>(value.c_str()) );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Balance(        int * changes,
 					int * num_gid_entries,
 					int * num_lid_entries,
@@ -413,6 +446,7 @@ int Zoltan::LoadBalance::Balance(        int * changes,
 }
 
 #ifdef ZOLTAN_ORDER
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Order(		int * num_gid_entries,
 					int * num_lid_entries,
                                         int num_objs,
@@ -429,6 +463,7 @@ int Zoltan::LoadBalance::Order(		int * num_gid_entries,
 }
 #endif
 
+EPETRAEXT_DEPRECATED
 void Zoltan::LoadBalance::Evaluate     ( int print_stats,
 					int * num_objects,
 					float * object_weights,
@@ -444,6 +479,7 @@ void Zoltan::LoadBalance::Evaluate     ( int print_stats,
 //	num_cuts, cut_weights, num_boundary_objects, num_adj_procs );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Free_Data     ( ZOLTAN_ID_PTR * import_global_ids,
 					ZOLTAN_ID_PTR * import_local_ids,
 					int ** import_procs,
@@ -456,12 +492,14 @@ int Zoltan::LoadBalance::Free_Data     ( ZOLTAN_ID_PTR * import_global_ids,
 }
 
  //Decomposition Augmentation
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Point_Assign  ( double * coords,
 					int * proc )
 {
   return Zoltan_LB_Point_Assign( LoadBalance_Ptr_, coords, proc );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Box_Assign    ( double xmin,
 					double ymin,
 					double zmin,
@@ -476,6 +514,7 @@ int Zoltan::LoadBalance::Box_Assign    ( double xmin,
 }
 
  //Migration Functions
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Compute_Destinations  ( int num_import,
 						ZOLTAN_ID_PTR import_global_ids,
 						ZOLTAN_ID_PTR import_local_ids,
@@ -490,6 +529,7 @@ int Zoltan::LoadBalance::Compute_Destinations  ( int num_import,
 	export_global_ids, export_local_ids, export_procs );
 }
 
+EPETRAEXT_DEPRECATED
 int Zoltan::LoadBalance::Help_Migrate  ( int num_import,
 					ZOLTAN_ID_PTR import_global_ids,
 					ZOLTAN_ID_PTR import_local_ids,

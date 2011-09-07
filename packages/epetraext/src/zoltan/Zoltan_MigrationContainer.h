@@ -37,7 +37,7 @@ namespace Zoltan {
 
 class MigrationObject;
 
-class MigrationContainer
+class EPETRAEXT_DEPRECATED MigrationContainer
 {
 
 public:
