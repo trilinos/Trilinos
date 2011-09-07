@@ -65,10 +65,12 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 // BEGIN mfh 07 Sep 2011
-// This is a hack.  Belos shouldn't depend on Ifpack.  We just want
-// to make sure that Ifpack knows how to apply transposes.
-#include "Ifpack_ILU.h"
+//#define BELOS_BIG_STUPID_HACK 1
+#ifdef BELOS_BIG_STUPID_HACK
+#  undef BELOS_BIG_STUPID_HACK
+#endif // BELOS_BIG_STUPID_HACK
 
+#ifdef BELOS_BIG_STUPID_HACK
 namespace {
   // BIG HACK (mfh 07 Sep 2011)
   //
@@ -80,20 +82,16 @@ namespace {
   setEpetraPrecOpTranspose (const Teuchos::RCP<const Epetra_Operator>& op, 
                             const bool transpose)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
-    using Teuchos::rcp_dynamic_cast;
 
-    RCP<const Belos::EpetraPrecOp> epetraPrecOp = rcp_dynamic_cast<const Belos::EpetraPrecOp> (op, true);
-    RCP<Epetra_Operator> origOp = epetraPrecOp->getOp ();
- 
-    const int errcode = origOp->SetUseTranspose (transpose);
+    const int errcode = rcp_const_cast<Epetra_Operator>(op)->SetUseTranspose (transpose);
     if (errcode != 0) {
-      throw std::runtime_error ("Your Ifpack_ILU object doesn't know how to apply its transpose!");
+      throw std::runtime_error ("Your Epetra_Operator object doesn't know how to apply its transpose!");
     }
   }
 } // namespace (anonymous) 
+
+#endif // BELOS_BIG_STUPID_HACK
 // END mfh 07 Sep 2011
 
 
@@ -462,10 +460,13 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
       {
         RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
+#ifdef BELOS_BIG_STUPID_HACK
         setEpetraPrecOpTranspose (M_left, true);
-        //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS); 
         OPT::Apply (*M_left, *U_, *tempInRangeOfA);
         setEpetraPrecOpTranspose (M_left, false);
+#else
+        OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS); 
+#endif // BELOS_BIG_STUPID_HACK
 
         OPT::Apply (*A, *tempInRangeOfA, *V_, CONJTRANS); // V_ = A' LeftPrec' U_
       }
@@ -473,10 +474,13 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
       {
         RCP<MV> tempInDomainOfA = MVT::CloneCopy (*V_);
 
+#ifdef BELOS_BIG_STUPID_HACK
         setEpetraPrecOpTranspose (M_right, true);
-        //OPT::Apply (*M_right, *tempInDomainOfA, *V_, CONJTRANS); // V:= RtPrec' A' LeftPrec' U
         OPT::Apply (*M_right, *tempInDomainOfA, *V_);
         setEpetraPrecOpTranspose (M_right, false);
+#else
+        OPT::Apply (*M_right, *tempInDomainOfA, *V_, CONJTRANS); // V:= RtPrec' A' LeftPrec' U
+#endif // BELOS_BIG_STUPID_HACK
       }
 
     // debug print norm statements 
@@ -632,10 +636,13 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
        RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
+#ifdef BELOS_BIG_STUPID_HACK
        setEpetraPrecOpTranspose (M_left, true);
-       //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
        OPT::Apply (*M_left, *U_, *tempInRangeOfA);
        setEpetraPrecOpTranspose (M_left, false);
+#else
+       OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
+#endif // BELOS_BIG_STUPID_HACK
 
        OPT::Apply (*A, *tempInRangeOfA, *AtU, CONJTRANS);   // AtU = B'L'U
        MVT::MvAddMv( one, *AtU, -alpha[0], *V_, *AtU );
@@ -688,10 +695,13 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
         {
           RCP<MV> tempInRangeOfA = MVT::CloneCopy (*U_);
 
+#ifdef BELOS_BIG_STUPID_HACK
           setEpetraPrecOpTranspose (M_left, true);
-          //OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
           OPT::Apply (*M_left, *U_, *tempInRangeOfA);
           setEpetraPrecOpTranspose (M_left, false);
+#else
+          OPT::Apply (*M_left, *U_, *tempInRangeOfA, CONJTRANS);
+#endif // BELOS_BIG_STUPID_HACK
 
           OPT::Apply(*A, *tempInRangeOfA, *AtU, CONJTRANS);
         }
@@ -699,10 +709,13 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
         {
           RCP<MV> tempInDomainOfA = MVT::CloneCopy (*AtU);
 
+#ifdef BELOS_BIG_STUPID_HACK
           setEpetraPrecOpTranspose (M_right, true);
-          //OPT::Apply (*M_right, *tempInDomainOfA, *AtU, CONJTRANS); // AtU may change
           OPT::Apply (*M_right, *tempInDomainOfA, *AtU);
           setEpetraPrecOpTranspose (M_right, false);
+#else
+          OPT::Apply (*M_right, *tempInDomainOfA, *AtU, CONJTRANS); // AtU may change
+#endif // BELOS_BIG_STUPID_HACK
         }
 
       MVT::MvAddMv( one, *AtU, -beta[0], *V_, *V_ );
