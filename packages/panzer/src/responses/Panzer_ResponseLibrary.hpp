@@ -14,6 +14,7 @@
 #include "Panzer_ResponseAggregator_Manager.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
+#include "Panzer_RLDynamicDispatch.hpp"
 
 #include "Panzer_PhysicsBlock.hpp"
 
@@ -39,7 +40,7 @@ class ResponseLibrary {
 public:
    typedef typename TraitsT::EvalTypes TypeSeq;
 
-   ResponseLibrary() {}
+   ResponseLibrary(); 
 
    /** Asks, does this string correspond to a response type
      * in this library?
@@ -71,6 +72,12 @@ public:
    //! Reserve a response for actual calculation (by response id and element block).
    template <typename EvalT>
    void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock);
+
+   /** Reserve a response for calculation (by response id, element block, and evalution type).
+     * The evaluation type must be a string that is define by <code>PHX::TypeString<EvalT>==evalType</code>
+     * a member of the <code>Traits::EvalTypes</code> type list.
+     */
+   void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType);
 
    /** Veryify that this response and element block are actual valid choices
      * for the evaluation type. This is optional error checking but makes debugging
@@ -143,6 +150,8 @@ private:
 
    std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
    std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > > volFieldManagers_;
+
+   RLDynamicDispatch<TraitsT> dynamicDispatch_;
 };
 
 }

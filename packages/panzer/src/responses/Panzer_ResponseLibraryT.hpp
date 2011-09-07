@@ -6,6 +6,13 @@
 namespace panzer {
 
 template <typename TraitsT>
+ResponseLibrary<TraitsT>::ResponseLibrary()
+{
+   // build dynamic dispatch objects
+   dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
@@ -33,6 +40,13 @@ reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
 
    // reserve this respoinse id
    container->reserve(rid);
+}
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType)
+{
+   dynamicDispatch_.reserveVolumeResponse(rid,eBlock,evalType);
 }
 
 template <typename TraitsT>

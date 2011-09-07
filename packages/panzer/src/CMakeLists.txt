@@ -159,6 +159,7 @@ APPEND_SET(HEADERS
   responses/Panzer_ResponseLibraryT.hpp
   responses/Panzer_ResponseContainer.hpp
   responses/Panzer_ResponseUtilities.hpp
+  responses/Panzer_RLDynamicDispatch.hpp
   ) 
 
 APPEND_SET(SOURCES
