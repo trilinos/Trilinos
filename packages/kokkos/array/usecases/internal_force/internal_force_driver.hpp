@@ -21,7 +21,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   const int nelems = ex * ey * ez;
   const int nnodes = (ex + 1) * (ey + 1) * (ez + 1);
 
-  double time = 0.0; 
+  double time = 0.0;
   double total = 0.0;
 
   timeval start, stop, result;
@@ -32,7 +32,10 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // to the device memory.
 
   typedef typename Kokkos::MDArrayView<Scalar,device_type>           scalar_array_d;
-  typedef typename Kokkos::MDArrayView<int,device_type>              int_array_d;    
+  typedef typename Kokkos::MDArrayView<int,device_type>             int_array_d;
+
+  //  Initialize Host data structures:
+  HostView_int     elem_nodeIDs_h ;  // Element-node connectivity array
 
   typedef typename scalar_array_d::HostView  scalar_array_h;
   typedef typename int_array_d   ::HostView  int_array_h;
@@ -44,25 +47,26 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // Element-nodes coordinates
   scalar_array_h elem_coords_h = Kokkos::create_mdarray< scalar_array_h >( nelems , 3 , 8 );
 
-  for ( int ielem = 0 ; ielem < nelems ; ++ielem ) {
-    for ( int knode = 0 ; knode < 8 ; ++knode ) {
-      const int n = box_mesh.elem_node_ids(ielem,knode);
-      for ( int j = 0 ; j < 3 ; ++j ) {
-        elem_coords_h(ielem,j,knode) = box_mesh.node_coords(n,j);
-      }
-    }
-  }
+  // Create and populate the box-mesh connectivity and coordinates.
+  // To be considered: to use a node coordinate array and index
+  //                   into that array for element-node coordinates.
+  mesh_init<HostView_scalar, HostView_int>(  elem_coords_h,
+                        elem_nodeIDs_h,
+                        node_elemIDs_h,
+                        elems_per_node_h,
+                        ex, ey, ez);
 
   //  Copies of the mesh data structures on the device.
   int_array_d   elem_nodeIDs, node_elemIDs, node_elemOffset;
 
-  elem_nodeIDs = Kokkos::create_mdarray< int_array_d >(  box_mesh.elem_node_ids.dimension(0), 
-                                                         box_mesh.elem_node_ids.dimension(1));  
+  elem_nodeIDs = Kokkos::create_mdarray< int_array_d >(  elem_nodeIDs_h.dimension(0),
+                                                         elem_nodeIDs_h.dimension(1));
 
-  node_elemIDs = Kokkos::create_mdarray< int_array_d >(  box_mesh.node_elem_ids.dimension(0), 
-                                                         box_mesh.node_elem_ids.dimension(1));  
+  node_elemIDs = Kokkos::create_mdarray< int_array_d >(  node_elemIDs_h.dimension(0),
+                                                         node_elemIDs_h.dimension(1));
 
-  node_elemOffset = Kokkos::create_mdarray< int_array_d >(  box_mesh.node_elem_offset.dimension(0) );
+  elems_per_node = Kokkos::create_mdarray< int_array_d >(  elems_per_node_h.dimension(0),
+                                                           elems_per_node_h.dimension(1));
 
 
   gettimeofday(&stop, NULL);
@@ -71,7 +75,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
 
   // Field data required for the internal force computations on the device.
 
-  scalar_array_d  position =      Kokkos::create_mdarray< scalar_array_d >(nelems, 3, 8);  
+  scalar_array_d  position =      Kokkos::create_mdarray< scalar_array_d >(nelems, 3, 8);
   scalar_array_d  velocity =      Kokkos::create_mdarray< scalar_array_d >(nelems, 3, 8);
   scalar_array_d  hg_resist =     Kokkos::create_mdarray< scalar_array_d >(nelems, 12, 2); // old and new
   scalar_array_d  rotation =      Kokkos::create_mdarray< scalar_array_d >(nelems, 9, 2);  // rotation old and new
@@ -86,7 +90,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   scalar_array_d  s_temp =        Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  vorticity =     Kokkos::create_mdarray< scalar_array_d >(nelems, 3);
   scalar_array_d  rot_stret =     Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
-  scalar_array_d  stress_new =    Kokkos::create_mdarray< scalar_array_d >(nelems, 6);    
+  scalar_array_d  stress_new =    Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  rot_stress =    Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  mid_vol =       Kokkos::create_mdarray< scalar_array_d >(nelems);
   scalar_array_d  shrmod =        Kokkos::create_mdarray< scalar_array_d >(nelems);
@@ -100,12 +104,12 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
 
   // Parameters required for the internal force computations.
   const Scalar  dt = 0.25;
-  const Scalar  lin_bulk_visc = 0;
-  const Scalar  quad_bulk_visc = 0;
-  const Scalar  hg_stiffness = 1.04;
-  const Scalar  hg_viscosity = 0.93;
+  const Scalar  lin_bulk_visc = 0.06;
+  const Scalar  quad_bulk_visc = 1.2;
+  const Scalar  hg_stiffness = 0.03;
+  const Scalar  hg_viscosity = 0.003;
   const bool    scaleHGRotation = false;
-  
+
   //  before starting the internal force calculations,
   //  copy the Host generated mesh information to the accelerator device
 
@@ -125,24 +129,24 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // gradient, velocity gradient, and hour glass operator.
 
   Kokkos::parallel_for( nelems , grad_hgop<Scalar, device_type>
-  (   position, 
-    velocity, 
-    mid_vol, 
-    vel_grad, 
-    hgop, 
+  (   position,
+    velocity,
+    mid_vol,
+    vel_grad,
+    hgop,
     dt )     , time );
 
-  total += time;  
+  total += time;
 
   // Combine tensor decomposition and rotation functions.
 
   Kokkos::parallel_for( nelems , decomp_rotate<Scalar, device_type>
-  (    rotation, 
-    vel_grad, 
-    s_temp, 
-    stretch, 
-    vorticity, 
-    rot_stret, 
+  (    rotation,
+    vel_grad,
+    s_temp,
+    stretch,
+    vorticity,
+    rot_stret,
     dt)     , time );
 
   total += time;
@@ -151,8 +155,8 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // did not notice any opportunity for splitting.
 
   Kokkos::parallel_for( nelems , divergence<Scalar, device_type>
-  (   position, 
-    velocity, 
+  (   position,
+    velocity,
     force_new,
     vorticity,
     rotation,
@@ -174,7 +178,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
     hg_stiffness,
     hg_viscosity,
     lin_bulk_visc,
-    quad_bulk_visc, 
+    quad_bulk_visc,
     dt,
     scaleHGRotation)   , time );
 
