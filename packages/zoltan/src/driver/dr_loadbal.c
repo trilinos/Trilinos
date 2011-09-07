@@ -864,18 +864,28 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
 
   if (Driver_Action & 4) {
+      int addIDs=10, checkIDs=0, nprocs;
       int *color = NULL;          /* Color vector */
       ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
 
       if (Test.Dynamic_Graph && !Proc){
-	printf("COLORING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
+	printf("COLORING DOES NOT WORK WITH DYNAMIC GRAPHS.\n");
 	printf("Turn off \"test dynamic graph\".\n");
       }
 
-      color = (int *) malloc (mesh->num_elems * sizeof(int));
-      gids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_GID, sizeof(ZOLTAN_ID_TYPE));
-      lids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_LID, sizeof(ZOLTAN_ID_TYPE));
+      MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+      if (Debug_Driver > 0 && nprocs>1) {
+          if (Proc == 0)
+              addIDs = (mesh->num_elems > addIDs ) ? addIDs : mesh->num_elems;
+
+          MPI_Bcast(&addIDs, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          checkIDs = addIDs;
+      }
+
+      color = (int *) malloc ((addIDs+mesh->num_elems) * sizeof(int));
+      gids = (ZOLTAN_ID_PTR) calloc((addIDs+mesh->num_elems)*Num_GID, sizeof(ZOLTAN_ID_TYPE));
+      lids = (ZOLTAN_ID_PTR) calloc((addIDs+mesh->num_elems)*Num_LID, sizeof(ZOLTAN_ID_TYPE));
 
       if (!color || !gids || !lids) {
 	  safe_free((void **)(void *) &color);
@@ -890,9 +900,22 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	lids[i*num_lid_entries+num_lid_entries-1] = i;
       }
 
+      if (addIDs) {
+          if (Proc==0) {
+              for ( ; i< mesh->num_elems + addIDs; ++i) {
+                  gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i-mesh->num_elems].globalID;
+                  lids[i*num_lid_entries+num_lid_entries-1] = -1;
+              }
+          }
+          MPI_Bcast(gids+mesh->num_elems, addIDs, MPI_INT, 0, MPI_COMM_WORLD);
+          MPI_Bcast(lids+mesh->num_elems, addIDs, MPI_INT, 0, MPI_COMM_WORLD);
+          if (Proc == 0)
+              addIDs = 0;
+      }
+
       /* Only do coloring if it is specified in the driver input file */
       /* Do coloring after load balancing */
-      if (Zoltan_Color(zz, num_gid_entries, mesh->num_elems, gids, color) == ZOLTAN_FATAL) {
+      if (Zoltan_Color(zz, num_gid_entries, mesh->num_elems+addIDs, gids, color) == ZOLTAN_FATAL) {
 	  Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
 	  safe_free((void **)(void *) &color);
 	  safe_free((void **)(void *) &gids);
@@ -923,6 +946,26 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	      printf("Valid coloring found; #colors = %d.\n",
 		     gmaxcolor);
 	  }
+
+
+          if (checkIDs) {
+              int *bColor=(int *) malloc (checkIDs * sizeof(int));
+
+              if (Proc == 0) {
+                  for (i = 0; i<checkIDs; ++i)
+                      bColor[i] = color[i];
+              }
+              MPI_Bcast(bColor, checkIDs, MPI_INT, 0, MPI_COMM_WORLD);
+              if (Proc != 0) {
+                  for (i = mesh->num_elems; i<mesh->num_elems+checkIDs; ++i) {
+                      if (color[i] != bColor[i-mesh->num_elems]) {
+                          safe_free((void **)(void *) &bColor);
+                          Gen_Error(0, "fatal: queried color info is incorrect.\n");
+                      }
+                  }
+              }
+              safe_free((void **)(void *) &bColor);
+          }
       }
 
       /* Copy color info as "perm" into mesh structure */
