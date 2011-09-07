@@ -158,6 +158,7 @@ APPEND_SET(HEADERS
   responses/Panzer_ResponseLibrary.hpp
   responses/Panzer_ResponseLibraryT.hpp
   responses/Panzer_ResponseContainer.hpp
+  responses/Panzer_ResponseUtilities.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -185,6 +186,7 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
   dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
   dofmngr/Panzer_SGEpetraLinearObjContainer.cpp
+  responses/Panzer_ResponseUtilities.cpp
   )
 
 #

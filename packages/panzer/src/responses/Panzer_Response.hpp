@@ -12,6 +12,9 @@ struct ResponseId {
    std::string name;
    std::string type;
 
+   ResponseId()
+      : name(""), type("") {}
+
    ResponseId(const std::string & n,
               const std::string & t)
       : name(n), type(t) {}
@@ -32,11 +35,11 @@ struct ResponseId {
    }
 };
 
-ResponseId buildResponse(const std::string & n,
-                         const std::string & t)
+inline ResponseId buildResponse(const std::string & n,
+                                const std::string & t)
 { return ResponseId(n,t); }
 
-std::ostream & operator<<(std::ostream & os,const ResponseId & rid)
+inline std::ostream & operator<<(std::ostream & os,const ResponseId & rid)
 { return os << rid.getString(); }
 
 /** Provide access to responses through a user specified
