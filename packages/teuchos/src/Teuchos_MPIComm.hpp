@@ -42,9 +42,11 @@
 #ifndef TEUCHOS_MPICOMM_H
 #define TEUCHOS_MPICOMM_H
 
-/*! \file Teuchos_MPIComm.hpp
-    \brief Object representation of a MPI communicator
-*/
+/// \file Teuchos_MPIComm.hpp
+/// \brief Object-oriented wrapper for an MPI communicator.
+///
+/// \warning The class implemented in this file is DEPRECATED.  Please
+///   use \c Teuchos::Comm instead.
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
@@ -58,7 +60,11 @@
 namespace Teuchos
 {
   /**
-   * \brief Object representation of an MPI communicator.
+   * \class MPIComm
+   * \brief Object-oriented wrapper for an MPI communicator.
+   *
+   * \warning This class is DEPRECATED.  Please use \c Teuchos::Comm
+   *   instead.
    *
    * At present, groups are not implemented so the only communicator
    * is MPI_COMM_WORLD.
@@ -186,10 +192,10 @@ namespace Teuchos
       int nProc_;
       int myRank_;
 
-      /** common initialization function, called by all ctors */
+      //! Common initialization function, called by all constructors.
       void init();
 
-      /** Indicate whether MPI is currently running */
+      //! Indicate whether MPI is currently running.
       int mpiIsRunning() const ;
     };
 }

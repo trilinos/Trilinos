@@ -42,10 +42,15 @@
 #ifndef TEUCHOS_MPISESSION_H
 #define TEUCHOS_MPISESSION_H
 
-/*! \file Teuchos_MPISession.hpp
-    \brief A MPI utilities class, providing methods for initializing,
-	finalizing, and querying the global MPI session
-*/
+/// \file Teuchos_MPISession.hpp
+/// \brief A MPI utilities class, providing methods for initializing,
+///   finalizing, and querying the global MPI session.
+/// 
+/// \warning This file has been DEPRECATED.  Please include
+///   Teuchos_GlobalMPISession.hpp and use \c
+///   Teuchos::GlobalMPISession instead.  Note the minor interface
+///   differences in the latter.
+///
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_MPI
@@ -55,8 +60,14 @@
 namespace Teuchos
 {
   /**
+   * \class MPISession
    * \brief This class provides methods for initializing, finalizing, 
    * and querying the global MPI session. 
+   *
+   * \warning This class has been DEPRECATED.  Please include
+   *   Teuchos_GlobalMPISession.hpp and use \c
+   *   Teuchos::GlobalMPISession instead.  Note the minor interface
+   *   differences in the latter.
    */
   class MPISession
     {

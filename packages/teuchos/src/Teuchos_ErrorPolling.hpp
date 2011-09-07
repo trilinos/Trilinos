@@ -42,6 +42,11 @@
 #ifndef TEUCHOS_ERRORPOLLING_H
 #define TEUCHOS_ERRORPOLLING_H
 
+/// \file Teuchos_ErrorPolling.hpp
+/// \brief Utility code for synchronizing exception detection across processors.
+/// 
+/// \warning The contents of this file have been DEPRECATED.
+///
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -79,6 +84,9 @@ namespace Teuchos
    * is enabled or disabled. If there are inconsistent states, the reduction
    * operations in pollForFailures() will hang because some processors cannot be 
    * contacted. 
+   *
+   * \warning This class has been DEPRECATED, due to its dependence on
+   *   the deprecated \c MPIComm interface.
    */
   class TEUCHOS_LIB_DLL_EXPORT ErrorPolling
   {

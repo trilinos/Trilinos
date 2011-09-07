@@ -42,7 +42,7 @@
 #ifndef TEUCHOS_GLOBAL_MPI_SESSION_HPP
 #define TEUCHOS_GLOBAL_MPI_SESSION_HPP
 
-/*! \file Teuchos_MPISession.hpp
+/*! \file Teuchos_GlobalMPISession.hpp
     \brief A MPI utilities class, providing methods for initializing,
 	finalizing, and querying the global MPI session
 */
