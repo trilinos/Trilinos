@@ -515,7 +515,12 @@ Apply (const Epetra_Operator& Op,
 		       " means that the Epetra_Operator object doesn't know "
 		       "how to apply its transpose.  Are you perhaps using a"
 		       " subclass of Epetra_Operator for which applying the "
-		       "transpose is not implemented?");
+		       "transpose is not implemented?  Anyway, just to help "
+		       "with debugging, you specified trans=" 
+		       << (trans == NOTRANS ? "NOTRANS" : (trans == TRANS ? "TRANS" : "CONJTRANS"))
+		       << ", and the original operator was set "
+		       << (originalTransposeFlag ? "" : "NOT ")
+		       << "to apply the transpose.");
   }
 
   info = Op.Apply (x, y);
