@@ -50,7 +50,9 @@ namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceTPI , true , DeviceHost , true >
+class MultiVectorDeepCopy< ValueType , DeviceTPI , DeviceHost ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
 {
 public:
   static void run( const MultiVectorView< ValueType , DeviceTPI >  & dst ,
@@ -64,7 +66,9 @@ public:
 };
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceTPI , true >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceTPI ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
 {
 public:
   static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,

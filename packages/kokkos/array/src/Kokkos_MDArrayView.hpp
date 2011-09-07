@@ -335,7 +335,7 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst> & dst ,
 
 #include <impl/Kokkos_MDArrayIndexMap.hpp>
 #include <impl/Kokkos_MDArrayDeepCopy.hpp>
-//#include <impl/Kokkos_MDArrayMirror.hpp>
+#include <impl/Kokkos_MDArrayMirror.hpp>
 
 #endif /* KOKKOS_MDARRAYVIEW_HPP */
 

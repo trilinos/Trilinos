@@ -57,8 +57,9 @@ namespace Kokkos {
 namespace Impl {
 
 template < typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceCuda , false ,
-                                       DeviceCuda , false > {
+class MultiVectorDeepCopy< ValueType , DeviceCuda , DeviceCuda ,
+                           true  /* Same memory space */ ,
+                           false /* Not contiguous */ > {
 public:
   typedef MultiVectorView< ValueType , DeviceCuda > multivector_type ;
 
@@ -74,7 +75,9 @@ public:
 };
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceCuda , false , DeviceHost , true >
+class MultiVectorDeepCopy< ValueType , DeviceCuda , DeviceHost ,
+                           false /* different memory space */ ,
+                           false /* one is not contiguous */  >
 {
 public:
   typedef MultiVectorView< ValueType , DeviceCuda > dst_type ;
@@ -93,7 +96,9 @@ public:
 };
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceCuda , false >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceCuda ,
+                           false /* different memory space */ ,
+                           false /* one is not contiguous */  >
 {
 public:
   typedef MultiVectorView< ValueType , DeviceHost > dst_type ;

@@ -1,5 +1,4 @@
-/** \HEADER
- *************************************************************************
+/*************************************************************************
  *
  *                            Kokkos
  *                 Copyright 2010 Sandia Corporation
@@ -37,61 +36,19 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
-#endif
-
+#include <string>
 #include <stdexcept>
-#include <sstream>
-#include <iostream>
+#include <Kokkos_ViewMirror.hpp>
 
-// #include <impl/Kokkos_Preprocessing_macros.hpp>
+namespace Kokkos {
+namespace Impl {
 
-/*--------------------------------------------------------------------------*/
-
-namespace {
-
-template< typename T, class > class UnitTestMDArrayDeepCopy ;
-
-template<typename T>
-class UnitTestMDArrayDeepCopy< T, KOKKOS_MACRO_DEVICE >
+void view_mirror_incompatible_throw()
 {
-public:
-  typedef KOKKOS_MACRO_DEVICE device ;
-  typedef Kokkos::DeviceHost  host ;
-
-  typedef Kokkos::MDArrayView< T , device > dView ;
-  typedef typename dView::HostView          hView ;
-
-  UnitTestMDArrayDeepCopy() { run_test(); }
-
-  void run_test()
-  {
-    enum { dN = 1000 };
-
-    dView dx , dy ;
-    hView host_dx , host_dy ;
-
-    dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
-    dy = Kokkos::create_labeled_mdarray< dView > ( "dy" , dN );
-
-    host_dx = Kokkos::mirror_create( dx );
-    host_dy = Kokkos::mirror_create( dy );
-
-    for ( size_t i = 0 ; i < dN ; ++i ) { host_dx(i) = i ; }
-
-    Kokkos::mirror_update( dx , host_dx );
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::mirror_update( host_dy , dy );
-
-
-    for ( size_t i = 0 ; i < dN ; ++i ) {
-      ASSERT_EQ(host_dx(i), host_dy(i));
-    }
-  }
-};
-
+  std::string msg("Kokkos::mirror_update given incompatible views");
+  throw std::runtime_error( msg );
 }
 
-/*--------------------------------------------------------------------------*/
+} // namespace Impl
+} // namespace Kokkos
 

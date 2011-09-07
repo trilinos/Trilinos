@@ -209,6 +209,7 @@ public:
 
 } //Kokkos
 
+#include <impl/Kokkos_ValueMirror.hpp>
 
 #endif /* KOKKOS_VALUEVIEW_HPP */
 

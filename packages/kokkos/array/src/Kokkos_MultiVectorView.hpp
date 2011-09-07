@@ -42,6 +42,7 @@
 
 #include <cstddef>
 #include <string>
+#include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
@@ -61,8 +62,13 @@ create_labeled_multivector( const std::string & label ,
 
 namespace Impl {
 
-template< typename ValueType , class DeviceDst , bool ContigDst ,
-                               class DeviceSrc , bool ContigSrc >
+template< typename ValueType , class DeviceDst , class DeviceSrc ,
+          bool same_memory_space =
+            SameType< typename DeviceDst::memory_space ,
+                      typename DeviceSrc::memory_space >::value ,
+          bool both_contiguous =
+            MultiVectorView< ValueType , DeviceDst >::Contiguous &&
+            MultiVectorView< ValueType , DeviceSrc >::Contiguous >
 class MultiVectorDeepCopy ;
 
 }
@@ -150,7 +156,7 @@ private:
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
 
-  template< typename V , class Dst , bool , class Src , bool >
+  template< typename V , class Dst , class Src , bool , bool >
   friend
   class Impl::MultiVectorDeepCopy ;
 
@@ -217,14 +223,7 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
   Impl::multivector_require_equal_dimension( dst.length() , dst.count() ,
                                              src.length() , src.count() );
 
-#if 0
-  Impl::MultiVectorDeepCopy<ValueType,
-                            DeviceDst,dst_type::Contiguous,
-                            DeviceSrc,src_type::Contiguous>::run( dst , src );
-#endif
-  Impl::MultiVectorDeepCopy<ValueType,
-                            DeviceDst,dst_type::Contiguous,
-                            DeviceSrc,src_type::Contiguous>::run( dst , src );
+  Impl::MultiVectorDeepCopy<ValueType, DeviceDst, DeviceSrc >::run( dst , src );
 }
 
 } // namespace Kokkos
@@ -235,8 +234,11 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 namespace Kokkos {
 namespace Impl {
 
+/** \brief Deep copy with same device and contiguous */
 template< typename ValueType , class Device >
-class MultiVectorDeepCopy< ValueType , Device , true , Device , true > {
+class MultiVectorDeepCopy< ValueType , Device , Device ,
+                           true /* same memory space */ ,
+                           true /* contiguous */ > {
 public:
   typedef MultiVectorView< ValueType , Device > multivector_type ;
 
@@ -254,6 +256,8 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+
+#include <impl/Kokkos_MultiVectorMirror.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

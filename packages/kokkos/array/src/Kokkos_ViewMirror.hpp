@@ -52,8 +52,9 @@ namespace Impl {
 template< class ViewDest , class ViewSrc > class ViewTraits ;
 
 template< class ViewDst , class ViewSrc ,
-          bool AvoidDeepCopy = ViewTraits< ViewDst , ViewSrc >::compatible &&
-                               KOKKOS_MIRROR_VIEW_OPTIMIZE >
+          bool AvoidDeepCopy =
+            Impl::ViewTraits< ViewDst , ViewSrc >::compatible &&
+            KOKKOS_MIRROR_VIEW_OPTIMIZE >
 class ViewMirror ;
 
 void view_mirror_incompatible_throw();
@@ -66,7 +67,7 @@ typename ViewType::HostView mirror_create( const ViewType & s )
 
 template< class ViewTypeDst , class ViewTypeSrc >
 void mirror_update( const ViewTypeDst & d , const ViewTypeSrc & s )
-{ return Impl::ViewMirror< ViewTypeDst , ViewTypeSrc >::update( d , s ); }
+{ Impl::ViewMirror< ViewTypeDst , ViewTypeSrc >::update( d , s ); }
 
 } // namespace Kokkos
 

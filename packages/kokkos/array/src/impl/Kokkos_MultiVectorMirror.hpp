@@ -37,70 +37,86 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_VALUEMIRROR_HPP
-#define KOKKOS_VALUEMIRROR_HPP
+#ifndef KOKKOS_MULTIVECTORMIRROR_HPP
+#define KOKKOS_MULTIVECTORMIRROR_HPP
 
-#include <Kokkos_ValueView.hpp>
+#include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_ViewMirror.hpp>
-#include <impl/Kokkos_StaticAssert.hpp>
-
-//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
-class ViewTraits< ValueView< ValueType , DeviceDst > ,
-                  ValueView< ValueType , DeviceSrc > >
+class ViewTraits< MultiVectorView< ValueType , DeviceDst > ,
+                  MultiVectorView< ValueType , DeviceSrc > >
 {
 public:
 
-  typedef ValueView< ValueType , DeviceDst > ValueViewDst ;
-  typedef ValueView< ValueType , DeviceSrc > ValueViewSrc ;
+  typedef MultiVectorView< ValueType , DeviceDst > MultiVectorViewDst ;
+  typedef MultiVectorView< ValueType , DeviceSrc > MultiVectorViewSrc ;
 
   /** \brief  Does their data reside in the same memory space ? */
   enum { same_memory_space =
-           Impl::SameType< typename ValueViewDst::memory_space ,
-                           typename ValueViewSrc::memory_space >::value };
+           Impl::SameType< typename MultiVectorViewDst::memory_space ,
+                           typename MultiVectorViewSrc::memory_space >::value };
 
   /** \brief  The two view types can view the same array */
   enum { compatible = same_memory_space };
+
+  /** \brief  Are the dimensions equal? */
+  inline
+  static bool equal_dimension( const MultiVectorViewDst & dst ,
+                               const MultiVectorViewSrc & src )
+    {
+      typedef typename MultiVectorViewDst::size_type size_type ;
+
+      return dst.length() == (size_type) src.length() &&
+             dst.count()  == (size_type) src.count();
+    }
 };
 
 //----------------------------------------------------------------------------
 
 template< class ValueType , class DeviceDst , class DeviceSrc >
-class ViewMirror< ValueView< ValueType , DeviceDst > ,
-                  ValueView< ValueType , DeviceSrc > ,
+class ViewMirror< MultiVectorView< ValueType , DeviceDst > ,
+                  MultiVectorView< ValueType , DeviceSrc > ,
                   false /* Keep deep copies */ >
 {
 public:
-  typedef ValueView< ValueType , DeviceDst > ValueViewDst ;
-  typedef ValueView< ValueType , DeviceSrc > ValueViewSrc ;
+  typedef MultiVectorView< ValueType , DeviceDst > MultiVectorViewDst ;
+  typedef MultiVectorView< ValueType , DeviceSrc > MultiVectorViewSrc ;
 
-  static ValueViewDst create( const ValueViewSrc & s )
-  { return create_labeled_value<ValueViewDst>( std::string() ); }
+  static MultiVectorViewDst create( const MultiVectorViewSrc & s )
+  {
+    return create_labeled_multivector<MultiVectorViewDst>(
+             std::string() , s.length(), s.count() );
+  }
 
-  static void update( const ValueViewDst & d , const ValueViewSrc & s )
-  { Impl::ValueDeepCopy< ValueType , DeviceDst , DeviceSrc >::run( d , s ); }
+  static void update( const MultiVectorViewDst & d , const MultiVectorViewSrc & s )
+  {
+    const bool equal_dim =
+      ViewTraits< MultiVectorViewDst , MultiVectorViewSrc >::equal_dimension( d , s );
+    if ( ! equal_dim ) { view_mirror_incompatible_throw(); }
+    Impl::MultiVectorDeepCopy< ValueType , DeviceDst , DeviceSrc >::run( d , s );
+  }
 };
 
 //----------------------------------------------------------------------------
 
 template< class ValueType , class DeviceDst , class DeviceSrc >
-class ViewMirror< ValueView< ValueType , DeviceDst > ,
-                  ValueView< ValueType , DeviceSrc > ,
+class ViewMirror< MultiVectorView< ValueType , DeviceDst > ,
+                  MultiVectorView< ValueType , DeviceSrc > ,
                   true  /* Avoid deep copies */ >
 {
 public:
-  typedef ValueView< ValueType , DeviceDst > ValueViewDst ;
-  typedef ValueView< ValueType , DeviceSrc > ValueViewSrc ;
+  typedef MultiVectorView< ValueType , DeviceDst > MultiVectorViewDst ;
+  typedef MultiVectorView< ValueType , DeviceSrc > MultiVectorViewSrc ;
 
   inline
-  static ValueViewDst create( const ValueViewSrc & s )
-  { return ValueViewDst( s ); }
+  static MultiVectorViewDst create( const MultiVectorViewSrc & s )
+  { return MultiVectorViewDst( s ); }
 
-  static void update( const ValueViewDst & d , const ValueViewSrc & s )
+  static void update( const MultiVectorViewDst & d , const MultiVectorViewSrc & s )
   { if ( d != s ) { view_mirror_incompatible_throw(); } }
 };
 
@@ -109,5 +125,5 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_VALUEMIRROR_HPP */
+#endif /* KOKKOS_MULTIVECTORMIRROR_HPP */
 

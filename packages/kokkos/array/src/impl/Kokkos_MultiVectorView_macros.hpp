@@ -261,8 +261,8 @@ private:
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
 
-  template < typename V , class DeviceDst , bool ContigDst ,
-                          class DeviceSrc , bool ContigSrc >
+  template < typename V , class DeviceDst , class DeviceSrc ,
+             bool same_memory_space , bool both_contiguous >
   friend
   class Impl::MultiVectorDeepCopy ;
 };

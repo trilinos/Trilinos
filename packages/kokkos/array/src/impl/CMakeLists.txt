@@ -33,6 +33,7 @@ APPEND_SET(SOURCES
     Kokkos_ArrayBounds.cpp
     Kokkos_MemoryInfo.cpp
     Kokkos_ViewTracker.cpp
+    Kokkos_ViewMirror.cpp
   )
 
 PACKAGE_ADD_LIBRARY(
