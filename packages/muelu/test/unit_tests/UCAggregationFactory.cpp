@@ -61,7 +61,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates);
+        printAggregates(*aggregates, out);
       }
 
       {
@@ -76,7 +76,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates);
+        printAggregates(*aggregates, out);
       }
 
       {
@@ -91,7 +91,7 @@ namespace {
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
-        printAggregates(*aggregates);
+        printAggregates(*aggregates, out);
       }
     }
   } // Build
