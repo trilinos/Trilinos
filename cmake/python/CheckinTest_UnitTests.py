@@ -195,9 +195,11 @@ D	packages/tpetra/FSeconds.f
   def test_extra_repo(self):
 
     updateOutputStr = """
+M	CMakeLists.txt
 M	ExtraTrilinosPackages.cmake
 M	stalix/README
 """
+    # NOTE: Above, we ignore top-level changes in extra repos which would cause global rebuilds
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     trilinosDependenciesLocal = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
 
