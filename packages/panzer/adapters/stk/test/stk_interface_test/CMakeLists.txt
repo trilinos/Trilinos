@@ -20,12 +20,18 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
   tCubeHexMeshFactory
   SOURCES tCubeHexMeshFactory.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM serial mpi
   )
+PACKAGE_ADD_TEST(
+  tCubeHexMeshFactory
+  NUM_MPI_PROCS 2
+  CATEGORIES NIGHTLY
+  )
+# Above test takes more than 3 minutes to run on pu241 and therefore
+# should not be a *BASIC* test.  It will still run in CI and Nightly
+# testing.
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   tSingleBlockCubeHexMeshFactory
