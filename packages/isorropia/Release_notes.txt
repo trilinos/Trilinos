@@ -1,3 +1,12 @@
+Release notes for Isorropia in Trilinos 10.8 (Sept. 2011):
+------------------------------------------------------------
+ - New class Isorropia::Epetra::Matcher solves the
+   maximum cardinality matching problem for the bipartite graph.
+   This is also known as a maximum transversal, and is
+   typically used to permute a sparse matrix to zero-free diagonal form. 
+   The current implementation uses OpenMP and shared memory model.
+   It does not work on distributed matrices.
+
 Release notes for Isorropia in Trilinos 10.4 (July 2010):
 ------------------------------------------------------------
  - Improved documentation.
