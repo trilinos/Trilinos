@@ -10,7 +10,7 @@
 #include "grad_hgop.hpp"
 #include "decomp_rotate.hpp"
 #include "divergence.hpp"
-#include "MeshInit.hpp"
+#include "BoxMeshFixture.hpp"
 #include "ForceGather.hpp"
 
 //----------------------------------------------------------------------------
@@ -18,57 +18,51 @@
 template<typename Scalar, class device_type>
 double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
 {
+  const int nelems = ex * ey * ez;
+  const int nnodes = (ex + 1) * (ey + 1) * (ez + 1);
 
   double time = 0.0; 
   double total = 0.0;
 
   timeval start, stop, result;
-  int nelems = ex * ey * ez;
-  int nnodes = (ex + 1) * (ey + 1) * (ez + 1);
 
   // Creating the mesh on the Host, so use compatible MDArrays on the Host.
   // The 'HostView' member type is the compatible MDArray on the Host memory space.
   // Use compatible MDArray layouts to avoid the cost of transposing when copying
   // to the device memory.
 
-  typedef typename Kokkos::MDArrayView<Scalar,device_type>::HostView  HostView_scalar;
-  typedef typename Kokkos::MDArrayView<int,device_type>::HostView     HostView_int;
-
   typedef typename Kokkos::MDArrayView<Scalar,device_type>           scalar_array_d;
-  typedef typename Kokkos::MDArrayView<int,device_type>             int_array_d;    
+  typedef typename Kokkos::MDArrayView<int,device_type>              int_array_d;    
 
-  //  Initialize Host data structures:
-  HostView_int     elem_nodeIDs_h ;  // Element-node connectivity array
-
-  HostView_int     node_elemIDs_h ;  // Node-element connectivity array
-  HostView_int     elems_per_node_h; // Number of elements per node for the "CSR-like"
-                                     // node-element connectivity array.
-
-  HostView_scalar  elem_coords_h;    // Coordinates of the elements' nodes
-
+  typedef typename scalar_array_d::HostView  scalar_array_h;
+  typedef typename int_array_d   ::HostView  int_array_h;
 
   gettimeofday(&start, NULL);
 
-  // Create and populate the box-mesh connectivity and coordinates.
-  // To be considered: to use a node coordinate array and index
-  //                   into that array for element-node coordinates.
-  mesh_init<HostView_scalar, HostView_int>(  elem_coords_h, 
-                        elem_nodeIDs_h, 
-                        node_elemIDs_h, 
-                        elems_per_node_h, 
-                        ex, ey, ez);
+  const BoxMeshFixture< int_array_h , scalar_array_h > box_mesh( ex , ey , ez );
+
+  // Element-nodes coordinates
+  scalar_array_h elem_coords_h = Kokkos::create_mdarray< scalar_array_h >( nelems , 3 , 8 );
+
+  for ( int ielem = 0 ; ielem < nelems ; ++ielem ) {
+    for ( int knode = 0 ; knode < 8 ; ++knode ) {
+      const int n = box_mesh.elem_node_ids(ielem,knode);
+      for ( int j = 0 ; j < 3 ; ++j ) {
+        elem_coords_h(ielem,j,knode) = box_mesh.node_coords(n,j);
+      }
+    }
+  }
 
   //  Copies of the mesh data structures on the device.
-  int_array_d   elem_nodeIDs, node_elemIDs, elems_per_node;
+  int_array_d   elem_nodeIDs, node_elemIDs, node_elemOffset;
 
-  elem_nodeIDs = Kokkos::create_mdarray< int_array_d >(  elem_nodeIDs_h.dimension(0), 
-                                                         elem_nodeIDs_h.dimension(1));  
+  elem_nodeIDs = Kokkos::create_mdarray< int_array_d >(  box_mesh.elem_node_ids.dimension(0), 
+                                                         box_mesh.elem_node_ids.dimension(1));  
 
-  node_elemIDs = Kokkos::create_mdarray< int_array_d >(  node_elemIDs_h.dimension(0), 
-                                                         node_elemIDs_h.dimension(1));  
+  node_elemIDs = Kokkos::create_mdarray< int_array_d >(  box_mesh.node_elem_ids.dimension(0), 
+                                                         box_mesh.node_elem_ids.dimension(1));  
 
-  elems_per_node = Kokkos::create_mdarray< int_array_d >(  elems_per_node_h.dimension(0), 
-                                                           elems_per_node_h.dimension(1));   
+  node_elemOffset = Kokkos::create_mdarray< int_array_d >(  box_mesh.node_elem_offset.dimension(0) );
 
 
   gettimeofday(&stop, NULL);
@@ -116,9 +110,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   //  copy the Host generated mesh information to the accelerator device
 
   Kokkos::deep_copy(position,       elem_coords_h);
-  Kokkos::deep_copy(elem_nodeIDs,   elem_nodeIDs_h);
-  Kokkos::deep_copy(node_elemIDs,   node_elemIDs_h);
-  Kokkos::deep_copy(elems_per_node, elems_per_node_h);
+  Kokkos::deep_copy(elem_nodeIDs,   box_mesh.elem_node_ids);
+  Kokkos::deep_copy(node_elemIDs,   box_mesh.node_elem_ids);
+  Kokkos::deep_copy(node_elemOffset, box_mesh.node_elem_offset);
 
   //--------------------------------------------------------------------------
   // We will call a sequence of functions.  These functions have been
@@ -192,7 +186,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
 
   Kokkos::parallel_for( nnodes , ForceGather<Scalar, device_type>
   (  node_elemIDs,
-    elems_per_node,
+    node_elemOffset,
     nodal_force,
     force_new ) , time);
 

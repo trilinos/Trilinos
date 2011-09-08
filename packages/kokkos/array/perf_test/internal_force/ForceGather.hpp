@@ -11,18 +11,18 @@ struct ForceGather<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef Kokkos::MDArrayView<int,device_type>         int_array_d;    
 
   int_array_d    node_elemIDs;   // Node-element connectivity via ids
-  int_array_d    elems_per_node; // number elements per node
+  int_array_d    node_elemOffset; // number elements per node
   
   scalar_array_d  nodal_force;
   scalar_array_d   element_force;
 
     ForceGather(int_array_d   & arg_node_elemIDs,
-        int_array_d   & arg_elems_per_node,
+        int_array_d   & arg_node_elemOffset,
         scalar_array_d   & arg_nodal_force,
         scalar_array_d   & arg_element_force) :
       
         node_elemIDs  (arg_node_elemIDs),
-        elems_per_node  (arg_elems_per_node),
+        node_elemOffset  (arg_node_elemOffset),
         nodal_force    (arg_nodal_force),
         element_force  (arg_element_force){}
 
@@ -31,16 +31,16 @@ struct ForceGather<Scalar ,KOKKOS_MACRO_DEVICE>{
     void operator()(int inode) const {
 
       // Getting count as per 'CSR-like' data structure
-      const int element_offset = elems_per_node(inode);
-      const int element_count  = elems_per_node(inode + 1) - element_offset ;
+      const int element_offset = node_elemOffset(inode);
+      const int element_count  = node_elemOffset(inode + 1) - element_offset ;
 
     double local_force[] = {0.0, 0.0, 0.0};
 
   //  for each element that a node belongs to
     for(int i = 0; i < element_count ; i++){
 
-    //  elems_per_node is a cumulative structure, so 
-    //  elems_per_node(inode) should be the index where
+    //  node_elemOffset is a cumulative structure, so 
+    //  node_elemOffset(inode) should be the index where
     //  a particular row's elem_IDs begin
       const int nelem = node_elemIDs( element_offset + i, 0);
 
