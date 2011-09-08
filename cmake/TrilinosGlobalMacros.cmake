@@ -144,7 +144,10 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   # generator, but it doesn't hurt to do it for other generators as
   # well.
   SET(Trilinos_LICENSE_AND_README "${Trilinos_BINARY_DIR}/README.txt")
-  FILE(COPY "${Trilinos_SOURCE_DIR}/README" DESTINATION ${Trilinos_LICENSE_AND_README})
+  IF (EXISTS "${Trilinos_LICENSE_AND_README}")
+    FILE(REMOVE_RECURSE "${Trilinos_LICENSE_AND_README}")
+  ENDIF ()
+  CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/README" "${Trilinos_LICENSE_AND_README}" COPYONLY)
 
   SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
   SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
