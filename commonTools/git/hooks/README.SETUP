@@ -2,39 +2,23 @@
 Set up email notification hooks
 ------------------------------------
 
-1) Create symbolic links to the static driver files
+1) Set up hook scripts and default configuration
 
-  $ cd GIT_REPO_BASE_DIR/hooks
-  $ ln -s THIS_DIR/post-receive .
-  $ ln -s THIS_DIR/post-receive-email .
-  $ ln -s THIS_DIR/get_recipients.py .
-  $ ln -s THIS_DIR/update_push_log.py .
+  $ cd GIT_REPO_BASE
+  $ THIS_DIR/full_repo_setup.sh defaultemail@something.com Something
 
-  Or, if you just want to copy the scripts do:
+  NOTE: The above will completely configure the repo to set out emails
+  on pushes to the default email show above
 
-  $ cd GIT_REPO_BASE_DIR/hooks
-  $ THIS_DIR/copy_hooks_scripts.sh
-
-2) Copy configure file, customize, and give group ownership:
+2) Customize the dirs_to_emails file and fill out with mapping [Optional]
 
   $ cd GIT_REPO_BASE_DIR
-  $ cp THIS_DIR/config .
-  $ eg config --add hooks.mailinglist "defaultemail@something.com"
-  $ eg config --add hooks.emailprefix "[Something] "
-  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
-
-  NOTE: The above setup-shared-repo.sh will make sure that anyone can modify
-  the repo in the given group.
-
-3) Create a dirs_to_emails file and fill out with mapping:
-
-  $ cd GIT_REPO_BASE_DIR/hooks
   $ echo "
       base_dir_1/subdir email1@somthing.com,email2@somthing.com
       base_dir_1 email3@something.com
       ...
       .+ defaultemail@something.com
-      " >> dirs_to_emails
+      " >> hooks/dirs_to_emails
 
   NOTE: You want to sort the directories in the order that you want the
   matches to take place with the default match regex '.+' (which matches
@@ -47,7 +31,7 @@ Set up email notification hooks
   NOTE: If you only want to send to the default email address you can leave
   the dirs_to_emails file empty.
 
-4) Test the mappings:
+3) Test the mappings:
 
   $ cd GIT_REPO_BASE_DIR
   $ ./hooks/get_recipients.py OLD_REV NEW_REV refs/heads/master # Prints out email list
@@ -57,3 +41,11 @@ With all of this done, your email notifications should work great.  Note that
 you should keep your dirs_to_emails file under version control and just create
 a symbolic link in order to allow anyone with access to your repository to
 change the mappings.
+
+4) Set group ownership
+
+  $ cd GIT_REPO_BASE_DIR
+  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
+
+  NOTE: The above setup-shared-repo.sh will make sure that anyone can modify
+  the repo in the given group.
