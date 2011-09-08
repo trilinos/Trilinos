@@ -1,0 +1,14 @@
+The purpose of this directory is to hold CMake cache files used
+for deploying installers for various platforms. To use these
+cache files, execute the following statements:
+
+$ mkdir -p $TRILINOS_HOME/../Build/<script-name>
+$ cd $TRILINOS_HOME/../Build/<script-name>
+$ cmake -C $TRILINOS_HOME/cmake/cpack/deploy/<script-name>.cmake
+$ [n]make
+$ cpack
+
+This will generate an installer for the package.
+
+TODO: This needs to be automated to generate packages
+during nightly testing.
