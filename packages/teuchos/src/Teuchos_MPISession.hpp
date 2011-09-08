@@ -61,38 +61,38 @@ namespace Teuchos
 {
   /**
    * \class MPISession
-   * \brief This class provides methods for initializing, finalizing, 
-   * and querying the global MPI session. 
+   * \brief Methods for initializing, finalizing, and querying 
+   *   the global MPI session. 
    *
    * \warning This class has been DEPRECATED.  Please include
    *   Teuchos_GlobalMPISession.hpp and use \c
    *   Teuchos::GlobalMPISession instead.  Note the minor interface
    *   differences in the latter.
    */
-  class MPISession
-    {
-    public:
-      //! Initializer, calls MPI_Init() if necessary
-      static void init(int* argc, void*** argv);
+  class TEUCHOS_DEPRECATED MPISession
+  {
+  public:
+    //! Initializer, calls MPI_Init() if necessary
+    static void init(int* argc, void*** argv);
 
-      //! Returns the process rank relative to MPI_COMM_WORLD
-      static int getRank() {return rank_;}
+    //! Returns the process rank relative to MPI_COMM_WORLD
+    static int getRank() {return rank_;}
 
-      //! Returns the number of processors in MPI_COMM_WORLD 
-      static int getNProc() {return nProc_;}
+    //! Returns the number of processors in MPI_COMM_WORLD 
+    static int getNProc() {return nProc_;}
 
-      //! Finalizer, calls MPI_Finalize() if necessary
-      static void finalize();
+    //! Finalizer, calls MPI_Finalize() if necessary
+    static void finalize();
 
-      /** Set to true if a message should be written by each processor
-       * at startup. */
-      static bool& showStartupMessage() {static bool rtn=false; return rtn;}
+    /** Set to true if a message should be written by each processor
+     * at startup. */
+    static bool& showStartupMessage() {static bool rtn=false; return rtn;}
 
-    private:
+  private:
 
-      static int rank_;
-      static int nProc_;
-    };
+    static int rank_;
+    static int nProc_;
+  };
 }
 
 #endif

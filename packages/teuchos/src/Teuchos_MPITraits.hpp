@@ -43,70 +43,81 @@
 #define TEUCHOS_MPITRAITS_H
 
 /*! \file Teuchos_MPITraits.hpp
- * \brief Declaration of a templated traits class for binding MPI types to
- * C++ types. This is for use with the MPIComm class and is supposed to compile
- * rgeardless of whether MPI has been enabled. If you need to convert directly to 
- * MPI types (e.g., MPI_INT), please refer to Teuchos_MPIRawTraits.hpp.
+ * \brief A templated traits class for binding MPI types to C++ types. 
+ *
+ * \warning The class implemented in this file is DEPRECATED, since
+ *   \c Teuchos::MPIComm is deprecated.
+ * 
+ * The \c Teuchos::MPITraits class is for use with the \c
+ * Teuchos::MPIComm class and is supposed to compile whether or not
+ * Trilinos was built with MPI. If you need to convert directly to MPI
+ * types (e.g., MPI_INT), please refer to Teuchos_MPIRawTraits.hpp.
 */
-
 #include "Teuchos_MPIComm.hpp"
 
 namespace Teuchos
 {
-	using std::string;
+  using std::string;
 
-	/** \ingroup MPI 
-	 * \brief Templated traits class that binds MPI types to C++ types
-	 * \note Template specializations exist for datatypes: <tt>char</tt>,
-		<tt>int</tt>, <tt>float</tt>, and <tt>double</tt>.
-	 */
-	template <class T> class MPITraits
-		{
-		public:
-			/** \brief Return the MPI data type of the template argument */
-			static int type();
-		};
+  /** 
+   * \class MPITraits
+   * \ingroup MPI 
+   * \brief Templated traits class that binds MPI types to C++ types
+   *
+   * \warning This class is DEPRECATED, since it depends on the
+   *   deprecated class \c MPIComm.
+   * 
+   * \note Template specializations exist for datatypes:
+   *   <tt>char</tt>, <tt>int</tt>, <tt>float</tt>, and
+   *   <tt>double</tt>.
+  */
+  template <class T> class TEUCHOS_DEPRECATED MPITraits
+  {
+  public:
+    /** \brief Return the MPI data type of the template argument */
+    static int type();
+  };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS	
-	/** \ingroup MPI 
-	 * Binds MPI_INT to int
-	 */
-	template <> class MPITraits<int>
-		{
-		public:
-			/** return the MPI data type of the template argument */
-			static int type() {return MPIComm::INT;}
-		};
+  /** \ingroup MPI 
+   * Binds MPI_INT to int
+   */
+  template <> class MPITraits<int>
+  {
+  public:
+    /** return the MPI data type of the template argument */
+    static int type() {return MPIComm::INT;}
+  };
 	
-	/** \ingroup MPI 
-	 * Binds MPI_FLOAT to float
-	 */
-	template <> class MPITraits<float>
-		{
-		public:
-			/** return the MPI data type of the template argument */
-			static int type() {return MPIComm::FLOAT;}
-		};
+  /** \ingroup MPI 
+   * Binds MPI_FLOAT to float
+   */
+  template <> class MPITraits<float>
+  {
+  public:
+    /** return the MPI data type of the template argument */
+    static int type() {return MPIComm::FLOAT;}
+  };
 	
-	/** \ingroup MPI 
-	 * Binds MPI_DOUBLE to double
-	 */
-	template <> class MPITraits<double>
-		{
-		public:
-			/** return the MPI data type of the template argument */
-			static int type() {return MPIComm::DOUBLE;}
-		};
+  /** \ingroup MPI 
+   * Binds MPI_DOUBLE to double
+   */
+  template <> class MPITraits<double>
+  {
+  public:
+    /** return the MPI data type of the template argument */
+    static int type() {return MPIComm::DOUBLE;}
+  };
 	
-	/** \ingroup MPI 
-	 * Binds MPI_CHAR to char
-	 */
-	template <> class MPITraits<char>
-		{
-		public:
-			/** return the MPI data type of the template argument */
-			static int type() {return MPIComm::CHAR;}
-		};
+  /** \ingroup MPI 
+   * Binds MPI_CHAR to char
+   */
+  template <> class MPITraits<char>
+  {
+  public:
+    /** return the MPI data type of the template argument */
+    static int type() {return MPIComm::CHAR;}
+  };
 
 #endif //DOXYGEN_SHOULD_SKIP_THIS
 	
