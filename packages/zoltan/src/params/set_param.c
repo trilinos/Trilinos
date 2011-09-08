@@ -27,7 +27,6 @@ extern "C" {
 #ifdef ZOLTAN_OCT
 #include "octupdate_const.h"
 #endif
-#include "third_library_const.h"
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"

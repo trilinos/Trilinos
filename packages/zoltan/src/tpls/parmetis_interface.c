@@ -65,7 +65,7 @@ static int mylog2(int x)
   return (i-1);
 }
 
-static int Zoltan_Parmetis_Parse(ZZ*, int *, char*, float*, double *, 
+static int Zoltan_Parmetis_Parse(ZZ*, indextype *, char*, float*, double *, 
                                  ZOLTAN_Output_Order*);
 
 
@@ -110,7 +110,7 @@ int Zoltan_ParMetis(
 
   double pmv3_itr = 0.0;
   float  itr = 0.0;
-  int  options[MAX_OPTIONS];
+  indextype options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
 #ifdef ZOLTAN_PARMETIS
@@ -118,13 +118,13 @@ int Zoltan_ParMetis(
                                    /* change our zz struct.                  */
 #endif
 
-  int i;
+  indextype i;
   float *imb_tols;
-  int  ncon;
-  int edgecut;
-  int wgtflag;
-  int   numflag = 0;
-  int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
+  indextype ncon;
+  indextype edgecut;
+  indextype wgtflag;
+  indextype numflag = 0;
+  indextype num_part = zz->LB.Num_Global_Parts; /* passed to ParMETIS. */
 
 #ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -241,7 +241,7 @@ int Zoltan_ParMetis(
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-  /* Get ready to call ParMETIS or Jostle */
+  /* Get ready to call ParMETIS */
   edgecut = -1;
   wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0);
   numflag = 0;
@@ -252,9 +252,9 @@ int Zoltan_ParMetis(
   }
   if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
     for (i=0; i<num_part; i++){
-      int j;
+      indextype j;
 
-      printf("Debug: Size(s) for part %1d = ", i);
+      printf("Debug: Size(s) for part " TPL_IDX_SPEC " = ", i);
       for (j=0; j<ncon; j++)
         printf("%f ", prt.part_sizes[i*ncon+j]);
       printf("\n");
@@ -297,18 +297,20 @@ int Zoltan_ParMetis(
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOMKWAY") == 0){
+      indextype ndims = geo->ndims;
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
                                   "ParMETIS_V3_PartGeomKway");
       ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
-                               &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
+                               &wgtflag, &numflag, &ndims, geo->xyz, &ncon,
                                &num_part, prt.part_sizes,
                                imb_tols, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOM") == 0){
+      indextype ndims = geo->ndims;
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
                                   "ParMETIS_V3_PartGeom");
-      ParMETIS_V3_PartGeom(gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
+      ParMETIS_V3_PartGeom(gr.vtxdist, &ndims, geo->xyz, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "ADAPTIVEREPART") == 0){
@@ -401,7 +403,7 @@ int Zoltan_ParMetis(
 
 static int Zoltan_Parmetis_Parse(
   ZZ* zz, 
-  int *options, 
+  indextype *options, 
   char* alg,
   float* itr, 
   double *pmv3_itr,
@@ -544,7 +546,7 @@ int Zoltan_ParMetis_Order(
 #ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* don't want to risk letting external 
                                       packages changing our communicator */
-  int numflag = 0;
+  indextype numflag = 0;
 #endif
 
   int timer_p = 0;
@@ -555,7 +557,7 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_ID_PTR       l_gids = NULL;
   ZOLTAN_ID_PTR       l_lids = NULL;
 
-  int  options[MAX_OPTIONS];
+  indextype options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -700,11 +702,13 @@ int Zoltan_ParMetis_Order(
 #endif /* ZOLTAN_PARMETIS */
 #if defined(ZOLTAN_METIS) || defined(ZOLTAN_PARMETIS)
  if (IS_LOCAL_GRAPH(gr.graph_type)) { /* Be careful : permutation parameters are in the opposite order */
+    indextype numobj = gr.num_obj;
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
     order_opt->return_args = RETURN_RANK|RETURN_IPERM; /* We provide directly all the permutations */
 
-    METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy, &numflag, options, ord.iperm, ord.rank);
+    METIS_NodeND(&numobj, gr.xadj, gr.adjncy, &numflag, options, 
+                 ord.iperm, ord.rank);
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
   }

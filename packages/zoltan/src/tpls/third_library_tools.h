@@ -29,11 +29,6 @@ extern "C" {
 #define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
 
 
-/* Macro for error handling */
-#define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
-
-
 /* Data structures used in ParMetis interface routines */
 /* An array of this data structure works with a parallel array of
  * ZOLTAN_ID_PTR called proc_list_nbor containing the global IDs of the

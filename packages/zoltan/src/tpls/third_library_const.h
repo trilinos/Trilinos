@@ -131,8 +131,8 @@ extern "C" {
       #define TPL_WGT_SPEC "%d"
     #elif IDXTYPEWIDTH == 64 /* defined in parmetis.h */
       #define MAX_WGT_SUM (INT64_MAX/8)
-      #define TPL_IDX_SPEC "%ld"
-      #define TPL_WGT_SPEC "%ld"
+      #define TPL_IDX_SPEC "%lld"
+      #define TPL_WGT_SPEC "%lld"
     #endif
   #endif
 
