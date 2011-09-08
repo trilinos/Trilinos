@@ -25,7 +25,6 @@ extern "C" {
 #include "params_const.h"
 #include "order_const.h"
 #include "matrix.h"
-#include "third_library.h"
 #include "ccolamd_interface.h"
 
   /**********  parameters structure for parmetis methods **********/

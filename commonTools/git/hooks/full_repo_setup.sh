@@ -14,7 +14,7 @@ EMAIL_SUMMARY_PREFIX=$1; shift
 
 _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/full_repo_setup.sh/\1/g"`
 
-GIT_REPO_BASE=$PWD
+GIT_REPO_BASE_DIR=$PWD
 THIS_DIR=$_SCRIPT_DIR
 
 echo "1) Copy driver files ..."

@@ -23,8 +23,6 @@ extern "C" {
 #include "zz_util_const.h"
 #include "phg.h"
 #include "phg_lookup.h"
-#include "third_library_const.h"
-#include "third_library_tools.h"
 
 /* #define CEDRIC_PRINT */
 

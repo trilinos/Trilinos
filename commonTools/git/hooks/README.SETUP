@@ -31,7 +31,7 @@ Set up email notification hooks
   NOTE: If you only want to send to the default email address you can leave
   the dirs_to_emails file empty.
 
-3) Test the mappings:
+3) Test the mappings [Optional]
 
   $ cd GIT_REPO_BASE_DIR
   $ ./hooks/get_recipients.py OLD_REV NEW_REV refs/heads/master # Prints out email list

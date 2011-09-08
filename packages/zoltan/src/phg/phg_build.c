@@ -22,8 +22,6 @@ extern "C" {
 #include "phg.h"
 #include "phg_verbose.h"
 #include "zz_const.h"
-#include "third_library_const.h"
-#include "third_library_tools.h"
 #include "zz_util_const.h"
 
 /*#define REPART_FASTER_METHOD*/
