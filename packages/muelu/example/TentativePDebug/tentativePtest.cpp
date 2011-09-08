@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
                                 //FIXME is implemented
 
   Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+  //Finest->Set("Nullspace",nullSpace);
 
   H->SetLevel(Finest);
 

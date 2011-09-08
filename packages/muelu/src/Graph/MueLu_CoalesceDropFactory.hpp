@@ -50,6 +50,7 @@ namespace MueLu {
 
     bool Build(Level &currentLevel) const {
       RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_);
+      currentLevel.Release("A",AFact_);
 
       RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
 

@@ -213,6 +213,15 @@ namespace MueLu {
 
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
 
+      // keep variables A, P and R on all multigrid levels
+
+      // set operator A to be generated with AcFact
+      Levels_[startLevel]->Keep("A", rcpFromRef(AcFact));
+      Levels_[startLevel]->Set<RCP<Operator> >("A", A, rcpFromRef(AcFact));
+
+      Levels_[startLevel]->Keep("P"); // P and R without factory information (set by GenericPRFactory)
+      Levels_[startLevel]->Keep("R");
+
       // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
       defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
       defaultFactoryHandler_->SetDefaultFactory("R", rcpFromRef(PRFact));
@@ -239,8 +248,16 @@ namespace MueLu {
           TEST_FOR_EXCEPTION(coarseLevel.GetLevelID() != i+2, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): CoarseLevel have a wrong level ID");
           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
+          *out_ << "declareInput for P's, R's and RAP" << std::endl;
+          PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
+          AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
+
+          *out_ << "FineLevel: " << std::endl;
+          fineLevel.print(*out_);
+          *out_ << "CoarseLevel: " << std::endl;
+          coarseLevel.print(*out_);
+
           *out_ << "starting build of P's and R's"  << std::endl;
-          //PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
           goodBuild = PRFact.Build(fineLevel, coarseLevel);
           if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
           if (!goodBuild) {
@@ -248,13 +265,13 @@ namespace MueLu {
             break;
           }
           *out_ << "starting build of RAP"  << std::endl;
-          AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
+
           if ( !AcFact.Build(fineLevel, coarseLevel) ) {
             Levels_.resize(i+1); //keep only entries 0..i
             break;
           }
           //RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A");
-          totalNnz += coarseLevel.Get< RCP<Operator> >("A")->getGlobalNumEntries();
+          totalNnz += coarseLevel.Get< RCP<Operator> >("A", rcpFromRef(AcFact))->getGlobalNumEntries();
 
           ++i;
         } //while
@@ -378,13 +395,13 @@ namespace MueLu {
         }
 
         //X.norm2(norms);
-        if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
+        if (Fine->Get< RCP<Operator> >("A",NULL)->getDomainMap()->isCompatible(*(X.getMap())) == false) {
           std::ostringstream buf;
           buf << startLevel;
           std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
           throw(Exceptions::Incompatible(msg));
         }
-        if (Fine->Get< RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
+        if (Fine->Get< RCP<Operator> >("A",NULL)->getRangeMap()->isCompatible(*(B.getMap())) == false) {
           std::ostringstream buf;
           buf << startLevel;
           std::string msg = "Level " + buf.str() + ": level A's range map is not compatible with B";
@@ -415,7 +432,7 @@ namespace MueLu {
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
 
-          RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
+          RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A",NULL)),X,B);
 
           RCP<Operator> P = Coarse->Get< RCP<Operator> >("P");
           RCP<Operator> R;

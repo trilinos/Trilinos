@@ -46,7 +46,7 @@ namespace MueLu {
         if (varName == "R")           return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
         // (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
         //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new ReUseFactory())); //TODO?
-        //if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
         if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));

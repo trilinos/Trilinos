@@ -26,9 +26,12 @@ class RAPFactory : public TwoLevelFactoryBase {
 
   public:
     //@{ Constructors/Destructors.
-  RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null) 
+  /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
     : PFact_(PFact), RFact_(RFact),
-      implicitTranspose_(false) {}
+      implicitTranspose_(false) {}*/
+
+    RAPFactory(RCP<FactoryBase> PRFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
+    : PRFact_(PRFact), AFact_(AFact), implicitTranspose_(false) {}
 
     virtual ~RAPFactory() {}
     //@}
@@ -36,12 +39,23 @@ class RAPFactory : public TwoLevelFactoryBase {
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+      fineLevel.Request("A", AFact_);     // AFact per default Teuchos::null -> default factory for this
+      coarseLevel.Request("P",PRFact_);   // transfer operators (from PRFactory, not from PFactory and RFactory!)
+      coarseLevel.Request("R",PRFact_);
+    }
 
     //@}
 
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+
+      std::cout << "RAPFactory.Build:" << std::endl;
+      std::cout << "FineLevel:" << std::endl;
+      fineLevel.print(std::cout);
+      std::cout << "CoarseLevel:" << std::endl;
+      coarseLevel.print(std::cout);
+
 
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
@@ -49,9 +63,9 @@ class RAPFactory : public TwoLevelFactoryBase {
 
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PRFact_);
 
-      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
+      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_);
 
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
 apTimer->start(true);
@@ -68,7 +82,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         //Utils::Write(filename,AP);
         RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
       } else {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", PRFact_);
 RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
         RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
@@ -77,10 +91,28 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
 
       }
       
-      coarseLevel.Set("A", RAP, this);
+      coarseLevel.Set("A", RAP, AFact_);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+
+      std::cout << "RAPFactory.Build (before Release):" << std::endl;
+      std::cout << "FineLevel:" << std::endl;
+      fineLevel.print(std::cout);
+      std::cout << "CoarseLevel:" << std::endl;
+      coarseLevel.print(std::cout);
+
+
+      fineLevel.Release("A",AFact_);
+      coarseLevel.Release("P",PRFact_);
+      coarseLevel.Release("R",PRFact_);
+
+      std::cout << "RAPFactory.Build: (after Release)" << std::endl;
+      std::cout << "FineLevel:" << std::endl;
+      fineLevel.print(std::cout);
+      std::cout << "CoarseLevel:" << std::endl;
+      coarseLevel.print(std::cout);
+      std::cout << "RAPFactory.Build: (end)" << std::endl;
 
       return true;
     }
@@ -90,14 +122,23 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       implicitTranspose_ = implicit;
     }
 
+    void SetPRFact(RCP<FactoryBase> PRFact) {
+      PRFact_ = PRFact;
+    }
 
 private:
   //! P Factory
-  RCP<FactoryBase> PFact_;
+  //RCP<FactoryBase> PFact_;
 
   //! R Factory
-  RCP<FactoryBase> RFact_;
+  //RCP<FactoryBase> RFact_;
+
+  //! PR Factory
+  RCP<FactoryBase> PRFact_;
   
+  //! A Factory
+  RCP<FactoryBase> AFact_;
+
   bool implicitTranspose_;
 
 }; //class RAPFactory
