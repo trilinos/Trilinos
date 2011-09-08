@@ -477,21 +477,20 @@ namespace {
 	if (debug) std::cerr << name << ", ";
 	std::string type      = eb->get_property("topology_type").get_string();
 	int    num_elem  = eb->get_property("entity_count").get_int();
-	int    num_attrib= eb->get_property("attribute_count").get_int();
 	total_elements += num_elem;
 
 	if (num_elem > 0) {
 	  Ioss::ElementBlock *ebn = new Ioss::ElementBlock(output_region.get_database(), name, type,
-							   num_elem, num_attrib);
+							   num_elem);
 	  ebn->property_add(Ioss::Property("original_block_order", used_blocks++));
 	  output_region.add(ebn);
 	  transfer_fields(eb, ebn, Ioss::Field::ATTRIBUTE);
 
-	  if (eb->property_exists("original_element_type")) {
-	    std::string oes = eb->get_property("original_element_type").get_string();
+	  if (eb->property_exists("original_topology_type")) {
+	    std::string oes = eb->get_property("original_topology_type").get_string();
 
 	    // Set the new property
-	    ebn->property_add(Ioss::Property("original_element_type", oes));
+	    ebn->property_add(Ioss::Property("original_topology_type", oes));
 	  }
 	}
       }

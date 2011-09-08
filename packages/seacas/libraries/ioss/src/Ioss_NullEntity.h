@@ -43,7 +43,7 @@ namespace Ioss {
   class NullEntity : public GroupingEntity {
   public:
     NullEntity()
-      : Ioss::GroupingEntity(NULL, "null_entity") {}
+      : Ioss::GroupingEntity(NULL, "null_entity", 0) {}
       
     std::string type_string() const {return "NullEntity";}
     EntityType type() const {return INVALID_TYPE;}

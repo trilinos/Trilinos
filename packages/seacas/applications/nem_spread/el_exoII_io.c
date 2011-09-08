@@ -155,14 +155,15 @@ void load_mesh(int io_ws)
 
   /* Local variables */
 
-  int   *num_nodes_in_node_set = NULL, mesh_exoid;
+  int   *num_nodes_in_node_set = NULL;
+  int    mesh_exoid = 0;
   int   *num_elem_in_ssets=NULL, *num_df_in_ssets=NULL, *num_df_in_nsets=NULL;
   int    cpu_ws;
   int    i1, i2, iproc, index, length_qa, glob_pindx;
   char  *yo = "load_mesh: ";
   float  version;
-  double start_time;
-  int    max_name_length;
+  double start_time = 0.0;
+  int    max_name_length = 0;
 
   char   cTemp[512];
 
@@ -1571,8 +1572,8 @@ static void read_elem_blk(int exoid, int io_ws)
   /* Local variables */
 
   void   *elem_attr = NULL;
-  float  *attr_sp;
-  double *attr_dp;
+  float  *attr_sp = NULL;
+  double *attr_dp = NULL;
   int     i, j, k, ielem, ielem_blk, iconnect_length;
 #ifdef DEBUG
   int     ielem_count;
@@ -2246,8 +2247,8 @@ static void extract_elem_attr(void *elem_attr, int icurrent_elem_blk,
   int iglobal_begin, iglobal_end;
   int iglobal_pos, ielem_blk, ipos, ibegin, iend;
   int iglobal_offset, iproc_offset, iproc_start, num_elem;
-  float  *attr_sp;
-  double *attr_dp;
+  float  *attr_sp = NULL;
+  double *attr_dp = NULL;
 
   extern int in_list_mono(int, int *, int, int vector[]);
 
@@ -2561,9 +2562,9 @@ static void read_node_sets(int exoid, int *num_nodes_in_node_set,
   int      num_messages, num_left_over, num_node_per_message, imess, istart_ns;
   int     *ns_cntr, *first_message, *ns_on_proc, *proc_num_ns;
 
-  int     *node_set;          /* the current node set's node number list     */
-  void    *node_set_df;       /* the current node set dist. factors.         */
-  int     *proc_ns_pointer;   /* pointers into 'node_set' for the nodes that
+  int     *node_set = NULL;          /* the current node set's node number list     */
+  void    *node_set_df = NULL;       /* the current node set dist. factors.         */
+  int     *proc_ns_pointer = NULL;   /* pointers into 'node_set' for the nodes that
                                  are common to both 'node_set' and the internal
                                  and border nodes for the current processor  */
   int   ***proc_list;         /* the node number lists for the current node
@@ -2586,16 +2587,15 @@ static void read_node_sets(int exoid, int *num_nodes_in_node_set,
   int     *list_length = NULL; /* length of the processor's node-set list    */
 
   /* generic pointers for single/double precision */
-  void    *ptr;
-  float   *ptr_sp;
-  double  *ptr_dp;
+  void    *ptr = NULL;
+  float   *ptr_sp = NULL;
+  double  *ptr_dp = NULL;
 
-  int *gmap;
+  int *gmap = NULL;
   int **gmap_dups = NULL;
   int  dups = 0;
   
   extern void find_message_info (int , int , int *, int *, int *);
-  extern int  int_cmp           (int *i1, int *i2);
 
   /*************************** Execution begins ******************************/
 
@@ -3282,11 +3282,11 @@ static void read_side_sets(int exoid, int *num_elem_in_ssets,
   int *gmap;
 
   /* generic pointers for single/double precision */
-  void   *ptr;
-  float  *ptr_sp;
-  double *ptr_dp;
+  void   *ptr = NULL;
+  float  *ptr_sp = NULL;
+  double *ptr_dp = NULL;
 
-  int ilast, ilast_side, ss_indx;
+  int ilast = 0, ilast_side, ss_indx;
   int loc_elem, loc_side, *ss_num, *ntotal, indx;
 
   extern void find_message_info(int , int , int *, int *, int *);

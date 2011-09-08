@@ -1,0 +1,545 @@
+\chapter{FREE FIELD INPUT}
+This chapter describes the free field input system supported in SUPES.  This
+software was developed because it was recognized that most codes written
+within the Engineering Sciences Directorate have very similar command input
+requirements.  The SUPES free field input system consolidates the
+development and maintenance of command parsing code into a single set of
+reliable software.  This utility provides a uniform command syntax across
+application codes to the end user, and minimizes the burden of command
+parsing on the applications programmer.
+
+The design requirements which are imposed on the SUPES free field input
+system are as follows:
+\begin{enumerate}
+\item Input must follow a natural syntax which encourages readability.
+
+\item The system must be applicable to both batch and interactive command
+input modes.
+
+\item The software must be written in ANSI FORTRAN~\cite{ansi}.
+
+\item The interface to the applications program must be clear and
+flexible.
+\end{enumerate}
+
+Version 2 of the SUPES free field reader differs from version 1 in the
+following areas:
+\begin{enumerate}
+\item An interface has been provided to allow character strings to be input
+to the free field reader in addition to reading from files. This allows the
+applications programmer to perform more sophisticated string parsing than
+would be possible when reading only from a file.
+
+\item Whole, real numbers (e.g., 12.3E3) will translate to both INTEGER and
+REAL values if the absolute value of the number is not greater than 
+1.0E9.
+
+\item Quoted strings are allowed. This makes the free field reader more
+compatible with the standard FORTRAN free field input. No interpretation of
+characters (except for internal quotes) is performed within a quoted string.
+
+\end{enumerate}
+
+\section{Keyword/Value Input System}
+This section describes the basic characteristics of the SUPES free field
+input system.  SUPES addresses the first two phases of command processing;
+it obtains a record from the input stream, and parses the record into
+logical components.  Interpretation of the data in the final phase of
+command processing is left to the applications program.
+
+SUPES provides a keyword/value input structure which encourages a verb
+oriented command language.  The hallmark of this input style is the concept
+of ``verbs'' (or ``keywords'') which indicate how a command is to be
+interpreted.  Since keywords allow each command to be self-contained, input
+lines need not follow a rigid order.  This results in highly readable input
+data.  For example, the command ``YOUNGS MODULUS = 30.E6'' has a very clear
+meaning.  The verb oriented style can be contrasted with standard FORTRAN
+list-directed I/O which requires the application code to know precisely what
+to expect before reading a line of input.
+
+The SUPES free field input system has a very simple, yet versatile syntax.
+Input records are broken into ``fields''.  Each field is categorized
+according to its contents as: null, character, real, or integer.  Note that
+these four categories form a hierarchy where each subsequent category is a
+more specific subset of the previous one.  For example, ``5.2345E3'' is a
+real field because it can be interpreted as a REAL value as well as a valid
+CHARACTER string, but does not constitute a valid INTEGER format.
+
+There are just four syntax markers in SUPES: field separators which delimit
+data fields, a quote character which encloses literal strings, a comment
+indicator which allows a comment to be appended to command lines, and a
+continuation indicator which causes consecutive input records to be
+logically joined.
+
+An application program need not use all of the information returned for
+each field.  A default value (blank or zero) is returned when a valid value
+is not specified for a given field.  On the other hand, the application code
+can easily detect that the user has not explicitly specified a value so that
+a more meaningful default can be assumed, or so that the user can be
+prompted to supply more information.
+
+
+\section{Syntax Rules} \label{sec:syntax}
+The syntax rules for the SUPES free field input structure are listed below.
+This syntax describes how input records/strings are parsed into data fields.  Both
+the end user and the applications programmer should clearly understand these
+few rules.
+\begin{enumerate}
+\item A data field is any sequence of data characters within an input line.  A
+   data field is broken by (does not include) any non-data character or the
+   end of the input line.  A non-data character is a field separator, a
+   space, a comment indicator, or a continuation indicator.  Any other
+   character is a data character.
+
+\item A field separator is a comma (,), an equal sign (=), or a series of one
+   or more spaces not adjacent to another separator.
+
+\item A dollar sign (\$) indicates a comment.  All characters after and
+   including the comment indicator are ignored.
+
+\item An asterisk (\last) indicates that the next input record/string will be
+treated as a continuation of the current line.  All characters after and
+including the continuation indicator on the current line are ignored. 
+Multple records/strings that are ''joined'' by continuation indicators
+are treated as a single logical record.
+
+\item A null field does not contain any data characters.  A null field can be
+   defined explicitly only by a field separator (spaces cannot act as a
+   field separator for an explicit null field).  Fields which are not
+   defined on the input line are implicitly null.
+
+\item \label{itm:case} Lowercase letters not contained in a quoted string
+                       are converted to uppercase.  All
+                       other non-printable ASCII characters are converted
+                       to spaces. 
+
+\item A numeric field is a data field which adheres to an ANSI FORTRAN numeric
+   format.  A numeric field cannot be longer than 32 characters.  A numeric
+   field always defines a REAL (floating point) value; it also defines an
+   INTEGER (fixed point) value if it adheres to a legal INTEGER format.
+
+\item A quoted string is a data field in which the quote (') character is
+the first nonblank character. An internal quote is indicated with 2
+consecutive quote characters. If an end quote character is not included,
+then the remainder of the record (excluding any trailing blanks) is treated
+as part of the quoted string. Within a quoted string, no character
+conversion to uppercase is performed. Delimiters (other than quotes) are
+treated as part of the string. Interpretation of data to numeric data will
+be performed, if possible.
+
+\item A data field which does not begin with the quote character, but has a
+quote internal to the field (e.g., MOM'S) is not considered a quoted string.
+In this case, the internal quote is not a special character.
+
+\item The maximum length of an input record (FREFLD only) is 132 characters.
+Input strings to FFISTR may be any length.
+\end{enumerate}
+
+Some important points which are not obvious from the above rules are noted
+below.
+\begin{itemize}
+\item Spaces have no significance except when they act a field separator.
+
+\item Only the first occurrence of a comment or continuation character is
+  significant; subsequent characters are considered part of the comment.
+
+\item A blank line has no data fields.
+
+\item If no data characters appear after the last field separator, the field
+  after that separator will not be counted.
+\end{itemize}
+
+\section{Free Field Input Routines}
+
+The user interface to the SUPES free field input system consists of two
+subroutines: FREFLD and FFISTR. Both routines perform parsing functions of
+strings. The main difference is that FFREFLD gets its input from a FORTRAN
+I/O unit while FFISTR gets its input from a character string. In fact,
+FREFLD uses FFISTR to perform parsing functions once FREFLD has read a
+record.
+
+\subsection{External Input Routine (FREFLD)}\label{sec:frefld}
+
+Input is prompted for, read, and echoed via FREFLD
+using specified I/O units.  FREFLD returns the parsed data field values
+defined on the next input record and any continuation records.  All I/O is
+accomplished via the utility routine GETINP, which is documented further in
+section~\ref{sec:getinp}, while the parsing is performed by FFISTR.
+
+The arguments to FREFLD are prescribed below.
+\begin{verbatim}
+      CALL FREFLD( KIN, KOUT, PROMPT, MFIELD, IOSTAT, NFIELD, KVALUE,
+     *             CVALUE, IVALUE, RVALUE )
+\end{verbatim}
+
+\begin{argy}{KIN}{INTEGER}{Read Only}
+Unit from which to read input.  If zero, read from the
+standard input device (terminal or batch deck) and echo
+to the standard output device (terminal or batch log).
+If non-zero, the caller is responsible for opening/closing this unit.
+\end{argy}
+
+\begin{argy}{KOUT}{INTEGER}{Read Only}
+Unit to which to echo input.  If zero, do not echo other
+than to the standard output device as described above.
+If non-zero, the caller is responsible for opening/closing this unit.
+\end{argy}
+
+\begin{argy}{PROMPT}{CHARACTER\last(\last)}{Read Only}
+Prompt string.  This string will be used to prompt for
+data from an interactive terminal and/or will be written
+as a prefix to the input line for echo.  If the string
+`AUTO' is specified, a prompt of the form `   n: ',
+where ``n'' is the current input line number (only lines
+read under the AUTO feature are counted), will be
+generated.
+\end{argy}
+
+\begin{argy}{MFIELD}{INTEGER}{Read Only}
+Maximum number of data fields to be returned.
+The dimensions of each of the output
+arrays described below must be greater than of equal to this number.
+\end{argy}
+
+\begin{argy}{IOSTAT}{INTEGER}{Write Only}
+ANSI FORTRAN I/O status:\\
+\begin{tabular}{llll}
+IOSTAT &$<$ & 0 & End of File\\
+IOSTAT & =  & 0 & Normal\\
+IOSTAT &$>$ & 0 & Error
+\end{tabular}
+\end{argy}
+
+\begin{argy}{NFIELD}{INTEGER}{Write Only}
+Number of data fields found on this logical record.  If this value is less
+than MFIELD, the excess fields are implicitly defined as null fields.  If
+this value is greater than MFIELD, the extra data fields are ignored.
+\end{argy}
+
+\begin{argy}{KVALUE}{INTEGER Array}{Write Only}
+Translation states of the data fields.  The value of
+each element of this array is interpreted as follows:
+
+\begin{tabular}{|cp{9 cm}|} \hline \hline
+KVALUE & \multicolumn{1}{c|}{Meaning}\\ \hline
+-1 & This is a null field.\\
+0 & This is a non-numeric field; only CVALUE
+contains a specified value.\\
+1 & This is a REAL numeric field; CVALUE and
+RVALUE contain specified values.\\
+2 & This is an INTEGER numeric field; CVALUE,
+RVALUE, and IVALUE contain specified values.\\ \hline \hline
+\end{tabular}
+
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+\begin{argy}{CVALUE}{CHARACTER\last(\last) Array}{Write Only}
+Character values of the data fields.  The data will be
+left-justified and either blank-filled or truncated.
+The value in this array is set blank for a null field.
+The dimension of this array must be at least MFIELD.
+The character element size may be any value set by the
+caller.
+\end{argy}
+
+\begin{argy}{IVALUE}{INTEGER Array}{Write Only}
+Integer values of the data fields.  The value in this
+array is set to zero for a null or non-INTEGER field.
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+\begin{argy}{RVALUE}{REAL Array}{Write Only}
+Floating-point values of the data fields.  The value in
+this array is set to zero for a null or non-REAL field.
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+\subsection{Internal Input Routine (FFISTR)}\label{sec:ffistr}
+
+Internal input (i.e., a character string) is parsed via FFISTR using
+character strings supplied through FFISTR's argument list.  FFISTR returns
+the parsed data field values defined in the input string. If a string
+contains a continuation character, a flag is returned to the user indicating
+that another string should be supplied to complete the logical record. 
+The arguments to FFISTR are prescribed below.
+\begin{verbatim}
+      CALL FFISTR( LINE, MFIELD, IDCONT, NFIELD, KVALUE,
+     *             CVALUE, IVALUE, RVALUE )
+\end{verbatim}
+
+\begin{argy}{LINE}{CHARACTER\last(\last)}{Read Only}
+Input string. This argument contains the data to be parsed.
+\end{argy}
+
+\begin{argy}{MFIELD}{INTEGER}{Read Only}
+Maximum number of data fields to be returned.
+The dimensions of each of the output
+arrays described below must be greater than of equal to this number.
+\end{argy}
+
+\begin{argy}{IDCONT}{INTEGER}{Read and Write}
+Continuation flag. 0 means no continuation. On input, this flag indicates
+if the previous string contained a continuation indicator. In this case, the
+current string will be treated as part of the same logical record as the
+previous string.
+\end{argy}
+
+\begin{argy}{NFIELD}{INTEGER}{Write Only}
+Number of data fields found on this logical record.  If this value is less
+than MFIELD, the excess fields are implicitly defined as null fields.  If
+this value is greater than MFIELD, the extra data fields are ignored.
+\end{argy}
+
+\begin{argy}{KVALUE}{INTEGER Array}{Write Only}
+Translation states of the data fields.  The value of
+each element of this array is interpreted as follows:
+
+\begin{tabular}{|cp{9 cm}|} \hline \hline
+KVALUE & \multicolumn{1}{c|}{Meaning}\\ \hline
+-1 & This is a null field.\\
+0 & This is a non-numeric field; only CVALUE
+contains a specified value.\\
+1 & This is a REAL numeric field; CVALUE and
+RVALUE contain specified values.\\
+2 & This is an INTEGER numeric field; CVALUE,
+RVALUE, and IVALUE contain specified values.\\ \hline \hline
+\end{tabular}
+
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+\begin{argy}{CVALUE}{CHARACTER\last(\last) Array}{Write Only}
+Character values of the data fields.  The data will be
+left-justified and either blank-filled or truncated.
+The value in this array is set blank for a null field.
+The dimension of this array must be at least MFIELD.
+The character element size may be any value set by the
+caller.
+\end{argy}
+
+\begin{argy}{IVALUE}{INTEGER Array}{Write Only}
+Integer values of the data fields.  The value in this
+array is set to zero for a null or non-INTEGER field.
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+\begin{argy}{RVALUE}{REAL Array}{Write Only}
+Floating-point values of the data fields.  The value in
+this array is set to zero for a null or non-REAL field.
+The dimension of this array must be at least MFIELD.
+\end{argy}
+
+
+\subsection{Basic Examples}
+
+The following examples illustrate the operation of the SUPES free field
+input system.
+
+INPUT RECORDS:\\
+\begin{verbatim}
+verb, 1 2. * continue on next line
+key=5
+\end{verbatim}
+
+Results returned from FREFLD:\\
+NFIELD = 5
+
+\begin{tabular}{|ccccc|} \hline \hline
+I    &  KVALUE(I) &       CVALUE(I)  &        RVALUE(I)   &  IVALUE(I)\\\hline
+   1   &      0 &\verb*"VERB            " & 0.000E+00 & 0\\
+   2   &      2 &\verb*"1               " & 1.00     & 1\\
+   3   &      2 &\verb*"2.              " & 2.00     & 2\\
+   4   &      0 &\verb*"KEY             " & 0.000E+00 & 0\\
+   5   &      2 &\verb*"5               " & 5.00     & 5\\ \hline \hline
+\end{tabular}
+
+INPUT RECORD:
+\begin{verbatim}
+$ this is a comment line
+\end{verbatim}
+
+Results returned from FREFLD:\\
+NFIELD = 0
+
+\begin{tabular}{|ccccc|} \hline \hline
+I    &  KVALUE(I)  &      CVALUE(I)    &     RVALUE(I) &    IVALUE(I)\\\hline
+1 &-1 &\verb*"                "  &    0.000E+00 & 0\\
+2 &-1 &\verb*"                "  &    0.000E+00 & 0\\
+3 &-1 &\verb*"                "  &    0.000E+00 & 0\\
+4 &-1 &\verb*"                "  &    0.000E+00 & 0\\
+5 &-1 &\verb*"                "  &    0.000E+00 & 0\\ \hline \hline
+\end{tabular}
+
+INPUT RECORD:
+\begin{verbatim}
+10,,
+\end{verbatim}
+
+Results returned from FREFLD:\\  
+NFIELD =    2
+
+\begin{tabular}{|ccccc|} \hline \hline
+I    &  KVALUE(I) &       CVALUE(I)       &   RVALUE(I)   &  IVALUE(I)\\\hline
+1  &  2  &\verb*"10              "  &     10.0     &  10\\
+2  & -1  &\verb*"                "  &    0.000E+00 &  0\\
+3  & -1  &\verb*"                "  &    0.000E+00 &  0\\
+4  & -1  &\verb*"                "  &    0.000E+00 &  0\\
+5  & -1  &\verb*"                "  &    0.000E+00 &  0\\ \hline \hline
+\end{tabular}
+
+INPUT RECORD:
+\begin{verbatim}
+'Quoted strings', '5 ', '$*,=''"' $ rest is comment
+\end{verbatim}
+
+Results returned from FREFLD:\\  
+NFIELD =    3
+
+\begin{tabular}{|ccccc|} \hline \hline
+I    &  KVALUE(I) &       CVALUE(I)       &   RVALUE(I)   &  IVALUE(I)\\\hline
+1  &  0  &\verb*"Quoted strings  "  &    0.000E+00 &  0\\
+2  &  2  &\verb*"5               "  &     50.0     &  50\\
+3  &  0  &\verb*+$*,='"          +  &    0.000E+00 &  0\\
+4  & -1  &\verb*"                "  &    0.000E+00 &  0\\
+5  & -1  &\verb*"                "  &    0.000E+00 &  0\\ \hline \hline
+\end{tabular}
+
+INPUT RECORD:
+\begin{verbatim}
+quotes's
+\end{verbatim}
+
+Results returned from FREFLD:\\  
+NFIELD =    1
+
+\begin{tabular}{|ccccc|} \hline \hline
+I    &  KVALUE(I) &       CVALUE(I)       &   RVALUE(I)   &  IVALUE(I)\\\hline
+1 &   0  &\verb*"QUOTES'S        "  &    0.000E+00 &  0\\
+2 &  -1  &\verb*"                "  &    0.000E+00 &  0\\
+3 &  -1  &\verb*"                "  &    0.000E+00 &  0\\
+4 &  -1  &\verb*"                "  &    0.000E+00 &  0\\
+5 &  -1  &\verb*"                "  &    0.000E+00 &  0\\ \hline \hline
+\end{tabular}
+
+\section{Utility Routines}
+The three routines described in this section, together with the FORTRAN
+extension library routines EXREAD and EXUPCS, are the only externals called
+by FREFLD and FFISTR. Application programs built on top of FREFLD and FFISTR
+may find further use for these routines.
+
+
+\subsection{Get Literal Input Line (GETINP)}\label{sec:getinp}
+All I/O for FREFLD is done through this subroutine.  This routine was
+intentionally separated from FREFLD so that the caller can obtain an
+unmodified line of input (such as a problem title) via the same I/O stream.
+Applications which require a more complex syntax than SUPES provides (e.g.,
+algebraic operations) may find GETINP advantageous.
+
+There are four modes of operation of GETINP depending upon the specification
+of the I/O units KIN and KOUT.  Each of these modes, which are summarized in
+the following table, may be useful to various applications.
+
+\begin{tabular}{|cccc|} \hline \hline
+     KIN        &KOUT    &Source  &Echo\\\hline
+        0       &0       &Standard Input  &Standard Output\\
+        0       &M       &Standard Input  &Standard Output and File (M)\\
+     N         &M       &File (N)        &File (M)\\
+        N       &0       &File (N)        &none \\ \hline \hline
+\end{tabular}
+
+The arguments to GETINP are prescribed below.
+
+\verb+CALL GETINP( KIN, KOUT, PROMPT, LINE, IOSTAT )+
+
+\begin{argy}{KIN}{INTEGER}{Read Only}
+Unit from which to read input.  If zero, read from the
+standard input device (terminal or batch deck) and echo
+to the standard output device (terminal or batch log).
+non-zero, the caller is responsible for opening/closing this unit.
+\end{argy}
+
+\begin{argy}{KOUT}{INTEGER}{Read Only}
+Unit to which to echo input.  If zero, do not echo other
+than to the standard output device as described above.
+If non-zero, the caller is responsible for opening/closing this unit.
+\end{argy}
+
+\begin{argy}{PROMPT}{CHARACTER\last(\last)}{Read Only}
+Prompt string.  This string will be used to prompt for
+data from an interactive terminal and/or will be written
+as a prefix to the input line for echo.  If the string
+`AUTO' is specified, a prompt of the form `   n: ',
+where "n" is the current input line number (only lines
+read under the AUTO feature are counted), will be
+generated.
+\end{argy}
+
+\begin{argy}{LINE}{CHARACTER\last(\last)}{Write Only}
+Line of input.  This string will be blank-filled or
+truncated, if necessary.  The length of the string is
+set by the caller, but should not exceed 132.
+\end{argy}
+
+\begin{argy}{IOSTAT}{INTEGER}{Write Only}
+ANSI FORTRAN I/O status:\\
+\begin{tabular}{cccl}
+IOSTAT &$<$ & 0 & End of File\\
+IOSTAT &=   & 0 & Normal\\
+IOSTAT &$>$ & 0 & Error\\
+\end{tabular}
+\end{argy}
+
+\subsection{Strip Leading/Trailing Blanks (STRIPB)}\label{sec:stripb}
+This routine is called by FREFLD and FFISTR from several locations.  It may
+be useful to other applications as well.  Note that STRIPB does not modify
+nor copy the input string, but simply returns the location of the first and
+last non- blank characters.  If a substring is passed, these locations are
+relative to the beginning of the substring.  For example, if the substring
+STRING(N:) is passed to STRIPB, STRING(ILEFT+N-1:IRIGHT+N-1) would represent
+the result.
+
+The arguments to STRIPB are prescribed below.
+
+\verb+CALL STRIPB( STRING, ILEFT, IRIGHT )+
+
+\begin{argy}{STRING}{CHARACTER\last(\last)}{Read Only}
+Any character string.
+\end{argy}
+
+\begin{argy}{ILEFT}{INTEGER}{Write Only}
+Relative index of the first non-blank character in
+STRING.  ILEFT = LEN(STRING) + 1 if STRING = ` '.
+\end{argy}
+
+\begin{argy}{IRIGHT}{INTEGER}{Write Only}
+Relative index of the last non-blank character in
+STRING.  IRIGHT = 0 if STRING = ` '.
+\end{argy}
+
+\subsection{Process Quoted String (QUOTED)}\label{sec:quoted}
+This routine is called by FFISTR to remove the delimiting quotes from a
+quoted string. It also converts any repeated quotes into single quotes.
+(This is a common method for indicating internal quotes.)
+
+The arguments to QUOTED are prescribed below.
+
+\verb+CALL QUOTED ( STRING, ILEFT, IRIGHT )+
+
+\begin{argy}{STRING}{CHARACTER\last(\last)}{Read and Write}
+Any character string. On output, the first and last quotes are removed, and
+internal (repeated) quotes are converted to single quotes. If the trailing
+quote is omitted, then the remainder of the input record (excluding trailing
+blanks) is considered part of the quoted string.
+\end{argy}
+
+\begin{argy}{ILEFT}{INTEGER}{Write Only}
+Relative index of the first character in the string. This is always the
+location of the first character inside the leading quote.
+\end{argy}
+
+\begin{argy}{IRIGHT}{INTEGER}{Write Only}
+Relative index of the last character in
+STRING.  IRIGHT = 0 if the quoted string is null.
+\end{argy}
+

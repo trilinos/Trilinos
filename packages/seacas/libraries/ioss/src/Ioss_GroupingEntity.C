@@ -42,11 +42,29 @@
 #include <iostream>
 #include <assert.h>
 
+Ioss::GroupingEntity::GroupingEntity()
+  : entityCount(0), entityName("invalid"), database_(NULL), entityState(STATE_CLOSED),
+    attributeCount(0)
+{}
+
 Ioss::GroupingEntity::GroupingEntity(const Ioss::DatabaseIO *io_database,
-					 const std::string& my_name)
-  : entityName(my_name), database_(io_database), entityState(STATE_CLOSED)
+				     const std::string& my_name,
+				     size_t entity_count)
+  : entityCount(entity_count), entityName(my_name), database_(io_database),
+    entityState(STATE_CLOSED), attributeCount(0)    
 {
   properties.add(Ioss::Property("name", my_name));
+
+  properties.add(Ioss::Property("entity_count", static_cast<int>(entity_count)));
+
+  properties.add(Ioss::Property(this, "attribute_count",
+				Ioss::Property::INTEGER));
+
+  if (my_name != "null_entity") {
+    fields.add(Ioss::Field("ids",
+			   Ioss::Field::INTEGER, "scalar",
+			   Ioss::Field::MESH, entity_count));
+  }
 }
 
 Ioss::GroupingEntity::~GroupingEntity()
@@ -112,13 +130,21 @@ Ioss::State Ioss::GroupingEntity::get_state() const
 }
 
 Ioss::Property
-Ioss::GroupingEntity::get_implicit_property(const std::string& /* name */) const
+Ioss::GroupingEntity::get_implicit_property(const std::string& my_name) const
 {
   // Handle properties generic to all GroupingEntities.
   // These include:
-  // --NONE--
+  if (my_name == "attribute_count") {
+    count_attributes();
+    return Ioss::Property(my_name, static_cast<int>(attributeCount));
+  }
 
-  return Ioss::Property(); // Invalid property.
+  // End of the line. No property of this name exists.
+  std::ostringstream errmsg;
+  errmsg << "\nERROR: Property '" << my_name << "' does not exist on "
+         << type_string() << " " << name() << "\n\n";
+  IOSS_ERROR(errmsg);
+  return Ioss::Property();
 }
 
 void Ioss::GroupingEntity::field_add(const Ioss::Field& new_field)
@@ -335,5 +361,30 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   size_t data_size = data.size() * sizeof(Complex);
   field.transform(TOPTR(data));
   return internal_put_field_data(field, TOPTR(data), data_size);
+}
+
+void Ioss::GroupingEntity::count_attributes() const
+{
+  if (attributeCount > 0)
+    return;
+  else {
+    // If the set has a field named "attribute", then the number of
+    // attributes is equal to the component count of that field...
+    if (field_exists("attribute")) {
+      Ioss::Field field = get_field("attribute");
+      attributeCount = field.raw_storage()->component_count();
+      return;
+    } else {
+      NameList results_fields;
+      field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+
+      Ioss::NameList::const_iterator IF;
+      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	std::string field_name = *IF;
+	Ioss::Field field = get_field(field_name);
+	attributeCount += field.raw_storage()->component_count();
+      }
+    }
+  }
 }
 

@@ -76,8 +76,10 @@ namespace Ioss {
   public:
     friend class Property;
 
-    explicit GroupingEntity(const DatabaseIO *io_database = NULL,
-			    const std::string& name="");
+    GroupingEntity();
+    GroupingEntity(const DatabaseIO *io_database, const std::string& name,
+		   size_t entity_count);
+    
     virtual ~GroupingEntity();
 
     State get_state() const;
@@ -96,8 +98,8 @@ namespace Ioss {
     bool is_alias(const std::string &name) const;
 
     //: Return list of blocks that the entities in this GroupingEntity "touch"
-    //: For a FaceSet or EdgeSet, returns a list of the element blocks that the
-    //: elements in the set belong to.  For a nodeset, returns "nodeblock_1".
+    //: For a SideSet, returns a list of the element blocks that the
+    //: elements in the set belong to.  
     //: For others, it returns an empty vector.
     //: Entries are pushed onto the "block_members" vector, so it will be
     //: appended to if it is not empty at entry to the function.
@@ -156,6 +158,8 @@ namespace Ioss {
 
 
   protected:
+    void count_attributes() const;
+
     bool set_state(State new_state) {
       entityState = new_state;
       return true;
@@ -184,14 +188,18 @@ namespace Ioss {
     virtual int internal_put_field_data(const Field& field,
 					void *data, size_t data_size=0) const = 0;
 
+    size_t entityCount;
+
   private:
     GroupingEntity(const GroupingEntity&); // do not implement
     GroupingEntity& operator=(const GroupingEntity&); // do not implement
 
     std::string entityName;
+
     const DatabaseIO* database_;
 
     State entityState;
+    mutable size_t attributeCount;
   };
 }
 inline void

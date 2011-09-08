@@ -34,30 +34,54 @@
 #include <Ioss_Utils.h>
 #include <Ioss_Super.h>
 
+#include <algorithm>
 #include <cstring>
 #include <assert.h>
 
 
+namespace {
+  class Deleter {
+  public:
+    void operator()(Ioss::ElementTopology* t) {delete t;}
+  };
+}
+
+void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
+{
+  m_registry.insert(value);
+  if (delete_me) {
+    m_deleteThese.push_back(value.second);
+  }
+}
+
+Ioss::ETRegistry::~ETRegistry()
+{
+  if (!m_deleteThese.empty()) 
+    std::for_each(m_deleteThese.begin(), m_deleteThese.end(), Deleter());
+}
+
 // ========================================================================
-Ioss::ElementTopology::ElementTopology(const std::string &type, const std::string &master_elem_name)
+Ioss::ElementTopology::ElementTopology(const std::string &type, const std::string &master_elem_name,
+				       bool delete_me)
   : name_(type), masterElementName_(master_elem_name)
 {
-  registry()->insert(Ioss::ETM_VP(type, this));
+  registry().insert(Ioss::ETM_VP(type, this), delete_me);
   alias(name_, masterElementName_);
 }
 
 void Ioss::ElementTopology::alias(const std::string& base, const std::string& syn)
 {
-  registry()->insert(Ioss::ETM_VP(syn, factory(base)));
+  registry().insert(Ioss::ETM_VP(syn, factory(base)), false);
 }
 
-Ioss::ElementTopologyMap* Ioss::ElementTopology::registry()
+Ioss::ETRegistry& Ioss::ElementTopology::registry()
 {
-  static Ioss::ElementTopologyMap registry_ ;
-  return &registry_;
+  static ETRegistry registry_;
+  return registry_;
 }
 
-Ioss::ElementTopology::~ElementTopology() {}
+Ioss::ElementTopology::~ElementTopology()
+{}
 
 bool Ioss::ElementTopology::edges_similar() const {return true;}
 bool Ioss::ElementTopology::faces_similar() const {return true;}
@@ -65,18 +89,18 @@ bool Ioss::ElementTopology::faces_similar() const {return true;}
 Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, bool ok_to_fail)
 {
   Ioss::ElementTopology* inst = NULL;
-  Ioss::ElementTopologyMap::iterator iter = registry()->find(type);
-  if (iter == registry()->end() && std::strncmp(type.c_str(), "super", 5) == 0) {
+  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
+  if (iter == registry().end() && std::strncmp(type.c_str(), "super", 5) == 0) {
     // A super element can have a varying number of nodes.  Create
     // an IO element type for this super element. The node count
     // should be encoded in the 'type' as 'super42' for a 42-node
     // superelement.
     
     Ioss::Super::make_super(type);
-    iter = registry()->find(type);
+    iter = registry().find(type);
   }
 
-  if (iter == registry()->end()) {
+  if (iter == registry().end()) {
     if (!ok_to_fail)
       IOSS_WARNING << "WARNING: The topology type '" << type << "' is not supported.\n";
   } else {
@@ -90,7 +114,7 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(unsigned int unique_id)
   // Given a unique id obtained from 'get_unique_id', return the
   // topology type that it refers to...
   Ioss::ElementTopologyMap::const_iterator I;
-  for (I = registry()->begin(); I != registry()->end(); ++I) {
+  for (I = registry().begin(); I != registry().end(); ++I) {
     if (Ioss::Utils::hash((*I).second->name()) == unique_id)
       return (*I).second;
   }
@@ -105,8 +129,8 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
   if (type == "unknown")
     return 0;
   unsigned int hash_val = 0;
-  Ioss::ElementTopologyMap::iterator iter = registry()->find(type);
-  if (iter == registry()->end()) {
+  Ioss::ElementTopologyMap::iterator iter = registry().find(type);
+  if (iter == registry().end()) {
     IOSS_WARNING << "WARNING: The topology type '" << type
 		 << "' is not supported.\n";
   } else {
@@ -120,7 +144,7 @@ int Ioss::ElementTopology::describe(NameList *names)
 {
   int count = 0;
   Ioss::ElementTopologyMap::const_iterator I;
-  for (I = registry()->begin(); I != registry()->end(); ++I) {
+  for (I = registry().begin(); I != registry().end(); ++I) {
     names->push_back((*I).first);
     count++;
   }
@@ -153,8 +177,8 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 
 bool Ioss::ElementTopology::is_alias(const std::string &my_alias) const
 {
-  Ioss::ElementTopologyMap::iterator iter = registry()->find(my_alias);
-  if (iter == registry()->end()) {
+  Ioss::ElementTopologyMap::iterator iter = registry().find(my_alias);
+  if (iter == registry().end()) {
     return false;
   } else {
     return this == (*iter).second;

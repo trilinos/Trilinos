@@ -36,8 +36,8 @@ int      *total_vwgt;		/* total vertex weight in each set */
     double    ratio;		/* possible wgt / desired wgt */
     float     ewgt;		/* weight of an edge */
     int     set2, set3;	/* sets of two vertices */
-    int       vtx, best_vtx;	/* vertex to make internal */
-    int       move_vtx;		/* vertex to move between sets */
+    int       vtx, best_vtx=-1;	/* vertex to make internal */
+    int       move_vtx=-1;	/* vertex to move between sets */
     int       neighbor;		/* neighbor of a vertex */
     int       nguys;		/* number of vertices in current set */
     int       internal;		/* is a vertex internal or not? */

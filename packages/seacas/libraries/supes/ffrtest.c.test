@@ -1,0 +1,56 @@
+/* A little test routine to see what the call to the free field must look
+ * like on the VAX running VMS from a C calling routine.  This routine
+ * has *NOT* been tested.
+ */
+
+#define MFIELD 5
+#define CHARLEN 17
+
+main()
+{
+  static struct dsc$descriptor_s cvalue[MFIELD];
+  char strings[MFIELD][CHARLEN];
+  int counter;
+  int kvalue[MFIELD];
+  int ivalue[MFIELD];
+  int iostat, nfield;
+  float rvalue[MFIELD];
+
+  void frefld();
+
+  int zero;
+  int mfld;
+
+  $DESCRIPTOR( mode, "AUTO" );
+
+  for( counter = 1; counter <= MFIELD; counter++ )
+    {
+      descriptor( cvalue[ counter - 1 ], strings + ( counter - 1 ) );
+    }
+
+  zero = 0;
+  mfld = MFIELD;
+
+  while(1)
+    {
+      frefld( &zero, &zero, &mode, &mfld, &iostat,
+	     &nfield, kvalue, cvalue, ivalue, rvalue );
+      if( iostat == 0 )
+	{
+	  int ktr;
+
+	  printf(
+     " NFIELD =%d    I     KV(I)               CV(I)          RV(I)       IV(I)\n",
+		 nfield);
+
+	  for( ktr = MFIELD ; ktr > 0 ; ktr-- )
+	    {
+	      int i;
+	      i = ktr - MFIELD;
+
+	      printf("%5d%10d   \"%16c\"%15f%12d\n", i, kvalue[i], strings[i],
+		     rvalue[i], ivalue[i]);
+	    }
+	}
+    }
+}

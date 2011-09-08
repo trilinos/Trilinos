@@ -18,7 +18,7 @@ int    *vtx2node;		/* maps comm_graph vtxs to processors */
     int       dir;		/* higher or lower direction? */
     int       my_node;		/* processor vertex assigned to */
     int     my_loc[3];	/* location of my processor */
-    int       index;		/* computed index into edata */
+    int       index=0;		/* computed index into edata */
 
     if (dim < 0) {
 	dir = -1;

@@ -34,14 +34,15 @@
 #define IOSS_Ioss_NodeSet_h
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_GroupingEntity.h>
+#include <Ioss_EntitySet.h>
 #include <string>
 
 namespace Ioss {
   class DatabaseIO;
 
-  class NodeSet : public GroupingEntity {
+  class NodeSet : public EntitySet {
   public:
+    NodeSet(); // Used for template typing only
     NodeSet(const DatabaseIO *io_database, const std::string& name,
 	    size_t number_nodes);
 
@@ -52,8 +53,6 @@ namespace Ioss {
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
-
-    virtual void block_membership(std::vector<std::string> &block_membership);
 
   protected:
     int internal_get_field_data(const Field& field,

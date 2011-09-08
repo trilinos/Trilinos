@@ -1,0 +1,26 @@
+XCOMM $Id: Imakefile,v 1.15 2006/04/05 14:55:28 gdsjaar Exp $
+
+CODE = grope
+
+SRCS = \
+chkcnt.f chkrng.f ckeb1.f  ckelb.f  ckess.f  ckmap.f  \
+cknps.f  comand.f dbsbel.f dbselb.f grope.f  nxmmax.f \
+preb1.f  prebn.f  prelb.f  prelem.f press.f  prglob.f prvers.f \
+prinit.f prmap.f  prmmax.f prname.f prnode.f prnps.f  \
+prqa.f   prstep.f prtims.f prxyz.f  rdcord.f rdeb1.f  \
+rdelb.f  rdess.f  rdmap.f  rdnmap.f rdmmax.f rdnam1.f \
+rdname.f rdnps.f  rdqa.f   rdstep.f rdtims.f rixid.f  \
+rixint.f rixwrd.f tostep.f wdberr.f indexx.f \
+selset.f limits.f invcon.f selmap.f setprc.f getprc.f numstr.f \
+prnsv.f  prssv.f  selblk.f prfrm.f
+
+OBJS = ${SRCS:.f=.o}
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallProgram($(CODE),$(BINDIR))
+
+DependTarget()
+

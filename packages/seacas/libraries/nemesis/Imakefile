@@ -43,20 +43,7 @@ XCOMM Imakefile for Nemesis libraries
  * Building Nemesis libraries for debugging
  * % accmkmf
  * % make Makefiles
- * % make CDEBUGFLAGS=-g
- *
- * Building Nemesis libraries on Sandias Teraflop machine
- * Service partition
- * % accmkmf
- * % make Makefiles
- * % make all
- * % make install
- *
- * Compute partition
- * % accmkmf -D PARALLEL
- * % make Makefiles
- * % make all
- * % make plib.install
+ * % make DEBUG=-g
  *
  */
 
@@ -69,6 +56,16 @@ XCOMM Imakefile for Nemesis libraries
 			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
 
 #define ExtraOptions "CCOPTIONS=$(CCOPTIONS)"
+
+#ifndef BuildSharedExodusLibrary
+#define BuildSharedExodusLibrary NO
+#endif
+
+#define DoNormalLib YES
+#define DoSharedLib BuildSharedExodusLibrary
+#define LibName nemesis
+SOREV = 4
+#define SoRev SOREV
 
 #ifdef PARALLEL
 CCOPTIONS  = ParallelCCOptions
@@ -94,7 +91,10 @@ ne_pnspg.c   ne_pnss.c    ne_pnssd.c   ne_pnvs.c    ne_psspg.c   ne_util.c
 
 OBJS = ${SRCS:.c=.o}
 
+REQUIREDLIBS = -L$(SHLIBDIR) $(EXOIIV2C) $(NETCDF) 
 LIBS = $(NETCDF) $(EXOIIV2C)
+
+#include <Library.tmpl>
 
 #if Build64BitAccess == YES
 AllTarget(libnemesis.a libnemIf.a libnemIf32.a)
@@ -147,3 +147,5 @@ test: libnemesis.a libnemIf.a ne_test.c forbind/ne_test.F
 
 ExtraStuffToClean(ne_ctest ne_ftest ne_test.exoII  ne_test.nemI)
 
+DependTarget()
+LibraryObjectRule()

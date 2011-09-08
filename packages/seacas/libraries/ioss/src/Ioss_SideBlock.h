@@ -62,6 +62,25 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
 
+    // For faceblock, edgeblock, if they are split by element block, then this
+    // will be non-NULL and is a pointer to the parent element block for this
+    // faceblock or edgeblock. Has no meaning for other EntityBlock types or split
+    // types.
+    const ElementBlock *parent_element_block() const
+      { return parentElementBlock_;}
+    void set_parent_element_block(ElementBlock *element_block)
+    { parentElementBlock_ = element_block; }
+    
+    // Describes the contained entities element block topology
+    const ElementTopology *parent_element_topology() const
+      { return parentTopology_;}
+
+    // For faceblock, edgeblock, return whether the surface is applied
+    // to the same face/edge for all elements in the surface. If not,
+    // return 0; otherwise return the consistent face number.
+    int  get_consistent_side_number() const;
+    void set_consistent_side_number(int side) {consistentSideNumber = side;}
+
   protected:
     int internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
@@ -70,10 +89,14 @@ namespace Ioss {
 				void *data, size_t data_size) const;
 
   private:
-    // Pointer to the SideSet (if any) that contains this side block.
     const SideSet *owner_;
+    ElementTopology *parentTopology_; // Topology of parent element (if any)
+    ElementBlock    *parentElementBlock_;
+
+    // Pointer to the SideSet (if any) that contains this side block.
     std::vector<std::string> blockMembership; // What element blocks do the
                                              // elements in this sideset belong to.
+    mutable int consistentSideNumber;
   };
 }
 #endif

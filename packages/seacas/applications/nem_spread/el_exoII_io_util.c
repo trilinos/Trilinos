@@ -219,8 +219,8 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
 
     default:
       /*
-       * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
-       * of the quad element.
+       * sides 2,3,4,5 correspond to
+       * sides 0,1,2,3 of the quad element.
        */
       for (i = 0; i < 2; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +
@@ -245,8 +245,8 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
 
     default:
       /*
-       * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
-       * of the quad element.
+       * sides 2, 3, 4, 5 correspond to
+       * sides 0, 1, 2, 3 of the quad element.
        */
       for(i=0; i < 3; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +
@@ -271,8 +271,8 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
 
     default:
       /*
-       * sides 3, 4, 5 correspond to sides 1, 2, & 3
-       * of the tri element.
+       * sides 2, 3, 4 correspond to
+       * sides 0, 1, 2 of the tri element.
        */
       for (i = 0; i < 2; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +
@@ -384,6 +384,7 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
     break;
 
   case WEDGE6:
+    /* NOTE: side_num is decremented above, runs from 0..4 */
     switch(side_num) {
 
     case 3:
@@ -450,9 +451,10 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
     break;
 
   case PYRAMID5:
+    /* NOTE: side_num is decremented above, runs from 0..4 */
     switch(side_num) {
 
-    case 5:
+    case 4:
       for(i=0; i < 4; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +
           (pyramid_table[side_num][i] - 1);
@@ -473,7 +475,7 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
   case PYRAMID13:
     switch(side_num) {
 
-    case 5:
+    case 4:
       for(i=0; i < 8; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +
           (pyramid_table[side_num][i] - 1);
@@ -494,7 +496,6 @@ int ss_to_node_list(int elem_type, int elem_id, int side_num,
   case HEXSHELL:
     switch (side_num) {
     case 4:
-
     case 5:
       for (i = 0; i < 4; i++) {
         itmp1 = Proc_Connect_Ptr[iproc][elem_id] +

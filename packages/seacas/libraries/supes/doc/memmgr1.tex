@@ -1,0 +1,300 @@
+\chapter{MEMORY MANAGER}
+The purpose of the memory manager utilities is to allow an applications
+programmer to write standard, readable FORTRAN-77 code while employing
+dynamic memory management for REAL, INTEGER, and LOGICAL type arrays.
+
+Because the array sizes in most programs are problem dependent, the
+program's memory requirements are not known until the program is running.
+Since FORTRAN-77 does not provide for dynamic memory allocation, the
+programmer has to either predict the maximum memory requirement or use
+machine dependent requests for memory.  In addition, dynamic memory
+allocation is an error prone exercise which tends to make the source code
+difficult to read and maintain.
+
+The memory manager utilities are written in standard FORTRAN-77 and provide
+an interface which encourages readable coding and efficient use of memory
+resources.  Machine dependencies are isolated through the use of the FORTRAN
+extension library (Chapter~\ref{sec:extlib}). All memory requests are in
+terms of {\em numeric storage units} (the amount of memory occupied by an
+integer, real, or logical datum~\cite{ansi}). 
+
+The memory manager utility is divided into three categories; basic routines,
+advanced routines, and development aids.  These categories will be discussed
+in sections \ref{sec:mbas} through \ref{sec:mdev}.
+
+
+\section{Pointer System}
+In order to use the memory manager properly, the user must first understand
+the concept of a base array with pointers for accessing memory locations.
+The memory manager references all memory relative to a user supplied base
+array.  A reference to memory is made in terms of an index or pointer to
+this base array.  The pointers which the memory manager provides may take on
+a wide range of values, including negative numbers.
+
+The base array must comply with the following rules:
+\begin{enumerate}
+\item The array must be of type INTEGER, REAL, or LOGICAL.  Modified word
+length storage arrays such as INTEGER\last2 or REAL\last8 will result in
+invalid pointers with no error message. 
+
+\item The lower bound of the array subscript must be one.
+\end{enumerate}
+
+The following FORTRAN statement defines a valid base array:
+
+DIMENSION A(1)
+
+ONLY ONE BASE ARRAY MAY BE USED IN A PROGRAM.
+
+In order to use memory allocated by the memory manager, the user merely
+needs to pass the base array with the correct pointer to a subprogram.  For
+example, for a base array A and a pointer IP, a subroutine call would be:
+
+\verb+CALL SUBBIE ( A(IP) )+
+
+Although the programmer is not restricted to using the allocated memory in
+subprograms only, the recommended usage for the memory manager is to
+allocate dynamic arrays in the main program and then pass them to
+subroutines.
+
+
+\section{Basic Routines}\label{sec:mbas}
+The basic memory manager routines are those which are most commonly used and
+require little understanding of the internal workings of the utility.
+
+\subsection{Initialize (MDINIT)}
+The memory manager {\em must} be initialized with a call to MDINIT before
+any memory can be allocated.  The main purpose of the initialization is to
+determine the location of the base array in memory. 
+
+\verb+CALL MDINIT (BASE)+
+
+\begin{argy}{BASE}{INTEGER, LOGICAL or REAL Array}{Read Only}
+This array is used as a base reference to all dynamically allocated memory. 
+\end{argy}
+
+\subsection{Define Dynamic Array (MDRSRV)}
+MDRSRV declares a new dynamic array.  The user supplies the space required,
+and a pointer to the new space is returned.  Note that the contents of the
+new storage are undefined.
+
+\verb+CALL MDRSRV (NAME, NEWPNT, NEWLEN)+
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the new dynamic array. The memory manager will add this
+name to its internal dictionary; each array must have a unique name.  The
+first eight characters are used for comparison, and leading and embedded
+blanks are significant. 
+\end{argy}
+
+\begin{argy}{NEWPNT}{INTEGER}{Write Only}
+This is the pointer to storage allocated to this dynamic array relative to
+the base array. 
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Read Only}
+This is the length to be reserved for the new array. Any nonnegative number
+is acceptable.  A zero length does not cause any storage to be allocated and
+returns a pointer equal to one. 
+\end{argy}
+
+\subsection{Delete Dynamic Array (MDDEL)}
+MDDEL releases the memory that is allocated to a dynamic array.
+
+\verb+CALL MDDEL (NAME)+
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array which is to be deleted.  The array
+name must match an existing name in the dictionary.  The first eight
+characters are used for comparison, and leading and embedded blanks are
+significant. 
+\end{argy}
+
+\subsection{Reserve Memory Block (MDGET)}
+MDGET reserves a contiguous block of memory without associating the block of
+memory with an array.  MDGET should be called prior to a series of calls to
+MDRSRV to improve efficiency and to reduce memory fragmentation.  Further
+discussion of the operation of MDGET is found in section~\ref{sec:table}.
+
+\verb+CALL MDGET (MNGET)+
+
+\begin{argy}{MNGET}{INTEGER}{Read only}
+This specifies the desired contiguous block size.
+\end{argy}
+
+\subsection{Release Unallocated Memory (MDGIVE)}
+MDGIVE causes the memory manager to return unused storage to the operating
+system, if possible.
+
+\verb+CALL MDGIVE ()+
+
+
+\subsection{Obtain Statistics (MDSTAT)}
+MDSTAT returns memory manager statistics.  MDSTAT provides the only method
+for error checking, and thus should be used after other calls to the memory
+manager to assure no errors have occurred.
+
+\verb+CALL MDSTAT (MNERRS, MNUSED)+
+
+\begin{argy}{MNERRS}{INTEGER}{Write Only}
+This is the total number of errors detected by the memory manager during the
+current execution. 
+\end{argy}
+
+\begin{argy}{MNUSED}{INTEGER}{Write Only}
+This is the total number of words that are currently allocated to dynamic
+arrays. 
+\end{argy}
+
+\subsection{Print Error Summary (MDEROR)}
+MDEROR prints a summary of all errors detected by the memory manager.  The
+return status of the last memory manager routine called is also printed.
+MDEROR should be called any time an error is detected by a call to MDSTAT.
+
+\verb+CALL MDEROR (IUNIT)+
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the unit number of the output device.
+\end{argy}
+
+\begin{center}
+\begin{tabular}{|rl|} \hline \hline
+\multicolumn{2}{|c|}{ERROR CODES}\\ \hline
+  1 &  SUCCESSFUL COMPLETION\\
+  2 &  UNABLE TO GET REQUESTED STORAGE FROM SYSTEM\\
+  3 &  DATA MANAGER NOT INITIALIZED\\
+  4 &  DATA MANAGER WAS PREVIOUSLY INITIALIZED\\
+  5 &  NAME NOT FOUND IN DICTIONARY\\
+  6 &  NAME ALREADY EXISTS IN DICTIONARY\\
+  7 &  ILLEGAL LENGTH REQUEST\\
+  8 &  UNKNOWN DATA TYPE\\
+  9 &  DICTIONARY IS FULL\\
+ 10 &  VOID TABLE IS FULL\\
+ 11 &  MEMORY BLOCK TABLE IS FULL\\
+ 12 &  OVERLAPPING VOIDS - INTERNAL ERROR\\
+ 13 &  OVERLAPPING MEMORY BLOCKS - INTERNAL ERROR\\
+ 14 &  INVALID MEMORY BLOCK - EXTENSION LIBRARY ERROR \\ \hline \hline
+\end{tabular}
+\end{center}
+
+\subsection{Basic Example}
+\begin{verbatim}
+    DIMENSION BASE(1)
+    CALL MDINIT (BASE)
+    CALL MDGET (30)
+    CALL MDRSRV ('FIRST', I1, 10)
+    CALL MDRSRV ('SECOND', I2, 10)
+    CALL MDRSRV (' THIRD', I3, 10)
+    CALL MDSTAT (MNERRS, MNUSED)
+    IF (MNERRS .NE. 0) THEN
+    CALL MDEROR (6)
+    STOP
+    END IF
+    CALL MDDEL (' THIRD')
+    CALL MDGIVE ()
+\end{verbatim}
+
+\section{Advanced Routines}
+The advanced routines are supplied to give added capability to the user who
+is interested in more sophisticated manipulation of memory.  These routines
+are never necessary, but may be very desirable.
+
+\subsection{Rename Dynamic Array (MDNAME)}
+MDNAME renames a dynamic array from NAME1 to NAME2.  The location of the
+array is not changed, nor is its length.
+
+\verb+CALL MDNAME (NAME1, NAME2)+
+
+\begin{argy}{NAME1}{CHARACTER\last(\last)}{Read Only}
+This is the old name of the array.  The first eight characters are used for
+comparison. 
+\end{argy}
+
+\begin{argy}{NAME2}{CHARACTER\last(\last)}{Read Only}
+This is the new name of the array.  The first eight characters are used. 
+\end{argy}
+
+\subsection{Adjust Dynamic Array Length (MDLONG)}
+MDLONG changes the length of a dynamic array.  The memory manager will
+relocate the array and move its data if storage cannot be extended at the
+array's current location.  The user should assume that MDLONG invalidates
+the previous pointer to this array if the array is extended.
+
+\verb+CALL MDLONG (NAME, NEWPNT, NEWLEN)+
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array which the user wishes to extend or
+shorten. 
+\end{argy}
+
+\begin{argy}{NEWPNT}{INTEGER}{Write Only}
+This is the new pointer to the dynamic array.
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Read Only}
+This is the new length for the dynamic array.
+\end{argy}
+
+\subsection{Locate Dynamic Array (MDFIND)}
+MDFIND returns the pointer and length of storage allocated to a dynamic
+array.  This routine would be used if the pointer from an earlier call to
+MDRSRV was not passed to a different subprogram.
+
+\verb+CALL MDFIND (NAME, NEWPNT, NEWLEN)+
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the dynamic array to be located.
+\end{argy}
+
+\begin{argy}{NEWPNT}{INTEGER}{Write Only}
+This is the pointer to the dynamic array relative to the user's reference
+array. 
+\end{argy}
+
+\begin{argy}{NEWLEN}{INTEGER}{Write Only}
+This is the length of the dynamic array.
+\end{argy}
+
+\subsection{Compress Storage (MDCOMP)}
+MDCOMP causes fragmented memory to be consolidated.  Note that this may
+cause array storage locations to change.  It is important to realize that
+all pointers must be recalculated by calling MDFIND after a compress
+operation.  A call to MDCOMP prior to MDGIVE will result in the return of
+the maximum memory to the system.
+
+\verb+CALL MDCOMP ()+
+
+
+\section{Development Aids}\label{sec:mdev}
+The routines in this section are designed to aid the programmer during
+development of a program, and probably would not be used during execution of
+a mature program.
+
+\subsection{List Storage Tables (MDLIST)}
+MDLIST prints the contents of the memory manager's internal tables.
+Section~\ref{sec:table} describes these tables. 
+
+\verb+CALL MDLIST (IUNIT)+
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the unit number of the output device.
+\end{argy}
+
+\subsection{Print Dynamic Array (MDPRNT)}
+MDPRNT prints the contents of an individual array.
+
+\verb+CALL MDPRNT (NAME, IUNIT, NTYPE)+
+
+\begin{argy}{NAME}{CHARACTER\last(\last)}{Read Only}
+This is the name of the array to be printed.
+\end{argy}
+
+\begin{argy}{IUNIT}{INTEGER}{Read Only}
+This is the unit number of the output device.
+\end{argy}
+
+\begin{argy}{NTYPE}{CHARACTER\last(\last)}{Read Only}
+NTYPE indicates the data type of the data to be printed; "R" for REAL, or
+"I" for INTEGER.  Note that this is not necessarily the declared type of the
+base array. 
+\end{argy}

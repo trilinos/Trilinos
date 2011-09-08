@@ -39,8 +39,8 @@ int       vwgt_max;		/* largest vertex weight */
     int       done;		/* have I successfully move a vertex? */
 
     /* int npass=0; *//* counts passes through main loop */
-    int       badset;		/* most unbalanced set */
-    int       toobig;		/* badset too large or too small? */
+    int       badset=-1;		/* most unbalanced set */
+    int       toobig=0;		/* badset too large or too small? */
     int       balanced;		/* is balance attained? */
     double    imbalance;	/* amount of imbalance in badset */
     int       i;		/* loop counter */

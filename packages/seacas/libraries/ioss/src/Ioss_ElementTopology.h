@@ -47,6 +47,20 @@ namespace Ioss {
     std::less<std::string> > ElementTopologyMap;
   typedef ElementTopologyMap::value_type ETM_VP;
 
+  class ETRegistry {
+  public:
+    void insert(const Ioss::ETM_VP &value, bool delete_me);
+    ElementTopologyMap::iterator begin() {return m_registry.begin();}
+    ElementTopologyMap::iterator end()   {return m_registry.end();}
+    ElementTopologyMap::iterator find(const std::string &type) {return m_registry.find(type);}
+
+    ~ETRegistry();
+    std::map<std::string, std::string> customFieldTypes;
+  private:
+    Ioss::ElementTopologyMap m_registry;
+    std::vector<Ioss::ElementTopology*> m_deleteThese;
+  };
+
   // ========================================================================
   class ElementTopology {
   public:
@@ -112,7 +126,8 @@ namespace Ioss {
     static int describe(NameList *names);
 
   protected:
-    ElementTopology(const std::string& type, const std::string& master_elem_name);
+    ElementTopology(const std::string& type, const std::string& master_elem_name,
+		    bool delete_me=false);
 
   private:
     ElementTopology(const ElementTopology&); // Do not implement...
@@ -121,7 +136,7 @@ namespace Ioss {
     const std::string name_;
     const std::string masterElementName_;
     
-    static ElementTopologyMap* registry();
+    static ETRegistry & registry();
   };
 }
 #endif

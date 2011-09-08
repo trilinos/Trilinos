@@ -829,11 +829,11 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
      * Start a local block so we can define some variables locally
      * here instead of a few thousand lines up from here...
      */
-    int *EB_Ids;
-    int *EB_Cnts;
-    int *EB_NperE;
-    int *EB_Nattr;
-    char **EB_Types;
+    int *EB_Ids = NULL;
+    int *EB_Cnts = NULL;
+    int *EB_NperE = NULL;
+    int *EB_Nattr = NULL;
+    char **EB_Types = NULL;
     EB_Ids = (int*)array_alloc(__FILE__, __LINE__, 1, (4*Num_Elem_Blk),
 			       sizeof(int));
     if (!EB_Ids) {
@@ -1202,14 +1202,14 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
   tt1 = second();
   if (Num_Node_Set > 0) {
     int i3;
-    int *conc_ids;
-    int *conc_nodes;
-    int *conc_df;
-    int *conc_nind;
-    int *conc_dind;
-    int *conc_nlist;
-    float  *conc_sdf;
-    double *conc_ddf;
+    int *conc_ids = NULL;
+    int *conc_nodes = NULL;
+    int *conc_df = NULL;
+    int *conc_nind = NULL;
+    int *conc_dind = NULL;
+    int *conc_nlist = NULL;
+    float  *conc_sdf = NULL;
+    double *conc_ddf = NULL;
 
     int dcount;
     int ncount;
@@ -1340,15 +1340,15 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     int i3;
     int df_count;
     int el_count;
-    int *conc_ids;
-    int *conc_sides;
-    int *conc_dist;
-    int *conc_eind;
-    int *conc_dind;
-    int *conc_elist;
-    int *conc_slist;
-    float  *conc_sdflist;
-    double *conc_ddflist;
+    int *conc_ids = NULL;
+    int *conc_sides = NULL;
+    int *conc_dist = NULL;
+    int *conc_eind = NULL;
+    int *conc_dind = NULL;
+    int *conc_elist = NULL;
+    int *conc_slist = NULL;
+    float  *conc_sdflist = NULL;
+    double *conc_ddflist = NULL;
     
     df_count = 0;
     el_count = 0;
@@ -1545,9 +1545,9 @@ void write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
 {
   int     cnt1, var_num, error, bytes_out=0;
   int     num_nodes, num_elem, eb_num, eb_num_g, var_offset;
-  float  *sp_ptr;
-  double *dp_ptr;
-  void   *var_ptr;
+  float  *sp_ptr = NULL;
+  double *dp_ptr = NULL;
+  void   *var_ptr = NULL;
 
   /* check to see if the io_ws is smaller than the machine precision */
   if (io_ws < sizeof(float)) io_ws = sizeof(float);

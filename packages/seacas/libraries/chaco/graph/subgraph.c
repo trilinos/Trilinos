@@ -23,9 +23,9 @@ int      *loc2glob;		/* mapping from subgraph to graph numbering */
 int    *degree;		/* degrees of vertices in graph */
 int       using_ewgts;		/* are edge weights being used? */
 {
-    struct vtx_data *subgptr;	/* loops through subgraph */
-    float    *fptr;		/* loops through edge weights */
-    int      *iptr;		/* loops through edge list */
+    struct vtx_data *subgptr=NULL;/* loops through subgraph */
+    float    *fptr=NULL;	/* loops through edge weights */
+    int      *iptr=NULL;	/* loops through edge list */
     float     tempwgt;		/* weight of vertex being swapped */
     double    ewgtsum;		/* sum of weights of subgraph edges */
     int       subnedges;	/* number of edges in subgraph */

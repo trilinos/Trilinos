@@ -48,7 +48,7 @@
 
 #include <Ioss_ElementTopology.h>
 #include <Ioss_GroupingEntity.h>
-#include <Ioss_EntityBlock.h>
+#include <Ioss_SideBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_Region.h>
 #include <Ioss_SerializeIO.h>
@@ -148,7 +148,7 @@ std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int 
   return entity_name;
 }
 
-std::string Ioss::Utils::fixup_element_type(const std::string &base, int nodes_per_element, int spatial)
+std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_element, int spatial)
 {
   std::string type = base;
   Ioss::Utils::fixup_name(type); // Convert to lowercase; replace spaces with '_'
@@ -261,11 +261,13 @@ namespace {
   }
 }
 void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
-						 const Ioss::EntityBlock *ef_blk,
+						 const Ioss::SideBlock *ef_blk,
 						 const int *element, const int *sides,
 						 int number_sides,
 						 const Ioss::Region *region)
 {
+  assert(ef_blk != NULL);
+  
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
 
@@ -289,6 +291,13 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
 
   // The element side that the current face is on the element...
   int current_side = -1;
+
+  if (number_sides > 0 && (element == NULL || sides == NULL)) {
+    std::ostringstream errmsg;
+    errmsg << "INTERNAL ERROR: null element or sides pointer passed to "
+	   << "Ioss::Utils::calculate_sideblock_membership function.";
+    IOSS_ERROR(errmsg);
+  }
 
   for (int iel = 0; iel < number_sides; iel++) {
     int elem_id = element[iel];

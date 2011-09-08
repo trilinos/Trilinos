@@ -123,9 +123,14 @@ int ex_get_name (int   exoid,
     if (ent_ndx < 0) ent_ndx = -ent_ndx;
     
     /* read the name */
-    status = ex_get_name_internal(exoid, varid, ent_ndx-1, name, obj_type, routine);
-    if (status != NC_NOERR) {
-      return (EX_FATAL);
+    {
+      int db_name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
+      int name_size = db_name_size < ex_max_name_length ? db_name_size : ex_max_name_length;
+
+      status = ex_get_name_internal(exoid, varid, ent_ndx-1, name, name_size, obj_type, routine);
+      if (status != NC_NOERR) {
+	return (EX_FATAL);
+      }
     }
   } else {
     /* Name variable does not exist on the database; probably since this is an

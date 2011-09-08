@@ -31,9 +31,9 @@ int     (*hops)[MAXSETS];	/* hop cost between sets */
 int       using_ewgts;		/* are edge weights being used? */
 {
     extern double CUT_TO_HOP_COST;	/* if term_prop, cut/hop importance */
-    struct bilist *lptr;	/* pointer to an element in listspace */
-    float    *ewptr;		/* loops through edge weights */
-    int      *edges;		/* edge list for a vertex */
+    struct bilist *lptr=NULL;	/* pointer to an element in listspace */
+    float    *ewptr=NULL;	/* loops through edge weights */
+    int      *edges=NULL;	/* edge list for a vertex */
     int       myset;		/* set that current vertex belongs to */
     int       newset;		/* set current vertex could move to */
     int       set;		/* set that neighboring vertex belongs to */

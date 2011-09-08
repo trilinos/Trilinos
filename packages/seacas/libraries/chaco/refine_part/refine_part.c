@@ -24,12 +24,12 @@ double   *goal;			/* desired set sizes */
     extern int TERM_PROP;	/* perform terminal propagation? */
     struct bilist *set_list = NULL;	/* lists of vtxs in each set */
     struct bilist *vtx_elems = NULL;	/* space for all vtxs in set_lists */
-    struct bilist *ptr;		/* loops through set_lists */
+    struct bilist *ptr = NULL;	/* loops through set_lists */
     struct ipairs *pairs = NULL;/* ordered list of edges in comm graph */
     double   *comm_vals = NULL;	/* edge wgts of comm graph for sorting */
     float    *term_wgts[2];	/* terminal propagation vector */
     int     hops[MAXSETS][MAXSETS];	/* preference weighting */
-    double   *temp;		/* return argument from srealloc_ret() */
+    double   *temp = NULL;	/* return argument from srealloc_ret() */
     int      *indices = NULL;	/* sorted order for communication edges */
     int      *space = NULL;	/* space for mergesort */
     int      *sizes = NULL;	/* sizes of the different sets */
@@ -37,11 +37,11 @@ double   *goal;			/* desired set sizes */
     int    *old_sub_assign = NULL;	/* room for current sub assignment */
     int     **edges_list = NULL;/* lists of comm graph edges */
     int     **ewgts_list = NULL;/* lists of comm graph edge wgts */
-    int      *ewgts;		/* loops through ewgts_list */
-    int      *edges;		/* edges in communication graph */
+    int      *ewgts = NULL;	/* loops through ewgts_list */
+    int      *edges = NULL;	/* edges in communication graph */
     int      *adj_sets = NULL;	/* weights connecting sets */
-    int      *eptr;		/* loop through edges and edge weights */
-    int      *ewptr;		/* loop through edges and edge weights */
+    int      *eptr = NULL;	/* loop through edges and edge weights */
+    int      *ewptr = NULL;	/* loop through edges and edge weights */
     int       ewgt;		/* weight of an edge */
     struct vtx_data **subgraph = NULL;	/* subgraph data structure */
     int      *nedges = NULL;	/* space for saving graph data */
@@ -52,10 +52,10 @@ double   *goal;			/* desired set sizes */
     int       set, set1, set2;	/* sets vertices belong to */
     int       vertex;		/* vertex in graph */
     int       ncomm;		/* # edges in communication graph */
-    int       dist;		/* architectural distance between two sets */
-    int       nsets_tot;	/* total number of processors */
+    int       dist=-1;		/* architectural distance between two sets */
+    int       nsets_tot=0;	/* total number of processors */
     int       change;		/* did change occur in this pass? */
-    int       any_change;	/* has any change occured? */
+    int       any_change = FALSE;/* has any change occured? */
     int       error;		/* out of space? */
     int       size;		/* array spacing */
     int       i, j, k;		/* loop counters */

@@ -35,8 +35,8 @@
 static char const *qainfo[] =
 {
   "conjoin",
-  "2011/06/29",
-  "1.2.3",
+  "2011/08/15",
+  "1.2.4",
 };
 
 #endif // SEACAS_Version_h

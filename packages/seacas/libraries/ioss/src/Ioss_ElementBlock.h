@@ -46,7 +46,7 @@ namespace Ioss {
   public:
     ElementBlock(const DatabaseIO *io_database,
 		 const std::string& name, const std::string& element_type,
-		 size_t number_elements, size_t number_attributes);
+		 size_t number_elements);
 
     ~ElementBlock();
 
@@ -58,12 +58,6 @@ namespace Ioss {
     /// An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
 
-    bool contains(size_t local_id) const
-      { return idOffset < local_id && local_id <= idOffset + elementCount; }
-
-    void  set_offset(int offset) {idOffset = offset;}
-    int get_offset() const {return idOffset;}
-
     void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
 
   protected:
@@ -73,26 +67,7 @@ namespace Ioss {
     int internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
   private:
-    void count_attributes() const;
 
-    /**
-     * The 'offset' is used to map an element location within an
-     * element block to the element 'file descriptor'.
-     * For example, the file descriptor of the 37th element in the 4th
-     * block is calculated by:
-     *
-     * file_descriptor = offset of block 4 + 37
-     *
-     * This can also be used to determine which element block
-     * an element with a file_descriptor maps into. An particular
-     * element block contains all elements in the range:
-     *
-     * offset < file_descriptor <= offset+number_elements_per_block
-     */
-    size_t idOffset;
-    
-    size_t elementCount; ///< stored locally to avoid looking up property
-    mutable size_t attributeCount;
   };
 }
 #endif

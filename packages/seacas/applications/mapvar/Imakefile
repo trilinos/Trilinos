@@ -1,0 +1,32 @@
+XCOMM $Id: Imakefile,v 1.8 2008/02/07 15:22:37 gdsjaar Exp $
+CODE = mapvar
+
+SRCSM = mapvar.f
+
+SRCSL = avg.f     bldpte.f  bldptn.f  bldsrf.f  bs.f      \
+        clsfil.f  cntr.f    elgrad.f  elton0.f  elton1.f  error.f   \
+        exth.f    extq.f    exts.f    flgrad.f  frge.f    getbnd.f  \
+        hexsrc.f  indexx.f  inielt.f  ininod.f  initlz.f  intrp3.f  \
+        intrpe.f  intrpn.f  invcon.f  jacobn.f  lenstr.f  mkei.f    mke.f \
+        mklstv.f  mkrnk.f   node.f    opnfil.f  qadsrc.f  rank.f    \
+        rda1.f    rda2.f    rdb1.f    rdb2.f    rdinpt.f  seton0.f  \
+        seton1.f  shapef.f  shlsrc.f  sintpe.f  sintpn.f  srchge.f  \
+        srchgt.f  srchh.f   srchq.f   srchs.f   srcht.f   stran.f   \
+        tetsrc.f  tranab.f  trutbl.f  vol.f     version.f wrtc.f
+
+OBJSL = ${SRCSL:.f=.o}
+OBJSM = ${SRCSM:.f=.o}
+
+EXOLIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF)
+LIBS = $(EXOLIBS) $(SUPLIB) $(SUPES)
+
+NormalLibraryTarget($(CODE),$(OBJSL))
+NormalFortranTarget($(CODE), $(OBJSM),lib$(CODE).a,lib$(CODE).a,$(LIBS))
+
+InstallProgram($(CODE), $(BINDIR))
+InstallProgram($(OBJSM),$(BINDIR))
+InstallLibrary($(CODE), $(LIBDIR))
+
+
+
+

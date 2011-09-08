@@ -1,0 +1,94 @@
+C     -*- Mode: fortran -*-
+C    Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
+C    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+C    certain rights in this software
+C    
+C    Redistribution and use in source and binary forms, with or without
+C    modification, are permitted provided that the following conditions are
+C    met:
+C    
+C    * Redistributions of source code must retain the above copyright
+C       notice, this list of conditions and the following disclaimer.
+C              
+C    * Redistributions in binary form must reproduce the above
+C      copyright notice, this list of conditions and the following
+C      disclaimer in the documentation and/or other materials provided
+C      with the distribution.
+C                            
+C    * Neither the name of Sandia Corporation nor the names of its
+C      contributors may be used to endorse or promote products derived
+C      from this software without specific prior written permission.
+C                                                    
+C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C    
+      QAINFO(1) = 'Grope   '
+      QAINFO(2) = '        '
+      QAINFO(3) = '        '
+      
+      QAINFO(2)(:8) = '20110629'
+      QAINFO(3)(:8) = ' 1.57'
+C
+c..Dynamic dimensioning of block names+other changes
+c..compress output of distribution factors
+c..Fix nodal variable read
+c..Fix coordinate print (transposed array bounds)
+c..Fix mismatch between ss nodes and dist factors
+c..Fix printing of global variables
+c..fix when no distribution factors on ns or ss
+c..Add node number map and change element map to element number map
+c..Fix map-check to work with non-permutation maps (id can be greater than numel/numnp)
+c  Add check of node map also.  Added indexx to do indexed sort.      
+c..Minor typo in ckess (nodes -> faces)
+c..Add limits, node in connectivity check, and select nodes nodeset
+c..Add node and element selection based on nodesets and sidesets
+c..Add output of global ids using node and element maps
+c..Widen node number output field for disconnected nodes
+c..Reorder connectivity check to avoid out-of-bounds array access.
+c..Fix Z component of limits output.
+c..One more try on limits fix.
+c..when global ids output, show message. Turn of warning for no node/el map
+c..Split range check into zero and out-of-range checks
+c..Make printing of database metadata happen faster
+c..Add invers connectivity (invcon) function
+c..Add more error checking; fix map error checking
+c..Better output of ss/ns dist factors when not stored in file; remove warnings
+c..Check for unique sideset/nodeset ids
+c..limit number of errors printed during check; default 10; set with maxerrs command
+c..Add list globnod and list globelem
+c..Fixes for reading databases with zero nodes and/or elements
+c..Unconnected node message shows local and global id.
+c..Added message if running executable instead of script
+c..Add precision command for controlling output precision
+c..Fix numstr, add error checking for precision command
+c..Fix output of element variables to have same number on each line
+c..Row/Column on evar output; select evar remove added
+c..Add nodeset/sideset variables, entity names, gvar formatting
+c..Add node selection by block; sset and nset defined variable output
+c..Fix bug in prnps
+c..Fix problem printing nodal point variables
+c..Eliminate empty sset and nset warnings.
+c..Print ssfactors with element/side info if homogenous
+c..Widen output format for connectivity and map output
+c..Fix incorrect scratch array allocation for nodeset variables
+c..Filter reading empty ss and element block variables
+c..Widen output format for just about everything
+c..add invcon element option
+c..Don't get sideset node list length, not needed and is slow for models with lots of blocks
+c..Fix 'time step 1 of 10' output
+c..Basic Support for nsided (arbitrary polyhedra) elements
+c..Fix attribute output bug introduced with polyhedra output
+c..Fix connectivity output for subset output
+c..Attribute names output
+c..Add check for unique attribute names
+c..Add printing of coordinate frames
+c..Add command line parsing; remove exname and need for script

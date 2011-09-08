@@ -47,8 +47,8 @@
 #include "stddef.h"
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.10f
-#define EX_API_VERS_NODOT 510
+#define EX_API_VERS 5.12f
+#define EX_API_VERS_NODOT 512
 #define EX_VERS EX_API_VERS
 
 
@@ -591,6 +591,12 @@ extern "C" {
   EXODUS_EXPORT int ex_put_id_map(int exoid,
 				  ex_entity_type obj_type,
 				  const int *map);
+  
+  EXODUS_EXPORT int ex_put_partial_id_map(int exoid,
+					  ex_entity_type obj_type,
+					  int   start_entity_num,
+					  int   num_entities,
+					  const int *map);
   
   EXODUS_EXPORT int ex_get_id_map(int exoid,
 				  ex_entity_type obj_type,

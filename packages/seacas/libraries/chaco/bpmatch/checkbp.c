@@ -21,12 +21,12 @@ int       ndims;		/* number of dimensions for division */
     int       signs[MAXDIMS];	/* signs for coordinates of target points */
     int       sizes[MAXSETS];	/* size of each set */
     int       weights[MAXSETS];	/* size of each set */
-    double    setval;		/* value from assigned set */
-    double    val, bestval;	/* value to decide set assignment */
+    double    setval=0.0;		/* value from assigned set */
+    double    val, bestval=0.0;	/* value to decide set assignment */
     double    tol = 1.0e-8;	/* numerical tolerence */
     int       error = FALSE;	/* are errors encountered? */
     int       nsets;		/* number of sets */
-    int       bestset;		/* set vtx should be assigned to */
+    int       bestset=-1;		/* set vtx should be assigned to */
     int       i, j, k;		/* loop counter */
     void      checkpnt();
 

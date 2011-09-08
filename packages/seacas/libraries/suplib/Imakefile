@@ -1,0 +1,111 @@
+XCOMM Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM certain rights in this software.
+XCOMM         
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+XCOMM $Id: Imakefile,v 1.28 2009/03/25 12:46:01 gdsjaar Exp $
+
+#ifdef PARALLEL
+CCOPTIONS  = ParallelCCOptions
+F77OPTIONS = ParallelF77Options
+LIBDIR     = $(PLIBDIR)
+#endif
+
+LIB = suplib
+
+INCLIST = f2kcli.inc
+
+OBJSc  = c_xhelp.o do_help.o help_c.o scanner.o util.o addlog.o wildcmp.o
+
+OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
+         cknone.o ckwhol.o copint.o cpuifc.o cpyint.o cpylog.o \
+         cpyrea.o cpyrgt.o cpystr.o dberr.o  dbieb1.o dbielb.o \
+         dbiess.o dbiini.o dbimap.o dbinam.o dbinm1.o dbinps.o \
+         dbiqa.o  dbist1.o dbist2.o dbiste.o dbitim.o dbiv0.o  \
+         dbixyz.o dboeb1.o dboelb.o dboess.o dboini.o dbomap.o \
+         dbonam.o dbonm1.o dbonps.o dboqa.o  dboste.o dboxyz.o \
+         dbpelb.o dbpini.o dbpnam.o dbpqa.o  dbptim.o dbvini.o \
+         engnot.o engstr.o ffaddc.o ffaddi.o ffaddo.o ffaddr.o \
+         ffaddv.o ffchar.o ffexst.o ffintg.o ffmatc.o ffneed.o \
+         ffnumb.o ffonof.o ffreal.o ffrrng.o ffsfld.o ffvrng.o \
+         gslibv.o idblnk.o iengrx.o inigrd.o iniint.o screrr.o \
+         inilog.o inirea.o inistr.o intadd.o intstr.o lenstr.o \
+         locint.o locrea.o locstr.o logerr.o lowstr.o matstr.o \
+         memerr.o minmax.o minmxl.o minmxs.o num2ix.o numeqi.o \
+         numeql.o numstr.o okabrt.o opnfil.o packt.o  pcklab.o \
+         pckstr.o pltond.o pltone.o prterr.o scneof.o shocmd.o \
+         sqzstr.o strtup.o subv.o   wrapup.o iowdsz.o screrr.o \
+	 indexr.o
+
+OBJSF = help.o f2kcli.o
+
+#ifndef CrayArchitecture
+#if NeedsFortranFlush == YES
+OBJSf2 = flush.o  ismax.o  ismin.o  wheneq.o
+#else
+OBJSf2 = ismax.o  ismin.o  wheneq.o
+#endif
+#else
+OBJSf2 =
+#endif
+
+SRCSc  = ${OBJSc:.o=.c}
+
+SRCSf1 = ${OBJSf1:.o=.f}
+SRCSf2 = ${OBJSf2:.o=.f}
+SRCSF = ${OBJSF:.o=.F}
+
+#if defined(CougarArchitecture)
+OBJS = $(OBJSf1) $(OBJSf2) $(OBJSF)
+SRCS = $(SRCf1) $(SRCf2) $(SRCSF)
+#elif defined PPCArchitecture && !defined DarwinArchitecture
+OBJS = $(OBJSc) $(OBJSf1) $(OBJSf2) $(OBJSF)
+SRCS = $(SRCc) $(SRCf1) $(SRCf2) $(SRCSF)
+#else
+DEFINES = -DHELPFILE=\"$(ETCDIR)/xhelp.gih\"
+STD_CPP_DEFINES = StandardCppDefines -DUSEHELP
+OBJS = $(OBJSc) $(OBJSf1) $(OBJSf2) $(OBJSF)
+SRCS = $(SRCc) $(SRCf1) $(SRCf2) $(SRCSF)
+#endif
+
+NormalLibraryTarget($(LIB),$(OBJS))
+
+InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR))
+InstallIncludeList(install,$(INCLIST),$(INCDIR))
+
+InstallLibrary($(LIB),$(LIBDIR))
+
+#if Parallel
+InstallParallelLibrary($(LIB),$(PLIBDIR))
+#endif
+
+CleanupCapF(help.f)
+
+DependTarget()
+

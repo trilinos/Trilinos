@@ -1,0 +1,268 @@
+\chapter{INSTALLATION PROCEDURE} \label{sec:install}
+SUPES now contains a codified procedure
+for installing it as a part of the standard distribution.
+
+\section{VAX/VMS Installation Procedure}
+
+\subsection{Building SUPES}
+
+Under normal conditions,
+the VMS version of the SUPES distribution will come
+in the form of a BACKUP saveset,
+\verb+SUPES2_1.BCK+.
+The installer should set the default directory
+to a suitable place and unbundle the saveset as follows:
+\begin{verbatim}
+$ BACKUP SUPES2_1.BCK/SAVESET []
+\end{verbatim}
+Then,
+set default to \verb+[.SUPES2_1.BUILD]+, and execute the build procedure
+by entering the command:
+\begin{verbatim}
+$ @BUILD_VMS
+\end{verbatim}
+and wait for the build to be performed.
+You will be prompted
+for a message to include in an update file (\verb+UPDATE.QA+).
+Do this by entering a message between a pair of double quotes (")
+followed by a carriage return, \verb+<CR>+.
+The library will be built as \verb+SUPES2_1.OLB+
+in the \verb+[.BUILD]+ directory.
+IMPORTANT!!!
+Version 2.3
+of VAX C running v4.5 of VMS exhibits a
+strange bug:
+when compiling the module \verb+[.EXT_LIB.PORTABLE]EXDATE.C+
+in the command procedure \verb+BUILD_VMS.COM+ it doesn't find
+one of the ``header'' modules and bombs with an error.
+The net result is that you will have to copy this one to
+the build directory yourself, compile it with \verb+CC+,
+and add it to the library.  Here are the commands to do that:
+\begin{verbatim}
+$ COPY [-.EXT_LIB.PORTABLE]EXDATE.C []    ! from the build subdirectory
+$ CC EXDATE
+$ LIBRARY/REPLACE/LOG SUPES2_1 EXDATE
+\end{verbatim}
+
+\subsection{Building the Test Programs}
+Once you have done the installation,
+there is a set of test procedures that exercise each of the SUPES
+capabilities separately.
+They are located in the top-level directory
+and are named:
+\verb+EXTTEST.F+,
+\verb+MEMTEST.F+,
+and \verb+FFRTEST.F+\@.
+To build these,
+use the command procedure,
+\verb+BUILD_TESTS.COM+\@,
+which is invoked with:
+\begin{verbatim}
+$ @BUILD_TESTS
+\end{verbatim}
+Once you have done this step,
+each of the test procedures will be available for use
+in the
+\verb+[.BUILD]+
+subdirectory.
+To use any one of them
+refer to the
+proper section in Chapter~\ref{sec:support}
+as well as to
+a file titled
+\verb+OUTPUT.LIS+
+located in the
+individual subdirectories,
+\verb+[.EXT_LIB]+,
+\verb+[.FRE_FLD]+,
+or \verb+[.MEM_MGR]+.
+Finally,
+you can refer
+to the source files for the test procedures themselves.
+
+\subsection{Installing SUPES On Your VMS System}
+As a last step,
+install the SUPES library on your VMS system.
+This is done by
+running the command procedure,
+\verb+VMSINSTALL.COM+\@.
+It should copy the
+the library to the directory of your choice,
+and set up the
+required logicals.
+Some things to note:
+\begin{enumerate}
+\item To perform the operations in the
+      \verb+VMSINSTALL.COM+
+      command procedure,
+      you will be required to have SYSTEM privileges.
+
+\item You may want to have your system manager look
+      at this file and insert some sections of it in
+      a system startup command procedure.
+      Otherwise, the appropriate definitions will be lost
+      when the system is rebooted.
+
+\item If you don't have the required privileges,
+      you should edit \verb+VMSINSTALL.COM+ to remove
+      any qualifier that requires them and invoke this newly
+      created version in your \verb+LOGIN.COM+.
+      This will set up the logical names in your process
+      name table and allow you to use SUPES as described in this manual.
+\end{enumerate}
+
+\section{General UNIX Installation Procedure}
+
+\subsection{Building SUPES}
+The general build scheme for all of the UNIX
+derived operating systems will be done through the
+\verb+make+ utility.
+This procedure should help the maintainer deal with any
+upgrades, bug fixes, etc.
+The distribution itself will generally be distributed
+as UNIX \verb+tar+
+file named
+\verb+supes2_1.tar+.
+To install SUPES,
+go to the directory that you want to have as a
+parent of the SUPES tree and unbundle the distribution.
+In the example below,
+the directory
+\verb+/usr/local+
+has been arbitrarily chosen as this parent---individual
+sites have the option of choosing a different location,
+depending on their conventions.
+An example of the required
+command sequence follows\footnote{Here, and throughout the
+remainder of this manual,
+the UN*X interaction will be documented as follows:
+the user prompt will be \verb+\%+,
+comments will be offset by \verb+<--+, and
+the text in between will denote the user supplied commands.}:
+\begin{verbatim}
+% cd /usr/local     <-- ``/usr/local'' will contain the distribution.
+% tar xf supes2_1.tar  <-- If you get your distribution via tape, man tar.
+% cd supes2_1
+\end{verbatim}
+You will now be in the top-level directory of the distribution;
+each directory reference from this point onward will be made
+relative to this directory.
+If a makefile exists for your system named
+\verb+makefile.$(ARCH)+
+in any of the source directories---%
+\verb+./ext_lib/portable+,
+\verb+./fre_fld+,
+or
+\verb+./mem_mgr+
+then a machine specific makefile
+has been written.
+For example, under UNICOS,
+the file
+\verb+makefile.unico+
+exists in
+\verb+./mem_mgr+,
+so in order to do the build for that system one would need
+to perform the following command:
+\begin{verbatim}
+% make ARCH=.unico
+\end{verbatim}
+from the \verb+supes2_1+ directory
+and the build will proceed.
+At this point, you will be prompted for a message to add to the
+update file (\verb+update.qa+ in the \verb+./build+ subdirectory).
+Conclude
+this message with a \verb+^D+ (i.e., input a ``\verb+D+'' while holding
+down the Control key simultaneously) at the beginning of a line.
+The sequence will look something like this:
+\begin{verbatim}
+% Enter Message for Update File (./build/update.qa).
+% End with a CNTL-D On A New Line.
+% Initial UNICOS build.            <---/ Lines input by user
+% ^D                               <--/
+\end{verbatim}
+The archived library, titled
+\verb+libsupes.a+,
+will be built in
+the ``\verb+./build+'' subdirectory.
+
+There are a couple of things to note:
+the ``.'' in the above
+\verb+make+ statement {\em IS} significant!!!!
+Further,
+the file name has a suffix ``unico'' due to the fact that
+Cray UNICOS restricts file names to be fewer than
+fifteen characters.
+
+In the event that such a makefile does {\em NOT} exist then one of two
+things is true.
+Either typing the simple command:
+\begin{verbatim}
+% make
+\end{verbatim}
+from the \verb+supes2_1+ directory will suffice,
+or an appropriate makefile does not exist.
+In the former case you are done, while
+in the latter,
+the consequences are much greater.
+More to the point,
+it probably means that the code will not run on your machine
+without modification.
+If this is the case, you will need to port the C source files in
+the directory \verb+./ext_lib/portable+.  Use the existing source as a
+guide and reference the ``\verb+README+'' file in this directory.
+
+\subsection{Building the Test Programs}
+In most instances,
+once you have done the installation,
+you have also built the
+set of test procedures that exercise each of the SUPES
+capabilities separately (cf. Chapter~\ref{sec:support}).
+They are located in the top-level \verb+supes2_1+ directory
+and are named:
+\verb+exttest+,
+\verb+memtest+,
+and \verb+ffrtest+.
+Look for them in the current directory.
+If they're not there,
+then
+something has happened to prevent the test procedures
+from being built after the actual build of the SUPES library
+and
+you will be required to build them manually.
+Doing this is a system dependent problem;
+here's how you would go about building \verb+exttest+ on the Alliant:
+\begin{verbatim}
+
+% fortran -o exttest exttest.f build/libsupes.a
+
+\end{verbatim}
+Or,
+on the Cray under UNICOS with the \verb+cft77+ compiler it's:
+\begin{verbatim}
+
+% cf77 -o exttest exttest.f build/libsupes.a
+
+\end{verbatim}
+To use each of the programs, refer to the
+proper section in Chapter~\ref{sec:support}
+as well as to the
+individual subdirectories for a file titled,
+\verb+output.lis+
+and finally,
+refer
+to the source files for the test procedures themselves.
+
+\subsection{Installing SUPES On Your UNIX System}
+As a last step,
+install the SUPES library in a suitable place on your UNIX system.
+To do this,
+just enter the command
+\begin{verbatim}
+
+% make install
+
+\end{verbatim}
+from the \verb+supes2_1+ directory.
+You should note that the proper permission will
+be required to place the library in its final
+resting place (the default is \verb+/usr/local/lib+).

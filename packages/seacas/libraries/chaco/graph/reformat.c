@@ -24,9 +24,9 @@ struct vtx_data ***pgraph;	/* ptr to array of vtx data for graph */
     struct vtx_data *links = NULL;	/* space for data for all vtxs */
     int      *edges = NULL;	/* space for all adjacency lists */
     float    *eweights = NULL;	/* space for all edge weights */
-    int      *eptr;		/* steps through adjacency list */
-    int      *eptr_save;	/* saved index into adjacency list */
-    float    *wptr;		/* steps through edge weights list */
+    int      *eptr = NULL;	/* steps through adjacency list */
+    int      *eptr_save = NULL;	/* saved index into adjacency list */
+    float    *wptr = NULL;	/* steps through edge weights list */
     int       self_edge;	/* number of self loops detected */
     int       size;		/* length of all edge lists */
     double    sum;		/* sum of edge weights for a vtx */

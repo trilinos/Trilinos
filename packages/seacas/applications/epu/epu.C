@@ -882,13 +882,24 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	      }
 	    }
 	    
-	    // copy values to master nodal value information
 	    T *local_nodal_values = &values[0];
 	    T *global_nodal_values = &master_nodal_values[i_out][0];
-	    for (j = 0; j < node_count; j++) {
-	      // Map local nodal value to global location...
-	      int nodal_value = local_node_to_global[p][j];
-	      global_nodal_values[nodal_value] = local_nodal_values[j];
+	    if (interface.sum_shared_nodes()) {
+	      // sum values into master nodal value information. Note
+	      // that for non-shared nodes, this will be the same as a
+	      // copy; for shared nodes, it will be a true sum.
+	      for (j = 0; j < node_count; j++) {
+		// Map local nodal value to global location...
+		int nodal_value = local_node_to_global[p][j];
+		global_nodal_values[nodal_value] += local_nodal_values[j];
+	      }
+	    } else {
+	      // copy values to master nodal value information
+	      for (j = 0; j < node_count; j++) {
+		// Map local nodal value to global location...
+		int nodal_value = local_node_to_global[p][j];
+		global_nodal_values[nodal_value] = local_nodal_values[j];
+	      }
 	    }
 	  }
 	}

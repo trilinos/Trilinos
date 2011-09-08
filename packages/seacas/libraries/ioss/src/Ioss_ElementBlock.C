@@ -34,7 +34,6 @@
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Property.h>
 #include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
 #include <Ioss_ElementTopology.h>
 
 #include <string>
@@ -42,62 +41,16 @@
 Ioss::ElementBlock::ElementBlock(const Ioss::DatabaseIO *io_database,
 				 const std::string& my_name,
 				 const std::string& element_type,
-				 size_t number_elements,
-				 size_t number_attributes)
-  : Ioss::EntityBlock(io_database, my_name, element_type,
-		      std::string("unknown"), number_elements),
-    idOffset(0), elementCount(number_elements), attributeCount(number_attributes)
+				 size_t number_elements)
+  : Ioss::EntityBlock(io_database, my_name, element_type, number_elements)
 {
-  properties.add(Ioss::Property(this, "attribute_count",
-				Ioss::Property::INTEGER));
-
-  if (topology()->master_element_name() != element_type &&
-      topology()->name() != element_type) {
-    // Maintain original element type on output database if possible.
-    properties.add(Ioss::Property("original_element_type", element_type));
-  }
-
-  // Returns connectivity in local id space
-  fields.add(Ioss::Field("connectivity_raw", Ioss::Field::INTEGER,
-			 topology()->name(),
-			 Ioss::Field::MESH, number_elements));
 }
 
 Ioss::ElementBlock::~ElementBlock() {}
 
-void Ioss::ElementBlock::count_attributes() const
-{
-  if (attributeCount > 0)
-    return;
-  else {
-    // If the block has a field named "attribute", then the number of
-    // attributes is equal to the component count of that field...
-    if (field_exists("attribute")) {
-      Ioss::Field field = get_field("attribute");
-      attributeCount = field.raw_storage()->component_count();
-      return;
-    } else {
-      NameList results_fields;
-      field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
-
-      Ioss::NameList::const_iterator IF;
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
-	Ioss::Field field = get_field(field_name);
-	attributeCount += field.raw_storage()->component_count();
-      }
-    }
-  }
-}
-
 Ioss::Property Ioss::ElementBlock::get_implicit_property(const std::string& my_name) const
 {
-  if (my_name == "attribute_count") {
-    count_attributes();
-    return Ioss::Property(my_name, static_cast<int>(attributeCount));
-  } else {
-    return Ioss::EntityBlock::get_implicit_property(my_name);
-  }
+  return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
 int Ioss::ElementBlock::internal_get_field_data(const Ioss::Field& field,

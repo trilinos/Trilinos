@@ -1,0 +1,19 @@
+XCOMM $Id: Imakefile,v 1.5 1999/02/22 23:48:56 gdsjaar Exp $
+
+STATICFLAGS = FortranStaticFlags
+
+CODE = txtexo
+
+SRCS = \
+rdeb1.f rdelb.f rdess.f rdinit.f rdmap.f rwname.f \
+rdnm1.f rdnps.f rwqa.f  rwstep.f rdxyz.f txtexo.f \
+dboelb.f rwpval.f rwpval1.f
+
+OBJS = ${SRCS:.f=.o}
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES) 
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+

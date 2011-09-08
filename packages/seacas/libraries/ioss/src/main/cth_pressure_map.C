@@ -622,11 +622,10 @@ namespace {
       if (debug) std::cerr << name << ", ";
       std::string type      = (*i)->get_property("topology_type").get_string();
       int    num_elem  = (*i)->get_property("entity_count").get_int();
-      int    num_attrib= (*i)->get_property("attribute_count").get_int();
       total_elements += num_elem;
 
       Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type,
-						      num_elem, num_attrib);
+						      num_elem);
       output_region.add(eb);
       transfer_properties(*i, eb);
       transfer_fields(*i, eb, Ioss::Field::MESH);

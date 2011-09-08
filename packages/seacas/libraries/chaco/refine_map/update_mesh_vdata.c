@@ -18,10 +18,10 @@ int       mesh_dims[3];		/* size of processor mesh */
 int       neighbor;		/* vertex impacted by flip */
 int    *vtx2node;		/* mapping from comm_graph vtxs to processors */
 {
-    struct refine_vdata *vptr;	/* correct element in vdata */
-    int       offset;		/* index into vdata array */
-    int       my_loc;		/* my location in relevant dimension */
-    int       neighbor_node;	/* processor neighbor assigned to */
+    struct refine_vdata *vptr = NULL;	/* correct element in vdata */
+    int       offset=0;		/* index into vdata array */
+    int       my_loc=0;		/* my location in relevant dimension */
+    int       neighbor_node=0;	/* processor neighbor assigned to */
 
     neighbor_node = vtx2node[neighbor];
 

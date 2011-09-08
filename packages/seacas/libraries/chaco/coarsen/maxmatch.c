@@ -20,7 +20,7 @@ float   **coords;		/* coordinates for each vertex */
 {
     extern int DEBUG_COARSEN;	/* debug output for coarsening? */
     extern int MATCH_TYPE;	/* which matching routine to use */
-    int       nmerged;		/* number of matching edges found */
+    int       nmerged=0;		/* number of matching edges found */
     int       maxmatch1(), maxmatch2(), maxmatch3(), maxmatch4();
     int       maxmatch5(), maxmatch9();
 

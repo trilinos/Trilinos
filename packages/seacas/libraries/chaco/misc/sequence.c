@@ -26,24 +26,24 @@ double    eigtol;		/* tolerance on eigenvectors */
     extern int RQI_CONVERGENCE_MODE;	/* residual or partition mode? */
     extern int LANCZOS_CONVERGENCE_MODE;	/* residual or partition mode? */
     extern double sequence_time;/* time spent sequencing */
-    struct vtx_data **subgraph;	/* subgraph data structure */
-    struct edgeslist *edge_list;/* edges added for connectivity */
+    struct vtx_data **subgraph=NULL;	/* subgraph data structure */
+    struct edgeslist *edge_list=NULL;/* edges added for connectivity */
     double   *yvecs[MAXDIMS + 1];	/* space for pointing to eigenvectors */
     double    evals[MAXDIMS + 1];	/* corresponding eigenvalues */
-    double   *subvwsqrt;	/* vwsqrt vector for subgraphs */
-    double   *values;		/* sorted Fiedler vector values */
-    double   *subvals;		/* values for one connected component */
+    double   *subvwsqrt=NULL;	/* vwsqrt vector for subgraphs */
+    double   *values=NULL;		/* sorted Fiedler vector values */
+    double   *subvals=NULL;		/* values for one connected component */
     double    goal[2];		/* needed for eigen convergence mode = 1 */
     double    total_vwgt;	/* sum of all vertex weights */
     double    time;		/* time spent sequencing */
     float    *term_wgts[2];	/* dummy vector for terminal weights */
-    int      *setsize;		/* size of each connected component */
-    int      *glob2loc;		/* maps graph vtxs to subgraph vtxs */
-    int      *loc2glob;		/* maps subgraph vtxs to graph vtxs */
-    int      *permutation;	/* computed permutation */
-    int      *subperm;		/* partial permutation */
-    int    *compnum;		/* component number for each vertex */
-    int    *degree;		/* degrees of vertices in subgraph */
+    int      *setsize=NULL;		/* size of each connected component */
+    int      *glob2loc=NULL;		/* maps graph vtxs to subgraph vtxs */
+    int      *loc2glob=NULL;		/* maps subgraph vtxs to graph vtxs */
+    int      *permutation=NULL;	/* computed permutation */
+    int      *subperm=NULL;		/* partial permutation */
+    int    *compnum=NULL;		/* component number for each vertex */
+    int    *degree=NULL;		/* degrees of vertices in subgraph */
     double    maxdeg;		/* maximum weighted degree of a vertex */
     int       using_vwgts;	/* are vertex weights being used? */
     int       subnvtxs;		/* number of vertices in subgraph */
@@ -56,8 +56,8 @@ double    eigtol;		/* tolerance on eigenvectors */
     int       old_rqi_conv_mode;/* value of RQI_CONVERGENCE_MODE */
     int       old_lan_conv_mode;/* value of LANCZOS_CONVERGENCE_MODE */
     int       i;		/* loop counters */
-    int      *space;
-    FILE     *orderfile;
+    int      *space=NULL;
+    FILE     *orderfile=NULL;
     void      mergesort(), eigensolve(), free_edgeslist(), y2x();
     void      make_subvector(), make_subgraph(), remake_graph();
     void      make_maps2();

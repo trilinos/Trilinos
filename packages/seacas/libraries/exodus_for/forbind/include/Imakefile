@@ -1,0 +1,6 @@
+XCOMM $Id: Imakefile,v 1.5 2008/07/24 21:40:41 gdsjaar Exp $
+
+INCLIST=exodusII.inc exodusII_int.inc
+
+InstallIncludeList(install,$(INCLIST),$(INCDIR))
+

@@ -45,13 +45,21 @@
 #include <vector>
 
 namespace Ioss {
+  class GroupingEntity;
   class ElementTopology;
   class EntityBlock;
   class ElementBlock;
-  class SideBlock;
+  class FaceBlock;
+  class EdgeBlock;
   class NodeBlock;
-  class SideSet;
+  class SideBlock;
+
+  class ElementSet;
+  class FaceSet;
+  class EdgeSet;
   class NodeSet;
+  class SideSet;
+
   class CommSet;
   class Region;
   class Field;
@@ -66,11 +74,11 @@ namespace Ioss {
       // Check to see if database state is ok...
       virtual bool ok(bool write_message = false) const {return dbState != Ioss::STATE_INVALID;}
 
-      // Check capabilities of input/output database...
-      virtual bool supports_nodal_fields()    const = 0;
-      virtual bool supports_side_fields()     const = 0;
-      virtual bool supports_element_fields()  const = 0;
-      virtual bool supports_nodelist_fields() const = 0;
+      // Check capabilities of input/output database...  Returns an
+      // unsigned int with the supported Ioss::EntityTypes or'ed
+      // together. If "return_value & Ioss::EntityType" is set, then the
+      // database supports that type (e.g. return_value & Ioss::FACESET)
+      virtual unsigned entity_field_support() const = 0;
 
       virtual int node_global_to_local(int global, bool must_exist) const = 0;
       virtual int element_global_to_local(int global) const = 0;
@@ -99,21 +107,25 @@ namespace Ioss {
       virtual bool internal_edges_available() const {return false;}
       virtual bool internal_faces_available() const {return false;}
 
-      int get_field(const Region* reg,      const Field& field, void *data, size_t data_size) const;
-      int get_field(const NodeBlock* nb,    const Field& field, void *data, size_t data_size) const;
-      int get_field(const ElementBlock* eb, const Field& field, void *data, size_t data_size) const;
-      int get_field(const SideBlock* fb,    const Field& field, void *data, size_t data_size) const;
-      int get_field(const NodeSet* ns,      const Field& field, void *data, size_t data_size) const;
-      int get_field(const SideSet* fs,      const Field& field, void *data, size_t data_size) const;
-      int get_field(const CommSet* cs,      const Field& field, void *data, size_t data_size) const;
-
-      int put_field(const Region* reg,      const Field& field, void *data, size_t data_size) const;
-      int put_field(const NodeBlock* nb,    const Field& field, void *data, size_t data_size) const;
-      int put_field(const ElementBlock* eb, const Field& field, void *data, size_t data_size) const;
-      int put_field(const SideBlock* fb,    const Field& field, void *data, size_t data_size) const;
-      int put_field(const NodeSet* ns,      const Field& field, void *data, size_t data_size) const;
-      int put_field(const SideSet* fs,      const Field& field, void *data, size_t data_size) const;
-      int put_field(const CommSet* cs,      const Field& field, void *data, size_t data_size) const;
+      // The get_field and put_field functions are just a wrapper around the
+      // pure virtual get_field_internal and put_field_internal functions,
+      // but this lets me add some debug/checking/common code to the
+      // functions without having to do it in the calling code or in the
+      // derived classes code.  This also fulfills the hueristic that a
+      // public interface should not contain pure virtual functions.
+      template <typename T>
+	int get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
+      {
+	verify_and_log(reg, field);
+	return get_field_internal(reg, field, data, data_size);
+      }
+      
+      template <typename T>
+	int put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
+      {
+	verify_and_log(reg, field);
+	return put_field_internal(reg, field, data, data_size);
+      }
 
       bool get_logging() const {return doLogging && !singleProcOnly;}
       void set_logging(bool on_off) {doLogging = on_off;}
@@ -124,8 +136,6 @@ namespace Ioss {
       void set_surface_split_type(Ioss::SurfaceSplitType split_type) {splitType = split_type;}
       Ioss::SurfaceSplitType get_surface_split_type() const {return splitType;}
 
-      void set_surface_split_backward_compatibility(bool true_false) const {surfaceSplitBackwardCompatibility = true_false;}
-      bool get_surface_split_backward_compatibility() const {return surfaceSplitBackwardCompatibility;}
       void set_node_global_id_backward_compatibility(bool true_false) const {nodeGlobalIdBackwardCompatibility = true_false;}
       bool get_node_global_id_backward_compatibility() const {return nodeGlobalIdBackwardCompatibility;}
       
@@ -136,8 +146,9 @@ namespace Ioss {
       virtual void compute_block_membership(int id,
 					    std::vector<std::string> &block_membership) const {}
 
-      virtual void compute_block_membership(Ioss::EntityBlock *efblock,
-					    std::vector<std::string> &block_membership) const {}
+      virtual void compute_block_membership(Ioss::SideBlock *efblock,
+                                           std::vector<std::string> &block_membership) const {}
+ 
 
       /*!
        * The owning region of this database.
@@ -249,11 +260,6 @@ namespace Ioss {
       Ioss::SurfaceSplitType splitType;
       Ioss::DatabaseUsage dbUsage;
 
-      // True to combine all sideblocks in a sideset into a single sideset;
-      // False to output a sideset per sideblock 
-      // Default is false for backward compatibility.
-      mutable bool surfaceSplitBackwardCompatibility; 
-
       // True if the old node global id mapping should be enabled.  This is:
       // * Do not use node global_id_order map ever
       // * If a serial input mesh file, don't do any id mapping
@@ -268,15 +274,27 @@ namespace Ioss {
       std::vector<std::string> blockOmissions;  
 
     private:
+      void verify_and_log(const GroupingEntity *reg, const Field& field) const;
+      
       virtual int get_field_internal(const Region* reg, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const NodeBlock* nb, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int get_field_internal(const EdgeBlock* nb, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int get_field_internal(const FaceBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const NodeSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int get_field_internal(const EdgeSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int get_field_internal(const FaceSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int get_field_internal(const ElementSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;
@@ -287,11 +305,21 @@ namespace Ioss {
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const NodeBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
+      virtual int put_field_internal(const EdgeBlock* nb, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int put_field_internal(const FaceBlock* nb, const Field& field,
+				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const NodeSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int put_field_internal(const EdgeSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int put_field_internal(const FaceSet* ns, const Field& field,
+				     void *data, size_t data_size) const = 0;
+      virtual int put_field_internal(const ElementSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;

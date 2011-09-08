@@ -103,20 +103,20 @@ int emap1[] = {
 };
 
 const char* eblk_names[] = {
-  "Eli WALLACH",
-  "Angelo NOVI"
+  "Eli_WALLACH",
+  "Angelo_NOVI"
 };
-const char* edblk_names[] = { "Aldo GIUFFRE" };
+const char* edblk_names[] = { "Aldo_GIUFFRE" };
 const char* fablk_names[] = { 
-  "Livio LORENZON",
-  "Claudio SCARCHILLI",
-  "John BARTHA"
+  "Livio_LORENZON",
+  "Claudio_SCARCHILLI",
+  "John_BARTHA"
 };
 
-const char* nmap_names[] = { "Luigi PISTILLI" };
-const char* edmap_names[] = { "Antonio CASALE" };
-const char* famap_names[] = { "Sandro SCARCHILLI" };
-const char* emap_names[] = { "Benito STEFANELLI" };
+const char* nmap_names[] = { "Luigi_PISTILLI" };
+const char* edmap_names[] = { "Antonio_CASALE" };
+const char* famap_names[] = { "Sandro_SCARCHILLI" };
+const char* emap_names[] = { "Benito_STEFANELLI" };
 
 /* ======== Sets ========= */
 int nset_nodes[] = {
@@ -157,17 +157,17 @@ int elset_elems[] = {
 };
 
 const char* elset_names[] = {
-  "Clint EASTWOOD",
-  "Lee VAN CLEEF"
+  "Clint_EASTWOOD",
+  "Lee_VAN_CLEEF"
 };
 
-const char* nset_names[] = { "Ennio MORRICONE" };
-const char* eset_names[] = { "Rada RASSIMOV" };
-const char* fset_names[] = { "Enzo PETITO" };
-const char* sset_names[] = { "Luciano VINCENZONI" };
+const char* nset_names[] = { "Ennio_MORRICONE" };
+const char* eset_names[] = { "Rada_RASSIMOV" };
+const char* fset_names[] = { "Enzo_PETITO" };
+const char* sset_names[] = { "Luciano_VINCENZONI" };
 
 /* ======== Attributes ========= */
-const char* edge_attr_names1[] = {"Sergio LEONE"};
+const char* edge_attr_names1[] = {"Sergio_LEONE"};
 
 const char* face_attr_names1[] = {"GOOD"};
 const char* face_attr_names2[] = {"BAD"};
@@ -278,7 +278,7 @@ int cCreateEdgeFace( int argc, char* argv[] )
     1,  /* num_edge_blk */
     11, /* num_face */
     3,  /* num_face_blk */
-    2,  /* num_elem */
+    3,  /* num_elem */
     2,  /* num_elem_blk */
     1,  /* num_node_sets */
     1,  /* num_edge_sets */
@@ -352,7 +352,7 @@ int cCreateEdgeFace( int argc, char* argv[] )
 
   blockParams.define_maps = 0;
 
-  strcpy(blockParams.edge_type[0], "STRAIGHT2");
+  strcpy(blockParams.edge_type[0], "EDGE2");
 
   strcpy(blockParams.face_type[0], "QUAD4");
   strcpy(blockParams.face_type[1], "QUAD4");

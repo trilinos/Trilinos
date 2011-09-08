@@ -1,0 +1,11 @@
+XCOMM $Id: Imakefile,v 1.8 2008/05/05 19:42:09 gdsjaar Exp $
+
+
+SRCS =	\
+excpus.c  exparm.c  ixlchr.c  exdate.c  exread.c  ixlnum.c \
+exmemy.c  extime.c   exname.c exupcs.c	getline_int.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libsupes.a,$(OBJS),../../)
+

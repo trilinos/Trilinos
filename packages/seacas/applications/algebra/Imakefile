@@ -1,0 +1,30 @@
+
+CODE = algebra
+
+SRCS = \
+addvar.f algebra2.f alicmd.f aparse.f caltim.f chkdis.f \
+chkerr.f chkfnc.f   chkpar.f chksyn.f cmdtim.f cnvnum.f \
+comand.f cpyvar.f   dbicon.f dbielb.f dbinam.f \
+dbiqa.f  dbivtt.f   dblist.f dboqa.f  dbpelb.f dbpini.f \
+dbpnam.f dbpqa.f    dbptim.f dbvini.f delcmd.f dofnc1.f \
+dofnc2.f dofncg.f   doif.f   dooper.f eval.f   fixone.f \
+idblnk.f initim.f   isize.f  lnkfnc.f lnksto.f lnkvar.f \
+loceqv.f locnam.f   locrl.f  locstr.f makevo.f mlist.f  \
+myamod.f mymax.f    mymin.f  mysign.f mysum.f  nwhsel.f \
+nxttim.f opnlog.f   postfx.f princ3.f prtdeb.f pxn.f    \
+pxn2.f   rdeqns.f   rdstep.f rweval.f rwmap.f  rwnmap.f rwxyz.f  \
+savcmd.f shotsp.f   show.f   shptim.f sordel.f sortid.f \
+store.f  svcord.f   tmag.f   uelem.f  uglob.f  uhist.f  \
+unode.f  wconat.f   welb.f   wnam.f   wrstep.f zmess.f  \
+zmfixd.f zmnps.f    filtel.f remel.f
+
+OBJS = $(SRCS:.f=.o)
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+
+DependTarget()
+

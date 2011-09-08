@@ -58,29 +58,29 @@ double   *startweight;		/* sum of vweights in each set (in and out) */
     struct bilist **endlist;	/* end of movelists */
     struct bilist *bestptr;	/* best vertex in linked list */
     struct bilist *bptr;	/* loops through bucket list */
-    float    *ewptr;		/* loops through edge weights */
-    double   *locked;		/* weight of vertices locked in a set */
-    double   *loose;		/* weight of vtxs that can move from a set */
-    int      *bspace;		/* list of active vertices for bucketsort */
-    double   *weightsum;	/* sum of vweights for each partition */
-    int      *edges;		/* edge list for a vertex */
-    int      *bdy_ptr;	 	/* loops through bndy_list */
+    float    *ewptr=NULL;		/* loops through edge weights */
+    double   *locked=NULL;		/* weight of vertices locked in a set */
+    double   *loose=NULL;		/* weight of vtxs that can move from a set */
+    int      *bspace=NULL;		/* list of active vertices for bucketsort */
+    double   *weightsum=NULL;	/* sum of vweights for each partition */
+    int      *edges=NULL;		/* edge list for a vertex */
+    int      *bdy_ptr=NULL;	 	/* loops through bndy_list */
     double    time;		/* timing parameter */
     double    delta;		/* desire of sets to change size */
-    double    bestdelta;	/* strongest delta value */
+    double    bestdelta=-1;	/* strongest delta value */
     double    deltaplus;	/* largest negative deviation from goal size */
     double    deltaminus;	/* largest negative deviation from goal size */
     int       list_length;	/* how long is list of vertices to bucketsort? */
     int       balanced;		/* is partition balanced? */
     int       temp_balanced;	/* is intermediate partition balanced? */
     int       ever_balanced;	/* has any partition been balanced? */
-    int       bestvtx;		/* best vertex to move */
-    int       bestval;		/* best change in value for a vtx move */
-    int       bestfrom, bestto;	/* sets best vertex moves between */
+    int       bestvtx=-1;		/* best vertex to move */
+    int       bestval=-1;		/* best change in value for a vtx move */
+    int       bestfrom=-1, bestto=-1;	/* sets best vertex moves between */
     int       vweight;		/* weight of best vertex */
     int       gtotal;		/* sum of changes from moving */
     int       improved;		/* total improvement from KL */
-    double    balance_val;	/* how imbalanced is it */
+    double    balance_val=0.0;	/* how imbalanced is it */
     double    balance_best;	/* best balance yet if trying hard */
     double    bestg;		/* maximum gtotal found in KL loop */
     double    bestg_min;	/* smaller than any possible bestg */
@@ -96,7 +96,7 @@ double   *startweight;		/* sum of vweights in each set (in and out) */
     double    cut_cost;		/* if term_prop; relative cut/hop importance */
     int       diff;		/* change in a d-value */
     int       stuck1st, stuck2nd;	/* how soon will moves be disallowed? */
-    int       beststuck1, beststuck2;	/* best stuck values for tie-breaking */
+    int       beststuck1=-1, beststuck2=-1;	/* best stuck values for tie-breaking */
     int       eweight;		/* a particular edge weight */
     int       worth_undoing;	/* is it worth undoing list? */
     float     undo_frac;	/* fraction of vtxs indicating worth of undoing */

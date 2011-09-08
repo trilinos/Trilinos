@@ -176,9 +176,9 @@ int get_group_info(MACHINE_PTR machine,
                    int *max_adj
   )
 {
-  int nproc, sum, iblk;
+  int nproc=0, sum=0, iblk=0;
   int i, j;
-  int *nadj_per_grp;
+  int *nadj_per_grp=NULL;
 
 /*---------------------------Execution Begins--------------------------------*/
 

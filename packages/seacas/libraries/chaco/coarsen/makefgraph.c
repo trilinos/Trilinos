@@ -27,18 +27,18 @@ float   **ccoords;		/* coordinates for coarsened vertices */
     extern int DEBUG_COARSEN;	/* debug flag for coarsening output */
     extern int COARSEN_VWGTS;	/* turn off vertex weights in coarse graph? */
     extern int COARSEN_EWGTS;	/* turn off edge weights in coarse graph? */
-    struct vtx_data **cgraph;	/* coarsened version of graph */
-    struct vtx_data *links;	/* space for all the vertex data */
-    struct vtx_data **gptr;	/* loops through cgraph */
-    struct vtx_data *cgptr;	/* loops through cgraph */
-    int      *iptr;		/* loops through integer arrays */
-    int      *seenflag;		/* flags for vtxs already put in edge list */
-    int      *sptr;		/* loops through seenflags */
-    int      *cv2v_vals;	/* vtxs corresponding to each cvtx */
-    int      *cv2v_ptrs;	/* indices into cv2v_vals */
-    float    *eweights;		/* space for edge weights in coarsened graph */
-    float    *ewptr;		/* loops through eweights */
-    float    *fptr;		/* loops through eweights */
+    struct vtx_data **cgraph=NULL;/* coarsened version of graph */
+    struct vtx_data *links=NULL;/* space for all the vertex data */
+    struct vtx_data **gptr=NULL;/* loops through cgraph */
+    struct vtx_data *cgptr=NULL;/* loops through cgraph */
+    int      *iptr=NULL;	/* loops through integer arrays */
+    int      *seenflag=NULL;	/* flags for vtxs already put in edge list */
+    int      *sptr=NULL;	/* loops through seenflags */
+    int      *cv2v_vals=NULL;	/* vtxs corresponding to each cvtx */
+    int      *cv2v_ptrs=NULL;	/* indices into cv2v_vals */
+    float    *eweights=NULL;	/* space for edge weights in coarsened graph */
+    float    *ewptr=NULL;	/* loops through eweights */
+    float    *fptr=NULL;	/* loops through eweights */
     float     ewgt;		/* edge weight */
     double    ewgt_sum;		/* sum of edge weights */
     double    time;		/* timing parameters */
@@ -48,8 +48,8 @@ float   **ccoords;		/* coordinates for coarsened vertices */
     int       cnedges;		/* twice number of edges in coarsened graph */
     int       neighbor;		/* neighboring vertex */
     int       size;		/* space needed for coarsened graph */
-    int      *edges;		/* space for edges in coarsened graph */
-    int      *eptr;		/* loops through edges data structure */
+    int      *edges=NULL;	/* space for edges in coarsened graph */
+    int      *eptr=NULL;	/* loops through edges data structure */
     int       cneighbor;	/* neighboring vertex number in coarsened graph */
     int       i, j;		/* loop counters */
     double    seconds();

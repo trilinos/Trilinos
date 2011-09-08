@@ -227,7 +227,7 @@ void read_restart_data (int io_ws)
   int    num_blocks, times_in_blk, iblk, time_idx;
   int    array_size;
   int    dum1, dum2;
-  int    exoid, *par_exoid = NULL;
+  int    exoid=0, *par_exoid = NULL;
   
   int    open_file_count;
   double start_t, end_t;

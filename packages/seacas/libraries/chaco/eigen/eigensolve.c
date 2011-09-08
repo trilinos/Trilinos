@@ -69,9 +69,9 @@ double    eigtol;		/* tolerance on eigenvectors */
     int       i, j;		/* loop counter */
     int       normal;		/* use normal or extended eigensolver? */
     int       autoset_maxitns;	/* set LANCZOS_MAXITNS automatically? */ 
-    int       prev_maxitns;	/* LANCZOS_MAXITNS value above this routine */ 
+    int       prev_maxitns=0;	/* LANCZOS_MAXITNS value above this routine */ 
     int       autoset_srestol;	/* set SRESTOL automatically? */
-    double    prev_srestol;	/* SRESTOL value above this routine */
+    double    prev_srestol=0;	/* SRESTOL value above this routine */
 
     double    seconds();
     void      coarsen(), lanczos_FO(), lanczos_SO(), vecout(), vecnorm();

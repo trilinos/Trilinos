@@ -40,7 +40,7 @@ int      *max_move;		/* largest connected component moved */
     double   *bndy_size;	/* size of these boundaries */
     double   *comp_size;	/* sizes of different connected components */
     double    comp_size_max;	/* size of largest connected component */
-    int       comp_max_index;	/* which component is largest? */
+    int       comp_max_index=0;	/* which component is largest? */
     int      *glob2loc;		/* global to domain renumbering */
     int      *loc2glob;		/* domain to global renumbering */
     int    *degree;		/* number of neighbors of a vertex */
