@@ -1099,14 +1099,10 @@ namespace stk {
 
 	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
 
-	// Defer the counting of attributes until after we define the
-	// element block so we can count them as we add them as fields to
-	// the element block
-	int attribute_count = 0;
-	Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database() ,
-							part.name() ,
-							map_topology_cell_to_ioss(cell_top, spatial_dim) ,
-							num_elems , attribute_count);
+	Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database(),
+							part.name(),
+							map_topology_cell_to_ioss(cell_top, spatial_dim),
+							num_elems);
 	io_region.add(eb);
 
 	// Add the attribute fields.

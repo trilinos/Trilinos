@@ -12,10 +12,10 @@ INCLUDE_DIRECTORIES(
 
 SET(HEADERS "")
 SET(SOURCES 
-   bldsrf.f    ebbyeb.blk  exts.f      inival.blk  mke.f       optkd.h     schdat.blk  srchq.f     tranab.f
+   bldsrf.f    ebbyeb.blk  exts.f      inival.blk  mke.f       schdat.blk  srchq.f     tranab.f
    bmesh.blk   elgrad.f    flgrad.f    intrp3.f    mkei.f      qadsrc.f    seton0.f    srchs.f     trutbl.f
-   aexds1.blk  bs.f        elton0.f    frge.f      intrpe.f    naivekd.c   rda1.f      seton1.f    srcht.f     varept.blk
-   aexds2.blk  clsfil.f    elton1.f    header.blk  intrpn.f    naivekd.h   rda2.f      shapef.f    steps.blk   varnpt.blk
+   aexds1.blk  bs.f        elton0.f    frge.f      intrpe.f    rda1.f      seton1.f    srcht.f     varept.blk
+   aexds2.blk  clsfil.f    elton1.f    header.blk  intrpn.f    rda2.f      shapef.f    steps.blk   varnpt.blk
    amesh.blk   cntr.f      error.f     hexsrc.f    invcon.f    node.f      rdb1.f      shlsrc.f    stran.f     version.f
    avg.f       contrl.blk  ex2tp.blk   inielt.f    jacobn.f    ntpdat.blk  rdb2.f      sintpe.f    tapes.blk   vol.f
    bldpte.f    debg.blk    exth.f      ininod.f    lenstr.f    opnfil.f    rdinpt.f    sintpn.f    tetsrc.f    wrtc.f

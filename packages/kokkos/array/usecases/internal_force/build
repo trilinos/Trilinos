@@ -6,7 +6,7 @@
 
 set INC_PATH="-I../../../../ThreadPool/src -I. -I../../src"
 
-set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp"
+set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp simple_hex_fixture.cpp"
 
 #-----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ set LIB="-lpthread"
 
 echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 
-set GCC_FLAGS="-Wall -O3 -fopenmp ${INC_PATH}"
+set GCC_FLAGS="-Wall -g -O0 -fopenmp ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 
