@@ -907,8 +907,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                   lids[i*num_lid_entries+num_lid_entries-1] = -1;
               }
           }
-          MPI_Bcast(gids+mesh->num_elems, addIDs, MPI_INT, 0, MPI_COMM_WORLD);
-          MPI_Bcast(lids+mesh->num_elems, addIDs, MPI_INT, 0, MPI_COMM_WORLD);
+          MPI_Bcast(gids+mesh->num_elems, addIDs, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
+          MPI_Bcast(lids+mesh->num_elems, addIDs, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
           if (Proc == 0)
               addIDs = 0;
       }
@@ -950,6 +950,11 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
           if (checkIDs) {
               int *bColor=(int *) malloc (checkIDs * sizeof(int));
+
+              if (!bColor ) {
+                  Gen_Error(0, "memory alloc failed for Zoltan_Color: bColor\n");
+                  return 0;
+              }
 
               if (Proc == 0) {
                   for (i = 0; i<checkIDs; ++i)
