@@ -24,34 +24,8 @@ extern "C" {
 #include <float.h>
 #include "zoltan_util.h"
 
-/****************************************************************************/
-/*  TPL-Specific settings for data types                                    */
-/*
- * "indextype" is the type used for global numbers and indices in the graph 
- *  data structure.
- * "weighttype" is the type used for weights.  
- * 
- * If there is only one third party library used for graph algorithms, 
- * define indextype and weighttype to match the types used by that library.
- *
- * If more than one library is linked in, arbitrarily choose one. At runtime, if
- * either the indextype or weighttype is not compatible with the graph library 
- * API, return an error.
- *
- * If there are no third party graph/ordering libraries, let indextype be 
- * ZOLTAN_GNO_TYPE and let "weighttype" be float.
- */
-
-/* KDDKDD Use ZOLTAN_GNO_TYPE or ZOLTAN_ID_TYPE???? */
-
-#define TPL_SCOTCH_DATATYPES   1
-#define TPL_METIS_DATATYPES    2
-#define TPL_ZOLTAN_DATATYPES   3
-
-#undef TPL_USE_DATATYPE
-#undef indextype
-#undef weighttype
-
+/*****************************************************************************/
+/* Include appropriate files for TPLs */
 #ifdef ZOLTAN_METIS
   #include "metis.h"
   #define __metis__ 1
@@ -82,6 +56,37 @@ extern "C" {
   #define __scotch__ 0
 #endif
 
+/****************************************************************************/
+/*  TPL-Specific settings for data types                                    */
+/*
+ * "indextype" is the type used for global numbers and indices in the graph
+ *  data structure.
+ * "weighttype" is the type used for weights.
+ * 
+ * If there are no third party graph/ordering libraries, let indextype be
+ * ZOLTAN_GNO_TYPE and let "weighttype" be float.
+ *
+ * If there is only one third party library used for graph algorithms,
+ * define indextype and weighttype to match the types used by that library.
+ *
+ * If more than one library is linked in, arbitrarily choose one.
+ * Check for compatibility between the libraries here; all should use the same
+ * size integer for indices.
+ *
+ * At runtime, if
+ * either the indextype or weighttype is not compatible with the graph library
+ * API, return an error.
+ */
+
+#define TPL_SCOTCH_DATATYPES   1
+#define TPL_METIS_DATATYPES    2
+#define TPL_ZOLTAN_DATATYPES   3
+
+#undef TPL_USE_DATATYPE
+#undef indextype
+#undef weighttype
+
+/* Select the data types to use */
 #if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ == 0
   /* No graph TPLs used; use Zoltan values */
   #define TPL_USE_DATATYPE TPL_ZOLTAN_DATATYPES
@@ -91,11 +96,9 @@ extern "C" {
   #define MAX_WGT_SUM (FLT_MAX/8)
   #define TPL_IDX_SPEC ZOLTAN_GNO_SPEC
   #define TPL_WGT_SPEC "%f"
-
 #elif (__ptscotch__ + __scotch__ > 0) && (__parmetis__ + __metis__  == 0)
   /* Using only Scotch/PTScotch */
   #define TPL_USE_DATATYPE TPL_SCOTCH_DATATYPES
-
 #elif (__parmetis__ + __metis__ > 0) && (__ptscotch__ + __scotch__ == 0)
   /* Using only METIS/ParMETIS */
   #define TPL_USE_DATATYPE TPL_METIS_DATATYPES
@@ -120,8 +123,9 @@ extern "C" {
     #define MAX_WGT_SUM (INT_MAX/8)
     #define TPL_IDX_SPEC "%d"
     #define TPL_WGT_SPEC "%d"
+    #define IDXTYPEWIDTH 32
 
-  #else /* PARMETIS_MAJOR_VERSION == 4 */
+  #elif PARMETIS_MAJOR_VERSION == 4
     #define indextype idx_t
     #define weighttype idx_t
     #define TPL_INTEGRAL_WEIGHT
@@ -134,13 +138,15 @@ extern "C" {
       #define TPL_IDX_SPEC "%lld"
       #define TPL_WGT_SPEC "%lld"
     #endif
+  #else
+    #error "Unsupported version of ParMETIS; use ParMETIS 3.1 or 4."
   #endif
 
 #elif TPL_USE_DATATYPE == TPL_SCOTCH_DATATYPES
 
   #define indextype SCOTCH_Num
   #define weighttype SCOTCH_Num
-  #define MAX_WGT_SUM (INT_MAX/8)  /* KDDKDD Same for 32 and 64 bit? */
+  #define MAX_WGT_SUM (SCOTCH_NUMMAX/8)
   #define TPL_IDX_SPEC SCOTCH_NUMSTRING
   #define TPL_WGT_SPEC SCOTCH_NUMSTRING
   #define TPL_INTEGRAL_WEIGHT
