@@ -149,8 +149,17 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    }
 }
 
+struct free_any_remaining_az_memory {
+ free_any_remaining_az_memory(){}
+ ~free_any_remaining_az_memory()
+ {
+   AZ_manage_memory(0, AZ_CLEAR_ALL, 0, NULL, NULL);
+ }
+};
+
 //========DESTRUCTOR============================================================
 Aztec_LinSysCore::~Aztec_LinSysCore() {
+  static free_any_remaining_az_memory when_program_exits;
 
   if (blkMatrixAllocated_) {
     delete blkA_;
