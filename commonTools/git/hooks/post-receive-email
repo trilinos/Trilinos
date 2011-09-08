@@ -821,7 +821,7 @@ else
     repo_root=$(dirname $(pwd))
 fi
 repo_location=$(uname -n):$repo_root
-email_from="$USER@sandia.gov"
+email_from="$USER"
 
 projectdesc=$(sed -ne '1p' "$GIT_DIR/description")
 # Check if the description is unchanged from it's default, and shorten it to
