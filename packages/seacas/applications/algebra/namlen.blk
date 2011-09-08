@@ -1,0 +1,4 @@
+C     -*- Mode: fortran -*-
+      parameter (maxnam=256)
+      common /namln/ namlen
+C ... NAMLEN - Length of variable and entity names on database      

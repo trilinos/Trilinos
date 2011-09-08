@@ -1,0 +1,66 @@
+C     -*- Mode: fortran -*-
+      QAINFO(1) = 'GJoin2  '
+      QAINFO(2) = '2009/12/02                      '
+      QAINFO(3) = ' 1.32                           '
+
+C - Added EXPXYZ - By material matching
+C - Fixes in expxyz, matxyz, comand, irennp
+C - added mirroring, scaling, offsetting
+C - Added sorting to matxyz/expxyz -- seems to work better (2-4 times faster)
+c - Added revolve and revcen commands
+c - Added expect command
+c - Added copyright notice
+c - Added CUBIT kludge
+C - Added adding %gjoin
+c - Added bar mirroring connectivity fixup
+c - Added code to disregard comments (from aprepro?) at beginning of input file
+c - Modified so no temporary file
+C - fixed problems with the no temporary fix
+c - fixed input problem in setitl.f (used getinp instead of frefld)
+c - strip leading spaces from filenames
+c - added CHANGE to setsta -- assign new id to old id
+c - more functionality in setsta CHANGE
+c - sort on largest overlap delta direction
+c - bug fix last change
+c - problem with link array size not getting updated
+c - zero variables if no second database
+c - efficiency
+c - check for zero length sideset element list
+c - needsdoubleescape for prt* routines
+c - fix accessing z array for 2D problems
+c - made 'closest' the default matching behavior, always on
+c - fix renix call for link arrays.
+c - missing mdlong for yn zn in gjoin.f
+c - handle comments better
+c - fix connectivity input to reduce mdlong calls
+c - fix element map handling, error detection, coordinate names
+c - fix info record filename appending
+c - fix attribute reading, better file open diagnostics
+c - fix info recore filename appending (again...)
+c - fix maximum element block names -- now dynamic
+c - add increment, fix problem with block name reserve
+c - fix incorrect memory error message in rdgen
+c - fix exodus error reporting
+c - fix by-material matching
+c - minor change in setsta help message
+c - check block names when merging blocks
+c - removed unused routines
+c - reorder writing of qa and info
+c - modified to use sides instead of nodes for sidesets.
+c - remove debugging code in zmess
+c - fix for no sideset distribution factors
+c - fix for incorrect dist factor offset for 3 or more dbs
+c - matching mods -- pick based on set size.
+c - removed write of element map -- default provided by exodusII
+c - eliminate writing distribution factors if they are all unity
+c - better message for dist factor error; write dist factor even if all unity..
+c - mirroring of 20-node hexes
+c - add addlog
+c - fix 'grepos' in error message 
+c - mirroring of tet sidesets supported if only tets in model
+c - use expclb instead of multiple calls to expelb
+c - fix so can combine two blocks with same id
+c - handle mirroring in models with all shells
+c - fix shell sset mirroring -- since connectivity is fixed up, the shell side remains the same
+c - optimize nodeset combining since locint was taking lots of time on some compilers
+c - fixing sideset node count information for large models

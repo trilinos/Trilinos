@@ -1,0 +1,46 @@
+\documentstyle[chapter,12pt,arg]{sreport}\classification{}
+%\includeonly{}
+%
+\begin{document}
+\SAND90-0247
+\DistCat{UC-705}
+\Release{Unlimited Release}
+%\Previous{	}      %To be used if there was a previous release of report
+\author{John R. Red-Horse\\
+William C. Mills-Curran\\
+Dennis P. Flanagan \\
+Applied Mechanics Division IV\\[\parskip]
+\SNLA}
+
+\title{SUPES Version 2.1\\
+A Software Utilities Package for the Engineering Sciences}
+\abstract{abstract}      %Name of file containing abstract
+%
+% ************************************************************************
+% Remove comment character % from first column to use any of the following
+% ************************************************************************
+\date{October 20, 1988}
+%Date to be used if different than today's
+\makesandtitle        %Remove % from first column when ready for title page
+%
+\cleardoublepage\tableofcontents
+%\cleardoublepage\listoffigures
+%\cleardoublepage\listoftables
+%\listoftables
+%
+% The general practice is to place each chapter in a separate
+% file and include each file. Each file should begin with a \chapter
+% command to define the title of the chapter.
+%
+\sloppy
+\include{introduction}
+\include{install}
+\include{frefld}
+\include{memmgr}
+\include{extlib}
+\include{support}
+\include{references}
+\appendix*
+\include{site}
+\include{dist}
+\end{document}

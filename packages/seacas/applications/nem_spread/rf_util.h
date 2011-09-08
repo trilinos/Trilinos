@@ -73,7 +73,6 @@ extern int   bin_search     (int List[],  int num, int value);
 extern int   bin_search2    (int value,   int num, int List[]);
 extern int   bin_search_min (int List[],  int num, int value);
 extern void  print_line     (char *charstr, int ntimes);
-extern int   int_cmp        (int *i1, int *i2);
 extern int   break_message_up(size_t, size_t, size_t, int **);
 extern double srandom1      (int *seed);
 /*****************************************************************************/

@@ -244,9 +244,9 @@ int find_adjacency(PROB_INFO_PTR problem,
   int     ncnt, ecnt, cnt, i, elem, node, inode, entry;
   int     nnodes, iret, nsides, nscnt;
   int     hflag1, hflag2, tflag1, tflag2;
-  int    *pt_list, nelem;
-  int    *hold_elem, nhold;
-  int    *tmp_element;
+  int    *pt_list=NULL, nelem;
+  int    *hold_elem=NULL, nhold;
+  int    *tmp_element=NULL;
   int     side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
   int     side_cnt, sid;
   int     element_3d = 0;
@@ -540,7 +540,7 @@ int find_adjacency(PROB_INFO_PTR problem,
                                      graph->sur_elem[side_nodes[(ncnt+1)]],
                                      nhold,
                                      graph->nsur_elem[side_nodes[(ncnt+1)]],
-                                     2, pt_list);
+                                     pt_list);
 
                   /*  If less than 2 ( 0 or 1 ) elements only
                      touch nodes 0 and ncnt+1 then try next side node, i.e., 
@@ -574,7 +574,7 @@ int find_adjacency(PROB_INFO_PTR problem,
                                      graph->sur_elem[side_nodes[(ncnt+2)]],
                                      graph->nsur_elem[side_nodes[inode]],
                                      graph->nsur_elem[side_nodes[(ncnt+2)]],
-                                     2, pt_list);
+                                     pt_list);
 
                   /*
                    * If there are multiple elements in the intersection, then

@@ -1,0 +1,917 @@
+
+after exopen, error =   0
+  I/O word size 4
+
+after exgini, error =   0
+database parameters:
+title =  This is testwt1                                                                 
+num_dim =   3
+num_nodes =  28
+num_elem =   8
+num_elem_blk =   7
+num_node_sets =   2
+num_side_sets =   5
+
+after exgcor, error =   0
+x coords = 
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+  2.0
+  2.0
+  1.0
+  0.0
+ 10.0
+ 10.0
+  1.0
+  1.0
+ 10.0
+ 10.0
+  1.0
+  0.0
+  1.0
+ 10.0
+  7.0
+100.0
+ 50.0
+  3.0
+  6.0
+  0.0
+  3.0
+  6.0
+  0.0
+y coords = 
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  0.0
+  0.0
+ 10.0
+ 10.0
+ 10.0
+ 10.0
+  0.0
+  0.0
+  0.0
+  5.0
+100.0
+ 50.0
+  0.0
+  0.0
+  0.0
+  2.0
+  2.0
+  2.0
+z coords = 
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  5.0
+  2.0
+  3.0
+  0.0
+ 20.0
+  6.0
+  0.0
+  0.0
+  6.0
+  2.0
+  0.0
+
+after exgcon, error =   0
+x coord name = xcoor    
+y coord name = ycoor    
+
+after exgmp, error =   0
+
+after exgpa, error =   0
+
+after exgem, error =   0
+
+element map id = 111
+elem_map(  1) =   1
+elem_map(  2) =   2
+elem_map(  3) =   3
+elem_map(  4) =   4
+elem_map(  5) =   5
+elem_map(  6) =   6
+elem_map(  7) =   7
+elem_map(  8) =   8
+
+after exgem, error =   0
+
+element map id = 222
+elem_map(  1) =   2
+elem_map(  2) =   4
+elem_map(  3) =   6
+elem_map(  4) =   8
+elem_map(  5) =  10
+elem_map(  6) =  12
+elem_map(  7) =  14
+elem_map(  8) =  16
+
+after exinq, error =   0
+
+There are  3 properties for each element map
+after exgpn, error =   0
+elem map  1 property( 1): ID                               =   111
+elem map  2 property( 1): ID                               =   222
+elem map  1 property( 2): ORDER                            =     1
+elem map  2 property( 2): ORDER                            =     0
+elem map  1 property( 3): NUMBER                           =     0
+elem map  2 property( 3): NUMBER                           =     1
+
+after exgpa, error =   0
+
+after exgnm, error =   0
+
+node map id = 333
+node_map(  1) =   3
+node_map(  2) =   6
+node_map(  3) =   9
+node_map(  4) =  12
+node_map(  5) =  15
+node_map(  6) =  18
+node_map(  7) =  21
+node_map(  8) =  24
+node_map(  9) =  27
+node_map( 10) =  30
+node_map( 11) =  33
+node_map( 12) =  36
+node_map( 13) =  39
+node_map( 14) =  42
+node_map( 15) =  45
+node_map( 16) =  48
+node_map( 17) =  51
+node_map( 18) =  54
+node_map( 19) =  57
+node_map( 20) =  60
+node_map( 21) =  63
+node_map( 22) =  66
+node_map( 23) =  69
+node_map( 24) =  72
+node_map( 25) =  75
+node_map( 26) =  78
+node_map( 27) =  81
+node_map( 28) =  84
+
+after exinq, error =   0
+
+There are  2 properties for each node map
+after exgpn, error =   0
+node map  1 property( 1): ID                               =   333
+node map  1 property( 2): NUMBER                           =     1
+
+after exgebi, error =   0
+
+after exgelb, error =   0
+element block id = 10
+element type = quad     
+num_elem_in_block =  1
+num_nodes_per_elem =  4
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 11
+element type = quad     
+num_elem_in_block =  2
+num_nodes_per_elem =  4
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 12
+element type = hex      
+num_elem_in_block =  1
+num_nodes_per_elem =  8
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 13
+element type = tetra    
+num_elem_in_block =  1
+num_nodes_per_elem =  4
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 14
+element type = circle   
+num_elem_in_block =  1
+num_nodes_per_elem =  1
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 15
+element type = sphere   
+num_elem_in_block =  1
+num_nodes_per_elem =  1
+num_attr =  3
+
+after exgelb, error =   0
+element block id = 16
+element type = wedge    
+num_elem_in_block =  1
+num_nodes_per_elem =  6
+num_attr =  3
+
+after exinq, error =   0
+
+There are  3 properties for each element block
+after exgpn, error =   0
+elem block  1 property( 1): ID                               =    10
+elem block  2 property( 1): ID                               =    11
+elem block  3 property( 1): ID                               =    12
+elem block  4 property( 1): ID                               =    13
+elem block  5 property( 1): ID                               =    14
+elem block  6 property( 1): ID                               =    15
+elem block  7 property( 1): ID                               =    16
+elem block  1 property( 2): MATL                             =    10
+elem block  2 property( 2): MATL                             =    20
+elem block  3 property( 2): MATL                             =    30
+elem block  4 property( 2): MATL                             =    40
+elem block  5 property( 2): MATL                             =    50
+elem block  6 property( 2): MATL                             =    60
+elem block  7 property( 2): MATL                             =    70
+elem block  1 property( 3): DENSITY                          =     0
+elem block  2 property( 3): DENSITY                          =     0
+elem block  3 property( 3): DENSITY                          =     0
+elem block  4 property( 3): DENSITY                          =     0
+elem block  5 property( 3): DENSITY                          =     0
+elem block  6 property( 3): DENSITY                          =     0
+elem block  7 property( 3): DENSITY                          =     0
+
+after exgelc, error =   0
+connect array for elem block 10
+  1
+  2
+  3
+  4
+
+after exgelc, error =   0
+connect array for elem block 11
+  1
+  2
+  3
+  4
+
+after exgelc, error =   0
+connect array for elem block 12
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+
+after exgelc, error =   0
+connect array for elem block 13
+ 17
+ 18
+ 19
+ 20
+
+after exgelc, error =   0
+connect array for elem block 14
+ 21
+
+after exgelc, error =   0
+connect array for elem block 15
+ 22
+
+after exgelc, error =   0
+connect array for elem block 16
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 10 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.0000
+attribute_2                      = 2.0000
+attribute_3                      = 3.0000
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 11 has  3 attribute(s) and  2 element(s):
+attribute_1                      = 1.1100  1.1200
+attribute_2                      = 2.1100  2.1200
+attribute_3                      = 3.1100  3.1200
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 12 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.2000
+attribute_2                      = 2.2000
+attribute_3                      = 3.2000
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 13 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.3000
+attribute_2                      = 2.3000
+attribute_3                      = 3.3000
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 14 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.4000
+attribute_2                      = 2.4000
+attribute_3                      = 3.4000
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 15 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.5000
+attribute_2                      = 2.5000
+attribute_3                      = 3.5000
+
+after exgeat, error =   0
+
+after exgean, error =   0
+element block 16 has  3 attribute(s) and  1 element(s):
+attribute_1                      = 1.6000
+attribute_2                      = 2.6000
+attribute_3                      = 3.6000
+
+after exgnsi, error =   0
+
+after exgnp, error =   0
+
+node set 20 parameters: 
+num_nodes =  5
+
+after exgns, error =   0
+
+after exgnsd, error =   0
+
+node list for node set 20
+100
+101
+102
+103
+104
+dist factors for node set 20
+ 1.00
+ 2.00
+ 3.00
+ 4.00
+ 5.00
+
+after exgnp, error =   0
+
+node set 21 parameters: 
+num_nodes =  3
+
+after exgns, error =   0
+
+after exgnsd, error =   0
+
+node list for node set 21
+200
+201
+202
+dist factors for node set 21
+ 1.10
+ 2.10
+ 3.10
+
+after exinq, error =   0
+
+There are  3 properties for each node set
+after exgpn, error =   0
+node set  1 property( 1): ID                               =    20
+node set  2 property( 1): ID                               =    21
+node set  1 property( 2): FACE                             =     4
+node set  2 property( 2): FACE                             =     5
+node set  1 property( 3): VELOCITY                         =  1000
+node set  2 property( 3): VELOCITY                         =  2000
+
+after exinq, error =   0
+
+after EXNSNL =  8 exinq, error =   0
+
+after EXNSDF =  8 exinq, error =   0
+
+after exgcns, error =   0
+
+concatenated node set info
+ids = 
+ 20
+ 21
+num_nodes_per_set = 
+  5
+  3
+node_ind = 
+  1
+  6
+node_list = 
+100
+101
+102
+103
+104
+200
+201
+202
+dist_fact = 
+1.000
+2.000
+3.000
+4.000
+5.000
+1.100
+2.100
+3.100
+
+after exgssi, error =   0
+
+after exgsp, error =   0
+side set 30 parameters:
+num_sides =   2
+num_dist_factors =   4
+
+after exgss, error =   0
+
+after exgssn, error =   0
+
+after exgssd, error =   0
+
+element list for side set 30
+  3
+  3
+side list for side set 30
+  4
+  2
+node list for side set 30
+  8
+  5
+  6
+  7
+dist factors for side set 30
+30.000
+30.100
+30.200
+30.300
+
+after exgsp, error =   0
+side set 31 parameters:
+num_sides =   2
+num_dist_factors =   4
+
+after exgss, error =   0
+
+after exgssn, error =   0
+
+after exgssd, error =   0
+
+element list for side set 31
+  1
+  3
+side list for side set 31
+  2
+  3
+node list for side set 31
+  2
+  3
+  7
+  8
+dist factors for side set 31
+31.000
+31.100
+31.200
+31.300
+
+after exgsp, error =   0
+side set 32 parameters:
+num_sides =   7
+num_dist_factors =   0
+
+after exgss, error =   0
+
+after exgssn, error =   0
+
+element list for side set 32
+  4
+  4
+  4
+  4
+  4
+  4
+  4
+side list for side set 32
+  5
+  3
+  3
+  2
+  4
+  1
+  6
+node list for side set 32
+  9
+ 12
+ 11
+ 10
+ 11
+ 12
+ 16
+ 15
+ 11
+ 12
+ 16
+ 15
+ 10
+ 11
+ 15
+ 14
+  9
+ 13
+ 16
+ 12
+  9
+ 10
+ 14
+ 13
+ 13
+ 14
+ 15
+ 16
+no dist factors for side set 32
+
+after exgsp, error =   0
+side set 33 parameters:
+num_sides =   4
+num_dist_factors =   0
+
+after exgss, error =   0
+
+after exgssn, error =   0
+
+element list for side set 33
+  5
+  5
+  5
+  5
+side list for side set 33
+  1
+  2
+  3
+  4
+node list for side set 33
+ 17
+ 18
+ 20
+ 18
+ 19
+ 20
+ 17
+ 20
+ 19
+ 17
+ 19
+ 18
+no dist factors for side set 33
+
+after exgsp, error =   0
+side set 34 parameters:
+num_sides =   2
+num_dist_factors =   0
+
+after exgss, error =   0
+
+after exgssn, error =   0
+
+element list for side set 34
+  6
+  7
+side list for side set 34
+  1
+  1
+node list for side set 34
+ 21
+ 22
+no dist factors for side set 34
+
+after exinq, error =   0
+
+There are  2 properties for each side set
+after exgpn, error =   0
+side set  1 property( 1): ID                               =    30
+side set  2 property( 1): ID                               =    31
+side set  3 property( 1): ID                               =    32
+side set  4 property( 1): ID                               =    33
+side set  5 property( 1): ID                               =    34
+side set  1 property( 2): COLOR                            =   100
+side set  2 property( 2): COLOR                            =   101
+side set  3 property( 2): COLOR                            =     0
+side set  4 property( 2): COLOR                            =     0
+side set  5 property( 2): COLOR                            =     0
+
+after exinq: EXSIDS =  5, error =   0
+
+after exinq: EXSSEL = 17, error =   0
+
+after exinq: EXSSNL = 50, error =   0
+
+after exinq: EXSSDF =  8, error =   0
+
+after exgcss, error =   0
+concatenated side set info
+ids = 
+ 30
+ 31
+ 32
+ 33
+ 34
+num_elem_per_set = 
+  2
+  2
+  7
+  4
+  2
+num_df_per_set = 
+  4
+  4
+  0
+  0
+  0
+elem_ind = 
+  1
+  3
+  5
+ 12
+ 16
+df_ind = 
+  1
+  5
+  9
+  9
+  9
+elem_list = 
+  3
+  3
+  1
+  3
+  4
+  4
+  4
+  4
+  4
+  4
+  4
+  5
+  5
+  5
+  5
+  6
+  7
+side_list = 
+  4
+  2
+  2
+  3
+  5
+  3
+  3
+  2
+  4
+  1
+  6
+  1
+  2
+  3
+  4
+  1
+  1
+dist_fact = 
+30.000
+30.100
+30.200
+30.300
+31.000
+31.100
+31.200
+31.300
+
+after exinq, error =   0
+
+after exgqa, error =   0
+QA records = 
+testwt1                         
+03/16/94                        
+15:41:33                        
+FASTQ                           
+fastq                           
+07/07/93                        
+16:41:33                        
+
+after exinq, error =   0
+
+after exginf, error =   0
+info records = 
+ This is the first information record.                                           
+ This is the second information record.                                          
+ This is the third information record.                                           
+
+after exgvp, error =   0
+
+after exgvnm, error =   0
+There are  1 global variables; their names are :
+glo vars 
+
+after exgvp, error =   0
+
+after exgvan, error =   0
+There are  2 nodal variables; their names are :
+nod_var0 
+nod_var1 
+
+after exgvp, error =   0
+
+after exgvan, error =   0
+There are  3 element variables; their names are :
+ele_var0 
+ele_var1 
+ele_var2 
+
+after exgvtt, error =   0
+This is the element variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 0
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after exinq, error =   0
+There are 10 time steps in the database.
+
+after exgtim, error =   0
+time value at time step  3 = 0.030
+
+after exgatm, error =   0
+time values at all time steps are:
+0.010
+0.020
+0.030
+0.040
+0.050
+0.060
+0.070
+0.080
+0.090
+0.100
+
+after exggv, error =   0
+global variable values at time step  3
+0.060
+
+after exggvt, error =   0
+global variable  1 values through time:
+0.020
+0.040
+0.060
+0.080
+0.100
+0.120
+0.140
+0.160
+0.180
+0.200
+
+after exgnv, error =   0
+nodal variable  1 values at time step  3
+1.030
+1.060
+1.090
+1.120
+1.150
+1.180
+1.210
+1.240
+1.270
+1.300
+1.330
+1.360
+1.390
+1.420
+1.450
+1.480
+1.510
+1.540
+1.570
+1.600
+1.630
+1.660
+1.690
+1.720
+1.750
+1.780
+1.810
+1.840
+
+after exgnvt, error =   0
+nodal variable  1 values for node  1 through time:
+1.010
+1.020
+1.030
+1.040
+1.050
+1.060
+1.070
+1.080
+1.090
+1.100
+
+after exgebi, error =   0
+
+after exgev, error =   0
+element variable  1 values of element block 10 at time step  3
+ 4.030
+
+after exgev, error =   0
+element variable  1 values of element block 11 at time step  3
+ 5.030
+ 5.060
+
+after exgev, error =  -1
+ 5.030
+
+after exgev, error =   0
+element variable  1 values of element block 13 at time step  3
+ 7.030
+
+after exgev, error =   0
+element variable  1 values of element block 14 at time step  3
+ 8.030
+
+after exgev, error =   0
+element variable  1 values of element block 15 at time step  3
+ 9.030
+
+after exgev, error =   0
+element variable  1 values of element block 16 at time step  3
+10.030
+
+after exgevt, error =   0
+element variable  2 values for element  2 through time:
+6.010
+6.020
+6.030
+6.040
+6.050
+6.060
+6.070
+6.080
+6.090
+6.100
+
+after exclos, error =   0

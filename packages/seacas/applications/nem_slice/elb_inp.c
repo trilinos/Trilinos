@@ -70,8 +70,8 @@ int cmd_line_arg_parse(
   WEIGHT_INFO_PTR weight	/* Structure for weighting graph */
   )
 {
-  int   opt_let, iret, el_blk, wgt, max_dim, i;
-  char *sub_opt, *value, *cptr, *cptr2, ctemp[MAX_ERR_MSG+1];
+  int   opt_let, iret, el_blk, wgt, max_dim=0, i;
+  char *sub_opt=NULL, *value=NULL, *cptr=NULL, *cptr2=NULL, ctemp[MAX_ERR_MSG+1];
 
   extern char *optarg;
   extern int   optind;
@@ -1499,7 +1499,7 @@ int check_inp_specs(
   char  ctemp2[MAX_FNL+1];
   char *cptr;
   char **var_names;
-  int   cnt, exoid, cpu_ws=0, io_ws=0, nvars, tmp_vindx;
+  int   cnt, exoid, cpu_ws=0, io_ws=0, nvars, tmp_vindx=0;
   int   ntimes;
   float version;
   FILE *inp_fd;

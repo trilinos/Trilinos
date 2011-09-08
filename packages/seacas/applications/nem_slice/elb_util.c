@@ -704,7 +704,7 @@ int find_min(const int list_length, const int list[])
  * and returns the number of values in the intersection.
  *****************************************************************************/
 int find_inter(const int set1[], const int set2[], const int length1,
-               const int length2, const int prob_type, int inter_ptr[])
+               const int length2, int inter_ptr[])
 
 /*
  *
@@ -715,10 +715,7 @@ int find_inter(const int set1[], const int set2[], const int length1,
  *      have already been allocated in the calling program before this
  *      function is called.
  *
- *        prob_type defines the problem to be addressed:
- *            0 = don't know anything about set1 or set2.
- *            1 = Know that set2 is monotonically increasing.
- *            2 = Know that set1 and set2 are monotonically increasing
+ *      Know that set1 and set2 are monotonically increasing
  *
  *      On return, find_inter returns 0 if there is no intersection.
  *      It returns the number of points in the intersection, if there
@@ -726,78 +723,26 @@ int find_inter(const int set1[], const int set2[], const int length1,
  */
 
 {
+  int counter = 0;
+  int i = 0;
+  int j = 0;
 
-  /* Local variables */
-
-  register int    i, j, counter = 0;
-  int             max_set1, min_set1, max_set2, min_set2;
-
-  /****************************** execution begins *****************************/
-
-  /* Error check the arguments */
-  if ((length1 <= 0) || (length2 <= 0)) return (counter);
-
-  if (prob_type == 0 ) {
-
-    /* find the maximum and the minimum of the two sets */
-    max_set1 = find_max (length1, set1);
-    min_set1 = find_min (length1, set1);
-    max_set2 = find_max (length2, set2);
-    min_set2 = find_min (length2, set2);
-
-    /*  check for a possible overlaps in node numbers;
-     *  If there is an overlap, then do the search
-     */
-
-    if ( (max_set2 >= min_set1) && (min_set2 <= max_set1) )   {
-
-      for (i = 0; i < length1; i++)
-        for (j = 0; j < length2; j++)
-          if (set1[i] == set2[j])  inter_ptr[counter++] = i;
-
+  while (i < length1 && j < length2) {
+    if (set1[i] < set2[j])
+      ++i;
+    else if (set2[j] < set1[i])
+      ++j;
+    else {
+      inter_ptr[counter++] = i;
+      ++i;
+      ++j;
     }
-  } else if (prob_type == 1) {
-
-    fprintf (stderr, "prob_type = 1 is unimplemented\n");
-    exit(1);
-
-  } else if (prob_type == 2) {
-    /*
-     *    Find the maximum and the minimum of the two sets
-     */
-    max_set1 =  set1[length1-1];
-    min_set1 =  set1[0];
-    max_set2 =  set2[length2-1];
-    min_set2 =  set2[0];
-    /*
-     *    Check for a possible overlaps in node numbers;
-     *    If there is an overlap, then do the search using a linearly
-     *    scaled method
-     *
-     */
-    if ( (max_set2 >= min_set1) && (min_set2 <= max_set1) )   {
-      i = 0;
-      j = 0;
-      while (i < length1 && j < length2 &&
-	     set1[i] <= max_set2 && set2[j] <= max_set1) {
-	if (set1[i] < set2[j])
-	  ++i;
-	else if (set2[j] < set1[i])
-	  ++j;
-	else {
-	  inter_ptr[counter++] = i;
-	  ++i;
-	  ++j;
-	}
-      }
-    }
-  } else {
-
-    fprintf (stderr, "prob_type = %d is unknown\n", prob_type);
-    exit(1);
-
   }
 
+#if 0
+  fprintf(stderr, "%d %d -- %d %d -- %d %d -- %d\n", length1, length2,
+	  min_set1, max_set1, min_set2, max_set2, counter);
+#endif
   return counter;
 
 } /* find_inter **************************************************************/

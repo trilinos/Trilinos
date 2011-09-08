@@ -38,12 +38,12 @@ int       using_ewgts;		/* are edge weights being used? */
     extern int KL_RANDOM;	/* use randomness in KL? */
     extern int KL_UNDO_LIST;	/* only sort vertices who have moved. */
     extern double CUT_TO_HOP_COST;	/* ..if so, relative cut/hop importance */
-    struct bilist **bptr;	/* loops through set of buckets */
-    struct bilist *lptr;	/* pointer to an element in listspace */
-    float    *ewptr;		/* loops through edge weights */
-    float    *twptr;		/* weights for terminal propogation */
-    int      *bsptr;		/* loops through bspace */
-    int      *edges;		/* edge list for a vertex */
+    struct bilist **bptr=NULL;	/* loops through set of buckets */
+    struct bilist *lptr=NULL;	/* pointer to an element in listspace */
+    float    *ewptr=NULL;		/* loops through edge weights */
+    float    *twptr=NULL;		/* weights for terminal propogation */
+    int      *bsptr=NULL;		/* loops through bspace */
+    int      *edges=NULL;		/* edge list for a vertex */
     int       myset;		/* set current vertex belongs to */
     int       other_set;	/* set current vertex doesn't belong to */
     int       set;		/* set that neighboring vertex belongs to */

@@ -94,7 +94,7 @@ namespace {
 
 Ioex::SuperElement::SuperElement(const std::string &filename,
 				 const std::string &my_name)
-  : Ioss::GroupingEntity(NULL, my_name), fileName(filename),
+  : Ioss::GroupingEntity(NULL, my_name, 1), fileName(filename),
     numDOF(0), numEIG(0), filePtr(-1)
 {
 

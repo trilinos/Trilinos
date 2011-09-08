@@ -661,7 +661,7 @@ int get_type(char string[], int nodes)
 
 {
 
-  int   answer;
+  int   answer = 0;
   char *yo = "get_type: ";
 
   /* Precondition: string is lower case */

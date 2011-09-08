@@ -42,21 +42,14 @@ namespace {
   const std::string SCALAR() { return std::string("scalar");}
 }
 
+Ioss::NodeSet::NodeSet()
+  : Ioss::EntitySet(NULL, "invalid", 0)
+{}
+
 Ioss::NodeSet::NodeSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
 		       size_t number_nodes)
-  : Ioss::GroupingEntity(io_database, my_name)
+  : Ioss::EntitySet(io_database, my_name, number_nodes)
 {
-  properties.add(Ioss::Property("entity_count", static_cast<int>(number_nodes)));
-  properties.add(Ioss::Property("distribution_factor_count",
-				static_cast<int>(number_nodes)));
-      // Add the standard fields...
-  fields.add(Ioss::Field("ids", Ioss::Field::INTEGER, SCALAR(),
-			 Ioss::Field::MESH, number_nodes));
-
-  fields.add(Ioss::Field("distribution_factors",
-			 Ioss::Field::REAL, SCALAR(),
-			 Ioss::Field::MESH, number_nodes));
-
 }
 
 int Ioss::NodeSet::internal_get_field_data(const Ioss::Field& field,
@@ -76,7 +69,3 @@ Ioss::Property Ioss::NodeSet::get_implicit_property(const std::string& my_name) 
   return Ioss::GroupingEntity::get_implicit_property(my_name);
 }
 
-void Ioss::NodeSet::block_membership(std::vector<std::string> &block_members)
-{
-  block_members.push_back("nodeblock_1");
-}

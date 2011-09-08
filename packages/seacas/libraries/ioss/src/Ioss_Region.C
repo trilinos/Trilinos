@@ -43,20 +43,15 @@
 #include <limits.h>
 
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_CommSet.h>
+#include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 
 namespace {
   const std::string id_str()           { return std::string("id");}
-  const std::string orig_elem_str()    { return std::string("original_element_type");}
+  const std::string orig_topo_str()    { return std::string("original_topology_type");}
   const std::string orig_block_order() { return std::string("original_block_order");}
 
-  bool lessOffset(const Ioss::ElementBlock *b1, const Ioss::ElementBlock *b2) {
+  bool lessOffset(const Ioss::EntityBlock *b1, const Ioss::EntityBlock *b2) {
     assert(b1->property_exists(orig_block_order()));
     assert(b2->property_exists(orig_block_order()));
     return b1->get_property(orig_block_order()).get_int() <
@@ -76,12 +71,10 @@ namespace {
 
 namespace Ioss {
   Region::Region(DatabaseIO *iodatabase, const std::string& my_name)
-    : GroupingEntity(iodatabase, my_name), currentState(-1), stateCount(0)
+    : GroupingEntity(iodatabase, my_name, 1), currentState(-1), stateCount(0)
   {
     assert(iodatabase != NULL);
     iodatabase->set_region(this);
-
-    properties.add(Property("entity_count", 1));
 
     if (iodatabase->is_input()) {
       // Read metadata -- populates GroupingEntity lists
@@ -93,15 +86,29 @@ namespace Ioss {
     properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
     properties.add(Property(this,
+			    "edge_block_count",    Property::INTEGER));
+    properties.add(Property(this,
+			    "face_block_count",    Property::INTEGER));
+    properties.add(Property(this,
 			    "element_block_count", Property::INTEGER));
     properties.add(Property(this,
 			    "side_set_count",      Property::INTEGER));
     properties.add(Property(this,
 			    "node_set_count",      Property::INTEGER));
     properties.add(Property(this,
+			    "edge_set_count",      Property::INTEGER));
+    properties.add(Property(this,
+			    "face_set_count",      Property::INTEGER));
+    properties.add(Property(this,
+			    "element_set_count",      Property::INTEGER));
+    properties.add(Property(this,
 			    "comm_set_count",      Property::INTEGER));
     properties.add(Property(this,
 			    "node_count",          Property::INTEGER));
+    properties.add(Property(this,
+			    "edge_count",          Property::INTEGER));
+    properties.add(Property(this,
+			    "face_count",          Property::INTEGER));
     properties.add(Property(this,
 			    "element_count",       Property::INTEGER));
     properties.add(Property(this,
@@ -123,7 +130,20 @@ namespace Ioss {
 	}
       }
 
-      // Element Blocks...
+      {
+	EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
+	while (i != edgeBlocks.end()) {
+	  delete (*i++);
+	}
+      }
+
+      {
+	FaceBlockContainer::const_iterator i = faceBlocks.begin();
+	while (i != faceBlocks.end()) {
+	  delete (*i++);
+	}
+      }
+
       {
 	ElementBlockContainer::const_iterator i = elementBlocks.begin();
 	while (i != elementBlocks.end()) {
@@ -131,7 +151,6 @@ namespace Ioss {
 	}
       }
 
-      // SideSets...
       {
 	SideSetContainer::const_iterator i = sideSets.begin();
 	while (i != sideSets.end()) {
@@ -139,7 +158,6 @@ namespace Ioss {
 	}
       }
 
-      // Node Sets
       {
 	NodeSetContainer::const_iterator i = nodeSets.begin();
 	while (i != nodeSets.end()) {
@@ -147,7 +165,27 @@ namespace Ioss {
 	}
       }
 
-      // Communication Sets
+      {
+	EdgeSetContainer::const_iterator i = edgeSets.begin();
+	while (i != edgeSets.end()) {
+	  delete (*i++);
+	}
+      }
+
+      {
+	FaceSetContainer::const_iterator i = faceSets.begin();
+	while (i != faceSets.end()) {
+	  delete (*i++);
+	}
+      }
+
+      {
+	ElementSetContainer::const_iterator i = elementSets.begin();
+	while (i != elementSets.end()) {
+	  delete (*i++);
+	}
+      }
+
       {
 	CommSetContainer::const_iterator i = commSets.begin();
 	while (i != commSets.end()) {
@@ -169,21 +207,37 @@ namespace Ioss {
   {
     strm << "\n Database: " << get_database()->get_filename() << "\n";
     
-    strm << "\n Number of coordinates per node       =" << std::setw(9)
+    strm << "\n Number of coordinates per node =" << std::setw(9)
 	 << get_property("spatial_dimension").get_int() << "\n";
-    strm << " Number of nodes                      =" << std::setw(9)
+    strm << " Number of nodes                  =" << std::setw(9)
 	 << get_property("node_count").get_int() << "\n";
-    strm << " Number of elements                   =" << std::setw(9)
+    strm << " Number of edges                  =" << std::setw(9)
+	 << get_property("edge_count").get_int() << "\n";
+    strm << " Number of faces                  =" << std::setw(9)
+	 << get_property("face_count").get_int() << "\n";
+    strm << " Number of elements               =" << std::setw(9)
 	 << get_property("element_count").get_int() << "\n";
-    strm << " Number of element blocks             =" << std::setw(9)
+    strm << " Number of node blocks            =" << std::setw(9)
+	 << get_property("node_block_count").get_int() << "\n";
+    strm << " Number of edge blocks            =" << std::setw(9)
+	 << get_property("edge_block_count").get_int() << "\n";
+    strm << " Number of face blocks            =" << std::setw(9)
+	 << get_property("face_block_count").get_int() << "\n";
+    strm << " Number of element blocks         =" << std::setw(9)
 	 << get_property("element_block_count").get_int() << "\n";
-    strm << " Number of nodal point sets           =" << std::setw(9)
+    strm << " Number of node sets              =" << std::setw(9)
 	 << get_property("node_set_count").get_int() << "\n";
-    strm << " Number of element side sets          =" << std::setw(9)
+    strm << " Number of edge sets              =" << std::setw(9)
+	 << get_property("edge_set_count").get_int() << "\n";
+    strm << " Number of face sets              =" << std::setw(9)
+	 << get_property("face_set_count").get_int() << "\n";
+    strm << " Number of element sets           =" << std::setw(9)
+	 << get_property("element_set_count").get_int() << "\n";
+    strm << " Number of element side sets      =" << std::setw(9)
 	 << get_property("side_set_count").get_int() << "\n\n";
 
     if (do_transient && get_property("state_count").get_int() > 0) {
-      strm << " Number of global variables           =" << std::setw(9)
+      strm << " Number of global variables     =" << std::setw(9)
 	   << field_count() << "\n";
       {
 	Ioss::NameList names;
@@ -308,13 +362,33 @@ namespace Ioss {
       // Sort the element blocks based on the idOffset field...
       if (!get_database()->is_input()) {
 	std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
+	std::sort(faceBlocks.begin(),    faceBlocks.end(),    lessOffset);
+	std::sort(edgeBlocks.begin(),    edgeBlocks.end(),    lessOffset);
 
 	// Now update the block offsets based on this new order...
-	int offset = 0;
-	ElementBlockContainer::iterator i = elementBlocks.begin();
-	while (i != elementBlocks.end()) {
-	  (*i)->set_offset(offset);
-	  offset += (*i++)->get_property("entity_count").get_int();
+	{
+	  int offset = 0;
+	  ElementBlockContainer::iterator i = elementBlocks.begin();
+	  while (i != elementBlocks.end()) {
+	    (*i)->set_offset(offset);
+	    offset += (*i++)->get_property("entity_count").get_int();
+	  }
+	}
+	{
+	  int offset = 0;
+	  FaceBlockContainer::iterator i = faceBlocks.begin();
+	  while (i != faceBlocks.end()) {
+	    (*i)->set_offset(offset);
+	    offset += (*i++)->get_property("entity_count").get_int();
+	  }
+	}
+	{
+	  int offset = 0;
+	  EdgeBlockContainer::iterator i = edgeBlocks.begin();
+	  while (i != edgeBlocks.end()) {
+	    (*i)->set_offset(offset);
+	    offset += (*i++)->get_property("entity_count").get_int();
+	  }
 	}
       }
     }
@@ -335,8 +409,7 @@ namespace Ioss {
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     double out_time = time;
-    if ( !get_database()->is_input() && !get_database()->usage() == WRITE_HEARTBEAT &&
-	 stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
+    if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
       std::ostringstream errmsg;
       errmsg << "Current time, " << time
@@ -582,6 +655,94 @@ namespace Ioss {
     }
   }
 
+  bool Region::add(FaceBlock *face_block)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      // Add name as alias to itself to simplify later uses...
+      add_alias(face_block);
+
+      // An input database defines these in the order matching the order
+      // on the "file".  For output, we need to order based on the
+      // "original_block_order" property and calculate the offset at that
+      // point.  This is done in "end".
+
+      if (get_database()->is_input()) {
+	size_t nblocks = faceBlocks.size();
+	int offset = 0;
+	if (nblocks > 0) {
+	  offset = faceBlocks[nblocks-1]->get_offset() +
+	    faceBlocks[nblocks-1]->get_property("entity_count").get_int();
+	}
+	face_block->set_offset(offset);
+      } else {
+	// Check whether the "original_block_order" property exists on
+	// this face block. If it isn't there, then add it with a
+	// large value. If this is an face block read from the input
+	// mesh, then the value will be updated during the
+	// 'synchronize_id_and_name' function; if it is a block created
+	// by the application during execution, then this value will
+	// persist.  Add the property with a very large number such that
+	// it will later be sorted after all "original" blocks.  Note
+	// that it doesn't matter if two of the "new" blocks have the
+	// same value since there is no ordering of new blocks that must
+	// be preserved. (Use int_MAX/2 just to avoid some paranoia
+	// about strange issue that might arise from int_MAX)
+	if (!face_block->property_exists(orig_block_order())) {
+	  face_block->property_add(Property(orig_block_order(), INT_MAX/2));
+	}
+      }
+      faceBlocks.push_back(face_block);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool Region::add(EdgeBlock *edge_block)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      // Add name as alias to itself to simplify later uses...
+      add_alias(edge_block);
+
+      // An input database defines these in the order matching the order
+      // on the "file".  For output, we need to order based on the
+      // "original_block_order" property and calculate the offset at that
+      // point.  This is done in "end".
+
+      if (get_database()->is_input()) {
+	size_t nblocks = edgeBlocks.size();
+	int offset = 0;
+	if (nblocks > 0) {
+	  offset = edgeBlocks[nblocks-1]->get_offset() +
+	    edgeBlocks[nblocks-1]->get_property("entity_count").get_int();
+	}
+	edge_block->set_offset(offset);
+      } else {
+	// Check whether the "original_block_order" property exists on
+	// this edge block. If it isn't there, then add it with a
+	// large value. If this is an edge block read from the input
+	// mesh, then the value will be updated during the
+	// 'synchronize_id_and_name' function; if it is a block created
+	// by the application during execution, then this value will
+	// persist.  Add the property with a very large number such that
+	// it will later be sorted after all "original" blocks.  Note
+	// that it doesn't matter if two of the "new" blocks have the
+	// same value since there is no ordering of new blocks that must
+	// be preserved. (Use int_MAX/2 just to avoid some paranoia
+	// about strange issue that might arise from int_MAX)
+	if (!edge_block->property_exists(orig_block_order())) {
+	  edge_block->property_add(Property(orig_block_order(), INT_MAX/2));
+	}
+      }
+      edgeBlocks.push_back(edge_block);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   bool Region::add(SideSet      *sideset)
   {
     // Check that region is in correct state for adding entities
@@ -608,6 +769,45 @@ namespace Ioss {
     }
   }
 
+  bool Region::add(EdgeSet      *edgeset)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      // Add name as alias to itself to simplify later uses...
+      add_alias(edgeset);
+      edgeSets.push_back(edgeset);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool Region::add(FaceSet      *faceset)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      // Add name as alias to itself to simplify later uses...
+      add_alias(faceset);
+      faceSets.push_back(faceset);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool Region::add(ElementSet      *elementset)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      // Add name as alias to itself to simplify later uses...
+      add_alias(elementset);
+      elementSets.push_back(elementset);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   bool Region::add(CommSet      *commset)
   {
     // Check that region is in correct state for adding entities
@@ -621,28 +821,14 @@ namespace Ioss {
     }
   }
 
-  bool Region::supports_field_type(EntityType fld_type) const
-  {
-    switch (fld_type) {
-    case NODEBLOCK:
-      return supports_nodal_fields();
-    case ELEMENTBLOCK:
-      return supports_element_fields();
-    case NODESET:
-      return supports_nodelist_fields();
-
-    case SIDESET: // fall through
-    case SIDEBLOCK:
-      return supports_side_fields();
-    case COMMSET:
-      return false;
-    default:
-      return false;
-    }
-  }
-
   const NodeBlockContainer&  Region::get_node_blocks() const
   { return nodeBlocks; }
+
+  const EdgeBlockContainer& Region::get_edge_blocks() const
+  { return edgeBlocks; }
+
+  const FaceBlockContainer& Region::get_face_blocks() const
+  { return faceBlocks; }
 
   const ElementBlockContainer& Region::get_element_blocks() const
   { return elementBlocks; }
@@ -652,6 +838,15 @@ namespace Ioss {
 
   const NodeSetContainer&  Region::get_nodesets() const
   { return nodeSets; }
+
+  const EdgeSetContainer&  Region::get_edgesets() const
+  { return edgeSets; }
+
+  const FaceSetContainer&  Region::get_facesets() const
+  { return faceSets; }
+
+  const ElementSetContainer&  Region::get_elementsets() const
+  { return elementSets; }
 
   const CommSetContainer&  Region::get_commsets() const
   { return commSets; }
@@ -735,10 +930,20 @@ namespace Ioss {
       return get_node_block(my_name);
     } else if (io_type == ELEMENTBLOCK) {
       return get_element_block(my_name);
+    } else if (io_type == FACEBLOCK) {
+      return get_face_block(my_name);
+    } else if (io_type == EDGEBLOCK) {
+      return get_edge_block(my_name);
     } else if (io_type == SIDESET) {
       return get_sideset(my_name);
     } else if (io_type == NODESET) {
       return get_nodeset(my_name);
+    } else if (io_type == EDGESET) {
+      return get_edgeset(my_name);
+    } else if (io_type == FACESET) {
+      return get_faceset(my_name);
+    } else if (io_type == ELEMENTSET) {
+      return get_elementset(my_name);
     } else if (io_type == COMMSET) {
       return get_commset(my_name);
     } else if (io_type == SIDEBLOCK) {
@@ -754,9 +959,19 @@ namespace Ioss {
     if (entity != NULL) { return entity;}
     entity = get_element_block(my_name);
     if (entity != NULL) { return entity;}
+    entity = get_face_block(my_name);
+    if (entity != NULL) { return entity;}
+    entity = get_edge_block(my_name);
+    if (entity != NULL) { return entity;}
     entity = get_sideset(my_name);
     if (entity != NULL) { return entity;}
     entity = get_nodeset(my_name);
+    if (entity != NULL) { return entity;}
+    entity = get_edgeset(my_name);
+    if (entity != NULL) { return entity;}
+    entity = get_faceset(my_name);
+    if (entity != NULL) { return entity;}
+    entity = get_elementset(my_name);
     if (entity != NULL) { return entity;}
     entity = get_commset(my_name);
     if (entity != NULL) { return entity;}
@@ -772,6 +987,36 @@ namespace Ioss {
     NodeBlock *ge = NULL;
     NodeBlockContainer::const_iterator i = nodeBlocks.begin();
     while (i != nodeBlocks.end()) {
+      if ((*i)->name() == db_name) {
+	ge = *i;
+	break;
+      }
+      ++i;
+    }
+    return ge;
+  }
+
+  EdgeBlock*    Region::get_edge_block(const std::string& my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    EdgeBlock *ge = NULL;
+    EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
+    while (i != edgeBlocks.end()) {
+      if ((*i)->name() == db_name) {
+	ge = *i;
+	break;
+      }
+      ++i;
+    }
+    return ge;
+  }
+
+  FaceBlock*    Region::get_face_block(const std::string& my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    FaceBlock *ge = NULL;
+    FaceBlockContainer::const_iterator i = faceBlocks.begin();
+    while (i != faceBlocks.end()) {
       if ((*i)->name() == db_name) {
 	ge = *i;
 	break;
@@ -839,6 +1084,51 @@ namespace Ioss {
     return ge;
   }
 
+  EdgeSet* Region::get_edgeset(const std::string& my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    EdgeSet *ge = NULL;
+    EdgeSetContainer::const_iterator i = edgeSets.begin();
+    while (i != edgeSets.end()) {
+      if ((*i)->name() == db_name) {
+	ge = *i;
+	break;
+      }
+      ++i;
+    }
+    return ge;
+  }
+
+  FaceSet* Region::get_faceset(const std::string& my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    FaceSet *ge = NULL;
+    FaceSetContainer::const_iterator i = faceSets.begin();
+    while (i != faceSets.end()) {
+      if ((*i)->name() == db_name) {
+	ge = *i;
+	break;
+      }
+      ++i;
+    }
+    return ge;
+  }
+
+  ElementSet* Region::get_elementset(const std::string& my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    ElementSet *ge = NULL;
+    ElementSetContainer::const_iterator i = elementSets.begin();
+    while (i != elementSets.end()) {
+      if ((*i)->name() == db_name) {
+	ge = *i;
+	break;
+      }
+      ++i;
+    }
+    return ge;
+  }
+
   CommSet* Region::get_commset(const std::string& my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -864,6 +1154,12 @@ namespace Ioss {
     if ((io_type & NODEBLOCK) && get_node_block(my_name) != NULL) {
       if (my_type != NULL) *my_type = "NODE_BLOCK";
       return true;
+    } else if ((io_type & EDGEBLOCK) && get_edge_block(my_name) != NULL) {
+      if (my_type != NULL) *my_type = "EDGE_BLOCK";
+      return true;
+    } else if ((io_type & FACEBLOCK) && get_face_block(my_name) != NULL) {
+      if (my_type != NULL) *my_type = "FACE_BLOCK";
+      return true;
     } else if ((io_type & ELEMENTBLOCK) && get_element_block(my_name) != NULL) {
       if (my_type != NULL) *my_type = "ELEMENT_BLOCK";
       return true;
@@ -872,6 +1168,15 @@ namespace Ioss {
       return true;
     } else if ((io_type & NODESET) && get_nodeset(my_name) != NULL) {
       if (my_type != NULL) *my_type = "NODESET";
+      return true;
+    } else if ((io_type & EDGESET) && get_edgeset(my_name) != NULL) {
+      if (my_type != NULL) *my_type = "EDGESET";
+      return true;
+    } else if ((io_type & FACESET) && get_faceset(my_name) != NULL) {
+      if (my_type != NULL) *my_type = "FACESET";
+      return true;
+    } else if ((io_type & ELEMENTSET) && get_elementset(my_name) != NULL) {
+      if (my_type != NULL) *my_type = "ELEMENTSET";
       return true;
     } else if ((io_type & COMMSET) && get_commset(my_name) != NULL) {
       if (my_type != NULL) *my_type = "COMMSET";
@@ -905,6 +1210,12 @@ namespace Ioss {
     if (my_name == "node_block_count")
       return Property(my_name, (int)nodeBlocks.size());
 
+    if (my_name == "edge_block_count")
+      return Property(my_name, (int)edgeBlocks.size());
+
+    if (my_name == "face_block_count")
+      return Property(my_name, (int)faceBlocks.size());
+
     if (my_name == "element_block_count")
       return Property(my_name, (int)elementBlocks.size());
 
@@ -913,6 +1224,15 @@ namespace Ioss {
 
     if (my_name == "node_set_count")
       return Property(my_name, (int)nodeSets.size());
+
+    if (my_name == "edge_set_count")
+      return Property(my_name, (int)edgeSets.size());
+
+    if (my_name == "face_set_count")
+      return Property(my_name, (int)faceSets.size());
+
+    if (my_name == "element_set_count")
+      return Property(my_name, (int)elementSets.size());
 
     if (my_name == "comm_set_count")
       return Property(my_name, (int)commSets.size());
@@ -929,6 +1249,24 @@ namespace Ioss {
       int count = 0;
       ElementBlockContainer::const_iterator i = elementBlocks.begin();
       while (i != elementBlocks.end()) {
+	count += (*i++)->get_property("entity_count").get_int();
+      }
+      return Property(my_name, count);
+    }
+
+    if (my_name == "face_count") {
+      int count = 0;
+      FaceBlockContainer::const_iterator i = faceBlocks.begin();
+      while (i != faceBlocks.end()) {
+	count += (*i++)->get_property("entity_count").get_int();
+      }
+      return Property(my_name, count);
+    }
+
+    if (my_name == "edge_count") {
+      int count = 0;
+      EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
+      while (i != edgeBlocks.end()) {
 	count += (*i++)->get_property("entity_count").get_int();
       }
       return Property(my_name, count);
@@ -1062,18 +1400,18 @@ namespace Ioss {
 	    }
 	  }
 
-	  // See if there is a 'original_element_type' property...
-	  if (ge->property_exists(orig_elem_str())) {
-	    std::string oes = ge->get_property(orig_elem_str()).get_string();
+	  // See if there is a 'original_topology_type' property...
+	  if (ge->property_exists(orig_topo_str())) {
+	    std::string oes = ge->get_property(orig_topo_str()).get_string();
 
 	    // Set the new property (erase if already exists; original file trumps...)
-	    if (this_ge->property_exists(orig_elem_str())) {
-	      this_ge->property_erase(orig_elem_str());
+	    if (this_ge->property_exists(orig_topo_str())) {
+	      this_ge->property_erase(orig_topo_str());
 	    }
-	    this_ge->property_add(Property(orig_elem_str(), oes));
+	    this_ge->property_add(Property(orig_topo_str(), oes));
 	  }
 
-	  // Specific to element blocks. Transfer the "original_block_order" property.
+	  // Specific to entity blocks. Transfer the "original_block_order" property.
 	  if (ge->property_exists(orig_block_order())) {
 	    int offset = ge->get_property(orig_block_order()).get_int();
 	    if (this_ge->property_exists(orig_block_order())) {

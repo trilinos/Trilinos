@@ -33,7 +33,7 @@ float   **eweights;		/* edge weight list data */
     int       vtx;		/* vertex in graph */
     int       line_num;		/* line number in input file */
     int       sum_edges;	/* total number of edges read so far */
-    int       option;		/* input option */
+    int       option=0;		/* input option */
     int       using_ewgts;	/* are edge weights in input file? */
     int       using_vwgts;	/* are vertex weights in input file? */
     int       vtxnums;		/* are vertex numbers in input file? */

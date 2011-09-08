@@ -60,8 +60,8 @@
  * \param   exoid                   exodus file id
  * \param   set_type                set type
  * \param   set_id                  set id
- * \param  *set_entry_list          array of entries in set
- * \param  *set_extra_list          array of extras in set
+ * \param  *set_entry_list          array of entries in set. Set to NULL to not write.
+ * \param  *set_extra_list          array of extras in set. Set to NULL to not write.
  */
 
 int ex_put_set (int   exoid,
@@ -151,30 +151,26 @@ int ex_put_set (int   exoid,
   }
 
   /* write out the entry list and extra list arrays */
+  if (set_entry_list != NULL) {
 
-  status = nc_put_var_int(exoid, entry_list_id, set_entry_list);
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to store entry list for %s %d in file id %d",
-	    ex_name_of_object(set_type), set_id,exoid);
-    ex_err("ex_put_set",errmsg,exerrval);
-    return (EX_FATAL);
+    status = nc_put_var_int(exoid, entry_list_id, set_entry_list);
+    
+    if (status != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to store entry list for %s %d in file id %d",
+	      ex_name_of_object(set_type), set_id,exoid);
+      ex_err("ex_put_set",errmsg,exerrval);
+      return (EX_FATAL);
+    }
   }
 
 
   /* only do for edge, face and side sets */
-  if (extraptr) {
-    if ( set_extra_list == NULL ) {
-      sprintf(errmsg, "Error: extra list NULL for %s %d in file id %d",
-	      ex_name_of_object(set_type), set_id, exoid );
-      ex_err("ex_put_set",errmsg,EX_BADPARAM);
-      return (EX_FATAL);
-    }
-
+  if (extraptr && set_extra_list != NULL ) {
+    
     status = nc_put_var_int(exoid, extra_list_id, set_extra_list);
-
+    
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,

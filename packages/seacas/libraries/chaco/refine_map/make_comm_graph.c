@@ -21,16 +21,16 @@ int       nsets_tot;		/* total number of sets */
     float     ewgt;		/* edge weight in graph */
     int     **edges_list = NULL;	/* lists of edges */
     int     **ewgts_list = NULL;	/* lists of edge weights */
-    int      *edges;		/* edges in communication graph */
-    int      *ewgts;		/* edge weights in communication graph */
+    int      *edges = NULL;		/* edges in communication graph */
+    int      *ewgts = NULL;		/* edge weights in communication graph */
     float    *float_ewgts = NULL;	/* edge weights in floating point */
     int      *adj_sets = NULL;	/* weights connecting sets */
     int      *order = NULL;	/* ordering of vertices by set */
     int      *sizes = NULL;	/* sizes of different sets */
     int      *start = NULL;	/* pointers into adjacency data */
     int      *adjacency = NULL;	/* array with all the edge info */
-    int      *eptr;		/* loops through edges in graph */
-    int      *ewptr;		/* loop through edge weights */
+    int      *eptr = NULL;		/* loops through edges in graph */
+    int      *ewptr = NULL;		/* loop through edge weights */
     int       set, set2;	/* sets two vertices belong to */
     int       vertex;		/* vertex in graph */
     int       ncomm_edges;	/* number of edges in communication graph */

@@ -20,7 +20,7 @@ float    *term_wgts[];		/* terminal weights for each vertex */
 {
     double    term_wgt;		/* terminal weight */
     float     edge_wgt;		/* weight of an edge */
-    int       dist0, dist1;	/* distance from set to set0 and set1 */
+    int       dist0=0, dist1=0;	/* distance from set to set0 and set1 */
     int       set;		/* set neighbor vtx belongs to */
     int       vtx;		/* vertex number */
     int       neighbor;		/* neighboring vertex number */

@@ -63,7 +63,7 @@ namespace {
     }
   }
 
-  std::ostream *open_stream(const std::string &filename) {
+  std::ostream *open_stream(const std::string &filename, bool *needs_delete) {
     // A little wierdness and ambiguity is possible here.  We want to
     // minimize the number of commands, but maximize the
     // functionality. For example, we want to be able to specify output
@@ -77,6 +77,7 @@ namespace {
     // we can devise a syntax as: 'FILE:cout' or do a './cout'
 
     std::ostream *log_stream = NULL;
+    *needs_delete = false;
     if (filename == "cout" || filename == "stdout") {
       log_stream = &std::cout;
     } else if (filename == "cerr" || filename == "stderr") {
@@ -92,6 +93,7 @@ namespace {
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
       log_stream = new std::ofstream(filename.c_str());
+      *needs_delete = true;
     }
     return log_stream;
   }
@@ -122,13 +124,16 @@ namespace Iohb {
     Ioss::DatabaseIO(region, filename, db_usage, communicator),
     logStream(NULL), layout_(NULL), legend_(NULL),
     tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), initialized_(false),
-    fileFormat(DEFAULT)
+    streamNeedsDelete(false), fileFormat(DEFAULT)
   { }
 
   DatabaseIO::~DatabaseIO()
   {
     delete layout_;
     delete legend_;
+    if (streamNeedsDelete && logStream) {
+      delete logStream;
+    }
   }
 
   void DatabaseIO::initialize(const Ioss::Region *region) const
@@ -146,7 +151,8 @@ namespace Iohb {
       }
 
       if (util().parallel_rank() == 0) {
-	new_this->logStream = open_stream(get_filename().c_str());
+	new_this->logStream = open_stream(get_filename().c_str(),
+					  &(new_this->streamNeedsDelete));
       } else {
 	// All processors except processor 0
 	new_this->logStream = NULL;
@@ -249,23 +255,48 @@ namespace Iohb {
     return -1;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::get_field_internal(const Ioss::SideBlock* /* eb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
   int DatabaseIO::get_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
 
   int DatabaseIO::get_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::SideBlock* /* eb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -352,7 +383,12 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
+  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -368,6 +404,26 @@ namespace Iohb {
   {
     return -1;
   }
+  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
   int DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -379,4 +435,9 @@ namespace Iohb {
     return -1;
   }
 
+  unsigned DatabaseIO::entity_field_support() const
+  {
+    return Ioss::REGION;
+  }
 }
+

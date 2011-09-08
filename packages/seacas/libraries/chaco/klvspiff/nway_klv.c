@@ -62,23 +62,23 @@ double   *weightsum;		/* sum of vweights in each set (in and out) */
     double    time;		/* timing parameter */
     double    delta0;		/* largest negative deviation from goal size */
     double    delta1;		/* largest negative deviation from goal size */
-    double    left_imbalance;	/* imbalance if I move to the left */
+    double    left_imbalance=0.0;/* imbalance if I move to the left */
     double    right_imbalance;	/* imbalance if I move to the right */
     double    balance_val;	/* how imbalanced is it */
     double    balance_best;	/* best balance yet if trying hard */
     int       flag;		/* condition indicator */
-    int       to, from;		/* sets moving into / out of */
+    int       to=-1, from;		/* sets moving into / out of */
     int       rtop, ltop;	/* top of each set of buckets */
     int      *to_top;		/* ptr to top of set moving to */
     int       lvtx, rvtx;	/* next vertex to move left/right */
     int       lweight, rweight;	/* weights of moving vertices */
-    int       weightfrom;	/* weight moving out of a set */
+    int       weightfrom=0;	/* weight moving out of a set */
     int       list_length;	/* how long is list of vertices to bucketsort? */
     int       balanced;		/* is partition balanced? */
     int       temp_balanced;	/* is intermediate partition balanced? */
     int       ever_balanced;	/* has any partition been balanced? */
-    int       bestvtx;		/* best vertex to move */
-    int       bestval;		/* best change in value for a vtx move */
+    int       bestvtx=-1;	/* best vertex to move */
+    int       bestval=-1;	/* best change in value for a vtx move */
     int       vweight;		/* weight of best vertex */
     int       gtotal;		/* sum of changes from moving */
     int       improved;		/* total improvement from KL */

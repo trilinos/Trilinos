@@ -232,16 +232,21 @@ int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
   size_t i;
   int status;
 
-  /* read the names */
+  /* Query size of names on file
+   * Use the smaller of the size on file or ex_max_name_length
+   */
+  int db_name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
+  int name_size = db_name_size < ex_max_name_length ? db_name_size : ex_max_name_length;
+  
   for (i=0; i<num_entity; i++) {
-    status = ex_get_name_internal(exoid, varid, i, names[i], obj_type, routine);
+    status = ex_get_name_internal(exoid, varid, i, names[i], name_size, obj_type, routine);
     if (status != NC_NOERR)
       return status;
   }
   return EX_NOERR;
 }
 
-int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
+int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
 			 ex_entity_type obj_type, const char *routine)
 {
   size_t start[2], count[2];
@@ -250,7 +255,7 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
 
   /* read the name */
   start[0] = index;  count[0] = 1;
-  start[1] = 0;      count[1] = ex_max_name_length+1;
+  start[1] = 0;      count[1] = name_size+1;
 
   status = nc_get_vara_text(exoid, varid, start, count, name);
   if (status != NC_NOERR) {

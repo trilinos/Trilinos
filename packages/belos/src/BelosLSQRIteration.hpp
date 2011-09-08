@@ -37,6 +37,7 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
+//@HEADER
 
 #ifndef BELOS_LSQR_ITERATION_HPP
 #define BELOS_LSQR_ITERATION_HPP

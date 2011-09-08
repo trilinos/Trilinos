@@ -42,10 +42,9 @@ Ioss::CommSet::CommSet(const Ioss::DatabaseIO *io_database,
 		       const std::string& my_name,
 		       const std::string& entity_type,
 		       size_t entity_count)
-  : Ioss::GroupingEntity(io_database, my_name)
+  : Ioss::GroupingEntity(io_database, my_name, entity_count)
 {
   assert(entity_type == "node" || entity_type == "side");
-  properties.add(Ioss::Property("entity_count", static_cast<int>(entity_count)));
   properties.add(Ioss::Property("entity_type",  entity_type));
 
   // Field contains a pair of type [entity_id, shared_cpu]

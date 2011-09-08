@@ -1,0 +1,703 @@
+\chapter{SITE SUPPLEMENTS} \label{sec:site}
+This appendix contains a supplement for each site at which SUPES is
+currently installed.  Changes to the current systems and the addition of new
+sites will require that this appendix be amended; the information contained
+here should be considered just a starting point.
+
+All system independent source code for SUPES is stored on the SNLA Central
+File System (CFS) with those files having a file type of ``.STX''
+being stored in Standard Text format.
+The SNLA installation of SUPES contains both the previous
+and new versions.
+This is done for two reasons,
+first, to provide the necessary compatibility during an interim
+migration period,
+and,
+second,
+to assure that current users of Cray/CTSS continue to have a point of reference
+for the SUPES library.
+
+The previous version is stored under the root directory ``/SUPES''.
+The table below documents the files stored in this directory. 
+
+\begin{tabular}{|ll|} \hline \hline
+\multicolumn{1}{|c}{Node} & \multicolumn{1}{c|}{Contents} \\ \hline
+FRE\_FLD.STX   &  Free field reader source code\\
+MEM\_MGR.STX   &  Memory manager source code\\
+EXT\_LIB.STX   &  Skeleton FORTRAN extension library source code\\
+FRR\_TEST.STX  &  Free field reader test program source code\\
+MEM\_TEST.STX  &  Memory manager test program source code\\
+EXT\_TEST.STX  &  FORTRAN extension library test program source code\\ \hline
+\hline
+\end{tabular}
+
+The current version is stored under the CFS root directory
+``/SUPES2\_1'' in the following files (the last two are {\em not} in Standard Text
+Format):
+
+\begin{tabular}{|ll|} \hline \hline
+\multicolumn{1}{|c}{Node} & \multicolumn{1}{c|}{Contents} \\ \hline
+FRE\_FLD.STX   &  Free field reader source code\\
+MEM\_MGR.STX   &  Memory manager source code\\
+EXT\_LIB.STX   &  Portable C extension library source code\\
+FRR\_TEST.STX  &  Free field reader test program source code\\
+MEM\_TEST.STX  &  Memory manager test program source code\\
+EXT\_TEST.STX  &  Extension library test program source code\\
+SUPES2\_1.BCK  &  The version 2.1 distribution in VMS BACKUP format\footnotemark%
+\addtocounter{footnote}{-1}\\
+SUPES2\_1.TAR  &  The version 2.1 distribution in UN*X TAR format\footnotemark%
+\\ \hline
+\hline
+\end{tabular}
+\footnotetext{Note that these files are {\em not\/}
+stored in Standard Text}
+The current extension library has been ported
+to run on the following machine/operating system combinations:
+\begin{enumerate}
+\item Sun 3 and Sun 4 running SunOS operating system version 4.0.3 and later,
+
+\item VAXen running VMS version 4.5 and later,
+
+\item Cray X/MP and Y/MP running UNICOS version 5.0 and later, and
+
+\item Alliant F/X 8 running Concentrix 5.0.0.
+\end{enumerate}
+A notable exception to the above list is the Cray using the CTSS operating system.
+This configuration still requires the FORTRAN source code for the extension
+library that was provided in previous
+implementations of SUPES.
+This code continues to be included in the current standard SUPES distribution,
+though a build procedure designed for this system is not.
+
+These files may be retrieved via the MASS utility and converted to Native
+Text Format via the NTEXT utility.  Sandia personnel may consult the
+Computer Consulting and Training Division (2614) for details on these
+utilities.
+
+\section{Site Supplement For 1500 VAX Cluster (VAX/VMS 5.1)}
+
+\subsection{Linking}
+The SUPES package is accessed on the 1500 VAX CLUSTER (SAV01, SAV03,
+SAV07 and SAV08) as an object library located via either of two system logical
+names.
+Which one that the user uses depends on which version that he or she
+wants to use.
+The older
+SUPES routines are linked to an application program as follows:
+
+\begin{verbatim}
+$ LINK your_program,SUPES/LIB,etc.
+\end{verbatim}
+While the newer version can be accessed at link time via:
+\begin{verbatim}
+$ LINK your_program,SUPES2_1/LIB,etc.
+\end{verbatim}
+The last of the above commands assumes that the SUPES2\_1 library has
+been installed by someone using the \verb+VMSINSTALL.COM+
+command procedure.
+If that is not the case,
+then the user will be informed by
+the \verb+LINK+er that there is an abundance of unsatisfied
+external references that have been made.
+To avoid this scenario,
+one should be sure to provide the \verb+VAX C+ Run Time Library
+to the \verb+LINK+ command.
+One way to do this appropriately is to modify the above
+link command as:
+\begin{verbatim}
+$ LINK your_program,SUPES2_1/LIB,SYS$LIBRARY:VAXCRTL/LIB
+\end{verbatim}
+The alternative is to define the logical \verb+LNK$LIBRARY+
+to be \verb+SYS$LIBRARY:VAXCRTL+.
+For systems which already have this logical assigned,
+define the logical \verb+LNK$LIBRARY_n+,
+where n is the smallest integer for which the corresponding
+logical has not been assigned.
+(Hints about how to go about this are provided in the
+file \verb+[.BUILD]VMSINSTALL.COM+.)
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME:}
+Both versions of SUPES use this extension library call in the
+same manner.
+A file name is connected to a unit number via a logical name of the form
+FORnnn,  where ``nnn'' is a three digit integer indicating the FORTRAN unit
+number. For example:
+\begin{verbatim}
+
+$ ASSIGN CARDS.INP FOR007
+
+\end{verbatim}
+causes the following FORTRAN statements to open ``CARDS.INP'' on unit 7.
+\begin{verbatim}
+CALL EXNAME( 7, NAME, LN )
+OPEN( 7, FILE=NAME(1:LN) )
+\end{verbatim}
+
+One caveat to note regarding the above sequence is that if the \verb+ASSIGN+
+statement is not performed,
+the user program will abort with an error in the \verb+OPEN+ statement.
+A possible,
+or preferred code sequence is:
+\begin{verbatim}
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN      ! EXNAME returns a zero for LN if no ASSIGN
+                          ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                      ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+\end{verbatim}
+where the system default mentioned in the above FORTRAN comment
+is a file named ``\verb+FOR007.DAT+'' in the current
+default directory.
+
+EXNAME looks for a DCL symbol of the form EXTnn, where ``nn'' is a two digit
+integer which defines a symbol number.  For example:
+\begin{verbatim}
+
+$ EXT01 = "HELLO"
+
+\end{verbatim}
+will cause the following call to return NAME=``HELLO'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+
+\end{verbatim}
+
+\subsection{Interface to EXREAD} 
+EXREAD will prompt to,
+and read from,
+SYS\$INPUT.
+It will automatically echo to SYS\$OUTPUT if that device is a terminal.
+However,
+if a program is run in a context where SYS\$OUTPUT is {\em not} a
+terminal,
+such as from within a command procedure,
+the input is not echoed---the user will have to control this
+himself with an appropriate call parameter to the routine FREFLD.
+EXREAD supports all the VMS command line editing features (e.g., CTRL/U,
+$<$up-arrow$>$, etc.).  An end-of-file from the terminal keyboard is
+indicated by CTRL/Z. 
+
+\subsection{Additional Comments Regarding SUPES2\_1}
+When attempting to redefine the logical SYS\$OUTPUT,
+the user should note that under VMS,
+the mixed language environment has a minor side effect:
+two versions of the output file are created by default.
+To avoid this scenario,
+he or she,
+will have to explicitly open the file.
+The following code segment demonstrates the required command sequence:
+\begin{verbatim}
+
+$ OPEN/WRITE SYSOUT OUTPUT.DAT
+$ ASSIGN/USER_MODE SYSOUT SYS$OUTPUT
+$ RUN PROG
+$ CLOSE SYSOUT
+
+\end{verbatim}
+
+Finally,
+the user should be aware that his or her program is being
+linked with the VAX C Run-time Library.
+Consequently,
+certain function,
+subroutine
+or more generally,
+external symbol names\footnote{This does {\em not}
+include FORTRAN keywords, for example, \verb+READ+ and
+\verb+WRITE+ statements.}
+might be in conflict with some of these
+run time library functions.
+These include the names:
+\begin{enumerate}
+
+\item \verb+SPRINTF+
+
+\item \verb+GETENV+
+
+\item \verb+READ+
+
+\item \verb+WRITE+
+
+\item \verb+STRNCPY+
+
+\item \verb+STRCPY+
+
+\item \verb+STRLEN+
+
+\item \verb+SBRK+
+
+\item \verb+BRK+
+
+\item \verb+ISATTY+
+
+\item \verb+PERROR+
+
+\item \verb+ISASCII+
+
+\item \verb+ISCNTRL+
+
+\item \verb+ISALPHA+
+
+\item \verb+ISLOWER+
+
+\item \verb+TOUPPER+
+\end{enumerate}
+The remedy is to redefine any user-supplied conflict
+when warned by the linker of multiply defined symbol names.
+
+\subsection{Source Code}
+The source code for the old FORTRAN extension library for the VAX/VMS operating
+system is stored in the SNLA Central File System under node
+``/SUPES/VMS/EXT\_LIB.STX'' in SNLA Standard Text format.
+Conversely,
+the new version is in
+``/SUPES2\_1/EXT\_LIB.STX''.
+
+\cleardoublepage
+
+\section{Site Supplement for SNLA CRAY-1/S (COS 1.11)}
+
+\subsection{Linking}
+The newer version of SUPES is not available for this system.
+However,
+the older package can still be accessed on the SNLA CRAY-1/S
+using COS 1.11 as an object library.
+The permanent dataset containing SUPES is accessed as follows:
+\begin{verbatim}
+
+ACCESS,DN=SUPES,ID=ACCLIB.
+
+\end{verbatim}
+SUPES routines are then linked to an application program as follows:
+
+\begin{verbatim}
+
+LDR,other_options,LIB=SUPES:other_libraries.
+
+\end{verbatim}
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via an alias of the form FTnn,
+where ``nn'' is a two digit integer indicating the FORTRAN unit number. For
+example:
+\begin{verbatim}
+
+ASSIGN,DN=CARDS,A=FT07.
+
+\end{verbatim}
+causes the following FORTRAN statements to open 'CARDS' on unit 7.
+\begin{verbatim}
+          CALL EXNAME( 7, NAME, LN )
+          OPEN( 7, FILE=NAME(1:LN) )
+\end{verbatim}
+Again,
+the more suitable code sequence is
+\begin{verbatim}
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN       ! EXNAME returns a zero for LN if no ASSIGN
+                           ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                       ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+\end{verbatim}
+
+If no file has been assigned the alias for a particular unit, EXNAME will
+return a file name of the form TAPEnn, where ``nn'' is a one (if less than
+ten) or two digit integer indicating the FORTRAN unit number---this is also the
+system default.
+
+EXNAME looks for a JCL symbol of the form Jn, where ``n'' is a one digit
+integer which defines a symbol number.  For example:
+\begin{verbatim}
+
+SET(J1='HELLO')
+
+\end{verbatim}
+will cause the following call to return NAME=``HELLO'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from \$IN and automatically echo to \$OUT.  COS at SNLA has
+no interactive capability.
+
+\subsection{Known Problems}
+The CFT 1.11 support routines contain a bug which may cause FREFLD to
+function improperly.  FREFLD was modified for this installation such that
+application programs which call FREFLD should not notice any problem.
+
+The problem is that the CFT 1.11 support routines do not return an error in
+the IOSTAT argument for invalid real formats; a zero value and a zero
+(success) status are returned in such a case.  The symptom observed from
+FREFLD is that KVALUE will indicate that a valid REAL value was specified
+for a data field which contains an invalid REAL format; the value returned
+in RVALUE for this field will be set correctly to zero.  To work around this
+problem FREFLD was modified to downgrade KVALUE from one (valid REAL value)
+to zero (invalid REAL value) under the following conditions:
+\begin{enumerate}
+\item The field does not contain a valid INTEGER value.
+\item The REAL value translated for the field is zero.
+\item The field does not begin with '0.' nor '.0'.
+\end{enumerate}
+
+\subsection{Source Code}
+The source code for the FORTRAN extension library for the COS 1.11 operating
+system is stored in the SNLA Central File System under node
+``/SUPES/COS/EXT\_LIB.STX''
+in SNLA Standard Text format.  The source code for
+the modified version of FREFLD described above is stored under node
+``/SUPES/COS/FRE\_BUG.STX'' in SNLA Standard Text format.
+
+\cleardoublepage
+
+\section{Site Supplement for SNLA CRAY-1/S (UNICOS)}
+
+\subsection{Linking}
+The new version of SUPES is the only one that is available for this system.
+It resides in the directory \verb+/usr/local/lib+
+with the file name \verb+libsupes.a+
+
+In what follows,
+an example of how the SUPES routines can be linked to an application program
+is given:
+\begin{verbatim}
+
+% cf77 -o your-executable your-source.f -lsupes.
+\end{verbatim}
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via an environment
+variable of the form FOR0nn,
+where ``nn'' is a two digit integer indicating the FORTRAN unit number. For
+example, if the user is currently running under the shell program
+\verb+/bin/csh+, the required sequence is:
+\begin{verbatim}
+
+% setenv FOR007 cards.dat
+
+\end{verbatim}
+This causes the following FORTRAN statements to open '\verb+cards.dat+' on unit 7.
+\begin{verbatim}
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN       ! EXNAME returns a zero for LN if no ASSIGN
+                           ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                       ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+\end{verbatim}
+
+From the Bourne Shell,
+\verb+/bin/sh+,
+the following sequence is required:
+\begin{verbatim}
+
+$ FOR007=cards.dat
+$ export TERM
+
+\end{verbatim}
+If no file has been assigned,
+a system default file name of the form \verb+fort.nn+, where ``\verb+nn+''
+is a one (if less than
+ten) or two digit integer indicating the FORTRAN unit number that will be written.
+
+Similarly,
+EXNAME looks for an environment variable of the form
+EXTnn.
+So that
+\begin{verbatim}
+
+% setenv EXT05 hello
+
+\end{verbatim}
+will cause the following call to return NAME=``hello'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from \verb+stdin+ and automatically echo to \verb+stdout+.
+
+\subsection{Known Problems}
+The Cray running UNICOS appears to have some compiler specific problems
+when linking programs of differing levels of optimization.
+To alleviate this situation,
+two versions of the SUPES library are maintained in \verb+/usr/local/lib+,
+\verb+libsupes.a+ and
+\verb+libsupesnopt.a+.
+The user will be responsible for linking to the appropriate library.
+
+\subsection{Source Code}
+The source code for the extension library for the UNICOS operating
+system is stored in the SNLA Central File System under node
+``/SUPES2\_1/EXT\_LIB.STX''
+in SNLA Standard Text format.
+
+\cleardoublepage
+
+\section{Site Supplement For SNLA CRAY X-MP/24 (CTSS/CFTLIB 1.11 or 1.14)}
+
+\subsection{Linking}
+The old SUPES package is all that is currently available on this system.
+It is accessed on the SNLA CRAY X-MP/24 as an object library
+which is stored in a public library file.  Two versions of this object
+library exists: one for the CFT 1.11 compiler, and one for the CFT 1.14
+compiler.  The CFT 1.11 object library is obtained interactively as follows:
+\begin{verbatim}
+lib acclib
+ok. x supes11
+ok. end
+switch supes11 supes
+\end{verbatim}
+
+Either compiler version can also be obtained within a CCL procedure.  For
+example, the CFT 1.14 object library can be extracted by:
+\begin{verbatim}
+lib acclib
+-x supes14
+-end
+switch supes14 supes
+\end{verbatim}
+
+The SUPES routines are then linked to an application program as follows:
+\begin{verbatim}
+
+ldr other_options,lib=(supes,other_libraries)
+
+\end{verbatim}
+Note that CFTLIB is a dependent library of SUPES, so there is no need to
+specify cftlib in the above lib list.
+
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via a name of the form tapenn,
+where ``nn'' is a one (if less than ten) or two digit integer indicating the
+FORTRAN unit number. This name can be replaced via the execution line as
+shown in the following example:
+
+\verb+myprog tape7=cards+
+
+The above command would cause the following FORTRAN statements within
+``myprog'' to open ``cards'' on unit 7:
+\begin{verbatim}
+CALL EXNAME( 7, NAME, LN )
+OPEN( 7, FILE=NAME(1:LN) )
+\end{verbatim}
+
+EXNAME looks for a symbol on the execution line of the form extn, where
+``n'' is a one digit integer which defines a symbol number.  For example: 
+\begin{verbatim}
+
+myprog ext1=HELLO
+
+\end{verbatim}
+will cause the following call within 'myprog' to return NAME=``HELLO'' and
+LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from ``input'' and automatically echo to ``output''.  By
+default, EXREAD connects both ``input'' and ``output'' to ``tty''.  CTSS defines
+``tty'' as the next higher level controller, which is normally the terminal
+keyboard / screen for an interactive job, or the JCI / log files for a batch
+job.  An end-of-file from the terminal keyboard is indicated by a null
+response (just a carriage return).
+
+The default connections for either ``input'' or ``output'' can be overridden on
+the execution line as follows:
+
+\verb+myprog input=deck output=list+
+
+
+\subsection{Known Problems}
+Contrary to the ANSI FORTRAN standard, CTSS does not automatically open the
+standard input and output devices.  This causes reading from or writing to
+UNIT=\last to fail unless you add some CTSS-specific code, such as a PROGRAM
+statement argument list.  EXNAME and EXPARM, as well as EXREAD, explicitly
+open the standard input and output devices according to the rules described
+above.  This is an advantage to the applications programmer since it avoids
+nonstandard code, but it places the following restrictions on any program
+which calls EXNAME, EXPARM, or EXREAD under CTSS:
+\begin{enumerate}
+\item Do not use a PROGRAM statement argument list.
+
+\item Do not read from nor write to UNIT=* before a call to either EXNAME,
+        EXPARM, or EXREAD.
+\end{enumerate}
+
+\subsection{Source Code}
+The source code for the FORTRAN extension library for the CTSS/CFTLIB/SNLA
+operating system is stored in the SNLA Central File System under nodes
+``/SUPES/VMS/EXT\_111.STX'' and ``/SUPES/VMS/EXT\_114.STX'' in SNLA Standard Text
+format for the CFT 1.11 and 1.14 compilers, respectively.
+
+\section{Site Supplement for SNLA Alliant FX/8 (Concentrix 5.0.0)}
+
+\subsection{Linking}
+The new version of SUPES is the only one that is available for this system.
+It resides in the directory \verb+/usr/local/lib+
+with the file name \verb+libsupes.a+
+
+In what follows,
+an example of how the SUPES routines can be linked to an application program
+is given:
+\begin{verbatim}
+
+% fortran -o your-executable your-source.f -lsupes.
+\end{verbatim}
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via an environment
+variable of the form FOR0nn,
+where ``nn'' is a two digit integer indicating the FORTRAN unit number. For
+example, if the user is currently running under the shell program
+\verb+/bin/csh+, the required sequence is:
+\begin{verbatim}
+
+% setenv FOR007 cards.dat
+
+\end{verbatim}
+This causes the following FORTRAN statements to open '\verb+cards.dat+' on unit 7.
+\begin{verbatim}
+
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN             ! EXNAME returns a zero for LN if no ASSIGN
+                                 ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                             ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+
+\end{verbatim}
+
+From the Bourne Shell,
+\verb+/bin/sh+,
+the following sequence is required:
+\begin{verbatim}
+
+$ FOR007=cards.dat
+$ export TERM
+
+\end{verbatim}
+
+If no file has been assigned,
+a system default file name of the form \verb+fort.nn+, where ``\verb+nn+''
+is a one (if less than
+ten) or two digit integer indicating the FORTRAN unit number that will be written.
+
+Similarly,
+EXNAME looks for an environment variable of the form
+EXTnn.
+So that
+\begin{verbatim}
+
+% setenv EXT05 hello
+
+\end{verbatim}
+will cause the following call to return NAME=``hello'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from \verb+stdin+ and automatically echo to \verb+stdout+.
+
+\subsection{Source Code}
+The source code for the extension library for the Alliant
+is stored in the SNLA Central File System under node
+``/SUPES2\_1/EXT\_LIB.STX''
+in SNLA Standard Text format.
+
+\cleardoublepage
+\section{Site Supplement for SNLA Sun Workstations (SunOS version 4)}
+
+\subsection{Linking}
+The new version of SUPES is also the only one that is available for this system.
+Note that the SUPES installation must have been performed according to 
+the installation instructions~\ref{sec:install}.
+If so,
+then it resides in the directory \verb+/usr/local/lib+
+with the file name \verb+libsupes.a+
+
+In what follows,
+an example of how the SUPES routines can be linked to an application program
+is given:
+\begin{verbatim}
+
+% f77 -o your-executable your-source.f -lsupes.
+\end{verbatim}
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via an environment
+variable of the form FOR0nn,
+where ``nn'' is a two digit integer indicating the FORTRAN unit number. For
+example, if the user is currently running under the shell program
+\verb+/bin/csh+, the required sequence is:
+\begin{verbatim}
+
+% setenv FOR007 cards.dat
+
+\end{verbatim}
+This causes the following FORTRAN statements to open '\verb+cards.dat+' on unit 7.
+\begin{verbatim}
+
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN             ! EXNAME returns a zero for LN if no ASSIGN
+                                 ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                             ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+
+\end{verbatim}
+
+From the Bourne Shell,
+\verb+/bin/sh+,
+the following sequence is required:
+\begin{verbatim}
+
+$ FOR007=cards.dat
+$ export TERM
+
+\end{verbatim}
+If no file has been assigned,
+a system default file name of the form \verb+fort.nn+, where ``\verb+nn+''
+is a one (if less than
+ten) or two digit integer indicating the FORTRAN unit number that will be written.
+
+Similarly,
+EXNAME looks for an environment variable of the form
+EXTnn.
+So that
+\begin{verbatim}
+
+% setenv EXT05 hello
+
+\end{verbatim}
+will cause the following call to return NAME=``hello'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from \verb+stdin+ and automatically echo to \verb+stdout+.
+
+\subsection{Source Code}
+The source code for the extension library for the Sun
+is stored in the SNLA Central File System under node
+``/SUPES2\_1/EXT\_LIB.STX''
+in SNLA Standard Text format.
+
+\cleardoublepage

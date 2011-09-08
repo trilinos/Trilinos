@@ -54,11 +54,18 @@ namespace Ioss {
   class CommSet;
 
   typedef std::vector<NodeBlock*>    NodeBlockContainer;
+  typedef std::vector<EdgeBlock*>    EdgeBlockContainer;
+  typedef std::vector<FaceBlock*>    FaceBlockContainer;
   typedef std::vector<ElementBlock*> ElementBlockContainer;
-  typedef std::vector<SideSet*>      SideSetContainer;
+
   typedef std::vector<NodeSet*>      NodeSetContainer;
+  typedef std::vector<EdgeSet*>      EdgeSetContainer;
+  typedef std::vector<FaceSet*>      FaceSetContainer;
+  typedef std::vector<ElementSet*>   ElementSetContainer;
+
+  typedef std::vector<SideSet*>      SideSetContainer;
   typedef std::vector<CommSet*>      CommSetContainer;
-  typedef std::vector<double>          StateTimeContainer;
+  typedef std::vector<double>        StateTimeContainer;
 
   typedef std::map<std::string, std::string, std::less<std::string> > AliasMap;
   typedef AliasMap::value_type IOAliasValuePair;
@@ -75,11 +82,6 @@ namespace Ioss {
 
     void output_summary(std::ostream &strm, bool do_transient=true);
     
-    // Check capabilities of input/output database...
-    bool supports_nodal_fields()    const;
-    bool supports_side_fields()     const;
-    bool supports_element_fields()  const;
-    bool supports_nodelist_fields() const;
     bool supports_field_type(Ioss::EntityType fld_type) const;
 
     // Helper function...
@@ -113,16 +115,26 @@ namespace Ioss {
     std::pair<int, double> get_min_time() const;
 
     // Functions for an output region...
-    bool add(NodeBlock    *node_block);
-    bool add(ElementBlock *element_block);
-    bool add(SideSet      *sideset);
-    bool add(NodeSet      *nodeset);
-    bool add(CommSet      *commset);
+    bool add(NodeBlock    *block);
+    bool add(EdgeBlock    *block);
+    bool add(FaceBlock    *block);
+    bool add(ElementBlock *block);
+    bool add(SideSet      *set);
+    bool add(NodeSet      *set);
+    bool add(EdgeSet      *set);
+    bool add(FaceSet      *set);
+    bool add(ElementSet   *set);
+    bool add(CommSet      *set);
 
     const NodeBlockContainer&    get_node_blocks() const;
+    const EdgeBlockContainer&    get_edge_blocks() const;
+    const FaceBlockContainer&    get_face_blocks() const;
     const ElementBlockContainer& get_element_blocks() const;
     const SideSetContainer&      get_sidesets() const;
     const NodeSetContainer&      get_nodesets() const;
+    const EdgeSetContainer&      get_edgesets() const;
+    const FaceSetContainer&      get_facesets() const;
+    const ElementSetContainer&   get_elementsets() const;
     const CommSetContainer&      get_commsets() const;
 
     // Retrieve the Grouping Entity with the specified name.
@@ -130,10 +142,15 @@ namespace Ioss {
     GroupingEntity* get_entity(const std::string& name, EntityType io_type) const;
     GroupingEntity* get_entity(const std::string& name) const;
     NodeBlock*      get_node_block(const std::string& name) const;
+    EdgeBlock*      get_edge_block(const std::string& name) const;
+    FaceBlock*      get_face_block(const std::string& name) const;
     ElementBlock*   get_element_block(const std::string& name) const;
     SideSet*        get_sideset(const std::string& name) const;
     SideBlock*      get_sideblock(const std::string& name) const;
     NodeSet*        get_nodeset(const std::string& name) const;
+    EdgeSet*        get_edgeset(const std::string& name) const;
+    FaceSet*        get_faceset(const std::string& name) const;
+    ElementSet*     get_elementset(const std::string& name) const;
     CommSet*        get_commset(const std::string& name) const;
 
     // Add the name 'alias' as an alias for the databae entity with the
@@ -191,27 +208,27 @@ namespace Ioss {
 
     // Containers for all grouping entities
     NodeBlockContainer    nodeBlocks;
+    EdgeBlockContainer    edgeBlocks;
+    FaceBlockContainer    faceBlocks;
     ElementBlockContainer elementBlocks;
-    SideSetContainer      sideSets;
+    
     NodeSetContainer      nodeSets;
+    EdgeSetContainer      edgeSets;
+    FaceSetContainer      faceSets;
+    ElementSetContainer   elementSets;
+    
+    SideSetContainer      sideSets;
     CommSetContainer      commSets;
-    mutable StateTimeContainer    stateTimes;
+    mutable StateTimeContainer stateTimes;
+
     int currentState;
     mutable int stateCount;
   };
 }
+inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
+{return get_database()->entity_field_support() & fld_type;}
+
 inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
 { return get_database()->node_global_to_local(global,must_exist); }
 
-inline bool Ioss::Region::supports_nodal_fields() const
-{ return get_database()->supports_nodal_fields(); }
-
-inline bool Ioss::Region::supports_side_fields() const
-{ return get_database()->supports_side_fields(); }
-
-inline bool Ioss::Region::supports_element_fields() const
-{ return get_database()->supports_element_fields(); }
-
-inline bool Ioss::Region::supports_nodelist_fields() const
-{ return get_database()->supports_nodelist_fields(); }
 #endif

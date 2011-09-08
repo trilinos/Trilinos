@@ -56,7 +56,7 @@ void add_to_log(const char *my_name)
   char *username = NULL;
   const char *codename = NULL;
   char *access_dir = NULL;
-  
+
   /* Don't log information if this environment variable is set */
   if (getenv("SEACAS_NO_LOGGING") != NULL) {
     fprintf(stderr, "SEACAS Audit logging disabled via SEACAS_NO_LOGGING setting.\n");

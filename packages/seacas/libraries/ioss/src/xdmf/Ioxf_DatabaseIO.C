@@ -339,10 +339,17 @@ namespace Ioxf {
     return 0;
   }
 
-  int DatabaseIO::read_transient_field(const char */* type */,
-				       const Ioss::Field& /* field */,
-				       const Ioss::GroupingEntity */* ge */,
-				       void */* variables */) const
+  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* nb */,
+				     const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    output_only();
+    return 0;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* nb */,
+				     const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
   {
     output_only();
     return 0;
@@ -357,6 +364,30 @@ namespace Ioxf {
   }
 
   int DatabaseIO::get_field_internal(const Ioss::NodeSet* /* ns */,
+				     const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    output_only();
+    return 0;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* ns */,
+				     const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    output_only();
+    return 0;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* ns */,
+				     const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    output_only();
+    return 0;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::ElementSet* /* ns */,
 				     const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -511,6 +542,22 @@ namespace Ioxf {
       }
       return num_to_get;
     }
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* fs,
+				     const Ioss::Field& field,
+				     void */* data */, size_t /* data_size */) const
+  {
+    int num_to_get = field_warning(fs, field, "output");
+    return num_to_get;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* fs,
+				     const Ioss::Field& field,
+				     void */* data */, size_t /* data_size */) const
+  {
+    int num_to_get = field_warning(fs, field, "output");
+    return num_to_get;
   }
 
   int DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
@@ -1249,6 +1296,30 @@ namespace Ioxf {
       }
       return num_to_get;
     }
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* fs,
+				     const Ioss::Field& field,
+				     void */* data */, size_t /* data_size */) const
+  {
+    int num_to_get = field_warning(fs, field, "output");
+    return num_to_get;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::FaceSet* fs,
+				     const Ioss::Field& field,
+				     void */* data */, size_t /* data_size */) const
+  {
+    int num_to_get = field_warning(fs, field, "output");
+    return num_to_get;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::ElementSet* fs,
+				     const Ioss::Field& field,
+				     void */* data */, size_t /* data_size */) const
+  {
+    int num_to_get = field_warning(fs, field, "output");
+    return num_to_get;
   }
 
   int DatabaseIO::put_field_internal(const Ioss::SideSet* fs,

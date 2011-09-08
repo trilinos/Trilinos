@@ -1,0 +1,526 @@
+\chapter{SUPPORT PROGRAMMER'S GUIDE} \label{sec:support}
+This chapter documents the internal architecture for SUPES.  It is intended
+to guide the maintenance of SUPES and support of SUPES on new operating
+systems.  The consequences of using the Skeleton FORTRAN extension library
+on the internal operation of SUPES is fully discussed.
+
+
+\section{Free Field Input} The SUPES free field input system consists of
+four subroutines: FREFLD (section~\ref{sec:frefld}),
+FFISTR (section~\ref{sec:ffistr}), GETINP
+(section~\ref{sec:getinp}), and STRIPB (section~\ref{sec:stripb}). All of
+these routines are written in fully standard ANSI FORTRAN. 
+
+FREFLD calls the extension library routine EXUPCS
+(section~\ref{sec:exupcs}). If only the skeleton version of EXUPCS is
+available, case insensitivity of input data (rule~\ref{itm:case} of
+section~\ref{sec:syntax}) can not be guaranteed. 
+
+FFISTR is the input line parsing routine.
+It is called by FREFLD,
+but the user is free to call it independently.
+The input line may be of arbitrary length.
+
+GETINP calls the extension library routine EXREAD
+(section~\ref{sec:exread}). If only the skeleton version of EXREAD is
+available, GETINP will not prompt nor guarantee echo when reading from the
+standard input device (KIN = 0). 
+
+
+\subsection{Implementation Notes on FREFLD}
+
+This section contains a basic outline of the internal operation of the free
+field input system and other supplemental information.  More complete
+documentation is contained within the code itself.
+
+FREFLD is organized into five phases:
+\begin{enumerate}
+\item All the output arrays are initialized to their default values.
+
+\item The next input record is obtained via GETINP.  Processing of a
+        continuation line begins with this phase.
+
+\item The effective portion of the input line is isolated by stripping any
+        comment and leading/trailing blanks.  A flag is set if a
+        continuation line is to follow this record.
+
+\item All field separators are made uniform.  This phase streamlines the
+        main processing loop which follows.
+
+\item Successive fields are extracted, translated, and categorized until
+        the input line is exhausted.  After the maximum number of fields is
+        reached, fields are counted but not processed further.
+\end{enumerate}
+Upon leaving the main translation loop, the routine is restarted at phase 2
+if the continuation flag is set.
+
+The only errors returned by FREFLD are any returned from GETINP.
+
+A data field is left-justified to define a CHARACTER value, but must be
+right-justified to obtain a numeric value.  An internal READ is used to
+decode a numeric value from a data field.  FREFLD relies upon the IOSTAT
+specifier to determine if the field represents a valid numeric format; this
+presents the possibility that some non-standard numeric strings may be
+interpreted inconsistently by various operating systems.  Default numeric
+values are overwritten if and only if IOSTAT indicates a valid translation.
+
+CHARACTER data manipulation tends to be the area of lowest reliability for
+FORTRAN compilers, especially with supercomputers.  An attempt was made in
+coding FREFLD to minimize the risk of triggering compiler bugs by
+manipulating pointers rather than shifting CHARACTER strings.
+
+
+\subsection{Test Program for FREFLD}
+A simple test program which calls FREFLD is included with the SUPES free
+field input system.  FREFLD is instructed to digest data entered via the
+standard input device (e.g., keyboard), then the results are dumped to the
+standard output device (e.g., screen).  This program should always be run to
+verify proper operation of FREFLD on a new operating system or compiler.
+Application programmers are encouraged to experiment with this program to
+learn what to expect from FREFLD.
+A sample session from a Sun 4/60 Workstation follows:
+\begin{verbatim}
+
+% ffrtest         <-- At the system prompt, enter the program name.
+    1: This is an example <-- At the SUPES prompt, the user enters a line, etc.
+ NFIELD =    4
+    I     KV(I)               CV(I)          RV(I)       IV(I)
+    1         0  "THIS            "         0.               0
+    2         2  "IS              "         0.               0
+    3         0  "AN              "         0.               0
+    4         0  "EXAMPLE         "         0.               0
+    5        -1  "                "         0.               0
+   2: Another line = example.
+ NFIELD =    3
+    I     KV(I)               CV(I)          RV(I)       IV(I)
+    1         0  "ANOTHER         "         0.               0
+    2         0  "LINE            "         0.               0
+    3         0  "EXAMPLE.        "         0.               0
+    4        -1  "                "         0.               0
+    5        -1  "                "         0.               0
+   3: This is a further 3.e5
+ NFIELD =    6
+    I     KV(I)               CV(I)          RV(I)       IV(I)
+    1         0  "THIS            "         0.               0
+    2         2  "IS              "         0.               0
+    3         2  "A               "         0.               0
+    4         0  "FURTHER         "         0.               0
+    5         2  "3.E5            "      3.000E+05      300000
+   4: exit
+ NFIELD =    1
+    I     KV(I)               CV(I)          RV(I)       IV(I)
+    1         0  "EXIT            "         0.               0
+    2        -1  "                "         0.               0
+    3        -1  "                "         0.               0
+    4        -1  "                "         0.               0
+    5        -1  "                "         0.               0
+   5: ^C                         <-- To exit, the user enters a ^C.
+% 
+\end{verbatim}
+
+\section{Memory Manager} \label{sec:table}
+This section includes details of the internal operations of the memory
+manager, assumptions used in the memory manager, and details on the
+implementation of the memory manager on systems which do not support the
+extension library.
+
+
+\subsection{Table Architecture and Maintenance} 
+The bookkeeping for the memory manager is accomplished with three tables; a
+memory block table, a void area table, and a dictionary.
+
+The {\em 
+memory block table} maintains a record of contiguous blocks of memory
+that have been received from the operating system.  If a series of requests
+causes separate blocks to become contiguous, these blocks are joined.  The
+beginning location and length of each memory block is recorded, and the
+table is sorted in location order.
+
+Within each memory block, sections of memory that are not currently
+allocated to arrays are recorded in the {\em void area table}.  As in the
+case of the memory block table, contiguous voids are joined and this table
+is sorted in location order. 
+
+The {\em dictionary} relates storage locations with eight character array
+names. The dictionary is sorted via the default FORTRAN collating sequence.
+All characters (including blanks) are significant.
+All names are converted to upper case then
+blank filled or truncated to eight characters.
+In addition to the array name, the
+dictionary stores the location and length of each dynamic array. 
+
+Any call for memory (MDGET or MDRSRV) will be satisfied in one of two ways:
+\begin{enumerate}
+\item If a void of sufficient size is available, then this void will be
+          used for the new array (MDRSRV).  In the case of MDGET, no further
+          action is taken.
+
+\item An extension library call (EXMEMY) is made to get more memory from
+          the system.
+\end{enumerate}
+
+A request to extend an array (MDLONG) is satisfied in one of three ways:
+\begin{enumerate}
+\item If a void of sufficient size exists at the end of the array, then
+          this space is allocated to the array.
+
+\item If a void large enough for the extended array exists elsewhere in
+          memory, the array is moved to this location.  Note that the data
+          is actually shifted and the pointer is updated.
+
+\item An extension library call (EXMEMY) is made to get more memory from
+          the system.
+\end{enumerate}
+
+A call to MDCOMP will cause all arrays within each memory block to be moved
+to the lower addresses (pointers) within that memory block.  Thus, all voids
+in the block will be joined at the end of the block.
+
+A call to MDGIVE will attempt to return memory to the system.  Only voids at
+the end of a memory block are subject to this attempt, and the system may
+accept only portions of these.  Thus a call to MDCOMP followed by MDGIVE
+will release the maximum memory to the system.
+
+
+\subsection{Non-ANSI FORTRAN Assumptions}
+Although the memory manager is written in standard FORTRAN-77, it does
+depend on some assumptions which are not part of the ANSI standard.  These
+assumptions are:
+\begin{enumerate}
+\item The contents of a word are not checked nor altered by an INTEGER
+          assignment.  Data is moved by MDLONG or MDCOMP as INTEGER
+          variables.
+
+\item Strong typing is not enforced between dummy and actual arguments.
+          This allows the same base array to pass storage to any INTEGER,
+          REAL, or LOGICAL array.
+
+\item Array bounds are not enforced.  Thus, any value is a valid
+          subscript for the base array.
+
+\item All dynamically allocated memory must remain fixed in relation to
+          the base array.
+\end{enumerate}
+
+\subsection{Standard FORTRAN Implementation}
+
+If an installation does not yet support the extension library, it is still
+possible and advantageous to use the memory manager.  In this case, the
+memory manager will act as a dynamic allocator of static (already
+dimensioned) memory.  Codes which employ the memory manager therefore do not
+need to be rewritten, and codes under development can anticipate the
+implementation of the extension library.
+
+When the subprograms IXLNUM or EXMEMY of the extension library are not
+available, the following steps must be taken before using the memory
+manager:
+\begin{enumerate}
+\item Install the skeleton version of the extension library
+(Section~\ref{sec:skel}).
+
+\item Alter the memory manager subroutine MDINIT as follows:
+
+\underline{ORIGINAL}
+
+\verb+DIMENSION MYV(1)+
+
+\underline{ALTERED}
+\begin{verbatim}
+PARAMETER (MAXSIZ=1024)
+COMMON /EXTLIB/ MYV( MAXSIZ)
+\end{verbatim}
+
+\item Put the base vector in the user's program in the COMMON block
+          EXTLIB and dimension it consistently with the COMMON blocks in
+          EXMEMY and MDINIT.
+
+\item If more than 1024 numeric storage units are required, change the
+          parameter statement in MDINIT, EXMEMY and the user's program.
+\end{enumerate}
+
+\subsection{Test Program}
+In order to aid the installation of the memory manager at a new site, an
+interactive test program has been written which allows the user to exercise
+each of the features of the memory manager and insure that it is operating
+properly.
+While the proper implementation of the memory management test program
+requires an in-depth examination of the corresponding source file,
+a short test run on a Cray running the UNICOS operating system follows
+(comments are included after an arrow, \verb+<--+):
+\begin{verbatim}
+% memtest    <-- At the system prompt, enter program name.
+FUNC: mdinit    <-- At the SUPES prompt, the user enters a string, etc.
+FUNC: mcinit
+FUNC: mdwait
+FUNC: mdrsrv real1 108
+ POINTER:    -65733
+FUNC: mcrsrv char 850
+ POINTER:   -532696
+FUNC: mdrsrv real2 108
+ POINTER:    -65733
+FUNC: mdexec
+ POINTER BEFORE     -65733
+ POINTER AFTER      17879   <-- Having the pointer updated is vital!
+FUNC: mdlist
+
+
+ **************************************************
+0 * * * * * * *  D I C T I O N A R Y  * * * * * * * 
+0                               NUMERIC   CHARACTER
+	 NAME      LOCATION      LENGTH      LENGTH
+
+    1  CHAR           17664         107         850
+    2  REAL1          17771         108          -1
+    3  REAL2          17879         108          -1
+0        TOTAL                      323         850
+
+
+0 * * * V O I D   T A B L E * * *
+0           LOCATION       LENGTH
+
+      1        17987           61
+0        TOTAL                 61
+
+
+ **************************************************
+0 * * * * * *  O R D E R E D   L I S T  * * * * * * 
+0                               NUMERIC   CHARACTER
+	 NAME      LOCATION      LENGTH      LENGTH
+
+    1  CHAR           17664         107         850
+    2  REAL1          17771         108          -1
+    3  REAL2          17879         108          -1
+    4                 17987          61  
+ BLOCK SIZE                         384         850
+
+ ALLOCATED TOTAL                    384         850
+
+     GRAND TOTAL                    384         850
+
+FUNC: exit
+   STOP              in MEMTEST 
+% 
+\end{verbatim}
+
+
+\section{Extension Library Implementation}
+Implementing the SUPES extension library on a new operating system
+requires a firm understanding of that system, but should not require a great
+deal of programming.  Since the package is by definition system dependent,
+it is impossible to predict the exact procedure which will be required to
+implement these routines on a given operating system.  This section provides
+some general guidelines and hints compiled from experience in implementing
+the package on several very different systems.
+
+As has been mentioned previously,
+this version represents a change in philosophy regarding the procedure
+for implementing a port of the extension library.
+Specifically,
+many of the features of the extension library require a
+richer data type than is available in ANSI FORTRAN 77.
+For example,
+the requirement to do pointer assignment for the memory management
+made it desirable to utilize a more flexible programming
+language.
+The language chosen was C\@.
+A direct consequence of this is that the
+entire SUPES extension library is now coded in a single
+set of source files across all supported machines.
+Among the advantages are:
+\begin{enumerate}
+
+\item It reduces the amount of bookkeeping that is necessary to maintain
+      the library across a number of machine architectures at a given
+      site,
+
+\item It now allows for a codified approach
+      to building the library on any given machine, and finally,
+
+\item It permits one to use the current source as an example for a
+      future port.
+
+\end{enumerate}
+Of course,
+these advantages do come at a cost.
+The FORTRAN--C interface must now be handled at the source level
+in the extension library.
+This is an extremely system dependent area.
+However,
+most systems do allow for such a scenario,
+and,
+accordingly,
+it tends to be documented quite extensively.
+
+The code should be well
+commented and references to appropriate system manuals should be included.
+
+The original FORTRAN version of the skeleton library will
+continue to be part of the distribution.
+To use them,
+it is recommended that one start with the skeleton library routines and
+gradually add system dependent code to provide full capability.
+Examples are provided in the distribution in the form of
+the original source code for VAX/VMS and Cray CTSS with the CFTLIB
+FORTRAN run-time library.
+In fact,
+for the latter case that code represents the only method of implementation
+of SUPES.
+This is entirely due to the lack of a suitable FORTRAN-C interfacing scheme
+under that system.
+
+If this is the desired plan,
+it is suggested that extension library modules be implemented in the
+following order:
+\begin{enumerate}
+\item EXUPCS.  The skeleton version should be sufficient.
+
+\item EXTIME, EXDATE, EXCPUS, IXLNUM, and EXPARM.  These routines are
+        generally straightforward and can be accomplished simply with the
+        aid of the FORTRAN and/or C Run Time Library manuals for the
+        particular operating system.
+
+\item EXREAD, EXNAME, EXMEMY, and IXLCHR.  These routines require a more intimate
+        knowledge of the operating system.  A substantial set of system
+        documentation may be required to accomplish these tasks.
+\end{enumerate}
+
+\subsection{Implementation Notes for Modules}
+The format of the date for \underline{EXDATE} must be strictly observed.
+Many systems supply a date service routine which formats the date in a
+different style. Conversion to the SUPES format should be straightforward. 
+
+Most systems provide a time of day service routine which formats the time in
+the desired style.  Some systems also return fractional seconds which can
+easily be trimmed off.  In any case, the format specified by
+\underline{EXTIME} must be strictly observed. 
+
+\underline{EXCPUS} is intended to measure performance rather than cost.  The
+quantity returned by EXCPUS should be raw CPU seconds; any weighting for
+memory use or priority should be removed.  I/O time should be included only
+if it is performed by the CPU. 
+
+The hardware ID string for \underline{EXPARM} should reflect both the
+manufacturer and model of the processor.  For example, ``VAX 8600'' rather
+than just ``VAX'' allows the user to make sense of the CPU time returned by
+EXCPUS. 
+
+The software ID string should reflect the release of the operating system in
+use, such as ``COS 1.11''.  It is not a trivial exercise to provide all
+pertinent information in eight characters for ad hoc systems like CTSS which
+vary widely between installations.  For example, the string ``CFTLIB14'' has
+been used to indicate a variation of the SUPES package for CTSS using CFTLIB
+and the CFT 1.14 compiler. 
+
+On most systems KCSU will give the number of characters per numeric word and
+KNSU will be unity.  For a hypothetical 36-bit processor which allows 8-bit
+characters to cross word boundaries, KCSU=9 and KNSU=2 would define the
+storage relationship.
+
+The proper value for IDAU should always be indicated in the reference manual
+for the compiler where it discusses Unformatted Direct Access files.
+
+The unit/file mode of \underline{EXNAME} should follow as closely as
+possible to whatever convention the particular operating system uses for
+connecting a FORTRAN I/O unit to a file at execution time.  This feature
+should be easy to implement on systems which support pre-connection.  Support
+for units 1-99 should be sufficient. 
+
+The symbol mode feature of EXNAME should be designed to obtain messages from
+the system level procedure which activates the program.  Eight characters
+per symbol is a reasonable limit.  Support for symbols 0-7 should be
+adequate.
+
+Support for EXNAME not only requires coding the routine itself, but also
+designing the system procedure level interface.  This interface should
+always be designed before coding EXNAME.  It should fit as cleanly as
+possible into normal techniques for writing procedures for the system.
+
+The skeleton version of \underline{EXUPCS} is designed to work on any system
+which supports lower case letters.  This routine will rarely require any
+change. 
+
+\underline{EXREAD} must provide a prompt for an interactive device and
+guarantee that input is echoed.  This requires a careful determination of
+the current execution environment.  For example, EXREAD must be able to
+handle input from a script file as well as from a terminal.  Any automatic
+echo service provided by the operating system should be employed wherever
+possible, as long as the user supplied prompt appears along with the input
+data echo. 
+
+In all instances,
+the C programming language provides a clean method for returning the
+address for \underline{IXLNUM}\@. In some cases it may be necessary to
+convert the address to numeric units.  For example, addresses on VMS must be
+divided by four to convert from bytes to numeric storage units. 
+The same cannot necessarily be said for a character address
+as returned by \underline{IXLCHR}\@.
+The reader is referred to the source file \verb+ixlchr.c+ for further details
+on how to attack this problem.
+
+\underline{EXMEMY} is the most crucial routine in the extension
+library---and one the primary reasons for choosing to do the extension
+library in C.
+As opposed to in the past,
+this latest approach has made it one of the most straightforward in
+the entire extension library.
+However, care should still be
+taken to ensure that both memory block locations and sizes are measured in
+numeric storage units.
+In the current version of SUPES,
+memory is allocated in blocks of 512 bytes
+(a number which can be changed at compile time)
+to improve performance.
+EXMEMY should return the precise amount of
+memory allocated.
+Any memory that is given by the system,
+but not requested by the user is kept track of in a void table
+by the memory manager.
+So, it is generally unnecessary to keep track of memory
+blocks allocated via EXMEMY.
+
+\subsection{Extension Library Test Program}
+A short program which exercises all features of the SUPES extension
+library is available.  This program should be considered a starting point
+for testing a new implementation.  Other tests which more extensively
+exercise complex modules, such as EXMEMY, should be developed as needed.
+An example session on a Sun 4/60 Workstation follows (with comments offset by
+an arrow, \verb+<--+):
+\begin{verbatim}
+
+% setenv FOR001 junk.dat  <-- Test EXNAME.
+% exttest        <-- At the system prompt, invoke the procedure.
+TST: ldkj        <-- At the SUPES prompt, the user enters a string.
+Input line = LDKJ    <-- The input line is returned in upper case.
+Date = 12/18/89
+Time = 09:58:05
+Unit 1 name = junk.dat 
+Unit 10 name =  
+Symbol 1 =  
+Processor = Sun4      System = OS4.0.3c  Mode =   1
+Character, Numeric, D/A Units:   4  1  0
+Memory block location and length:   24700  128
+Numeric difference =   4
+Character difference =   4
+CPU time =     7.00000E-02
+
+\end{verbatim}
+
+\section{Installation Documentation Guidelines}
+A supplement to this document should be written for each operating system on
+which SUPES is installed.  As a minimum, this supplement should include:
+\begin{enumerate}
+\item How to access the SUPES library and link it to an applications
+        program.  Individual copies of SUPES should never be propagated as
+        this reduces the quality assurance level of SUPES.
+
+\item How to interface from the operating system to EXNAME for both unit/
+        file mode and symbol mode.
+
+\item How to interface to EXREAD via an interactive device.  Information
+        such as how to signal an end of file should be specified.
+\end{enumerate}
+
+Any known bugs or idiosyncrasies.
+
+The installation supplements for several operating systems are included in
+the Appendix.

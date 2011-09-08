@@ -73,7 +73,7 @@ Excn::SystemInterface::SystemInterface()
     raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0), partCount_(-1),
     debugLevel_(0), screenWidth_(0),
     stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1),
-    addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
+    sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
     largeModel_(false), append_(false)
 {
   enroll_options();
@@ -124,18 +124,6 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("Subdirectory", GetLongOpt::MandatoryValue,
 		  "subdirectory containing input exodusII files", NULL);
 
-  options_.enroll("debug", GetLongOpt::MandatoryValue,
-		  "debug level (values are or'd)\n"
-		  "\t\t  1 = timing information.\n"
-		  "\t\t  2 = Check consistent nodal field values between processors.\n"
-		  "\t\t  4 = Verbose Element block information.\n"
-		  "\t\t  8 = Check consistent nodal coordinates between processors.\n"
-		  "\t\t 16 = Verbose Sideset information.\n"
-		  "\t\t 32 = Verbose Nodeset information.\n"
-		  "\t\t 64 = put exodus library into verbose mode.\n"
-		  "\t\t128 = Check consistent global field values between processors.",
-		  "0");
-
   options_.enroll("width", GetLongOpt::MandatoryValue,
 		  "Width of output screen, default = 80",
 		  "80");
@@ -175,6 +163,12 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tthan the processor count.",
 		  "0");
 
+  options_.enroll("sum_shared_nodes", GetLongOpt::NoValue,
+		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
+		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
+		  "\t\tThe default behavior assumes that the values are equal.",
+		  NULL);
+  
   options_.enroll("gvar", GetLongOpt::MandatoryValue,
 		  "Comma-separated list of global variables to be joined or ALL or NONE.",
 		  0);
@@ -204,6 +198,18 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("omit_sidesets", GetLongOpt::NoValue,
 		  "Don't transfer sidesets to output file.",
 		  NULL);
+
+  options_.enroll("debug", GetLongOpt::MandatoryValue,
+		  "debug level (values are or'd)\n"
+		  "\t\t  1 = timing information.\n"
+		  "\t\t  2 = Check consistent nodal field values between processors.\n"
+		  "\t\t  4 = Verbose Element block information.\n"
+		  "\t\t  8 = Check consistent nodal coordinates between processors.\n"
+		  "\t\t 16 = Verbose Sideset information.\n"
+		  "\t\t 32 = Verbose Nodeset information.\n"
+		  "\t\t 64 = put exodus library into verbose mode.\n"
+		  "\t\t128 = Check consistent global field values between processors.",
+		  "0");
 
   options_.enroll("copyright", GetLongOpt::NoValue,
 		  "Show copyright and license data.",
@@ -363,6 +369,14 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("large_model")) {
     largeModel_ = true;
+  }
+
+  if (options_.retrieve("append")) {
+    append_ = true;
+  }
+
+  if (options_.retrieve("sum_shared_nodes")) {
+    sumSharedNodes_ = true;
   }
 
   if (options_.retrieve("append")) {

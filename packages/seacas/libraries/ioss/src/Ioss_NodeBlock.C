@@ -40,23 +40,26 @@
 #include <string>
 
 namespace {
+  const std::string SCALAR()    { return std::string("scalar");}
   const std::string VECTOR_2D() { return std::string("vector_2d");}
   const std::string VECTOR_3D() { return std::string("vector_3d");}
-  const std::string UNKNOWN()   { return std::string("unknown");}
 }
 
 Ioss::NodeBlock::NodeBlock(const Ioss::DatabaseIO *io_database,
 			   const std::string &my_name,
 			   size_t node_count,
 			   size_t degrees_of_freedom)
-  : Ioss::EntityBlock(io_database, my_name, "node", UNKNOWN(), node_count)
+  : Ioss::EntityBlock(io_database, my_name, "node", node_count)
 {
   properties.add(Ioss::Property("component_degree",
 				static_cast<int>(degrees_of_freedom)));
 
   std::string vector_name;
-  assert(degrees_of_freedom == 2 || degrees_of_freedom == 3);
-  if (degrees_of_freedom == 2)
+  assert(degrees_of_freedom == 1 || degrees_of_freedom == 2 || degrees_of_freedom == 3);
+
+  if (degrees_of_freedom == 1)
+    vector_name = SCALAR();
+  else if (degrees_of_freedom == 2)
     vector_name = VECTOR_2D();
   else if (degrees_of_freedom == 3)
     vector_name = VECTOR_3D();
@@ -66,7 +69,7 @@ Ioss::NodeBlock::NodeBlock(const Ioss::DatabaseIO *io_database,
 			 Ioss::Field::MESH, node_count));
 
   fields.add(Ioss::Field("node_connectivity_status",
-			 Ioss::Field::CHARACTER, "scalar",
+			 Ioss::Field::CHARACTER, SCALAR(),
 			 Ioss::Field::MESH, node_count));
 }
 

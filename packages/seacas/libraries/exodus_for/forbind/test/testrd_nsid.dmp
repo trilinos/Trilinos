@@ -1,0 +1,162 @@
+
+after exopen, error =   0
+  I/O word size 4
+  Model Size 1
+
+after exgini, error =   0
+database parameters:
+title =  This is a test                                                                  
+num_dim =   3
+num_nodes =  33
+num_elem =   7
+num_elem_blk =   1
+num_node_sets =   0
+num_side_sets =   0
+
+after exgcor, error =   0
+x coords = 
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+  2.0
+  2.0
+  1.0
+  0.0
+ 10.0
+ 10.0
+  1.0
+  1.0
+ 10.0
+ 10.0
+  1.0
+  0.0
+  1.0
+ 10.0
+  7.0
+  3.0
+  6.0
+  0.0
+  3.0
+  6.0
+  0.0
+  2.7
+  6.0
+  5.7
+  3.7
+  0.0
+ 10.0
+ 10.0
+y coords = 
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  0.0
+  0.0
+ 10.0
+ 10.0
+ 10.0
+ 10.0
+  0.0
+  0.0
+  0.0
+  5.0
+  0.0
+  0.0
+  0.0
+  2.0
+  2.0
+  2.0
+  1.7
+  1.7
+  1.7
+  0.0
+  0.0
+  0.0
+ 10.0
+z coords = 
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  5.0
+  2.0
+  3.0
+  6.0
+  0.0
+  0.0
+  6.0
+  2.0
+  0.0
+  2.7
+  3.3
+  1.7
+  2.3
+  0.0
+  0.0
+ 10.0
+
+after exgcon, error =   0
+x coord name = xcoor    
+y coord name = ycoor    
+
+after exgmap, error =   0
+elem_map(1) = 1
+elem_map(2) = 2
+elem_map(3) = 3
+elem_map(4) = 4
+elem_map(5) = 5
+elem_map(6) = 6
+elem_map(7) = 7
+
+after exgebi, error =   0
+
+after exgelb, error =   0
+element block id = 10
+element type = nsided   
+num_elem_in_block =  7
+num_nodes_per_elem = 37
+num_attr =  0
+
+after exgelc, error =   0
+
+after exgecpp, error =   0
+connect array for elem block 10
+ Element   1, Nodes/Element =   4 --   1  2  3  4
+ Element   2, Nodes/Element =   4 --   5  6  7  8
+ Element   3, Nodes/Element =   8 --   9 10 11 12 13 14 15 16
+ Element   4, Nodes/Element =   4 --  17 18 19 20
+ Element   5, Nodes/Element =   6 --  21 22 23 24 25 26
+ Element   6, Nodes/Element =   8 --  17 18 19 20 27 28 30 29
+ Element   7, Nodes/Element =   3 --  31 32 33
+
+after exinq, error =   0
+
+There are  3 coordinate frames
+after exgfrm, error =    0
+    1   RECTANGULAR                           0.10      0.20      0.30      0.40      0.50      0.60      0.70      0.80      0.90
+   11   CYLINDRICAL                           1.10      1.20      1.30      1.40      1.50      1.60      1.70      1.80      1.90
+  111   SPHERICAL                             2.10      2.20      2.30      2.40      2.50      2.60      2.70      2.80      2.90
+
+after exclos, error =   0

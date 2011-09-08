@@ -1,0 +1,75 @@
+C    Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
+C    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+C    certain rights in this software
+C    
+C    Redistribution and use in source and binary forms, with or without
+C    modification, are permitted provided that the following conditions are
+C    met:
+C    
+C    * Redistributions of source code must retain the above copyright
+C       notice, this list of conditions and the following disclaimer.
+C              
+C    * Redistributions in binary form must reproduce the above
+C      copyright notice, this list of conditions and the following
+C      disclaimer in the documentation and/or other materials provided
+C      with the distribution.
+C                            
+C    * Neither the name of Sandia Corporation nor the names of its
+C      contributors may be used to endorse or promote products derived
+C      from this software without specific prior written permission.
+C                                                    
+C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C    
+      COMMON /ENT/    NUMEQN, NUMENT(MAXEQN), INXENT(MAXENT,MAXEQN),
+     &   VALENT(MAXENT,MAXEQN), ITMENT(MAXENT,MAXEQN),
+     &   IEVENT(MAXENT,MAXEQN)
+      COMMON /ENTCH/  NAMENT(MAXENT,MAXEQN), TYPENT(MAXENT,MAXEQN),
+     &   VSZENT(MAXENT,MAXEQN)
+      CHARACTER*(maxnam) NAMENT
+      CHARACTER TYPENT, VSZENT
+C      --   Assigned in RDEQNS, CHKALG, POSTFX, LOCEQV, LNKVAR
+C      --NUMEQN - total number of equations
+C      --NUMENT - the number of entries in each equation
+C      --NAMENT - the equation entries: variable names, functions, operators
+C      --TYPENT - the type of each equation entry:
+C      --   C - constant; O - operator; V - variable; F - function
+C      --INXENT -
+C      --   Operator - the operator number
+C      --   Variable - during equation input, -1 for LHS, +1 for input variable;
+C      --      during equation evaluation, the variable location in VARVAL
+C      --   Function - the function number
+C      --   other - no meaning
+C      --VALENT -
+C      --   Constant - the constant value
+C      --   Variable - the specific node or element number or the
+C      --      time or global variable index in time/global entry;
+C      --      0 for node or element variable
+C      --   Function - the number of required parameters
+C      --   other - no meaning
+C      --ITMENT -
+C      --   Variable - the associated time
+C      --      1 = (ICURTM) current time
+C      --      2 = (ILSTTM) last time
+C      --      3 = (IONETM) first time
+C      --   Function - during equation evaluation, the storage index
+C      --      for time function result
+C      --   other - no meaning
+C      --IEVENT - the ISEVOK index for this entry (Operator, Variable,
+C      --   and Function only)
+C      --VSZENT - the type of variable on the stack after processing
+C      --   this entry (used to get the size and type of an entry):
+C      --   H - a history variable or time
+C      --   G - a global variable
+C      --   N - a nodal variable or coordinates
+C      --   E - an element variable
+C      --   * - unknown type (global before processing)

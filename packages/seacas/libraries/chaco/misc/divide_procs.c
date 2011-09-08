@@ -24,10 +24,10 @@ int      *cut_dirs;		/* direction of each cut if mesh */
 int      *mesh_dims;		/* size of full mesh */
 int     hops_special[][MAXSETS];	/* hop matrix for nonstandard cases */
 {
-    int       nsets_real;	/* number of sets to divide into */
-    int       ndims_real;	/* number of eigenvectors to use */
+    int       nsets_real=-1;	/* number of sets to divide into */
+    int       ndims_real=-1;	/* number of eigenvectors to use */
     int       striping;		/* cut in single direction? */
-    int       flag;		/* unusual partition => use special hops */
+    int       flag=-1;		/* unusual partition => use special hops */
     int       ndim_poss;	/* largest dimensionality possible */
     int       idims;		/* true dimensionality of subgrid */
     int       i;		/* loop counter */

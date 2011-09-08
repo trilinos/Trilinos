@@ -57,11 +57,11 @@ int       ndims;		/* dimensionality of partition */
     double    minfactor;	/* minimum acceptable value of factor */
     int       converged;	/* has process converged yet? */
     double   *u;		/* name of vector being refined */
-    int    *old_assignment;	/* previous assignment vector */
+    int    *old_assignment=NULL;/* previous assignment vector */
     int    *assgn_pntr;	/* pntr to assignment vector */
     int    *old_assgn_pntr;	/* pntr to previous assignment vector */
-    int       assigndiff;	/* discrepancies between old and new assignment */
-    int       assigntol;	/* tolerance on convergence of assignment vector */
+    int       assigndiff=0;	/* discrepancies between old and new assignment */
+    int       assigntol=0;	/* tolerance on convergence of assignment vector */
     int       first;		/* is this the first RQI step? */
     int       i;		/* loop index */
 

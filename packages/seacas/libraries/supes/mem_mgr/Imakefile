@@ -1,0 +1,18 @@
+XCOMM $Id: Imakefile,v 1.9 2004/12/14 19:08:47 gdsjaar Exp $
+
+SRCS =	\
+mxexec.f mxrsrv.f mxfind.f mycomp.f mxget.f  mydel.f  shftc.f  \
+myfind.f shfti.f  mxgive.f myget.f  srchc.f  mxlist.f mylong.f \
+srchi.f  mxlong.f mymemy.f mxcomp.f mxlook.f mynsrt.f vtable.f \
+mxdel.f  mxnsrt.f myprnt.f mxeror.f mxprnt.f myrsrv.f 
+
+SRCSF = \
+mdinit.F
+
+OBJS  = ${SRCS:.f=.o}
+OBJSF = ${SRCSF:.F=.o}
+
+LibraryTargetSubdirs(libsupes.a,$(OBJS) $(OBJSF),../)
+
+CleanupCapF(mdinit.f)
+

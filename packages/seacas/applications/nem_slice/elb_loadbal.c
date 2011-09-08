@@ -134,13 +134,13 @@ int generate_loadbal(MACHINE_PTR machine,
                      char *argv[])
 {
   char   *assignfile = NULL;
-  int     ecnt, cnt, cnt2, flag, arch, refine, num_level, totalproc=0, glob_method;
+  int     ecnt, cnt, cnt2, flag, arch, refine, num_level=0, totalproc=0, glob_method=0;
   int     nnodes, ncnt, iproc, iloop, nloops, adjp, elemp, start_proc;
   int    *tmp_start=NULL, *tmp_adj=NULL, *tmp_vwgts=NULL, tmp_nv;
   int    *nprocg=NULL, *nelemg=NULL, *nadjg=NULL, max_vtx, max_adj, group;
   int    *elem_map=NULL, dim[1], tmpdim[3], tmp_arch, tmp_lev;
-  int  *tmp_v2p;
-  float  *x_ptr, *y_ptr, *z_ptr;
+  int    *tmp_v2p=NULL;
+  float  *x_ptr=NULL, *y_ptr=NULL, *z_ptr=NULL;
   float  *x_node_ptr=NULL, *y_node_ptr=NULL, *z_node_ptr=NULL;
   float  *x_elem_ptr=NULL, *y_elem_ptr=NULL, *z_elem_ptr=NULL;
   float  *tmp_x=NULL, *tmp_y=NULL, *tmp_z=NULL;
@@ -148,7 +148,7 @@ int generate_loadbal(MACHINE_PTR machine,
   long    seed=1;
   double *goal=NULL;
   double  time1, time2;
-  FILE   *fp;
+  FILE   *fp=NULL;
   /* unused variable int *adj_ptr=NULL; */
 
   /* Variables used in Chaco */
@@ -1378,7 +1378,7 @@ int elemental_dist(LB_INFO_PTR lb,
 	    /* Find elements connnected to both node '0' and node 'ncnt+1' */
 	    nelem = find_inter(hold_elem, graph->sur_elem[side_nodes[(ncnt+1)]],
 			       nhold, graph->nsur_elem[side_nodes[(ncnt+1)]],
-			       2, pt_list);
+			       pt_list);
 
 	    if (nelem < 2)
 	      break;
@@ -1441,7 +1441,7 @@ int elemental_dist(LB_INFO_PTR lb,
 			       graph->sur_elem[side_nodes[node]],
 			       graph->nsur_elem[side_nodes[inode]],
 			       graph->nsur_elem[side_nodes[node]],
-			       2, pt_list);
+			       pt_list);
 
 	    if (nelem > 1) {
 	      if (ncnt == 0) {
@@ -2377,7 +2377,7 @@ int identify_mechanisms(
 					graph->sur_elem[side_nodes2[1]],
 					graph->nsur_elem[side_nodes2[0]],
 					graph->nsur_elem[side_nodes2[1]],
-					2, pt_list);
+					pt_list);
         
                     for(i = 0; i < nhold2; i++) 
                        hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
@@ -2386,7 +2386,7 @@ int identify_mechanisms(
                                        graph->sur_elem[side_nodes2[2]],
                                        nhold2,
                                        graph->nsur_elem[side_nodes2[2]],
-                                       2, pt_list);
+                                       pt_list);
 
                     if(nelem >= 1) {
                       count++;

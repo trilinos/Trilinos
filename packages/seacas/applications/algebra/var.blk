@@ -1,0 +1,67 @@
+C    Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
+C    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+C    certain rights in this software
+C    
+C    Redistribution and use in source and binary forms, with or without
+C    modification, are permitted provided that the following conditions are
+C    met:
+C    
+C    * Redistributions of source code must retain the above copyright
+C       notice, this list of conditions and the following disclaimer.
+C              
+C    * Redistributions in binary form must reproduce the above
+C      copyright notice, this list of conditions and the following
+C      disclaimer in the documentation and/or other materials provided
+C      with the distribution.
+C                            
+C    * Neither the name of Sandia Corporation nor the names of its
+C      contributors may be used to endorse or promote products derived
+C      from this software without specific prior written permission.
+C                                                    
+C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C    
+      PARAMETER (MAXVAR=2048)
+C      --MAXVAR - maximum number of all variables (input and LHS)
+
+      COMMON /VAR/    NUMINP, IXLHS, IDVAR(MAXVAR), ISTVAR(3,MAXVAR),
+     &   IEVVAR(MAXVAR)
+      COMMON /VARCH/  NAMVAR(MAXVAR), TYPVAR(MAXVAR)
+      CHARACTER*(maxnam) NAMVAR
+      CHARACTER TYPVAR
+C      --   Assigned in RDEQNS, LOCEQV, SAVCMD (ADDVAR)
+C      --NUMINP - total number of referenced input variables
+C      --IXLHS - index of the first LHS variable;
+C      --   during equation input, the LHS variables are stored backwards
+C      --   from the end of the /VAR../arrays up; there order is reversed
+C      --   after all equations are input
+C      --   VAR..(1..NUMINP) holds the input variables
+C      --   VAR..(IXLHS..MAXVAR) holds the LHS variables
+C      --NAMVAR - name of the referenced variable
+C      --TYPVAR - type of variable:
+C      --   time(T), coordinate(C), global(G), node(N), element(E)
+C      --IDVAR - input database index of the variable;
+C      --   index into time/global entry for global
+C      --   NOTE: IDVAR for LHS is scratch during equation evaluation
+C      --      (set by LNKSTO)
+C      --ISTVAR - indexed on time; if <> 0, values for indexed time needed
+C      --   (1) = (ICURTM) current time
+C      --   (2) = (ILSTTM) last time
+C      --   (3) = (IONETM) first time
+C      --   during equation input, (1) is the variable state flag for LHS:
+C      --       1 = assigned variable
+C      --      -1 = temporary variable
+C      --      -2 = saved variable
+C      --   during equation evaluation, storage location for variable
+C      --   (shared if the variable is both an input variable and an output
+C      --   variable)
+C      --IEVENT - the ISEVOK index for this variable (if element variable)

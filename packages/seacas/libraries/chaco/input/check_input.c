@@ -43,7 +43,7 @@ double    eigtol;		/* tolerance for eigen-pairs */
     int       flag_graph;	/* does graph check out OK? */
     int       flag_params;	/* do params look OK? */
     int       flag_assign;	/* does assignment look good? */
-    int       nprocs;		/* number of processors partitioning for */
+    int       nprocs=0;		/* number of processors partitioning for */
     int       i;		/* loop counter */
     int       check_graph(), check_params(), check_assignment();
 

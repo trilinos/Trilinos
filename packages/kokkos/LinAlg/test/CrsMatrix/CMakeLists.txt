@@ -27,9 +27,8 @@ IF (Kokkos_ENABLE_ThreadPool)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+    INSTALLABLE
   ) 
-  INSTALL(TARGETS Kokkos_CrsMatrix_FirstTouchTPI
-         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
 ENDIF (Kokkos_ENABLE_ThreadPool) 
 
 IF (Kokkos_ENABLE_TBB) 
@@ -41,9 +40,8 @@ IF (Kokkos_ENABLE_TBB)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+    INSTALLABLE
   ) 
-  INSTALL(TARGETS Kokkos_CrsMatrix_FirstTouchTBB
-         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
 ENDIF (Kokkos_ENABLE_TBB) 
 
 IF (Kokkos_ENABLE_CUSP) 
@@ -55,7 +53,6 @@ IF (Kokkos_ENABLE_CUSP)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+    INSTALLABLE
   ) 
-  INSTALL(TARGETS Kokkos_CrsMatrix_CUSP
-         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
 ENDIF()

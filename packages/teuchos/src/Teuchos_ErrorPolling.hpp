@@ -88,7 +88,7 @@ namespace Teuchos
    * \warning This class has been DEPRECATED, due to its dependence on
    *   the deprecated \c MPIComm interface.
    */
-  class TEUCHOS_LIB_DLL_EXPORT ErrorPolling
+  class TEUCHOS_DEPRECATED TEUCHOS_LIB_DLL_EXPORT ErrorPolling
   {
   public:
     /** Call this function upon catching an std::exception in order to

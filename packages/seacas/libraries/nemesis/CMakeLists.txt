@@ -1,6 +1,7 @@
 INCLUDE(SubPackageMacros)
 INCLUDE(PackageLibraryMacros)
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(FortranSettings)
 
 SUBPACKAGE(Nemesis)
 
@@ -80,20 +81,16 @@ PACKAGE_ADD_LIBRARY(
 	DEPLIBS exodus
 )
 
-IF (SEACASNemesis_ENABLE_TESTS)
+PACKAGE_ADD_TEST(
+	ne_test
+	NAME ne_test
+	NUM_MPI_PROCS 1
+)
 
-  PACKAGE_ADD_TEST(
-  	  ne_test
-	  NAME ne_test
-	  NUM_MPI_PROCS 1
-  )
-
-  PACKAGE_ADD_EXECUTABLE(
-   ne_test
-   SOURCES ne_test.c
-  )
-
-ENDIF()
+PACKAGE_ADD_EXECUTABLE(
+ ne_test
+ SOURCES ne_test.c
+)
 
 SUBPACKAGE_POSTPROCESS()
 

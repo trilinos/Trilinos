@@ -34,13 +34,13 @@ FILE     *out_file;		/* output file */
     extern double SRESTOL;	/* limit on relative residual tol for evec of T */
     extern int LANCZOS_CONVERGENCE_MODE;	/* type of Lanczos convergence test */
     extern int SRES_SWITCHES;	/* # switches to backup routine for computing s */
-    int       warning1;		/* warning1 cond. (eigtol not achieved) true? */
-    int       warning2;		/* warning2 cond. (premature orth. loss) true? */
-    int       warning3;		/* warning3 cond. (suspected misconvergence) true? */
+    int       warning1=0;	/* warning1 cond. (eigtol not achieved) true? */
+    int       warning2=0;	/* warning2 cond. (premature orth. loss) true? */
+    int       warning3=0;	/* warning3 cond. (suspected misconvergence) true? */
     int       i;		/* loop index */
     int       hosed;		/* flag for serious Lanczos problems */
     int       pass;		/* which time through we are on */
-    FILE     *outfile;		/* set to output file or stdout */
+    FILE     *outfile=NULL;	/* set to output file or stdout */
     double    checkeig();	/* calculate residual of eigenvector of A */
     void      doubleout_file();	/* print a double precision number */
     void      bail();		/* our exit routine */

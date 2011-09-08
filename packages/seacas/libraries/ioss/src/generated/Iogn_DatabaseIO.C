@@ -342,6 +342,32 @@ namespace Iogn {
     return num_to_get;
   }
     
+  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::ElementSet* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
   int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -391,10 +417,15 @@ namespace Iogn {
   // Input only database -- these will never be called...
   int DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::FaceBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::ElementSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::SideSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
 
   const Ioss::MapContainer& DatabaseIO::get_node_map() const
@@ -520,10 +551,8 @@ namespace Iogn {
     for (int i=0; i < block_count; i++) {
       std::string name = Ioss::Utils::encode_entity_name("block", i+1);
       std::string type = m_generatedMesh->topology_type(i+1).first;
-      int attribute_count = i == 0 ? 0 : 1;
       size_t element_count =  m_generatedMesh->element_count_proc(i+1);
-      Ioss::ElementBlock *block = new Ioss::ElementBlock(this, name, type, element_count, 
-							 attribute_count);
+      Ioss::ElementBlock *block = new Ioss::ElementBlock(this, name, type, element_count);
 
       block->property_add(Ioss::Property("id", i+1));
       
@@ -531,6 +560,7 @@ namespace Iogn {
       block->property_add(Ioss::Property("original_block_order", i));
       block->property_add(Ioss::Property("global_entity_count", (int)m_generatedMesh->element_count(i+1)));
       
+      int attribute_count = i == 0 ? 0 : 1;
       if (attribute_count > 0) {
 	block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
 				     (int)m_generatedMesh->element_count_proc(i+1)));
@@ -608,4 +638,10 @@ namespace Iogn {
       get_region()->add(commset);
     }
   }
+
+  unsigned DatabaseIO::entity_field_support() const
+  {
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION;
+  }
+
 }

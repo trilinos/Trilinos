@@ -1,0 +1,325 @@
+netcdf test {
+dimensions:
+	len_string = 33 ;
+	len_line = 81 ;
+	four = 4 ;
+	time_step = UNLIMITED ; // (10 currently)
+	len_name = 33 ;
+	num_dim = 2 ;
+	num_nodes = 8 ;
+	num_elem = 2 ;
+	num_el_blk = 2 ;
+	num_node_sets = 2 ;
+	num_side_sets = 2 ;
+	num_el_in_blk1 = 1 ;
+	num_nod_per_el1 = 4 ;
+	num_att_in_blk1 = 1 ;
+	num_el_in_blk2 = 1 ;
+	num_nod_per_el2 = 4 ;
+	num_att_in_blk2 = 1 ;
+	num_nod_ns1 = 5 ;
+	num_nod_ns2 = 3 ;
+	num_side_ss1 = 2 ;
+	num_df_ss1 = 4 ;
+	num_side_ss2 = 2 ;
+	num_df_ss2 = 4 ;
+	num_qa_rec = 2 ;
+	num_info = 3 ;
+	num_glo_var = 1 ;
+	num_nod_var = 2 ;
+	num_elem_var = 3 ;
+variables:
+	double time_whole(time_step) ;
+	int eb_status(num_el_blk) ;
+	int eb_prop1(num_el_blk) ;
+		eb_prop1:name = "ID" ;
+	int ns_status(num_node_sets) ;
+	int ns_prop1(num_node_sets) ;
+		ns_prop1:name = "ID" ;
+	int ss_status(num_side_sets) ;
+	int ss_prop1(num_side_sets) ;
+		ss_prop1:name = "ID" ;
+	double coordx(num_nodes) ;
+	double coordy(num_nodes) ;
+	char eb_names(num_el_blk, len_name) ;
+	char ns_names(num_node_sets, len_name) ;
+	char ss_names(num_side_sets, len_name) ;
+	char coor_names(num_dim, len_name) ;
+	int elem_map(num_elem) ;
+	double attrib1(num_el_in_blk1, num_att_in_blk1) ;
+	char attrib_name1(num_att_in_blk1, len_name) ;
+	int connect1(num_el_in_blk1, num_nod_per_el1) ;
+		connect1:elem_type = "quad" ;
+	double attrib2(num_el_in_blk2, num_att_in_blk2) ;
+	char attrib_name2(num_att_in_blk2, len_name) ;
+	int connect2(num_el_in_blk2, num_nod_per_el2) ;
+		connect2:elem_type = "quad" ;
+	int eb_prop2(num_el_blk) ;
+		eb_prop2:_FillValue = 0 ;
+		eb_prop2:name = "MATL" ;
+	int eb_prop3(num_el_blk) ;
+		eb_prop3:_FillValue = 0 ;
+		eb_prop3:name = "DENSITY" ;
+	int node_ns1(num_nod_ns1) ;
+	double dist_fact_ns1(num_nod_ns1) ;
+	int node_ns2(num_nod_ns2) ;
+	double dist_fact_ns2(num_nod_ns2) ;
+	int ns_prop2(num_node_sets) ;
+		ns_prop2:_FillValue = 0 ;
+		ns_prop2:name = "FACE" ;
+	int ns_prop3(num_node_sets) ;
+		ns_prop3:name = "VELOCITY" ;
+	int elem_ss1(num_side_ss1) ;
+	int side_ss1(num_side_ss1) ;
+	double dist_fact_ss1(num_df_ss1) ;
+	int elem_ss2(num_side_ss2) ;
+	int side_ss2(num_side_ss2) ;
+	double dist_fact_ss2(num_df_ss2) ;
+	int ss_prop2(num_side_sets) ;
+		ss_prop2:_FillValue = 0 ;
+		ss_prop2:name = "COLOR" ;
+	char qa_records(num_qa_rec, four, len_string) ;
+	char info_records(num_info, len_line) ;
+	char name_glo_var(num_glo_var, len_name) ;
+	double vals_glo_var(time_step, num_glo_var) ;
+	double vals_nod_var1(time_step, num_nodes) ;
+	double vals_nod_var2(time_step, num_nodes) ;
+	char name_nod_var(num_nod_var, len_name) ;
+	char name_elem_var(num_elem_var, len_name) ;
+	double vals_elem_var1eb1(time_step, num_el_in_blk1) ;
+	double vals_elem_var2eb1(time_step, num_el_in_blk1) ;
+	double vals_elem_var3eb1(time_step, num_el_in_blk1) ;
+	double vals_elem_var1eb2(time_step, num_el_in_blk2) ;
+	double vals_elem_var2eb2(time_step, num_el_in_blk2) ;
+	double vals_elem_var3eb2(time_step, num_el_in_blk2) ;
+	int elem_var_tab(num_el_blk, num_elem_var) ;
+
+// global attributes:
+		:floating_point_word_size = 8 ;
+		:file_size = 1 ;
+		:title = "This is a test" ;
+		:maximum_name_length = 32 ;
+data:
+
+ time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;
+
+ eb_status = 1, 1 ;
+
+ eb_prop1 = 10, 11 ;
+
+ ns_status = 1, 1 ;
+
+ ns_prop1 = 20, 21 ;
+
+ ss_status = 1, 1 ;
+
+ ss_prop1 = 30, 31 ;
+
+ coordx = 0, 1, 1, 0, 1, 2, 2, 1 ;
+
+ coordy = 0, 0, 1, 1, 0, 0, 1, 1 ;
+
+ eb_names =
+  "",
+  "" ;
+
+ ns_names =
+  "",
+  "" ;
+
+ ss_names =
+  "",
+  "" ;
+
+ coor_names =
+  "xcoor",
+  "ycoor" ;
+
+ elem_map = 1, 2 ;
+
+ attrib1 =
+  3.1416 ;
+
+ attrib_name1 =
+  "" ;
+
+ connect1 =
+  1, 2, 3, 4 ;
+
+ attrib2 =
+  6.1416 ;
+
+ attrib_name2 =
+  "" ;
+
+ connect2 =
+  5, 6, 7, 8 ;
+
+ eb_prop2 = 10, 20 ;
+
+ eb_prop3 = _, _ ;
+
+ node_ns1 = 100, 101, 102, 103, 104 ;
+
+ dist_fact_ns1 = 1, 2, 3, 4, 5 ;
+
+ node_ns2 = 200, 201, 202 ;
+
+ dist_fact_ns2 = 1.1, 2.1, 3.1 ;
+
+ ns_prop2 = 4, 5 ;
+
+ ns_prop3 = 1000, 2000 ;
+
+ elem_ss1 = 11, 12 ;
+
+ side_ss1 = 1, 2 ;
+
+ dist_fact_ss1 = 30, 30.1, 30.2, 30.3 ;
+
+ elem_ss2 = 13, 14 ;
+
+ side_ss2 = 3, 4 ;
+
+ dist_fact_ss2 = 31, 31.1, 31.2, 31.3 ;
+
+ ss_prop2 = 100, 101 ;
+
+ qa_records =
+  "testwtd",
+  "07/07/93",
+  "15:41:33",
+  "FASTQ",
+  "fastq",
+  "07/07/93",
+  "16:41:33" ;
+
+ info_records =
+  "This is the first information record.",
+  "This is the second information record.",
+  "This is the third information record." ;
+
+ name_glo_var =
+  "glo_vars" ;
+
+ vals_glo_var =
+  0.02,
+  0.04,
+  0.06,
+  0.08,
+  0.1,
+  0.12,
+  0.14,
+  0.16,
+  0.18,
+  0.2 ;
+
+ vals_nod_var1 =
+  1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08,
+  1.02, 1.04, 1.06, 1.08, 1.1, 1.12, 1.14, 1.16,
+  1.03, 1.06, 1.09, 1.12, 1.15, 1.18, 1.21, 1.24,
+  1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32,
+  1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4,
+  1.06, 1.12, 1.18, 1.24, 1.3, 1.36, 1.42, 1.48,
+  1.07, 1.14, 1.21, 1.28, 1.35, 1.42, 1.49, 1.56,
+  1.08, 1.16, 1.24, 1.32, 1.4, 1.48, 1.56, 1.64,
+  1.09, 1.18, 1.27, 1.36, 1.45, 1.54, 1.63, 1.72,
+  1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8 ;
+
+ vals_nod_var2 =
+  2.01, 2.02, 2.03, 2.04, 2.05, 2.06, 2.07, 2.08,
+  2.02, 2.04, 2.06, 2.08, 2.1, 2.12, 2.14, 2.16,
+  2.03, 2.06, 2.09, 2.12, 2.15, 2.18, 2.21, 2.24,
+  2.04, 2.08, 2.12, 2.16, 2.2, 2.24, 2.28, 2.32,
+  2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4,
+  2.06, 2.12, 2.18, 2.24, 2.3, 2.36, 2.42, 2.48,
+  2.07, 2.14, 2.21, 2.28, 2.35, 2.42, 2.49, 2.56,
+  2.08, 2.16, 2.24, 2.32, 2.4, 2.48, 2.56, 2.64,
+  2.09, 2.18, 2.27, 2.36, 2.45, 2.54, 2.63, 2.72,
+  2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8 ;
+
+ name_nod_var =
+  "nod_var0",
+  "nod_var1" ;
+
+ name_elem_var =
+  "ele_var0",
+  "ele_var1",
+  "ele_var2" ;
+
+ vals_elem_var1eb1 =
+  4.01,
+  4.02,
+  4.03,
+  4.04,
+  4.05,
+  4.06,
+  4.07,
+  4.08,
+  4.09,
+  4.1 ;
+
+ vals_elem_var2eb1 =
+  5.01,
+  5.02,
+  5.03,
+  5.04,
+  5.05,
+  5.06,
+  5.07,
+  5.08,
+  5.09,
+  5.1 ;
+
+ vals_elem_var3eb1 =
+  6.01,
+  6.02,
+  6.03,
+  6.04,
+  6.05,
+  6.06,
+  6.07,
+  6.08,
+  6.09,
+  6.1 ;
+
+ vals_elem_var1eb2 =
+  5.01,
+  5.02,
+  5.03,
+  5.04,
+  5.05,
+  5.06,
+  5.07,
+  5.08,
+  5.09,
+  5.1 ;
+
+ vals_elem_var2eb2 =
+  6.01,
+  6.02,
+  6.03,
+  6.04,
+  6.05,
+  6.06,
+  6.07,
+  6.08,
+  6.09,
+  6.1 ;
+
+ vals_elem_var3eb2 =
+  7.01,
+  7.02,
+  7.03,
+  7.04,
+  7.05,
+  7.06,
+  7.07,
+  7.08,
+  7.09,
+  7.1 ;
+
+ elem_var_tab =
+  1, 1, 1,
+  1, 1, 1 ;
+}

@@ -68,7 +68,7 @@ long      seed;			/* for random graph mutations */
     extern int DEBUG_TRACE;	/* trace main execution path */
     extern double start_time;	/* time routine is entered */
     extern double reformat_time;/* time spent reformatting graph */
-    FILE     *params_file;	/* file for reading new parameters */
+    FILE     *params_file=NULL;	/* file for reading new parameters */
     struct vtx_data **graph;	/* graph data structure */
     double    vwgt_sum;		/* sum of vertex weights */
     double    time;		/* timing variable */
@@ -78,7 +78,7 @@ long      seed;			/* for random graph mutations */
     int       nedges;		/* number of edges in graph */
     int       using_vwgts;	/* are vertex weights being used? */
     int       using_ewgts;	/* are edge weights being used? */
-    int       nsets_tot;	/* total number of sets being created */
+    int       nsets_tot=0;	/* total number of sets being created */
     int       igeom;		/* geometric dimension for inertial method */
     int       default_goal;	/* using default goals? */
     int       i;		/* loop counter */

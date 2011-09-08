@@ -1,5 +1,4 @@
 INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutable)
 INCLUDE(CheckIncludeFile)
 
 SET(HEADERS "")
@@ -16,11 +15,18 @@ INCLUDE_DIRECTORIES(
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_XDMF)
 IF (NOT ${PACKAGE_NAME}_ENABLE_XDMF)
-  ADD_DEFINITIONS(-DNO_XDMF_SUPPORT)
+ADD_DEFINITIONS(-DNO_XDMF_SUPPORT)
 ENDIF()
 
 
-PACKAGE_ADD_EXECUTABLE(cth_pressure_map SOURCES cth_pressure_map.C DEPLIBS Ionit)
-PACKAGE_ADD_EXECUTABLE(io_shell         SOURCES io_shell.C DEPLIBS Ionit)
-PACKAGE_ADD_EXECUTABLE(shell_to_hex     SOURCES shell_to_hex.C DEPLIBS Ionit)
-PACKAGE_ADD_EXECUTABLE(io_info          SOURCES io_info.C volume.C DEPLIBS Ionit)
+ADD_EXECUTABLE(cth_pressure_map cth_pressure_map.C)
+ADD_EXECUTABLE(io_shell         io_shell.C)
+ADD_EXECUTABLE(shell_to_hex     shell_to_hex.C)
+ADD_EXECUTABLE(io_info          io_info.C volume.C)
+
+TARGET_LINK_LIBRARIES(cth_pressure_map Ionit)
+TARGET_LINK_LIBRARIES(io_shell         Ionit)
+TARGET_LINK_LIBRARIES(shell_to_hex     Ionit)
+TARGET_LINK_LIBRARIES(io_info          Ionit)
+
+

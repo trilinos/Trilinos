@@ -590,10 +590,10 @@ int write_vis(char *nemI_out_file,
   char  *var_names[] = {"proc"};
   int    ncnt, ecnt, pcnt, nsize, nsize_old, max_np_elem, nnodes, proc;
   int    vis_nelem_blks, pos, old_pos, bcnt, ccnt;
-  int   *el_blk_ids=NULL, *el_cnt_blk, *node_pel_blk, *el_ptr;
-  int   *nattr_el_blk, *elem_block, *tmp_connect, *vis_el_blk_ptr;
-  int   *elem_map;
-  float  vers, time_val, *node_vals;
+  int   *el_blk_ids=NULL, *el_cnt_blk=NULL, *node_pel_blk=NULL, *el_ptr=NULL;
+  int   *nattr_el_blk=NULL, *elem_block=NULL, *tmp_connect=NULL, *vis_el_blk_ptr=NULL;
+  int   *elem_map=NULL;
+  float  vers, time_val, *node_vals=NULL;
 /*-----------------------------Execution Begins------------------------------*/
 
   /* Generate the file name for the visualization file */

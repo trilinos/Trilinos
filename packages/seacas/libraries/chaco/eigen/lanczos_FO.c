@@ -110,9 +110,9 @@ int       version;		/* 1 = standard mode, 2 = inverse operator mode */
     struct orthlink *orthlist  = NULL;	/* vectors to orthogonalize against in Lanczos */
     struct orthlink *orthlist2 = NULL;	/* vectors to orthogonalize against in Symmlq */
     struct orthlink *temp;	/* for expanding orthogonalization list */
-    double   *ritzvec;		/* ritz vector for current iteration */
-    double   *zeros;		/* vector of all zeros */
-    double   *ones;		/* vector of all ones */
+    double   *ritzvec=NULL;	/* ritz vector for current iteration */
+    double   *zeros=NULL;	/* vector of all zeros */
+    double   *ones=NULL;	/* vector of all ones */
     struct scanlink *scanlist;	/* list of fields for min ritz vals */
     struct scanlink *curlnk;	/* for traversing the scanlist */
     double    bji_tol;		/* tol on bji estimate of A e-residual */
@@ -128,8 +128,8 @@ int       version;		/* 1 = standard mode, 2 = inverse operator mode */
     double    normxlim;		/* a stopping criteria for symmlq */
     long      itnmin;		/* enforce minimum number of iterations */
     int       symmlqitns;	/* # symmlq itns */
-    double   *wv1, *wv2, *wv3;	/* Symmlq work space */
-    double   *wv4, *wv5, *wv6;	/* Symmlq work space */
+    double   *wv1=NULL, *wv2=NULL, *wv3=NULL;	/* Symmlq work space */
+    double   *wv4=NULL, *wv5=NULL, *wv6=NULL;	/* Symmlq work space */
     long      long_n;		/* long int copy of n for symmlq */
     int       ritzval_flag = 0;	/* status flag for ql() */
     double    Anorm;            /* Norm estimate of the Laplacian matrix */
