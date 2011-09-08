@@ -45,7 +45,9 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const { }
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+      coarseLevel.Request("P",PFact_);
+    }
 
     //@}
 

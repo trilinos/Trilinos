@@ -43,6 +43,11 @@ namespace MueLu {
       return Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
+    //!
+    virtual void callDeclareInput(Level & requestedLevel) const {
+      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+    }
+
     //@}
 
   }; //class TwoLevelFactoryBase

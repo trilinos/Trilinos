@@ -82,12 +82,12 @@ namespace MueLu {
     }
 
     //! Indicate that an object is needed. This increments the storage counter.
-    void Request(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+    /*void Request(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null) {
       Request(ename,factory.get());
-    } //Request
+    } //Request*/
 
     //! Indicate that an object is needed. This increments the storage counter.
-    void Request(const std::string ename, const FactoryBase* factory) {
+    virtual void Request(const std::string& ename, const FactoryBase* factory) {
       // if it's the first request for 'ename', create a new key in the hashtable
       if(!countTable_.isKey(ename, factory))
         countTable_.Set(ename,0,factory);
@@ -97,13 +97,13 @@ namespace MueLu {
     } //Request
 
     //! Decrement the storage counter.
-    void Release(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null)
+    /*void Release(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
     {
       Release(ename,factory.get());
-    } //Release
+    } //Release*/
 
     //! Decrement the storage counter.
-    void Release(const std::string ename, const FactoryBase* factory)
+    virtual void Release(const std::string& ename, const FactoryBase* factory)
     {
       // test: we can only release data if the key 'ename' exists in countTable (and dataTable)
       if (!countTable_.isKey(ename,factory) ||

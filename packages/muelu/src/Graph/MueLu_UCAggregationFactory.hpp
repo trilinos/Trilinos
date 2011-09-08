@@ -72,7 +72,7 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      currentLevel.Input("Graph", graphFact_()); // TW: what's this???
+      //currentLevel.Input("Graph", graphFact_()); // TW: what's this???
       currentLevel.Request("Graph", graphFact_); // we should request data...
     }
 

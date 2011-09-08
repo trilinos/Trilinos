@@ -40,6 +40,11 @@ namespace MueLu {
     virtual bool NewBuild(Level & requestedLevel) const {
       return Build(requestedLevel);
     }
+
+    //!
+    virtual void callDeclareInput(Level & requestedLevel) const {
+      DeclareInput(requestedLevel);
+    }
  //@}
 
   }; //class SingleLevelFactoryBase

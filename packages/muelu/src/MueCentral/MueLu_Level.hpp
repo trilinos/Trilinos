@@ -127,11 +127,16 @@ public:
         if (factory == NULL)
         {
             const FactoryBase* defaultFactory = GetDefaultFactoryPtr(ename);
+            if( defaultFactory == NULL)
+            {
+              std::cout << "WARNING: default factory == NULL" << std::endl; // todo: remove this!!
+              return Needs::GetData<T>(ename,defaultFactory);
+            }
             // check if data for default factory has already been generated
             if(!Needs::IsAvailable(ename,defaultFactory))
             {
-                // todo: call declareInput!
-                defaultFactory->NewBuild(*this);
+              defaultFactory->callDeclareInput(*this);
+              defaultFactory->NewBuild(*this);
             }
 
             TEST_FOR_EXCEPTION(! Needs::IsAvailable(ename,defaultFactory), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output.");
@@ -140,6 +145,7 @@ public:
         else
         {
             // todo: call declareInput?
+            factory->callDeclareInput(*this);
             factory->NewBuild(*this);
             TEST_FOR_EXCEPTION(! Needs::IsAvailable(ename,factory), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output.");
             return Needs::GetData<T>(ename,factory);
@@ -185,9 +191,36 @@ public:
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
 
+    //! Indicate that an object is needed. This increments the storage counter.
+    void Request(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null) {
+      Request(ename,factory.get());
+    } //Request
+
     //!
-    void Input(const std::string& ename, const FactoryBase* factory) {
-        //TODO
+    void Request(const std::string& ename, const FactoryBase* factory) {
+      const FactoryBase* fac = factory;
+      if (factory == NULL)
+      {
+          fac = GetDefaultFactoryPtr(ename);
+      }
+      Needs::Request(ename,fac);
+    }
+
+    //! Decrement the storage counter.
+    void Release(const std::string& ename, RCP<const FactoryBase> factory = Teuchos::null)
+    {
+      Release(ename,factory.get());
+    } //Release
+
+    //! Decrement the storage counter.
+    void Release(const std::string& ename, const FactoryBase* factory)
+    {
+      const FactoryBase* fac = factory;
+      if (factory == NULL)
+      {
+          fac = GetDefaultFactoryPtr(ename);
+      }
+      Needs::Release(ename,fac);
     }
 
     //! Previous level
@@ -195,9 +228,9 @@ public:
     //@}
 
 
-    void Input(const std::string& ename, Teuchos::Ptr<const FactoryBase> factory) {
+    /*void Input(const std::string& ename, Teuchos::Ptr<const FactoryBase> factory) {
         Input(ename, factory.get());
-    }
+    }*/
 
 
 private:

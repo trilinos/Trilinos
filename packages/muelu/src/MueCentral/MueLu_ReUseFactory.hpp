@@ -51,6 +51,10 @@ namespace MueLu {
       return true; // ??
     }
 
+    virtual void callDeclareInput(Level & requestedLevel) const {
+      return;
+    }
+
   }; // class ReUseFactory
 
 } //namespace MueLu

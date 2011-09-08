@@ -34,6 +34,7 @@ namespace MueLu {
 
     virtual bool NewBuild(Level & requestedLevel) const = 0;
 
+    virtual void callDeclareInput(Level & requestedLevel) const = 0;
     //@}
 
     //@{
