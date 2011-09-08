@@ -33,6 +33,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   timeval start, stop, result;
 
   fixture::simple_hex_fixture mesh(ex,ey,ez);
+  mesh.generate_mesh();
+
+  const int NumStates = 2;
 
   const unsigned nelems = mesh.m_num_elements;;
   const unsigned nnodes = mesh.m_num_nodes;
@@ -77,8 +80,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
       for (unsigned iz=0; iz<ez+1; ++iz) {
         const unsigned inode = mesh.node_index(ix,iy,iz);
         const unsigned X = 0;
-        const unsigned STATE = 0;
-        velocity_h(inode,X,STATE) = 1.0e3;
+        //set both states to the initial value
+        velocity_h(inode,X,0) = 1.0e3;
+        velocity_h(inode,X,1) = 1.0e3;
       }
     }
   }
@@ -117,8 +121,8 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // Field data required for the internal force computations on the device.
 
   scalar_array_d  model_coords =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3);
-  scalar_array_d  displacement =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3, 2); // two state field
-  scalar_array_d  velocity     =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3, 2); // two state field
+  scalar_array_d  displacement =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3, NumStates); // two state field
+  scalar_array_d  velocity     =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3, NumStates); // two state field
   scalar_array_d  acceleration =  Kokkos::create_mdarray< scalar_array_d >(nnodes, 3);
   scalar_array_d  nodal_mass   =  Kokkos::create_mdarray< scalar_array_d >(nnodes);
   scalar_array_d  elem_mass    =  Kokkos::create_mdarray< scalar_array_d >(nelems);
@@ -126,13 +130,13 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   scalar_array_d  internal_force =   Kokkos::create_mdarray< scalar_array_d >(nnodes, 3);
 
 
-  scalar_array_d  hg_resist =     Kokkos::create_mdarray< scalar_array_d >(nelems, 12, 2); // old and new
-  scalar_array_d  rotation =      Kokkos::create_mdarray< scalar_array_d >(nelems, 9, 2);  // rotation old and new
+  scalar_array_d  hg_resist =     Kokkos::create_mdarray< scalar_array_d >(nelems, 12, NumStates); // old and new
+  scalar_array_d  rotation =      Kokkos::create_mdarray< scalar_array_d >(nelems, 9, NumStates);  // rotation old and new
   scalar_array_d  gradop12 =      Kokkos::create_mdarray< scalar_array_d >(nelems, 3, 8);
   scalar_array_d  force_new =     Kokkos::create_mdarray< scalar_array_d >(nelems, 3, 8);
 
 
-  scalar_array_d  hgop =          Kokkos::create_mdarray< scalar_array_d >(nelems, 32, 2); // hgop and mid_hgop
+  scalar_array_d  hgop =          Kokkos::create_mdarray< scalar_array_d >(nelems, 32, NumStates); // hgop and mid_hgop
   scalar_array_d  vel_grad =      Kokkos::create_mdarray< scalar_array_d >(nelems, 9);
   scalar_array_d  stretch =       Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  s_temp =        Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
@@ -178,7 +182,15 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // Global memory accees have read/write cost and memory subsystem contention cost.
   //--------------------------------------------------------------------------
 
+  int current_state = 0;
+  int previous_state = 1;
   for (Scalar sim_time = 0.0; sim_time < end_time; sim_time += dt) {
+
+    //rotate the states
+    previous_state = current_state;
+    ++current_state;
+    current_state %= NumStates;
+
 
     // First kernel 'grad_hgop' combines three functions:
     // gradient, velocity gradient, and hour glass operator.
@@ -190,7 +202,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
           mid_vol,
           vel_grad,
           hgop,
-          dt )     , compute_time );
+          dt,
+          current_state,
+          previous_state)     , compute_time );
 
     total += compute_time;
 
@@ -203,7 +217,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
           stretch,
           vorticity,
           rot_stret,
-          dt)     , compute_time );
+          dt,
+          current_state,
+          previous_state)     , compute_time );
 
     total += compute_time;
 
@@ -238,7 +254,9 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
           lin_bulk_visc,
           quad_bulk_visc,
           dt,
-          scaleHGRotation)   , compute_time );
+          scaleHGRotation,
+          current_state,
+          previous_state)   , compute_time );
 
     total += compute_time;
 
@@ -250,9 +268,13 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
         (  node_elem_ids,
            node_elem_offset,
            internal_force,
-           force_new ) , compute_time);
+           force_new,
+           current_state,
+           previous_state) , compute_time);
 
     total += compute_time;
+
+    break;
   }
 
 

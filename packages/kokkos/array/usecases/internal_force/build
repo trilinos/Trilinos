@@ -25,7 +25,7 @@ set LIB="-lpthread"
 
 echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 
-set GCC_FLAGS="-Wall -O3 -fopenmp ${INC_PATH}"
+set GCC_FLAGS="-Wall -g -O0 -fopenmp ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 

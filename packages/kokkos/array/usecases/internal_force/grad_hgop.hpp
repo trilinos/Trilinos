@@ -43,6 +43,8 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   const array_type hgop;
 
   const Scalar     dt;
+  const int        current_state;
+  const int        previous_state;
 
   // Constructor on the Host to populate this device functor.
   // All array view copies are shallow.
@@ -54,7 +56,9 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
                const array_type & arg_mv,
                const array_type & arg_vg,
                const array_type & arg_hg,
-               const Scalar delta_t )
+               const Scalar delta_t,
+               const int arg_current_state,
+               const int arg_previous_state)
     : elem_node_connectivity(arg_enc)
     , model_coords( arg_p )
     , displacement( arg_disp )
@@ -63,6 +67,8 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     , vel_grad( arg_vg )
     , hgop    ( arg_hg )
     , dt( delta_t )
+    , current_state(arg_current_state)
+    , previous_state(arg_previous_state)
     {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -93,31 +99,29 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     const int Y = 1;
     const int Z = 2;
 
-    int state = 0;
-
   // Read global velocity once and use many times via local registers / L1 cache.
   //  store the velocity information in local memory before using, so it can
   //  be returned for other functions to use
 
-    vx[0] = velocity(nodes[0], X, state);
-    vx[1] = velocity(nodes[1], X, state);
-    vx[2] = velocity(nodes[2], X, state);
-    vx[3] = velocity(nodes[3], X, state);
-    vx[4] = velocity(nodes[4], X, state);
-    vx[5] = velocity(nodes[5], X, state);
-    vx[6] = velocity(nodes[6], X, state);
-    vx[7] = velocity(nodes[7], X, state);
+    vx[0] = velocity(nodes[0], X, current_state);
+    vx[1] = velocity(nodes[1], X, current_state);
+    vx[2] = velocity(nodes[2], X, current_state);
+    vx[3] = velocity(nodes[3], X, current_state);
+    vx[4] = velocity(nodes[4], X, current_state);
+    vx[5] = velocity(nodes[5], X, current_state);
+    vx[6] = velocity(nodes[6], X, current_state);
+    vx[7] = velocity(nodes[7], X, current_state);
 
   // Read global coordinates once and use many times via local registers / L1 cache.
   //  load X coordinate information and move by half time step
-    x[0] = model_coords(nodes[0], X) + displacement(nodes[0], X, state) + dt_scale * vx[0];
-    x[1] = model_coords(nodes[1], X) + displacement(nodes[1], X, state) + dt_scale * vx[1];
-    x[2] = model_coords(nodes[2], X) + displacement(nodes[2], X, state) + dt_scale * vx[2];
-    x[3] = model_coords(nodes[3], X) + displacement(nodes[3], X, state) + dt_scale * vx[3];
-    x[4] = model_coords(nodes[4], X) + displacement(nodes[4], X, state) + dt_scale * vx[4];
-    x[5] = model_coords(nodes[5], X) + displacement(nodes[5], X, state) + dt_scale * vx[5];
-    x[6] = model_coords(nodes[6], X) + displacement(nodes[6], X, state) + dt_scale * vx[6];
-    x[7] = model_coords(nodes[7], X) + displacement(nodes[7], X, state) + dt_scale * vx[7];
+    x[0] = model_coords(nodes[0], X) + displacement(nodes[0], X, current_state) + dt_scale * vx[0];
+    x[1] = model_coords(nodes[1], X) + displacement(nodes[1], X, current_state) + dt_scale * vx[1];
+    x[2] = model_coords(nodes[2], X) + displacement(nodes[2], X, current_state) + dt_scale * vx[2];
+    x[3] = model_coords(nodes[3], X) + displacement(nodes[3], X, current_state) + dt_scale * vx[3];
+    x[4] = model_coords(nodes[4], X) + displacement(nodes[4], X, current_state) + dt_scale * vx[4];
+    x[5] = model_coords(nodes[5], X) + displacement(nodes[5], X, current_state) + dt_scale * vx[5];
+    x[6] = model_coords(nodes[6], X) + displacement(nodes[6], X, current_state) + dt_scale * vx[6];
+    x[7] = model_coords(nodes[7], X) + displacement(nodes[7], X, current_state) + dt_scale * vx[7];
 
   //  calc X difference vectors
     Scalar R42=(x[3] - x[1]);
@@ -144,24 +148,24 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     Scalar t5 =(R83 + R52);
     Scalar t6 =(R75 + R31);
 
-    vz[0] = velocity(nodes[0], Z, state);
-    vz[1] = velocity(nodes[1], Z, state);
-    vz[2] = velocity(nodes[2], Z, state);
-    vz[3] = velocity(nodes[3], Z, state);
-    vz[4] = velocity(nodes[4], Z, state);
-    vz[5] = velocity(nodes[5], Z, state);
-    vz[6] = velocity(nodes[6], Z, state);
-    vz[7] = velocity(nodes[7], Z, state);
+    vz[0] = velocity(nodes[0], Z, current_state);
+    vz[1] = velocity(nodes[1], Z, current_state);
+    vz[2] = velocity(nodes[2], Z, current_state);
+    vz[3] = velocity(nodes[3], Z, current_state);
+    vz[4] = velocity(nodes[4], Z, current_state);
+    vz[5] = velocity(nodes[5], Z, current_state);
+    vz[6] = velocity(nodes[6], Z, current_state);
+    vz[7] = velocity(nodes[7], Z, current_state);
 
   //  Load Z information
-    z[0] = model_coords(nodes[0], Z) + displacement(nodes[0], Z, state) + dt_scale * vz[0];
-    z[1] = model_coords(nodes[1], Z) + displacement(nodes[1], Z, state) + dt_scale * vz[1];
-    z[2] = model_coords(nodes[2], Z) + displacement(nodes[2], Z, state) + dt_scale * vz[2];
-    z[3] = model_coords(nodes[3], Z) + displacement(nodes[3], Z, state) + dt_scale * vz[3];
-    z[4] = model_coords(nodes[4], Z) + displacement(nodes[4], Z, state) + dt_scale * vz[4];
-    z[5] = model_coords(nodes[5], Z) + displacement(nodes[5], Z, state) + dt_scale * vz[5];
-    z[6] = model_coords(nodes[6], Z) + displacement(nodes[6], Z, state) + dt_scale * vz[6];
-    z[7] = model_coords(nodes[7], Z) + displacement(nodes[7], Z, state) + dt_scale * vz[7];
+    z[0] = model_coords(nodes[0], Z) + displacement(nodes[0], Z, current_state) + dt_scale * vz[0];
+    z[1] = model_coords(nodes[1], Z) + displacement(nodes[1], Z, current_state) + dt_scale * vz[1];
+    z[2] = model_coords(nodes[2], Z) + displacement(nodes[2], Z, current_state) + dt_scale * vz[2];
+    z[3] = model_coords(nodes[3], Z) + displacement(nodes[3], Z, current_state) + dt_scale * vz[3];
+    z[4] = model_coords(nodes[4], Z) + displacement(nodes[4], Z, current_state) + dt_scale * vz[4];
+    z[5] = model_coords(nodes[5], Z) + displacement(nodes[5], Z, current_state) + dt_scale * vz[5];
+    z[6] = model_coords(nodes[6], Z) + displacement(nodes[6], Z, current_state) + dt_scale * vz[6];
+    z[7] = model_coords(nodes[7], Z) + displacement(nodes[7], Z, current_state) + dt_scale * vz[7];
 
   //  Some data is used by other functors, as well as this one, so we make a
   //  local copy, but still write the values to Global memory, so that other
@@ -206,24 +210,24 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     t5 =(R83 + R52);
     t6 =(R75 + R31);
 
-    vy[0] = velocity(nodes[0], Y, state);
-    vy[1] = velocity(nodes[1], Y, state);
-    vy[2] = velocity(nodes[2], Y, state);
-    vy[3] = velocity(nodes[3], Y, state);
-    vy[4] = velocity(nodes[4], Y, state);
-    vy[5] = velocity(nodes[5], Y, state);
-    vy[6] = velocity(nodes[6], Y, state);
-    vy[7] = velocity(nodes[7], Y, state);
+    vy[0] = velocity(nodes[0], Y, current_state);
+    vy[1] = velocity(nodes[1], Y, current_state);
+    vy[2] = velocity(nodes[2], Y, current_state);
+    vy[3] = velocity(nodes[3], Y, current_state);
+    vy[4] = velocity(nodes[4], Y, current_state);
+    vy[5] = velocity(nodes[5], Y, current_state);
+    vy[6] = velocity(nodes[6], Y, current_state);
+    vy[7] = velocity(nodes[7], Y, current_state);
 
   //  Load Y information
-    y[0] = model_coords(nodes[0], Y) + displacement(nodes[0], Y, state) + dt_scale * vy[0];
-    y[1] = model_coords(nodes[1], Y) + displacement(nodes[1], Y, state) + dt_scale * vy[1];
-    y[2] = model_coords(nodes[2], Y) + displacement(nodes[2], Y, state) + dt_scale * vy[2];
-    y[3] = model_coords(nodes[3], Y) + displacement(nodes[3], Y, state) + dt_scale * vy[3];
-    y[4] = model_coords(nodes[4], Y) + displacement(nodes[4], Y, state) + dt_scale * vy[4];
-    y[5] = model_coords(nodes[5], Y) + displacement(nodes[5], Y, state) + dt_scale * vy[5];
-    y[6] = model_coords(nodes[6], Y) + displacement(nodes[6], Y, state) + dt_scale * vy[6];
-    y[7] = model_coords(nodes[7], Y) + displacement(nodes[7], Y, state) + dt_scale * vy[7];
+    y[0] = model_coords(nodes[0], Y) + displacement(nodes[0], Y, current_state) + dt_scale * vy[0];
+    y[1] = model_coords(nodes[1], Y) + displacement(nodes[1], Y, current_state) + dt_scale * vy[1];
+    y[2] = model_coords(nodes[2], Y) + displacement(nodes[2], Y, current_state) + dt_scale * vy[2];
+    y[3] = model_coords(nodes[3], Y) + displacement(nodes[3], Y, current_state) + dt_scale * vy[3];
+    y[4] = model_coords(nodes[4], Y) + displacement(nodes[4], Y, current_state) + dt_scale * vy[4];
+    y[5] = model_coords(nodes[5], Y) + displacement(nodes[5], Y, current_state) + dt_scale * vy[5];
+    y[6] = model_coords(nodes[6], Y) + displacement(nodes[6], Y, current_state) + dt_scale * vy[6];
+    y[7] = model_coords(nodes[7], Y) + displacement(nodes[7], Y, current_state) + dt_scale * vy[7];
 
 
   //  Calculate X gradient from Y and Z data

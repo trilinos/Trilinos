@@ -81,6 +81,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 	const bool    scaleHGRotation;
 
+  const int        current_state;
+  const int        previous_state;
+
 	divergence(
         const int_array_type & arg_enc,
         const array_type & arg_p,
@@ -109,36 +112,41 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 				const Scalar arg_l,
 				const Scalar arg_q,
 				const Scalar delta_t,
-				const bool arg_scale):
+				const bool arg_scale,
+        const int arg_current_state,
+        const int arg_previous_state)
 
-        elem_node_connectivity( arg_enc) ,
-				model_coords			( arg_p ),
-        displacement( arg_disp) ,
-				velocity		( arg_v ),
-				force_new		( arg_f ),
-				vorticity		( arg_vort ),
-				rotation		( arg_r ),
-				stress_new		( arg_sn ),
-				rot_stress		( arg_rstrss ),
-				rot_stret		( arg_rstret ),
-				gradop12		( arg_g ),
-				elem_mass		( arg_em ),
-				elem_dilmod		( arg_ed ),
-				elem_shrmod		( arg_es ),
-				elem_t_step		( arg_et ),
-				intern_energy	( arg_ie ),
-				mid_vol			( arg_mv ),
-				hgop			( arg_hg ),
-				hg_resist		( arg_hgr ),
-				hg_energy		( arg_hge ),
-				two_mu			( arg_tmu ),
-				bulk_mod		( arg_blk ),
-				hg_stiff		( arg_hgs ),
-				hg_visc			( arg_hgv ),
-				linBulkVisc		( arg_l ),
-				quadBulkVisc	( arg_q ),
-				dt				( delta_t ),
-				scaleHGRotation	( arg_scale ){}
+          : elem_node_connectivity( arg_enc)
+          , model_coords(arg_p)
+          , displacement(arg_disp)
+          , velocity(arg_v)
+          , force_new(arg_f)
+          , vorticity(arg_vort)
+          , rotation(arg_r)
+          , stress_new(arg_sn)
+          , rot_stress(arg_rstrss)
+          , rot_stret(arg_rstret)
+          , gradop12(arg_g)
+          , elem_mass(arg_em)
+          , elem_dilmod(arg_ed)
+          , elem_shrmod(arg_es)
+          , elem_t_step(arg_et)
+          , intern_energy(arg_ie)
+          , mid_vol(arg_mv)
+          , hgop(arg_hg)
+          , hg_resist(arg_hgr)
+          , hg_energy(arg_hge)
+          , two_mu(arg_tmu)
+          , bulk_mod(arg_blk)
+          , hg_stiff(arg_hgs)
+          , hg_visc(arg_hgv)
+          , linBulkVisc(arg_l)
+          , quadBulkVisc(arg_q)
+          , dt(delta_t)
+          , scaleHGRotation(arg_scale)
+          , current_state(arg_current_state)
+          , previous_state(arg_previous_state)
+        {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
     void get_nodes( int ielem, int * nodes) const
@@ -160,18 +168,17 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
     const int Y = 1;
     const int Z = 2;
 
-    const int state = 0;
 
     // Read global coordinates once and use many times via local registers / L1 cache.
     //  load X coordinate information and move by half time step
-    x[0] = model_coords(nodes[0], X) + displacement(nodes[0], X, state) ;
-    x[1] = model_coords(nodes[1], X) + displacement(nodes[1], X, state) ;
-    x[2] = model_coords(nodes[2], X) + displacement(nodes[2], X, state) ;
-    x[3] = model_coords(nodes[3], X) + displacement(nodes[3], X, state) ;
-    x[4] = model_coords(nodes[4], X) + displacement(nodes[4], X, state) ;
-    x[5] = model_coords(nodes[5], X) + displacement(nodes[5], X, state) ;
-    x[6] = model_coords(nodes[6], X) + displacement(nodes[6], X, state) ;
-    x[7] = model_coords(nodes[7], X) + displacement(nodes[7], X, state) ;
+    x[0] = model_coords(nodes[0], X) + displacement(nodes[0], X, current_state) ;
+    x[1] = model_coords(nodes[1], X) + displacement(nodes[1], X, current_state) ;
+    x[2] = model_coords(nodes[2], X) + displacement(nodes[2], X, current_state) ;
+    x[3] = model_coords(nodes[3], X) + displacement(nodes[3], X, current_state) ;
+    x[4] = model_coords(nodes[4], X) + displacement(nodes[4], X, current_state) ;
+    x[5] = model_coords(nodes[5], X) + displacement(nodes[5], X, current_state) ;
+    x[6] = model_coords(nodes[6], X) + displacement(nodes[6], X, current_state) ;
+    x[7] = model_coords(nodes[7], X) + displacement(nodes[7], X, current_state) ;
 
 		//   calc X difference vectors
 		Scalar R42=(x[3] - x[1]);
@@ -199,14 +206,14 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		Scalar t6 =(R75 + R31);
 
 		//  Load Z information
-    z[0] = model_coords(nodes[0], Z) + displacement(nodes[0], Z, state) ;
-    z[1] = model_coords(nodes[1], Z) + displacement(nodes[1], Z, state) ;
-    z[2] = model_coords(nodes[2], Z) + displacement(nodes[2], Z, state) ;
-    z[3] = model_coords(nodes[3], Z) + displacement(nodes[3], Z, state) ;
-    z[4] = model_coords(nodes[4], Z) + displacement(nodes[4], Z, state) ;
-    z[5] = model_coords(nodes[5], Z) + displacement(nodes[5], Z, state) ;
-    z[6] = model_coords(nodes[6], Z) + displacement(nodes[6], Z, state) ;
-    z[7] = model_coords(nodes[7], Z) + displacement(nodes[7], Z, state) ;
+    z[0] = model_coords(nodes[0], Z) + displacement(nodes[0], Z, current_state) ;
+    z[1] = model_coords(nodes[1], Z) + displacement(nodes[1], Z, current_state) ;
+    z[2] = model_coords(nodes[2], Z) + displacement(nodes[2], Z, current_state) ;
+    z[3] = model_coords(nodes[3], Z) + displacement(nodes[3], Z, current_state) ;
+    z[4] = model_coords(nodes[4], Z) + displacement(nodes[4], Z, current_state) ;
+    z[5] = model_coords(nodes[5], Z) + displacement(nodes[5], Z, current_state) ;
+    z[6] = model_coords(nodes[6], Z) + displacement(nodes[6], Z, current_state) ;
+    z[7] = model_coords(nodes[7], Z) + displacement(nodes[7], Z, current_state) ;
 
 
 		//  Calculate Y gradient from X and Z data
@@ -246,14 +253,14 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		t6 =(R75 + R31);
 
 		//  Load Y information
-    y[0] = model_coords(nodes[0], Y) + displacement(nodes[0], Y, state) ;
-    y[1] = model_coords(nodes[1], Y) + displacement(nodes[1], Y, state) ;
-    y[2] = model_coords(nodes[2], Y) + displacement(nodes[2], Y, state) ;
-    y[3] = model_coords(nodes[3], Y) + displacement(nodes[3], Y, state) ;
-    y[4] = model_coords(nodes[4], Y) + displacement(nodes[4], Y, state) ;
-    y[5] = model_coords(nodes[5], Y) + displacement(nodes[5], Y, state) ;
-    y[6] = model_coords(nodes[6], Y) + displacement(nodes[6], Y, state) ;
-    y[7] = model_coords(nodes[7], Y) + displacement(nodes[7], Y, state) ;
+    y[0] = model_coords(nodes[0], Y) + displacement(nodes[0], Y, current_state) ;
+    y[1] = model_coords(nodes[1], Y) + displacement(nodes[1], Y, current_state) ;
+    y[2] = model_coords(nodes[2], Y) + displacement(nodes[2], Y, current_state) ;
+    y[3] = model_coords(nodes[3], Y) + displacement(nodes[3], Y, current_state) ;
+    y[4] = model_coords(nodes[4], Y) + displacement(nodes[4], Y, current_state) ;
+    y[5] = model_coords(nodes[5], Y) + displacement(nodes[5], Y, current_state) ;
+    y[6] = model_coords(nodes[6], Y) + displacement(nodes[6], Y, current_state) ;
+    y[7] = model_coords(nodes[7], Y) + displacement(nodes[7], Y, current_state) ;
 
 
 		//  Calculate X gradient from Y and Z data
@@ -490,36 +497,35 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
     const int Y = 1;
     const int Z = 2;
 
-    const int state = 0;
 
     Scalar vx[8], vy[8], vz[8];
 
-    vx[0] = velocity(nodes[0], X, state);
-    vx[1] = velocity(nodes[1], X, state);
-    vx[2] = velocity(nodes[2], X, state);
-    vx[3] = velocity(nodes[3], X, state);
-    vx[4] = velocity(nodes[4], X, state);
-    vx[5] = velocity(nodes[5], X, state);
-    vx[6] = velocity(nodes[6], X, state);
-    vx[7] = velocity(nodes[7], X, state);
+    vx[0] = velocity(nodes[0], X, current_state);
+    vx[1] = velocity(nodes[1], X, current_state);
+    vx[2] = velocity(nodes[2], X, current_state);
+    vx[3] = velocity(nodes[3], X, current_state);
+    vx[4] = velocity(nodes[4], X, current_state);
+    vx[5] = velocity(nodes[5], X, current_state);
+    vx[6] = velocity(nodes[6], X, current_state);
+    vx[7] = velocity(nodes[7], X, current_state);
 
-    vy[0] = velocity(nodes[0], Y, state);
-    vy[1] = velocity(nodes[1], Y, state);
-    vy[2] = velocity(nodes[2], Y, state);
-    vy[3] = velocity(nodes[3], Y, state);
-    vy[4] = velocity(nodes[4], Y, state);
-    vy[5] = velocity(nodes[5], Y, state);
-    vy[6] = velocity(nodes[6], Y, state);
-    vy[7] = velocity(nodes[7], Y, state);
+    vy[0] = velocity(nodes[0], Y, current_state);
+    vy[1] = velocity(nodes[1], Y, current_state);
+    vy[2] = velocity(nodes[2], Y, current_state);
+    vy[3] = velocity(nodes[3], Y, current_state);
+    vy[4] = velocity(nodes[4], Y, current_state);
+    vy[5] = velocity(nodes[5], Y, current_state);
+    vy[6] = velocity(nodes[6], Y, current_state);
+    vy[7] = velocity(nodes[7], Y, current_state);
 
-    vz[0] = velocity(nodes[0], Z, state);
-    vz[1] = velocity(nodes[1], Z, state);
-    vz[2] = velocity(nodes[2], Z, state);
-    vz[3] = velocity(nodes[3], Z, state);
-    vz[4] = velocity(nodes[4], Z, state);
-    vz[5] = velocity(nodes[5], Z, state);
-    vz[6] = velocity(nodes[6], Z, state);
-    vz[7] = velocity(nodes[7], Z, state);
+    vz[0] = velocity(nodes[0], Z, current_state);
+    vz[1] = velocity(nodes[1], Z, current_state);
+    vz[2] = velocity(nodes[2], Z, current_state);
+    vz[3] = velocity(nodes[3], Z, current_state);
+    vz[4] = velocity(nodes[4], Z, current_state);
+    vz[5] = velocity(nodes[5], Z, current_state);
+    vz[6] = velocity(nodes[6], Z, current_state);
+    vz[7] = velocity(nodes[7], Z, current_state);
 
 		if (!scaleHGRotation){
 

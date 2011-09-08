@@ -34,21 +34,25 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	typedef KOKKOS_MACRO_DEVICE     device_type ;
 	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
 
-	const array_type rotation;    
+	const array_type rotation;
 	const array_type vel_grad;
 	const array_type stretching_tensor;
 	const array_type stretch;
 	const array_type vorticity;
 	const array_type rot_stret;
 	const Scalar     dt;
+  const int        current_state;
+  const int        previous_state;
 
 	decomp_rotate(	const array_type & arg_r,
 					const array_type & arg_v_gr,
 					const array_type & arg_str_ten,
 					const array_type & arg_str,
 					const array_type & arg_v,
-					const array_type & arg_rs,  
-					const Scalar       arg_dt  )
+					const array_type & arg_rs,
+					const Scalar       arg_dt,
+          const int arg_current_state,
+          const int arg_previous_state)
 		: rotation( arg_r )
 		, vel_grad( arg_v_gr )
 		, stretching_tensor( arg_str_ten )
@@ -56,7 +60,11 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		, vorticity( arg_v )
 		, rot_stret( arg_v_gr )
 		, dt( arg_dt )
+    , current_state(arg_current_state)
+    , previous_state(arg_previous_state)
 		{}
+
+
 
 	KOKKOS_MACRO_DEVICE_FUNCTION
 	void additive_decomp(int ielem, Scalar * v_gr, Scalar * str_ten)const {
@@ -141,15 +149,15 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	//  1) premultiply old rotation tensor to get right-hand side.
 		const Scalar dt_half = 0.5 * dt;
 
-		rot_old[K_F_XX] = rotation(ielem, K_F_XX, 0);
-		rot_old[K_F_YX] = rotation(ielem, K_F_YX, 0);
-		rot_old[K_F_ZX] = rotation(ielem, K_F_ZX, 0);
-		rot_old[K_F_XY] = rotation(ielem, K_F_XY, 0);
-		rot_old[K_F_YY] = rotation(ielem, K_F_YY, 0);
-		rot_old[K_F_ZY] = rotation(ielem, K_F_ZY, 0);
-		rot_old[K_F_XZ] = rotation(ielem, K_F_XZ, 0);
-		rot_old[K_F_YZ] = rotation(ielem, K_F_YZ, 0);
-		rot_old[K_F_ZZ] = rotation(ielem, K_F_ZZ, 0);
+		rot_old[K_F_XX] = rotation(ielem, K_F_XX, previous_state);
+		rot_old[K_F_YX] = rotation(ielem, K_F_YX, previous_state);
+		rot_old[K_F_ZX] = rotation(ielem, K_F_ZX, previous_state);
+		rot_old[K_F_XY] = rotation(ielem, K_F_XY, previous_state);
+		rot_old[K_F_YY] = rotation(ielem, K_F_YY, previous_state);
+		rot_old[K_F_ZY] = rotation(ielem, K_F_ZY, previous_state);
+		rot_old[K_F_XZ] = rotation(ielem, K_F_XZ, previous_state);
+		rot_old[K_F_YZ] = rotation(ielem, K_F_YZ, previous_state);
+		rot_old[K_F_ZZ] = rotation(ielem, K_F_ZZ, previous_state);
 
 		Scalar r_XX = rot_old[K_F_XX] + dt_half*( z3 * rot_old[K_F_YX] - z2 * rot_old[K_F_ZX] );
 		Scalar r_YX = rot_old[K_F_YX] + dt_half*( z1 * rot_old[K_F_ZX] - z3 * rot_old[K_F_XX] );
@@ -181,19 +189,19 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		r_ZY += r_XY * a13 + r_YY * b32;
 		r_ZZ += r_XZ * a13 + r_YZ * b32;
 
-	
+
 	// 	backward substitution -
 		const Scalar a33inv = 1.0 / (1.0 + a13 * a13 + a23 * b32);
 
-		rotation(ielem, K_F_ZX, 1)  = rot_new[K_F_ZX] = r_ZX * a33inv;
-		rotation(ielem, K_F_ZY, 1)  = rot_new[K_F_ZY] = r_ZY * a33inv;
-		rotation(ielem, K_F_ZZ, 1)  = rot_new[K_F_ZZ] = r_ZZ * a33inv;
-		rotation(ielem, K_F_YX, 1)  = rot_new[K_F_YX] = ( r_YX - rot_new[K_F_ZX] * a23 ) * a22inv;
-		rotation(ielem, K_F_YY, 1)  = rot_new[K_F_YY] = ( r_YY - rot_new[K_F_ZY] * a23 ) * a22inv;
-		rotation(ielem, K_F_YZ, 1)  = rot_new[K_F_YZ] = ( r_YZ - rot_new[K_F_ZZ] * a23 ) * a22inv;
-		rotation(ielem, K_F_XX, 1)  = rot_new[K_F_XX] = r_XX - rot_new[K_F_ZX] * a13 - rot_new[K_F_YX] * a12;
-		rotation(ielem, K_F_XY, 1)  = rot_new[K_F_XY] = r_XY - rot_new[K_F_ZY] * a13 - rot_new[K_F_YY] * a12;
-		rotation(ielem, K_F_XZ, 1)  = rot_new[K_F_XZ] = r_XZ - rot_new[K_F_ZZ] * a13 - rot_new[K_F_YZ] * a12;
+		rotation(ielem, K_F_ZX, current_state)  = rot_new[K_F_ZX] = r_ZX * a33inv;
+		rotation(ielem, K_F_ZY, current_state)  = rot_new[K_F_ZY] = r_ZY * a33inv;
+		rotation(ielem, K_F_ZZ, current_state)  = rot_new[K_F_ZZ] = r_ZZ * a33inv;
+		rotation(ielem, K_F_YX, current_state)  = rot_new[K_F_YX] = ( r_YX - rot_new[K_F_ZX] * a23 ) * a22inv;
+		rotation(ielem, K_F_YY, current_state)  = rot_new[K_F_YY] = ( r_YY - rot_new[K_F_ZY] * a23 ) * a22inv;
+		rotation(ielem, K_F_YZ, current_state)  = rot_new[K_F_YZ] = ( r_YZ - rot_new[K_F_ZZ] * a23 ) * a22inv;
+		rotation(ielem, K_F_XX, current_state)  = rot_new[K_F_XX] = r_XX - rot_new[K_F_ZX] * a13 - rot_new[K_F_YX] * a12;
+		rotation(ielem, K_F_XY, current_state)  = rot_new[K_F_XY] = r_XY - rot_new[K_F_ZY] * a13 - rot_new[K_F_YY] * a12;
+		rotation(ielem, K_F_XZ, current_state)  = rot_new[K_F_XZ] = r_XZ - rot_new[K_F_ZZ] * a13 - rot_new[K_F_YZ] * a12;
 
 	// 	update stretch tensor in the new configuration -
 		const Scalar a1 = str_ten[K_S_XY] + vort[K_V_XY];
@@ -238,7 +246,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		rot_stret(ielem, K_S_XX) = rot_new[K_F_XX] * t[0] + rot_new[K_F_YX] * t[1] + rot_new[K_F_ZX] * t[2];
 		rot_stret(ielem, K_S_YY) = rot_new[K_F_XY] * t[3] + rot_new[K_F_YY] * t[4] + rot_new[K_F_ZY] * t[5];
 		rot_stret(ielem, K_S_ZZ) = rot_new[K_F_XZ] * t[6] + rot_new[K_F_YZ] * t[7] + rot_new[K_F_ZZ] * t[8];
-	  
+
 		rot_stret(ielem, K_S_XY) = rot_new[K_F_XX] * t[3] + rot_new[K_F_YX] * t[4] + rot_new[K_F_ZX] * t[5];
 		rot_stret(ielem, K_S_YZ) = rot_new[K_F_XY] * t[6] + rot_new[K_F_YY] * t[7] + rot_new[K_F_ZY] * t[8];
 		rot_stret(ielem, K_S_ZX) = rot_new[K_F_XZ] * t[0] + rot_new[K_F_YZ] * t[1] + rot_new[K_F_ZZ] * t[2];
@@ -269,7 +277,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		polar_decomp(ielem, v_gr, str_ten, str, vort, rot_old, rot_new);
 
 		rotate_tensor(ielem, str_ten, str, rot_new);
-	
+
 	}
 
 };
