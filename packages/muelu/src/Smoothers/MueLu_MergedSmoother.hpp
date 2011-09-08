@@ -118,7 +118,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     @param B right-hand side
     @param InitialGuessIsZero
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false)
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
       TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:Apply(): Setup() has not been called");
 

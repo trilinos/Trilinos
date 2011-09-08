@@ -191,7 +191,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         @param B right-hand side
         @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false)
+    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));

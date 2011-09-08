@@ -137,7 +137,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         @param B right-hand side
         @param InitialGuessIsZero This option has no effect.
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false)
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
       if (!SmootherPrototype::IsSetup()) //TODO: use TEST_FOR_EXCEPTION
         throw(Exceptions::RuntimeError("Setup has not been called"));

@@ -48,7 +48,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
       @param b  right-hand side
       @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
   */
-  void Apply(RCP<MultiVector> x, RCP<MultiVector> const b, bool InitialGuessIsZero=false)
+  void Apply(RCP<MultiVector> x, RCP<MultiVector> const b, bool InitialGuessIsZero=false) const
   {
      if (InitialGuessIsZero)
        throw(Exceptions::NotImplemented("No logic for handling zero initial guesses"));

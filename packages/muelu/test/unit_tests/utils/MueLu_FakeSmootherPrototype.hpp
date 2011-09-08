@@ -35,7 +35,7 @@ namespace MueLu {
       SmootherPrototype::IsSetup(true); 
     }
 
-    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) { 
+    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) const { 
       TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
     }
     
