@@ -419,6 +419,21 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASExodus_for" dir="seacas/libraries/exodus_for" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACASNemesis" dir="seacas/libraries/nemesis" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -466,6 +481,51 @@
   </Package>
   <Package name="SEACASAprepro_lib" dir="seacas/libraries/aprepro_lib" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASSupes" dir="seacas/libraries/supes" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASSuplib" dir="seacas/libraries/suplib" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASAlgebra" dir="seacas/applications/algebra" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -584,6 +644,81 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASExotxt" dir="seacas/applications/exotxt" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASGjoin" dir="seacas/applications/gjoin" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASGrope" dir="seacas/applications/grope" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASMapvar" dir="seacas/applications/mapvar" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASMapvar-kd" dir="seacas/applications/mapvar-kd" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACASMat2exo" dir="seacas/applications/mat2exo" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -629,9 +764,24 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASTxtexo" dir="seacas/applications/txtexo" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for,SEACASExodus"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACAS" dir="seacas" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExo2mat,SEACASExodiff,SEACASExomatlab,SEACASMat2exo,SEACASNemslice,SEACASNemspread"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExo2mat,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGrope,SEACASMapvar,SEACASMapvar-kd,SEACASMat2exo,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
