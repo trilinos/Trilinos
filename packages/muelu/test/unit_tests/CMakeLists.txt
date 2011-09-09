@@ -32,6 +32,7 @@ APPEND_SET(SOURCES
   ExtendedHashtable.cpp
 
   Smoothers/SmootherFactory.cpp
+  Smoothers/MueLu_TestHelpersSmoothers.cpp
 )
 
 ### Tests that require other Trilinos packages
