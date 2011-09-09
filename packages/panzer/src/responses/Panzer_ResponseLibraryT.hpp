@@ -50,6 +50,34 @@ reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const st
 }
 
 template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
+                             const std::list<std::string> & eBlocks,
+                             const std::list<std::string> & evalTypes)
+{
+   TEST_FOR_EXCEPTION(labeledResponses_.find(label)!=labeledResponses_.end(),std::logic_error,
+                      "ResponseLibrary::reserveLabeledVolumeResponse: Adding response labeled \""+label+"\" "
+                      "failed because response label has already been added!");
+
+   // add labeled responses
+   labeledResponses_[label].rid = rid;
+   labeledResponses_[label].elmtBlocks = eBlocks;
+   labeledResponses_[label].evalTypes = eBlocks;
+
+   // loop over element blocks
+   for(std::list<std::string>::const_iterator eBlk=eBlocks.begin(); 
+       eBlk!=eBlocks.end();++eBlk) {
+      // loop over evaluation types
+      for(std::list<std::string>::const_iterator eType=evalTypes.begin(); 
+          eType!=evalTypes.end();++eType) {
+ 
+         // reserve this response
+         reserveVolumeResponse(rid,*eBlk,*eType);
+      }
+   }
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseContainerBase<TraitsT> > ResponseLibrary<TraitsT>::
 getVolumeContainer(const std::string & eBlock)
@@ -101,6 +129,43 @@ getVolumeResponse(const ResponseId & rid,const std::string & eBlock) const
    return response;
 }
 
+/** Get a particular volume response by label.
+  */ 
+template <typename TraitsT>
+Teuchos::RCP<const Response<TraitsT> > ResponseLibrary<TraitsT>::
+getVolumeResponseByLabel(const std::string & label) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   typename std::map<std::string,ResponseDescriptor>::const_iterator itr=labeledResponses_.find(label);
+   TEST_FOR_EXCEPTION(itr==labeledResponses_.end(),std::logic_error,
+                      "ResponseLibrary::getVolumeResponseByLabel: Cannot find response labeled \""+label+"\"!");
+   
+   const ResponseId & rid = itr->rid;
+   const std::list<std::string> & eBlocks = itr->elementBlocks;
+   const std::list<std::string> & evalTypes = itr->evalTypes;
+
+   // get responses for each element block
+   std::list<RCP<const Response<TraitsT> > > blkResponses;
+   for(std::list<std::string>::const_iterator eblkItr=eBlocks.begin();
+       eblkItr!=eBlocks.end();++eblkItr) 
+      blkResponses.push_back(getVolumeResponse(rid,*eblkItr));
+
+   TEST_FOR_EXCEPTION(blkResponses.size()==0,std::logic_error,
+                      "ReponseLibrary::getVolumeResponseByLabel: Could not find any response in "
+                      "subcontainers for Response label \""+label+"\"!");
+
+   // for each evaluation type use an aggregator to aggregate responses
+   RCP<Response<TraitsT> > response = rcp(new Response<TraitsT>(rid)); 
+   for(std::list<std::string>::const_iterator eTypeItr=evalTypes.begin();
+       eTypeItr!=evalTypes.end();++eTypeItr) {
+      getAggregator(rid.type,*eTypeItr).aggregateResponses(*response,blkResponses);
+   }
+
+   return response;
+}
+
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 getRequiredElementBlocks(std::vector<std::string> & eBlocks) const
@@ -118,7 +183,8 @@ buildVolumeFieldManagersFromResponses(
                         const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-                        const Teuchos::ParameterList& response_block_closure_models,
+                        const Teuchos::ParameterList& equation_set_closure_models,
+                        const Teuchos::ParameterList& response_closure_models,
                         const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file,
@@ -144,14 +210,14 @@ buildVolumeFieldManagersFromResponses(
       
       // Choose model sublist for this element block
       std::string closure_model_name = "";
-      if (response_block_closure_models.isSublist(blockId))
+      if (response_closure_models.isSublist(blockId))
         closure_model_name = blockId;
-      else if (response_block_closure_models.isSublist("Default"))
+      else if (response_closure_models.isSublist("Default"))
         closure_model_name = "Default";
       else 
         TEST_FOR_EXCEPTION(true, std::logic_error, 
                            "Failed to find response model for element block \"" << blockId << 
-                           "\".  You must provide a response model for each element block or set a default!" << response_block_closure_models);
+                           "\".  You must provide a response model for each element block or set a default!" << response_closure_models);
      
       Teuchos::ParameterList tmp_user_data(user_data);
       tmp_user_data.set<bool>("Ignore Scatter",true);
@@ -159,7 +225,8 @@ buildVolumeFieldManagersFromResponses(
       // use the physics block to register evaluators
       pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
       pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, tmp_user_data);
-      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_block_closure_models.sublist(closure_model_name), user_data);
+      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, equation_set_closure_models, user_data);
+      pb->buildAndRegisterResponseEvaluators(*fm, cm_factory,closure_model_name, response_closure_models,lo_factory, user_data);
 
       for(std::size_t i=0;i<contVector.size();i++) {
 

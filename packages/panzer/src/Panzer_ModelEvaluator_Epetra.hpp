@@ -16,12 +16,14 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
+  template<typename>  class ResponseLibrary;
   class EpetraLinearObjContainer;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
     
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                          const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 			  bool build_transient_support);
@@ -62,6 +64,7 @@ namespace panzer {
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     bool build_transient_support_;
 

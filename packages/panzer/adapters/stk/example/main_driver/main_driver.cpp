@@ -141,6 +141,9 @@ int main(int argc, char *argv[])
       //std::cout << *gx << std::endl;
       
     }
+ 
+    *out << "Lets print volume containers!" << std::endl;
+    rLibrary->printVolumeContainers(*out);
 
   }
   catch (std::exception& e) {

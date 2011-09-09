@@ -25,6 +25,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -78,6 +79,8 @@ namespace panzer {
 
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -167,7 +170,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -207,7 +210,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();

@@ -173,6 +173,35 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 }
 
 // *******************************************************************
+
+void panzer::PhysicsBlock::
+buildAndRegisterResponseEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+				   const std::string& model_name,
+				   const Teuchos::ParameterList& models,
+				   const panzer::LinearObjFactory<panzer::Traits> & lof,
+				   const Teuchos::ParameterList& user_data) const
+{
+  using namespace std;
+  using namespace panzer;
+  using namespace Teuchos;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+
+    // Loop over evaluation types
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
+      eqstm.begin();
+    for (; eval_type != eqstm.end(); ++eval_type) {
+      eval_type->buildAndRegisterResponseEvaluators(fm, m_provided_dofs, factory, model_name, models, lof, user_data);
+    }
+  }
+}
+
+// *******************************************************************
 const std::vector<std::string>& panzer::PhysicsBlock::getDOFNames() const
 {
   return m_dof_names;

@@ -9,11 +9,13 @@
 
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                      const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 		      bool build_transient_support) : 
   fmb_(fmb),
   lof_(lof),
+  responseLibrary_(rLibrary),
   p_names_(p_names),
   build_transient_support_(build_transient_support)
 {

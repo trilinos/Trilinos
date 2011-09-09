@@ -105,10 +105,10 @@ namespace panzer_stk {
     Teuchos::ParameterList & mesh_params     = p.sublist("Mesh");
     Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
     Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
+    Teuchos::ParameterList & volume_responses = p.sublist("Volume Responses");
 
     Teuchos::ParameterList & user_data_params = p.sublist("User Data");
     Teuchos::ParameterList & panzer_data_params = user_data_params.sublist("Panzer Data");
-    Teuchos::ParameterList & volume_responses = user_data_params.sublist("Volume Responses");
 
     // Build mesh factory and uncommitted mesh
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
@@ -236,6 +236,7 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
 
     m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
+    m_response_library->defineDefaultAggregators();
     addVolumeResponses(*m_response_library,*mesh,volume_responses);
 
     {
@@ -250,6 +251,7 @@ namespace panzer_stk {
        m_response_library->buildVolumeFieldManagersFromResponses(volume_worksets,
                                                                  physicsBlocks,
   					                         *cm_factory,
+                                                                 p.sublist("Closure Models"),
                                                                  p.sublist("Response Models"),
   					                         *linObjFactory,
   					                         user_data,write_dot_files,prefix);
@@ -268,7 +270,7 @@ namespace panzer_stk {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,Teuchos::null,ep_lof, p_names, is_transient));
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
@@ -550,41 +552,34 @@ namespace panzer_stk {
                                                                  const panzer_stk::STK_Interface & mesh,
                                                                  const Teuchos::ParameterList & pl) const
   {
+     typedef std::map<std::string,std::pair<panzer::ResponseId,std::pair<std::list<std::string>,std::list<std::string> > > > ResponseMap;
+
      std::vector<std::string> validEBlocks;
      mesh.getElementBlockNames(validEBlocks);
 
-     // loop over element blocks
-     for(Teuchos::ParameterList::ConstIterator itr=pl.begin();
-         itr!=pl.end();itr++) {
-        const std::string & eBlock = itr->first;
-        const Teuchos::ParameterEntry & paramEntry = itr->second;
+     // build a map of all responses 
+     pl.print(std::cout);
+     ResponseMap responses;
+     panzer::buildResponseMap(pl,responses);
 
-        // make formatting of this parameter list is correct
-        TEST_FOR_EXCEPTION(!paramEntry.isList(),
-                           Teuchos::Exceptions::InvalidParameterType,
-                           "panzer_stk::ModelEvaluatorFactory_Epetra: In the sublist \""+pl.name()+"\" only parameter"
-                           " lists are expected. Parmeter \""+eBlock+"\" is invalid!");
-        TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),(eBlock))!=validEBlocks.end(),
-                           Teuchos::Exceptions::InvalidParameterName,
-                           "panzer_stk::ModelEvaluatorFactory_Epetra: Cannot find element block "
-                           "specified in sublist \""+pl.name()+"\" named \"" +eBlock +"\"!");
-                       
-        // parse response list of responses
-        const Teuchos::ParameterList & respPL = Teuchos::any_cast<Teuchos::ParameterList>(paramEntry.getAny());
-        std::map<std::string,std::pair<panzer::ResponseId,std::set<std::string> > > responses;
-        panzer::buildResponseMap(respPL,responses);
+     std::cout << "Response count = " << responses.size() << std::endl;
 
-        // reserve each response for every evaluation type
-        for(std::map<std::string,std::pair<panzer::ResponseId,std::set<std::string> > >::const_iterator respItr=responses.begin();
-            respItr!=responses.end();++respItr) {
-           const panzer::ResponseId & rid = respItr->second.first;
-           const std::set<std::string> & evalTypes = respItr->second.second;
- 
-           // add response for each evaluation type
-           for(std::set<std::string>::const_iterator eItr=evalTypes.begin();
-               eItr!=evalTypes.end();++eItr)
-              rLibrary.reserveVolumeResponse(rid,eBlock,*eItr);
-        }
+     // reserve each response for every evaluation type
+     for(typename ResponseMap::const_iterator respItr=responses.begin();
+         respItr!=responses.end();++respItr) {
+        const std::string & label = respItr->first;
+        const panzer::ResponseId & rid = respItr->second.first;
+        const std::list<std::string> & eBlocks = respItr->second.second.first;
+        const std::list <std::string> & eTypes = respItr->second.second.second;
+
+        std::cout << "reserving: " << label << " - " << rid << std::endl;
+
+        // sanity check for valid element blocks
+        for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++)
+           TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),*itr)==validEBlocks.end(),Teuchos::Exceptions::InvalidParameterValue,
+                              "Invalid element block \""+(*itr)+"\" specified for response labeled \""+label+"\"."); 
+
+        rLibrary.reserveLabeledVolumeResponse(label,rid,eBlocks,eTypes);
      }
   }
 

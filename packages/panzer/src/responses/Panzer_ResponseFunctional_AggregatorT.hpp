@@ -118,6 +118,20 @@ globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) con
                      &dataVec2[0], &dataVec[0]);
 }
 
+template <typename TraitsT>
+void ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
+aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const
+{
+   typename TraitsT::RealType val = dest.getValue();
+
+   // sum over all values
+   typename std::list<Teuchos::RCP<const Response<TraitsT> > >::const_iterator itr;
+   for(itr=sources.begin();itr!=sources.end();++itr)
+      val += (*itr)->getValue();      
+
+   dest.setValue(val);
+}
+
 template < >
 Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggregator_Builder::
 build<panzer::Traits::Residual>() const

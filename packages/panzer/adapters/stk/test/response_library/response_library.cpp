@@ -165,6 +165,7 @@ namespace panzer {
     rLibrary->buildVolumeFieldManagersFromResponses(volume_worksets,
   					       physics_blocks,
   					       *cm_factory,
+                                               closure_models,
   					       responseClosureModels,
   					       *elof,
   					       user_data,true);

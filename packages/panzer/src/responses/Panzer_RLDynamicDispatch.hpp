@@ -30,6 +30,8 @@ public:
    virtual ~RLDynamicDispatchBase() {}
 
    virtual void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType) = 0;
+
+   virtual const ResponseAggregatorBase<Traits> & getAggregator(const std::string & type,const std::string & evalType) const = 0;
 };
 
 /** A concrete instantiation of the response library
@@ -49,9 +51,18 @@ public:
    { 
       // sanity check
       TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
-                         "panzer::RLDynamicDispatch: Somethihng is seriously wrong, dynamic evaluation type \""+evalType+"\" "
+                         "panzer::RLDynamicDispatch: Something is seriously wrong, dynamic evaluation type \""+evalType+"\" "
                          "is not equal to static type \""+PHX::TypeString<EvalT>::value+"\"!"); 
       responseLibrary_->template reserveVolumeResponse<EvalT>(rid,eBlock); 
+   }
+
+   virtual const ResponseAggregatorBase<Traits> & getAggregator(const std::string & type,const std::string & evalType) const
+   { 
+      // sanity check
+      TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
+                         "panzer::RLDynamicDispatch: Something is seriously wrong, dynamic evaluation type \""+evalType+"\" "
+                         "is not equal to static type \""+PHX::TypeString<EvalT>::value+"\"!"); 
+      return responseLibrary_->template getAggregator<EvalT>(type);
    }
 
 private:
@@ -70,6 +81,9 @@ public:
 
    virtual void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType)
    { dynToStaticMap_[evalType]->reserveVolumeResponse(rid,eBlock,evalType); }
+
+   virtual const ResponseAggregatorBase<Traits> & getAggregator(const std::string & type,const std::string & evalType) const
+   { return (dynToStaticMap_.find(evalType)->second)->getAggregator(type,evalType); }
 
    const std::vector<std::string> & getEvaluationNames() const
    { return evaluationNames_; }

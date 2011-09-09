@@ -27,6 +27,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -78,6 +79,8 @@ namespace panzer {
 
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>); 
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -195,7 +198,7 @@ namespace panzer {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,ep_lof, p_names, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -365,6 +368,8 @@ namespace panzer {
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>); 
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -484,7 +489,7 @@ namespace panzer {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb, ep_lof, p_names, true));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));

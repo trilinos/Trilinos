@@ -4,7 +4,7 @@
 
 namespace panzer {
 
-void ResponseEntryValidator::split(const std::string & str,const std::string & delim,
+void CommaSeperatedEntryValidator::split(const std::string & str,const std::string & delim,
                                    std::vector<std::string> & output)
 {
    output.clear();
@@ -19,11 +19,12 @@ void ResponseEntryValidator::split(const std::string & str,const std::string & d
       // extract token, remove spaces
       std::string s = *tok_iter;
       boost::trim(s);
-      output.push_back(s);
+      if(s.length()!=0)
+         output.push_back(s);
    }
 }
 
-void ResponseEntryValidator::validate(const Teuchos::ParameterEntry & entry,  
+void CommaSeperatedEntryValidator::validate(const Teuchos::ParameterEntry & entry,  
                                       const std::string & paramName,
                                       const std::string & sublistName) const
 {
@@ -45,90 +46,82 @@ void ResponseEntryValidator::validate(const Teuchos::ParameterEntry & entry,
   const std::string & value = Teuchos::any_cast<std::string>(anyValue);
 
   std::vector<std::string> tokens;
-  split(value,":",tokens);  
+  split(value,",",tokens);  
 
-  const std::string errorStr = "The value for \"response\" type parameter named \""+paramName+"\" "
+  const std::string errorStr = "The value for \"string-list\" type parameter in sublist \""+sublistName+"\" named \""+paramName+"\" "
                                "is incorrectly formatted. The expected format is\n"
-                               "   \"<Response type>(<Field name>): <Evaluation type> [, <Evaluation type>]*\""
+                               "   \"<string>[, <string>]*\" "
                                "your value is \""+value+"\"";
 
   // verify that their is a response type and a evaluation type
-  TEST_FOR_EXCEPTION(tokens.size()!=2,
-     Teuchos::Exceptions::InvalidParameterValue,errorStr);
-
-  std::string respType = tokens[0];
-  std::string evalTypes = tokens[1];
-
-  TEST_FOR_EXCEPTION(respType.length()==0 || evalTypes.length()==0,
-     Teuchos::Exceptions::InvalidParameterValue,errorStr);
-
-  // parse response: <Response Type>(<Field name>)
-  split(respType,"()",tokens);
-  TEST_FOR_EXCEPTION(tokens.size()!=2,
-     Teuchos::Exceptions::InvalidParameterValue,errorStr);
-
-  respType = tokens[0];
-  std::string respName = tokens[1];
-
-  TEST_FOR_EXCEPTION(respType.length()==0 || respName.length()==0,
-     Teuchos::Exceptions::InvalidParameterValue,errorStr);
-
-  // parse evaluation fields: <Evaluation type> [,<Evaluation type>]*
-  split(evalTypes,",",tokens);  
   TEST_FOR_EXCEPTION(tokens.size()==0,
      Teuchos::Exceptions::InvalidParameterValue,errorStr);
 }
 
 
-void ResponseEntryValidator::printDoc(
+void CommaSeperatedEntryValidator::printDoc(
   std::string const &docString, std::ostream &out) const
 {
   Teuchos::StrUtils::printLines(out,"# ",docString);
   out << "#  Validator Used: " << std::endl;
-  out << "#  ResponseEntry Validator" << std::endl;
+  out << "#  CommaSeperatedEntry Validator" << std::endl;
 }
 
 void buildResponseMap(const Teuchos::ParameterList & p,std::map<std::string,std::pair<ResponseId,std::set<std::string> > > & responses)
 {
-   ResponseEntryValidator validator;
+   TEUCHOS_ASSERT(false);
+}
+
+void buildResponseMap(const Teuchos::ParameterList & p,
+                      std::map<std::string,std::pair<ResponseId,std::pair<std::list<std::string>,std::list<std::string> > > > & responses)
+{
+   static Teuchos::RCP<const Teuchos::ParameterList> validList;
+
+   // build valid parameter list
+   if(validList==Teuchos::null) {
+      Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::rcp(new Teuchos::ParameterList);
+      tmpList->set<std::string>("Type","");
+      tmpList->set<std::string>("Field Name","");
+      tmpList->set<std::string>("Element Blocks","empty","Element blocks for this response",Teuchos::rcp(new CommaSeperatedEntryValidator));
+      tmpList->set<std::string>("Evaluation Types","empty","Evaluation types for this response",Teuchos::rcp(new CommaSeperatedEntryValidator));
+
+      validList = tmpList;
+   }
+ 
+   CommaSeperatedEntryValidator validator;
    const std::string & sublistName = p.name();
    std::vector<std::string> tokens;
 
    responses.clear();
 
    // loop over entries of parameter list, must satisfy response formatting
-   for(Teuchos::ParameterList::ConstIterator itr=p.begin();
-       itr!=p.end();++itr) {
+   for(Teuchos::ParameterList::ConstIterator itr=p.begin(); itr!=p.end();++itr) {
  
       const std::string & paramName = itr->first;
       const Teuchos::ParameterEntry & pe = itr->second;
 
-      // validate value is formatted correctly: if so (this doesn't throw)
-      // then we can grind on w/o a care in the world!
-      validator.validate(pe,paramName,sublistName);
+      // make sure this is a parameter list
+      TEST_FOR_EXCEPTION(!pe.isList(),Teuchos::Exceptions::InvalidParameterValue,
+                         "In list \""+sublistName+"\", the parameter \""+paramName+"\" is expected "
+                         "to be a sublist. Response map cannot be built!");
 
-      // extract value string for parsing
-      Teuchos::any anyValue = pe.getAny(true);
-      const std::string & value = Teuchos::any_cast<std::string>(anyValue);
+      // extract parameter list and validate
+      const Teuchos::ParameterList & respList = Teuchos::getValue<Teuchos::ParameterList>(pe); 
+      respList.validateParameters(*validList);
 
-      // parse the value string
-      ResponseEntryValidator::split(value,":",tokens);  
-      std::string respTypeAndName = tokens[0];
-      std::string evalTypes = tokens[1];
+      const std::string & respLabel = paramName;
+      ResponseId & rid = responses[respLabel].first;
+      std::list<std::string> & eBlocks = responses[respLabel].second.first; // element blocks
+      std::list<std::string> & eTypes = responses[respLabel].second.second;  // evaluation types
 
-      ResponseEntryValidator::split(respTypeAndName,"()",tokens);  
-      std::string respType = tokens[0];
-      std::string respName = tokens[1];
+      rid.type = respList.get<std::string>("Type");
+      rid.name = respList.get<std::string>("Field Name");
+
+      CommaSeperatedEntryValidator::split(respList.get<std::string>("Element Blocks"),",",tokens);
+      eBlocks.assign(tokens.begin(),tokens.end()); // this should automatically wipe out old values
       
-      ResponseEntryValidator::split(evalTypes,",",tokens);  
-
-      // build response id, and evaluation set pair
-      std::pair<ResponseId,std::set<std::string> > & respPair = responses[paramName];
-    
-      respPair.first.name = respName;
-      respPair.first.type = respType; 
-      respPair.first.label = paramName; // set label
-      respPair.second.insert(tokens.begin(),tokens.end()); 
+      CommaSeperatedEntryValidator::split(respList.get<std::string>("Evaluation Types"),",",tokens);
+      eTypes.assign(tokens.begin(),tokens.end()); // this should automatically wipe out old values
    }
 }
 

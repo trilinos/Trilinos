@@ -58,6 +58,10 @@ public:
       return getAggregatorManager().template getAggregator<EvalT>(type);
    }
 
+   //! dynamic dispatch version
+   const ResponseAggregatorBase<TraitsT> & getAggregator(const std::string & type,const std::string & evalType) const
+   { return dynamicDispatch_.getAggregator(type,evalType); }
+
    /** \defgroup volume
      * Volume methods for volumetric reponses
      * @{
@@ -69,6 +73,10 @@ public:
    Teuchos::RCP<const Response<TraitsT> > getVolumeResponse(const ResponseId & rid,
                                                             const std::string & eBlock) const;
 
+   /** Get a particular volume response by label.
+     */ 
+   Teuchos::RCP<const Response<TraitsT> > getVolumeResponseByLabel(const std::string & label) const;
+
    //! Reserve a response for actual calculation (by response id and element block).
    template <typename EvalT>
    void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock);
@@ -78,6 +86,19 @@ public:
      * a member of the <code>Traits::EvalTypes</code> type list.
      */
    void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType);
+
+   /** Reserve a labeled response over a set of element blocks and evaluation types. A labeled
+     * response is a first class citizen, and the expected mechanism used to access and register
+     * responses. 
+     *
+     * \param[in] label User readable label for the response
+     * \param[in] rid Response identifier containing the relevant field and type of response.
+     * \param[in] eBlocks Element blocks to be aggregated over.
+     * \param[in] evalTypes String of evaluation types for the response (Residual,Jacobian, etc...)
+     */
+   void reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
+                                     const std::list<std::string> & eBlocks,
+                                     const std::list<std::string> & evalTypes);
 
    /** Veryify that this response and element block are actual valid choices
      * for the evaluation type. This is optional error checking but makes debugging
@@ -98,7 +119,8 @@ public:
                         const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-                        const Teuchos::ParameterList& ic_block_closure_models,
+                        const Teuchos::ParameterList& equation_set_closure_models,
+                        const Teuchos::ParameterList& response_block_closure_models,
                         const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file=false,
@@ -146,12 +168,21 @@ private:
    typedef std::vector<Teuchos::RCP<ResponseContainerBase<TraitsT> > > RespContVector;
    typedef std::vector<Teuchos::RCP<PHX::FieldManager<TraitsT> > > FMVector;
 
+   struct ResponseDescriptor {
+      ResponseId rid;
+      std::list<std::string> elmtBlocks;
+      std::list<std::string> evalTypes;
+   };
+
    ResponseAggregator_Manager<TraitsT> respAggManager_;
 
    std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
    std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > > volFieldManagers_;
 
    RLDynamicDispatch<TraitsT> dynamicDispatch_;
+
+   //! Maps from a "label"->(ResponseId,List of Element Blocks)
+   std::map<std::string,ResponseDescriptor> labeledResponses_;
 };
 
 }

@@ -11,19 +11,13 @@ namespace panzer {
 struct ResponseId {
    std::string name;
    std::string type;
-   std::string label;
 
    ResponseId()
-      : name(""), type(""), label("") {}
-
-   ResponseId(const std::string & n,
-              const std::string & t,
-              const std::string & l)
-      : name(n), type(t), label(l) {}
+      : name(""), type("") {}
 
    ResponseId(const std::string & n,
               const std::string & t)
-      : name(n), type(t), label(getString()) {}
+      : name(n), type(t) {}
 
    std::string getString() const 
    { return name + "("+type+")"; }

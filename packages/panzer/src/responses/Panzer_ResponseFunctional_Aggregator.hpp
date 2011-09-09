@@ -125,6 +125,9 @@ public:
    void evaluateFields(panzer::Workset & wkst,ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data,
                                               const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const;
 
+   //! Aggregate a set of responses locally
+   virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const;
+
 };
 
 // Specialized for panzer::Traits

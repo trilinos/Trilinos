@@ -23,9 +23,9 @@ namespace panzer {
   * it is used to make sure the parameter value is correctly
   * formatted. 
   */
-class ResponseEntryValidator : public Teuchos::ParameterEntryValidator {
+class CommaSeperatedEntryValidator : public Teuchos::ParameterEntryValidator {
 public:
-  ResponseEntryValidator() {}
+  CommaSeperatedEntryValidator() {}
 
   ValidStringsList validStringValues() const
   { return Teuchos::null; }
@@ -35,7 +35,7 @@ public:
                 const std::string & sublistName) const;
 
   const std::string getXMLTypeName() const
-  { return "response"; }
+  { return "string-list"; }
 
   void printDoc(const std::string & docString, std::ostream &out) const;
 
@@ -51,6 +51,20 @@ public:
   */
 void buildResponseMap(const Teuchos::ParameterList & p,
                       std::map<std::string,std::pair<ResponseId,std::set<std::string> > > & responses);
+
+/** Given a parameter list, loop over all the entries
+  * and parse their value field and build a response ID field and a 
+  * set of types to evaluate. The format of the list is
+  *
+    <ParameterList name="<response label>"> 
+       <Parameter name="Type" type="string" value="<type of response>"/>
+       <Parameter name="Field Name" type="string" value="<name of field>"/>
+       <Parameter name="Element Blocks" type="string" value="<Comma seperated list of element blocks>"/>
+       <Parameter name="Evaluation Types" type="string" value="<Comma seperated list of evaluation types>"/>
+    </ParameterList>
+  */
+void buildResponseMap(const Teuchos::ParameterList & p,
+                      std::map<std::string,std::pair<ResponseId,std::pair<std::list<std::string>,std::list<std::string> > > > & responses);
 
 
 }

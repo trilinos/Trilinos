@@ -59,6 +59,9 @@ public:
 
    //! perform global reduction on this set of response data
    virtual void globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) const = 0;
+
+   //! Aggregate a set of responses locally
+   virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const = 0;
 };
 
 template <typename EvalT,typename TraitsT>

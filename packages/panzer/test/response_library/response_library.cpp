@@ -87,19 +87,43 @@ TEUCHOS_UNIT_TEST(response_library, test)
 
 TEUCHOS_UNIT_TEST(response_library, pl_reader)
 {
-   Teuchos::ParameterList pl;
-   Teuchos::ParameterList & pl0 = pl.sublist("block_0");
-   pl0.set("Cat","None(Cat):Residual,Jacobian");
-   pl0.set("HorseFunc","Functional(Horse):Residual");
-   pl0.set("HorseMax","Maximum(Horse):Residual,Jacobian");
-   Teuchos::ParameterList & pl1 = pl.sublist("block_1");
-   pl1.set("Cat","None(Dog):   ");
-   pl1.set("Horse","    :Residual,Jacobian");
-   pl1.set("Monster","Maximum");
+   Teuchos::ParameterList pl0;
+   pl0.sublist("Cat");
+      pl0.sublist("Cat").set("Type","None");
+      pl0.sublist("Cat").set("Field Name","Cat");
+      pl0.sublist("Cat").set("Element Blocks","block_0");
+      pl0.sublist("Cat").set("Evaluation Types","Residual,Jacobian");
+   pl0.sublist("HorseFunc");
+      pl0.sublist("HorseFunc").set("Type","Functional");
+      pl0.sublist("HorseFunc").set("Field Name","Horse");
+      pl0.sublist("HorseFunc").set("Element Blocks","block_0");
+      pl0.sublist("HorseFunc").set("Evaluation Types","Residual");
+   pl0.sublist("HorseMax");
+      pl0.sublist("HorseMax").set("Type","Maximum");
+      pl0.sublist("HorseMax").set("Field Name","Horse");
+      pl0.sublist("HorseMax").set("Element Blocks","block_0,block_4");
+      pl0.sublist("HorseMax").set("Evaluation Types","Residual,Jacobian");
 
-   std::map<std::string,std::pair<ResponseId,std::set<std::string> > > responses;
-   TEST_THROW(buildResponseMap(pl.sublist("block_1"),responses),Teuchos::Exceptions::InvalidParameterValue);
-   TEST_NOTHROW(buildResponseMap(pl.sublist("block_0"),responses));
+   Teuchos::ParameterList pl1;
+   pl1.sublist("Cat");
+      pl1.sublist("Cat").set("Type","Functional");
+      pl1.sublist("Cat").set("Field Name","Cat");
+      pl1.sublist("Cat").set("Element Blocks"," ");
+      pl1.sublist("Cat").set("Evaluation Types"," ");
+   pl1.sublist("HorseFunc");
+      pl1.sublist("HorseFunc").set("Type","Functional");
+      pl1.sublist("HorseFunc").set("Field Name","Horse");
+      pl1.sublist("HorseFunc").set("Element Blocks","block_1");
+      pl1.sublist("HorseFunc").set("Evaluation Types","Residual");
+   pl1.sublist("HorseMax");
+      pl1.sublist("HorseMax").set("Type","Maximum");
+      pl1.sublist("HorseMax").set("Field Name","Horse");
+      pl1.sublist("HorseMax").set("Element Blocks","block_1");
+      pl1.sublist("HorseMax").set("Evaluation Types","Residual,Jacobian");
+
+   std::map<std::string,std::pair<ResponseId,std::pair<std::list<std::string>,std::list<std::string> > > > responses;
+   TEST_THROW(buildResponseMap(pl1,responses),Teuchos::Exceptions::InvalidParameterValue);
+   TEST_NOTHROW(buildResponseMap(pl0,responses));
 
    TEST_EQUALITY(responses.size(),3);
    TEST_ASSERT(responses.find("Cat")!=responses.end());
@@ -111,39 +135,42 @@ TEUCHOS_UNIT_TEST(response_library, pl_reader)
    out << responses["HorseFunc"].first.getString() << std::endl;
 
    TEST_ASSERT(responses["HorseMax"].first==ResponseId("Horse","Maximum"));
-   TEST_EQUALITY(responses["HorseMax"].second.size(),2);
+   TEST_EQUALITY(responses["HorseMax"].second.first.size(),2);
+   TEST_EQUALITY(responses["HorseMax"].second.second.size(),2);
 
    TEST_ASSERT(responses["HorseFunc"].first==ResponseId("Horse","Functional"));
-   TEST_EQUALITY(responses["HorseFunc"].second.size(),1);
+   TEST_EQUALITY(responses["HorseFunc"].second.first.size(),1);
+   TEST_EQUALITY(responses["HorseFunc"].second.second.size(),1);
 
    TEST_ASSERT(responses["Cat"].first==ResponseId("Cat","None"));
-   TEST_EQUALITY(responses["Cat"].second.size(),2);
+   TEST_EQUALITY(responses["Cat"].second.first.size(),1);
+   TEST_EQUALITY(responses["Cat"].second.second.size(),2);
    
 
    std::vector<std::string> tokens;
-   ResponseEntryValidator::split(" None :Residual, Jacobian",":",tokens);
+   CommaSeperatedEntryValidator::split(" None :Residual, Jacobian",":",tokens);
     
    TEST_EQUALITY(tokens.size(),2);
    TEST_EQUALITY(tokens[0],"None");
    TEST_EQUALITY(tokens[1],"Residual, Jacobian");
 
    std::string next = tokens[1];
-   ResponseEntryValidator::split(next,",",tokens);
+   CommaSeperatedEntryValidator::split(next,",",tokens);
 
    TEST_EQUALITY(tokens.size(),2);
    TEST_EQUALITY(tokens[0],"Residual");
    TEST_EQUALITY(tokens[1],"Jacobian");
 
-   ResponseEntryValidator rev;
+   CommaSeperatedEntryValidator rev;
 
    // standard operating
    {
       Teuchos::ParameterEntry entry;
 
-      entry.setValue<std::string>("Functional(Horse) : Residual, Jacobian");
+      entry.setValue<std::string>("Residual, Jacobian");
       TEST_NOTHROW(rev.validate(entry,"FuncValue","ResponseList"));
 
-      entry.setValue<std::string>("Functional (Monkey) : Residual");
+      entry.setValue<std::string>("Residual");
       TEST_NOTHROW(rev.validate(entry,"FuncValue","ResponseList"));
    }
 
@@ -151,19 +178,7 @@ TEUCHOS_UNIT_TEST(response_library, pl_reader)
    {
       Teuchos::ParameterEntry entry;
 
-      entry.setValue<std::string>("Functional : Residual");
-      TEST_THROW(rev.validate(entry,"FuncValue","ResponseList"),Teuchos::Exceptions::InvalidParameterValue);
-
-      entry.setValue<std::string>("Functional () : Residual");
-      TEST_THROW(rev.validate(entry,"FuncValue","ResponseList"),Teuchos::Exceptions::InvalidParameterValue);
-
-      entry.setValue<std::string>("Functional (Monkey) : ");
-      TEST_THROW(rev.validate(entry,"FuncValue","ResponseList"),Teuchos::Exceptions::InvalidParameterValue);
-
-      entry.setValue<std::string>(" : Residual");
-      TEST_THROW(rev.validate(entry,"FuncValue","ResponseList"),Teuchos::Exceptions::InvalidParameterValue);
-
-      entry.setValue<std::string>(" Residual");
+      entry.setValue<std::string>(" ");
       TEST_THROW(rev.validate(entry,"FuncValue","ResponseList"),Teuchos::Exceptions::InvalidParameterValue);
    }
 }

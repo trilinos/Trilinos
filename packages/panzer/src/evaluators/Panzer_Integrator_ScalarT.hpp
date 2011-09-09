@@ -23,7 +23,9 @@ PHX_EVALUATOR_CTOR(Integrator_Scalar,p) : quad_index(-1)
   this->addEvaluatedField(integral);
   this->addDependentField(scalar);
     
-  multiplier = p.get<double>("Multiplier");
+  multiplier = 1.0;
+  if(p.isType<double>("Multiplier"))
+     multiplier = p.get<double>("Multiplier");
 
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
     const std::vector<std::string>& field_multiplier_names = 

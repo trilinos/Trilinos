@@ -40,6 +40,7 @@ buildClosureModels(const std::string& model_id,
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
+    models.print(std::cout);
     std::stringstream msg;
     msg << "Falied to find requested model, \"" << model_id 
 	<< "\", for equation set:\n" << std::endl;
@@ -102,6 +103,7 @@ buildClosureModels(const std::string& model_id,
     if (key == "Volume Integral") {
 
         {
+           ParameterList input;
 	   input.set("Name", "Unit Value");
 	   input.set("Value", 1.0);
 	   input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
@@ -111,6 +113,7 @@ buildClosureModels(const std::string& model_id,
         }
 
         {
+           ParameterList input;
 	   input.set("Integral Name", "Volume_Integral");
 	   input.set("Integrand Name", "Unit Value");
 	   input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
@@ -119,6 +122,8 @@ buildClosureModels(const std::string& model_id,
    	     rcp(new panzer::Integrator_Scalar<EvalT,panzer::Traits>(input));
    	   evaluators->push_back(e);
         }
+
+	found = true;
     }
 
     if (!found) {
