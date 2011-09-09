@@ -606,7 +606,15 @@ int Zoltan_Scotch(
                     imp_gids, imp_lids, imp_procs, imp_to_part,
                     exp_gids, exp_lids, exp_procs, exp_to_part);
 
-  prt.input_part_sizes = prt.part_sizes = part_sizes;
+  if (sizeof(realtype) != sizeof(float)) {
+    prt.input_part_sizes = (realtype *)
+                   ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(realtype));
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++)
+      prt.input_part_sizes[i] = (realtype) part_sizes[i];
+    prt.part_sizes = prt.input_part_sizes;
+  }
+  else
+    prt.input_part_sizes = prt.part_sizes = (realtype *) part_sizes;
 
   strcpy (alg, "RBISECT");
   strcpy (graph_type, "GLOBAL");

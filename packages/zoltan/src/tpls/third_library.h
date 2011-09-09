@@ -64,7 +64,7 @@ typedef struct ZOLTAN_Third_Graph_ {
 /* Structure that defines a geometry for third party libraries like ParMetis. */
 typedef struct ZOLTAN_Third_Geom_ {
   int ndims;                            /* Number of dimensions */
-  float *xyz;                           /* Coordinates */
+  realtype *xyz;                        /* Coordinates */
 } ZOLTAN_Third_Geom;
 
 /* Structure that defines a partition for third party libraries like ParMetis. */
@@ -72,8 +72,8 @@ typedef struct ZOLTAN_Third_Part_ {
   indextype *part;                      /* Current partition */
   indextype *input_part;
   indextype *part_orig;
-  float     *part_sizes;
-  float     *input_part_sizes;
+  realtype  *part_sizes;
+  realtype  *input_part_sizes;
 } ZOLTAN_Third_Part;
 
 typedef struct ZOLTAN_Third_Vsize_ {
@@ -165,7 +165,7 @@ int Zoltan_Postprocess_Graph(
 int
 Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				ZOLTAN_Third_Part *prt, ZOLTAN_Third_Vsize *vsp,
-				int use_timers, double itr);
+				int use_timers, realtype itr);
 
 
 int Zoltan_matrix_Print(Zoltan_matrix *m, char *s);

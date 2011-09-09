@@ -92,6 +92,7 @@ extern "C" {
   #define TPL_USE_DATATYPE TPL_ZOLTAN_DATATYPES
   #define indextype ZOLTAN_GNO_TYPE
   #define weighttype float
+  #define realtype float
   #define TPL_FLOAT_WEIGHT
   #define MAX_WGT_SUM (FLT_MAX/8)
   #define TPL_IDX_SPEC ZOLTAN_GNO_SPEC
@@ -119,6 +120,7 @@ extern "C" {
     #endif
     #define indextype idxtype
     #define weighttype idxtype
+    #define realtype float
     #define TPL_INTEGRAL_WEIGHT
     #define MAX_WGT_SUM (INT_MAX/8)
     #define TPL_IDX_SPEC "%d"
@@ -128,6 +130,7 @@ extern "C" {
   #elif PARMETIS_MAJOR_VERSION == 4
     #define indextype idx_t
     #define weighttype idx_t
+    #define realtype real_t
     #define TPL_INTEGRAL_WEIGHT
     #if IDXTYPEWIDTH == 32  /* defined in parmetis.h */
       #define MAX_WGT_SUM (INT32_MAX/8)
@@ -146,6 +149,7 @@ extern "C" {
 
   #define indextype SCOTCH_Num
   #define weighttype SCOTCH_Num
+  #define realtype float
   #define MAX_WGT_SUM (SCOTCH_NUMMAX/8)
   #define TPL_IDX_SPEC SCOTCH_NUMSTRING
   #define TPL_WGT_SPEC SCOTCH_NUMSTRING

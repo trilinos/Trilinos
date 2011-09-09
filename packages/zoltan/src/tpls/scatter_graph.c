@@ -49,7 +49,7 @@ int Zoltan_Scatter_Graph(
   weighttype **vwgt,
   indextype **vsize,
   weighttype **adjwgt,
-  float   **xyz,
+  realtype   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
   int     vwgt_dim,
   ZZ      *zz,
@@ -62,7 +62,7 @@ int Zoltan_Scatter_Graph(
   indextype *old_xadj;
   indextype *old_vsize;
   weighttype *old_vwgt, *old_adjwgt;
-  float   *old_xyz;
+  realtype   *old_xyz;
   int *ptr, *proclist = NULL, *proclist2 = NULL;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int use_graph;	/* do we use graph data, or only the geometry? */
@@ -137,7 +137,7 @@ int Zoltan_Scatter_Graph(
   if (use_vsize)
     *vsize = (indextype *) ZOLTAN_MALLOC(num_obj*sizeof(indextype));
   if (ndims)
-    *xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj*sizeof(float));
+    *xyz = (realtype *) ZOLTAN_MALLOC(ndims*num_obj*sizeof(realtype));
 
   if (old_num_obj > 0) {
     /* Set up the communication plan for the vertex data */
@@ -182,7 +182,7 @@ int Zoltan_Scatter_Graph(
     Zoltan_Comm_Do( *plan, TAG4, (char *) old_vsize, sizeof(indextype), (char *) *vsize);
   }
   if (ndims){
-    Zoltan_Comm_Do( *plan, TAG5, (char *) old_xyz, ndims*sizeof(float), (char *) *xyz);
+    Zoltan_Comm_Do( *plan, TAG5, (char *) old_xyz, ndims*sizeof(realtype), (char *) *xyz);
   }
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Finished vertex-based communication.\n", zz->Proc);

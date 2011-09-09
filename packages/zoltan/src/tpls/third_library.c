@@ -186,6 +186,8 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
     MEMFREE(prt->part_orig);
     if (prt->part_sizes != prt->input_part_sizes)
       MEMFREE(prt->part_sizes);
+    if (sizeof(realtype) != sizeof(float))
+      MEMFREE(prt->input_part_sizes);
   }
 
   if (vsp) {

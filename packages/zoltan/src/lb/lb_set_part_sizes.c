@@ -253,58 +253,6 @@ End:
   return error;
 }
 
-/*****************************************************************************/
-int Zoltan_LB_Add_Part_Sizes_Weight(
-  ZZ *zz,
-  int old_part_dim,      /* # of part-size entries per part in old_part_sizes */
-  int new_part_dim,      /* # of part-size entries per part in new_part_sizes */
-  float *old_part_sizes, /* Array of part sizes before adding an entry */
-  float **new_part_sizes /* Array of part sizes after adding an entry */
-)
-{
-/* Function to add one entry per part to part_sizes array.  Returns a new
- * array with the added entry.
- * The added entry for a part is set by default to the zeroth part_sizes entry
- * for the part. 
- * This function is invoked when parameter ADD_OBJ_WEIGHT is used. 
- */
-float *part_sizes;               /* New part_sizes array */
-int i, j;
-int ierr = ZOLTAN_OK;
-
-  if (old_part_dim < 1) {
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  /* new_part_dim will equal old_part_dim if obj_weight_dim = 0 
-     and add_obj_weight != NONE */
-  if (old_part_dim == new_part_dim) {
-    *new_part_sizes = old_part_sizes;
-  }
-  else { /* Need to enlarge part_sizes array */
-    *new_part_sizes = (float *) ZOLTAN_MALLOC(new_part_dim
-                                           * zz->LB.Num_Global_Parts
-                                           * sizeof(float));
-    if (!new_part_sizes) {
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-    part_sizes = *new_part_sizes;
-
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      /* Copy old_part_sizes info to new part_sizes array */
-      for (j = 0; j < old_part_dim; j++)
-        part_sizes[i*new_part_dim+j] = old_part_sizes[i*old_part_dim+j];
-      /* For the added weight, use zeroth entry of old_part_sizes for part. */
-      for (j = old_part_dim; j < new_part_dim; j++) 
-        part_sizes[i*new_part_dim+j] = old_part_sizes[i*old_part_dim];
-    }
-  }
-
-End:
-  return ierr;
-}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

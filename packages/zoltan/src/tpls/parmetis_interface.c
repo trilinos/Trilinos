@@ -65,7 +65,7 @@ static int mylog2(int x)
   return (i-1);
 }
 
-static int Zoltan_Parmetis_Parse(ZZ*, indextype *, char*, float*, double *, 
+static int Zoltan_Parmetis_Parse(ZZ*, indextype *, char*, realtype*, double *, 
                                  ZOLTAN_Output_Order*);
 
 
@@ -109,7 +109,7 @@ int Zoltan_ParMetis(
   double times[5];
 
   double pmv3_itr = 0.0;
-  float  itr = 0.0;
+  realtype itr = 0.0;
   indextype options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
@@ -119,7 +119,7 @@ int Zoltan_ParMetis(
 #endif
 
   indextype i;
-  float *imb_tols;
+  realtype *imb_tols;
   indextype ncon;
   indextype edgecut;
   indextype wgtflag;
@@ -162,7 +162,16 @@ int Zoltan_ParMetis(
                     imp_gids, imp_lids, imp_procs, imp_to_part,
                     exp_gids, exp_lids, exp_procs, exp_to_part);
 
-  prt.input_part_sizes = prt.part_sizes = part_sizes;
+  if (sizeof(realtype) != sizeof(float)) {
+    prt.input_part_sizes = (realtype *)
+                   ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(realtype));
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+      prt.input_part_sizes[i] = (realtype) part_sizes[i];
+    prt.part_sizes = prt.input_part_sizes;
+  }
+  else
+    prt.input_part_sizes = prt.part_sizes = (realtype *) part_sizes;
+
 
   ierr = Zoltan_Parmetis_Parse(zz, options, alg, &itr, &pmv3_itr, NULL);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
@@ -271,13 +280,13 @@ int Zoltan_ParMetis(
 
 
   /* Set Imbalance Tolerance for each weight component. */
-  imb_tols = (float *) ZOLTAN_MALLOC(ncon * sizeof(float));
+  imb_tols = (realtype *) ZOLTAN_MALLOC(ncon * sizeof(realtype));
   if (!imb_tols){
     /* Not enough memory */
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   for (i=0; i<ncon; i++)
-    imb_tols[i] = zz->LB.Imbalance_Tol[i];
+    imb_tols[i] = (realtype) (zz->LB.Imbalance_Tol[i]);
 
   /* Now we can call ParMetis */
 
@@ -405,7 +414,7 @@ static int Zoltan_Parmetis_Parse(
   ZZ* zz, 
   indextype *options, 
   char* alg,
-  float* itr, 
+  realtype* itr, 
   double *pmv3_itr,
   ZOLTAN_Output_Order *ord
 )
@@ -481,7 +490,7 @@ static int Zoltan_Parmetis_Parse(
       options[PMV3_OPTION_SEED] = seed;
       options[PMV3_OPT_USE_OBJ_SIZE] = use_obj_size;
       if (ord == NULL)
-        *itr = (float)*pmv3_itr;
+        *itr = (realtype)*pmv3_itr;
     }
 
     /* If ordering, use ordering method instead of load-balancing method */

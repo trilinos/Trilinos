@@ -342,7 +342,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 int
 Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				ZOLTAN_Third_Part *prt, ZOLTAN_Third_Vsize *vsp,
-				int use_timers, double itr)
+				int use_timers, realtype itr)
 {
 #define FOMAXDIM 10
   static char * yo = "Zoltan_Postprocess_FinalOutput";

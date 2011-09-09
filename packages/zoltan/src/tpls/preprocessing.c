@@ -67,6 +67,7 @@ static int Zoltan_Preprocess_Scatter_Graph(ZZ *zz,
                                  ZOLTAN_Third_Vsize *vsp);
 static int scale_round_weights(float *, weighttype *, int, int,
                                int, weighttype, int, MPI_Comm);
+static int Zoltan_LB_Add_Part_Sizes_Weight(ZZ *, int, int, realtype *, realtype **);
 
 /****************************************************************************/
 
@@ -616,16 +617,20 @@ Zoltan_Preprocess_Extract_Geom (ZZ *zz,
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
                           "Error returned from Zoltan_Get_Coordinates");
   }
-  /* Convert geometry info from double to float for ParMETIS */
-  if (gr->num_obj && geo->ndims) {
-    geo->xyz = (float *) ZOLTAN_MALLOC(gr->num_obj * geo->ndims * sizeof(float));
-    if (geo->xyz == NULL)  {
-      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Memory error.");
+  if (sizeof(realtype) != sizeof(double)) {
+    /* Convert geometry info from double to float for ParMETIS */
+    if (gr->num_obj && geo->ndims) {
+      geo->xyz = (realtype *) ZOLTAN_MALLOC(gr->num_obj*geo->ndims*sizeof(realtype));
+      if (geo->xyz == NULL)  {
+        ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Memory error.");
+      }
+      for (i = 0; i < gr->num_obj * geo->ndims; i++)
+        geo->xyz[i] = (realtype) geom_vec[i];
+      ZOLTAN_FREE(&geom_vec);
     }
-    for (i = 0; i < gr->num_obj * geo->ndims; i++)
-      geo->xyz[i] = (float) geom_vec[i];
-    ZOLTAN_FREE(&geom_vec);
   }
+  else
+    geo->xyz = (realtype *)geom_vec;
 
   return ierr;
 }
@@ -758,7 +763,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
                                   &gr->ewgts, &geo->xyz, geo->ndims,
                                   gr->obj_wgt_dim, zz, &gr->comm_plan);
     else {
-      float* xyz = NULL;
+      realtype* xyz = NULL;
       ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy,
                                   &gr->vwgt, (vsp ? &vsp->vsize : NULL),
                                   &gr->ewgts, &xyz, 0,
@@ -1016,6 +1021,59 @@ char *val)                      /* value of variable */
   PARAM_UTYPE result;
 
   return Zoltan_Check_Param(name, val, Graph_params, &result, &index);
+}
+
+/*****************************************************************************/
+static int Zoltan_LB_Add_Part_Sizes_Weight(
+  ZZ *zz,
+  int old_part_dim,      /* # of part-size entries per part in old_part_sizes */
+  int new_part_dim,      /* # of part-size entries per part in new_part_sizes */
+  realtype *old_part_sizes, /* Array of part sizes before adding an entry */
+  realtype **new_part_sizes /* Array of part sizes after adding an entry */
+)
+{
+/* Function to add one entry per part to part_sizes array.  Returns a new
+ * array with the added entry.
+ * The added entry for a part is set by default to the zeroth part_sizes entry
+ * for the part. 
+ * This function is invoked when parameter ADD_OBJ_WEIGHT is used. 
+ */
+realtype *part_sizes;               /* New part_sizes array */
+int i, j;
+int ierr = ZOLTAN_OK;
+
+  if (old_part_dim < 1) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  /* new_part_dim will equal old_part_dim if obj_weight_dim = 0 
+     and add_obj_weight != NONE */
+  if (old_part_dim == new_part_dim) {
+    *new_part_sizes = old_part_sizes;
+  }
+  else { /* Need to enlarge part_sizes array */
+    *new_part_sizes = (realtype *) ZOLTAN_MALLOC(new_part_dim
+                                               * zz->LB.Num_Global_Parts
+                                               * sizeof(realtype));
+    if (!new_part_sizes) {
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    part_sizes = *new_part_sizes;
+
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      /* Copy old_part_sizes info to new part_sizes array */
+      for (j = 0; j < old_part_dim; j++)
+        part_sizes[i*new_part_dim+j] = old_part_sizes[i*old_part_dim+j];
+      /* For the added weight, use zeroth entry of old_part_sizes for part. */
+      for (j = old_part_dim; j < new_part_dim; j++)
+        part_sizes[i*new_part_dim+j] = old_part_sizes[i*old_part_dim];
+    }
+  }
+
+End:
+  return ierr;
 }
 
 

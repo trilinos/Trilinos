@@ -270,9 +270,6 @@ extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to,
 extern int Zoltan_LB_Special_Free_Part(struct Zoltan_Struct *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
 
-extern int Zoltan_LB_Add_Part_Sizes_Weight(struct Zoltan_Struct *, int, int,
-                                           float *, float **);
-
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_Block;
 extern ZOLTAN_LB_FN Zoltan_Cyclic;
