@@ -103,19 +103,20 @@ struct assembleFE<Scalar, KOKKOS_MACRO_DEVICE> {
 
   enum { numGaussPointsPerDim = 2 };
 
-  typedef KOKKOS_MACRO_DEVICE               device_type;
-  typedef Kokkos::MDArrayView<Scalar,device_type>  scalar_array ;
-  typedef Kokkos::MDArrayView<int,device_type>     int_array ;
+  typedef KOKKOS_MACRO_DEVICE                      device_type;
+  typedef device_type::size_type                   index_type ;
+  typedef Kokkos::MDArrayView<index_type,device_type> index_array ;
+  typedef Kokkos::MDArrayView<Scalar,device_type>     scalar_array ;
 
-  int_array    elem_node_ids ;
-  scalar_array node_coords ;
-  scalar_array element_stiffness;
-  scalar_array element_vectors;
+  index_array   elem_node_ids ;
+  scalar_array  node_coords ;
+  scalar_array  element_stiffness;
+  scalar_array  element_vectors;
   GaussPoints< numGaussPointsPerDim > gauss ;
   Scalar k ;
   Scalar Q ;
 
-  assembleFE( const int_array    & arg_elem_node_ids ,
+  assembleFE( const index_array  & arg_elem_node_ids ,
               const scalar_array & arg_node_coords ,
               const scalar_array & arg_element_stiffness , 
               const scalar_array & arg_element_vectors )

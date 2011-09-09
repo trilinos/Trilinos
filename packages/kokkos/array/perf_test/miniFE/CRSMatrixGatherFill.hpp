@@ -43,37 +43,37 @@ struct CRSMatrixGatherFill;
 template<typename Scalar>
 struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
   
-  typedef KOKKOS_MACRO_DEVICE                 device_type;
-  typedef device_type::size_type                size_type;
+  typedef KOKKOS_MACRO_DEVICE     device_type;
+  typedef device_type::size_type  index_type;
 
-  typedef Kokkos::MultiVectorView<Scalar , device_type>    scalar_vector_d;
-  typedef Kokkos::MultiVectorView<int , device_type>      int_vector_d;
+  typedef Kokkos::MultiVectorView<Scalar , device_type>     scalar_vector_d;
+  typedef Kokkos::MultiVectorView<index_type , device_type> index_vector_d;
 
-  typedef Kokkos::MDArrayView<Scalar,device_type>       scalar_array_d;
-  typedef Kokkos::MDArrayView<int,device_type>         int_array_d;    
+  typedef Kokkos::MDArrayView<Scalar,device_type>      scalar_array_d;
+  typedef Kokkos::MDArrayView<index_type,device_type>  index_array_d;    
   
-  scalar_vector_d A ;
-  scalar_vector_d b ;
-  int_vector_d   A_col_offset;
-  int_vector_d   A_col_index;
+  scalar_vector_d  A ;
+  scalar_vector_d  b ;
+  index_vector_d   A_col_offset;
+  index_vector_d   A_col_index;
 
-  int_array_d  node_elemIDs;
-  int_array_d  elem_nodeIDs;
-  int_array_d  elems_per_node;
+  index_array_d  node_elemIDs;
+  index_array_d  elem_nodeIDs;
+  index_array_d  elems_per_node;
   
   scalar_array_d  element_stiffness;
-  scalar_array_d element_load;
+  scalar_array_d  element_load;
 
   CRSMatrixGatherFill(
-    scalar_vector_d & arg_A,
-    scalar_vector_d & arg_b,
-    int_vector_d    & arg_A_col_offset,
-    int_vector_d    & arg_A_col_index,
-    int_array_d     & arg_node_elemIDs,
-    int_array_d     & arg_elem_nodeIDs,
-    int_array_d     & arg_elems_per_node,
-    scalar_array_d  & arg_element_stiffness,
-    scalar_array_d  & arg_element_load)
+    const scalar_vector_d   & arg_A,
+    const scalar_vector_d   & arg_b,
+    const index_vector_d    & arg_A_col_offset,
+    const index_vector_d    & arg_A_col_index,
+    const index_array_d     & arg_elems_per_node,
+    const index_array_d     & arg_node_elemIDs,
+    const index_array_d     & arg_elem_nodeIDs,
+    const scalar_array_d    & arg_element_stiffness,
+    const scalar_array_d    & arg_element_load)
   : A(arg_A), 
     b(arg_b),
     A_col_offset(arg_A_col_offset),
@@ -86,41 +86,41 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
   {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()(int irow) const {
+  void operator()(index_type irow) const {
 
-    const int base_index = A_col_offset(irow);
-    const int last_index = A_col_offset(irow + 1);
+    const index_type base_index = A_col_offset(irow);
+    const index_type last_index = A_col_offset(irow + 1);
 
-    const int node_elem_begin = elems_per_node( irow );
-    const int node_elem_end   = elems_per_node( irow + 1 );
+    const index_type node_elem_begin = elems_per_node( irow );
+    const index_type node_elem_end   = elems_per_node( irow + 1 );
 
     //  for each element that a node belongs to
 
-    for(int i = node_elem_begin ; i < node_elem_end ; i++){
+    for(index_type i = node_elem_begin ; i < node_elem_end ; i++){
 
       //  elems_per_node is a cumulative structure, so 
       //  elems_per_node(irow) should be the index where
       //  a particular row's elem_IDs begin
 
-      const int nelem          = node_elemIDs( i, 0);
-      const int elem_row_index = node_elemIDs( i, 1);
+      const index_type nelem          = node_elemIDs( i, 0);
+      const index_type elem_row_index = node_elemIDs( i, 1);
 
       b(irow) += element_load(nelem, elem_row_index);
 
       //  for each node in a particular related element  
-      for(int j = 0; j < 8; j++){
+      for(index_type j = 0; j < 8; j++){
 
         //  gather the contents of the element stiffness
         //  matrix that belong in irow
 
-        int column_search = base_index;
+        index_type column_search = base_index;
   
-        const int node_id = elem_nodeIDs(nelem, j);
+        const index_type node_id = elem_nodeIDs(nelem, j);
 
-        for ( int len = last_index - base_index ; 0 < len ; ) {
+        for ( index_type len = last_index - base_index ; 0 < len ; ) {
   
-          const int half = len >> 1;
-          const int middle = column_search + half ;
+          const index_type half = len >> 1;
+          const index_type middle = column_search + half ;
 
           if ( A_col_index(middle) < node_id ){
             column_search = middle + 1 ;

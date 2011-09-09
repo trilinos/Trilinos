@@ -13,8 +13,8 @@ int main(int argc, char ** argv){
 
 	if ( argc != 5) 
 	{
-		int beg = 5;
-		int end = 6;
+		int beg = 10;
+		int end = 11;
 		int runs = 1;
 		int threads = 4;
 

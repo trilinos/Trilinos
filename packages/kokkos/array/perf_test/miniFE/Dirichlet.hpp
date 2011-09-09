@@ -6,42 +6,38 @@ struct Dirichlet<Scalar , KOKKOS_MACRO_DEVICE >
 {
   
   typedef KOKKOS_MACRO_DEVICE                   device_type;
-  typedef device_type::size_type                  size_type;
+  typedef device_type::size_type                  index_type;
   typedef typename Kokkos::MultiVectorView<Scalar, device_type>   scalar_vector;  
-  typedef typename Kokkos::MultiVectorView<int, device_type>     int_vector;
+  typedef typename Kokkos::MultiVectorView<index_type, device_type>  index_vector;
 
-    scalar_vector A;
-  int_vector A_row;
-  int_vector A_col;
-    scalar_vector b;
-    double value;
+  scalar_vector A;
+  index_vector A_row;
+  index_vector A_col;
+  scalar_vector b;
+  double value;
 
-  int nx, ny, nz;
+  index_type nx, ny, nz;
   
     Dirichlet(  scalar_vector & arg_A, 
-        int_vector & arg_A_row,
-        int_vector & arg_A_col, 
+        index_vector & arg_A_row,
+        index_vector & arg_A_col, 
         scalar_vector & arg_b, 
-        int nodes_x,
-        int nodes_y,
-        int nodes_z,
-        double arg_value) : 
-
-        A(arg_A),
-        A_row(arg_A_row),
-        A_col(arg_A_col), 
-        b(arg_b)
-  {
-      value = arg_value;
-  
-    nx = nodes_x;
-    ny = nodes_y;
-    nz = nodes_z;
-
-  }
+        index_type nodes_x,
+        index_type nodes_y,
+        index_type nodes_z,
+        double arg_value)
+  : A(arg_A)
+  , A_row(arg_A_row)
+  , A_col(arg_A_col)
+  , b(arg_b)
+  , value( arg_value )
+  , nx( nodes_x )
+  , ny( nodes_y )
+  , nz( nodes_z )
+  { }
     
     KOKKOS_MACRO_DEVICE_FUNCTION
-    void operator()(int irow) const {
+    void operator()(index_type irow) const {
   //  For each node with x coordinate == 0,
   //  Apply a dirichlet boundary condition:
   //    temperature = value
@@ -54,10 +50,10 @@ struct Dirichlet<Scalar , KOKKOS_MACRO_DEVICE >
   //  if irow is _NOT_ a boundary condition
     if( (irow % (nx * ny)) % ny != 0){
  
-       int stop = A_row(irow+1);
+       const index_type stop = A_row(irow+1);
 
     //  iterate over the columns in irow
-      for(int i = A_row(irow); i < stop; i++){
+      for(index_type i = A_row(irow); i < stop; i++){
 
       //  find any columns that are
       //  boundary conditions. Clear them,
@@ -76,23 +72,19 @@ struct Dirichlet<Scalar , KOKKOS_MACRO_DEVICE >
     //  set the load vector equal to a specified value
       b(irow) = value;
   
-      int stop = A_row(irow+1);
+      const index_type stop = A_row(irow+1);
 
     //  zero each value on the row, and leave a one
     //  on the diagonal
-      for(int i = A_row(irow); i < stop; i++){
+      for(index_type i = A_row(irow); i < stop; i++){
 
         if(A_col(i) == irow)
           A(i) = 1;
         else 
           A(i) = 0;
-        
-
       }
-
-
     }
-
-    }
+  }
 
 };
+

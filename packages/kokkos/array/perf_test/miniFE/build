@@ -42,8 +42,8 @@ set GCC_SOURCES="${GCC_SOURCES} testTBBStub.cpp"
 
 echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 
-# set GCC_FLAGS="-Wall -O3 ${INC_PATH}"
-set GCC_FLAGS="-Wall -g ${INC_PATH}"
+set GCC_FLAGS="-Wall -O3 ${INC_PATH}"
+# set GCC_FLAGS="-Wall -g ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 

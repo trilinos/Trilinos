@@ -15,15 +15,16 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 {
 
   typedef KOKKOS_MACRO_DEVICE    device_type;
+  typedef device_type::size_type index_type ;
   typedef Kokkos::MultiVectorView<Scalar , device_type>  scalar_vector;
-  typedef Kokkos::MultiVectorView<int , device_type>    int_vector;
+  typedef Kokkos::MultiVectorView<index_type , device_type>    index_vector;
 
 
   typedef Kokkos::ValueView<Scalar , device_type>     value;
   typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
 
   
-  static double run(scalar_vector & A_value , int_vector & A_row , int_vector & A_col , scalar_vector & b , scalar_vector & x , double* times)
+  static double run(scalar_vector & A_value , index_vector & A_row , index_vector & A_col , scalar_vector & b , scalar_vector & x , double* times)
   {
     double time = 0.0;
     double total_time = 0.0;
