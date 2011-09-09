@@ -53,7 +53,7 @@ OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
          dbpelb.o dbpini.o dbpnam.o dbpqa.o  dbptim.o dbvini.o \
          engnot.o engstr.o ffaddc.o ffaddi.o ffaddo.o ffaddr.o \
          ffaddv.o ffchar.o ffexst.o ffintg.o ffmatc.o ffneed.o \
-         ffnumb.o ffonof.o ffreal.o ffrrng.o ffsfld.o ffvrng.o \
+         ffnumb.o ffonof.o ffreal.o ffrrng.o ffvrng.o \
          gslibv.o idblnk.o iengrx.o inigrd.o iniint.o screrr.o \
          inilog.o inirea.o inistr.o intadd.o intstr.o lenstr.o \
          locint.o locrea.o locstr.o logerr.o lowstr.o matstr.o \
