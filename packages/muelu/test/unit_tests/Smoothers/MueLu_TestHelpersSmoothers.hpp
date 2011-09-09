@@ -30,6 +30,9 @@ namespace MueLuTests {
     //! Test if a smoother reduces effectively the error on a simple problem
     // TODO
 
+    //! Test direct solver
+    void testDirectSolver(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success);
+
   } // namespace Smoother
   
 } // MueLuTests

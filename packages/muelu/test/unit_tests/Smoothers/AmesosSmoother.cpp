@@ -29,14 +29,12 @@ namespace MueLuTests {
       {
 #ifdef HAVE_AMESOS_KLU
         AmesosSmoother smoother("Klu", Teuchos::ParameterList());
-        ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
-        TEST_EQUALITY(residualNorms < 1e-12, true);
+        testDirectSolver(smoother, out, success);
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
         AmesosSmoother smoother("Superlu", Teuchos::ParameterList());
-        ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
-        TEST_EQUALITY(residualNorms < 1e-12, true);
+        testDirectSolver(smoother, out, success);
 #endif
       }
   }
@@ -45,5 +43,6 @@ namespace MueLuTests {
 
 //TODO
 // Test with invalid std::string
+// Test with invalid parameterList? (== a characterization test for Amesos)
 // Test if paramList takes into account
 // Check if all the defaults that are used by MueLu are tested

@@ -102,6 +102,11 @@ namespace MueLuTests {
       return testApply_X0_RandomRHS(*A, smoother, out, success); // in MueLuTests::SmootherBase
     }
 
+    void testDirectSolver(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
+      ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      TEST_EQUALITY(residualNorms < 1e-12, true);
+    }
+
   } // namespace Smoother
   
 } // MueLuTests
