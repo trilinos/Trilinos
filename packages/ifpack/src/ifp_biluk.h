@@ -30,12 +30,14 @@
 #ifndef _IFP_BILUK_H_
 #define _IFP_BILUK_H_
 
+#include "Ifpack_config.h"
+
 #include "ifp_GlobalPrecon.h"
 
 class ifp_LocalMat;
 class ifp_BlockMat;
 
-class ifp_biluk : public ifp_GlobalPrecon
+class IFPACK_DEPRECATED ifp_biluk : public ifp_GlobalPrecon
 {
 private:
     const ifp_BlockMat *Ap;

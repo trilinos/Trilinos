@@ -32,6 +32,8 @@
 #ifndef IFP_SPBLAS_H
 #define IFP_SPBLAS_H
 
+#include "Ifpack_config.h"
+
 #include "ifp_arch.h"
 
 #ifdef COMPLEX_SUPPORT
@@ -40,7 +42,7 @@
 
 extern "C" {
 
-void F77NAME(scoomm)
+IFPACK_DEPRECATED void F77NAME(scoomm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const float &alpha, 
    const int descra[], const float *val, 
@@ -49,7 +51,7 @@ void F77NAME(scoomm)
    const float &beta, float *c, const int &ldc, 
    float *work, const int &lwork);
 
-void F77NAME(scscmm)
+IFPACK_DEPRECATED void F77NAME(scscmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const float &alpha, 
    const int descra[], const float *val, 
@@ -57,7 +59,7 @@ void F77NAME(scscmm)
    const float &beta, float *c, const int &ldc, 
    float *work, const int &lwork);
    
-void F77NAME(scsrmm)
+IFPACK_DEPRECATED void F77NAME(scsrmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const float &alpha, 
    const int descra[], const float *val, 
@@ -65,7 +67,7 @@ void F77NAME(scsrmm)
    const float &beta, float *c, const int &ldc, 
    float *work, const int &lwork);
    
-void F77NAME(dcoomm)
+IFPACK_DEPRECATED void F77NAME(dcoomm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const double &alpha, 
    const int descra[], const double *val, 
@@ -74,7 +76,7 @@ void F77NAME(dcoomm)
    const double &beta, double *c, const int &ldc, 
    double *work, const int &lwork);
 
-void F77NAME(dcscmm)
+IFPACK_DEPRECATED void F77NAME(dcscmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const double &alpha, 
    const int descra[], const double *val, 
@@ -82,7 +84,7 @@ void F77NAME(dcscmm)
    const double &beta, double *c, const int &ldc, 
    double *work, const int &lwork);
    
-void F77NAME(dcsrmm)
+IFPACK_DEPRECATED void F77NAME(dcsrmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const double &alpha, 
    const int descra[], const double *val, 
@@ -91,7 +93,7 @@ void F77NAME(dcsrmm)
    double *work, const int &lwork);
   
 
-void F77NAME(dcscsm)
+IFPACK_DEPRECATED void F77NAME(dcscsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const double *dv, const double &alpha, 
    const int descra[], const double *val, 
@@ -99,7 +101,7 @@ void F77NAME(dcscsm)
    const double &beta, double *c, const int &ldc, 
    double *work, const int &lwork);
 
-void F77NAME(dcsrsm)
+IFPACK_DEPRECATED void F77NAME(dcsrsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const double *dv, const double &alpha, 
    const int descra[], const double *val, 
@@ -107,7 +109,7 @@ void F77NAME(dcsrsm)
    const double &beta, double *c, const int &ldc, 
    double *work, const int &lwork);
 
-void F77NAME(scscsm)
+IFPACK_DEPRECATED void F77NAME(scscsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const float *dv, const float &alpha, 
    const int descra[], const float *val, 
@@ -115,7 +117,7 @@ void F77NAME(scscsm)
    const float &beta, float *c, const int &ldc, 
    float *work, const int &lwork);
 
-void F77NAME(scsrsm)
+IFPACK_DEPRECATED void F77NAME(scsrsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const float *dv, const float &alpha, 
    const int descra[], const float *val, 
@@ -125,7 +127,7 @@ void F77NAME(scsrsm)
 
 #ifdef COMPLEX_SUPPORT
 
-void F77NAME(zcoomm)
+IFPACK_DEPRECATED void F77NAME(zcoomm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const complex &alpha, 
    const int descra[], const complex *val, 
@@ -134,7 +136,7 @@ void F77NAME(zcoomm)
    const complex &beta, complex *c, const int &ldc, 
    complex *work, const int &lwork);
 
-void F77NAME(zcscmm)
+IFPACK_DEPRECATED void F77NAME(zcscmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const complex &alpha, 
    const int descra[], const complex *val, 
@@ -142,7 +144,7 @@ void F77NAME(zcscmm)
    const complex &beta, complex *c, const int &ldc, 
    complex *work, const int &lwork);
    
-void F77NAME(zcsrmm)
+IFPACK_DEPRECATED void F77NAME(zcsrmm)
   (const int &transa, const int &m, const int &n, const int &k, 
    const complex &alpha, 
    const int descra[], const complex *val, 
@@ -150,7 +152,7 @@ void F77NAME(zcsrmm)
    const complex &beta, complex *c, const int &ldc, 
    complex *work, const int &lwork);
 
-void F77NAME(zcscsm)
+IFPACK_DEPRECATED void F77NAME(zcscsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const complex *dv, const complex &alpha, 
    const int descra[], const complex *val, 
@@ -158,7 +160,7 @@ void F77NAME(zcscsm)
    const complex &beta, complex *c, const int &ldc, 
    complex *work, const int &lwork);
 
-void F77NAME(zcsrsm)
+IFPACK_DEPRECATED void F77NAME(zcsrsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const complex *dv, const complex &alpha, 
    const int descra[], const complex *val, 

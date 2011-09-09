@@ -30,10 +30,12 @@
 #ifndef _IFP_GLOBALPRECON_H_
 #define _IFP_GLOBALPRECON_H_
 
+#include "Ifpack_config.h"
+
 #include "ifp_Precon.h"
 #include "ifp_LocalPrecon.h"
 
-class ifp_GlobalPrecon : public ifp_Precon
+class IFPACK_DEPRECATED ifp_GlobalPrecon : public ifp_Precon
 {
 protected:
     ifp_LocalPrecon local_precon;

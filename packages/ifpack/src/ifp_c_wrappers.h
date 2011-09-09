@@ -30,6 +30,8 @@
 #ifndef _IFP_C_WRAPPER_H_
 #define _IFP_C_WRAPPER_H_
 
+#include "Ifpack_config.h"
+
 #define IFP_DENSE 	0
 #define IFP_SPARSE 	1
 
@@ -50,7 +52,7 @@
 extern "C" {
 #endif
 
-void ifp_blockmatrix(
+IFPACK_DEPRECATED void ifp_blockmatrix(
   void    **bmat,
   int     n,
   double  *a,
@@ -60,10 +62,10 @@ void ifp_blockmatrix(
   int     *kvst,
   int     type);
 
-void ifp_freeblockmatrix(
+IFPACK_DEPRECATED void ifp_freeblockmatrix(
         void    *bmat);
 
-void ifp_preconditioner(
+IFPACK_DEPRECATED void ifp_preconditioner(
         void    **precon,
   const void    *bmat,
   const int     global,
@@ -73,11 +75,11 @@ void ifp_preconditioner(
   const double  lparam1,
   const double  lparam2);
 
-void ifp_freepreconditioner( void *precon);
+IFPACK_DEPRECATED void ifp_freepreconditioner( void *precon);
 
-void ifp_freebiluk( void *precon);
+IFPACK_DEPRECATED void ifp_freebiluk( void *precon);
 
-void ifp_matvec(
+IFPACK_DEPRECATED void ifp_matvec(
   void    *bmat,
   int     nr,
   int     nc,
@@ -86,7 +88,7 @@ void ifp_matvec(
   double *v,
   int     ldv);
 
-void ifp_apply(
+IFPACK_DEPRECATED void ifp_apply(
   void    *prec,
   int     nr,
   int     nc,
@@ -95,10 +97,10 @@ void ifp_apply(
   double *v,
   int     ldv);
 
-void ifp_BJacobi_condest(void *M);
+IFPACK_DEPRECATED void ifp_BJacobi_condest(void *M);
 
-void ifp_biluk_condest(void *M);
-void ifp_biluk_stats(void *M);
+IFPACK_DEPRECATED void ifp_biluk_condest(void *M);
+IFPACK_DEPRECATED void ifp_biluk_stats(void *M);
 
 #ifdef __cplusplus
 }

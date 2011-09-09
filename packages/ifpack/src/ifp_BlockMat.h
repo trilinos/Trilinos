@@ -30,12 +30,14 @@
 #ifndef _IFP_BLOCKMAT_H_
 #define _IFP_BLOCKMAT_H_
 
+#include "Ifpack_config.h"
+
 #include <iostream>
 #include "ifp_Matrix.h"
 
 class ifp_LocalMat;
 
-class ifp_BlockMat : public ifp_Matrix
+class IFPACK_DEPRECATED ifp_BlockMat : public ifp_Matrix
 {
 private:
     ifp_LocalMat **a;

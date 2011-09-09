@@ -30,6 +30,8 @@
 #ifndef _IFP_IFPACK_H_
 #define _IFP_IFPACK_H_
 
+#include "Ifpack_config.h"
+
 #include "Ifpack_ConfigDefs.h"
 
 #include <iostream>
@@ -58,10 +60,10 @@ extern "C" { void exit(int); }
 
 extern "C"
 {
-void F77NAME(dgetri)(int *n, double *A, int *lda, int *ipiv,
+IFPACK_DEPRECATED void F77NAME(dgetri)(int *n, double *A, int *lda, int *ipiv,
     double *work, int *lwork, int *info);
 
-void F77NAME(dgesvd) (char *, char *, int *, int *, const double *,
+IFPACK_DEPRECATED void F77NAME(dgesvd) (char *, char *, int *, int *, const double *,
     int *, double *, double *, int *, double *, int *,
     double *, int *, int *);
 }

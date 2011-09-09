@@ -30,6 +30,8 @@
 #ifndef _IFP_DENSEMAT_H_
 #define _IFP_DENSEMAT_H_
 
+#include "Ifpack_config.h"
+
 #include <math.h>
 #include <assert.h>
 #include "ifp_LocalMat.h"
@@ -46,7 +48,7 @@
 // In this case, the data pointer must be set to NULL before the destructor
 // is called.
 
-class ifp_DenseMat : public ifp_LocalMat
+class IFPACK_DEPRECATED ifp_DenseMat : public ifp_LocalMat
 {
 // Temporary change protected:
 public:
@@ -114,7 +116,7 @@ public:
 
 std::ostream& operator << (std::ostream& os, const ifp_DenseMat& mat);
 
-class ifp_DenseMat_LU : public ifp_DenseMat
+class IFPACK_DEPRECATED ifp_DenseMat_LU : public ifp_DenseMat
 {
 private:
     double  *lu;
@@ -126,7 +128,7 @@ public:
     inline ~ifp_DenseMat_LU();
 };
 
-class ifp_DenseMat_INVERSE : public ifp_DenseMat
+class IFPACK_DEPRECATED ifp_DenseMat_INVERSE : public ifp_DenseMat
 {
 private:
 public:
@@ -135,7 +137,7 @@ public:
         {solve_is_mult(B, X);}
 };
 
-class ifp_DenseMat_SVD : public ifp_DenseMat
+class IFPACK_DEPRECATED ifp_DenseMat_SVD : public ifp_DenseMat
 {
 private:
 public:
@@ -144,7 +146,7 @@ public:
         {solve_is_mult(B, X);}
 };
 
-class ifp_DenseMat_DIAGDOM : public ifp_DenseMat
+class IFPACK_DEPRECATED ifp_DenseMat_DIAGDOM : public ifp_DenseMat
 {
 private:
 public:
@@ -153,7 +155,7 @@ public:
         {solve_is_mult(B, X);}
 };
 
-class ifp_DenseMat_GERSH : public ifp_DenseMat
+class IFPACK_DEPRECATED ifp_DenseMat_GERSH : public ifp_DenseMat
 {
 private:
 public:
@@ -164,7 +166,7 @@ public:
 
 // B = A'
 // must copy data
-inline void ifp_DenseMat::Mat_Trans(ifp_LocalMat *B) const
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Trans(ifp_LocalMat *B) const
 {
     ifp_DenseMat& b = *(ifp_DenseMat *) B;
 
@@ -200,7 +202,7 @@ inline void ifp_DenseMat::Mat_Trans(ifp_LocalMat *B) const
 }
 
 // C = A + alpha B
-inline void ifp_DenseMat::Mat_Mat_Add(const ifp_LocalMat *B, ifp_LocalMat *C,
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Mat_Add(const ifp_LocalMat *B, ifp_LocalMat *C,
     double alpha) const
 {
     ifp_DenseMat& b = *(ifp_DenseMat *) B;
@@ -240,7 +242,7 @@ inline void ifp_DenseMat::Mat_Mat_Add(const ifp_LocalMat *B, ifp_LocalMat *C,
 }
 
 // C = alpha A B + beta C
-inline void ifp_DenseMat::Mat_Mat_Mult(const ifp_LocalMat *B, ifp_LocalMat *C, 
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Mat_Mult(const ifp_LocalMat *B, ifp_LocalMat *C, 
     double alpha, double beta) const
 {
     assert (B != C);
@@ -284,7 +286,7 @@ inline void ifp_DenseMat::Mat_Mat_Mult(const ifp_LocalMat *B, ifp_LocalMat *C,
 }
 
 // C = alpha A B + beta C
-inline void ifp_DenseMat::Mat_Vec_Mult(const ifp_BlockVec& B, ifp_BlockVec& C,
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Vec_Mult(const ifp_BlockVec& B, ifp_BlockVec& C,
     double alpha, double beta) const
 {
     char trans = 'N';
@@ -304,7 +306,7 @@ inline void ifp_DenseMat::Mat_Vec_Mult(const ifp_BlockVec& B, ifp_BlockVec& C,
     //    B.v, &LDB, &beta, C.v, &LDC);
 }
 
-inline void ifp_DenseMat::Mat_Trans_Vec_Mult(const ifp_BlockVec& B, 
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Trans_Vec_Mult(const ifp_BlockVec& B, 
     ifp_BlockVec& C, double alpha, double beta) const
 {
     char transa = 'T';
@@ -325,20 +327,20 @@ inline void ifp_DenseMat::Mat_Trans_Vec_Mult(const ifp_BlockVec& B,
     //    B.v, &LDB, &beta, C.v, &LDC);
 }
 
-inline void ifp_DenseMat::Mat_Vec_Solve(const ifp_BlockVec&, ifp_BlockVec&) const
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Vec_Solve(const ifp_BlockVec&, ifp_BlockVec&) const
 {
     ifp_error("ifp_DenseMat::Mat_Vec_Solve: to solve with a local matrix,\n"
             "a local preconditioner should be used.\n", 0);
 }
 
-inline void ifp_DenseMat::Mat_Trans_Vec_Solve(const ifp_BlockVec&,
+inline IFPACK_DEPRECATED void ifp_DenseMat::Mat_Trans_Vec_Solve(const ifp_BlockVec&,
 ifp_BlockVec&) const
 {
     ifp_error("ifp_DenseMat::Mat_Trans_Vec_Solve: to solve with a local matrix,\n"
             "a local preconditioner should be used.\n", 0);
 }
 
-inline void ifp_DenseMat::SetToZero(int r, int c)
+inline IFPACK_DEPRECATED void ifp_DenseMat::SetToZero(int r, int c)
 {
     if (a == NULL && nrow == 0 && ncol == 0)
     {
@@ -356,7 +358,7 @@ inline void ifp_DenseMat::SetToZero(int r, int c)
 	*p++ = 0.0;
 }
 
-inline ifp_LocalMat *ifp_DenseMat::CreateInv(ifp_LocalPrecon& local_precon) const
+inline IFPACK_DEPRECATED ifp_LocalMat *ifp_DenseMat::CreateInv(ifp_LocalPrecon& local_precon) const
 {
     assert (a != NULL);
 
@@ -379,7 +381,7 @@ inline ifp_LocalMat *ifp_DenseMat::CreateInv(ifp_LocalPrecon& local_precon) cons
     return(0); // Zero pointer (never returned because ifp_error aborts, but this satisfies the compiler)
 }
 
-inline ifp_DenseMat_LU::ifp_DenseMat_LU(const ifp_DenseMat& A)
+inline IFPACK_DEPRECATED ifp_DenseMat_LU::ifp_DenseMat_LU(const ifp_DenseMat& A)
 {
     a = NULL; // indicate this is implied inverse
     nrow = A.numrow();
@@ -409,7 +411,7 @@ inline ifp_DenseMat_LU::ifp_DenseMat_LU(const ifp_DenseMat& A)
 	ifp_error("ifp_DenseMat_LU: dgetrf error", INFO);
 }
 
-inline void ifp_DenseMat_LU::Mat_Vec_Solve(const ifp_BlockVec& b, ifp_BlockVec& x) const
+inline IFPACK_DEPRECATED void ifp_DenseMat_LU::Mat_Vec_Solve(const ifp_BlockVec& b, ifp_BlockVec& x) const
 {
     char trans = 'N';
     integer N = ncol;
@@ -429,13 +431,13 @@ inline void ifp_DenseMat_LU::Mat_Vec_Solve(const ifp_BlockVec& b, ifp_BlockVec& 
 	ifp_error("ifp_DenseMat_LU: dgetrs error", INFO);
 }
 
-inline ifp_DenseMat_LU::~ifp_DenseMat_LU()
+inline IFPACK_DEPRECATED ifp_DenseMat_LU::~ifp_DenseMat_LU()
 {
     delete [] ipiv;
     delete [] lu;
 }
 
-inline ifp_DenseMat_INVERSE::ifp_DenseMat_INVERSE(const ifp_DenseMat& A)
+inline IFPACK_DEPRECATED ifp_DenseMat_INVERSE::ifp_DenseMat_INVERSE(const ifp_DenseMat& A)
     : ifp_DenseMat(A)
 {
     integer M = nrow;
@@ -466,7 +468,7 @@ inline ifp_DenseMat_INVERSE::ifp_DenseMat_INVERSE(const ifp_DenseMat& A)
     delete [] work;
 }
 
-inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh, 
+inline IFPACK_DEPRECATED ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh, 
   double athresh)
     : ifp_DenseMat(A)
 {
@@ -534,7 +536,7 @@ inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh,
     delete [] vt;
 }
 
-inline ifp_DenseMat_DIAGDOM::ifp_DenseMat_DIAGDOM(const ifp_DenseMat& A, double alpha)
+inline IFPACK_DEPRECATED ifp_DenseMat_DIAGDOM::ifp_DenseMat_DIAGDOM(const ifp_DenseMat& A, double alpha)
     : ifp_DenseMat(A)
 {
     int i, j;
@@ -589,7 +591,7 @@ inline ifp_DenseMat_DIAGDOM::ifp_DenseMat_DIAGDOM(const ifp_DenseMat& A, double 
     delete [] work;
 }
 
-inline ifp_DenseMat_GERSH::ifp_DenseMat_GERSH(const ifp_DenseMat& A, double alpha)
+inline IFPACK_DEPRECATED ifp_DenseMat_GERSH::ifp_DenseMat_GERSH(const ifp_DenseMat& A, double alpha)
     : ifp_DenseMat(A)
 {
     int i, j;

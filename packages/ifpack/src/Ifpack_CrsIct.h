@@ -30,6 +30,8 @@
 #ifndef _IFPACK_CRSICT_H_
 #define _IFPACK_CRSICT_H_
 
+#include "Ifpack_config.h"
+
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
 #include "Epetra_CombineMode.h"
@@ -154,7 +156,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 */    
 
 
-class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virtual Epetra_Operator {
+class IFPACK_DEPRECATED Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virtual Epetra_Operator {
       
   // Give ostream << function some access to private and protected data/functions.
 

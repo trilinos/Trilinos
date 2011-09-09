@@ -30,11 +30,13 @@
 #ifndef _IFP_SPARSEUTIL_H_
 #define _IFP_SPARSEUTIL_H_
 
-void shell_sort(
+#include "Ifpack_config.h"
+
+IFPACK_DEPRECATED void shell_sort(
   const int n,
   int x[]);
 
-void allocate_ilu(
+IFPACK_DEPRECATED void allocate_ilu(
   const int levfill,
   const int n,
   int *nzl, int *nzu,
@@ -43,7 +45,7 @@ void allocate_ilu(
   int *iau[], int *jau[],
   int growthl, int growthu);
 
-int symbolic_ilu(
+IFPACK_DEPRECATED int symbolic_ilu(
   const int levinc,
   const int n,
   int *nzl,

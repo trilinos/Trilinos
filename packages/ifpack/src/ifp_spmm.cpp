@@ -38,6 +38,8 @@
  *
  */
 
+#include "Ifpack_config.h"
+
 #include <stdlib.h>
 #include <iostream>
 using namespace std;
@@ -399,7 +401,7 @@ ScaleRectangularArray_float(int m, int n, float *c, int ldc,
  *      max(m,n)
  *
  */
-void F77NAME(scoomm)
+IFPACK_DEPRECATED void F77NAME(scoomm)
   (const int &transa, const int &m, const int &n, const int &k,
    const float &alpha,
    const int descra[], const float *val,
@@ -432,7 +434,7 @@ void F77NAME(scoomm)
 }
 
 
-void F77NAME(dcoomm)
+IFPACK_DEPRECATED void F77NAME(dcoomm)
   (const int &transa, const int &m, const int &n, const int &k,
    const double &alpha,
    const int descra[], const double *val,
@@ -517,7 +519,7 @@ void F77NAME(dcoomm)
  *      max(m,n)
  *
  */
-void F77NAME(scscmm)
+IFPACK_DEPRECATED void F77NAME(scscmm)
   (const int &transa, const int &m, const int &n, const int &k,
    const float &alpha,
    const int descra[], const float *val,
@@ -543,7 +545,7 @@ void F77NAME(scscmm)
 }
 
 
-void F77NAME(dcscmm)
+IFPACK_DEPRECATED void F77NAME(dcscmm)
   (const int &transa, const int &m, const int &n, const int &k,
    const double &alpha,
    const int descra[], const double *val,
@@ -621,7 +623,7 @@ void F77NAME(dcscmm)
  *      max(m,n)
  *
  */
-void F77NAME(scsrmm)
+IFPACK_DEPRECATED void F77NAME(scsrmm)
   (const int &transa, const int &m, const int &n, const int &k,
    const float &alpha,
    const int descra[], const float *val,
@@ -647,7 +649,7 @@ void F77NAME(scsrmm)
 }
 
 
-void F77NAME(dcsrmm)
+IFPACK_DEPRECATED void F77NAME(dcsrmm)
   (const int &transa, const int &m, const int &n, const int &k,
    const double &alpha,
    const int descra[], const double *val,

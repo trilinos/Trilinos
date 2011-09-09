@@ -30,6 +30,8 @@
 #ifndef _IFP_LOCALPRECON_H_
 #define _IFP_LOCALPRECON_H_
 
+#include "Ifpack_config.h"
+
 // Make the values explicit, so we can match them with FORTRAN parameters.
 
 enum LocalPreconName
@@ -44,7 +46,7 @@ enum LocalPreconName
     LP_GERSH        = 16   // alpha
 };
 
-class ifp_LocalPrecon
+class IFPACK_DEPRECATED ifp_LocalPrecon
 {
 public:
     LocalPreconName name;

@@ -27,6 +27,8 @@
 //@HEADER
 */
 
+#include "Ifpack_config.h"
+
 /* Modified by Edmond Chow, to sort integers and carry along an array of
    doubles */
 #if 0 /* test program */
@@ -34,7 +36,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
+IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
 #define QSORTLEN 20
 
 int main()
@@ -136,7 +138,7 @@ typedef struct
       smaller partition.  This *guarantees* no more than log (n)
       stack size is needed (actually O(1) in this case)!  */
 
-void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems)
+IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems)
 {
   int itemp;
   double dtemp;

@@ -30,6 +30,8 @@
 #ifndef _ifp_parameters_h_
 #define _ifp_parameters_h_
 
+#include "Ifpack_config.h"
+
 #include <Ifpack_ConfigDefs.h>
 
 #include <Teuchos_map.hpp>
@@ -73,11 +75,11 @@ struct param_struct {
 
 Teuchos::map<string,parameter>& key_map();
 
-void initialize_string_map();
+IFPACK_DEPRECATED void initialize_string_map();
 
 string upper_case(const string& s);
 
-void set_parameters(const Teuchos::ParameterList& parameterlist,
+IFPACK_DEPRECATED void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
                     bool cerr_warning_if_unused=false);
 

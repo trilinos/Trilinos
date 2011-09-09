@@ -43,6 +43,8 @@
 
 #endif
 
+#include "Ifpack_config.h"
+
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -60,7 +62,7 @@ typedef struct {
     int    *ptr;  /* also known as IA; with ptr[0] = 0 */
 } Matrix;
 
-void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
+IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
 
 #define SHORTCUT(p, a, ja, ia) \
         (a)  = (p)->val; \
@@ -72,14 +74,14 @@ void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems)
         (p).col = NULL; \
         (p).ptr = NULL;
 
-void Matrix_alloc(Matrix *a, int n, int nnz)
+IFPACK_DEPRECATED void Matrix_alloc(Matrix *a, int n, int nnz)
 {
     a->val = (double *) malloc(nnz * sizeof(double));
     a->col = (int *) malloc(nnz * sizeof(int));
     a->ptr = (int *) malloc((n+1) * sizeof(int));
 }
  
-void Matrix_dealloc(Matrix *a)
+IFPACK_DEPRECATED void Matrix_dealloc(Matrix *a)
 {
     free(a->val);
     free(a->col);
@@ -283,7 +285,7 @@ static void update_lists_newcol(
  * function, i.e., L, pdiag.
  */
 
-void crout_ict(
+IFPACK_DEPRECATED void crout_ict(
     int n,
 #ifdef IFPACK
     void * A,
@@ -464,7 +466,7 @@ void crout_ict(
  *
  * d must be converted to a matrix (from a vector) by icrout_cholesky.m
  */
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+IFPACK_DEPRECATED void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     int n;
     Matrix AL;

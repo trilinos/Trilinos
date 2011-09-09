@@ -30,7 +30,9 @@
 #ifndef _IFP_MATRIX_H_
 #define _IFP_MATRIX_H_
 
-class ifp_Matrix
+#include "Ifpack_config.h"
+
+class IFPACK_DEPRECATED ifp_Matrix
 {
 public:
     virtual ~ifp_Matrix() {}

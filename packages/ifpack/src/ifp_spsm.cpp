@@ -38,6 +38,8 @@
  *
  */
 
+#include "Ifpack_config.h"
+
 #include <stdlib.h>
 #include <iostream>
 using namespace std;
@@ -1084,7 +1086,7 @@ CompRow_UpperDiagSolve_float(int m, int n, int unitd, const float *dv, float alp
  * C <- alpha D A^{-1} B + beta C
  * C <- alpha A^{-1} D B + beta C
  */
-void F77NAME(scscsm)
+IFPACK_DEPRECATED void F77NAME(scscsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const float *dv, const float &alpha,
    const int descra[], const float *val,
@@ -1164,7 +1166,7 @@ void F77NAME(scscsm)
 }
 
 
-void F77NAME(scsrsm)
+IFPACK_DEPRECATED void F77NAME(scsrsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const float *dv, const float &alpha,
    const int descra[], const float *val,
@@ -1244,7 +1246,7 @@ void F77NAME(scsrsm)
 }
 
 
-void F77NAME(dcscsm)
+IFPACK_DEPRECATED void F77NAME(dcscsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const double *dv, const double &alpha,
    const int descra[], const double *val,
@@ -1326,7 +1328,7 @@ void F77NAME(dcscsm)
 
 
 
-void F77NAME(dcsrsm)
+IFPACK_DEPRECATED void F77NAME(dcsrsm)
   (const int &transa, const int &m, const int &n,
    const int &unitd, const double *dv, const double &alpha,
    const int descra[], const double *val,

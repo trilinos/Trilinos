@@ -56,68 +56,70 @@
 #ifndef _IFP_BLAS1_H_
 #define _IFP_BLAS1_H_
 
+#include "Ifpack_config.h"
+
 #include "ifp_arch.h"
 
 extern "C"
 {
 
 
-    double F77NAME(dasum)(const integer *n, const double *dx, const integer *incx);
+    IFPACK_DEPRECATED double F77NAME(dasum)(const integer *n, const double *dx, const integer *incx);
 
 
-    void F77NAME(daxpy)(const integer *n, const double *da, const double *dx, 
+    IFPACK_DEPRECATED void F77NAME(daxpy)(const integer *n, const double *da, const double *dx, 
 			const integer *incx, double *dy, const integer *incy);
 
-    void F77NAME(dcopy)(const integer *n, double *dx, const integer *incx, double *dy, 
+    IFPACK_DEPRECATED void F77NAME(dcopy)(const integer *n, double *dx, const integer *incx, double *dy, 
                         const integer *incy);
 
 
-    double F77NAME(ddot)(const integer *n, const double *dx, const integer *incx, 
+    IFPACK_DEPRECATED double F77NAME(ddot)(const integer *n, const double *dx, const integer *incx, 
                         const double *dy, const integer *incy);
 
-    double F77NAME(dnrm2)(const integer *n, const double *dx, const integer *incx); 
+    IFPACK_DEPRECATED double F77NAME(dnrm2)(const integer *n, const double *dx, const integer *incx); 
 
-    void F77NAME(drot)(const integer *n, double *dx, const integer *incx, double *dy, 
+    IFPACK_DEPRECATED void F77NAME(drot)(const integer *n, double *dx, const integer *incx, double *dy, 
                         const integer *incy, const double *c, const double *s);
 
-    void F77NAME(drotg)(double *da, double *db, double *c, double *s);
+    IFPACK_DEPRECATED void F77NAME(drotg)(double *da, double *db, double *c, double *s);
 
-    void F77NAME(dscal)(const integer *n, double *da, double *dx, const integer *incx);
+    IFPACK_DEPRECATED void F77NAME(dscal)(const integer *n, double *da, double *dx, const integer *incx);
 
-    void F77NAME(dswap)(const integer *n, double *dx, const integer *incx, double *dy, 
+    IFPACK_DEPRECATED void F77NAME(dswap)(const integer *n, double *dx, const integer *incx, double *dy, 
                         const integer *incy);
 
-    integer F77NAME(idamax)(const integer *n, const double *dx, const integer *incx);
+    IFPACK_DEPRECATED integer F77NAME(idamax)(const integer *n, const double *dx, const integer *incx);
 
 
 /*           AT&T CC        Gnu g++  */
 #if defined(COMPLEXH)|| defined(_Complex_h )
 
-    double F77NAME(zdotc)(complex *c, const integer *n, const complex *cx, 
+    IFPACK_DEPRECATED double F77NAME(zdotc)(complex *c, const integer *n, const complex *cx, 
 			const integer *incx, const complex *cy, const integer *incy);
 
-    double F77NAME(zdotu)(complex *c, const integer *n, const complex *cx, 
+    IFPACK_DEPRECATED double F77NAME(zdotu)(complex *c, const integer *n, const complex *cx, 
 		const integer *incx, const complex *cy, const integer *incy);
 
-    void F77NAME(zaxpy)(const integer *n, const complex *da, const complex *dx, 
+    IFPACK_DEPRECATED void F77NAME(zaxpy)(const integer *n, const complex *da, const complex *dx, 
 			const integer *incx, complex *dy, const integer *incy);
 
-    void F77NAME(zcopy)(const integer *n, complex *dx, const integer *incx, 
+    IFPACK_DEPRECATED void F77NAME(zcopy)(const integer *n, complex *dx, const integer *incx, 
 				complex *dy, const integer *incy);
 
-    double	F77NAME(dzasum)(const integer *n, const complex *dx, const integer *incx);
+    IFPACK_DEPRECATED double	F77NAME(dzasum)(const integer *n, const complex *dx, const integer *incx);
 
-    double	F77NAME(dznrm2)(const integer *n, const complex *dx, const integer *incx); 
+    IFPACK_DEPRECATED double	F77NAME(dznrm2)(const integer *n, const complex *dx, const integer *incx); 
 
-    void F77NAME(zdscal)(const integer *n, const double *da, complex *dx, 
+    IFPACK_DEPRECATED void F77NAME(zdscal)(const integer *n, const double *da, complex *dx, 
 			const integer *incx);
 
-    void F77NAME(zscal)(const integer *n, const complex *da, complex *dx, 
+    IFPACK_DEPRECATED void F77NAME(zscal)(const integer *n, const complex *da, complex *dx, 
 			const integer *incx);
 
-    integer F77NAME(izamax)(const integer *n, const complex *dx, const integer *incx);
+    IFPACK_DEPRECATED integer F77NAME(izamax)(const integer *n, const complex *dx, const integer *incx);
 
-    void F77NAME(zswap)(const integer *n, complex *dx, const integer *incx, 
+    IFPACK_DEPRECATED void F77NAME(zswap)(const integer *n, complex *dx, const integer *incx, 
 				complex *dy, integer *incy);
 
 #endif

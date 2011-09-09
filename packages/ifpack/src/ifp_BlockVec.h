@@ -30,6 +30,8 @@
 #ifndef _IFP_BLOCKVEC_H_
 #define _IFP_BLOCKVEC_H_
 
+#include "Ifpack_config.h"
+
 #include <stdlib.h>
 #ifndef NULL
 #define NULL 0
@@ -38,7 +40,7 @@
 #include <assert.h>
 #endif
 
-class ifp_BlockVec
+class IFPACK_DEPRECATED ifp_BlockVec
 {
 private:
     double *base;

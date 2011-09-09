@@ -30,19 +30,21 @@
 #ifndef _IFP_BRELAX_H_
 #define _IFP_BRELAX_H_
 
+#include "Ifpack_config.h"
+
 #include "ifp_GlobalPrecon.h"
 
 class ifp_LocalMat;
 class ifp_BlockMat;
 
-class ifp_None : public ifp_GlobalPrecon
+class IFPACK_DEPRECATED ifp_None : public ifp_GlobalPrecon
 {
 public:
     void setup(const ifp_BlockMat&) {};
     void apply (int nr, int nc, const double *u, int ldu, double *v, int ldv);
 };
 
-class ifp_BJacobi : public ifp_GlobalPrecon
+class IFPACK_DEPRECATED ifp_BJacobi : public ifp_GlobalPrecon
 {
 private:
     const ifp_BlockMat *Ap;
@@ -57,7 +59,7 @@ public:
     double condest();
 };
 
-class ifp_BSOR_Base : public ifp_GlobalPrecon
+class IFPACK_DEPRECATED ifp_BSOR_Base : public ifp_GlobalPrecon
 {
 protected:
     const ifp_BlockMat *Ap;
@@ -77,7 +79,7 @@ public:
     void setup(const ifp_BlockMat& A, double omega = 1.0, int iterations = 1);
 };
 
-class ifp_BSOR : public ifp_BSOR_Base
+class IFPACK_DEPRECATED ifp_BSOR : public ifp_BSOR_Base
 {
 public:
     ifp_BSOR() {};
@@ -85,7 +87,7 @@ public:
     void apply (int, int, const double *, int, double *, int);
 };
 
-class ifp_BSSOR : public ifp_BSOR_Base
+class IFPACK_DEPRECATED ifp_BSSOR : public ifp_BSOR_Base
 {
 public:
     ifp_BSSOR() {};

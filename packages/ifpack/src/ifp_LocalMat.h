@@ -30,11 +30,13 @@
 #ifndef _IFP_LOCALMAT_H_
 #define _IFP_LOCALMAT_H_
 
+#include "Ifpack_config.h"
+
 #include <iostream>
 #include "ifp_BlockVec.h"
 class ifp_LocalPrecon;
 
-class ifp_LocalMat
+class IFPACK_DEPRECATED ifp_LocalMat
 {
 protected:
     inline void solve_is_mult(const ifp_BlockVec& B, ifp_BlockVec& X) const;
@@ -65,7 +67,7 @@ public:
         ifp_BlockVec& x) const = 0;
 };
 
-inline void ifp_LocalMat::solve_is_mult(const ifp_BlockVec& B, ifp_BlockVec& X) const
+inline IFPACK_DEPRECATED void ifp_LocalMat::solve_is_mult(const ifp_BlockVec& B, ifp_BlockVec& X) const
 {
     if (&B != &X)
     {

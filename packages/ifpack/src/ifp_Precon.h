@@ -30,7 +30,9 @@
 #ifndef _IFP_PRECON_H_
 #define _IFP_PRECON_H_
 
-class ifp_Precon
+#include "Ifpack_config.h"
+
+class IFPACK_DEPRECATED ifp_Precon
 {
 public:
     virtual ~ifp_Precon() {}

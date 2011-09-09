@@ -27,6 +27,8 @@
 //@HEADER
 */
 
+#include "Ifpack_config.h"
+
 #undef IFPACK
 
 #ifdef __cplusplus
@@ -42,10 +44,10 @@ typedef struct {
     int    *ptr;  /* also known as IA; with ptr[0] = 0 */
 } Matrix;
 
-void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
+IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
 
-void Matrix_dealloc(Matrix *a);
-void crout_ict(
+IFPACK_DEPRECATED void Matrix_dealloc(Matrix *a);
+IFPACK_DEPRECATED void crout_ict(
     int n,
 #ifdef IFPACK
     void * A,
