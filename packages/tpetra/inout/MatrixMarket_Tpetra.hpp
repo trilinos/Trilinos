@@ -43,9 +43,16 @@
 #define __MatrixMarket_Tpetra_hpp
 
 /// \file MatrixMarket_Tpetra.hpp
-/// \brief Matrix Market file reader for Tpetra::CrsMatrix.
+/// \brief Matrix Market file readers and writers for Tpetra objects.
+/// \author Mark Hoemmen
 ///
-
+/// This header file implements Matrix Market file readers and writers
+/// for both sparse and dense matrices (as \c Tpetra::CrsMatrix
+/// resp. \c Tpetra::MultiVector).  The Matrix Market (see their <a
+/// href="http://math.nist.gov/MatrixMarket"> web site </a> for
+/// details) defines a human-readable ASCII text file format ("Matrix
+/// Market format") for interchange of sparse and dense matrices.
+///
 #include "Tpetra_CrsMatrix.hpp"
 #include "MatrixMarket_raw.hpp"
 #include "MatrixMarket_Banner.hpp"
@@ -62,7 +69,8 @@
 namespace Tpetra {
   ///
   /// \namespace MatrixMarket
-  /// \brief Matrix Market file readers and writers for CrsMatrix and MultiVector.
+  /// \brief Matrix Market file readers and writers for sparse and 
+  ///   dense matrices (as \c CrsMatrix resp. \c MultiVector).
   /// \author Mark Hoemmen
   ///
   /// The Matrix Market (see their <a
@@ -154,6 +162,8 @@ namespace Tpetra {
     template<class SparseMatrixType>
     class Reader {
     public:
+      /// \typedef sparse_matrix_type 
+      /// \brief This class' template parameter; a specialization of CrsMatrix.
       typedef SparseMatrixType sparse_matrix_type;
       typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
 
@@ -169,14 +179,19 @@ namespace Tpetra {
       /// Indices of the sparse matrix are read in as global ordinals,
       /// since Matrix Market files represent the whole matrix and
       /// don't have a notion of distribution.
-      typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
+      typedef typename SparseMatrixType::global_ordinal_type 
+        global_ordinal_type;
+
       /// \typedef node_type
       /// \brief The Kokkos Node type.
       typedef typename SparseMatrixType::node_type node_type;
 
       /// \typedef multivector_type
       /// \brief The MultiVector type associated with SparseMatrixType.
-      typedef MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> multivector_type;
+      typedef MultiVector<scalar_type, 
+			  local_ordinal_type, 
+			  global_ordinal_type, 
+			  node_type> multivector_type;
 
       typedef RCP<node_type> node_ptr;
       typedef Comm<int> comm_type;
@@ -246,39 +261,37 @@ namespace Tpetra {
       /// \return If pRowMap is null, a new row map, otherwise pRowMap.
       ///
       static RCP<const map_type>
-        makeRowMap (const RCP<const map_type>& pRowMap, 
-                    const RCP<const comm_type>& pComm,
-                    const RCP<node_type>& pNode,
-                    const global_ordinal_type numRows)
-        {
-          // If the caller didn't provide a map, return a conventional,
-          // uniformly partitioned, contiguous map.
-          if (pRowMap.is_null()) {
-            return rcp (new map_type (static_cast<global_size_t> (numRows), 
-                                      static_cast<global_ordinal_type> (0),
-                                      pComm, GloballyDistributed, pNode));
-          }
-          else 
-          {
-            TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
-                std::invalid_argument,
-                "The specified row map is not distributed, but "
-                "the given communicator includes more than one "
-                "rank (in fact, there are " << pComm->getSize() 
-                << " ranks).");
-            TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm, 
-                std::invalid_argument,
-                "The specified row map's communicator (pRowMap->"
-                "getComm()) is different than the given separately "
-                "supplied communicator pComm.");
-            TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
-                std::invalid_argument,
-                "The specified row map's node (pRowMap->getNode()) "
-                "is different than the given separately supplied "
-                "node pNode.");
-            return pRowMap;
-          }
-        }
+      makeRowMap (const RCP<const map_type>& pRowMap, 
+		  const RCP<const comm_type>& pComm,
+		  const RCP<node_type>& pNode,
+		  const global_ordinal_type numRows)
+      {
+	// If the caller didn't provide a map, return a conventional,
+	// uniformly partitioned, contiguous map.
+	if (pRowMap.is_null()) {
+	  return rcp (new map_type (static_cast<global_size_t> (numRows), 
+				    static_cast<global_ordinal_type> (0),
+				    pComm, GloballyDistributed, pNode));
+	} else {
+	  TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
+			     std::invalid_argument,
+			     "The specified row map is not distributed, but "
+			     "the given communicator includes more than one "
+			     "rank (in fact, there are " << pComm->getSize() 
+			     << " ranks).");
+	  TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm, 
+			     std::invalid_argument,
+			     "The specified row map's communicator (pRowMap->"
+			     "getComm()) is different than the given separately "
+			     "supplied communicator pComm.");
+	  TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
+			     std::invalid_argument,
+			     "The specified row map's node (pRowMap->getNode()) "
+			     "is different than the given separately supplied "
+			     "node pNode.");
+	  return pRowMap;
+	}
+      }
 
       /// \brief Compute domain map.
       ///
@@ -299,17 +312,19 @@ namespace Tpetra {
                      const global_ordinal_type numRows,
                      const global_ordinal_type numCols)
       {
+	// Abbreviations so that the map creation call isn't too long.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef node_type Node;
 
         if (numRows == numCols) {
           return pRangeMap;
-        }
-        else {
+        } else {
           comm_ptr pComm = pRangeMap->getComm();
           node_ptr pNode = pRangeMap->getNode();
-          return createUniformContigMapWithNode<LO,GO,Node> (numCols, pComm, pNode);
+          return createUniformContigMapWithNode<LO,GO,Node> (numCols, 
+							     pComm, 
+							     pNode);
         }
       }
 
@@ -375,6 +390,16 @@ namespace Tpetra {
       ///   stderr on Rank 0.  This option is unlikely to be useful to
       ///   anyone but a Tpetra developer debugging this code.
       /// 
+      /// \note It was only after I wrote this routine that I learned
+      ///   it was completely unnecessary.  All the data
+      ///   redistribution can be done in about 10 lines of code by
+      ///   using Tpetra::Map objects, and either Import or Export.
+      ///   (For example, you could read the file into the sparse
+      ///   matrix entirely owned by Proc 0, then export it using a
+      ///   distributed Map.)  However, this routine works and I
+      ///   haven't had time to rewrite it yet.  Just expect that the
+      ///   implementation of \c readSparse() may become a lot shorter
+      ///   in the future.
       static void
       distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
                   ArrayRCP<size_type>& myRowPtr,
@@ -399,12 +424,16 @@ namespace Tpetra {
          const int myRank = Teuchos::rank (*pComm);
          const int rootRank = 0;
 
+	 // Type abbreviations to make the code more concise.
+	 typedef global_ordinal_type GO;
+	 typedef local_ordinal_type LO;
+
          // List of the global indices of my rows.  They may or may
          // not be contiguous, and the row map need not be one-to-one.
-         ArrayView<const global_ordinal_type> myRows = 
-           pRowMap->getNodeElementList();
+         ArrayView<const GO> myRows = pRowMap->getNodeElementList();
          const size_type myNumRows = myRows.size();
-         TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) != pRowMap->getNodeNumElements(),
+         TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) != 
+			    pRowMap->getNodeNumElements(),
                             std::logic_error,
                             "pRowMap->getNodeElementList().size() = " 
                             << myNumRows
@@ -428,24 +457,24 @@ namespace Tpetra {
 
          if (myRank != rootRank)
            {
-             // Tell the root how many rows we have.  If we're sending none,
-             // then we don't have anything else to send, nor does the root
-             // have to receive anything else.
+             // Tell the root how many rows we have.  If we're sending
+             // none, then we don't have anything else to send, nor
+             // does the root have to receive anything else.
              send (*pComm, myNumRows, rootRank);
              if (myNumRows != 0)
                {
                  // Now send my rows' global indices.  Hopefully the
                  // cast to int doesn't overflow.  This is unlikely,
-                 // since it should fit in a local_ordinal_type, even
-                 // though it is a global_ordinal_type.
+                 // since it should fit in a LO, even
+                 // though it is a GO.
                  send (*pComm, static_cast<int> (myNumRows), 
                        myRows.getRawPtr(), rootRank);
 
-                 // I (this proc) don't care if my global row indices are
-                 // contiguous, though the root proc does (since otherwise it
-                 // needs to pack noncontiguous data into contiguous storage
-                 // before sending).  That's why we don't check for
-                 // contiguousness here.
+                 // I (this proc) don't care if my global row indices
+                 // are contiguous, though the root proc does (since
+                 // otherwise it needs to pack noncontiguous data into
+                 // contiguous storage before sending).  That's why we
+                 // don't check for contiguousness here.
 
                  // Ask the root processor for my part of the array of the
                  // number of entries per row.
@@ -461,14 +490,15 @@ namespace Tpetra {
                                     myNumEntriesPerRow.end(), 
                                     static_cast<size_t> (0));
 
-                 // Make space for my entries of the sparse matrix.  Note that
-                 // they don't have to be sorted by row index.  Iterating through
-                 // all my rows requires computing a running sum over
-                 // myNumEntriesPerRow.
-                 myColInd = arcp<global_ordinal_type> (myNumEntries);
+                 // Make space for my entries of the sparse matrix.
+                 // Note that they don't have to be sorted by row
+                 // index.  Iterating through all my rows requires
+                 // computing a running sum over myNumEntriesPerRow.
+                 myColInd = arcp<GO> (myNumEntries);
                  myValues = arcp<scalar_type> (myNumEntries);
                  if (myNumEntries > 0)
-                   { // Ask for that many column indices and values, if there are any.
+                   { // Ask for that many column indices and values, 
+		     // if there are any.
                      recvResult = receive (*pComm, rootRank, 
                                            static_cast<int> (myNumEntries), 
                                            myColInd.getRawPtr());
@@ -488,7 +518,7 @@ namespace Tpetra {
              // (my*).
              for (size_type k = 0; k < myNumRows; ++k)
                {
-                 const global_ordinal_type myCurRow = myRows[k];
+                 const GO myCurRow = myRows[k];
                  const size_t numEntriesInThisRow = numEntriesPerRow[myCurRow];
                  //myNumEntriesPerRow[k] = numEntriesPerRow[myCurRow];
                  myNumEntriesPerRow[k] = numEntriesInThisRow;
@@ -514,7 +544,7 @@ namespace Tpetra {
                cerr << "-- Proc 0: I own " << myNumRows << " rows and " 
                     << myNumEntries << " entries" << endl;
 
-             myColInd = arcp<global_ordinal_type> (myNumEntries);
+             myColInd = arcp<GO> (myNumEntries);
              myValues = arcp<scalar_type> (myNumEntries);
 
              // Copy Proc 0's part of the matrix into the my* arrays.
@@ -527,11 +557,11 @@ namespace Tpetra {
                   myCurPos += myNumEntriesPerRow[k], ++k)
                {
                  const size_t curNumEntries = myNumEntriesPerRow[k];
-                 const global_ordinal_type myRow = myRows[k];
+                 const GO myRow = myRows[k];
                  const size_t curPos = rowPtr[myRow];
                  if (extraDebug && debug)
                    {
-                     cerr << "k = " << k << ", myRow = " << myRow << ": colInd(" 
+                     cerr << "k = " << k << ", myRow = " << myRow << ": colInd("
                           << curPos << "," << curNumEntries << "), myColInd(" 
                           << myCurPos << "," << curNumEntries << ")" << endl;
                    }
@@ -540,10 +570,9 @@ namespace Tpetra {
                  // views.
                  if (curNumEntries > 0)
                    {
-                     ArrayView<global_ordinal_type> colIndView = 
-                       colInd(curPos, curNumEntries);
-                     ArrayView<global_ordinal_type> myColIndView = 
-                       myColInd(myCurPos, curNumEntries);
+                     ArrayView<GO> colIndView = colInd(curPos, curNumEntries);
+                     ArrayView<GO> myColIndView = 
+		       myColInd(myCurPos, curNumEntries);
                      std::copy (colIndView.begin(), colIndView.end(), 
                                 myColIndView.begin());
 
@@ -563,24 +592,21 @@ namespace Tpetra {
                    cerr << "-- Proc 0: Processing proc " << p << endl;
 
                  size_type theirNumRows = 0;
-                 // Ask Proc p how many rows it has.  If it doesn't have any,
-                 // we can move on to the next proc.  This has to be a
-                 // standard receive so that we can avoid the degenerate case
-                 // of sending zero data.
+                 // Ask Proc p how many rows it has.  If it doesn't
+                 // have any, we can move on to the next proc.  This
+                 // has to be a standard receive so that we can avoid
+                 // the degenerate case of sending zero data.
                  recvResult = receive (*pComm, p, &theirNumRows);
                  if (debug)
                    cerr << "-- Proc 0: Proc " << p << " owns " 
                         << theirNumRows << " rows" << endl;
                  if (theirNumRows != 0)
-                   {
-                     // Ask Proc p which rows it owns.  The resulting
+                   { // Ask Proc p which rows it owns.  The resulting
                      // global row indices are not guaranteed to be
                      // contiguous or sorted.  Global row indices are
                      // themselves indices into the numEntriesPerRow
                      // array.
-
-                     ArrayRCP<global_ordinal_type> theirRows = 
-                       arcp<global_ordinal_type> (theirNumRows);
+                     ArrayRCP<GO> theirRows = arcp<GO> (theirNumRows);
                      recvResult = receive (*pComm, p, 
                                            static_cast<int> (theirNumRows), 
                                            theirRows.getRawPtr());
@@ -613,7 +639,7 @@ namespace Tpetra {
                          {
                            std::ostringstream os;
                            std::copy (theirRows.begin(), theirRows.end(), 
-                                      std::ostream_iterator<global_ordinal_type>(os, " "));
+                                      std::ostream_iterator<GO>(os, " "));
                            TEST_FOR_EXCEPTION(! theirRowsValid, 
                                               std::logic_error,
                                               "Proc " << p << " has at least "
@@ -639,13 +665,14 @@ namespace Tpetra {
                      ArrayRCP<size_t> theirNumEntriesPerRow;
                      theirNumEntriesPerRow = arcp<size_t> (theirNumRows);
                      for (size_type k = 0; k < theirNumRows; ++k)
-                       theirNumEntriesPerRow[k] = numEntriesPerRow[theirRows[k]];
+                       theirNumEntriesPerRow[k] = 
+			 numEntriesPerRow[theirRows[k]];
 
                      // Tell Proc p the number of entries in each of
                      // its rows.  Hopefully the cast to int doesn't
                      // overflow.  This is unlikely, since it should
-                     // fit in a local_ordinal_type, even though it is
-                     // a global_ordinal_type.
+                     // fit in a LO, even though it is
+                     // a GO.
                      send (*pComm, static_cast<int> (theirNumRows), 
                            theirNumEntriesPerRow.getRawPtr(), p);
 
@@ -670,8 +697,7 @@ namespace Tpetra {
                      // don't need to copy data into separate "their*"
                      // arrays (we can just use contiguous views of
                      // the global arrays).
-                     ArrayRCP<global_ordinal_type> theirColInd = 
-                       arcp<global_ordinal_type> (theirNumEntries);
+                     ArrayRCP<GO> theirColInd = arcp<GO> (theirNumEntries);
                      ArrayRCP<scalar_type> theirValues = 
                        arcp<scalar_type> (theirNumEntries);
                      // Copy Proc p's part of the matrix into the
@@ -686,7 +712,7 @@ namespace Tpetra {
                           theirCurPos += theirNumEntriesPerRow[k], k++)
                        {
                          const size_t curNumEntries = theirNumEntriesPerRow[k];
-                         const global_ordinal_type theirRow = theirRows[k];
+                         const GO theirRow = theirRows[k];
                          const size_t curPos = rowPtr[theirRow];
 
                          // Only copy if there are entries to copy, in
@@ -694,9 +720,9 @@ namespace Tpetra {
                          // the ArrayRCP views.
                          if (curNumEntries > 0)
                            {
-                             ArrayView<global_ordinal_type> colIndView = 
-                               colInd(curPos, curNumEntries);
-                             ArrayView<global_ordinal_type> theirColIndView = 
+                             ArrayView<GO> colIndView = 
+			       colInd(curPos, curNumEntries);
+                             ArrayView<GO> theirColIndView = 
                                theirColInd(theirCurPos, curNumEntries);
                              std::copy (colIndView.begin(), colIndView.end(), 
                                         theirColIndView.begin());
@@ -711,9 +737,8 @@ namespace Tpetra {
                        }
                      // Send Proc p its column indices and values.
                      // Hopefully the cast to int doesn't overflow.
-                     // This is unlikely, since it should fit in a
-                     // local_ordinal_type, even though it is a
-                     // global_ordinal_type.
+                     // This is unlikely, since it should fit in a LO,
+                     // even though it is a GO.
                      send (*pComm, static_cast<int> (theirNumEntries), 
                            theirColInd.getRawPtr(), p);
                      send (*pComm, static_cast<int> (theirNumEntries), 
@@ -783,7 +808,10 @@ namespace Tpetra {
       {
         using std::cerr;
         using std::endl;
+	// Typedef to make certain type declarations shorter.
+	typedef global_ordinal_type GO;
 
+	const bool extraDebug = false;
         const bool debug = false;
 
         // The row pointer array always has at least one entry, even
@@ -807,7 +835,7 @@ namespace Tpetra {
         // Handy for debugging output; not needed otherwise.
         const int myRank = Teuchos::rank (*(pRangeMap->getComm()));
 
-        if (false && debug)
+        if (extraDebug && debug)
           {
             cerr << "Proc " << myRank << ":" << endl
                  << "-- myRowPtr = [ ";
@@ -822,12 +850,12 @@ namespace Tpetra {
         // Go through all of my columns, and see if any are not in the
         // domain map.  This is possible if numProcs > 1, otherwise
         // not.
-        if (false && debug)
+        if (extraDebug && debug)
           {
             size_type numRemote = 0;
-            std::vector<global_ordinal_type> remoteGIDs;
+            std::vector<GO> remoteGIDs;
 
-            typedef typename ArrayRCP<global_ordinal_type>::const_iterator iter_type;
+            typedef typename ArrayRCP<GO>::const_iterator iter_type;
             for (iter_type it = myColInd.begin(); it != myColInd.end(); ++it)
               {
                 if (! pDomainMap->isNodeGlobalElement (*it))
@@ -841,7 +869,7 @@ namespace Tpetra {
                 cerr << "Proc " << myRank << ": " << numRemote 
                      << " remote GIDs = [ " << endl;
                 std::copy (remoteGIDs.begin(), remoteGIDs.end(),
-                           std::ostream_iterator<global_ordinal_type>(cerr, " "));
+                           std::ostream_iterator<GO>(cerr, " "));
                 cerr << "]" << endl;
               }
           }
@@ -860,8 +888,7 @@ namespace Tpetra {
                            ".");
         // List of the global indices of my rows.
         // They may or may not be contiguous.
-        ArrayView<const global_ordinal_type> myRows = 
-          pRowMap->getNodeElementList();
+        ArrayView<const GO> myRows = pRowMap->getNodeElementList();
         const size_type myNumRows = myRows.size();
 
         // Add this processor's matrix entries to the CrsMatrix.
@@ -870,7 +897,7 @@ namespace Tpetra {
             const size_type myCurPos = myRowPtr[k];
             const size_t curNumEntries = myNumEntriesPerRow[k];
 
-            if (false && debug)
+            if (extraDebug && debug)
               {
                 cerr << "Proc " << myRank << ": k = " << k 
                      << ", myCurPos = " << myCurPos
@@ -908,7 +935,11 @@ namespace Tpetra {
       ///   any line(s) were successfully read from the input stream,
       ///   this is incremented by the number of line(s) read.  (This
       ///   includes comment lines.)
-      /// \param pComm [in, global] Communicator.
+      /// \param pComm [in, global] Communicator over which the matrix
+      ///   will (eventually -- not here) be distributed.
+      /// \param tolerant [in] Whether to parse tolerantly.
+      /// \param debug [in] Whether to write debugging output to
+      ///   stderr on MPI Proc 0.
       ///
       /// \return Banner [non-null and valid only on Rank 0]
       static RCP<const Banner>
@@ -951,13 +982,14 @@ namespace Tpetra {
             TEST_FOR_EXCEPTION(pBanner->objectType() != "matrix",
                                std::invalid_argument,
                                "The Matrix Market file does not contain "
-                               "matrix data.  Its banner (first) line says that "
-                               "its object type is \"" << pBanner->matrixType()
+                               "matrix data.  Its banner (first) line says that"
+                               " its object type is \"" << pBanner->matrixType()
                                << "\", rather than the required \"matrix\".");
 
             // Validate the data type of the matrix, with respect to
             // the Scalar type of the CrsMatrix entries.
-            TEST_FOR_EXCEPTION(! STS::isComplex && pBanner->dataType() == "complex",
+            TEST_FOR_EXCEPTION(! STS::isComplex && 
+			       pBanner->dataType() == "complex",
                                std::invalid_argument,
                                "The Matrix Market file contains complex-valued "
                                "data, but you are trying to read it into a "
@@ -986,6 +1018,19 @@ namespace Tpetra {
       /// succeeds, it broadcasts them to all the other MPI ranks.
       /// (All ranks need to know the matrix dimensions in order to
       /// create domain, range, and column Maps.)
+      ///
+      /// \param in [in/out, valid only on Rank 0] Input stream from 
+      ///   which to read the sparse matrix dimensions.
+      /// \param lineNumber [in/out, valid only on Rank 0] On input:
+      ///   Current line number of the input stream.  On output: if 
+      ///   any line(s) were successfully read from the input stream,
+      ///   this is incremented by the number of line(s) read.  (This
+      ///   includes comment lines.)
+      /// \param pComm [in, global] Communicator over which the matrix
+      ///   will (eventually -- not here) be distributed.
+      /// \param tolerant [in] Whether to parse tolerantly.
+      /// \param debug [in] Whether to write debugging output to
+      ///   stderr on MPI Proc 0.
       ///
       /// \return (numRows, numCols, numNonzeros)
       static Tuple<global_ordinal_type, 3>
@@ -1061,7 +1106,8 @@ namespace Tpetra {
       /// information, it may "symmetrize" the matrix by adding entry
       /// A(j,i) (with the appropriate value depending on the symmetry
       /// type) if entry A(i,j) is seen.
-      typedef SymmetrizingAdder<Raw::Adder<scalar_type, global_ordinal_type> > adder_type;
+      typedef SymmetrizingAdder<Raw::Adder<scalar_type, global_ordinal_type> >
+        adder_type;
 
       /// \brief Make an "adder" object for processing matrix data.
       ///
@@ -1082,7 +1128,7 @@ namespace Tpetra {
       ///   particular, this refers to the number of rows, columns,
       ///   and entries in the matrix.)
       /// \param debug [in] Whether to print verbose debug output
-      ///   to stderr.
+      ///   to stderr on Rank 0.
       ///
       /// \return An adder_type object [nonnull and valid on Rank 0
       ///   only] that optionally symmetrizes the entries of the
@@ -1171,8 +1217,10 @@ namespace Tpetra {
       ///   over which the sparse matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
       /// \param callFillComplete [in] Whether to call fillComplete()
-      ///   on the Tpetra::CrsMatrix, after adding all the entries 
-      ///   read in from the input stream.
+      ///   on the Tpetra::CrsMatrix, after adding all the entries
+      ///   read in from the input stream.  (Not calling
+      ///   fillComplete() may be useful if you want to change the
+      ///   matrix after reading it from a file.)
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -1218,7 +1266,8 @@ namespace Tpetra {
             // In tolerant mode, we allow the matrix type to be
             // anything other than "array" (which would mean that the
             // file contains a dense matrix).
-            TEST_FOR_EXCEPTION(! tolerant && pBanner->matrixType() != "coordinate",
+            TEST_FOR_EXCEPTION(! tolerant && 
+			       pBanner->matrixType() != "coordinate",
                                std::runtime_error,
                                "Matrix Market file must contain a "
                                "\"coordinate\"-format sparse matrix in "
@@ -1296,7 +1345,8 @@ namespace Tpetra {
         // bools.  For now, we convert to/from int instead, using the
         // usual "true is 1, false is 0" encoding.
         {
-          int the_readSuccess = readSuccess ? 1 : 0; // only matters on MPI Rank 0
+	  // The value of this Boolean only matters on MPI Proc 0.
+          int the_readSuccess = readSuccess ? 1 : 0;
           Teuchos::broadcast (*pComm, 0, &the_readSuccess);
           readSuccess = (the_readSuccess == 1);
         }
@@ -1340,17 +1390,17 @@ namespace Tpetra {
                 // of rows is less than that specified in the
                 // metadata.  We allow this case, and favor the
                 // metadata so that the zero row(s) will be included.
-                updatedDims[0] = std::max (dims[0], pAdder->getAdder()->numRows());
+                updatedDims[0] = 
+		  std::max (dims[0], pAdder->getAdder()->numRows());
                 updatedDims[1] = pAdder->getAdder()->numCols();
               }
             Teuchos::broadcast (*pComm, 0, updatedDims);
             dims[0] = updatedDims[0];
             dims[1] = updatedDims[1];
-            if (debug && myRank == 0)
-              {
-                cerr << "----- Dimensions after: " << dims[0] << " x " << dims[1]
-                     << endl;
-              }
+            if (debug && myRank == 0) {
+	      cerr << "----- Dimensions after: " << dims[0] << " x " 
+		   << dims[1] << endl;
+	    }
           }
         else 
           { // In strict mode, we require that the matrix's metadata
@@ -1489,8 +1539,8 @@ namespace Tpetra {
                   values[curPos] = curEntry.value();
                 }
               // rowPtr has one more entry than numEntriesPerRow.  The
-              // last entry of rowPtr is the number of entries in colInd
-              // and values.
+              // last entry of rowPtr is the number of entries in
+              // colInd and values.
               rowPtr[numRows] = numEntries;
             }
             if (debug)
@@ -1648,7 +1698,8 @@ namespace Tpetra {
         return pMatrix;
       }
 
-      /// \brief Read dense matrix (as a MultiVector) from the given Matrix Market file.
+      /// \brief Read dense matrix (as a MultiVector) from the given
+      ///   Matrix Market file.
       ///
       /// Open the given file on MPI Rank 0 (with respect to the given
       /// communicator).  The file should contain Matrix Market
@@ -1660,8 +1711,9 @@ namespace Tpetra {
       /// a Map over which to distribute the resulting MultiVector.
       /// The Map argument is optional; if null, we construct our own
       /// reasonable Map.  We let users supply their own Map, because
-      /// a common case in Tpetra is to read in or construct a matrix
-      /// first, and then create vectors using the matrix's domain or
+      /// a common case in Tpetra is to read in or construct a sparse
+      /// matrix first, and then create vectors that are compatible
+      /// with the sparse matrix, using the sparse matrix's domain or
       /// range Map.
       ///
       /// \note This is a collective operation.  Only Rank 0 opens the
@@ -1689,7 +1741,8 @@ namespace Tpetra {
       ///   distribute the vector.  If null, we create a sensible map,
       ///   and assign that map to pMap.  If pMap is nonnull on input,
       ///   the map's communicator and node must equal pComm
-      ///   resp. pNode above.
+      ///   resp. pNode above.  pMap is not a "const RCP&" so that we
+      ///   can assign to it.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -1699,7 +1752,7 @@ namespace Tpetra {
       readDenseFile (const std::string& filename,
                      const RCP<const comm_type>& pComm, 
                      const RCP<node_type>& pNode,
-                     RCP<const map_type> pMap, // not a ref, so we can assign to it.
+                     RCP<const map_type> pMap,
                      const bool tolerant=false,
                      const bool debug=false)
       {
@@ -1757,7 +1810,8 @@ namespace Tpetra {
       ///   distribute the vector.  If null, we create a sensible map,
       ///   and assign that map to pMap.  If pMap is nonnull on input,
       ///   the map's communicator and node must equal pComm
-      ///   resp. pNode above.
+      ///   resp. pNode above.  pMap is not a "const RCP&" so that we
+      ///   can assign to it.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -1767,7 +1821,7 @@ namespace Tpetra {
       readDense (std::istream& in,
                  const RCP<const comm_type>& pComm,
                  const RCP<node_type>& pNode,
-                 RCP<const map_type> pMap, // not a ref, so we can assign to it.
+                 RCP<const map_type> pMap,
                  const bool tolerant=false,
                  const bool debug=false)
       {
@@ -1796,7 +1850,8 @@ namespace Tpetra {
         // now avoids doing a lot of file reading before we detect the
         // violated precondition.
         TEST_FOR_EXCEPTION(! pMap.is_null() && 
-                           (pMap->getComm() != pComm || pMap->getNode() != pNode),
+                           (pMap->getComm() != pComm || 
+			    pMap->getNode() != pNode),
                            std::invalid_argument,
                            "If you supply a nonnull Map, the Map's communicator"
                            " resp. node must equal the supplied communicator "
@@ -1824,16 +1879,16 @@ namespace Tpetra {
 	    if (debug && myRank == 0) 
 	      cerr << "-- Reading banner line (dense)" << endl;
 
-	    // The "Banner" tells you whether the input stream represents
-	    // a dense matrix, the symmetry type of the matrix, and the
-	    // type of the data it contains.
+	    // The "Banner" tells you whether the input stream
+	    // represents a dense matrix, the symmetry type of the
+	    // matrix, and the type of the data it contains.
 	    RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
 						    tolerant, debug);
 	    TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
 			       std::invalid_argument,
 			       "The Matrix Market file does not contain dense "
-			       "matrix data.  Its banner (first) line says that "
-			       "its matrix type is \"" << pBanner->matrixType()
+			       "matrix data.  Its banner (first) line says that"
+			       " its matrix type is \"" << pBanner->matrixType()
 			       << "\", rather than the required \"array\".");
 	    TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
 			       std::invalid_argument,
@@ -1846,24 +1901,23 @@ namespace Tpetra {
 	    // third element of the dimensions Tuple: "real" == 0,
 	    // "complex" == 1, "integer" == 0 (same as "real").
 	    // "pattern" == 2.  The lat
-	    if (pBanner->dataType() == "real" || pBanner->dataType() == "integer") {
+	    if (pBanner->dataType() == "real" || 
+		pBanner->dataType() == "integer")
 	      dims[2] = 0;
-	    }
-	    else if (pBanner->dataType() == "complex") {
+	    else if (pBanner->dataType() == "complex")
 	      dims[2] = 1;
+	    else {
+	      // We should never get here; Banner validates the
+	      // reported data type and ensures it is one of the above
+	      // three values.  We repeat the full test to make the
+	      // exception message more informative.
+	      TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
+				 pBanner->dataType() != "complex" && 
+				 pBanner->dataType() != "integer", 
+				 std::logic_error, 
+				 "Unrecognized Matrix Market data type \"" 
+				 << pBanner->dataType() << "\".");
 	    }
-	    else
-	      { // We should never get here; Banner validates the
-		// reported data type and ensures it is one of the
-		// above three values.  We repeat the full test to
-		// make the exception message more informative.
-		TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
-				   pBanner->dataType() != "complex" && 
-				   pBanner->dataType() != "integer", 
-				   std::logic_error, 
-				   "Unrecognized Matrix Market data type \"" 
-				   << pBanner->dataType() << "\".");
-	      }
 
           if (debug && myRank == 0) 
 	    cerr << "-- Reading dimensions line (dense)" << endl;
@@ -1878,12 +1932,13 @@ namespace Tpetra {
           while (commentLine) {
             // Test whether it is even valid to read from the
             // input stream wrapping the line.
-            TEST_FOR_EXCEPTION(in.eof() || in.fail(), 
-                               std::runtime_error,
+            TEST_FOR_EXCEPTION(in.eof() || in.fail(), std::runtime_error,
                                "Unable to get array dimensions line (at all) "
                                "from line " << lineNumber << " of input "
                                "stream.  The input stream claims that it is "
-                               << (in.eof() ? "at end-of-file." : "in a failed state."));
+                               << (in.eof() ? 
+				   "at end-of-file." : 
+				   "in a failed state."));
             // Try to get the next line from the input stream.
             if (getline(in, line))
               ++lineNumber; // We did actually read a line.
@@ -1904,7 +1959,7 @@ namespace Tpetra {
           // Test whether it is even valid to read from the input
           // stream wrapping the line.
           TEST_FOR_EXCEPTION(istr.eof() || istr.fail(), std::runtime_error,
-                             "Unable to read any data from line " << lineNumber 
+                             "Unable to read any data from line " << lineNumber
                              << " of input; the line should contain the matrix "
                              << "dimensions \"<numRows> <numCols>\".");
           // Read in <numRows>.
@@ -1912,17 +1967,19 @@ namespace Tpetra {
             GO theNumRows = 0;
             istr >> theNumRows;
             TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
-                               "Failed to get number of rows from line " << lineNumber 
-                               << " of input; the line should contain the matrix "
-                               << " dimensions \"<numRows> <numCols>\".");
+                               "Failed to get number of rows from line " 
+			       << lineNumber << " of input; the line should "
+			       "contain the matrix dimensions \"<numRows> "
+			       "<numCols>\".");
             // Capture the validly read result before checking for eof.
             dims[0] = theNumRows;
           }
           // There should be one more thing to read.
           TEST_FOR_EXCEPTION(istr.eof(), std::runtime_error,
-                             "No more data after number of rows on line " << lineNumber
-                             << " of input; the line should contain the matrix "
-                             << " dimensions \"<numRows> <numCols>\".");
+                             "No more data after number of rows on line " 
+			     << lineNumber << " of input; the line should "
+			     "contain the matrix dimensions \"<numRows> "
+			     "<numCols>\".");
           // Read in <numCols>
           {
             GO theNumCols = 0;
@@ -2037,7 +2094,8 @@ namespace Tpetra {
                           break;
                         // We repeat the full test here so the
                         // exception message is more informative.
-                        TEST_FOR_EXCEPTION(! tolerant && (istr.eof() || istr.fail()),
+                        TEST_FOR_EXCEPTION(! tolerant && 
+					   (istr.eof() || istr.fail()),
                                            std::runtime_error,
                                            "Line " << lineNumber << " of the "
                                            "Matrix Market file is empty, or we "
@@ -2167,7 +2225,8 @@ namespace Tpetra {
                                                                pNode);
         }
         // Make a multivector Y with the distributed map pMap.
-        RCP<multivector_type> Y = createMultiVector<S, LO, GO, Node> (pMap, numCols);
+        RCP<multivector_type> Y = 
+	  createMultiVector<S, LO, GO, Node> (pMap, numCols);
 
         // Make an Export object that will export X to Y.  First
         // argument is the source map, second argument is the target
@@ -2175,7 +2234,8 @@ namespace Tpetra {
         Export<LO, GO, Node> exporter (pRank0Map, pMap);
 
         if (debug && myRank == 0) 
-	  cerr << "-- Exporting from MultiVector X to global MultiVector Y" << endl;
+	  cerr << "-- Exporting from MultiVector X to global MultiVector Y" 
+	       << endl;
 
         // Export X into Y.
         Y->doExport (*X, exporter, INSERT);
@@ -2252,8 +2312,12 @@ namespace Tpetra {
 
       /// \typedef multivector_type
       /// \brief The MultiVector type associated with SparseMatrixType.
-      typedef MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> multivector_type;
-
+      typedef MultiVector<scalar_type, 
+			  local_ordinal_type, 
+			  global_ordinal_type, 
+			  node_type> multivector_type;
+      /// \typedef map_type
+      /// \brief Tpetra::Map specialization associated with SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
       /// \brief Print the sparse matrix in Matrix Market format.
@@ -2341,8 +2405,10 @@ namespace Tpetra {
         // Whether to print debugging output to stderr.
         const bool debugPrint = debug && myRank == 0;
 
-        const global_size_t numRows = pMatrix->getRangeMap()->getGlobalNumElements();
-        const global_size_t numCols = pMatrix->getDomainMap()->getGlobalNumElements();
+        const global_size_t numRows = 
+	  pMatrix->getRangeMap()->getGlobalNumElements();
+        const global_size_t numCols = 
+	  pMatrix->getDomainMap()->getGlobalNumElements();
         if (debugPrint) {
           cerr << "writeSparse:" << endl
                << "-- Input sparse matrix is:" 
@@ -2384,8 +2450,9 @@ namespace Tpetra {
         // The constructor needs a column map as well as a row map,
         // for the case that the matrix is not square.
         RCP<sparse_matrix_type> newMatrix = 
-          rcp (new sparse_matrix_type (pGatherRowMap, pGatherColMap, size_t(0)));
-
+          rcp (new sparse_matrix_type (pGatherRowMap, 
+				       pGatherColMap, 
+				       size_t(0)));
         // Import the sparse matrix onto Proc 0.
         newMatrix->doImport (*pMatrix, importer, INSERT);
 
@@ -2426,7 +2493,11 @@ namespace Tpetra {
         //
         if (myRank == 0) {
           // Print the Matrix Market banner line.  CrsMatrix stores
-          // data nonsymmetrically ("general").
+          // data nonsymmetrically ("general").  This implies that
+          // readSparse() on a symmetrically stored input file,
+          // followed by writeSparse() on the resulting sparse matrix,
+          // will result in an output file with a different banner
+          // line than the original input file.
           out << "%%MatrixMarket matrix coordinate " 
               << (STS::isComplex ? "complex" : "real") 
               << " general" << endl;
@@ -2446,9 +2517,9 @@ namespace Tpetra {
               << endl;
 
           // Index base (0-based or 1-based) for the row map.
-          const global_ordinal_type rowIndexBase = pGatherRowMap->getIndexBase();
+          const GO rowIndexBase = pGatherRowMap->getIndexBase();
           // Index base (0-based or 1-based) for the column map.
-          const global_ordinal_type colIndexBase = newMatrix->getColMap()->getIndexBase();
+          const GO colIndexBase = newMatrix->getColMap()->getIndexBase();
 
           //
           // Print the entries of the matrix.
@@ -2458,72 +2529,84 @@ namespace Tpetra {
           // cases (globally or locally indexed) just in case that
           // ever changes.
           if (newMatrix->isGloballyIndexed()) {
-            for (global_ordinal_type globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
+            for (GO globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
                  globalRowIndex <= pGatherRowMap->getMaxAllGlobalIndex();
                  ++globalRowIndex)
-            {
-              ArrayView<const global_ordinal_type> ind;
-              ArrayView<const scalar_type> val;
+	      {
+		ArrayView<const global_ordinal_type> ind;
+		ArrayView<const scalar_type> val;
 
-              newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-              typename ArrayView<const global_ordinal_type>::const_iterator indIter = ind.begin();
-              typename ArrayView<const scalar_type>::const_iterator valIter = val.begin();
-              for (; indIter != ind.end() && valIter != val.end();
-                   ++indIter, ++valIter)
-              {
-                const global_ordinal_type globalColIndex = *indIter;
+		newMatrix->getGlobalRowView (globalRowIndex, ind, val);
+		typedef typename ArrayView<const GO>::const_iterator 
+		  const_iter_type;
+		const_iter_type indIter = ind.begin();
+		const_iter_type valIter = val.begin();
+		for (; indIter != ind.end() && valIter != val.end();
+		     ++indIter, ++valIter)
+		  {
+		    const GO globalColIndex = *indIter;
 
-                // Matrix Market files use 1-based indices.
-                out << (globalRowIndex + 1 - rowIndexBase) << " " 
-                    << (globalColIndex + 1 - colIndexBase) << " ";
-                if (STS::isComplex) out << STS::real(*valIter) << " " << STS::imag(*valIter);
-                else                out << *valIter;
-                out << endl;
-              }
-            }
+		    // Matrix Market files use 1-based indices.
+		    out << (globalRowIndex + 1 - rowIndexBase) << " " 
+			<< (globalColIndex + 1 - colIndexBase) << " ";
+		    if (STS::isComplex) 
+		      out << STS::real(*valIter) << " " << STS::imag(*valIter);
+		    else
+		      out << *valIter;
+		    out << endl;
+		  }
+	      }
           }
           else // newMatrix is locally indexed
-          {
-            typedef OrdinalTraits<global_ordinal_type> OTG;
-            RCP<const map_type> pColMap = newMatrix->getColMap ();
+	    {
+	      typedef OrdinalTraits<global_ordinal_type> OTG;
+	      RCP<const map_type> pColMap = newMatrix->getColMap ();
 
-            for (local_ordinal_type localRowIndex = pGatherRowMap->getMinLocalIndex();
-                 localRowIndex <= pGatherRowMap->getMaxLocalIndex();
-                 ++localRowIndex)
-            {
-              // Convert from local to global row index.
-              const global_ordinal_type globalRowIndex = pGatherRowMap->getGlobalElement (localRowIndex);
-              TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(), 
-                                 std::logic_error,
-                                 "Failed to convert \"local\" row index " 
-                                 << localRowIndex << " into a global row "
-                                 "index.  Please report this bug to the "
-                                 "Tpetra developers.");
-              ArrayView<const local_ordinal_type> ind;
-              ArrayView<const scalar_type> val;
+	      for (LO localRowIndex = pGatherRowMap->getMinLocalIndex();
+		   localRowIndex <= pGatherRowMap->getMaxLocalIndex();
+		   ++localRowIndex)
+		{
+		  // Convert from local to global row index.
+		  const GO globalRowIndex = 
+		    pGatherRowMap->getGlobalElement (localRowIndex);
+		  TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(), 
+				     std::logic_error,
+				     "Failed to convert \"local\" row index " 
+				     << localRowIndex << " into a global row "
+				     "index.  Please report this bug to the "
+				     "Tpetra developers.");
+		  ArrayView<const LO> ind;
+		  ArrayView<const scalar_type> val;
 
-              newMatrix->getLocalRowView (localRowIndex, ind, val);
-              typename ArrayView<const local_ordinal_type>::const_iterator indIter = ind.begin();
-              typename ArrayView<const scalar_type>::const_iterator valIter = val.begin();
-              for (; indIter != ind.end() && valIter != val.end(); ++indIter, ++valIter)
-              {
-                // Convert from local to global index.
-                const global_ordinal_type globalColIndex = pColMap->getGlobalElement (*indIter);
-                TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(), 
-                                   std::logic_error,
-                                   "Failed to convert \"local\" column index " 
-                                   << *indIter << " into a global column "
-                                   "index.  Please report this bug to the "
-                                   "Tpetra developers.");
-                // Matrix Market files use 1-based indices.
-                out << (globalRowIndex + 1 - rowIndexBase) << " " 
-                    << (globalColIndex + 1 - colIndexBase) << " ";
-                if (STS::isComplex) out << STS::real(*valIter) << " " << STS::imag(*valIter);
-                else                out << *valIter;
-                out << endl;
-              }
-            }
-          }
+		  newMatrix->getLocalRowView (localRowIndex, ind, val);
+		  typename ArrayView<const LO>::const_iterator indIter = 
+		    ind.begin();
+		  typename ArrayView<const scalar_type>::const_iterator 
+		    valIter = val.begin();
+		  for (; indIter != ind.end() && valIter != val.end(); 
+		       ++indIter, ++valIter)
+		    {
+		      // Convert from local to global index.
+		      const GO globalColIndex = 
+			pColMap->getGlobalElement (*indIter);
+		      TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(), 
+					 std::logic_error,
+					 "Failed to convert \"local\" column " 
+					 "index " << *indIter << " into a "
+					 "global column index.  Please report "
+					 "this bug to the Tpetra developers.");
+		      // Matrix Market files use 1-based indices.
+		      out << (globalRowIndex + 1 - rowIndexBase) << " " 
+			  << (globalColIndex + 1 - colIndexBase) << " ";
+		      if (STS::isComplex) 
+			out << STS::real(*valIter) << " " 
+			    << STS::imag(*valIter);
+		      else
+			out << *valIter;
+		      out << endl;
+		    }
+		}
+	    }
         }
       }
 
@@ -2576,6 +2659,10 @@ namespace Tpetra {
         typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
         typedef typename ArrayView<scalar_type>::size_type size_type;
 
+        // Convenient abbreviations.
+        typedef local_ordinal_type LO;
+        typedef global_ordinal_type GO;
+
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
         // stream back to its state on input, when this scope
@@ -2585,25 +2672,27 @@ namespace Tpetra {
         RCP<const Comm<int> > pComm = X->getComm();
         const int myRank = Teuchos::rank (*pComm);
         RCP<const map_type> pMap = X->getMap();
-        const global_size_t numRows = pMap->getGlobalNumElements ();
-        const global_size_t numCols = X->getNumVectors(); // Promote to global_size_t
+        const global_size_t numRows = pMap->getGlobalNumElements();
+	// Promote to global_size_t.
+        const global_size_t numCols = X->getNumVectors(); 
 
         // Make the "gather" map, where Proc 0 owns all rows of X, and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
         RCP<node_type> pNode = pMap->getNode();
-        RCP<const map_type> pGatherMap = createContigMapWithNode<local_ordinal_type, global_ordinal_type, node_type> (numRows, localNumRows, pComm, pNode);
-
+        RCP<const map_type> pGatherMap = 
+	  createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows, 
+						      pComm, pNode);
         // Create an Import object to import X's data into a
         // multivector Y owned entirely by Proc 0.  In the Import
         // constructor, X's map is the source map, and the "gather
         // map" is the target map.
-        typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
-        import_type importer (pMap, pGatherMap);
+        Import<LO, GO, node_type> importer (pMap, pGatherMap);
 
         // Create a new multivector Y to hold the result of the import.
-        RCP<multivector_type> Y = createMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (pGatherMap, numCols);
-
+        RCP<multivector_type> Y = 
+	  createMultiVector<scalar_type, LO, GO, node_type> (pGatherMap, 
+							     numCols);
         // Import the multivector onto Proc 0.
         Y->doImport (*X, importer, INSERT);
 
@@ -2611,48 +2700,48 @@ namespace Tpetra {
         // Print the matrix in Matrix Market format on Rank 0.
         //
         if (myRank == 0)
-        {
-          // Print the Matrix Market banner line.  MultiVector stores
-          // data nonsymmetrically.
-          out << "%%MatrixMarket matrix array " 
-              << (STS::isComplex ? "complex" : "real") 
-              << " general" << endl;
+	  {
+	    // Print the Matrix Market banner line.  MultiVector
+	    // stores data nonsymmetrically.
+	    out << "%%MatrixMarket matrix array " 
+		<< (STS::isComplex ? "complex" : "real") 
+		<< " general" << endl;
 
-          // Print the Matrix Market dimensions header for dense matrices.
-          out << numRows << " " << numCols << endl;
+	    // Print the Matrix Market dimensions header for dense matrices.
+	    out << numRows << " " << numCols << endl;
 
-          //
-          // Get a read-only view of the entries of Y.  
-          // Rank 0 owns all of the entries of Y.
-          //
-          // Y must have constant stride, since multivectors have
-          // constant stride if created with a map and number of
-          // vectors.  This should be the case even if X does not
-          // have constant stride.  However, we check Y, just to
-          // make sure.
-          //
-          TEST_FOR_EXCEPTION(! Y->isConstantStride (),
-              std::logic_error,
-              "The multivector Y imported onto Rank 0 does not"
-              " have constant stride.  Please report this bug "
-              "to the Tpetra developers.");
-          ArrayRCP<const scalar_type> Y_view = Y->get1DView();
-          //
-          // Print the entries of the matrix, in column-major order.
-          //
-          const global_size_t stride = Y->getStride ();
-          for (global_size_t j = 0; j < numCols; ++j) {
-            for (global_size_t i = 0; i < numRows; ++i) {
-              const scalar_type Y_ij = Y_view[i + j*stride];
-              if (STS::isComplex) {
-                out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
-              }
-              else {
-                out << Y_ij << endl;
-              }
-            }
-          }
-        } // if (myRank == 0)
+	    //
+	    // Get a read-only view of the entries of Y.  
+	    // Rank 0 owns all of the entries of Y.
+	    //
+	    // Y must have constant stride, since multivectors have
+	    // constant stride if created with a map and number of
+	    // vectors.  This should be the case even if X does not
+	    // have constant stride.  However, we check Y, just to
+	    // make sure.
+	    //
+	    TEST_FOR_EXCEPTION(! Y->isConstantStride (),
+			       std::logic_error,
+			       "The multivector Y imported onto Rank 0 does not"
+			       " have constant stride.  Please report this bug "
+			       "to the Tpetra developers.");
+	    ArrayRCP<const scalar_type> Y_view = Y->get1DView();
+	    //
+	    // Print the entries of the matrix, in column-major order.
+	    //
+	    const global_size_t stride = Y->getStride ();
+	    for (global_size_t j = 0; j < numCols; ++j) {
+	      for (global_size_t i = 0; i < numRows; ++i) {
+		const scalar_type Y_ij = Y_view[i + j*stride];
+		if (STS::isComplex) {
+		  out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
+		}
+		else {
+		  out << Y_ij << endl;
+		}
+	      }
+	    }
+	  } // if (myRank == 0)
       }
 
     }; // class Writer
