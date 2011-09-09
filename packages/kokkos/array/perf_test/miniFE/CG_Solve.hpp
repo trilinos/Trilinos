@@ -124,6 +124,7 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       iteration+=k;
       Kokkos::deep_copy(check,oldrtrans);
       normr = sqrt(*check);
+
 //      std::cout<<"Iteration: "<<iteration<<" Residual "<<normr<<std::endl;
     }
 #if 0
