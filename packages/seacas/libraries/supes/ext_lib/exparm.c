@@ -353,7 +353,6 @@ void exparm( char *hard, char *soft, FTNINT *mode,
   /* cygwin native */
 /********************************************************************/
 #elif defined(__CYGWIN__)
-#undef linux
   struct utsname SysInfo;
   char hardname[MAXCHAR];
   char softname[MAXCHAR];
@@ -373,9 +372,6 @@ void exparm( char *hard, char *soft, FTNINT *mode,
 #endif
 /********************************************************************/
 #if defined(__APPLE__)
-#if defined linux
-#undef linux
-#endif
   struct utsname SysInfo;
   char hardname[MAXCHAR];
   char softname[MAXCHAR];

@@ -51,7 +51,6 @@
 #if defined (interix)
 #include <time.h>
      void excpus_(FTNREAL *cpusec)
-#undef linux
 #endif             /* interix */
 
 #if defined(aix) || defined(__VACPP__) || defined(hpux) || defined (sun) || defined (sgi) || defined (__osf__) || defined(__linux__) || defined (__APPLE__) || defined(__CYGWIN__) || defined(p6)
@@ -114,7 +113,7 @@
   }
 #endif
 
-#if defined (sun) || defined (sgi) || defined (__osf__) || defined(linux) || defined(aix) || defined(__VACPP__) || defined(paragon) || defined(hpux) || defined(__APPLE__)
+#if defined (sun) || defined (sgi) || defined (__osf__) || defined(__linux__) || defined(aix) || defined(__VACPP__) || defined(paragon) || defined(hpux) || defined(__APPLE__)
   struct rusage rusage;
   int secs,mics;
 

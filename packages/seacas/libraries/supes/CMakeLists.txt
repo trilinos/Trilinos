@@ -32,4 +32,12 @@ PACKAGE_ADD_LIBRARY(
 	SOURCES ${SOURCES}
 )
 
+ADD_EXECUTABLE(exttest exttest.f)
+ADD_EXECUTABLE(ffrtest ffrtest.f)
+ADD_EXECUTABLE(memtest memtest.f)
+
+TARGET_LINK_LIBRARIES(exttest supes)
+TARGET_LINK_LIBRARIES(ffrtest supes)
+TARGET_LINK_LIBRARIES(memtest supes)
+
 SUBPACKAGE_POSTPROCESS()
