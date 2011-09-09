@@ -23,9 +23,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsRequested(aNeed), false);
+    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), false);
     needs.Request(aNeed,NULL);
-    TEST_EQUALITY(needs.IsRequested(aNeed), true);
+    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, ValueIsAvailable)
@@ -33,9 +33,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsAvailable(aNeed), false);
+    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), false);
     needs.SetData(aNeed,42);
-    TEST_EQUALITY(needs.IsAvailable(aNeed), true);
+    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests_Exception)

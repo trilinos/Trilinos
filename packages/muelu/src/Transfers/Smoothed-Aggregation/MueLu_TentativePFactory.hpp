@@ -53,19 +53,17 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-      //      fineLevel.Input("A", AFact_());                   // TAW: what's this??
-      //      fineLevel.Input("Aggregates", aggregatesFact_());
-      //      fineLevel.Input("Nullspace",  nullspaceFact_());
-
-      fineLevel.Request("A", AFact_);
-      fineLevel.Request("Nullspace",  nullspaceFact_);
+      // todo: check for reusable P -> do not call DeclareInput
 
       // request aggregates (only if not already requested or available)
       if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
           !fineLevel.IsAvailable("Aggregates", aggregatesFact_))
       {
-        fineLevel.Request("Aggregates", aggregatesFact_);
+        aggregatesFact_->callDeclareInput(fineLevel);
       }
+      fineLevel.Request("Aggregates", aggregatesFact_);
+      fineLevel.Request("A", AFact_);
+      fineLevel.Request("Nullspace",  nullspaceFact_);
     }
 
     //@}

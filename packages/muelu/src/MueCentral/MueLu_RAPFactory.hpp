@@ -50,13 +50,6 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
 
-      std::cout << "RAPFactory.Build:" << std::endl;
-      std::cout << "FineLevel:" << std::endl;
-      fineLevel.print(std::cout);
-      std::cout << "CoarseLevel:" << std::endl;
-      coarseLevel.print(std::cout);
-
-
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
       timer->start(true);
@@ -96,23 +89,9 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
-      std::cout << "RAPFactory.Build (before Release):" << std::endl;
-      std::cout << "FineLevel:" << std::endl;
-      fineLevel.print(std::cout);
-      std::cout << "CoarseLevel:" << std::endl;
-      coarseLevel.print(std::cout);
-
-
       fineLevel.Release("A",AFact_);
       coarseLevel.Release("P",PRFact_);
       coarseLevel.Release("R",PRFact_);
-
-      std::cout << "RAPFactory.Build: (after Release)" << std::endl;
-      std::cout << "FineLevel:" << std::endl;
-      fineLevel.print(std::cout);
-      std::cout << "CoarseLevel:" << std::endl;
-      coarseLevel.print(std::cout);
-      std::cout << "RAPFactory.Build: (end)" << std::endl;
 
       return true;
     }

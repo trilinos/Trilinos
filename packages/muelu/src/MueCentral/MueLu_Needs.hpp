@@ -54,7 +54,7 @@ namespace MueLu {
 
     //! Default constructor.
     Needs() : out_(this->getOStream()) {
-      setupPhase_ = true; //TODO fix me.
+      setupPhase_ = false; //TODO fix me.
     }
 
     virtual ~Needs() {}
@@ -328,23 +328,23 @@ namespace MueLu {
     //@}
 
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+    /*bool IsAvailable(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
       return IsAvailable(ename,factory.get());
-    }
+    }*/
 
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string ename, const FactoryBase* factory) {
+    virtual bool IsAvailable(const std::string ename, const FactoryBase* factory) {
       return dataTable_.isKey(ename,factory);
     }
 
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
+    /*bool IsRequested(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
       return IsRequested(ename,factory.get());
-    }
+    }*/
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string ename, const FactoryBase* factory) {
+    virtual bool IsRequested(const std::string ename, const FactoryBase* factory) {
       return countTable_.isKey(ename,factory);
     }
 

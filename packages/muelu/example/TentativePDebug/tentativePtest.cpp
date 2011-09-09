@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
   //Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                 //FIXME is implemented
 
+  Finest->Request("A");
   Finest->Set("A",Op);
   //Finest->Set("Nullspace",nullSpace);
 

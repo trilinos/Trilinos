@@ -72,6 +72,8 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
+      if(currentLevel.IsAvailable("Aggregates",this)) return;
+      if(graphFact_!=Teuchos::null) graphFact_->DeclareInput(currentLevel);
       currentLevel.Request("Graph", graphFact_); // we should request data...
     }
 
@@ -112,7 +114,7 @@ namespace MueLu {
   private:
 
     //! Graph Factory
-    RCP<FactoryBase> graphFact_;
+    RCP<SingleLevelFactoryBase> graphFact_;
  
     //! Algorithms
     LocalAggregationAlgorithm algo1_;
