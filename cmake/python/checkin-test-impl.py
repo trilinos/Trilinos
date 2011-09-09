@@ -1086,7 +1086,7 @@ if not options.showDefaults:
   t1 = time.time()
   success = checkinTest(options)
   t2 = time.time()
-  print "\nTotal time for checkin-test.py =", (t2-t1)/60.0, "minutes"
+  print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
   
   print "\nFinal time:", getCmndOutput("date",True)
   

@@ -590,7 +590,7 @@ def getTotalTimeBeginStr(buildTestCaseName):
 
 
 def getTotalTimeLineStr(buildTestCaseName, timeInMin):
-  return getTotalTimeBeginStr(buildTestCaseName)+" = "+str(timeInMin) + " min"
+  return getTotalTimeBeginStr(buildTestCaseName)+" = "+formatMinutesStr(timeInMin)
 
 
 def getTimeInMinFromTotalTimeLine(buildTestCaseName, totalTimeLine):
