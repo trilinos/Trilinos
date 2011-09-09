@@ -10,3 +10,10 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   DEPLIBS muelu muelu-xpetra
   )
+  
+PACKAGE_ADD_EXECUTABLE(
+  SaPtest
+  SOURCES SaPtest.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-xpetra
+  )

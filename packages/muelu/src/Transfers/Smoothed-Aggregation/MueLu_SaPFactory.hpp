@@ -42,9 +42,16 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null) 
+    SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null)
       : initialPFact_(InitialPFact), AFact_(AFact),
-        dampingFactor_(4./3), diagonalView_("current") { }
+        dampingFactor_(4./3), diagonalView_("current") {
+      if(initialPFact_ == Teuchos::null)
+      {
+        // todo: if no initial PFactory, set it to TentativePFactory
+        std::string msg = "SaPFactory: no initial P factory defined";
+        throw(Exceptions::RuntimeError(msg));
+      }
+    }
   
     //! Destructor.
     virtual ~SaPFactory() {}
@@ -84,8 +91,12 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      coarseLevel.Request("Ptent",initialPFact_);
-      coarseLevel.Request("Nullspace");
+      if(!coarseLevel.IsRequested("P",initialPFact_))
+        initialPFact_->DeclareInput(fineLevel,coarseLevel);
+      if(!fineLevel.IsRequested("A",AFact_))
+        AFact_->DeclareInput(fineLevel);
+      coarseLevel.Request("P",initialPFact_);
+      fineLevel.Request("A",AFact_);
     };
 
     //@}
@@ -111,7 +122,10 @@ namespace MueLu {
 
       // Level Get
       RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_);
-      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("Ptent", initialPFact_);
+      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_);
+
+      fineLevel.Release("A", AFact_);
+      coarseLevel.Release("P", initialPFact_);
 
       //Build final prolongator
       RCP<Operator> finalP; // output
@@ -206,7 +220,7 @@ namespace MueLu {
 
     //! Input factories
     RCP<PFactory> initialPFact_; //! Ptentative Factory
-    RCP<FactoryBase> AFact_;     //! A Factory
+    RCP<SingleLevelFactoryBase> AFact_;     //! A Factory
     
     //! Factory parameters
     Scalar dampingFactor_;
