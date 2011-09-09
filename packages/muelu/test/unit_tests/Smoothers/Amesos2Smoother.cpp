@@ -10,7 +10,7 @@
 
 namespace MueLuTests {
 
-  using namespace Smoother;
+  using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Amesos2Smoother, NotSetup)
   {

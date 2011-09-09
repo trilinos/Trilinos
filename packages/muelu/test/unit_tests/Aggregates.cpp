@@ -33,7 +33,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Aggregates, JustAggregation)
   {
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
     RCP<Aggregates> aggregates = gimmeAggregates(A);
   }
 
@@ -43,11 +43,11 @@ namespace MueLuTests {
   {
       out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
+      RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
       RCP<const Map> rowmap = A->getRowMap();
       RCP<Aggregates> aggregates = gimmeAggregates(A);
       GO numAggs = aggregates->GetNumAggregates();
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
       ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
       bool foundAggNotSize3=false;

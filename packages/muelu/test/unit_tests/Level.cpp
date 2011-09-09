@@ -26,8 +26,9 @@ namespace MueLuTests {
 
     Level aLevel;
     MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
+    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
     aLevel.Set("Hitchhiker's Guide",42);
     int fff = aLevel.Get<int>("Hitchhiker's Guide");
@@ -70,5 +71,5 @@ namespace MueLuTests {
       */
   }
 
-}//namespace MueLuTests
+} // namespace MueLuTests
 

@@ -32,9 +32,10 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    fineLevel.Request("A");
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
@@ -86,9 +87,10 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     Level fineLevel, coarseLevel;
-    MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
+    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
+    fineLevel.Request("A");
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;

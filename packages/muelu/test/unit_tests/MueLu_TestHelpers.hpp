@@ -1,7 +1,7 @@
 #ifndef MUELU_TEST_HELPERS_H
 #define MUELU_TEST_HELPERS_H
 
-#include <iostream>
+#include <string>
 
 // Teuchos
 #include "Teuchos_Comm.hpp"
@@ -24,7 +24,20 @@
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
 
-namespace MueLu {
+namespace MueLuTests {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::arcp;
+  using Teuchos::arcpFromArrayView;
+  using Teuchos::rcpFromRef;
+  using Teuchos::null;
+  using Teuchos::arcp_reinterpret_cast;
+  using Teuchos::Array;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+  using Teuchos::rcpFromRef;
 
   namespace TestHelpers {
     
@@ -44,7 +57,7 @@ namespace MueLu {
       }
       
       inline static Xpetra::UnderlyingLib getLib() {
-        return MueLu::TestHelpers::Parameters::xpetraParameters.GetLib();
+        return TestHelpers::Parameters::xpetraParameters.GetLib();
       }
     };
 
@@ -154,15 +167,15 @@ namespace MueLu {
 
 // Macro to skip a test when UnderlyingLib==Epetra or Tpetra 
 #define MUELU_TEST_ONLY_FOR(UnderlyingLib) \
-  if (MueLu::TestHelpers::Parameters::getLib() == UnderlyingLib)
+  if (TestHelpers::Parameters::getLib() == UnderlyingLib)
 
 // Macro to skip a test when Epetra is used with Ordinal != int
 #define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \
-  if (!(MueLu::TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
+  if (!(TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
 
 // Macro to skip a test when Epetra is used with Scalar != double or Ordinal != int
 #define MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) \
-  if (!(MueLu::TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
+  if (!(TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
     MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal)
 
 
@@ -181,21 +194,8 @@ namespace MueLu {
 
 //! Namespace for MueLu test classes
 namespace MueLuTests {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::arcp;
-  using Teuchos::arcpFromArrayView;
-  using Teuchos::rcpFromRef;
-  using Teuchos::null;
-  using Teuchos::arcp_reinterpret_cast;
-  using Teuchos::Array;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
-  using Teuchos::rcpFromRef;
 
-  using namespace MueLu::TestHelpers;
+  using namespace TestHelpers;
 }
 
 #endif // ifndef MUELU_TEST_HELPERS_H
