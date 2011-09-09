@@ -165,6 +165,7 @@ namespace MueLu {
 
       //
 
+      RCP<const Map> colMap = fineA.getColMap();
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
@@ -174,7 +175,7 @@ namespace MueLu {
           //LO mylen = colMap->getNodeNumElements(); //error happens here ... problem with Views?
           //GO gid = colMap->getGlobalElement(lid);
           //globalIdsForPtent.push_back(gid);
-          globalIdsForPtent.push_back(fineA.getColMap()->getGlobalElement(aggToRowMap[i][k]));
+          globalIdsForPtent.push_back(colMap()->getGlobalElement(aggToRowMap[i][k]));
         }
       }
 
@@ -242,11 +243,10 @@ namespace MueLu {
       //because aggregates can span processors.
       rowMapForPtent = fineA.getRowMap();
 
-      Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
+      Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
 
       // Set up storage for the rows of the local Qs that belong to other processors.
       // FIXME This is inefficient and could be done within the main loop below with std::vector's.
-      RCP<const Map> colMap = fineA.getColMap();
       Array<GO> ghostGIDs;
       for (LO j=0; j<numAggs; ++j)
         {
@@ -399,7 +399,7 @@ namespace MueLu {
             //TODO is the use of Xpetra::global_size_t below correct?
             if (rowMapForPtent->getGlobalElement(localRow) == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid())
               {
-                ghostQrows[qctr] = fineA.getColMap()->getGlobalElement(localRow);
+                ghostQrows[qctr] = colMap()->getGlobalElement(localRow);
                 for (size_t k=0; k<NSDim; ++k) {
                   ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
                   ghostQvals[k][qctr] = localQR[k*myAggSize+j];
