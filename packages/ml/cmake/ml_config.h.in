@@ -41,9 +41,6 @@
 /* Define if want to build with ml enabled */
 #cmakedefine HAVE_ML_AMESOS
 
-/* Define if want to build with ml_aztec2_1 enabled */
-#cmakedefine HAVE_ML_AZTEC2_1
-
 /* Define if want to build with ml enabled */
 #cmakedefine HAVE_ML_AZTECOO
 
