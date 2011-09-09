@@ -2533,14 +2533,14 @@ namespace Tpetra {
                  globalRowIndex <= pGatherRowMap->getMaxAllGlobalIndex();
                  ++globalRowIndex)
 	      {
-		ArrayView<const global_ordinal_type> ind;
+		ArrayView<const GO> ind;
 		ArrayView<const scalar_type> val;
 
 		newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-		typedef typename ArrayView<const GO>::const_iterator 
-		  const_iter_type;
-		const_iter_type indIter = ind.begin();
-		const_iter_type valIter = val.begin();
+		typename ArrayView<const GO>::const_iterator indIter = 
+		  ind.begin();
+		typename ArrayView<const scalar_type>::const_iterator valIter = 
+		  val.begin();
 		for (; indIter != ind.end() && valIter != val.end();
 		     ++indIter, ++valIter)
 		  {
@@ -2559,7 +2559,7 @@ namespace Tpetra {
           }
           else // newMatrix is locally indexed
 	    {
-	      typedef OrdinalTraits<global_ordinal_type> OTG;
+	      typedef OrdinalTraits<GO> OTG;
 	      RCP<const map_type> pColMap = newMatrix->getColMap ();
 
 	      for (LO localRowIndex = pGatherRowMap->getMinLocalIndex();
@@ -2581,7 +2581,7 @@ namespace Tpetra {
 		  newMatrix->getLocalRowView (localRowIndex, ind, val);
 		  typename ArrayView<const LO>::const_iterator indIter = 
 		    ind.begin();
-		  typename ArrayView<const scalar_type>::const_iterator 
+		  typename ArrayView<const scalar_type>::const_iterator
 		    valIter = val.begin();
 		  for (; indIter != ind.end() && valIter != val.end(); 
 		       ++indIter, ++valIter)
