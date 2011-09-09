@@ -92,7 +92,7 @@ ML_Epetra::LevelWrap::~LevelWrap(){
 
 // Computes the preconditioner
 int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
-#ifdef ML_TIMING
+#ifdef xML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
 #endif
@@ -144,7 +144,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   Teuchos::ParameterList & CoarseList=List_.sublist("levelwrap: coarse list");  
   A1prec_=rcp<MultiLevelPreconditioner>(new MultiLevelPreconditioner(*A1_,CoarseList,true));
 
-#ifdef ML_TIMING
+#ifdef xML_TIMING
   StopTimer(&t_time_curr,&t_diff);
   /* Output */
   ML_Comm *comm_;
@@ -163,7 +163,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
 
 // Apply the preconditioner w/ RHS B and get result X
 int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const{
-#ifdef ML_TIMING
+#ifdef xML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
 #endif
@@ -204,7 +204,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   // Copy to output
   X_=X;
 
-#ifdef ML_TIMING
+#ifdef xML_TIMING
   StopTimer(&t_time,&t_diff);
   /* Output */
   ML_Comm *comm_;
@@ -240,7 +240,7 @@ int ML_Epetra::LevelWrap::DestroyPreconditioner(){
   A1_=Teuchos::null;
 
 
-#ifdef ML_TIMING
+#ifdef xML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
   ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);  
