@@ -12,13 +12,8 @@
 
 namespace MueLuTests {
 
-  //this macro declares the unit-test-class:
   TEUCHOS_UNIT_TEST(AmesosSmoother, NotSetup)
   {
-    //we are now in a class method declared by the above macro, and
-    //that method has these input arguments:
-    //Teuchos::FancyOStream& out, bool& success
-
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
@@ -36,7 +31,6 @@ namespace MueLuTests {
 
         //try applying without setting up
         TEST_THROW( smoother->Apply(*X,*RHS), MueLu::Exceptions::RuntimeError );
-        TEST_THROW( smoother->SetNIts(5),     MueLu::Exceptions::RuntimeError ); //JG: Why ?
       }
   }
 
@@ -51,13 +45,13 @@ namespace MueLuTests {
         amesosList.set("OutputLevel",0);
         RCP<AmesosSmoother> smoother = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
 
-        Level aLevel;
-        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(aLevel);
+        Level level;
+        MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
 
         RCP<Operator> Op = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(125);
-        aLevel.Set("A",Op);
+        level.Set("A",Op);
 
-        smoother->Setup(aLevel);
+        smoother->Setup(level);
 
         RCP<MultiVector> X   = MultiVectorFactory::Build(Op->getDomainMap(),1);
         RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -74,7 +68,7 @@ namespace MueLuTests {
         smoother->Apply(*X,*RHS);
         res = Utils::ResidualNorm(*Op,*X,*RHS);
         out << "||final residual|| = " << res[0] << std::endl;
-        TEST_EQUALITY(res[0] < 1e-12,true);
+        TEST_EQUALITY(res[0] < 1e-12, true);
       }
   }
   
