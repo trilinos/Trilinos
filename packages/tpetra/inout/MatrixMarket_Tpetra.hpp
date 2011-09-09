@@ -127,6 +127,30 @@ namespace Tpetra {
     ///
     /// \tparam SparseMatrixType A specialization of \c Tpetra::CrsMatrix.
     ///
+    /// Templating on the specialization of CrsMatrix means that the
+    /// Reader expects matrix data of a type compatible with the
+    /// CrsMatrix's scalar_type.  In general, Matrix Market files may
+    /// contain data of integer, real, or complex type.  However, the
+    /// reader methods have to return a CrsMatrix of a specific type,
+    /// so we require that you declare a Reader with the CrsMatrix
+    /// type that you want and that you expect the file(s) to contain.
+    ///
+    /// We didn't find any of the alternatives to this approach
+    /// acceptable.  One possibility would have been to have the
+    /// reader methods return a "container that can hold anything,"
+    /// like a boost::any.  However, then you would have to know all
+    /// five template arguments of the CrsMatrix in order to get the
+    /// actual CrsMatrix object out.  C++ doesn't have algebraic data
+    /// types (see the Wikipedia entry for a good definition) that are
+    /// disjoint unions of different types.  Thus, we couldn't have
+    /// had the readers return a CrsMatrix with scalar_type = "int or
+    /// double or complex<double>."  While you can implement such a
+    /// type in C++ (see e.g., boost::variant), it would not be
+    /// interchangeable for its component types.  This is because it
+    /// may not have the same memory layout (e.g., copying an array of
+    /// boost::variant<int, double, complex<double> > bitwise into an
+    /// array of int may not work).
+    ///
     template<class SparseMatrixType>
     class Reader {
     public:
@@ -1172,10 +1196,12 @@ namespace Tpetra {
         // Current line number in the input stream.  Various calls
         // will modify this depending on the number of lines that are
         // read from the input stream.  Only Rank 0 modifies this.
-        size_t lineNumber = 1;         
+        size_t lineNumber = 1;
 
-        if (debug && myRank == 0)
-          cerr << "About to read Matrix Market banner line" << endl;
+        if (debug && myRank == 0) {
+          cerr << "Matrix Market reader: readSparse:" << endl
+	       << "-- Reading banner line" << endl;
+	}
 
         // The "Banner" tells you whether the input stream represents
         // a sparse matrix, the symmetry type of the matrix, and the
@@ -1214,7 +1240,7 @@ namespace Tpetra {
                                "file contains dense matrix data.");
           }
         if (debug && myRank == 0)
-          cerr << "About to read Matrix Market dimensions line" << endl;
+          cerr << "-- Reading dimensions line" << endl;
 
         // Read the matrix dimensions from the Matrix Market metadata.
         // dims = (numRows, numCols, numEntries).  Rank 0 does the
@@ -1225,7 +1251,7 @@ namespace Tpetra {
           readCoordDims (in, lineNumber, pBanner, pComm, tolerant, debug);
 
         if (debug && myRank == 0)
-          cerr << "About to make Adder for collecting matrix data" << endl;
+          cerr << "-- Making Adder for collecting matrix data" << endl;
 
         // "Adder" object for collecting all the sparse matrix entries
         // from the input stream.  This is only nonnull on Rank 0.
@@ -1233,7 +1259,7 @@ namespace Tpetra {
           makeAdder (pComm, pBanner, dims, tolerant, debug);
 
         if (debug && myRank == 0)
-          cerr << "About to read matrix data" << endl;
+          cerr << "-- Reading matrix data" << endl;
         //
         // Read the matrix entries from the input stream on Rank 0.
         //
@@ -1285,7 +1311,7 @@ namespace Tpetra {
                            "Failed to read in the Matrix Market sparse "
                            "matrix.");
         if (debug && myRank == 0)
-          cerr << "Successfully read the Matrix Market data" << endl;
+          cerr << "-- Successfully read the Matrix Market data" << endl;
 
         // In tolerant mode, we need to rebroadcast the matrix
         // dimensions, since they may be different after reading the
@@ -1300,9 +1326,10 @@ namespace Tpetra {
           {
             if (debug && myRank == 0)
               {
-                cerr << "Tolerant mode: rebroadcasting matrix dimensions" 
+                cerr << "-- Tolerant mode: rebroadcasting matrix dimensions" 
                      << endl
-                     << "-- Dimensions before: " << dims[0] << " x " << dims[1]
+                     << "----- Dimensions before: " 
+		     << dims[0] << " x " << dims[1]
                      << endl;
               }
             // Packed coordinate matrix dimensions (numRows, numCols).
@@ -1321,7 +1348,7 @@ namespace Tpetra {
             dims[1] = updatedDims[1];
             if (debug && myRank == 0)
               {
-                cerr << "-- Dimensions after: " << dims[0] << " x " << dims[1]
+                cerr << "----- Dimensions after: " << dims[0] << " x " << dims[1]
                      << endl;
               }
           }
@@ -1375,7 +1402,7 @@ namespace Tpetra {
           }
 
         if (debug && myRank == 0)
-          cerr << "Converting matrix data into CSR format on Proc 0" << endl;
+          cerr << "-- Converting matrix data into CSR format on Proc 0" << endl;
 
         // Now that we've read in all the matrix entries from the
         // input stream into the adder on Rank 0, post-process them
@@ -1418,7 +1445,7 @@ namespace Tpetra {
             const size_type numEntries = entries.size();
 
             if (debug)
-              cerr << "Proc 0: Matrix has numRows=" << numRows 
+              cerr << "----- Proc 0: Matrix has numRows=" << numRows 
                    << " rows and numEntries=" << numEntries 
                    << " entries." << endl;
 
@@ -1470,7 +1497,8 @@ namespace Tpetra {
               {
                 const size_type maxToDisplay = 100;
 
-                cerr << "Proc 0: numEntriesPerRow[0.." << (numEntriesPerRow.size()-1) << "] ";
+                cerr << "----- Proc 0: numEntriesPerRow[0.." 
+		     << (numEntriesPerRow.size()-1) << "] ";
                 if (numRows > maxToDisplay)
                   cerr << "(only showing first and last few entries) ";
                 cerr << "= [";
@@ -1493,7 +1521,7 @@ namespace Tpetra {
                   }
                 cerr << "]" << endl;
 
-                cerr << "Proc 0: rowPtr ";
+                cerr << "----- Proc 0: rowPtr ";
                 if (numRows > maxToDisplay)
                   cerr << "(only showing first and last few entries) ";
                 cerr << "= [";
@@ -1521,7 +1549,7 @@ namespace Tpetra {
         pAdder = null;
 
         if (debug && myRank == 0)
-          cerr << "Making range, domain, and row maps" << endl;
+          cerr << "-- Making range, domain, and row maps" << endl;
 
         // Make the maps that describe the matrix'x range and domain,
         // and the distribution of its rows.
@@ -1530,7 +1558,7 @@ namespace Tpetra {
         map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
 
         if (debug && myRank == 0)
-          cerr << "Distributing the matrix data" << endl;
+          cerr << "-- Distributing the matrix data" << endl;
 
         // Distribute the matrix data.  Each processor has to add the
         // rows that it owns.  If you try to make Rank 0 call
@@ -1553,7 +1581,7 @@ namespace Tpetra {
 
         if (debug && myRank == 0)
           {
-            cerr << "Inserting matrix entries on each processor";
+            cerr << "-- Inserting matrix entries on each processor";
             if (callFillComplete)
               cerr << " and calling fillComplete()";
             cerr << endl;
@@ -1569,8 +1597,8 @@ namespace Tpetra {
           makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
                       pRowMap, pRangeMap, pDomainMap, callFillComplete);
         TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
-                           "makeMatrix() returned a null pointer.  Please "
-                           "report this bug to the Tpetra developers.");
+                           "Reader::makeMatrix() returned a null pointer.  "
+                           "Please report this bug to the Tpetra developers.");
 
         // We can't get the dimensions of the matix until after
         // fillComplete() is called.  Thus, we can't do the sanity
@@ -1614,8 +1642,8 @@ namespace Tpetra {
           } // if (callFillComplete)
 
         if (debug && myRank == 0)
-          cerr << "Done creating the Tpetra::CrsMatrix from the Matrix Market "
-            "data" << endl;
+          cerr << "-- Done creating the CrsMatrix from the Matrix Market data"
+	       << endl;
 
         return pMatrix;
       }
@@ -1687,7 +1715,8 @@ namespace Tpetra {
         // exception.
       }
 
-      /// \brief Read dense matrix (as a MultiVector) from the given Matrix Market input stream.
+      /// \brief Read dense matrix (as a MultiVector) from the given
+      ///   Matrix Market input stream.
       ///
       /// The given input stream need only be readable by MPI Rank 0
       /// (with respect to the given communicator).  The input stream
@@ -1758,6 +1787,10 @@ namespace Tpetra {
         // input stream.
         const int myRank = Teuchos::rank (*pComm);
 
+        if (debug && myRank == 0) {
+          cerr << "Matrix Market reader: readDense:" << endl;
+	}
+
         // If pMap is nonnull, check the precondition that its
         // communicator resp. node equal pComm resp. pNode.  Checking
         // now avoids doing a lot of file reading before we detect the
@@ -1787,52 +1820,53 @@ namespace Tpetra {
 
         // Only Rank 0 gets to read matrix data from the input stream.
         if (myRank == 0) 
-        {
-          if (debug && myRank == 0) cerr << "About to read Matrix Market banner line" << endl;
+	  {
+	    if (debug && myRank == 0) 
+	      cerr << "-- Reading banner line (dense)" << endl;
 
-          // The "Banner" tells you whether the input stream represents
-          // a dense matrix, the symmetry type of the matrix, and the
-          // type of the data it contains.
-          RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
-                                                  tolerant, debug);
-          TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
-                             std::invalid_argument,
-                             "The Matrix Market file does not contain dense "
-                             "matrix data.  Its banner (first) line says that "
-                             "its matrix type is \"" << pBanner->matrixType()
-                             << "\", rather than the required \"array\".");
-          TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
-                             std::invalid_argument,
-                             "The Matrix Market file's banner (first) line "
-                             "claims that its data type is \"pattern\".  "
-                             "This does not make sense for a dense matrix.  "
-                             "The only valid data types for a dense matrix "
-                             "are \"real\", \"complex\", and \"integer\".");
-          // Encode the data type reported by the Banner in the
-          // third element of the dimensions Tuple: "real" == 0,
-          // "complex" == 1, "integer" == 0 (same as "real").
-          // "pattern" == 2.  The lat
-          if (pBanner->dataType() == "real" || pBanner->dataType() == "integer") {
-            dims[2] = 0;
-          }
-          else if (pBanner->dataType() == "complex") {
-            dims[2] = 1;
-          }
-          else
-          { // We should never get here; Banner validates the
-            // reported data type and ensures it is one of the
-            // above three values.  We repeat the full test to
-            // make the exception message more informative.
-            TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
-                               pBanner->dataType() != "complex" && 
-                               pBanner->dataType() != "integer", 
-                               std::logic_error, 
-                               "Unrecognized Matrix Market data type \"" 
-                               << pBanner->dataType() << "\".");
-          }
+	    // The "Banner" tells you whether the input stream represents
+	    // a dense matrix, the symmetry type of the matrix, and the
+	    // type of the data it contains.
+	    RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
+						    tolerant, debug);
+	    TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
+			       std::invalid_argument,
+			       "The Matrix Market file does not contain dense "
+			       "matrix data.  Its banner (first) line says that "
+			       "its matrix type is \"" << pBanner->matrixType()
+			       << "\", rather than the required \"array\".");
+	    TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
+			       std::invalid_argument,
+			       "The Matrix Market file's banner (first) line "
+			       "claims that its data type is \"pattern\".  "
+			       "This does not make sense for a dense matrix.  "
+			       "The only valid data types for a dense matrix "
+			       "are \"real\", \"complex\", and \"integer\".");
+	    // Encode the data type reported by the Banner in the
+	    // third element of the dimensions Tuple: "real" == 0,
+	    // "complex" == 1, "integer" == 0 (same as "real").
+	    // "pattern" == 2.  The lat
+	    if (pBanner->dataType() == "real" || pBanner->dataType() == "integer") {
+	      dims[2] = 0;
+	    }
+	    else if (pBanner->dataType() == "complex") {
+	      dims[2] = 1;
+	    }
+	    else
+	      { // We should never get here; Banner validates the
+		// reported data type and ensures it is one of the
+		// above three values.  We repeat the full test to
+		// make the exception message more informative.
+		TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
+				   pBanner->dataType() != "complex" && 
+				   pBanner->dataType() != "integer", 
+				   std::logic_error, 
+				   "Unrecognized Matrix Market data type \"" 
+				   << pBanner->dataType() << "\".");
+	      }
 
           if (debug && myRank == 0) 
-	    cerr << "About to read Matrix Market dimensions line" << endl;
+	    cerr << "-- Reading dimensions line (dense)" << endl;
 
           // Keep reading lines from the input stream until we find a
           // non-comment line, or until we run out of lines.  The latter
@@ -1931,7 +1965,7 @@ namespace Tpetra {
         if (myRank == 0)
           {
             if (debug && myRank == 0)
-              cerr << "About to read Matrix Market matrix data" << endl;
+              cerr << "-- Reading matrix data (dense)" << endl;
 
             // Make sure that we can get a 1-D view of X.
             TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
@@ -2122,7 +2156,7 @@ namespace Tpetra {
           return X;
 
         if (debug && myRank == 0)
-          cerr << "Creating distributed Map and target MultiVector" << endl;
+          cerr << "-- Creating distributed Map and target MultiVector" << endl;
 
         // If pMap is null, make a distributed map.  We've already
         // checked the preconditions above, in the case that pMap was
@@ -2141,13 +2175,13 @@ namespace Tpetra {
         Export<LO, GO, Node> exporter (pRank0Map, pMap);
 
         if (debug && myRank == 0) 
-	  cerr << "Exporting from MultiVector X to global MultiVector Y" << endl;
+	  cerr << "-- Exporting from MultiVector X to global MultiVector Y" << endl;
 
         // Export X into Y.
         Y->doExport (*X, exporter, INSERT);
 
         if (debug && myRank == 0) 
-	  cerr << "Done reading multivector from Matrix Market file" << endl;
+	  cerr << "-- Done reading multivector" << endl;
 
         // Y is distributed over all process(es) in the communicator.
         return Y;
