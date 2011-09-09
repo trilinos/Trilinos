@@ -5,6 +5,13 @@ PACKAGE(Epetra)
 
 SET(${PACKAGE_NAME}_VERSION "3.7d")
 
+# 
+#   Exception added to deal with fixed form Fortran code on XL
+#
+if("${CMAKE_Fortran_COMPILER_ID}" MATCHES "XL|VisualAge")
+     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qfixed=72 -qxlines")
+   endif()
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ABC
   HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   "Enable array bounds checking on Epetra objects."
