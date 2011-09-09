@@ -18,7 +18,7 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
 
       //! Test if Apply() throw an exception when called before Setup()
-      void testApplyNoSetup(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success);
+      void testApplyNoSetup(SmootherPrototype const & smoother, Teuchos::FancyOStream & out, bool & success);
 
       //! Apply smoother with Poisson1D(125), RHS=0 and X initialized to 1
       //  This method calls Setup() internally

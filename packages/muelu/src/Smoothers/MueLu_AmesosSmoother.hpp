@@ -30,22 +30,6 @@ namespace MueLu {
     typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "MueLu_UseShortNames.hpp"
 
-  private:
-
-    //! amesos-specific key phrase that denote smoother type (same as SmootherBase::Type_)
-    std::string amesosType_;
-    //! pointer to Amesos solver object
-    RCP<Amesos_BaseSolver> prec_;
-    //! matrix operator 
-    RCP<Operator> A_;
-    //! parameter list that is used by Amesos internally
-    Teuchos::ParameterList list_;
-    //! Problem that Amesos uses internally.
-    RCP<Epetra_LinearProblem> AmesosLinearProblem_;
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
-
   public:
 
     //! @name Constructors / destructors
@@ -74,63 +58,55 @@ namespace MueLu {
         See also Amesos_Klu and Amesos_Superlu.
 
     */
-    AmesosSmoother(std::string const & type, Teuchos::ParameterList const & list)
-      : amesosType_(type), list_(list), out_(this->getOStream())
+
+    AmesosSmoother()
+      : type_("")
     {
-      //TODO      SmootherBase::SetType(type);
-      SmootherPrototype::IsSetup(false);
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
+
+#if defined(HAVE_AMESOS_SUPERLU)
+      type_ = "Superlu";
+#elif defined(HAVE_AMESOS_KLU)
+      type_ = "Klu";
+#endif
+      TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU and SuperLU. Cannot define a solver by default for this AmesosSmoother object");
+    }
+
+    AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
+      : type_(type), paramList_(paramList)
+    {
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
     }
 
     //! Destructor
     virtual ~AmesosSmoother() {}
-    //@}
 
-    //! @name Set/Get methods
-    //@{
-
-    //! @brief This has no effect and will throw an error.
-    void SetNIts(LO const &nIts) {
-      throw(Exceptions::RuntimeError("Only one iteration of Amesos solve is supported."));
-    }
-
-    //! @brief Returns 1.
-    LO GetNIts() {
-      return 1;
-    }
     //@}
 
     //! @name Setup and Apply methods.
     //@{
-
-
+    
     /*! @brief Set up the direct solver.
-
-       This creates the underlying Amesos solver object according to the parameter list options passed into the
-       AmesosSmoother constructor.  This includes doing a numeric factorization of the matrix.
+      This creates the underlying Amesos solver object according to the parameter list options passed into the
+      AmesosSmoother constructor.  This includes doing a numeric factorization of the matrix.
     */
     void Setup(Level &level) {
-      Teuchos::OSTab tab(out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
 
       A_ = level.Get< RCP<Operator> >("A");
-      RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
-      AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
-      AmesosLinearProblem_->SetOperator(epA.get());
-      Amesos factory;
-      prec_ = rcp(factory.Create(amesosType_, *AmesosLinearProblem_));
-      if (prec_ == Teuchos::null) {
-        std::string msg = "Amesos::Create: factorization type '" + amesosType_ + "' is not supported";
-        throw(Exceptions::RuntimeError(msg));
-      }
-      prec_->SetParameters(list_);
 
-      int rv = prec_->NumericFactorization();
-      if (rv != 0) {
-        std::ostringstream buf;
-        buf << rv;
-        std::string msg = "Amesos_BaseSolver::NumericFactorization return value of " + buf.str(); //TODO: BaseSolver or ... ?
-        throw(Exceptions::RuntimeError(msg));
-      }
+      RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
+      linearProblem_ = rcp( new Epetra_LinearProblem() );
+      linearProblem_->SetOperator(epA.get());
+
+      Amesos factory;
+      prec_ = rcp(factory.Create(type_, *linearProblem_));
+      TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Solver '" + type_ + "' not supported by Amesos");
+
+      prec_->SetParameters(paramList_);
+
+      int r = prec_->NumericFactorization();
+      TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " + Teuchos::Utils::toString(r) + " during NumericFactorization()");
 
       SmootherPrototype::IsSetup(true);
     }
@@ -141,59 +117,56 @@ namespace MueLu {
 
         @param X initial guess
         @param B right-hand side
-        @param InitialGuessIsZero This option has no effect.
+        @param InitialGuessIsZero This option has no effect with this smoother
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero = false) const
     {
-      if (!SmootherPrototype::IsSetup())
-        throw(Exceptions::RuntimeError("Setup has not been called"));
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
       //Epetra_LinearProblem takes the right-hand side as a non-const pointer.
       //I think this const_cast is safe because Amesos won't modify the rhs.
       Epetra_MultiVector &nonconstB = const_cast<Epetra_MultiVector&>(epB);
-      AmesosLinearProblem_->SetLHS(&epX);
-      AmesosLinearProblem_->SetRHS(&nonconstB);
+
+      linearProblem_->SetLHS(&epX);
+      linearProblem_->SetRHS(&nonconstB);
 
       prec_->Solve();
 
       // Don't keep pointers to our vectors in the Epetra_LinearProblem.
-      AmesosLinearProblem_->SetLHS(0);
-      AmesosLinearProblem_->SetRHS(0);
+      linearProblem_->SetLHS(0);
+      linearProblem_->SetRHS(0);
     }
+
     //@}
 
-    //! @name Utilities.
-    //@{
-
-    void Print(std::string prefix) const {
-      throw(Exceptions::NotImplemented("AmesosSmoother::Print is not implemented"));
+    RCP<SmootherPrototype> Copy() const {
+      return rcp( new AmesosSmoother(*this) );
     }
+    
+  private:
 
-    RCP<SmootherPrototype> Copy() const
-    {
-      return rcp(new AmesosSmoother(*this) );
-    }
+    //! amesos-specific key phrase that denote smoother type (same as SmootherBase::Type_)
+    std::string type_;
 
-    //FIXME JG: I think that the implementation of this method is wrong !!!!
-    void CopyParameters(RCP<SmootherPrototype> source)
-    {
-      RCP<AmesosSmoother> amesosSmoo = rcp_dynamic_cast<AmesosSmoother>(source);
-      //TODO check if dynamic cast fails
-      amesosType_ = amesosSmoo->amesosType_;
-      prec_ = amesosSmoo->prec_;
-      A_ = amesosSmoo->A_; 
-      list_ = amesosSmoo->list_;
-    }
-    //@}
+    //! parameter list that is used by Amesos internally
+    Teuchos::ParameterList paramList_;
 
-  }; //class AmesosSmoother
+    //! pointer to Amesos solver object
+    RCP<Amesos_BaseSolver> prec_;
 
-} //namespace MueLu
+    //! Problem that Amesos uses internally.
+    RCP<Epetra_LinearProblem> linearProblem_;
+
+    //! Operator. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
+    RCP<Operator> A_;
+
+  }; // class AmesosSmoother
+
+} // namespace MueLu
 
 #define MUELU_AMESOS_SMOOTHER_SHORT
 
-#endif //ifdef HAVE_MUELU_AMESOS
-
-#endif //ifndef MUELU_AMESOS_SMOOTHER_HPP
+#endif // HAVE_MUELU_AMESOS
+#endif // MUELU_AMESOS_SMOOTHER_HPP

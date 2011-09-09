@@ -16,7 +16,7 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
 
     // SmootherPrototype test
-    void testApplyNoSetup(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
+    void testApplyNoSetup(SmootherPrototype const & smoother, Teuchos::FancyOStream & out, bool & success) {
       GO numGlobalElements = 125;
       RCP<const Map> map = MapFactory::Build(Parameters::getLib(), numGlobalElements, 0, Parameters::getDefaultComm());
       
