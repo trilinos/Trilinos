@@ -14,21 +14,6 @@ PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
-IF (TPL_ENABLE_Netcdf)
-ADD_OPTION_AND_DEFINE(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Exodus
-  ${PACKAGE_NAME}_ENABLE_SEACASExodus
-  "Enable support for Exodus in ${PACKAGE_NAME}."
-  ON )
-
-ADD_OPTION_AND_DEFINE(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Nemesis
-  ${PACKAGE_NAME}_ENABLE_SEACASNemesis
-  "Enable support for Nemesis in ${PACKAGE_NAME}."
-  ON )
-ELSE()
-  MESSAGE(STATUS
-      "WARNING: ${PACKAGE_NAME}: Exodus and Nemesis support not available since TPL_ENABLE_Netcdf was not set.")
-ENDIF()
-
 #
 # C) Add the libraries, tests, and examples
 #- Add executable that will be installed in bin dir...
