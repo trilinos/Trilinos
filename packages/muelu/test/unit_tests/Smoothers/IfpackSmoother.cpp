@@ -36,13 +36,13 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
 
-      Teuchos::ParameterList ifpackList;
-      ifpackList.set("relaxation: type", "Gauss-Seidel");
-      ifpackList.set("relaxation: sweeps", (int) 1);
-      ifpackList.set("relaxation: damping factor", (double) 1.0);
-      ifpackList.set("relaxation: zero starting solution", false);
+      Teuchos::ParameterList paramList;
+      paramList.set("relaxation: type", "Gauss-Seidel");
+      paramList.set("relaxation: sweeps", (int) 1);
+      paramList.set("relaxation: damping factor", (double) 1.0);
+      paramList.set("relaxation: zero starting solution", false);
     
-      IfpackSmoother smoother("point relaxation stand-alone", ifpackList);
+      IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
     
@@ -66,13 +66,13 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
 
-      Teuchos::ParameterList ifpackList;
-      ifpackList.set("relaxation: type", "Gauss-Seidel");
-      ifpackList.set("relaxation: sweeps", (int) 10);
-      ifpackList.set("relaxation: damping factor", (double) 1.0);
-      ifpackList.set("relaxation: zero starting solution", false);
+      Teuchos::ParameterList paramList;
+      paramList.set("relaxation: type", "Gauss-Seidel");
+      paramList.set("relaxation: sweeps", (int) 10);
+      paramList.set("relaxation: damping factor", (double) 1.0);
+      paramList.set("relaxation: zero starting solution", false);
     
-      IfpackSmoother smoother("point relaxation stand-alone", ifpackList);
+      IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
@@ -99,14 +99,14 @@ namespace MueLuTests {
 
       // TODO This test should really calculate the reduction analytically.
 
-      Teuchos::ParameterList ifpackList;
-      ifpackList.set("chebyshev: degree", (int) 3);
-      ifpackList.set("chebyshev: max eigenvalue", (double) 1.98476);
-      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-      ifpackList.set("chebyshev: ratio eigenvalue", (double) 20);
-      ifpackList.set("chebyshev: zero starting solution", false);
+      Teuchos::ParameterList paramList;
+      paramList.set("chebyshev: degree", (int) 3);
+      paramList.set("chebyshev: max eigenvalue", (double) 1.98476);
+      paramList.set("chebyshev: min eigenvalue", (double) 1.0);
+      paramList.set("chebyshev: ratio eigenvalue", (double) 20);
+      paramList.set("chebyshev: zero starting solution", false);
 
-      IfpackSmoother smoother("Chebyshev", ifpackList);
+      IfpackSmoother smoother("Chebyshev", paramList);
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
