@@ -16,7 +16,9 @@
 
 #include <iostream>
 #include <math.h>
+#ifndef ICL
 #include <unistd.h>
+#endif
 #include "ml_include.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_EPETRAEXT)
 

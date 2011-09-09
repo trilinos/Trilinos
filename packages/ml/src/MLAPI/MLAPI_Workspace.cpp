@@ -119,7 +119,11 @@ void Init()
 #endif
         printf("%s\n",buf);
         fflush(stdout);
+#ifdef ICL
+        Sleep(1);
+#else
         sleep(1);
+#endif
       }
     }
     if (GetMyPID() == 0) {

@@ -23,6 +23,10 @@ static int     Dinv_size = -1;
 static double* Dinv      = 0;
 static bool    SinglePrecision = true; // to save memory
 
+#ifdef ICL
+void *ml_void_mem_ptr;
+#endif
+
 // ====================================================================== 
 // Take each column of Op, compute its 2-norm squared, and store
 // in Column2Norm[]. 

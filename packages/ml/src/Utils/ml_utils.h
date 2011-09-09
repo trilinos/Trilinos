@@ -53,6 +53,13 @@
 
 #ifdef ML_UseInlinedHashFunction
 /* work around for compiling on qt (ax_create_stdint_h.m4 didn't work) */
+#ifdef _MSC_VER
+typedef __int32 int32_t;
+typedef unsigned __int32 uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+#endif
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif

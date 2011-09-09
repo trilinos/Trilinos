@@ -1903,7 +1903,9 @@ void ML_serial_end(ML_Comm *comm)
 /* the developer to attach a debugger if desired.                       */
 /* (Based on code from ALEGRA).                                         */
 /* ******************************************************************** */
+#ifndef ICL
 #include <unistd.h>
+#endif
 void ML_BreakForDebugger(ML_Comm *comm)
 {
   int i,j;
@@ -1939,7 +1941,11 @@ void ML_BreakForDebugger(ML_Comm *comm)
 #endif
         printf("%s\n",buf);
         fflush(stdout);
+#ifdef ICL
+        Sleep(1);
+#else
         sleep(1);
+#endif
       }
     }
     if(mypid == 0) {

@@ -3523,7 +3523,11 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
 #endif
     printf("%s\n",buf);
     fflush(stdout);
+#ifdef ICL
+    Sleep(1);
+#else
     sleep(1);
+#endif
       }
     }
      if(Comm.MyPID() == 0) {
