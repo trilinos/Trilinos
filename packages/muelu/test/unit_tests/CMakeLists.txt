@@ -22,7 +22,6 @@ APPEND_SET(SOURCES
   RAPFactory.cpp
   SaPFactory.cpp
   TransPFactory.cpp
-  SmootherFactory.cpp
   Needs.cpp
   GenericPRFactory.cpp
   TentativePFactory.cpp
@@ -31,6 +30,8 @@ APPEND_SET(SOURCES
   Memory.cpp
   #UCAggregationFactory.cpp
   ExtendedHashtable.cpp
+
+  Smoothers/SmootherFactory.cpp
 )
 
 ### Tests that require other Trilinos packages
@@ -43,21 +44,15 @@ ASSERT_DEFINED(
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
-  APPEND_SET(SOURCES
-  Ifpack2Smoother.cpp
-  )
+  APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)
-  APPEND_SET(SOURCES
-  IfpackSmoother.cpp
-  )
+  APPEND_SET(SOURCES Smoothers/IfpackSmoother.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
-  APPEND_SET(SOURCES
-  AmesosSmoother.cpp
-  )
+  APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
