@@ -85,6 +85,8 @@ namespace stk
   namespace percept
   {
 
+    using shards::CellTopology;
+
     IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
     IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
     IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( NodesPerElem_Tag );
@@ -169,12 +171,12 @@ namespace stk
       };
 
       /// ([P],[D])
-      class CubaturePoints : public ArrayVector<double, NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag>
+      class CubaturePoints : public shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag>
       {
         IntrepidManager& m_im;
       public:
-        typedef ArrayVector<double, NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
-        typedef Array<double, NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
+        typedef shards::Array<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
 
         CubaturePoints(IM& im) ;
 
@@ -196,11 +198,11 @@ namespace stk
       };
 
       /// ([P])
-      class CubatureWeights : public ArrayVector<double, NaturalOrder, Cub_Points_Tag>
+      class CubatureWeights : public shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Cub_Points_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag> BaseType;
 
         CubatureWeights(IM& im);
 
@@ -221,10 +223,10 @@ namespace stk
       };
 
       /// ([C], [V], [D])
-      class CellWorkSet : public ArrayVector<double, NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag>
+      class CellWorkSet : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag>
       {
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag> BaseType;
 
         CellWorkSet(IM& im) ;
         using BaseType::operator();
@@ -232,13 +234,13 @@ namespace stk
       };
 
       /// ([C], [P], [D])
-      class PhysicalCoords : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag>
+      class PhysicalCoords : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag>
       {
 
         IntrepidManager& m_im;
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
-        typedef Array<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseType;
+        typedef shards::Array<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag> BaseBaseType;
 
         PhysicalCoords(IM& im);
 
@@ -264,11 +266,11 @@ namespace stk
       };
 
       /// ([C], [P], [D], [D])
-      class Jacobian : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
+      class Jacobian : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
 
         Jacobian(IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
@@ -280,11 +282,11 @@ namespace stk
       };
 
       /// ([C], [P], [D], [D])
-      class JacobianInverse : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
+      class JacobianInverse : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
 
         JacobianInverse(IM& im);
         void operator()(Jacobian& jac);
@@ -297,13 +299,13 @@ namespace stk
       };
 
       /// ([C], [P])
-      class JacobianDet : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class JacobianDet : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
 
-        //Jacobian(shards::Array<Cub_Points_Tag>& xi, shards::Array<NodesPerElem_Tag>& c, Topology& topo) 
+        //Jacobian(shards::shards::Array<Cub_Points_Tag>& xi, shards::Array<NodesPerElem_Tag>& c, Topology& topo) 
         JacobianDet(IM& im);
 
         void operator()(Jacobian& jac);
@@ -318,11 +320,11 @@ namespace stk
 
       /// weights multiplied by Jacobian det at cubature points
       /// ([C], [P])
-      class WeightedMeasure : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class WeightedMeasure : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
 
         WeightedMeasure(IM& im);
 
@@ -344,11 +346,11 @@ namespace stk
       };
 
       /// ([C], [P], [DOF])
-      class IntegrandValuesDOF : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag>
+      class IntegrandValuesDOF : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, DOFs_Tag> BaseType;
 
         IntegrandValuesDOF(IM& im);
 
@@ -372,11 +374,11 @@ namespace stk
       };
 
       /// ([C], [P])
-      class IntegrandValues : public ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag>
+      class IntegrandValues : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag> BaseType;
 
         IntegrandValues(IM& im);
 
@@ -401,11 +403,11 @@ namespace stk
       };
 
       /// ([C], [DOF])
-      class IntegralDOF : public ArrayVector<double, NaturalOrder, Elements_Tag, DOFs_Tag>
+      class IntegralDOF : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, DOFs_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag, DOFs_Tag > BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, DOFs_Tag > BaseType;
 
         IntegralDOF(IM& im);
 
@@ -432,11 +434,11 @@ namespace stk
       };
 
       /// ([C])
-      class Integral : public ArrayVector<double, NaturalOrder, Elements_Tag>
+      class Integral : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag>
       {
 
       public:
-        typedef ArrayVector<double, NaturalOrder, Elements_Tag > BaseType;
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag > BaseType;
 
         Integral(IM& im);
 
@@ -462,7 +464,7 @@ namespace stk
       };
 
       // FIXME - change to shards array
-      //class FieldValues : public ArrayVector<double, NaturalOrder, Elements_Tag>
+      //class FieldValues : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag>
 
       /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell: 
       class FieldValues : public MDArray
@@ -522,7 +524,7 @@ namespace stk
     };
 
 
-    //std::ostream& operator<<(std::ostream& os, const shards::Array<double, NaturalOrder>& container) ;
+    //std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container) ;
     
 
   }

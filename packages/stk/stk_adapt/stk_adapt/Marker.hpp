@@ -21,7 +21,9 @@ namespace stk {
      *  b) or use the predicate-based approach where you supply simple structs with an operator() that supplies
      *       information on whether an edge or element is to be refined/unrefined (classes named *Predicate*.*pp )
      *
-     * a)
+     * Details on the two flavors of markers:
+     *
+     * a) 
      * EdgeMarker is a base class for your class that provide a mark(edge_info) and markUnrefine(element_info) methods.
      * ElementMarker allows overloading mark(element_info) and markUnrefine(element_info) methods.
      * In either case, the mark methods tell the driving code to refine any (or all edges) of the mesh, unrefine an

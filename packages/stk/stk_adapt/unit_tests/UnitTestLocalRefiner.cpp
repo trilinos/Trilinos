@@ -199,7 +199,7 @@ namespace stk {
             toString(N)+","+
             toString(N);
             
-          eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+          eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
           eMesh.commit();
 
           eMesh.saveAs(input_files_loc+"hex_fixture_NxNxN.e");

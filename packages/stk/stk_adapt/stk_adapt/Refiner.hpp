@@ -89,13 +89,18 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     //template<class UniformRefinerPattern>
-    class Refiner : public stk::percept::Observable<ProgressMeterData>
+    class Refiner
+#ifndef SWIG //NLM    
+  : public stk::percept::Observable<ProgressMeterData>
+#endif
     {
     public:
       Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      Refiner(percept::PerceptMesh& eMesh, Pattern refine_type, stk::mesh::FieldBase *proc_rank_field=0);
       //Refiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, stk::mesh::FieldBase *proc_rank_field=0);
-      ~Refiner();
-
+      
+      virtual ~Refiner();
+      
       void
       doBreak();
 
@@ -130,16 +135,11 @@ namespace stk {
       getDoProgressMeter();
 
 
+      // ================================ unrefine
+
       typedef std::set<stk::mesh::Entity *> NodeSetType;
+      typedef std::set<stk::mesh::Entity *> SetOfEntities;
 
-      void 
-      filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
-
-      void
-      getKeptNodes(NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
-
-      void
-      getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
 
       void
       unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
@@ -161,12 +161,52 @@ namespace stk {
 
       void check_db(std::string msg="") ;
 
+      void check_sidesets(std::string msg="");
+      void check_sidesets_1(std::string msg);
+      void check_sidesets_2(std::string msg);
+      void fix_side_sets_1();
+      void fix_side_sets_2();
+
+      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
+      void fixElementSides2();
+      void fixSides(stk::mesh::Entity *parent);
+
       NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
       percept::PerceptMesh& getMesh() { return m_eMesh; }
     protected:
 
-      void check_db_ownership_consistency();
+      //============= unrefine
+      void 
+      filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getKeptNodes(NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
+
+      void getChildrenToBeRemoved(ElementUnrefineCollection& elements_to_unref,
+                                  SetOfEntities& children_to_be_removed, SetOfEntities& children_to_be_removed_with_ghosts, 
+                                  SetOfEntities& copied_children_to_be_removed,
+                                  SetOfEntities& family_trees_to_be_removed, 
+                                  SetOfEntities& parent_elements);
+
+      void removeFamilyTrees(SetOfEntities& family_trees_to_be_removed);
+
+
+      void getSideElemsToBeRemoved(SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements);
+
+      void removeChildElements(SetOfEntities& children_to_be_removed);
+
+      void removeSideElements(SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& elements_to_be_deleted);
+
+      void remesh(SetOfEntities& parent_elements);
+      //============= unrefine end
+
+      void check_db_ownership_consistency(std::string msg="");
       void check_db_hanging_nodes();
+      void check_db_entities_exist(std::string msg="");
 
       /**  Overrides start =======>
        */
@@ -274,6 +314,8 @@ namespace stk {
       void
       checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks);
 
+      void
+      set_active_part();
 
 
     protected:
@@ -296,9 +338,10 @@ namespace stk {
 
       int m_progress_meter_frequency;
       bool m_doProgress;
-
+      
       bool m_alwaysInitNodeRegistry;
       bool m_doSmoothGeometry;
+      bool m_allocated;
     };
 
 

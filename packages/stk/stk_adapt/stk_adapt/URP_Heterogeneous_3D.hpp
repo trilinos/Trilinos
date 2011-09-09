@@ -53,9 +53,18 @@ namespace stk {
             m_bp.push_back(new  UniformRefinerPattern<shards::ShellTriangle<6>,      shards::ShellTriangle<6>,      4, SierraPort > (eMesh, block_names) );
             m_bp.push_back(new  UniformRefinerPattern<shards::ShellQuadrilateral<8>, shards::ShellQuadrilateral<8>, 4, SierraPort > (eMesh, block_names));
 
+            // tmp FIXME
+#define ENABLE_DEBUG_BEAM_ELEMENTS_IN_2D 1
+#if !ENABLE_DEBUG_BEAM_ELEMENTS_IN_2D
             m_bp.push_back(new  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<2>,          2, SierraPort > (eMesh, block_names));
             m_bp.push_back(new  UniformRefinerPattern<shards::Beam<3>,          shards::Beam<3>,          2, SierraPort > (eMesh, block_names));
+#endif
           }
+
+#if ENABLE_DEBUG_BEAM_ELEMENTS_IN_2D
+        m_bp.push_back(new  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<2>,          2, SierraPort > (eMesh, block_names));
+        m_bp.push_back(new  UniformRefinerPattern<shards::Beam<3>,          shards::Beam<3>,          2, SierraPort > (eMesh, block_names));
+#endif
 
         m_bp.push_back(new  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) );
         m_bp.push_back(new  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      4, SierraPort > (eMesh, block_names) );
@@ -71,6 +80,14 @@ namespace stk {
 
 #endif
 
+      }
+
+      ~URP_Heterogeneous_3D()
+      {
+        for (unsigned ibp=0; ibp < m_bp.size(); ibp++)
+          {
+            if (m_bp[ibp]) delete m_bp[ibp];
+          }
       }
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
@@ -96,6 +113,9 @@ namespace stk {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getFromTopology()");
       }
 
+      virtual const CellTopologyData * const getToTopology() { 
+        throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getToTopology()");
+      }
 
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {

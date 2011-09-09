@@ -4,6 +4,10 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include "GeometryKernel.hpp"
 
+
+#define DEBUG_GEOM_SNAP 0
+
+
 typedef std::vector<double> PointSet;
 typedef int GeometryHandle;
 using namespace stk;
@@ -33,6 +37,18 @@ public:
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;
     GeometryKernel* geomKernel;
+
+private:
+
+    double mDbgNodeCoords[3];
+
+    bool contains_dbg_node( PerceptMesh *mesh_data,
+                            Bucket &bucket );
+    bool is_dbg_node( double node_coord[3] );
+
+    void snap_nodes( PerceptMesh* mesh_data,
+                     Bucket &bucket,
+                     size_t evalautor_idx );
 };
 
 #endif // MESHGEOMETRY_HPP

@@ -10,6 +10,7 @@
 #include <stk_util/util/PrintTable.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
@@ -23,6 +24,8 @@
 #include <stk_adapt/UniformRefiner.hpp>
 
 #include <stk_percept/fixtures/SingleTetFixture.hpp>
+
+#include <stk_mesh/fixtures/HexFixture.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -113,7 +116,7 @@ namespace stk {
 
           // generate a 4x4x(4*p_size) mesh
           std::string gmesh_spec = std::string("4x4x")+toString(4*p_size)+std::string("|bbox:0,0,0,1,1,1");
-          eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+          eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
           eMesh.commit();
           save_or_diff(eMesh, input_files_loc+"hex_fixture.e");
 
@@ -208,6 +211,105 @@ namespace stk {
       //=====================================================================================================================================================================================================
       //=====================================================================================================================================================================================================
       //=====================================================================================================================================================================================================
+
+#define REPRO_ERROR_7539 0
+
+#if REPRO_ERROR_7539
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, stk_fixture)
+      {         
+        typedef stk::mesh::Field<int> ProcIdFieldType;
+          
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        using Teuchos::rcpFromRef;
+             
+        int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+        int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+        std::cout << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
+    
+        stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,3,3,3);
+        ProcIdFieldType & processorIdField = hf.m_fem_meta.declare_field<ProcIdFieldType>("PROC_ID");
+        stk::mesh::put_field( processorIdField , 3, hf.m_fem_meta.universal_part());
+
+        stk::percept::PerceptMesh eMesh(&hf.m_fem_meta,&hf.m_bulk_data,false);
+        stk::adapt::Hex8_Hex8_8 break_quad(eMesh);
+    
+        hf.m_fem_meta.commit();
+        hf.generate_mesh();
+
+        const std::vector<stk::mesh::Bucket*> & buckets = hf.m_bulk_data.buckets(3);
+        for(std::size_t i=0;i<buckets.size();++i) {
+          stk::mesh::Bucket & b = *buckets[i];
+          for(std::size_t j=0;j<b.size();++j) {
+            stk::mesh::Entity & element = b[j];
+            // set processor rank
+            int * procId = stk::mesh::field_data(processorIdField,element);
+            procId[0] = hf.m_bulk_data.parallel_rank();
+          }
+        }
+
+        eMesh.saveAs("./tmp_hf1.e");
+        stk::adapt::UniformRefiner breaker(eMesh, break_quad, &processorIdField);
+        breaker.setRemoveOldElements(true);
+        
+        breaker.doBreak();
+      }
+
+#endif
+
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, stk_fixture_workaround)
+      {         
+        typedef stk::mesh::Field<int> ProcIdFieldType;
+          
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        using Teuchos::rcpFromRef;
+             
+        int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+        int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+        std::cout << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
+    
+        // local scope to make sure we don't re-use hf
+        { 
+          stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,3,3,3);
+          ProcIdFieldType & processorIdField = hf.m_fem_meta.declare_field<ProcIdFieldType>("PROC_ID");
+          stk::mesh::put_field( processorIdField , 3, hf.m_fem_meta.universal_part());
+
+          // to get any output we must tell I/O about this part
+          stk::io::put_io_part_attribute( hf.m_hex_part);
+
+          hf.m_fem_meta.commit();
+          hf.generate_mesh();
+
+          const std::vector<stk::mesh::Bucket*> & buckets = hf.m_bulk_data.buckets(3);
+          for(std::size_t i=0;i<buckets.size();++i) {
+            stk::mesh::Bucket & b = *buckets[i];
+            for(std::size_t j=0;j<b.size();++j) {
+              stk::mesh::Entity & element = b[j];
+              // set processor rank
+              int * procId = stk::mesh::field_data(processorIdField,element);
+              procId[0] = hf.m_bulk_data.parallel_rank();
+            }
+          }
+
+          // save and then re-open - this is a workaround until FEMMetaData is changed to natively support adaptivity 
+          //   by either initializing always to use rank-4 entities and/or allowing a re-init
+          stk::percept::PerceptMesh eMesh_TMP(&hf.m_fem_meta,&hf.m_bulk_data,true);
+          eMesh_TMP.saveAs("./hex_init.e");
+        }
+
+        stk::percept::PerceptMesh eMesh;
+        eMesh.open("./hex_init.e");
+        stk::adapt::Hex8_Hex8_8 break_quad(eMesh);
+        eMesh.commit();
+
+        stk::mesh::FieldBase& processorIdField_1 = *eMesh.getField("PROC_ID");
+        stk::adapt::UniformRefiner breaker(eMesh, break_quad, &processorIdField_1);
+        breaker.setRemoveOldElements(true);
+        
+        breaker.doBreak();
+        eMesh.saveAs("./hex_refined.e");
+      }
 
 
       //======================================================================================================================
@@ -384,6 +486,82 @@ namespace stk {
       //=============================================================================
       //=============================================================================
 
+      /// Refine quad elements with beam elements for the "side sets"
+      STKUNIT_UNIT_TEST(unit_uniformRefiner, break_quad_to_quad_sierra_1)
+      {
+        fixture_setup();
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 3)
+          {
+            //const unsigned p_rank = stk::parallel_machine_rank( pm );
+            //const unsigned p_size = stk::parallel_machine_size( pm );
+
+            const unsigned n = 2;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
+
+            bool debug_geom_side_sets_as_blocks = true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, true, debug_geom_side_sets_as_blocks);
+
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, false);
+
+            //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_pattern(eMesh);
+            URP_Heterogeneous_3D break_pattern(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            fixture.generate_mesh();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./quad_mesh_count_0.e");
+            {
+              std::vector<unsigned> count ;
+              stk::mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
+              stk::mesh::count_entities( selector, *eMesh.getBulkData(), count );
+
+              std::cout << "{ Node = " << count[  0 ] ;
+              std::cout << " Edge = " << count[  1 ] ;
+              std::cout << " Face = " << count[  2 ] ;
+              std::cout << " Elem = " << count[  3 ] ;
+              std::cout << " }" << std::endl ;
+            }
+
+            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            breaker.setRemoveOldElements(true);
+            breaker.doBreak();
+
+            eMesh.saveAs("./quad_mesh_count_1.e");
+
+            {
+              std::vector<unsigned> count ;
+              stk::mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
+              stk::mesh::count_entities( selector, *eMesh.getBulkData(), count );
+
+              std::cout << "{ Node = " << count[  0 ] ;
+              std::cout << " Edge = " << count[  1 ] ;
+              std::cout << " Face = " << count[  2 ] ;
+              std::cout << " Elem = " << count[  3 ] ;
+              std::cout << " }" << std::endl ;
+            }
+            //exit(123);
+
+            // end_demo
+          }
+
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
       /// Create a triangle mesh using the QuadFixture with the option of breaking the quads into triangles
       /// Refine the triangle mesh, write the results.
 
@@ -445,7 +623,7 @@ namespace stk {
 
         // generate a 4x4x(4*p_size) mesh
         std::string gmesh_spec = std::string("4x4x")+toString(4*p_size)+std::string("|bbox:0,0,0,1,1,1");
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
         //eMesh.commit();
         //eMesh.reopen();
 
@@ -979,7 +1157,7 @@ namespace stk {
         Util::setRank(eMesh.getRank());
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         UniformRefinerPattern<shards::Hexahedron<8>, shards::Tetrahedron<4>, 24 > break_hex_to_tet(eMesh);
 
@@ -1024,7 +1202,7 @@ namespace stk {
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Tet4_6_12 break_hex_to_tet(eMesh);
 
@@ -1945,7 +2123,7 @@ namespace stk {
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
@@ -2035,7 +2213,7 @@ namespace stk {
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
@@ -2119,7 +2297,7 @@ namespace stk {
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
@@ -2292,7 +2470,7 @@ namespace stk {
           unsigned p_size = eMesh.getParallelSize();
 
           std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-          eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+          eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
           Hex8_Hex27_1 break_hex_to_hex(eMesh);
 

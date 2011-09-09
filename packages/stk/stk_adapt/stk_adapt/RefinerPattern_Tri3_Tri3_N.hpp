@@ -25,7 +25,8 @@ namespace stk {
 
     public:
 
-      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh)
+      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh),
+                                                                                                    m_edge_breaker(0)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
         if (m_eMesh.getSpatialDim() == 2)
@@ -39,6 +40,11 @@ namespace stk {
             m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
           }
 
+      }
+
+      ~RefinerPattern() 
+      {
+        if (m_edge_breaker) delete m_edge_breaker;
       }
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
@@ -99,9 +105,12 @@ namespace stk {
       static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
                                    vector<tri_tuple_type_local>& elems)
       {
+        elems.resize(0);
+
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Triangle<3> >();
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
+        //const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK); /NLM
         VectorFieldType* coordField = eMesh.getCoordinatesField();
 
         unsigned num_edges_marked=0;
@@ -284,6 +293,12 @@ namespace stk {
             elems.resize(1);
             elems[0] = tri_tuple_type(T_VERT_N(0), T_VERT_N(1), T_VERT_N(2) );
 #else
+            if (elems.size() != 0)
+              {
+                std::cout << "tmp num_edges_marked= 0 " << elems.size() << std::endl;
+                throw std::logic_error("hmmmmmmmmmmm");
+              }
+
             return;
 #endif
           }
@@ -297,6 +312,11 @@ namespace stk {
                         stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
+        if (0 && eMesh.check_entity_duplicate(element))
+          {
+            throw std::logic_error("RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element of PARENT!");
+          }
+
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
         typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
         typedef boost::tuple<int, int, int> tri_tuple_type_int;
@@ -304,7 +324,7 @@ namespace stk {
         static vector<tri_tuple_type_local> elems_local(4);
         unsigned num_new_elems=0;
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.getCoordinatesField();
 
@@ -354,10 +374,12 @@ namespace stk {
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.getRank());
-                fdata[0] = double(newElement.owner_rank());
+                if (fdata)
+                  fdata[0] = double(newElement.owner_rank());
               }
 
-            eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            change_entity_parts(eMesh, element, newElement);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
@@ -376,6 +398,19 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
+            // FIXME tmp - could be slow
+
+            if (0 && eMesh.check_entity_duplicate(newElement))
+              {
+                if (eMesh.check_entity_duplicate(element))
+                  {
+                    std::cout << "RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element of PARENT 2!" << std::endl;
+                  }
+                std::cout << "RefinerPattern_Tri3_Tri3_N bad duplicate element= " << element << " newElement= " << newElement << " elems.size() = " << elems.size() << std::endl;
+                std::cout << "===> newElement.ischild, is parent = " << eMesh.isChildElement(newElement) << " " << eMesh.isParentElement(newElement) << std::endl;
+                throw std::logic_error("RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element");
+              }
+            
             element_pool++;
 
           }

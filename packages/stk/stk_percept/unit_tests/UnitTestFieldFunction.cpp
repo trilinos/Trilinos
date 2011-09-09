@@ -49,7 +49,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1_0_0)
 
   // start_demo_fieldFunction_1
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
   eMesh.commit();
   eMesh.printInfo("fieldFunction_demo_1_0_0",  printInfoLevel);
 
@@ -82,7 +82,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMeshReadOnly(PerceptMesh::GMeshSpec(config_mesh));
+  eMesh.newMeshReadOnly(GMeshSpec(config_mesh));
 
   mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
 
@@ -169,7 +169,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1)
 
   // start_demo_fieldFunction_1
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
   eMesh.commit();
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
@@ -191,7 +191,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
 
   // start_demo_fieldFunction_2
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1")); // create a 3x3x3 hex mesh in the unit cube
+  eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1")); // create a 3x3x3 hex mesh in the unit cube
 
   // add a new field
   // NOTE: we have to create the fields here before committing the mesh
@@ -251,7 +251,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+  eMesh.newMesh(GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
   eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+  eMesh.newMesh(GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
   eMesh.addField("coords_mag_field", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
@@ -431,7 +431,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+  eMesh.newMesh(GMeshSpec(config_mesh));
 
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();
@@ -498,7 +498,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
 
   PerceptMesh eMesh(3u);
-  eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+  eMesh.newMesh(GMeshSpec(config_mesh));
 
   eMesh.commit();
   // no need for this in create mode: eMesh.readBulkData();

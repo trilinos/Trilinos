@@ -21,7 +21,8 @@ namespace stk {
 
     public:
 
-      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh)
+      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh),
+                                                                                                    m_edge_breaker(0)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
         if (m_eMesh.getSpatialDim() == 2)
@@ -36,6 +37,12 @@ namespace stk {
           }
 
       }
+
+      ~RefinerPattern() 
+      {
+        if (m_edge_breaker) delete m_edge_breaker;
+      }
+
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
@@ -72,7 +79,7 @@ namespace stk {
         typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
         static vector<tri_tuple_type> elems(2);
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;

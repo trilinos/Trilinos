@@ -29,6 +29,9 @@ namespace stk {
       {
       }
 
+      RefinePredicate& getRefinePrediate() { return m_predicate_refine; }
+      UnrefinePredicate& getUnrefinePredicate() { return m_predicate_unrefine; }
+
       ///    1 (refine), 0 (nothing)
       virtual int mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
                            double *coord0, double *coord1, std::vector<int>& existing_edge_marks) 

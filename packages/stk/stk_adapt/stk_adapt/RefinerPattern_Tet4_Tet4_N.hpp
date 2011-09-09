@@ -102,31 +102,33 @@ namespace stk {
     class RefinerPattern<shards::Tetrahedron<4>, shards::Tetrahedron<4>, -1 > : public URP<shards::Tetrahedron<4>,shards::Tetrahedron<4>  >
     {
 
-      UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > * m_edge_breaker;
       RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > * m_face_breaker;
 
     public:
 
-      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Tetrahedron<4>, shards::Tetrahedron<4>  >(eMesh)
+      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Tetrahedron<4>, shards::Tetrahedron<4>  >(eMesh),
+                                                                                                    m_face_breaker(0)
       {
         m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
-        m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
         m_face_breaker =  new RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > (eMesh, block_names) ;
 
+      }
+
+      ~RefinerPattern() 
+      {
+        if (m_face_breaker) delete m_face_breaker;
       }
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
-        bp = std::vector<UniformRefinerPatternBase *>(3u, 0);
+        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
         bp[0] = this;
         bp[1] = m_face_breaker;
-        bp[2] = m_edge_breaker;
-
       }
 
       virtual void doBreak() {}
@@ -323,20 +325,9 @@ namespace stk {
                                   std::vector<TetTupleTypeLocal>& tets)
       {
 
-        static stk::mesh::Entity *centroid_node = 0;
-        static stk::mesh::Entity *temp_edge_nodes[6] = {0,0,0,0,0,0};
-        if (!centroid_node)
-          {
-            centroid_node = get_new_node(eMesh);
-            if (!centroid_node)
-              throw std::logic_error("RefinerPattern_Tet4_Tet4_N::triangulate_tet: centroid_node is null");
-            for (int i = 0; i < 6; i++)
-              temp_edge_nodes[i] = get_new_node(eMesh);
-          }
-
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         //VectorFieldType* coordField = eMesh.getCoordinatesField();
 
         unsigned num_edges_marked=0;
@@ -445,6 +436,17 @@ namespace stk {
             std::vector<tri_tuple_type_local> tet_faces;
 
             // algorithm: triangulate each face, create tets from centroid, collapse shortest edge
+            static stk::mesh::Entity *centroid_node = 0;
+            static stk::mesh::Entity *temp_edge_nodes[6] = {0,0,0,0,0,0};
+            if (!centroid_node)
+              {
+                centroid_node = get_new_node(eMesh);
+                if (!centroid_node)
+                  throw std::logic_error("RefinerPattern_Tet4_Tet4_N::triangulate_tet: centroid_node is null");
+                for (int i = 0; i < 6; i++)
+                  temp_edge_nodes[i] = get_new_node(eMesh);
+              }
+
 
             for (int iface = 0; iface < 4; iface++)
               {
@@ -522,7 +524,7 @@ namespace stk {
         static std::vector<TetTupleTypeLocal> elems_local(8);
         unsigned num_new_elems=0;
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.getCoordinatesField();
 
@@ -582,7 +584,8 @@ namespace stk {
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            change_entity_parts(eMesh, element, newElement);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 

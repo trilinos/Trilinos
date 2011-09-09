@@ -117,8 +117,10 @@ namespace moab {
                           double* v2, void* t2, EntityHandle h2,
                           double* v3, void* t3, EntityHandle h3 );
 
-    // FIXME
-    double *heap_coord_storage() { return new double[3]; }
+    double *heap_coord_storage() { 
+      //return new double[3]; 
+      return 0;
+    }
     void *heap_tag_storage() { return 0; }
 
     int best_tets( int* alternates, double*[14], int, int ) { return alternates[0]; }

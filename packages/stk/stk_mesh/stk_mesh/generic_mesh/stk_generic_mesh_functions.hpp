@@ -371,4 +371,3 @@ rotate_multistate_fields( STKGenericMesh & mesh )
 } // namespace stk
 
 #endif // STK_MESH_GENERIC_MESH_FUNCTIONS_HPP
-

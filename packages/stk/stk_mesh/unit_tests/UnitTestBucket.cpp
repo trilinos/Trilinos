@@ -267,11 +267,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   Bucket& b2 = **k2;
   BucketIterator bitr2 = b2.begin();
 
+#ifndef NDEBUG
   //tests operator != given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 != bitr3 , std::runtime_error );
+  STKUNIT_ASSERT_THROW( bitr2 != bitr3 , std::logic_error );
 
   //tests operator - given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 - bitr3, std::runtime_error );
+  STKUNIT_ASSERT_THROW( bitr2 - bitr3, std::logic_error );
+#endif
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)

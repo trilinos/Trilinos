@@ -55,7 +55,7 @@ namespace stk
 
         // start_demo_open_new_close_PerceptMesh
         PerceptMesh eMesh(3u);
-        eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+        eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
@@ -104,11 +104,11 @@ namespace stk
 
         //if (1 || eMesh.getRank()== 0) eMesh.printFields("Pressure");
      
-        ff_pressure = FieldFunction("ff_pressure", pressure_field, eMesh, 3, 1);
-        ff_pressure.addAlias("P");
+        FieldFunction ff_pressure_1("ff_pressure", pressure_field, eMesh, 3, 1);
+        ff_pressure_1.addAlias("P");
         StringFunction sf_pressure("P");
         std::cout << "P[" << eMesh.getRank() << "] "
-                  << "after read ff_pressure = " << eval(x,y,z,time, ff_pressure) << std::endl;
+                  << "after read ff_pressure = " << eval(x,y,z,time, ff_pressure_1) << std::endl;
 
         // a point-source at the origin
 #define EXACT_SOL log(sqrt( x*x + y*y + z*z) + 1.e-10)        
@@ -211,7 +211,7 @@ namespace stk
 
         // start_demo_open_new_close_PerceptMesh_3
         PerceptMesh eMesh(3u);
-        eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+        eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
@@ -250,7 +250,7 @@ namespace stk
 
         // start_demo_open_new_reopen_PerceptMesh
         PerceptMesh eMesh(3u);
-        eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
+        eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 

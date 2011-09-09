@@ -98,6 +98,7 @@ typedef uint64_t EntityId ;
 static const EntityRank BaseEntityRank = 0;
 static const EntityRank InvalidEntityRank = static_cast<EntityRank>(-1); // std::numeric_limits<EntityRank>::max();
 static const PartOrdinal InvalidPartOrdinal = static_cast<PartOrdinal>(-1); // std::numeric_limits<PartOrdinal>::max();
+static const RelationIdentifier InvalidRelationIdentifier = static_cast<RelationIdentifier>(-1); // std::numeric_limits<PartOrdinal>::max();
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
@@ -113,7 +114,9 @@ typedef std::vector<EntityProc>     EntityProcVec ;
  */
 typedef PairIter< std::vector< EntityProc >::const_iterator >
   PairIterEntityProc ;
-
+#ifndef SWIG
+	//NLM SWIG cannot handle this macro
+	
 NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , unsigned , proc )
 
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
@@ -123,7 +126,7 @@ typedef PairIter< std::vector< EntityCommInfo >::const_iterator >
   PairIterEntityComm ;
 
 typedef std::vector<EntityCommInfo> EntityCommInfoVector;
-
+#endif
 /** \} */
 
 //----------------------------------------------------------------------

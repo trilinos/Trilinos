@@ -53,7 +53,7 @@ class FieldRepository;
 class FieldBase
 {
   public:
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
    */
   MetaData & mesh_meta_data() const { return m_impl.meta_data(); }

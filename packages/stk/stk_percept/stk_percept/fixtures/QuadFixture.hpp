@@ -70,7 +70,7 @@ namespace stk {
         {}
 
         QuadFixture( stk::ParallelMachine pm ,
-                     unsigned nx , unsigned ny, bool generate_sidesets_in )
+                     unsigned nx , unsigned ny, bool generate_sidesets_in, bool debug_geom_side_sets_as_blocks_in=false )
           : meta_data(2, get_entity_rank_names(2) ),
             bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
             quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
@@ -78,10 +78,11 @@ namespace stk {
             coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
             NX( nx ),
             NY( ny ),
-            generate_sidesets(generate_sidesets_in)
+            generate_sidesets(generate_sidesets_in),
+            debug_geom_side_sets_as_blocks(debug_geom_side_sets_as_blocks_in)
         {
           enum { SpatialDim = 2 };
-
+          
           // Set topology of the element block part
           //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
           stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(quad_part);
@@ -231,6 +232,8 @@ namespace stk {
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];
         bool generate_sidesets;
+        bool debug_geom_side_sets_as_blocks;
+
 
         stk::mesh::EntityId node_id( unsigned ix , unsigned iy ) const
         { return 1 + ix + ( NX + 1 ) * iy ; }
@@ -267,18 +270,29 @@ namespace stk {
         {
           for (unsigned i_side = 0; i_side < 4; i_side++)
             {
-              side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
-              mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
-              //void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
+              if (!debug_geom_side_sets_as_blocks)
+                {
+                  side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2d2_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+                  mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+                  //void set_cell_topology(FEMMetaData & fem_meta, Part &part, fem::CellTopology cell_topology);
 
-              //stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
-              //stk::mesh::fem::set_cell_topology(meta_data, *side_parts[i_side], fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-              stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
-              stk::io::put_io_part_attribute(*side_parts[i_side]);
-              stk::io::put_io_part_attribute(side_part);
+                  //stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+                  //stk::mesh::fem::set_cell_topology(meta_data, *side_parts[i_side], fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
+                  stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
+                  stk::io::put_io_part_attribute(*side_parts[i_side]);
+                  stk::io::put_io_part_attribute(side_part);
 
-              meta_data.declare_part_subset(side_part, *side_parts[i_side]);
+                  meta_data.declare_part_subset(side_part, *side_parts[i_side]);
+                }
+              else
+                {
+                  //side_parts[i_side] = &meta_data.declare_part(std::string("block_1000")+boost::lexical_cast<std::string>(i_side+1), meta_data.edge_rank());
+                  side_parts[i_side] = &meta_data.declare_part<shards::Beam<2> >(std::string("block_1000")+boost::lexical_cast<std::string>(i_side+1));
+                  //, m_block_beam( m_metaData.declare_part< Beam2 >( "block_2" ) )
+                  //stk::mesh::fem::set_cell_topology< shards::Beam<2> >(*side_parts[i_side]);
+                  stk::io::put_io_part_attribute(*side_parts[i_side]);
 
+                }
             }
         }
 
@@ -291,6 +305,7 @@ namespace stk {
 
           // FIXME - a simple side_id server
           unsigned side_id = 0 + bulk_data.parallel_rank() * (NX+1) * (NY+1);
+
           for (unsigned i_side = 0; i_side < 4; i_side++)
             {
               unsigned j_side = i_side;
@@ -351,11 +366,22 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::fem::declare_element_side(bulk_data,
-                                                              side_id,
-                                                              element,
-                                                              j_side, // local_side_ord,
-                                                              side_parts[i_side]);
+                              if (!debug_geom_side_sets_as_blocks)
+                                {
+                                  stk::mesh::fem::declare_element_side(bulk_data,
+                                                                       side_id,
+                                                                       element,
+                                                                       j_side, // local_side_ord,
+                                                                       side_parts[i_side]);
+                                }
+                              else
+                                {
+                                  stk::mesh::EntityId elem_node[2];
+                                  elem_node[0] = (element.relations(0)[j_side]).entity()->identifier();
+                                  elem_node[1] = (element.relations(0)[(j_side+1)%4]).entity()->identifier();
+                                  stk::mesh::fem::declare_element( bulk_data, *side_parts[i_side], side_id + (2*NX*NY+2) , elem_node);
+                                  
+                                }
 
                             }
 
@@ -377,11 +403,14 @@ namespace stk {
                                             << " element= " << element
                                             << std::endl;
                                 }
-                              stk::mesh::fem::declare_element_side(bulk_data,
-                                                              side_id,
-                                                              element,
-                                                              j_side, // local_side_ord,
-                                                              side_parts[i_side]);
+                              if (!debug_geom_side_sets_as_blocks)
+                                {
+                                  stk::mesh::fem::declare_element_side(bulk_data,
+                                                                       side_id,
+                                                                       element,
+                                                                       j_side, // local_side_ord,
+                                                                       side_parts[i_side]);
+                                }
 
                             }
 

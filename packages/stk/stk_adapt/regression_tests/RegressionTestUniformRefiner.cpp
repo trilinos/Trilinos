@@ -863,7 +863,7 @@ namespace stk
         Util::setRank(eMesh.getRank());
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         UniformRefinerPattern<shards::Hexahedron<8>, shards::Tetrahedron<4>, 24 > break_hex_to_tet(eMesh);
 
@@ -906,7 +906,7 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Tet4_6_12 break_hex_to_tet(eMesh);
 
@@ -1019,7 +1019,7 @@ namespace stk
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
-        if (p_size <= 3)
+        if (p_size == 1 || p_size == 3)
           {
             const unsigned n = 12;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -1775,7 +1775,7 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
@@ -1859,7 +1859,7 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
@@ -1937,7 +1937,7 @@ namespace stk
         unsigned p_size = eMesh.getParallelSize();
 
         std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+        eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
         Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
@@ -2098,7 +2098,7 @@ namespace stk
           unsigned p_size = eMesh.getParallelSize();
 
           std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,"+toString(p_size) );
-          eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+          eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
           Hex8_Hex27_1 break_hex_to_hex(eMesh);
 

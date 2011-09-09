@@ -89,6 +89,10 @@ namespace stk {
          m_face_breaker = new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > (eMesh, block_names);
 #endif
        }
+      ~UniformRefinerPattern()
+      {
+        if (m_face_breaker) delete m_face_breaker;
+      }
 
 
       virtual void doBreak() {}
@@ -125,7 +129,7 @@ namespace stk {
         typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
         static vector<tet_tuple_type> elems(24);
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
 

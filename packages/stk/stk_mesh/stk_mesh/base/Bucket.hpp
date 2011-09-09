@@ -24,6 +24,8 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
+#include <boost/iterator/transform_iterator.hpp>
+
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -154,43 +156,43 @@ public:
 
   /** \brief Less than */
   inline bool operator<(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator < given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator < given iterator from different bucket");
     return (m_current_entity < i.m_current_entity);
   }
 
   /** \brief Less than equal to */
   inline bool operator<=(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator <= given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator <= given iterator from different bucket");
     return (m_current_entity <= i.m_current_entity);
   }
 
   /** \brief Greater than  */
   inline bool operator>(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator > given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator > given iterator from different bucket");
     return (m_current_entity > i.m_current_entity);
   }
 
   /** \brief Greater than equal to */
   inline bool operator>=(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator >= given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator >= given iterator from different bucket");
     return (m_current_entity >= i.m_current_entity);
   }
 
   /** \brief Equal to */
   inline bool operator==(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator == given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator == given iterator from different bucket");
     return (m_current_entity == i.m_current_entity);
   }
 
   /** \brief Not equal */
   inline bool operator!=(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator != given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator != given iterator from different bucket");
     return (m_current_entity != i.m_current_entity);
   }
 
@@ -214,8 +216,8 @@ public:
 
   /** \brief Distance between iterators */
   inline ptrdiff_t operator-(const BucketIterator &i) const {
-    ThrowErrorMsgIf(m_bucket_ptr != i.m_bucket_ptr,
-                    "operator - given iterator from different bucket");
+    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
+                   "operator - given iterator from different bucket");
     return static_cast<ptrdiff_t>(m_current_entity - i.m_current_entity);
   }
 
@@ -223,6 +225,17 @@ public:
   inline Entity & operator[]( const intType & n ) const { return entity(n); }
 
 }; // class BucketIterator
+
+struct To_Ptr : std::unary_function<Entity&, Entity*>
+{
+  Entity* operator()(Entity& entity) const
+  {
+    return &entity;
+  }
+};
+
+// Sometimes, we want a bucket-iterator to dereference to an Entity*
+typedef boost::transform_iterator<To_Ptr, BucketIterator> BucketPtrIterator;
 
 //----------------------------------------------------------------------
 /** \brief  A container for the \ref stk_mesh_field_data "field data"

@@ -10,7 +10,6 @@
 
 #include <stk_io/util/UseCase_mesh.hpp>
 #include <stk_io/util/Gears.hpp>
-#include <stk_io/util/Skinning.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -330,17 +329,6 @@ void create_input_mesh(const std::string &mesh_type,
     generate_gears(comm, mesh_filename, fem_meta, mesh_data.m_gears);
   }
   mesh_data.m_region = in_region;
-
-  // NOTE: THIS SHOULD NOT BE USED; USE STK_MESH SKINNING INSTEAD
-  // See if caller requested that the model be "skinned".  If
-  // so, all exposed sides are generated and put in a part named
-  // "skin"
-  if (mesh_data.m_generateSkinFaces) {
-    stk::mesh::Part &skin_part = fem_meta.declare_part("skin", fem_meta.side_rank());
-    stk::io::put_io_part_attribute(skin_part);
-    /** \todo REFACTOR Query all parts to determine topology of the skin. */
-    stk::mesh::fem::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
-  }
 }
 
 
@@ -809,12 +797,6 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
     generate_gears(bulk_data, mesh_data.m_gears);
   }
 
-  // NOTE: DO NOT USE THIS SKINNING
-  if (mesh_data.m_generateSkinFaces) {
-    stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-    stk::mesh::Part* const skin_part = fem_meta.get_part("skin");
-    stk::io::util::generate_sides(bulk_data, *skin_part, true);
-  }
 }
 } // namespace util
 } // namespace io

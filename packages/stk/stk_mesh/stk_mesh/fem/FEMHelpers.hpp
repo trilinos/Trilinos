@@ -134,7 +134,8 @@ declare_element_node_pointer_field(
 
 template< class Traits >
 void get_parts_with_topology(stk::mesh::BulkData& mesh,
-                             stk::mesh::PartVector& parts)
+                             stk::mesh::PartVector& parts,
+                             bool skip_topology_root_parts=false)
 {
   parts.clear();
 
@@ -151,6 +152,9 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
   for(; iter!=iter_end; ++iter) {
     stk::mesh::Part* part =  *iter;
     if (fem_meta.get_cell_topology(*part).getCellTopologyData() == topology) {
+      if (skip_topology_root_parts && stk::mesh::fem::is_cell_topology_root_part(*part)) {
+        continue;
+      }
       parts.push_back(part);
     }
   }

@@ -240,6 +240,7 @@ void use_case_5_generate_mesh_bulk_data(
 void use_case_5_write_mesh( stk::ParallelMachine comm ,
                             const std::string & filename )
 {
+  Ioss::Init::Initializer init_db;
   stk::mesh::fem::FEMMetaData meta_data(SpatialDim);
 
   VectorFieldType & node_coord =
@@ -256,7 +257,6 @@ void use_case_5_write_mesh( stk::ParallelMachine comm ,
 
   use_case_5_generate_mesh_bulk_data( bulk_data , node_coord );
 
-  Ioss::Init::Initializer init_db;
   stk::io::MeshData mesh;
   stk::io::create_output_mesh(filename, comm, bulk_data, mesh);
 }

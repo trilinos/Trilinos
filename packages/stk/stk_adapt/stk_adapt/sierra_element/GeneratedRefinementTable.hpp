@@ -32,7 +32,7 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Line<2>  > :: refinement_t
 template<> RefTopoX RefinementTopologyExtra< shards:: Beam<2>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },
-  {	2,	3,	0,	0,	1,	{0,	0,	0} } 
+  {	2,	1,	0,	0,	1,	{0,	0,	0} } 
 
 };
 
@@ -287,9 +287,9 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_t
 template<> RefTopoX RefinementTopologyExtra< shards:: Beam<3>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },
-  {	2,	3,	0,	2,	3,	{0,	0,	0} },
-  {	3,	3,	0,	0,	3,	{-0.5,	0,	0} },
-  {	4,	3,	0,	1,	3,	{0.5,	0,	0} } 
+  {	2,	1,	0,	2,	3,	{0,	0,	0} },
+  {	3,	1,	0,	0,	3,	{-0.5,	0,	0} },
+  {	4,	1,	0,	1,	3,	{0.5,	0,	0} } 
 
 };
 

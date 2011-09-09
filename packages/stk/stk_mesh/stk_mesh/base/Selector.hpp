@@ -71,6 +71,13 @@ public:
    */
   bool operator()( const Bucket & candidate ) const ;
 
+  /** \brief  Is this bucket a subset of the
+   *          set defined by thePerceptMesh* mesh_data selector expression.
+   */
+  bool operator()( const Bucket * candidate ) const{
+    return operator()(*candidate);
+  }
+
   /** \brief  Is this entity a member of the
    *          set defined by the selector expression.
    */

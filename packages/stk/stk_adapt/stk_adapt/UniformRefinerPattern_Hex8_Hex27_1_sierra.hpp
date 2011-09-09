@@ -38,6 +38,10 @@ namespace stk {
 
       }
 
+      ~UniformRefinerPattern()
+      {
+        if (m_subDim_breaker) delete m_subDim_breaker;
+      }
 
       virtual void doBreak() {}
 

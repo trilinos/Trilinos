@@ -14,6 +14,7 @@
 #include <iosfwd>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Iterators.hpp>
 
 //----------------------------------------------------------------------
 
@@ -36,15 +37,32 @@ void get_buckets( const Selector & selector ,
                   const std::vector< Bucket * > & input ,
                         std::vector< Bucket * > & output );
 
+/**
+ * For all the buckets in the mesh, return a range of selected buckets.
+ */
+AllSelectedBucketsRange get_buckets( const Selector & selector, const BulkData& mesh );
+
+/**
+ * Return a range of all buckets in the mesh
+ */
+AllBucketsRange get_buckets( const BulkData& mesh );
+
+/**
+ * Return a range of buckets for a certain rank.
+ */
+AllBucketsRange get_buckets( EntityRank entity_rank, const BulkData& mesh );
+
+/**
+ * Return a range of selected buckets within a bucket range
+ */
+AllSelectedBucketsRange get_buckets( const Selector & selector, const AllBucketsRange& range);
 
 /* \brief  Get the parts from the union part vector that the bucket is
  *         contained in. 
  */
-void get_involved_parts( 
-    const PartVector & union_parts,
-    const Bucket & candidate,
-    PartVector & involved_parts
-    );
+void get_involved_parts( const PartVector & union_parts,
+                         const Bucket & candidate,
+                         PartVector & involved_parts);
 
 //----------------------------------------------------------------------
 /** \} */

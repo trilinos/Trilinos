@@ -166,6 +166,20 @@ int main(int argc, char **argv) {                                  \
   return error;                                                    \
 }
 
+#define STKUNIT_WITH_TRACING_MAIN(argc, argv)                      \
+int* STKUNIT_ARGC;                                                 \
+char** STKUNIT_ARGV;                                               \
+int main(int argc, char **argv) {                                  \
+  use_case::UseCaseEnvironment use_case_environment(&argc, &argv); \
+  std::cout << "Running main() from gtest_main.cc\n";              \
+  testing::InitGoogleTest(&argc, argv);                            \
+  STKUNIT_ARGC = &argc;                                            \
+  STKUNIT_ARGV = argv;                                             \
+  int error = RUN_ALL_TESTS();                                     \
+  RUN_TEST_REDUCE(error);                                          \
+  return error;                                                    \
+}
+
 #define STKUNIT_WITH_SIERRA_MAIN(argc,argv,prod)    \
 int main(int argc, char **argv) { \
   testing::InitGoogleTest(&argc, argv); \

@@ -69,28 +69,30 @@ namespace stk
 
         dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test1 " << stk::diag::dendl;
 
-        const size_t numxyz=3;
-        const size_t num_x = numxyz;
-        const size_t num_y = numxyz;
-        const size_t num_z = numxyz;
-        std::string config_mesh = 
-          Ioss::Utils::to_string(num_x) + "x" + 
-          Ioss::Utils::to_string(num_y) + "x" +
-          Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
         percept::PerceptMesh eMesh(3u);
-        eMesh.newMesh(percept::PerceptMesh::GMeshSpec(config_mesh));
-        int vectorDimension = 0;
-        stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
-        eMesh.commit();
+        if (eMesh.getParallelSize() <= 3)
+          {
+            const size_t numxyz=3;
+            const size_t num_x = numxyz;
+            const size_t num_y = numxyz;
+            const size_t num_z = numxyz;
+            std::string config_mesh = 
+              Ioss::Utils::to_string(num_x) + "x" + 
+              Ioss::Utils::to_string(num_y) + "x" +
+              Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
+	
+            eMesh.newMesh(percept::GMeshSpec(config_mesh));
+            int vectorDimension = 0;
+            stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
+            eMesh.commit();
 
-        std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
-        Colorer meshColorer(mer);
-        unsigned elementType = 0u;
-        meshColorer.color(eMesh, &elementType, 0, element_color_field);
-        eMesh.saveAs("./output_files/cube_colored.e");
-        //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
-
+            std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
+            Colorer meshColorer(mer);
+            unsigned elementType = 0u;
+            meshColorer.color(eMesh, &elementType, 0, element_color_field);
+            eMesh.saveAs("./output_files/cube_colored.e");
+            //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
+          }
       }
 
       //======================================================================================================================

@@ -63,6 +63,14 @@ namespace stk {
 
       }
 
+      ~URP_Heterogeneous_QuadraticRefine_3D()
+      {
+        for (unsigned ibp=0; ibp < m_bp.size(); ibp++)
+          {
+            if (m_bp[ibp]) delete m_bp[ibp];
+          }
+      }
+
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
@@ -85,6 +93,10 @@ namespace stk {
       virtual const CellTopologyData * const getFromTopology()
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_QuadraticRefine_3D::getFromTopology()");
+      }
+      virtual const CellTopologyData * const getToTopology()
+      {
+        throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getToTopology()");
       }
 
 

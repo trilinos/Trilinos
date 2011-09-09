@@ -55,7 +55,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   MPI_Barrier( MPI_COMM_WORLD );
 
   percept::PerceptMesh eMesh(3u);
-  eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
+  eMesh.newMesh(percept::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   //int scalarDimension = 0; // a scalar
   //int vectorDimension = 3;
   eMesh.commit();
@@ -193,7 +193,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
 
   // start_demo_nodeRegistry_test_parallel_0
   percept::PerceptMesh eMesh(3u);
-  eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
+  eMesh.newMesh(percept::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   eMesh.commit();
   eMesh.printInfo();
 
@@ -256,7 +256,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
   // start_demo_nodeRegistry_test_parallel_1
 
   percept::PerceptMesh eMesh(3u);
-  eMesh.newMesh(percept::PerceptMesh::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
+  eMesh.newMesh(percept::GMeshSpec("3x3x12|bbox:0,0,0,1,1,1"));  // create a 3x3x12 hex mesh in the unit cube
   eMesh.commit();
   eMesh.printInfo();
   eMesh.saveAs("./cube_hex9-orig.e");
@@ -376,7 +376,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
   unsigned p_rank = eMesh.getRank();
   Util::setRank(eMesh.getRank());
 
-  eMesh.newMesh(percept::PerceptMesh::GMeshSpec(std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1")));
+  eMesh.newMesh(percept::GMeshSpec(std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1")));
 
   // prepare for adding some quadratic elements
   mesh::Part& block_hex_20 = eMesh.getFEM_meta_data()->declare_part("block_hex_20", eMesh.element_rank());
@@ -527,7 +527,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
   Util::setRank(eMesh.getRank());
 
   std::string gmesh_spec = std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1");
-  eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+  eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
 
   // prepare for breaking into tet elements
   mesh::Part& block_tet_4 = eMesh.getFEM_meta_data()->declare_part("block_tet_4", eMesh.element_rank());

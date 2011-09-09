@@ -498,6 +498,7 @@ namespace stk {
           vector<stk::mesh::Entity*> receive;
 
           ghosting.receive_list( receive );
+          //if (receive.size()) std::cout << "NodeRegistry::endGetFromRemote receive.size() = " << receive.size() << std::endl;
 
           m_eMesh.getBulkData()->change_ghosting( ghosting, m_nodes_to_ghost, receive);
 
@@ -978,7 +979,7 @@ namespace stk {
         if (is_empty)
           {
             const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-            CellTopology cell_topo(cell_topo_data);
+            shards::CellTopology cell_topo(cell_topo_data);
 
             std::cout << "NodeRegistry::makeCentroidField: no node found, cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity
@@ -1027,7 +1028,7 @@ namespace stk {
                 if (doPrint && coord)
                   {
                     const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                    CellTopology cell_topo(cell_topo_data);
+                    shards::CellTopology cell_topo(cell_topo_data);
 
                     std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName() << " ipts= " << ipts
                               << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
@@ -1082,7 +1083,7 @@ namespace stk {
             if (doPrint)
               {
                 const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                CellTopology cell_topo(cell_topo_data);
+                shards::CellTopology cell_topo(cell_topo_data);
 
                 std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity
@@ -1216,7 +1217,7 @@ namespace stk {
                         if (doPrint && coord)
                           {
                             const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                            CellTopology cell_topo(cell_topo_data);
+                            shards::CellTopology cell_topo(cell_topo_data);
 
                             std::cout << "tmp NodeRegistry::makeCentroid(field) cell_topo = " << cell_topo.getName() << " ipts= " << ipts
                                       << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
@@ -1376,7 +1377,7 @@ namespace stk {
                   continue;
 
                 //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                //              << " topology = " << (topology?CellTopology(topology).getName():"null")
+                //              << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
                 //              << std::endl;
 
 
@@ -1434,7 +1435,7 @@ namespace stk {
                         if (0)
                           {
                             std::cout << "P[" << m_eMesh.getRank() << "] adding node " << c_node->identifier() << " to   Part[" << ipart << "]= " << part.name()
-                                      << " topology = " << (topology ? CellTopology(topology).getName() : "null")
+                                      << " topology = " << (topology ? shards::CellTopology(topology).getName() : "null")
                                       << std::endl;
                           }
                       }
@@ -1486,7 +1487,7 @@ namespace stk {
 
                     NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
                     //std::cout << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                    //              << " topology = " << (topology?CellTopology(topology).getName():"null")
+                    //              << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
                     //              << std::endl;
 
                     bool found = true;
@@ -1572,7 +1573,7 @@ namespace stk {
                             if (0)
                               {
                                 std::cout << "P[" << m_eMesh.getRank() << "] adding node " << c_node->identifier() << " to   Part[" << ipart << "]= " << part.name()
-                                          << " topology = " << (topology ? CellTopology(topology).getName() : "null")
+                                          << " topology = " << (topology ? shards::CellTopology(topology).getName() : "null")
                                           << std::endl;
                               }
                           }
@@ -1638,7 +1639,7 @@ namespace stk {
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
@@ -1944,6 +1945,7 @@ namespace stk {
 
             vector<stk::mesh::Entity*> receive;
             ghosting.receive_list( receive );
+            //if (receive.size()) std::cout << "NodeRegistry::endGetFromRemote receive.size() = " << receive.size() << std::endl;
             m_eMesh.getBulkData()->change_ghosting( ghosting, nodes_to_ghost, receive);
           }
 
@@ -1960,6 +1962,17 @@ namespace stk {
         // create new entities on this proc
         vector<stk::mesh::Entity *> new_nodes;
         m_eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, num_nodes_needed, new_nodes);
+        
+        stk::mesh::Part* new_nodes_part = m_eMesh.getNonConstPart("refine_new_nodes_part");
+        if (new_nodes_part)
+          {
+            std::vector<stk::mesh::Part*> add_parts(1, new_nodes_part);
+            std::vector<stk::mesh::Part*> remove_parts;
+            for (unsigned ind = 0; ind < new_nodes.size(); ind++)
+              {
+                m_eMesh.getBulkData()->change_entity_parts( *new_nodes[ind], add_parts, remove_parts );
+              }
+          }
 
         // set map values to new node id's
         unsigned inode=0;
@@ -2171,7 +2184,57 @@ namespace stk {
           }
       }
 
+      // further cleanup of the NodeRegistry db - some elements get deleted on some procs but the ghost elements
+      //   are still in the db - the easiest way to detect this is as used here: during modification_begin(), 
+      //   cleanup of cached transactions are performed, then we find these by seeing if our element id's are
+      //   no longer in the stk_mesh db.
+
+      void clear_element_owner_data_phase_2()
+      {
+        m_eMesh.getBulkData()->modification_begin();
+
+        SubDimCellToDataMap::iterator iter;
+
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+
+            if (owning_elementId)
+              {
+                //stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), owning_elementRank, owning_elementId);
+                stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(owning_elementRank, owning_elementId);
+
+#if 0
+                if (owning_element != owning_element_1) 
+                  {
+                    
+                    std::cout << "P[" << m_eMesh.getRank() << "] NR::clear_2 error # 1= " << owning_element << " " << owning_element_1 <<  std::endl;
+                    throw std::logic_error("NodeRegistry:: clear_element_owner_data_phase_2 error # 1");
+                  }
+#endif
+
+                if (!owning_element)
+                  {
+                    NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                    nodeIds_onSE.resize(0);
+
+                    nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = stk::mesh::EntityKey(owning_elementRank, 0u);
+
+                  }
+              }
+          }
+        m_eMesh.getBulkData()->modification_end();
+
+      }
+
       // remove/zero any data that points to a deleted element
+      // called by Refiner with "children_to_be_removed_with_ghosts"
       void clear_element_owner_data( std::set<stk::mesh::Entity *>& elems_to_be_deleted)
       {
         SubDimCellToDataMap::iterator iter;
@@ -2189,11 +2252,23 @@ namespace stk {
             if (owning_elementId)
               {
                 stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), owning_elementRank, owning_elementId);
+                stk::mesh::Entity * owning_element_1 = m_eMesh.getBulkData()->get_entity(owning_elementRank, owning_elementId);
+
+                if (owning_element != owning_element_1) 
+                  {
+                    std::cout << "P[" << m_eMesh.getRank() << "] NR::clear_1 error # 1= " << owning_element << " " << owning_element_1 <<  std::endl;
+                    throw std::logic_error("NodeRegistry:: clear_element_owner_data_phase_1 error # 1");
+                  }
+
                 if (owning_element)
                   {
-                    if (elems_to_be_deleted.find(owning_element) != elems_to_be_deleted.end())
+
+                    bool isGhost = m_eMesh.isGhostElement(*owning_element);
+                        
+                    bool in_deleted_list = elems_to_be_deleted.find(owning_element) != elems_to_be_deleted.end();
+
+                    if (in_deleted_list)
                       {
-                        bool isGhost = m_eMesh.isGhostElement(*owning_element);
 
                         if (0)
                           std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId 
@@ -2236,6 +2311,31 @@ namespace stk {
                 m_eMesh.printEntity(std::cout, *nodeIds_onSE[ii]);
               }
           }
+      }
+
+      // estimate of memory used by this object
+      unsigned get_memory_usage()
+      {
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+
+        unsigned mem=0;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            mem += sizeof(SDSEntityType)*subDimEntity.size();
+            mem += sizeof(stk::mesh::EntityKey);
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+
+            unsigned mem1 = (sizeof(NodeIdsOnSubDimEntityTypeQuantum)+
+                             sizeof(stk::mesh::EntityId))*nodeIds_onSE.size() +sizeof(unsigned);
+
+            mem += mem1;
+          }
+        return mem;
       }
 
 

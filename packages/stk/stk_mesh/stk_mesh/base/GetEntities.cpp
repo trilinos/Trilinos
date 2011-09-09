@@ -22,10 +22,10 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-void get_entities( const BulkData & mesh , EntityRank type ,
+void get_entities( const BulkData & mesh , EntityRank entity_rank ,
                    std::vector< Entity*> & entities )
 {
-  const std::vector<Bucket*> & ks = mesh.buckets( type );
+  const std::vector<Bucket*> & ks = mesh.buckets( entity_rank );
   entities.clear();
 
   size_t count = 0;
@@ -48,6 +48,12 @@ void get_entities( const BulkData & mesh , EntityRank type ,
   }
 
   std::sort(entities.begin(), entities.end(), EntityLess());
+}
+
+BucketVectorEntityIteratorRange get_entities( EntityRank entity_rank, const BulkData& mesh )
+{
+  const std::vector<Bucket*>& buckets = mesh.buckets(entity_rank);
+  return get_entity_range(buckets);
 }
 
 unsigned count_selected_entities(
@@ -92,6 +98,11 @@ void get_selected_entities( const Selector & selector ,
   std::sort(entities.begin(), entities.end(), EntityLess());
 }
 
+SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & selector,
+                                                              const AllBucketsRange& bucket_range )
+{
+  return get_selected_bucket_entity_range(bucket_range, selector);
+}
 
 //----------------------------------------------------------------------
 
@@ -100,11 +111,11 @@ void count_entities(
   const BulkData & mesh ,
   std::vector< EntityRank > & count )
 {
-  const size_t ntype = MetaData::get(mesh).entity_rank_count();
+  const size_t nranks = MetaData::get(mesh).entity_rank_count();
 
-  count.resize( ntype );
+  count.resize( nranks );
 
-  for ( size_t i = 0 ; i < ntype ; ++i ) {
+  for ( size_t i = 0 ; i < nranks ; ++i ) {
     count[i] = 0 ;
 
     const std::vector<Bucket*> & ks = mesh.buckets( i );

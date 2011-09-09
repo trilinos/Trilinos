@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sys/times.h>
+#include <stk_util/environment/CPUTime.hpp>
 
 #include <stk_util/util/MallocUsed.h>
 
@@ -279,12 +279,11 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   int size[MAXP];
 
   int i, r, loop, pass, subpass;
-  int start_time, end_time;
+  double start_time, end_time;
   ptrdiff_t start_mem, end_mem;
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   ptrdiff_t start_footprint, end_footprint;
 #endif
-  struct tms tms;
   double elapsed;
   size_t absmax=0, curmax=0;
   int realloc_mask = -1;
@@ -294,8 +293,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   
   memset(pointers, 0, MAXP*sizeof(pointers[0]));
 
-  times(&tms);
-  start_time = tms.tms_utime;
+  start_time = stk::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   free(malloc(1));
   
@@ -370,8 +368,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
       }
     }
 
-    times(&tms);
-    end_time = tms.tms_utime;
+    end_time = stk::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
     end_mem = malloc_used();
     end_footprint = malloc_footprint();
@@ -379,7 +376,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
     end_mem = (ptrdiff_t) sbrk(0);
 #endif
 
-    elapsed = ((double)end_time - (double)start_time);
+    elapsed = end_time - start_time;
     std::cout << std::setw(14) << elapsed << " ticks "
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
               << std::setw(14) << (end_footprint - start_footprint)/1024 << " K "

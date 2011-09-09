@@ -9,6 +9,7 @@
 
 namespace stk {
   namespace percept {
+    using shards::CellTopology;
 
     bool MeshUtil::m_debug = false;
 

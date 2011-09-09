@@ -53,6 +53,7 @@ class HexFixture
   fem::FEMMetaData              m_fem_meta;
   BulkData                      m_bulk_data;
   Part &                        m_hex_part;
+  Part &                        m_node_part;
   CoordFieldType &              m_coord_field ;
   CoordGatherFieldType &        m_coord_gather_field ;
 

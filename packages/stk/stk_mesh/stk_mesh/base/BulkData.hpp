@@ -17,11 +17,14 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Trace.hpp>
+
+#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
 
+#include <algorithm>
 #include <map>
 
 //----------------------------------------------------------------------
@@ -180,6 +183,18 @@ public:
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   { return m_bucket_repository.buckets(rank); }
 
+#ifndef SWIG //SRK
+  AllBucketsRange get_bucket_range() const
+  {
+    return m_bucket_repository.get_bucket_range();
+  }
+
+  AllBucketsRange get_bucket_range( EntityRank rank ) const
+  {
+    return m_bucket_repository.get_bucket_range(rank);
+  }
+#endif
+
   /** \brief  Get entity with a given key */
   Entity * get_entity( EntityRank entity_rank , EntityId entity_id ) const {
     require_good_rank_and_id(entity_rank, entity_id);
@@ -219,7 +234,17 @@ public:
    */
   void change_entity_parts( Entity & entity,
       const PartVector & add_parts ,
-      const PartVector & remove_parts = PartVector() );
+      const PartVector & remove_parts = PartVector() )
+  {
+    change_entity_parts(entity,
+                        add_parts.begin(), add_parts.end(),
+                        remove_parts.begin(), remove_parts.end());
+  }
+
+  template<typename AddIterator, typename RemoveIterator>
+  void change_entity_parts( Entity & entity,
+                            AddIterator begin_add_parts, AddIterator end_add_parts,
+                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -310,8 +335,10 @@ public:
    *  'modification_end'.
    *  The local_id arg is used to differentiate the case when there are
    *  multiple relationships between e_from and e_to.
+   *
+   *  Returns true if we were able to destroy the relation.
    */
-  void destroy_relation( Entity & e_from ,
+  bool destroy_relation( Entity & e_from ,
                          Entity & e_to,
                          const RelationIdentifier local_id );
 
@@ -428,6 +455,20 @@ private:
    */
   void internal_regenerate_shared_aura();
 
+  // Returns false if there is a problem. It is expected that
+  // verify_change_parts will be called if quick_verify_change_part detects
+  // a problem, therefore we leave the generation of an exception to
+  // verify_change_parts. We want this function to be as fast as
+  // possible.
+  inline bool internal_quick_verify_change_part(const Entity& entity,
+                                                const Part* part,
+                                                const unsigned entity_rank,
+                                                const unsigned undef_rank) const;
+
+  void internal_verify_change_parts( const MetaData   & meta ,
+                                     const Entity     & entity ,
+                                     const PartVector & parts ) const;
+
   //------------------------------------
 
   /** \name  Invariants/preconditions for MetaData.
@@ -481,6 +522,117 @@ BulkData & BulkData::get( const Ghosting & ghost) {
 void set_field_relations( Entity & e_from ,
                           Entity & e_to ,
                           const unsigned ident );
+
+inline bool BulkData::internal_quick_verify_change_part(const Entity& entity,
+                                                        const Part* part,
+                                                        const unsigned entity_rank,
+                                                        const unsigned undef_rank) const
+{
+  const unsigned part_rank = part->primary_entity_rank();
+
+  // The code below is coupled with the code in verify_change_parts. If we
+  // change what it means for a part to be valid, code will need to be
+  // changed in both places unfortunately.
+  const bool intersection_ok = part->intersection_of().empty();
+  const bool rel_target_ok   = ( part->relations().empty() ||
+                                 part != part->relations().begin()->m_target );
+  const bool rank_ok         = ( entity_rank == part_rank ||
+                                 undef_rank  == part_rank );
+
+  return intersection_ok && rel_target_ok && rank_ok;
+}
+
+template<typename AddIterator, typename RemoveIterator>
+void BulkData::change_entity_parts( Entity & entity,
+                                    AddIterator begin_add_parts, AddIterator end_add_parts,
+                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts )
+{
+  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  //DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
+  //DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
+
+  require_ok_to_modify();
+
+  require_entity_owner( entity , m_parallel_rank );
+
+  const EntityRank entity_rank = entity.entity_rank();
+  const EntityRank undef_rank  = InvalidEntityRank;
+
+  // Transitive addition and removal:
+  // 1) Include supersets of add_parts
+  // 2) Do not include a remove_part if it appears in the add_parts
+  // 3) Include subsets of remove_parts
+
+  // most parts will at least have universal and topology part as supersets
+  const unsigned expected_min_num_supersets = 2;
+
+  PartVector a_parts;
+  a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
+  a_parts.insert( a_parts.begin(), begin_add_parts, end_add_parts );
+  bool quick_verify_check = true;
+
+  for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
+    quick_verify_check = quick_verify_check &&
+      internal_quick_verify_change_part(entity, *ia, entity_rank, undef_rank);
+    a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
+                                   (*ia)->supersets().end() );
+  }
+
+  order( a_parts );
+
+  PartVector r_parts ;
+
+  for ( RemoveIterator ir = begin_remove_parts; ir != end_remove_parts ; ++ir ) {
+
+    // The following guards should be in the public interface to
+    // changing parts.  However, internal mechanisms such as changing
+    // ownership calls this function to add or remove an entity from
+    // the three special parts.  Without refactoring, these guards
+    // cannot be put in place.
+    /*
+    ThrowErrorMsgIf( m_mesh_meta_data.universal_part() == **ir,
+                     "Cannot remove entity from universal part" );
+    ThrowErrorMsgIf( m_mesh_meta_data.locally_owned_part() == **ir,
+                     "Cannot remove entity from locally owned part" );
+    ThrowErrorMsgIf( m_mesh_meta_data.globally_shared_part() == **ir,
+                     "Cannot remove entity from globally shared part" );
+    */
+
+    quick_verify_check = quick_verify_check &&
+      internal_quick_verify_change_part(entity, *ir, entity_rank, undef_rank);
+
+    if ( ! contain( a_parts , **ir ) ) {
+      r_parts.push_back( *ir );
+      for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
+            cur_part != (*ir)->subsets().end() ;
+            ++cur_part )
+        if ( entity.bucket().member ( **cur_part ) )
+          r_parts.push_back ( *cur_part );
+    }
+  }
+
+  order( r_parts );
+
+  // If it looks like we have a problem, run the full check and we should
+  // expect to see an exception thrown; otherwise, only do the full check in
+  // debug mode because it incurs significant overhead.
+  if ( ! quick_verify_check ) {
+    internal_verify_change_parts( m_mesh_meta_data , entity , a_parts );
+    internal_verify_change_parts( m_mesh_meta_data , entity , r_parts );
+    ThrowRequireMsg(false, "Expected throw from verify methods above.");
+  }
+  else {
+#ifndef NDEBUG
+    internal_verify_change_parts( m_mesh_meta_data , entity , a_parts );
+    internal_verify_change_parts( m_mesh_meta_data , entity , r_parts );
+#endif
+  }
+
+  internal_change_entity_parts( entity , a_parts , r_parts );
+
+  return ;
+}
 
 } // namespace mesh
 } // namespace stk

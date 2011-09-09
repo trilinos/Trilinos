@@ -29,10 +29,23 @@ public:
     }
 
     virtual std::string get_attribute(GeometryHandle geom)
-    {return geometryAttribute[geom];}
+    {
+      return geometryAttribute[geom];
+    }
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom)
     { }
+
+    virtual bool is_curve(GeometryHandle geom) const
+    {
+      return true;
+    }
+
+    virtual bool is_surface(GeometryHandle geom) const
+    {
+      return true;
+    }
+
 private:
     std::map<int, std::string> geometryAttribute;
 };

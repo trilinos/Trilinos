@@ -44,15 +44,14 @@
 #include <stk_percept/SameRankRelation.hpp>
 
 
-
 // if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
 #define PERCEPT_USE_FAMILY_TREE 1
 
-using namespace shards;
+//using namespace shards;
 
 namespace Intrepid {
-  template<class Scalar, class ArrayScalar>
-  class Basis;
+	template<class Scalar, class ArrayScalar>
+	class Basis;
 }
 
 namespace stk {
@@ -62,9 +61,6 @@ namespace stk {
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
 
     static const unsigned EntityRankEnd = 6;
-
-    // explanation: to know which of the two possible family trees are present we identify them by a shifted ID
-    const stk::mesh::EntityId FAMILY_TREE_MAX_ENTITY_FOR_SHIFT = 1000000000000000ull;  // 1e15
 
     enum FamiltyTreeLevel {
       FAMILY_TREE_LEVEL_0 = 0,
@@ -76,7 +72,26 @@ namespace stk {
       FAMILY_TREE_CHILD_START_INDEX = 1
     };
 
-    using namespace interface_table;
+    //using namespace interface_table;
+
+    class GMeshSpec : public Name
+    {
+    public:
+      explicit GMeshSpec(const std::string& name) : Name(name) {}
+    };
+
+
+    struct FieldCreateOrder
+    {
+      const std::string m_name;
+      const unsigned m_entity_rank;
+      const std::vector<int> m_dimensions;
+      const mesh::Part* m_part;
+      FieldCreateOrder();
+      FieldCreateOrder(const std::string name, const unsigned entity_rank,
+                      const std::vector<int> dimensions, const mesh::Part* part);
+    };
+    typedef std::vector<FieldCreateOrder> FieldCreateOrderVec;
 
     class PerceptMesh
     {
@@ -86,25 +101,7 @@ namespace stk {
       typedef std::map<unsigned, BasisTypeRCP > BasisTableMap;
 
       static std::string s_omit_part;
-
-      class GMeshSpec : public Name
-      {
-      public:
-        explicit GMeshSpec(const std::string& name) : Name(name) {}
-      };
-
-      struct FieldCreateOrder
-      {
-        const std::string m_name;
-        const unsigned m_entity_rank;
-        const std::vector<int> m_dimensions;
-        const mesh::Part* m_part;
-        FieldCreateOrder();
-        FieldCreateOrder(const std::string name, const unsigned entity_rank,
-                        const std::vector<int> dimensions, const mesh::Part* part);
-      };
-      typedef std::vector<PerceptMesh::FieldCreateOrder> FieldCreateOrderVec;
-
+      
 
     public:
 
@@ -150,7 +147,7 @@ namespace stk {
 
       /// commits mesh if not committed and saves it in new file
       void
-      saveAs(const std::string& out_filename );
+      saveAs(const std::string& out_filename);
 
       /// closes this mesh to further changes
       void
@@ -174,6 +171,9 @@ namespace stk {
       getNumberElements();
 
       int
+      getNumberEdges();
+
+      int
       getNumberElementsLocallyOwned();
 
       void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
@@ -187,7 +187,7 @@ namespace stk {
       //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
-      void init ( stk::ParallelMachine comm  =  MPI_COMM_WORLD );      // FIXME - make private
+      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
       void destroy();       // FIXME - make private
 
       // allow setting spatial dim after creation (for compatability with new FEMMetaData)
@@ -208,19 +208,56 @@ namespace stk {
         return isGhost;
       }
 
-      /// the element is not a parent of the 0'th family_tree relation
+      // checks if this entity has a duplicate (ie all nodes are the same)
+      bool
+      check_entity_duplicate(stk::mesh::Entity& entity);
 
+      void delete_side_sets();
+
+      /**
+       * A family tree relation holds the parent/child relations for a refined mesh.  
+       * 
+       * Case 0: a single refinement of a parent P_0 and its children C_0_0, C_0_1,...,C_0_N leads to a new
+       *  family tree entity FT_0 that has down relations to {P_0, C_0_0, C_0_1,...,C_0_N}
+       *  The back pointers from P_0, C_0_0, ... are initially stored as the 0'th index of their relations,
+       *    i.e.: P_0.relations(FAMILY_TREE_RANK)[0] --> FT_0, 
+       *          C_0_0.relations(FAMILY_TREE_RANK)[0] --> FT_0, etc.
+       * Case 1: a previously refined child, say C_0_1, renamed to P_0_1, gets further refined leading to 
+       *  a new family tree entity, FT_1 
+       *  pointing to:  {P_0_1, C_0_1_0, C_0_1_1,... }
+       *  but, now the relations indexing changes (actually, we can't predict what it will be, thus the
+       *  need for this function getFamilyTreeRelationIndex):
+       *     P_0_1.relations(FAMILY_TREE_RANK)[0] --> FT_1
+       *     P_0_1.relations(FAMILY_TREE_RANK)[1] --> FT_0
+       *     etc.
+       *  So, we use this function to look for the family tree corresponding to if we are looking for the first
+       *    level (if there's only one level, or we are looking for the family tree associated with the element
+       *    when it was a child for the first time), orthe "level 1" family tree (corresponding to Case 1
+       *    where we are looking for the family tree of the element associated with it being a parent).
+       * 
+       */
       unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element)
       {
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
         stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
         if (level == FAMILY_TREE_LEVEL_0)
           {
+            // only one level, so we return 0 as the index
             if (element_to_family_tree_relations.size() <= 1) return 0;
-            if (element_to_family_tree_relations[0].entity()->identifier() < FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 0;
-            else if (element_to_family_tree_relations[1].entity()->identifier() < FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 1;
+
+            // check both family trees to see if element is parent or not
+            stk::mesh::Entity *family_tree_0 = element_to_family_tree_relations[0].entity();
+            stk::mesh::Entity *family_tree_1 = element_to_family_tree_relations[1].entity();
+
+            // NOTE: reversed index - when looking for FAMILY_TREE_LEVEL_0, we are looking for the family tree associated
+            //   with this element when viewed as a child, not a parent.
+            if ( (family_tree_0->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 1;
+            else if ( (family_tree_1->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 0;
             else
               {
+                std::cout << "element_to_family_tree_relations[0].entity()->identifier() = " << element_to_family_tree_relations[0].entity()->identifier() 
+                          << "element_to_family_tree_relations[1].entity()->identifier() = " << element_to_family_tree_relations[1].entity()->identifier() << std::endl;
+                std::cout << "element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
                 throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 1");
               }
           }
@@ -230,15 +267,24 @@ namespace stk {
               {
                 throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 2");
               }
-            if (element_to_family_tree_relations[0].entity()->identifier() > FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 0;
-            else if (element_to_family_tree_relations[1].entity()->identifier() > FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 1;
+            // check both family trees to see if element is parent or not
+            stk::mesh::Entity *family_tree_0 = element_to_family_tree_relations[0].entity();
+            stk::mesh::Entity *family_tree_1 = element_to_family_tree_relations[1].entity();
+
+            if ( (family_tree_0->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 0;
+            else if ( (family_tree_1->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 1;
             else
               {
+                std::cout << "element_to_family_tree_relations[0].entity()->identifier() = " << element_to_family_tree_relations[0].entity()->identifier() 
+                          << "element_to_family_tree_relations[1].entity()->identifier() = " << element_to_family_tree_relations[1].entity()->identifier() << std::endl;
+                std::cout << "element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
                 throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 3");
               }
           }
         return 0;
       }
+
+      /// the element is not a parent of the 0'th family_tree relation
 
       bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {
@@ -281,7 +327,7 @@ namespace stk {
         stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
         if (element_to_family_tree_relations.size()==0 )
           {
-            return false;
+            return true;
           }
         else
           {
@@ -361,6 +407,7 @@ namespace stk {
               }
             else
               {
+                // has no family tree, can't be a parent
                 return false;
               }
           }
@@ -535,6 +582,7 @@ namespace stk {
         return true;
       }
 
+      // return false if we couldn't get the children
       bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false)
       {
         children.resize(0);
@@ -731,7 +779,7 @@ namespace stk {
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
-                                       FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length);
+                                       Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
       VectorFieldType* getCoordinatesField() {
         // this should have been set by a previous internal call to setCoordinatesField
@@ -771,14 +819,14 @@ namespace stk {
 
 
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
-                                  std::string& msg,
+                                  std::string msg,
                                   bool print=true);
 
       static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
                                   stk::mesh::fem::FEMMetaData& metaData_2,
                                   stk::mesh::BulkData& bulkData_1,
                                   stk::mesh::BulkData& bulkData_2,
-                                  std::string& msg,
+                                  std::string msg,
                                   bool print=true);
 
 
@@ -824,7 +872,7 @@ namespace stk {
       stk::mesh::fem::FEMMetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
-      Ioss::Region *                        m_iossRegion;
+      Teuchos::RCP<Ioss::Region>            m_iossRegion;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;
       bool                                  m_ownData;
@@ -857,11 +905,11 @@ namespace stk {
 
 
 #if 0
-    inline
-    std::string &operator<<(std::string& out, const char *str)
-    {
-      return out.append(str);
-    }
+		inline
+		std::string &operator<<(std::string& out, const char *str)
+		{
+			return out.append(str);
+		}
 #endif
 
     // static
@@ -876,7 +924,7 @@ namespace stk {
       //const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
       const CellTopologyData * const bucket_cell_topo_data = get_cell_topology(bucket);
 
-      CellTopology cell_topo(bucket_cell_topo_data);
+      shards::CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;
       unsigned numNodes = cell_topo.getNodeCount();
       //unsigned spaceDim = cell_topo.getDimension();
@@ -944,7 +992,6 @@ namespace stk {
             }
         }
     }
-
 
   }
 }

@@ -682,6 +682,8 @@ void use_case_AD_driver(
     //------------------------------------------------------------------
   }
 
+  delete matmodel;
+
   time_max[8] = stk::wall_dtime( wtime );
 
   time_min[0] = time_max[0] ;

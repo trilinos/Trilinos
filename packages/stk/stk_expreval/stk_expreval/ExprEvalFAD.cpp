@@ -1196,12 +1196,12 @@ Eval::parse()
 
     if (m_syntaxStatus) {
       if (!m_undefinedFunctionSet.empty()) {
-	std::ostringstream strout;
-	strout << "In expression '" << m_expression << "', the following functions are not defined:" << std::endl;
-//	for (iteration<UndefinedFunctionSet> it(m_undefinedFunctionSet); it; ++it)
-	for (UndefinedFunctionSet::iterator it = m_undefinedFunctionSet.begin(); it != m_undefinedFunctionSet.end(); ++it)
-	  strout << (*it) << std::endl;
-	throw std::runtime_error(strout.str());
+        std::ostringstream strout;
+        strout << "In expression '" << m_expression << "', the following functions are not defined:" << std::endl;
+        //	for (iteration<UndefinedFunctionSet> it(m_undefinedFunctionSet); it; ++it)
+        for (UndefinedFunctionSet::iterator it = m_undefinedFunctionSet.begin(); it != m_undefinedFunctionSet.end(); ++it)
+          strout << (*it) << std::endl;
+        throw std::runtime_error(strout.str());
       }
 
       resolve();
@@ -1212,6 +1212,7 @@ Eval::parse()
   catch (std::runtime_error & /* x */) {
 //     x << " while parsing expression: " << m_expression;
 //     RuntimeDoomed() << x.what();
+    delete m_headNode;
     throw;
   }
 }

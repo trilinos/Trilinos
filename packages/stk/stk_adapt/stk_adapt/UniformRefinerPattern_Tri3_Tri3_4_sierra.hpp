@@ -22,7 +22,8 @@ namespace stk {
 
     public:
 
-      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh)
+      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Triangle<3>, shards::Triangle<3>  >(eMesh),
+                                                                                                           m_edge_breaker (0)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
         if (m_eMesh.getSpatialDim() == 2)
@@ -32,7 +33,6 @@ namespace stk {
         Elem::StdMeshObjTopologies::bootstrap();
 
 #if EDGE_BREAKER_T3_T3_4_S
-
         //m_edge_breaker = Teuchos::rcp( new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) );
         if (m_eMesh.getSpatialDim() == 2)
           {
@@ -40,6 +40,11 @@ namespace stk {
           }
 #endif
 
+      }
+
+      ~UniformRefinerPattern()
+      {
+        if (m_edge_breaker) delete m_edge_breaker;
       }
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )

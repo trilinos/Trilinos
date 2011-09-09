@@ -1,5 +1,6 @@
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 
 namespace stk {
   namespace adapt {
@@ -155,58 +156,49 @@ namespace stk {
       // if this is the first time the parent_elem has been visited, or if the parent_elem is the child of another parent,
       //   (at level 0 only, which is what isChildElement checks), then we need to add a new family tree
 
-      bool ALLOW_MULTI_LEVEL = true;
-
-      if ( (!ALLOW_MULTI_LEVEL && (parent_to_family_tree_relations.size() == 0 ) ) ||
-           ( ALLOW_MULTI_LEVEL && (parent_to_family_tree_relations.size() == 0 || (parent_to_family_tree_relations.size() == 1 && eMesh.isChildElement(parent_elem))) )
-           )
+      if (parent_to_family_tree_relations.size() == 0 || (parent_to_family_tree_relations.size() == 1 && eMesh.isChildElement(parent_elem) ) )
         {
           stk::mesh::PartVector add(1, &eMesh.getFEM_meta_data()->universal_part());
 
-          if (0 && ALLOW_MULTI_LEVEL)
+          // explanation: we want to avoid the above use of BulkData::generate_new_entities due to the parallel comm required, so we
+          //   use the parent_id for the familty_tree_id.
+          // there are two types of family tree uses, one for 
+          //   the first level of parent/child (FAMILY_TREE_LEVEL_0) and one that holds a child that now is a parent (FAMILY_TREE_LEVEL_1)
+          //
+          // Since we know that the parent_id is unique across processors, we can use it for the family tree
+          //   and guarantee uniqueness of family tree id's across processors.
+          stk::mesh::EntityId parent_id = parent_elem.identifier();
+          stk::mesh::EntityId family_tree_id = parent_id;
+
+          // FIXME
+          if (parent_elem.entity_rank() != eMesh.element_rank())
             {
-              std::vector<stk::mesh::Entity *> new_ft;
-              eMesh.createEntities( FAMILY_TREE_RANK, 1, new_ft);
-              family_tree = new_ft[0];
-            }
-          else
-            {
-              // explanation: we want to avoid the above use of BulkData::generate_new_entities due to the parallel comm required, so we
-              //   use a bit at the high end of EntityId to differentiate between the two types of family trees, the one that holds
-              //   the first level of parent/child (FAMILY_TREE_LEVEL_0) and one that holds a child that now is a parent (FAMILY_TREE_LEVEL_1)
-              //
-              // Since we know that the parent_id is unique across processors, we can use it for the family tree (and add the bit for the
-              //   second type of family tree) and guarantee uniqueness of family tree id's across processors.
-              stk::mesh::EntityId parent_id = parent_elem.identifier();
-              stk::mesh::EntityId family_tree_id = parent_id;
-              if (parent_to_family_tree_relations.size() == 1) 
-                //if (parent_to_family_tree_relations.size() == 0) 
-                {
-                  if (sizeof(stk::mesh::EntityId) < 8u)
-                    {
-                      throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations: EntityId not large enough on this platform.");
-                    }
-                  //stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
-                  //family_tree_id = family_tree_id | (bit << 60);  // actual
-                  //std::cout << "FAMILY_TREE_MAX_ENTITY_FOR_SHIFT= " << FAMILY_TREE_MAX_ENTITY_FOR_SHIFT << std::endl;
-                  //exit(123);
-                  // tmp for readability
-                  family_tree_id = family_tree_id + FAMILY_TREE_MAX_ENTITY_FOR_SHIFT; //1e15
-                  
-#if DEBUG_MULTI_LEVEL
-                  std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
-#endif
-                }
+              stk::mesh::EntityId FT_SHIFT_SIDE = 100000000000ull;
+              if (family_tree_id > FT_SHIFT_SIDE) 
+                throw std::logic_error("FT_SHIFT_SIDE error in set_parent_child_relations");
+              family_tree_id += FT_SHIFT_SIDE;
               //std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
-              family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
             }
+
+
+#if DEBUG_MULTI_LEVEL
+          if (parent_to_family_tree_relations.size() == 1) 
+            {
+              std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
+            }
+#endif
+          //unsgined FT_SHIFT = 100000000u;
+          unsigned FT_SHIFT = 0u;
+          family_tree_id += FT_SHIFT;
+
+          family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
 
           // make the parent be the first relation; children are at the end
           // from->to
 #if DEBUG_MULTI_LEVEL
           std::cout << "tmp super->parent " << family_tree->identifier() << " -> " << parent_elem.identifier() << " " << parent_elem << std::endl;
 #endif
-          eMesh.getBulkData()->declare_relation(*family_tree, parent_elem, 0u);
+          eMesh.getBulkData()->declare_relation(*family_tree, parent_elem, FAMILY_TREE_PARENT);
           //eMesh.getBulkData()->declare_relation( parent_elem, *family_tree, ptft_size-1);
           parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
 
@@ -241,7 +233,7 @@ namespace stk {
           //family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
           family_tree = parent_to_family_tree_relations[parent_elem_ft_level_0].entity();
         }
-      else if (ALLOW_MULTI_LEVEL && parent_to_family_tree_relations.size() == 2)
+      else if (parent_to_family_tree_relations.size() == 2)
         {
           //VERIFY_OP_ON(family_tree, !=, 0,"err1");
           //VERIFY_OP_ON(family_tree, ==, parent_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity(),"err2");
@@ -277,8 +269,8 @@ namespace stk {
             {
               if (family_tree_relations[i].identifier() == (ordinal + 1))
                 {
-                  //throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal");
                   std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal" << std::endl;
+                  throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal");
                 }
             }
         }
@@ -286,17 +278,25 @@ namespace stk {
       eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
 
       // add all the nodes for ghosting purposes
-      if (0)
+      /** Explanation: child elements can be created in the aura that have nodes in the aura but aren't shared
+       *  which doesn't bring over parent/child relations to the other processors.  The code below adds relations
+       *  to all nodes of the parent elements thus providing necessary links that the closure code can follow to
+       *  gather parent/child relations and send to sharing procs.
+       */
+      bool workaround_shared_node_issue = true;
+      if (workaround_shared_node_issue)
         {
           
-          mesh::PairIterRelation elem_nodes = parent_elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
-          for (unsigned i = 0; i < elem_nodes.size(); i++)
+          mesh::PairIterRelation parent_elem_nodes = parent_elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < parent_elem_nodes.size(); i++)
             {
+              if (!stk::mesh::in_shared(*parent_elem_nodes[i].entity())) continue;
+                
               bool found = false;
               mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
               for (unsigned j = 0; j < ft_nodes.size(); j++)
                 {
-                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                  if (ft_nodes[j].entity() == parent_elem_nodes[i].entity())
                     {
                       found = true;
                       break;
@@ -304,18 +304,20 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.getBulkData()->declare_relation(*family_tree, *parent_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
-          elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
-          for (unsigned i = 0; i < elem_nodes.size(); i++)
+          stk::mesh::PairIterRelation child_elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < child_elem_nodes.size(); i++)
             {
+              if (!stk::mesh::in_shared(*child_elem_nodes[i].entity())) continue;
+
               bool found = false;
               mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
               for (unsigned j = 0; j < ft_nodes.size(); j++)
                 {
-                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                  if (ft_nodes[j].entity() == child_elem_nodes[i].entity())
                     {
                       found = true;
                       break;
@@ -323,10 +325,40 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.getBulkData()->declare_relation(*family_tree, *child_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
+
+          // check for second level and subsequent refinement
+          if (parent_to_family_tree_relations.size() == 2)
+            {
+              unsigned parent_elem_ft_level_0 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, parent_elem);
+              stk::mesh::Entity* family_tree_level_0 = parent_to_family_tree_relations[parent_elem_ft_level_0].entity();
+              
+              stk::mesh::PairIterRelation ft_level_0_nodes = family_tree_level_0->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)
+                {
+                  if (!stk::mesh::in_shared(*ft_level_0_nodes[i].entity())) continue;
+
+                  bool found = false;
+                  mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+                  for (unsigned j = 0; j < ft_nodes.size(); j++)
+                    {
+                      if (ft_nodes[j].entity() == ft_level_0_nodes[i].entity())
+                        {
+                          found = true;
+                          break;
+                        }
+                    }
+                  if (!found)
+                    {
+                      eMesh.getBulkData()->declare_relation(*family_tree, *ft_level_0_nodes[i].entity(), ft_nodes.size());
+                    }
+                }
+            }
+
         }
+
 
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
 #endif

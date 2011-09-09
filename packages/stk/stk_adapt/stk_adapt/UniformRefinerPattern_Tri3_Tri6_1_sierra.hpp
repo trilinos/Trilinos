@@ -41,6 +41,11 @@ namespace stk {
 
       }
 
+      ~UniformRefinerPattern()
+      {
+        if (m_edge_breaker) delete m_edge_breaker;
+      }
+
 
       virtual void doBreak() {}
 

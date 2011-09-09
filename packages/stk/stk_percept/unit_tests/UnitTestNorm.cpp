@@ -93,7 +93,7 @@ struct LocalFixture
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
 	
-    eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+    eMesh.newMesh(GMeshSpec(config_mesh));
     eMesh.commit();
     return 1;
   }
@@ -579,7 +579,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
 	
-    eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
+    eMesh.newMesh(GMeshSpec(config_mesh));
 
     eMesh.commit();
   }

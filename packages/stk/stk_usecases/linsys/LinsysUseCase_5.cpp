@@ -96,6 +96,7 @@ bool use_case_5_driver( MPI_Comm comm ,
     // Declare the mesh meta data: element blocks and associated fields
 
     stk::mesh::fem::FEMMetaData fem_meta(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim) ) ;
+    Ioss::Init::Initializer init_db;
 
     stk::mesh::MetaData & mesh_meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
 
@@ -333,7 +334,6 @@ bool use_case_5_driver( MPI_Comm comm ,
     {
       const std::string out_filename("mesh.e");
 
-      Ioss::Init::Initializer init_db;
       stk::io::MeshData mesh;
       stk::io::create_output_mesh(out_filename, comm, mesh_bulk_data, mesh);
       stk::io::define_output_fields(mesh, fem_meta);

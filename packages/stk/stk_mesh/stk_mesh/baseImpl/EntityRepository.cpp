@@ -159,7 +159,7 @@ Bucket * EntityRepository::get_entity_bucket( Entity & e ) const
   return e.m_entityImpl.bucket_ptr();
 }
 
-void EntityRepository::destroy_relation( Entity & e_from,
+bool EntityRepository::destroy_relation( Entity & e_from,
                                          Entity & e_to,
                                          const RelationIdentifier local_id )
 {
@@ -182,6 +182,8 @@ void EntityRepository::destroy_relation( Entity & e_from,
     e_to.m_entityImpl.log_modified_and_propagate();
     e_from.m_entityImpl.log_modified_and_propagate();
   }
+
+  return caused_change_fwd;
 }
 
 void EntityRepository::declare_relation( Entity & e_from,

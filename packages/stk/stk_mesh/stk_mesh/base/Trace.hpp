@@ -13,16 +13,24 @@
 // with tracing with: 'bake -c ; bake <product> cxxflags=-DSTK_MESH_TRACE_ENABLED'
 // You'll need to be sure you link with stk_util/use_cases.
 //
+// If a macro is setting up your main function, be sure to use STKUNIT_WITH_TRACING_MAIN.
+// If you're setting up the main function yourself, be sure to set up the
+// environment with UseCaseEnvironment.
+//
+// You'll probably want to add the "--pout" argument so that each processor
+// produces it's own trace file.
+//
 // (Diag|Trace)If will produce diag/trace output if the given PrintMask is
 // activated.
 //
 // (Diag|Trace)IfWatching will produce diag/trace output if the given key is in
 // the watch list AND the given PrintMask is activated.
 //
-// A common idiom for code that wants tracing (put this code in your main):
-//   stk::mesh::setStream(use_case::dwout().rdbuf());
+// A common pattern for code that wants tracing (put this code somewhere before
+// the code you want to trace).
+//   stk::mesh::setStream(use_case::dwout());
 //   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
-//   stk::mesh::watch(stk::mesh::EntityKey(0, 11));
+//   stk::mesh::watch(stk::mesh::EntityKey(0, 11)); // Node 11
 //   stk::diag::Trace::addTraceFunction("stk::mesh::");
 //
 // Other common items to watch are Parts, Buckets, and Fields

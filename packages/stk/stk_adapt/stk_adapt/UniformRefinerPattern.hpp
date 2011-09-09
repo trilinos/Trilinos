@@ -70,7 +70,9 @@ namespace stk {
   namespace adapt {
 
     using std::vector;
-    using namespace stk::percept;
+    //using namespace stk::percept;
+
+    using shards::CellTopology;
 
     typedef std::vector<std::vector<std::string> > BlockNamesType;
     typedef std::map<std::string, std::string> StringStringMap;
@@ -142,6 +144,9 @@ namespace stk {
           base_topo_key_wedge15    = shards::Wedge<15>::key,
           */
 
+          base_s_beam_2_key       = shards::Beam<2>::key,
+          base_s_beam_3_key       = shards::Beam<3>::key,
+
           base_s_shell_line_2_key = shards::ShellLine<2>::key,
           base_s_shell_line_3_key = shards::ShellLine<3>::key,
           base_s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
@@ -178,6 +183,7 @@ namespace stk {
 
       virtual unsigned getFromTypeKey()=0;
       virtual const CellTopologyData * const getFromTopology()=0;
+      virtual const CellTopologyData * const getToTopology()=0;
 
 
       stk::mesh::EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
@@ -271,22 +277,29 @@ namespace stk {
         return x;
       }
 
-      static int getTopoDim(CellTopology& cell_topo)
+      static int getTopoDim(shards::CellTopology& cell_topo)
       {
         int topoDim = cell_topo.getDimension();
         unsigned cell_topo_key = cell_topo.getKey();
 
-        if (cell_topo_key == base_s_shell_line_2_key || cell_topo_key == base_s_shell_line_3_key)
+        switch (cell_topo_key)
           {
+          case base_s_shell_line_2_key:
+          case base_s_shell_line_3_key:
+          case base_s_beam_2_key:
+          case base_s_beam_3_key:
             topoDim = 1;
+            break;
+            
+          case base_s_shell_tri_3_key: 
+          case base_s_shell_tri_6_key: 
+          case base_s_shell_quad_4_key: 
+          case base_s_shell_quad_9_key: 
+          case base_s_shell_quad_8_key: 
+            topoDim = 2;
+            break;
           }
 
-        else if (cell_topo_key == base_s_shell_tri_3_key || cell_topo_key == base_s_shell_tri_6_key ||
-                 cell_topo_key == base_s_shell_quad_4_key || cell_topo_key == base_s_shell_quad_9_key ||
-                 cell_topo_key == base_s_shell_quad_8_key )
-          {
-            topoDim = 2;
-          }
         return topoDim;
       }
 
@@ -345,6 +358,7 @@ namespace stk {
       // return the type of element this pattern can refine
       virtual unsigned getFromTypeKey() { return fromTopoKey; }
       virtual const CellTopologyData * const getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
+      virtual const CellTopologyData * const getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)
@@ -355,7 +369,7 @@ namespace stk {
 #define EXPRINT 0
 
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData<FromTopology>();
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
 
         std::ostringstream graph_str;
 
@@ -588,7 +602,7 @@ namespace stk {
           }
       }
 
-      void interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, CellTopology& cell_topo,
+      void interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                                MDArray& output_pts, stk::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
       {
         int fieldStride = output_pts.dimension(1);
@@ -635,7 +649,7 @@ namespace stk {
 
         unsigned *null_u = 0;
 
-        CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+        shards::CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
 
         // FIXME - need topo dimensions here
         int topoDim = getTopoDim(cell_topo);
@@ -844,7 +858,7 @@ namespace stk {
 
         static vector<quadratic_type> elems(NumNewElements_Enrich);
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;
@@ -1005,7 +1019,7 @@ namespace stk {
        *
        *  Get sub-dim cell's nodes from NodeRegistry (actual_node array); or just sort them into a set
        *  Get parent element's sub-dim cell nodes from element->subcell[dim][ord].node
-       *  Get permutation using findPermutation(cell_topo, parent->subcell[dim][ord].node, subdim_cell_sorted_nodes)
+       *  Get permutation using shards::findPermutation(cell_topo, parent->subcell[dim][ord].node, subdim_cell_sorted_nodes)
        *
        *
        *  Then <b> ParentCell.node(K) == SubCell.node(I) </b> where:
@@ -1016,7 +1030,7 @@ namespace stk {
 
       */
 
-      int getPermutation(int num_verts, stk::mesh::Entity& element, CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
+      int getPermutation(int num_verts, stk::mesh::Entity& element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
       {
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
@@ -1104,7 +1118,7 @@ namespace stk {
               }
 
             //! now we have a set of nodes in the right order, use Shards to get the actual permutation
-            perm = findPermutation(cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
+            perm = shards::findPermutation(cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
                                               &vector_sdcell_global_baseline[0], &subCell_from_element[0]);
 
             //std::cout << "tmp perm = " << perm << std::endl;
@@ -1158,7 +1172,7 @@ namespace stk {
         static vector<refined_element_type> elems;
         elems.resize(getNumNewElemPerElem());
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
         bool isLinearElement = Util::isLinearElement(cell_topo);
 
         // SPECIAL CASE ALERT  FIXME
@@ -1961,10 +1975,11 @@ namespace stk {
           {
             rank_of_subcell = 1;
             // SPECIAL CASE
-            if (cell_topo.getKey() == shards::Beam<2>::key ||
-                cell_topo.getKey() == shards::Beam<3>::key )
+            if (cell_topo.getKey() == base_s_beam_2_key ||
+                cell_topo.getKey() == base_s_beam_3_key)
               {
-                rank_of_subcell = 3;
+                //rank_of_subcell = 3;   // wrong - see UniformRefinerPattern_Beam2_Beam2_2_sierra.hpp and ...Beam3...
+                rank_of_subcell = 1;   // wrong - see UniformRefinerPattern_Beam2_Beam2_2_sierra.hpp and ...Beam3...
               }
             return;
           }
@@ -2267,7 +2282,7 @@ namespace stk {
       {
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< ToTopology >();
 
-        CellTopology cell_topo(cell_topo_data);
+        shards::CellTopology cell_topo(cell_topo_data);
 
         //std::cout << "toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
         //std::cout << "toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
@@ -2402,6 +2417,27 @@ namespace stk {
                           bool sameTopology=true)
       {
         EXCEPTWATCH;
+
+        // a part to hold new nodes
+        if (0)  // FIXME - this is causing an exception in parallel runs, why?
+          {
+            stk::mesh::Part* new_nodes_part = eMesh.getNonConstPart("refine_new_nodes_part");
+            if (!new_nodes_part)
+              {
+                eMesh.getFEM_meta_data()->declare_part("refine_new_nodes_part", mesh::fem::FEMMetaData::NODE_RANK);
+              }
+          }
+
+        // a part to hold active elements (i.e. leaf elements)
+        if (0)
+          {
+            stk::mesh::Part* active_elements_part = eMesh.getNonConstPart("refine_active_elements_part");
+            if (!active_elements_part)
+              {
+                eMesh.getFEM_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+              }
+          }
+
         if (block_names_ranks.size() == 0)
           {
             block_names_ranks.resize(stk::percept::EntityRankEnd);
@@ -2802,6 +2838,50 @@ namespace stk {
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
 
+//DPM adding enum for use in initializing empty UniformRefiner objects
+enum Pattern 
+	{
+	 LINE2_LINE2_2,
+	 BEAM2_BEAM2_2,
+	 SHELLLINE2_SHELLLINE2_2,
+	 SHELLLINE3_SHELLLINE3_2,
+	 QUAD4_QUAD4_4_OLD,
+	 QUAD4_QUAD4_4,
+	 QUAD4_QUAD4_4_SIERRA,
+	 TRI3_TRI3_4,
+	 SHELLTRI3_SHELLTRI3_4,
+	 SHELLTRI6_SHELLTRI6_4,
+	 SHELLQUAD4_SHELLQUAD4_4,
+	 SHELLQUAD8_SHELLQUAD8_4,
+	 TET4_TET4_8,
+	 HEX8_HEX8_8, 
+	 WEDGE6_WEDGE6_8,
+	 LINE3_LINE3_2,
+	 BEAM3_BEAM3_2,
+	 TRI6_TRI6_4,
+	 QUAD9_QUAD9_4,
+	 QUAD8_QUAD8_4,
+	 HEX27_HEX27_8,
+	 HEX20_HEX20_8,
+	 TET10_TET10_8,
+	 WEDGE15_WEDGE15_8,
+	 WEDGE18_WEDGE18_8,
+	 QUAD4_QUAD9_1,
+	 QUAD4_QUAD8_1,
+	 BEAM2_BEAM3_1,
+	 SHELLQUAD4_SHELLQUAD8_1,
+	 TRI3_TRI6_1,
+	 TET4_TET10_1,
+	 HEX8_HEX27_1,
+	 HEX8_HEX20_1,
+	 WEDGE6_WEDGE15_1,
+	 WEDGE6_WEDGE18_1,
+	 QUAD4_TRI3_2,
+	 QUAD4_TRI3_4,
+	 QUAD4_TRI3_6,
+	 HEX8_TET4_24,
+	 HEX8_TET4_6_12
+	};
     typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
 
   }

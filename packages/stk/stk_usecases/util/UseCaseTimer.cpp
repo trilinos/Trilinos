@@ -12,9 +12,7 @@
 #include <cmath>
 #include <unistd.h>
 
-#ifdef HAVE_MPI
-#  include <mpi.h>
-#endif
+#include <mpi.h>
 
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -291,50 +289,30 @@ use_case_timer(
         object_vector[j].run();
 
     out() << "Object tree 100 more times, parallel collected output (checkpointed)" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
-#endif
+
     out() << "Object tree, parallel collected output (not checkpointed)" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
-#endif
+
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS);
     
     out() << "Object tree, parallel collected output (not checkpointed), seconds" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
-#endif
+
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS);
     
     out() << "Object tree, parallel collected output (not checkpointed), seconds and milliseconds" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
-#endif
+
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS);
     
     out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
-#endif
 
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS);
     
     out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss.mmm" << std::endl;
-#ifdef  HAVE_MPI   
     stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
-#else
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
-#endif
   }
 
   return 0;

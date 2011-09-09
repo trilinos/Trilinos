@@ -11,13 +11,13 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-
+#include <stk_mesh/base/Iterators.hpp>
 
 namespace stk {
 namespace mesh {
 namespace impl {
 
-  class EntityRepository;
+class EntityRepository;
 
 class BucketRepository {
 public:
@@ -86,6 +86,16 @@ public:
 
   void internal_propagate_relocation( Entity & );
 
+  AllBucketsRange get_bucket_range() const
+  {
+    return stk::mesh::get_bucket_range(m_buckets);
+  }
+
+  AllBucketsRange get_bucket_range(EntityRank entity_rank) const
+  {
+    std::vector< std::vector<Bucket*> >::const_iterator itr = m_buckets.begin() + entity_rank;
+    return stk::mesh::get_bucket_range(m_buckets, itr);
+  }
 
 private:
   BucketRepository();

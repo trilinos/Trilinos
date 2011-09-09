@@ -21,21 +21,20 @@
 #include <stk_util/environment/WallTime.hpp>
 
 // Only run tests for GCC 4 for now
-#if __GNUC__ == 4
-#ifndef __ICC
+// altix preprocessor variables are bizzare: defines __GNUC__, does not define __ICC even though it's intel
+#if __GNUC__ == 4 && !defined __itanium__ && !defined __ICC
 
 #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD 1
 #define FLAG_EASTL_HASH_MAP 0
 #define FLAG_RDESTL_HASH_MAP 0
 #if defined(__PGI) || defined(__PATHSCALE__)
-  #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0
   #define FLAG_GOOGLE_SPARSE_HASH_MAP 0
   #define FLAG_GOOGLE_DENSE_HASH_MAP 0
 #else
-  #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 1
   #define FLAG_GOOGLE_SPARSE_HASH_MAP 1
   #define FLAG_GOOGLE_DENSE_HASH_MAP 1
 #endif
+#define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 1
 #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST 1
 #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE 0
 
@@ -50,7 +49,8 @@
 
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE
   #include <ostream>
-  #include <stk_util/util/Hashtable_Teuchos.hpp>
+  #include <Teuchos_Hashtable.hpp>
+  using Teuchos::Hashtable;
 #endif
 
 #if FLAG_EASTL_HASH_MAP
@@ -85,7 +85,7 @@ using stk::mesh::Entity;
 
 namespace {
 
-const int NUM_KEYS = 20000000;
+const int NUM_KEYS = 10000000;
 
 // Generic performance test
 template<class MapType>
@@ -94,19 +94,42 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   std::cout << "For " << mapname << std::endl;
 
   // Populate map
+  double start_time = stk::wall_time();
   for (int i = 0; i < iters ; ++i) {
     testmap[EntityKey(1,i)] = i;
   }
+  double timing0 = stk::wall_dtime(start_time);
+  std::cout << mapname << "\ttiming map growth: \t"  << timing0 << " s" << std::endl;
 
-  // Time item lookup
-  double start_time = stk::wall_time();
+  // Time item lookup - sequential
+  start_time = stk::wall_time();
   int counter_to_fool_optimizer = 0;
   for (int i = 0; i < iters; ++i) {
     counter_to_fool_optimizer += testmap[EntityKey(1,i)];
   }
   double timing = stk::wall_dtime(start_time);
+  std::cout << mapname << "\tsequential timing map lookups: \t"  << timing << " s" << std::endl;
 
-  std::cout << "\ttiming map lookups: \t"  << timing << " s" << std::endl;
+  //
+  // Time item lookup - random
+  //
+
+  // Create list of random ids; pulls the cost of rand and modulo out of the timed section
+  int* num_array = new int[iters];
+  for (int i=0; i < iters; i++ ) {
+    num_array[i] = std::rand() % NUM_KEYS;
+  }
+
+  // Do random key lookups
+  start_time = stk::wall_time();
+  counter_to_fool_optimizer = 0;
+  for (int i = 0; i < iters; ++i) {
+    counter_to_fool_optimizer += testmap[EntityKey(1,num_array[i])];
+  }
+  double timing2 = stk::wall_dtime(start_time);
+  delete[] num_array;
+
+  std::cout << mapname << "\trandom timing map lookups: \t"  << timing2 << " s" << std::endl;
 
   // Code to fool optimizer
   if (counter_to_fool_optimizer == 666) std::cout << "";
@@ -235,10 +258,12 @@ STKUNIT_UNIT_TEST( PerformanceTestTimingMaps, boostmap)
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE
 STKUNIT_UNIT_TEST( PerformanceTestTimingMaps, teuchosmap)
 {
-  typedef Teuchos::Teuchos_Hashtable<EntityKey, int > EntityMap;
+  typedef Teuchos::Hashtable<EntityKey, int > EntityMap;
   EntityMap testmap;
+  EntityMap testmap2;
 
   time_map(testmap, NUM_KEYS, "teuchos map");
+  time_map2(testmap2, NUM_KEYS, "teuchos map");
 }
 #endif // end of teuchos map
 
@@ -299,12 +324,11 @@ STKUNIT_UNIT_TEST( PerformanceTestTimingMaps, rdestlmap)
   typedef rde::hash_map< EntityKey, int, stk_entity_rep_hash, 6, rde::equal_to<EntityKey> > EntityMap;
 
   EntityMap testmap;
-
   time_map(testmap, NUM_KEYS, "rdestl map");
 }
 #endif //end of rdestl map
 
 }//namespace <anonymous>
 
-#endif // not intel
 #endif // GCC 4
+

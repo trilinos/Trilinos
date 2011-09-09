@@ -1,6 +1,7 @@
 #ifndef stk_expreval_Variable_hpp
 #define stk_expreval_Variable_hpp
 
+#include <iostream>
 #include <string>
 #include <limits>
 #include <algorithm>
@@ -367,12 +368,13 @@ private:
 
     /**
      * @brief Member function <b>resolve</b> implements the default resolvers
-     * function, whihc does nothing.  I.E. lets the local variable values stand.
+     * function, which does nothing.  I.E. lets the local variable values stand.
      *
      * @param it		a <b>VariableMap::iterator</b> variable ...
      */
     virtual void resolve(VariableMap::iterator &it)
     {}
+    
   };
 
 public:
@@ -432,7 +434,7 @@ public:
   }
 
 private:
-  Resolver &		m_resolver;		///< Reference to this variabl map name resolver
+  Resolver &		m_resolver;		///< Reference to this variable map name resolver
 };
 
 } // namespace expreval

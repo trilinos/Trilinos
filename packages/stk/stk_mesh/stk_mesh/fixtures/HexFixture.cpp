@@ -33,6 +33,7 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
     m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) ),
     m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm ),
     m_hex_part( fem::declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
+    m_node_part( m_fem_meta.declare_part("node_part", m_fem_meta.node_rank() ) ),
     m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") ),
     m_coord_gather_field(m_fem_meta.declare_field<CoordGatherFieldType>("GatherCoordinates"))
 {
@@ -121,6 +122,9 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
   {
     // Declare the elements that belong on this process
 
+    PartVector add_parts;
+    add_parts.push_back(&m_node_part);
+
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
@@ -143,6 +147,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       for (unsigned i = 0; i<8; ++i) {
         stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
+        m_bulk_data.change_entity_parts(*node, add_parts);
 
         ThrowRequireMsg( node != NULL,
           "This process should know about the nodes that make up its element");

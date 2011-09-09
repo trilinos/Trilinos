@@ -188,7 +188,7 @@ void BulkData::declare_relation( Entity & entity ,
 
 //----------------------------------------------------------------------
 
-void BulkData::destroy_relation( Entity & e_from ,
+bool BulkData::destroy_relation( Entity & e_from ,
                                  Entity & e_to,
                                  const RelationIdentifier local_id )
 {
@@ -262,7 +262,7 @@ void BulkData::destroy_relation( Entity & e_from ,
   }
 
   //delete relations from the entities
-  m_entity_repo.destroy_relation( e_from, e_to, local_id);
+  return m_entity_repo.destroy_relation( e_from, e_to, local_id);
 }
 
 //----------------------------------------------------------------------

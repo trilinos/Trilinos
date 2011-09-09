@@ -169,10 +169,10 @@ public:
 
   /** \} */
   //------------------------------------
-  /** \name  Entity-types
+  /** \name  Entity-ranks
    *  \{
    */
-  /** \brief Query entity-type names
+  /** \brief entity-rank names
    *
    */
   void set_entity_rank_names(const std::vector<std::string> &entity_rank_names);

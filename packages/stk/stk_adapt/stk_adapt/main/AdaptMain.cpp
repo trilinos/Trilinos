@@ -26,6 +26,9 @@
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/util/MallocUsed.h>
+
+#include <stk_mesh/base/MemoryUsage.hpp>
 
 #include <stk_adapt/RefinerUtil.hpp>
 
@@ -41,6 +44,64 @@ extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
 namespace stk { 
 
   namespace adapt {
+
+    static void memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
+    {
+      size_t malloc_used_0 = malloc_used();
+      size_t malloc_footprint_0 = malloc_footprint();
+      size_t malloc_max_footprint_0 = malloc_max_footprint();
+      size_t MB = 1024*1024;
+
+      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_used_0 ) );
+      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_footprint_0 ) );
+      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_max_footprint_0 ) );
+
+      stk::mesh::MemoryUsage mem_usage;
+      stk::mesh::compute_memory_usage(bulkData, mem_usage);
+
+      unsigned node_reg_mem = 0;
+      if (node_reg) 
+        node_reg_mem = node_reg->get_memory_usage();
+      unsigned node_reg_mem_sum = node_reg_mem;
+      unsigned node_reg_mem_max = node_reg_mem;
+      stk::all_reduce( comm, stk::ReduceSum<1>( &node_reg_mem_sum ) );
+      stk::all_reduce( comm, stk::ReduceMax<1>( &node_reg_mem_max ) );
+
+      size_t mem_total_bytes_sum = mem_usage.total_bytes;
+      size_t mem_total_bytes_max = mem_usage.total_bytes;
+      stk::all_reduce( comm, stk::ReduceSum<1>( &mem_total_bytes_sum ) );
+      stk::all_reduce( comm, stk::ReduceMax<1>( &mem_total_bytes_max ) );
+      if (bulkData.parallel_rank() == 0)
+        {
+#if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
+          std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2'.  Printing zeros..." << std::endl;
+#endif
+
+          if (dump_level > 1)
+
+            {
+              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump stk_mesh counted memory usage at stage [" << msg << "] " 
+                " parallel sum, max memory [MB]= " << ((double)mem_total_bytes_sum)/MB << " , " << ((double)mem_total_bytes_max)/MB << std::endl;
+              if (dump_level > 2)
+                stk::mesh::print_memory_usage(mem_usage, std::cout);
+
+              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump malloc_used total (sum all proc) at stage [" << msg << "] = " 
+                        << " malloc_used malloc_footprint malloc_max_footprint [MB]= " << ((double)malloc_used_0)/MB 
+                        << " , " << ((double)malloc_footprint_0)/MB 
+                        << " , " << ((double)malloc_max_footprint_0)/MB 
+                        << std::endl;
+            }
+          
+          {
+            std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum/max], NodeRegistry [sum/max], ptmalloc[sum/max] [MB] "
+                      << ((double)mem_total_bytes_sum)/MB << " , " 
+                      << ((double)node_reg_mem_sum)/MB << " , " 
+                      << ((double)malloc_used_0)/MB 
+                      << std::endl;
+          }
+
+        }
+    }
 
     //extern void test_memory(int, int);
     void test_memory(percept::PerceptMesh& eMesh, int n_elements, int n_nodes)
@@ -114,9 +175,9 @@ namespace stk {
     {
       std::cout << "AdaptMain::print_simple_usage number of arguments = " << argc << std::endl;
       for (int i = 0; i < argc; i++)
-      {
-        std::cout << "AdaptMain::print_simple_usage arg[" << i << "]= " << argv[i] << std::endl;
-      }
+        {
+          std::cout << "AdaptMain::print_simple_usage arg[" << i << "]= " << argv[i] << std::endl;
+        }
       std::cout << "usage: exe_name [convert|enrich|refine] input_file_name [output_file_name] [number_refines]" << std::endl;
     }
 
@@ -176,7 +237,7 @@ namespace stk {
 
       bool isInt = false;
       try {
-         nref = boost::lexical_cast<int>(number_refines);
+        nref = boost::lexical_cast<int>(number_refines);
         isInt = true;
       }
       catch( ... ) 
@@ -284,6 +345,7 @@ namespace stk {
       int progress_meter = 0;
       int smooth_geometry = 0;
       int delete_parents = 1;
+      int print_memory_usage = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -340,6 +402,7 @@ namespace stk {
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
       run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
+      run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage        , "print memory usage");
 
       run_environment.processCommandLine(&argc, &argv);
 
@@ -433,11 +496,13 @@ namespace stk {
 
         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
         if (proc_rank_field)
-        {
-          proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-        }
+          {
+            proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+          }
 
         eMesh.commit();
+        if (print_memory_usage)
+          memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
 
         if (test_memory_nodes && test_memory_elements)
           {
@@ -497,7 +562,7 @@ namespace stk {
                   }
                 //breaker.setPassNumber(iBreak);
                 breaker.doBreak();
-		//RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
+                //RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
                 if (!eMesh.getRank())
                   {
                     std::cout << std::endl;
@@ -506,7 +571,9 @@ namespace stk {
                     RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
                     std::cout << std::endl;
                   }
-                
+                if (print_memory_usage)
+                  memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                              std::string("after refine pass: ")+toString(iBreak));
               }
             if (delete_parents)
               breaker.deleteParentElements();
@@ -514,11 +581,14 @@ namespace stk {
             t1 =  stk::wall_time(); 
             cpu1 = stk::cpu_time();
 
-	    stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
-	    std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+            stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
+            std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
             eMesh.saveAs(output_mesh);
-	    stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
-	    std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+            stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
+            std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+
+            if (print_memory_usage)
+              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(), "after final save mesh");
 
           }
 

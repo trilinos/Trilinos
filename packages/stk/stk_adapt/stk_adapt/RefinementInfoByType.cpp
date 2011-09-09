@@ -38,10 +38,13 @@ namespace stk {
 
       stk::PrintTable table;
       table.setTitle("Refinement Info\n");
+      //table.setAutoEndCol(false);
 
-      table << "|" << "Element Topology Type" << "|"
-            << "Original Number of Elements or Nodes" << "|" << "New Number of Elements or Nodes" << "|"
-            << stk::end_header;
+      table << "|" << "                     " <<  "|" << justify(PrintTable::Cell::CENTER) 
+        << "Original" << stk::end_col << "     " << "|" << "New     " << stk::end_col << "     " << "|" << stk::end_header;
+      //    << stk::span << "Original"  << "|" << stk::span << "New     "  << "|" << stk::end_header;
+      table << justify(PrintTable::Cell::LEFT) ;
+      table << "|" << "Element Topology Type" <<  "|" << "Elements" << stk::end_col << "Nodes" << "|" << "Elements" << stk::end_col << "Nodes" << "|" << stk::end_header;
 
       for (unsigned irank = 0; irank < refinementInfoByType.size(); irank++)
         {
@@ -60,21 +63,24 @@ namespace stk {
             }
 
           table << "|" << refinementInfoByType[irank].m_topology.getName() << "|"
-                << numOrig << "|"
-                << numNew << "|"
+                << numOrig << stk::end_col << " " << "|"
+                << numNew  << stk::end_col << " " << "|"
+            //                 << numOrig << stk::end_col << numOrigNodes << "|"
+            //                 << numNew  << stk::end_col << numNewNodes << "|"
                 << stk::end_row;
         }
 
-      table << "|" << "Element Totals" << "|"
-            << numOrigTot << "|"
-            << numNewTot << "|"
+      table << "|" << "Totals" << "|"
+            << numOrigTot << stk::end_col << numOrigNodes << "|"
+            << numNewTot  << stk::end_col << numNewNodes << "|"
             << stk::end_row;
 
+#if 0
       table << "|" << "Node Totals" << "|"
             << numOrigNodes << "|"
             << numNewNodes << "|"
             << stk::end_row;
-
+#endif
 
       os << "\n" << table;
     }

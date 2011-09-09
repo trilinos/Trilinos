@@ -31,14 +31,12 @@ namespace stk {
 	// Used to maintain state between the meta data and bulk data
 	// portions of the mesh generation process for use cases.
       public:
-	MeshData() : m_region(NULL),
-		     m_generateSkinFaces(false)
+	MeshData() : m_region(NULL)
 	{}
 
 	~MeshData();
 	Ioss::Region *m_region;
 	std::vector<stk::io::util::Gear*> m_gears;
-	bool m_generateSkinFaces;
 
       private:
 	MeshData(const MeshData&); // Do not implement

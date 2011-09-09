@@ -101,8 +101,8 @@ bool use_case_7_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-
     stk::mesh::fem::FEMMetaData mesh_meta_data( SpatialDim ) ;
+    Ioss::Init::Initializer init_db;
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -307,7 +307,6 @@ bool use_case_7_driver( MPI_Comm comm ,
     {
       const std::string out_filename("mesh.e");
 
-      Ioss::Init::Initializer init_db;
       stk::io::MeshData mesh;
       stk::io::create_output_mesh(out_filename, comm, mesh_bulk_data, mesh);
       stk::io::define_output_fields(mesh, mesh_meta_data);

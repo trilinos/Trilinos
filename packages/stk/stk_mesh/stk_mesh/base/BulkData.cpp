@@ -28,7 +28,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {
@@ -232,33 +231,7 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
 
 //----------------------------------------------------------------------
 
-namespace {
-
 // TODO Change the methods below to requirements (private, const invariant checkers)
-
-// Returns false if there is a problem. It is expected that
-// verify_change_parts will be called if quick_verify_change_part detects
-// a problem, therefore we leave the generation of an exception to
-// verify_change_parts. We want this function to be as fast as
-// possible.
-inline bool quick_verify_change_part(const Entity& entity,
-                                     const Part* part,
-                                     const unsigned entity_rank,
-                                     const unsigned undef_rank)
-{
-  const unsigned part_rank = part->primary_entity_rank();
-
-  // The code below is coupled with the code in verify_change_parts. If we
-  // change what it means for a part to be valid, code will need to be
-  // changed in both places unfortunately.
-  const bool intersection_ok = part->intersection_of().empty();
-  const bool rel_target_ok   = ( part->relations().empty() ||
-                                 part != part->relations().begin()->m_target );
-  const bool rank_ok         = ( entity_rank == part_rank ||
-                                 undef_rank  == part_rank );
-
-  return intersection_ok && rel_target_ok && rank_ok;
-}
 
 // Do not allow any of the induced part memberships to explicitly
 // appear in the add or remove parts lists.
@@ -266,9 +239,9 @@ inline bool quick_verify_change_part(const Entity& entity,
 // 2) PartRelation target part
 // 3) Part that does not match the entity rank.
 
-void verify_change_parts( const MetaData   & meta ,
-                          const Entity     & entity ,
-                          const PartVector & parts )
+void BulkData::internal_verify_change_parts( const MetaData   & meta ,
+                                             const Entity     & entity ,
+                                             const PartVector & parts ) const
 {
   const std::vector<std::string> & rank_names = meta.entity_rank_names();
   const EntityRank undef_rank  = InvalidEntityRank;
@@ -317,102 +290,6 @@ void verify_change_parts( const MetaData   & meta ,
   }
 
   ThrowErrorMsgIf( !ok, msg.str() << "}" );
-}
-
-}
-
-void BulkData::change_entity_parts(
-  Entity & entity ,
-  const PartVector & add_parts ,
-  const PartVector & remove_parts )
-{
-  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
-
-  require_ok_to_modify();
-
-  require_entity_owner( entity , m_parallel_rank );
-
-  const EntityRank entity_rank = entity.entity_rank();
-  const EntityRank undef_rank  = InvalidEntityRank;
-
-  // Transitive addition and removal:
-  // 1) Include supersets of add_parts
-  // 2) Do not include a remove_part if it appears in the add_parts
-  // 3) Include subsets of remove_parts
-
-  // most parts will at least have universal and topology part as supersets
-  const unsigned expected_min_num_supersets = 2;
-
-  PartVector a_parts;
-  a_parts.reserve( add_parts.size() * (expected_min_num_supersets + 1) );
-  a_parts.insert( a_parts.begin(), add_parts.begin(), add_parts.end() );
-  bool quick_verify_check = true;
-
-  for ( PartVector::const_iterator
-        ia = add_parts.begin(); ia != add_parts.end() ; ++ia ) {
-    quick_verify_check = quick_verify_check &&
-      quick_verify_change_part(entity, *ia, entity_rank, undef_rank);
-    a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
-                                   (*ia)->supersets().end() );
-  }
-
-  order( a_parts );
-
-  PartVector r_parts ;
-
-  for ( PartVector::const_iterator
-        ir = remove_parts.begin(); ir != remove_parts.end() ; ++ir ) {
-
-    // The following guards should be in the public interface to
-    // changing parts.  However, internal mechanisms such as changing
-    // ownership calls this function to add or remove an entity from
-    // the three special parts.  Without refactoring, these guards
-    // cannot be put in place.
-    /*
-    ThrowErrorMsgIf( m_mesh_meta_data.universal_part() == **ir,
-                     "Cannot remove entity from universal part" );
-    ThrowErrorMsgIf( m_mesh_meta_data.locally_owned_part() == **ir,
-                     "Cannot remove entity from locally owned part" );
-    ThrowErrorMsgIf( m_mesh_meta_data.globally_shared_part() == **ir,
-                     "Cannot remove entity from globally shared part" );
-    */
-
-    quick_verify_check = quick_verify_check &&
-      quick_verify_change_part(entity, *ir, entity_rank, undef_rank);
-
-    if ( ! contain( a_parts , **ir ) ) {
-      r_parts.push_back( *ir );
-      for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
-            cur_part != (*ir)->subsets().end() ;
-            ++cur_part )
-        if ( entity.bucket().member ( **cur_part ) )
-          r_parts.push_back ( *cur_part );
-    }
-  }
-
-  order( r_parts );
-
-  // If it looks like we have a problem, run the full check and we should
-  // expect to see an exception thrown; otherwise, only do the full check in
-  // debug mode because it incurs significant overhead.
-  if ( ! quick_verify_check ) {
-    verify_change_parts( m_mesh_meta_data , entity , a_parts );
-    verify_change_parts( m_mesh_meta_data , entity , r_parts );
-    ThrowRequireMsg(false, "Expected throw from verify methods above.");
-  }
-  else {
-#ifndef NDEBUG
-    verify_change_parts( m_mesh_meta_data , entity , a_parts );
-    verify_change_parts( m_mesh_meta_data , entity , r_parts );
-#endif
-  }
-
-  internal_change_entity_parts( entity , a_parts , r_parts );
-
-  return ;
 }
 
 //----------------------------------------------------------------------

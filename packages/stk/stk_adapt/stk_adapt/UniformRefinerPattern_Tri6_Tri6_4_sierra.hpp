@@ -42,6 +42,11 @@ namespace stk {
 
       }
 
+      ~UniformRefinerPattern()
+      {
+        if (m_edge_breaker) delete m_edge_breaker;
+      }
+
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;

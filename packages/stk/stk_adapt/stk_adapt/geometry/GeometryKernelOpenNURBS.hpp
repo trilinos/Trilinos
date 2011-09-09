@@ -16,6 +16,11 @@ public:
     virtual std::string get_attribute(GeometryHandle geom);
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom);
+
+    virtual bool is_curve(GeometryHandle geom) const;
+
+    virtual bool is_surface(GeometryHandle geom) const;
+
 private:
     ONX_Model onModel;
 };

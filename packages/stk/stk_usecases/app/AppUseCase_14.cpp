@@ -271,7 +271,8 @@ bool use_case_14_driver(MPI_Comm comm,
 
     stk::mesh::PartVector hex_parts;
 
-    stk::mesh::fem::get_parts_with_topology<shards::Hexahedron<8> >(bulk_data, hex_parts);
+    bool skip_topology_root_parts = true;
+    stk::mesh::fem::get_parts_with_topology<shards::Hexahedron<8> >(bulk_data, hex_parts, skip_topology_root_parts);
 
     // Reference to all node and element buckets,
     // will select which ones we need later

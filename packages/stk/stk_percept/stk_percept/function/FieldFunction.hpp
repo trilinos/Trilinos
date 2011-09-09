@@ -88,11 +88,13 @@ namespace stk
                     Dimensions codomain_dimensions = Dimensions(),
                     SearchType searchType = SIMPLE_SEARCH,
                     unsigned integration_order = 0);
+
       FieldFunction(const char *name, mesh::FieldBase *field, PerceptMesh& eMesh,
-                    Dimensions domain_dimensions = Dimensions(),
-                    Dimensions codomain_dimensions = Dimensions(),
+                    Dimensions domain_dimensions, // = Dimensions(),
+                    Dimensions codomain_dimensions, // = Dimensions(),
                     SearchType searchType = SIMPLE_SEARCH,
                     unsigned integration_order = 0);
+
       virtual ~FieldFunction();
 
       virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);

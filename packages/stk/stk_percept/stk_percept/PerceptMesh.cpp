@@ -38,8 +38,8 @@ namespace stk {
     //std::string PerceptMesh::s_omit_part = "_urporig";
     std::string PerceptMesh::s_omit_part = "_uo";  // stk_io now lowercases everything
 
-    PerceptMesh::FieldCreateOrder::FieldCreateOrder() : m_name(), m_entity_rank(stk::mesh::fem::FEMMetaData::NODE_RANK), m_dimensions(), m_part(0) {}
-    PerceptMesh::FieldCreateOrder::FieldCreateOrder(const std::string name, const unsigned entity_rank,
+    FieldCreateOrder::FieldCreateOrder() : m_name(), m_entity_rank(stk::mesh::fem::FEMMetaData::NODE_RANK), m_dimensions(), m_part(0) {}
+    FieldCreateOrder::FieldCreateOrder(const std::string name, const unsigned entity_rank,
                                                    const std::vector<int> dimensions, const stk::mesh::Part* part)
       : m_name(name), m_entity_rank(entity_rank), m_dimensions(dimensions), m_part(part) {}
 
@@ -136,7 +136,11 @@ namespace stk {
         {
           throw std::runtime_error("stk::percept::Mesh::newMesh: mesh is already committed. Internal code error");
         }
-      init( m_comm);
+      m_ownData = false;
+      if (!m_isInitialized)
+        {
+          init( m_comm, true);
+        }
       create_metaDataNoCommit( gmesh_spec.getName() );
       m_isOpen = true;
       m_isCommitted = false;
@@ -163,7 +167,7 @@ namespace stk {
 
     /// add a field to the mesh
     stk::mesh::FieldBase * PerceptMesh::
-    addField(const std::string& name, const unsigned entity_rank, int vectorDimension, const std::string part_name)
+    addField(const std::string& name, unsigned int entity_rank, int vectorDimension, const std::string part_name)
     {
       if (m_isCommitted)
         {
@@ -288,7 +292,8 @@ namespace stk {
         stream << " Node = " << count[ 0 ] ;
         stream << " Edge = " << count[ 1 ] ;
         stream << " Face = " << count[ 2 ] ;
-        if (count.size() == 4) stream << " Elem = " << count[ 3 ] ;
+        if (count.size() >= 4) stream << " Elem = " << count[ 3 ] ;
+        if (count.size() >= 5) stream << " FamilyTree = " << count[ 4 ] ;
         stream << " }" << mendl ;
       }
 
@@ -315,7 +320,7 @@ namespace stk {
               }
               subsets += "}";
               stream << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                        << " topology = " << (topology?CellTopology(topology).getName():"null")
+                        << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
                         << " primary_entity_rank = " << part.primary_entity_rank()
                         << " subsets = " << subsets
                         << mendl;
@@ -340,7 +345,8 @@ namespace stk {
                 stream << " Node = " << count[ 0 ] ;
                 stream << " Edge = " << count[ 1 ] ;
                 stream << " Face = " << count[ 2 ] ;
-                if (count.size() == 4) stream << " Elem = " << count[ 3 ] ;
+                if (count.size() >= 4) stream << " Elem = " << count[ 3 ] ;
+                if (count.size() >= 5) stream << " FamilyTree = " << count[ 4 ] ;
                 stream << " }" << mendl ;
               }
             }
@@ -411,7 +417,7 @@ namespace stk {
             }
         }
 
-      if (print_level>1)
+      if (print_level > 5)
       {
         using std::vector;
         const vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank()  );
@@ -550,6 +556,26 @@ namespace stk {
         }
 
       return count[ element_rank() ];
+      //         std::cout << " Node = " << count[  0 ] ;
+      //         std::cout << " Edge = " << count[  1 ] ;
+      //         std::cout << " Face = " << count[  2 ] ;
+      //         std::cout << " Elem = " << count[  3 ] ;
+      //         std::cout << " }" << std::endl ;
+      //         std::cout.flush();
+    }
+
+    int PerceptMesh::
+    getNumberEdges()
+    {
+      std::vector<unsigned> count ;
+      stk::mesh::Selector selector(getFEM_meta_data()->universal_part());
+      stk::mesh::count_entities( selector, *getBulkData(), count );
+      if (count.size() < 3)
+        {
+          throw std::logic_error("logic error in PerceptMesh::getNumberElements");
+        }
+
+      return count[ edge_rank() ];
       //         std::cout << " Node = " << count[  0 ] ;
       //         std::cout << " Edge = " << count[  1 ] ;
       //         std::cout << " Face = " << count[  2 ] ;
@@ -759,7 +785,7 @@ namespace stk {
         m_fixture(NULL),
         m_iossRegion(NULL),
         m_coordinatesField(NULL),
-        m_spatialDim(3),
+        m_spatialDim(metaData->spatial_dimension()),
         m_ownData(false),
         m_isCommitted(isCommitted),
         m_isOpen(true),
@@ -773,17 +799,6 @@ namespace stk {
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
 
       setCoordinatesField();
-
-      if (m_coordinatesField) {
-          const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, getFEM_meta_data()->universal_part());
-          unsigned dataStride = r.dimension() ;
-          m_spatialDim = dataStride;
-          if (m_spatialDim != 2 && m_spatialDim != 3)
-            {
-              std::cout << "m_spatialDim= " << m_spatialDim << std::endl;
-              throw std::runtime_error("PerceptMesh::PerceptMesh(adopt form): bad spatial dim");
-            }
-        }
     }
 
     void PerceptMesh::
@@ -793,35 +808,34 @@ namespace stk {
     }
 
     void PerceptMesh::
-    init( stk::ParallelMachine comm)
+    init( stk::ParallelMachine comm, bool no_alloc)
     {
-//       if (m_spatialDim ==0)
-//         {
-//           // postpone init until we know the spatial dimension
-//           return;
-//         }
+      if (m_isInitialized) return;
+
       m_isInitialized = true;
       m_comm          = comm;
       m_ownData       = true;
 
-      if (m_spatialDim)
+      if (!no_alloc)
         {
-          //m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
-          std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(m_spatialDim);
+          if (m_spatialDim)
+            {
+              //m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, stk::mesh::fem::entity_rank_names(m_spatialDim) );
+              std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(m_spatialDim);
 #if PERCEPT_USE_FAMILY_TREE
-          entity_rank_names.push_back("FAMILY_TREE");
+              entity_rank_names.push_back("FAMILY_TREE");
 #endif
-          m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, entity_rank_names);
-          m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
+              m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, entity_rank_names);
+              m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
+            }
+          else
+            {
+              m_metaData   = new stk::mesh::fem::FEMMetaData( );
+            }
         }
-      else
-        {
-          m_metaData   = new stk::mesh::fem::FEMMetaData( );
-        }
-      //std::cout << "tmp m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
       m_fixture       = 0;
-      m_iossRegion    = 0;
+      //m_iossRegion    = 0;
       m_isCommitted   = false;
       m_isAdopted     = false;
       m_isOpen        = false;
@@ -1289,7 +1303,7 @@ namespace stk {
       }
 
       // NOTE: 'in_region' owns 'dbi' pointer at this time...
-      m_iossRegion = new Ioss::Region(dbi, "input_model");
+      m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
       Ioss::Region& in_region = *m_iossRegion;
 
       // SUBSETTING PARSING/PREPROCESSING...
@@ -1350,6 +1364,12 @@ namespace stk {
         {
           m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , m_comm );
         }
+      if (0)
+        {
+          const size_t ntype = stk::mesh::MetaData::get(*m_bulkData).entity_rank_count();
+          const size_t ntype1 = stk::mesh::fem::FEMMetaData::get(*m_bulkData).entity_rank_count();
+          std::cout << "tmp SRK m_spatialDim= " << m_spatialDim << " ntype= " << ntype << " ntype1= " << ntype1 << std::endl;
+        }
 #endif
       process_read_sidesets_meta(in_region,      meta_data);
       process_read_nodesets_meta(in_region,      meta_data);
@@ -1360,6 +1380,11 @@ namespace stk {
     {
       EXCEPTWATCH;
       m_fixture = new stk::io::util::Gmesh_STKmesh_Fixture(MPI_COMM_WORLD, gmesh_spec);
+
+      if (m_metaData)
+        delete m_metaData;
+      if (m_bulkData)
+        delete m_bulkData;
 
       m_metaData = &m_fixture->getFEMMetaData();
       m_bulkData = &m_fixture->getBulkData();
@@ -1683,6 +1708,8 @@ namespace stk {
         process_output_request(out_region, bulk_data, out_step);
       }
       out_region.end_mode(Ioss::STATE_TRANSIENT);
+
+      if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }
 
 
@@ -1843,7 +1870,6 @@ namespace stk {
     {
       EXCEPTWATCH;
       //checkState("elementOpLoop");
-
       elementOp.init_elementOp();
 
       //mesh::fem::FEMMetaData& metaData = *m_metaData;
@@ -1857,9 +1883,7 @@ namespace stk {
 
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
-
       const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( element_rank() );
-
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           if (!part || selector(**k))  // this is where we do part selection
@@ -1995,36 +2019,36 @@ namespace stk {
       // FIXME
       //#if !(defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
 
-      m_basisTable[shards::getCellTopologyData<Line<2> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
-      //m_basisTable[shards::getCellTopologyData<Line<3> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Line<2> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
+      //m_basisTable[shards::getCellTopologyData<shards::Line<3> >()-> key]          = Teuchos::rcp ( new Intrepid::Basis_HGRAD_LINE_C1_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<Triangle<3> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Triangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Triangle<3> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Triangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<Quadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Quadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Quadrilateral<9> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<9> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<Hexahedron<8> >()-> key]    = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Hexahedron<27> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Hexahedron<8> >()-> key]    = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Hexahedron<27> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_HEX_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<Tetrahedron<4> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<Tetrahedron<10> >()-> key]  = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Tetrahedron<4> >()-> key]   = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Tetrahedron<10> >()-> key]  = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TET_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<Wedge<6> >()-> key]         = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Wedge<6> >()-> key]         = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<double, MDArray >() );
 
       // Intrepid doesn't support wedge 15
-      m_basisTable[shards::getCellTopologyData<Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM<double, MDArray >() );
 
 
       // Shells
-      m_basisTable[shards::getCellTopologyData<ShellTriangle<3> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
-      m_basisTable[shards::getCellTopologyData<ShellTriangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::ShellTriangle<3> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::ShellTriangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid::Basis_HGRAD_TRI_C2_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, MDArray >() );
 
-      m_basisTable[shards::getCellTopologyData<ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
+      m_basisTable[shards::getCellTopologyData<shards::ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM<double, MDArray >() );
 
       //#endif
 
@@ -2056,7 +2080,7 @@ namespace stk {
     {
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
 
-      CellTopology cell_topo(bucket_cell_topo_data);
+      shards::CellTopology cell_topo(bucket_cell_topo_data);
       unsigned number_elems = bucket.size();
       //unsigned numCells = number_elems;
       //unsigned numNodes = cell_topo.getNodeCount();
@@ -2176,11 +2200,11 @@ namespace stk {
       //const CellTopologyData * const cell_topo_data = fem::get_cell_topology(element).getCellTopologyData();
       const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(element);
 
-      CellTopology cell_topo(cell_topo_data);
+      shards::CellTopology cell_topo(cell_topo_data);
       const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
       const stk::mesh::PairIterRelation side_nodes = side.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-      CellTopology cell_topo_side(PerceptMesh::get_cell_topology(side));
+      shards::CellTopology cell_topo_side(PerceptMesh::get_cell_topology(side));
 
       const unsigned *  inodes = 0;
       unsigned nSubDimNodes = 0;
@@ -2382,7 +2406,7 @@ namespace stk {
                                           surface_node_ids[jnode] = elem_nodes_2[jnode].entity()->identifier();
                                         }
 
-                                      int perm = findPermutation(cell_topo.getCellTopologyData()->subcell[surface_rank][iface].topology,
+                                      int perm = shards::findPermutation(cell_topo.getCellTopologyData()->subcell[surface_rank][iface].topology,
                                                                  &element_side[0], &surface_node_ids[0]);
                                       if (perm < 0)
                                         {
@@ -2422,7 +2446,7 @@ namespace stk {
                     stk::mesh::fem::FEMMetaData& metaData_2,
                     stk::mesh::BulkData& bulkData_1,
                     stk::mesh::BulkData& bulkData_2,
-                    std::string& msg,
+                    std::string msg,
                     bool print)
     {
       EXCEPTWATCH;
@@ -2457,7 +2481,8 @@ namespace stk {
             std::cout << "\n Node = " << count_1[ 0 ] << " " << count_2[ 0 ] ;
             std::cout << "\n Edge = " << count_1[ 1 ] << " " << count_2[ 1 ] ;
             std::cout << "\n Face = " << count_1[ 2 ] << " " << count_2[ 2 ] ;
-            if (count_1.size() == 4) std::cout << "\n Elem = " << count_1[ 3 ] << " " << count_2[ 3 ] ;
+            if (count_1.size() >= 4) std::cout << "\n Elem = " << count_1[ 3 ] << " " << count_2[ 3 ] ;
+            if (count_1.size() >= 5) std::cout << "\n FamilyTree = " << count_1[ 4 ] << " " << count_2[ 4 ] ;
             std::cout << " }" << std::endl ;
           }
         for (unsigned i = 0; i < std::min(count_1.size(), count_2.size()); i++)
@@ -2500,13 +2525,13 @@ namespace stk {
 
               if (part_1.name() != part_2.name()) { msg += "|part names diff "+part_1.name()+" "+part_2.name()+" | "; diff = true; }
               if ((topology_1 != topology_2) ||
-                  ((std::string(topology_1?CellTopology(topology_1).getName():"null") !=
-                    std::string(topology_2?CellTopology(topology_2).getName():"null") ))
+                  ((std::string(topology_1?shards::CellTopology(topology_1).getName():"null") !=
+                    std::string(topology_2?shards::CellTopology(topology_2).getName():"null") ))
                   )
                 {
                   msg += "| part topology diff "+
-                    std::string(topology_1?CellTopology(topology_1).getName():"null")+" "+
-                    std::string(topology_2?CellTopology(topology_2).getName():"null");
+                    std::string(topology_1?shards::CellTopology(topology_1).getName():"null")+" "+
+                    std::string(topology_2?shards::CellTopology(topology_2).getName():"null");
                   diff = true;
                 }
 
@@ -2546,7 +2571,8 @@ namespace stk {
                     std::cout << "\n Node = " << count_1[ 0 ] << " " << count_2[ 0 ] ;
                     std::cout << "\n Edge = " << count_1[ 1 ] << " " << count_2[ 1 ] ;
                     std::cout << "\n Face = " << count_1[ 2 ] << " " << count_2[ 2 ] ;
-                    if (count_1.size() == 4) std::cout << "\n Elem = " << count_1[ 3 ] << " " << count_2[ 3 ] ;
+                    if (count_1.size() >= 4) std::cout << "\n Elem = " << count_1[ 3 ] << " " << count_2[ 3 ] ;
+                    if (count_1.size() >= 5) std::cout << "\n FamilyTree = " << count_1[ 4 ] << " " << count_2[ 4 ] ;
                     std::cout << " }" << std::endl ;
 
                   }
@@ -2783,13 +2809,142 @@ namespace stk {
     }
 
     bool PerceptMesh::
-    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string& msg, bool print)
+    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string msg, bool print)
     {
       stk::mesh::fem::FEMMetaData& metaData_1 = *eMesh_1.getFEM_meta_data();
       stk::mesh::fem::FEMMetaData& metaData_2 = *eMesh_2.getFEM_meta_data();
       stk::mesh::BulkData& bulkData_1 = *eMesh_1.getBulkData();
       stk::mesh::BulkData& bulkData_2 = *eMesh_2.getBulkData();
       return mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, msg, print);
+    }
+
+    // checks if this entity has a duplicate (ie all nodes are the same)
+    bool PerceptMesh::
+    check_entity_duplicate(stk::mesh::Entity& entity)
+    {
+      PerceptMesh& eMesh = *this;
+
+      stk::mesh::EntityRank node_rank = eMesh.node_rank();
+      stk::mesh::EntityRank entity_rank = entity.entity_rank();
+      
+      typedef std::set<stk::mesh::EntityId> SetOfIds;
+      SetOfIds entity_ids;
+      stk::mesh::PairIterRelation entity_nodes = entity.relations(node_rank);
+
+      for (unsigned is=0; is < entity_nodes.size(); is++)
+        {
+          entity_ids.insert(entity_nodes[is].entity()->identifier());
+        }
+
+      for (unsigned isnode=0; isnode < entity_nodes.size(); isnode++)
+        {
+          stk::mesh::PairIterRelation node_entitys = entity_nodes[isnode].entity()->relations(entity_rank);
+          for (unsigned ienode=0; ienode < node_entitys.size(); ienode++)
+            {
+              stk::mesh::Entity& entity2 = *node_entitys[ienode].entity();
+              if (entity2.identifier() == entity.identifier()) 
+                continue;
+
+              SetOfIds entity2_ids;
+              
+              if (entity2.relations(node_rank).size() == 0)
+                continue;
+
+              if (eMesh.isGhostElement(entity2))
+                continue;
+                      
+              stk::mesh::PairIterRelation entity2_nodes = entity2.relations(node_rank);
+              for (unsigned is2=0; is2 < entity2_nodes.size(); is2++)
+                {
+                  entity2_ids.insert(entity2_nodes[is2].entity()->identifier());
+                }
+              SetOfIds::iterator it=entity_ids.begin();
+              SetOfIds::iterator it2=entity2_ids.begin();
+              bool found = true;
+              for (; it != entity_ids.end(); ++it, ++it2)
+                {
+                  if (*it != *it2)
+                    {
+                      found = false;
+                      break;
+                    }
+                }
+              if (found)
+                {
+                  std::cout << "tmp check_entity_duplicate bad entitys " << entity << " " << entity2 << std::endl;
+
+                  std::cout << "tmp check_entity_duplicate bad entity2= " ;
+                  for (unsigned is2=0; is2 < entity2_nodes.size(); is2++)
+                    {
+                      std::cout << " " << entity2_nodes[is2].entity();
+                    }
+                  std::cout << std::endl;
+
+                  std::cout << "tmp check_entity_duplicate bad entity= " ;
+                  for (unsigned is=0; is < entity_nodes.size(); is++)
+                    {
+                      std::cout << " " << entity_nodes[is].entity();
+                    }
+                  std::cout << std::endl;
+                  
+                  for (it=entity_ids.begin(); it != entity_ids.end(); ++it)
+                    {
+                      std::cout << " " << *it;
+                    }
+                  std::cout << std::endl;
+                  return true;
+                }
+            }
+        }
+      return false;
+    }
+
+    void PerceptMesh::delete_side_sets()
+    {
+      const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( side_rank() );
+
+      typedef std::set<stk::mesh::Entity *> SetOfEntities;
+
+      SetOfEntities elem_set;
+
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                elem_set.insert(&element);
+              }
+          }
+        }
+      std::cout << "delete_side_sets: elem_set.size= " << elem_set.size() << std::endl;
+
+      getBulkData()->modification_begin();
+      for(SetOfEntities::iterator elem_it = elem_set.begin();
+          elem_it != elem_set.end(); ++elem_it)
+        {
+          stk::mesh::Entity *elem = *elem_it;
+          stk::mesh::PairIterRelation rels = elem->relations(element_rank());
+          for (unsigned irels = 0; irels < rels.size(); irels++)
+            {
+              stk::mesh::Entity *vol_elem = rels[irels].entity();
+              if ( ! getBulkData()->destroy_relation(*vol_elem, *elem, rels[irels].identifier()))
+                {
+                  throw std::logic_error("PerceptMesh::delete_side_sets couldn't remove element, destroy_relation returned false for elem.");
+                }
+            }
+              
+          if ( ! getBulkData()->destroy_entity( elem ) )
+            {
+              throw std::logic_error("PerceptMesh::delete_side_sets couldn't remove element, destroy_entity returned false for elem.");
+            }
+        }
+      getBulkData()->modification_end();
+
     }
 
   } // stk

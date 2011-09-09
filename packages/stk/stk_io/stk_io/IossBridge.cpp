@@ -768,7 +768,7 @@ namespace stk {
 
 	if (entity->type() == Ioss::ELEMENTBLOCK) {
 	  assert(topology != NULL);
-	  if (topology->spatial_dimension() < (int)fem_meta->spatial_dimension()) {
+	  if (fem_meta && (topology->spatial_dimension() < (int)fem_meta->spatial_dimension())) {
 	    // NOTE: The comparison is '<' and not '!=' since a 2D mesh
 	    // can contain a "3d" element -- a Beam is both a 2D and
 	    // 3D element...
@@ -1099,9 +1099,12 @@ namespace stk {
 
 	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
 
-	Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database(),
-							part.name(),
-							map_topology_cell_to_ioss(cell_top, spatial_dim),
+	// Defer the counting of attributes until after we define the
+	// element block so we can count them as we add them as fields to
+	// the element block
+	Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database() ,
+							part.name() ,
+							map_topology_cell_to_ioss(cell_top, spatial_dim) ,
 							num_elems);
 	io_region.add(eb);
 

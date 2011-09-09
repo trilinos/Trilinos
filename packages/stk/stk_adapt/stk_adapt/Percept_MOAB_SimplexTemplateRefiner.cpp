@@ -61,8 +61,15 @@ namespace moab {
                                                 double* v1, void* t1, EntityHandle h1,
                                                 double* v2, void* t2, EntityHandle h2,
                                                 double* v3, void* t3, EntityHandle h3 )
-  {
+  {  // refine_3_simplex
     int edge_code = 0;
+
+    double s_midpt0c[3]={0,0,0};
+    double s_midpt1c[3]={0,0,0};
+    double s_midpt2c[3]={0,0,0};
+    double s_midpt3c[3]={0,0,0};
+    double s_midpt4c[3]={0,0,0};
+    double s_midpt5c[3]={0,0,0};
 
     double* midpt0c=0;
     double* midpt1c=0;
@@ -87,12 +94,12 @@ namespace moab {
 
     if ( max_depth-- > 0 )
       {
-        midpt0c = this->heap_coord_storage();
-        midpt1c = this->heap_coord_storage();
-        midpt2c = this->heap_coord_storage();
-        midpt3c = this->heap_coord_storage();
-        midpt4c = this->heap_coord_storage();
-        midpt5c = this->heap_coord_storage();
+        midpt0c = &s_midpt0c[0];
+        midpt1c = &s_midpt1c[0];
+        midpt2c = &s_midpt2c[0];
+        midpt3c = &s_midpt3c[0];
+        midpt4c = &s_midpt4c[0];
+        midpt5c = &s_midpt5c[0];
 
         midpt0t = this->heap_tag_storage();
         midpt1t = this->heap_tag_storage();
@@ -143,15 +150,15 @@ namespace moab {
         return false;
       }
 
-    double* facept0c;
-    double* facept1c;
-    double* facept2c;
-    double* facept3c;
+    double facept0c[3]={0,0,0};
+    double facept1c[3]={0,0,0};
+    double facept2c[3]={0,0,0};
+    double facept3c[3]={0,0,0};
 
-    facept0c = this->heap_coord_storage();
-    facept1c = this->heap_coord_storage();
-    facept2c = this->heap_coord_storage();
-    facept3c = this->heap_coord_storage();
+//     facept0c = this->heap_coord_storage();
+//     facept1c = this->heap_coord_storage();
+//     facept2c = this->heap_coord_storage();
+//     facept3c = this->heap_coord_storage();
 
     double* vertex_coords[14] = {
       v0, v1, v2, v3, 

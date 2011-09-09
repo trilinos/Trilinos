@@ -171,6 +171,12 @@ namespace stk
         //m_atest.doIt();
       }
 
+      ~SweepMesher()
+      {
+        delete m_metaData;
+        delete m_bulkData;
+      }
+
       void initialize() 
       {
         m_deleteAfterSweep = 1;
