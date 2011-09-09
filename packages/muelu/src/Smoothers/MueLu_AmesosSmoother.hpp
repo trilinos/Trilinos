@@ -4,7 +4,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Utilities.hpp"
 
 #ifdef HAVE_MUELU_AMESOS
 #include "Amesos_BaseSolver.h"
@@ -13,20 +12,22 @@
 
 namespace MueLu {
 
-class Level;
+  /*!
+    @class AmesosSmoother
+    @brief Class that encapsulates Amesos direct solvers.
+    
+    This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
+    based on the type and ParameterList passed into the constructor.  See the constructor for more information.
+  */
 
-/*!
-  @class AmesosSmoother
-  @brief Class that encapsulates Amesos direct solvers.
-
-  This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
-  based on the type and ParameterList passed into the constructor.  See the constructor for more information.
-*/
-
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class AmesosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  class AmesosSmoother : public SmootherPrototype<double, int, int>
   {
 
+    typedef double Scalar;
+    typedef int    LocalOrdinal;
+    typedef int    GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "MueLu_UseShortNames.hpp"
 
   private:
