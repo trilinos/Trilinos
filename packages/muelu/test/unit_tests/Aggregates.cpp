@@ -21,8 +21,10 @@ namespace MueLuTests {
     aggFact.SetPhase3AggCreation(0.5);
 
     Level level;
+    level.SetupPhase(true);
     MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-    level.Set("A",A);
+    //level.Request("A",NULL);
+    level.Set("A",A,NULL);
 
     aggFact.Build(level);
 
