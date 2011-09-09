@@ -1,14 +1,16 @@
 #ifndef MUELU_AMESOS_SMOOTHER_HPP
 #define MUELU_AMESOS_SMOOTHER_HPP
 
+#ifdef HAVE_MUELU_AMESOS
+
+#include <Amesos_config.h>
+#include <Amesos.h>
+#include <Amesos_BaseSolver.h>
+#include <Epetra_LinearProblem.h>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-
-#ifdef HAVE_MUELU_AMESOS
-#include "Amesos_BaseSolver.h"
-#include "Amesos.h"
-#include "Epetra_LinearProblem.h"
 
 namespace MueLu {
 

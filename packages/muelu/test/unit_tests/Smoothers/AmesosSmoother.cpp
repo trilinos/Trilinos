@@ -16,10 +16,7 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
-#ifdef HAVE_AMESOS_KLU
-        AmesosSmoother smoother;
-        testApplyNoSetup(smoother, out, success);
-#endif
+        testApplyNoSetup(AmesosSmoother(), out, success);
       }
   }
 
