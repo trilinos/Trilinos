@@ -48,8 +48,9 @@ namespace MueLu {
       if(initialPFact_ == Teuchos::null)
       {
         // todo: if no initial PFactory, set it to TentativePFactory
-        std::string msg = "SaPFactory: no initial P factory defined";
-        throw(Exceptions::RuntimeError(msg));
+        //std::string msg = "SaPFactory: no initial P factory defined";
+        //throw(Exceptions::RuntimeError(msg));
+        initialPFact_ = rcp(new TentativePFactory());
       }
     }
   
