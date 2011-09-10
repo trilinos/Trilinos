@@ -54,7 +54,7 @@ namespace MueLu {
 
     //! Default constructor.
     Needs() : out_(this->getOStream()) {
-      setupPhase_ = false; //TODO fix me.
+      setupPhase_ = false;
     }
 
     virtual ~Needs() {}
