@@ -1,4 +1,5 @@
 #!/usr/bin/tcsh
+rm CMakeCache.txt
 cmake \
       -D CMAKE_INSTALL_PREFIX="/home/rppawlo/trilinos_install" \
       -D Trilinos_ENABLE_DEBUG=ON \
@@ -14,8 +15,8 @@ cmake \
       -D MPI_BASE_DIR:PATH="/home/rppawlo/local" \
       -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
       -D TPL_ENABLE_Boost:BOOL=ON \
-      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_43_0" \
-      -D TPL_ENABLE_TVMET:BOOL=ON \
+      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_46_1" \
+      -D TPL_ENABLE_TVMET:BOOL=OFF \
       -D TVMET_INCLUDE_DIRS:FILEPATH="/home/rppawlo/local/include" \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
