@@ -2,4 +2,3 @@
 ADD_SUBDIRECTORY(AlgebraicTypes)
 ADD_SUBDIRECTORY(Allocators)
 ADD_SUBDIRECTORY(BracketOperator)
-ADD_SUBDIRECTORY(ExpressionTemplates)
