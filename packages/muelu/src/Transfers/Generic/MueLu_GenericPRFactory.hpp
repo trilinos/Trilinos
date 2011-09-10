@@ -56,7 +56,7 @@ class GenericPRFactory : public PRFactory {
       if (RFact != Teuchos::null)
         RFact_ = RFact;
       else
-        RFact_ = rcp(new TransPFactory());
+        RFact_ = rcp(new TransPFactory(PFact_));
 
       PRFactory::reUseAggregates_ = PFact_->ReUseAggregates();
       PRFactory::reUseGraph_      = PFact_->ReUseGraph();
