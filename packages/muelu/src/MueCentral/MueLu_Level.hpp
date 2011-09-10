@@ -192,6 +192,15 @@ public:
      * no generating factory available and no default factory
      * */
     template <class T>
+    void Get(const std::string& ename, T& Value, const FactoryBase* factory)
+    {
+        Value = Get<T>(ename,factory);
+    }
+
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
+     * no generating factory available and no default factory
+     * */
+    template <class T>
     void Get(const std::string& ename, T& Value)
     {
         Value = Get<T>(ename,NULL); // todo fix me (call Needs::GetData directly)
@@ -326,25 +335,24 @@ public:
     RCP<Level> & GetPreviousLevel() { return previousLevel_; }
     //@}
 
-
-    /*void Input(const std::string& ename, Teuchos::Ptr<const FactoryBase> factory) {
-        Input(ename, factory.get());
-    }*/
+    //! Get ptr to default factory. // TODO: make me private again
+    const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) {
+        TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
+        return defaultFactoryHandler_->GetDefaultFactoryRCP(varname).get();
+    }
 
 private:
+    //! Get RCP to default factory for given variable 'varname'.
+    RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string& varname) {
+        TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
+        return defaultFactoryHandler_->GetDefaultFactoryRCP(varname);
+    }
 
     //! Get default factory.
     const FactoryBase & GetDefaultFactory(const std::string& varname) {
         TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
         return defaultFactoryHandler_->GetDefaultFactory(varname);
     }
-
-    //! Get ptr to default factory.
-    const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) {
-        TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
-        return defaultFactoryHandler_->GetDefaultFactoryRCP(varname).get();
-    }
-
 
 }; //class Level
 
