@@ -168,10 +168,11 @@ namespace MueLu {
     matrix, and the sum of nonzeros all matrices (including the fine).
     */
     Teuchos::ParameterList FillHierarchy() {
-      RCP<SaPFactory> PFact = rcp(new SaPFactory());
-      RCP<TransPFactory> RFact = rcp(new TransPFactory());
+      RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
+      RCP<SaPFactory> PFact = rcp(new SaPFactory(TentPFact));
+      RCP<TransPFactory> RFact = rcp(new TransPFactory(PFact));
       RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact,RFact));
-      RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+      RCP<RAPFactory> AcFact = rcp(new RAPFactory(PRFact));
       Teuchos::ParameterList status;
       status = FillHierarchy(*PRFact,*AcFact);
       return status;
@@ -261,7 +262,6 @@ namespace MueLu {
           ++i;
         } //while
 
-      /////////////////////////////////////////
       // build levels
       bool goodBuild=true;
       i = startLevel;
