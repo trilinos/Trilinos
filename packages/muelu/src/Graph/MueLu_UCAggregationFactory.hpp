@@ -74,6 +74,13 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const {
       if(currentLevel.IsAvailable("Aggregates",this)) return;
       if(graphFact_!=Teuchos::null) graphFact_->DeclareInput(currentLevel);
+      else
+      {
+        // TODO: move me to Level class?
+        const FactoryBase* defaultFactory = currentLevel.GetDefaultFactoryPtr("Graph");
+        if( defaultFactory == NULL) std::cout << "UCAggregationFactory::DeclareInput: Error: default factory == NULL" << std::endl;
+        defaultFactory->callDeclareInput(currentLevel);
+      }
       currentLevel.Request("Graph", graphFact_); // we should request data...
     }
 

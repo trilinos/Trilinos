@@ -43,7 +43,7 @@ namespace MueLu {
     */
     TentativePFactory(RCP<FactoryBase> aggregatesFact = Teuchos::null, RCP<FactoryBase> nullspaceFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
       : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-        QR_(false) { }
+        QR_(false) {    }
     
     //! Destructor.
     virtual ~TentativePFactory() {}
@@ -59,7 +59,15 @@ namespace MueLu {
       if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
           !fineLevel.IsAvailable("Aggregates", aggregatesFact_))
       {
-        aggregatesFact_->callDeclareInput(fineLevel);
+        if(aggregatesFact_ == Teuchos::null)
+        {
+          // TODO: move me to Level class?
+          const FactoryBase* defaultFactory = fineLevel.GetDefaultFactoryPtr("Aggregates");
+          if( defaultFactory == NULL) std::cout << "TentativePFactory::DeclareInput: Error: default factory == NULL" << std::endl;
+          defaultFactory->callDeclareInput(fineLevel);
+        }
+        else
+          aggregatesFact_->callDeclareInput(fineLevel);
       }
       fineLevel.Request("Aggregates", aggregatesFact_);
       fineLevel.Request("A", AFact_);
