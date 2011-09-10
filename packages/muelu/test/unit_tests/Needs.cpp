@@ -23,9 +23,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsRequested(aNeed), false);
-    needs.Request(aNeed);
-    TEST_EQUALITY(needs.IsRequested(aNeed), true);
+    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), false);
+    needs.Request(aNeed,NULL);
+    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, ValueIsAvailable)
@@ -33,9 +33,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsAvailable(aNeed), false);
+    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), false);
     needs.SetData(aNeed,42);
-    TEST_EQUALITY(needs.IsAvailable(aNeed), true);
+    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests_Exception)
@@ -50,8 +50,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
-    needs.Request(aNeed);
-    needs.Request(aNeed);
+    needs.Request(aNeed,NULL);
+    needs.Request(aNeed,NULL);
     TEST_EQUALITY(needs.NumRequests(aNeed), 2);
   }
 
@@ -79,7 +79,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
-    TEST_THROW( needs.Release("nonExistentNeed"), std::logic_error );
+    TEST_THROW( needs.Release("nonExistentNeed",NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, Release_Without_Request)
@@ -102,16 +102,16 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     double trueValue = 42;
     needs.SetData(aNeed,trueValue);
-    needs.Request(aNeed);
-    needs.Request(aNeed);
+    needs.Request(aNeed,NULL);         // TODO: write new test
+    needs.Request(aNeed,NULL);
     double value = 0;
     needs.GetData(aNeed,value);
-    needs.Release(aNeed);
+    needs.Release(aNeed,NULL);
     TEST_EQUALITY(trueValue,value);
     TEST_EQUALITY(needs.NumRequests(aNeed),1);
     value = 0;
     needs.GetData(aNeed,value);
-    needs.Release(aNeed);
+    needs.Release(aNeed,NULL);
     //try to get the need one too many times
     //JG TODO, disable for the moment    TEST_THROW( needs.Get(aNeed,value), std::logic_error );
   }

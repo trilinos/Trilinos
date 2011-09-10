@@ -10,7 +10,7 @@
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 //#include "MueLu_TentativePFactory.hpp"
-//#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
 #include "MueLu_ReUseFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -41,11 +41,11 @@ namespace MueLu {
     virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
-        if (varName == "P")           return SetAndReturnDefaultFactory(varName, rcp(new GenericPRFactory(rcp(new SaPFactory()))));
-        if (varName == "Ptent")       return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory())); //TMP
-        if (varName == "R")           return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
-        // (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
-        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new ReUseFactory())); //TODO?
+        //if (varName == "P")           return SetAndReturnDefaultFactory(varName, rcp(new GenericPRFactory(rcp(new SaPFactory()))));
+        //if (varName == "Ptent")       return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory())); //TMP
+        //if (varName == "R")           return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
+        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
+        //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new ReUseFactory())); //TODO?
         if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));

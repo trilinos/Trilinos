@@ -157,7 +157,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      A_ = level.Get< RCP<Operator> >("A");
+
+      A_ = level.Get< RCP<Operator> >("A",NULL);
 
       // output information
       std::ostringstream buf; buf << level.GetLevelID();

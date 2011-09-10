@@ -33,16 +33,18 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetupPhase(true); coarseLevel.SetupPhase(true);
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    fineLevel.Set("A",Op);
+    fineLevel.Set("A",Op,NULL);
 
-    SaPFactory sapFactory;
+    TentativePFactory tentpFactory;
+    SaPFactory sapFactory(rcpFromRef(tentpFactory));
 
     sapFactory.BuildP(fineLevel,coarseLevel);
 
     RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",NULL);
 
     TransPFactory transPFactory(rcpFromRef(sapFactory)); //todo:rcpFromRef
     transPFactory.BuildR(fineLevel,coarseLevel);
@@ -60,10 +62,13 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory)); //todo:rcpFromRef
+    RCP<GenericPRFactory> PRFac = rcp(new GenericPRFactory(rcpFromRef(sapFactory),rcpFromRef(transPFactory)));
+    PRFac->SetMaxCoarseSize(1);
+    PRFac->Build(fineLevel,coarseLevel);
+    RAPFactory rap(PRFac);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", NULL);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -87,15 +92,22 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel;
     MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetupPhase(true); coarseLevel.SetupPhase(true);
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
-    fineLevel.Set("A",Op);
+    fineLevel.Set("A",Op,NULL);
 
-    SaPFactory sapFactory;
+    TentativePFactory tentpFactory;
+    SaPFactory sapFactory(rcpFromRef(tentpFactory));
     sapFactory.BuildP(fineLevel,coarseLevel);
 
     RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",NULL);
+
+    TransPFactory transPFactory(rcpFromRef(sapFactory)); //todo:rcpFromRef
+    transPFactory.BuildR(fineLevel,coarseLevel);
+
+    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
 
     //std::string filename = "A.dat";
     //Utils::Write(filename,Op);
@@ -116,11 +128,14 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
 
-    RAPFactory rap(rcpFromRef(sapFactory)); //todo: rcpFromRef
+    RCP<GenericPRFactory> PRFac = rcp(new GenericPRFactory(rcpFromRef(sapFactory),rcpFromRef(transPFactory)));
+    PRFac->SetMaxCoarseSize(1);
+    PRFac->Build(fineLevel,coarseLevel);
+    RAPFactory rap(PRFac);
     rap.SetImplicitTranspose(true);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", NULL);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);

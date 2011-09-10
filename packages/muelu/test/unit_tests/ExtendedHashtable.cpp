@@ -2,7 +2,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_SaPFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -15,10 +15,10 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
+    RCP<TentativePFactory> sapFactory = rcp(new TentativePFactory);
     TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
-    RCP<SaPFactory> sapFactory2 = rcp(new SaPFactory);
+    RCP<TentativePFactory> sapFactory2 = rcp(new TentativePFactory);
     TEST_EQUALITY(sapFactory2 != Teuchos::null, true);
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

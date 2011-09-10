@@ -53,14 +53,17 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-      fineLevel.Input("A", AFact_());                   // TAW: what's this??
-      fineLevel.Input("Aggregates", aggregatesFact_());
-      fineLevel.Input("Nullspace",  nullspaceFact_());
+      // todo: check for reusable P -> do not call DeclareInput
 
-      fineLevel.Request("A", AFact_);
+      // request aggregates (only if not already requested or available)
+      if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
+          !fineLevel.IsAvailable("Aggregates", aggregatesFact_))
+      {
+        aggregatesFact_->callDeclareInput(fineLevel);
+      }
       fineLevel.Request("Aggregates", aggregatesFact_);
+      fineLevel.Request("A", AFact_);
       fineLevel.Request("Nullspace",  nullspaceFact_);
-
     }
 
     //@}
@@ -82,10 +85,12 @@ namespace MueLu {
     }
 
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
-      // Level Get
+      // get data from fine level
       RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_);
       RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_);
       RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_);
+
+      fineLevel.print(std::cout);
 
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
@@ -100,7 +105,14 @@ namespace MueLu {
 
       // Level Set
       coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_);
-      coarseLevel.Set("Ptent", Ptentative, this); //TODO: should be P when 'extended needs' implemented
+      coarseLevel.Set("P", Ptentative, this); //TODO: should be P when 'extended needs' implemented
+
+      // release data from fine level
+      fineLevel.Release("A", AFact_);
+      fineLevel.Release("Aggregates", aggregatesFact_);
+      fineLevel.Release("Nullspace", nullspaceFact_);
+
+      fineLevel.print(std::cout);
 
       return true;
     }
