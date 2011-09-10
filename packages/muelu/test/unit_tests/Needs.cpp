@@ -34,7 +34,8 @@ namespace MueLuTests {
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
     TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), false);
-    needs.SetData(aNeed,42);
+    needs.Request(aNeed,NULL);
+    needs.SetData(aNeed,42,NULL);
     TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), true);
   }
 
@@ -69,6 +70,7 @@ namespace MueLuTests {
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
     double trueValue = 42;
+    needs.Request(aNeed,NULL);
     needs.SetData(aNeed,trueValue);
     double expectedValue = 0;
     needs.GetData(aNeed,expectedValue);
@@ -101,9 +103,9 @@ namespace MueLuTests {
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
     double trueValue = 42;
-    needs.SetData(aNeed,trueValue);
     needs.Request(aNeed,NULL);         // TODO: write new test
     needs.Request(aNeed,NULL);
+    needs.SetData(aNeed,trueValue);
     double value = 0;
     needs.GetData(aNeed,value);
     needs.Release(aNeed,NULL);
@@ -127,6 +129,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     RCP<foobarClass> trueValue = rcp(new foobarClass);
+    needs.Request("foobar",NULL);
     needs.SetData("foobar",trueValue);
     RCP<foobarClass> value;
     needs.GetData("foobar",value);

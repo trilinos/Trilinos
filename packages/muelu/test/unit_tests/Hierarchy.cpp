@@ -65,6 +65,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
+  levelOne->Request("A");
   levelOne->Set("A",A);
 
   Hierarchy H;
@@ -117,15 +118,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
+  levelOne->Request("A");
   levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  RCP<TransPFactory>  RFact = rcp(new TransPFactory());
+  RCP<TransPFactory>  RFact = rcp(new TransPFactory(PFact));
   GenericPRFactory PRFact(PFact,RFact);
-  RAPFactory    AcFact;
+  RAPFactory    AcFact(rcpFromRef(PRFact));
 
   out << "Providing both factories to FillHierarchy." << std::endl;
   H.FillHierarchy(PRFact,AcFact);
@@ -280,6 +282,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
+  levelOne->Request("A");
   levelOne->Set("A",A);
 
   Hierarchy H;

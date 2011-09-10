@@ -273,7 +273,8 @@ namespace MueLuTests {
     void testBuild(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
-      Level level; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      Level level; level.SetupPhase(true);
+      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
       smooFact->Build(level);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, MueLu::BOTH, out, success);
@@ -291,7 +292,8 @@ namespace MueLuTests {
     void testBuildSmootherPreOrPost(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, MueLu::PreOrPost preOrPost, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
       
-      Level level; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      Level level; level.SetupPhase(true);
+      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
       smooFact->BuildSmoother(level, preOrPost);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, preOrPost, out, success);
@@ -306,7 +308,8 @@ namespace MueLuTests {
     void testBuildSmootherDefaultArg(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
       
-      Level level; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      Level level; level.SetupPhase(true);
+      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
       smooFact->BuildSmoother(level);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, MueLu::BOTH, out, success);

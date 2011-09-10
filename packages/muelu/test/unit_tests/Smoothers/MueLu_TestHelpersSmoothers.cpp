@@ -81,7 +81,8 @@ namespace MueLuTests {
     // SmootherPrototype helper function
     void setupSmoother(RCP<Operator>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
       Level level; MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+      level.Request("A", NULL);
+      level.Set("A", A, NULL);
       
       smoother.Setup(level);
     }

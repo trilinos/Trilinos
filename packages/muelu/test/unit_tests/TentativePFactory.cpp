@@ -40,37 +40,40 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
-    Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel;
+    MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-    fineLevel.Request("A");
-    fineLevel.Set("A",A);
+    fineLevel.Request("A",NULL);
+    fineLevel.Set("A",A,NULL);
 
     // first iteration calls LAPACK QR
     // second iteration (with only one NS vector) exercises manual orthogonalization
     for (LO NSdim = 2; NSdim >= 1; --NSdim) {
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
-      fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+      fineLevel.Request("Nullspace",NULL); //FIXME putting this in to avoid error until Merge needs business
                                       //FIXME is implemented
-      fineLevel.Set("Nullspace",nullSpace);
+      fineLevel.Set("Nullspace",nullSpace,NULL);
       RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      UCAggFact->Build(fineLevel);
       //fineLevel.Request("Aggregates",&UCAggFact); //FIXME putting this in to avoid error until Merge needs business
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
+      coarseLevel.Request("P",TentativePFact);  // request Ptent
+      coarseLevel.Request("Nullspace",NULL);    // request coarse nullspace
+      TentativePFact->DeclareInput(fineLevel,coarseLevel);
       TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
-      coarseLevel.Get("Ptent",Ptent,TentativePFact);
+      coarseLevel.Get("P",Ptent,TentativePFact);
 
       RCP<MultiVector> coarseNullSpace; 
-      coarseLevel.Get("Nullspace",coarseNullSpace);
+      coarseLevel.Get("Nullspace",coarseNullSpace,NULL);
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -78,6 +81,9 @@ namespace MueLuTests {
 
       RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       diff->putScalar(0.0);
+
+      coarseLevel.Release("P",TentativePFact); // release Ptent
+      coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
@@ -104,10 +110,8 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-    fineLevel.Set("A",A);
-
-    //fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                    //FIXME is implemented
+    fineLevel.Request("A",NULL);
+    fineLevel.Set("A",A,NULL);
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     UCAggFact->SetMinNodesPerAggregate(3);
@@ -115,16 +119,24 @@ namespace MueLuTests {
     UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
     UCAggFact->SetPhase3AggCreation(0.5);
 
-    UCAggFact->Build(fineLevel);
+    //UCAggFact->DeclareInput(fineLevel);
+    //UCAggFact->Build(fineLevel);
     //fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
+
+    coarseLevel.Request("P",tentativePFact);  // request Ptent
+    coarseLevel.Request("Nullspace",NULL);    // request coarse nullspace
+    tentativePFact->DeclareInput(fineLevel,coarseLevel);
     tentativePFact->Build(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
-    coarseLevel.Get("Ptent",Ptent,tentativePFact);
+    coarseLevel.Get("P",Ptent,tentativePFact);
 
     RCP<MultiVector> coarseNullSpace; 
-    coarseLevel.Get("Nullspace",coarseNullSpace);
+    coarseLevel.Get("Nullspace",coarseNullSpace,NULL);
+
+    coarseLevel.Release("P",tentativePFact); // release Ptent
+    coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
 
     //grab default fine level nullspace (vector of all ones)
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);

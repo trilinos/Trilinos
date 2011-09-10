@@ -59,7 +59,6 @@ namespace MueLuTests {
     coarseLevel.SetupPhase(true);
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
-    fineLevel.Request("A",NULL);
     fineLevel.Set("A",A,NULL);
 
     GenericPRFactory genericPR = GenericPRFactory();
