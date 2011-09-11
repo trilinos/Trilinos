@@ -16,9 +16,17 @@ namespace MueLu {
     @class Level
     @brief Class that holds all level-specific information.
 
-    This class stores <tt>A</tt>, <tt>R</tt>, <tt>P</tt>, the presmother and the postsmoother
-    explicitly.  All other data is stored in an associative list.
-    See the Needs class for more information.
+    All data is stored in an associative list. See the Needs class for more information.
+
+    The Level class uses the functionality of the Needs class with the extended hashtables and
+    adds the handling of default factories.
+    All data that is stored in the <tt>Level</tt> class need a variable name (e.g. "A", "P",...) and
+    a pointer to the generating factory. Only with both the variable name and the generating factory
+    the data can be accessed.
+
+    If no pointer to the generating factory is provided (or it is NULL) then the Level class
+    uses the information from a default factory handler, which stores default factories for different
+    variable names.
  */
 class Level : public Needs {
 
@@ -73,29 +81,28 @@ public:
     }
 
     //@{
-    //! @name Set methods.
+    //! @name Level handling
 
     //! @brief Set level number.
     void SetLevelID(int i) const {
         levelID_ = i;
     }
 
+    //! @brief Return level number.
+    int GetLevelID() const { return levelID_; }
+
     void SetPreviousLevel(const RCP<Level> & previousLevel) {
         previousLevel_ = previousLevel;
     }
 
-    //! Set default factories (used internally by Hierarchy::SetLevel()).
-    // Users should not use this method.
-    void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) {
-        defaultFactoryHandler_ = defaultFactoryHandler;
-    }
+    //! Previous level
+    RCP<Level> & GetPreviousLevel() { return previousLevel_; }
 
     //@}
 
     //@{
-    //! @name Set/Get methods.
+    //! @name Set methods.
 
-    // TODO REMOVE ME
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string ename, const T &entry, const FactoryBase* factory) {
@@ -115,12 +122,17 @@ public:
     }
 
     //! Store need label and its associated data. This does not increment the storage counter.
-    /* In the contrary to the other Set functions here we force the generating factory to be zero! (scratch pad) */
     template <class T>
     void Set(const std::string& ename, const T &entry) {
-        Needs::SetData<T>(ename, entry, NULL);  // no factory
+        Set<T>(ename, entry, NULL);
     }
 
+    //@}
+
+    //! @name Get functions
+    //! @brief Get functions for accessing stored data
+
+    //@{
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     // Usage: Level->Get< RCP<Operator> >("A", factory)
     // factory == NULL => use default factory
@@ -134,7 +146,6 @@ public:
             const FactoryBase* defaultFactory = GetDefaultFactoryPtr(ename);
             if( defaultFactory == NULL)
             {
-              std::cout << "WARNING: default factory == NULL" << std::endl; // todo: remove this!!
               return Needs::GetData<T>(ename,defaultFactory);
             }
             // check if data for default factory has already been generated
@@ -170,41 +181,38 @@ public:
         return Get<T>(ename,factory.get());
     }
 
-    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-     * no generating factory available and no default factory. (scratch pad)
-     * */
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     template <class T>
     T & Get(const std::string& ename)
     {
-        return Needs::GetData<T>(ename,NULL);
+        return Get<T>(ename, NULL);
     }
 
-    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-     * no generating factory available and no default factory
-     * */
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).*/
     template <class T>
     void Get(const std::string& ename, T& Value, Teuchos::RCP<const FactoryBase> factory)
     {
         Value = Get<T>(ename,factory.get());
     }
 
-    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-     * no generating factory available and no default factory
-     * */
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).*/
     template <class T>
     void Get(const std::string& ename, T& Value, const FactoryBase* factory)
     {
         Value = Get<T>(ename,factory);
     }
 
-    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-     * no generating factory available and no default factory
-     * */
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     template <class T>
     void Get(const std::string& ename, T& Value)
     {
         Value = Get<T>(ename,NULL); // todo fix me (call Needs::GetData directly)
     }
+
+    //@}
+
+    //! @name Permanent storage
+    //@{
 
     ///! keep variable 'ename' generated by 'factory'
     void Keep(const std::string& ename, RCP<const FactoryBase> factory)
@@ -226,7 +234,8 @@ public:
     ///! keep variable 'ename' generated by no factory
     virtual void Keep(const std::string& ename)
     {
-      Needs::Keep(ename);
+      //Needs::Keep(ename);
+        Keep(ename,NULL);
     }
 
     ///! returns true, if 'ename' generated by 'factory' is marked to be kept
@@ -241,12 +250,15 @@ public:
       return Needs::isKept(ename,factory);
     }
 
-    //! @brief Return level number.
-    int GetLevelID() const { return levelID_; }
+    //@}
 
+    //! @name Request/Release functions
+    //! @brief Request and Release for incrementing/decrementing the reference count pointer for a specific variable.
+    //@{
     //! Indicate that an object is needed. This increments the storage counter.
     void Request(const std::string& ename) {
-      Needs::Request(ename,NULL);
+      //Needs::Request(ename,NULL);
+        Request(ename,NULL);
     } //Request
 
     //! Indicate that an object is needed. This increments the storage counter.
@@ -256,15 +268,12 @@ public:
 
     //!
     void Request(const std::string& ename, const FactoryBase* factory) {
-      std::cout << "REQUEST: " << ename << " gen by " << factory;
       const FactoryBase* fac = factory;
       if (factory == NULL)
       {
           fac = GetDefaultFactoryPtr(ename);
       }
-      std::cout << " operated by " << fac << std::endl;
       Needs::Request(ename,fac);
-      print(std::cout);
     }
 
     //! Decrement the storage counter.
@@ -276,7 +285,8 @@ public:
     //! Decrement the storage counter.
     void Release(const std::string& ename)
     {
-      Needs::Release(ename,NULL);
+      //Needs::Release(ename,NULL);
+        Release(ename,NULL);
     } //Release
 
     //! Decrement the storage counter.
@@ -290,6 +300,10 @@ public:
       Needs::Release(ename,fac);
     }
 
+    //@}
+
+    //! @name Utility functions
+    //@{
     //! Test whether a need's value has been saved.
     bool IsAvailable(const std::string ename, RCP<const FactoryBase> factory) {
       return IsAvailable(ename,factory.get());
@@ -297,7 +311,8 @@ public:
 
     //! Test whether a need's value has been saved.
     bool IsAvailable(const std::string ename) {
-      return Needs::IsAvailable(ename,NULL);
+      //return Needs::IsAvailable(ename,NULL);
+        return IsAvailable(ename,NULL);
     }
 
     //! Test whether a need's value has been saved.
@@ -317,7 +332,8 @@ public:
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
     bool IsRequested(const std::string ename) {
-      return Needs::IsRequested(ename,NULL);
+      //return Needs::IsRequested(ename,NULL);
+        return IsRequested(ename,NULL);
     }
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
@@ -329,18 +345,22 @@ public:
       }
       return Needs::IsRequested(ename,fac);
     }
-
-
-    //! Previous level
-    RCP<Level> & GetPreviousLevel() { return previousLevel_; }
     //@}
+
+    //! @name Default factory handler
+    //@{
+    //! Set default factories (used internally by Hierarchy::SetLevel()).
+    // Users should not use this method.
+    void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) {
+        defaultFactoryHandler_ = defaultFactoryHandler;
+    }
 
     //! Get ptr to default factory. // TODO: make me private again
     const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) {
         TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
         return defaultFactoryHandler_->GetDefaultFactoryRCP(varname).get();
     }
-
+    //@}
 private:
     //! Get RCP to default factory for given variable 'varname'.
     RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string& varname) {
