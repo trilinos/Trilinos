@@ -77,6 +77,7 @@ APPEND_SET(SOURCES
   Zoltan2_Util.cpp
   Zoltan2_Environment.cpp
   Zoltan2_DebugManager.cpp
+  Zoltan2_Parameters.cpp
   )
 
 PACKAGE_ADD_LIBRARY(
