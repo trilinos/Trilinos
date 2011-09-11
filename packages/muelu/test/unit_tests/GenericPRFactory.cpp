@@ -55,14 +55,14 @@ namespace MueLuTests {
     out << "Test that Build returns early if the coarsest matrix is smaller than specified MaxCoarseSize" << std::endl;
 
     Level fineLevel, coarseLevel; MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
-    fineLevel.SetupPhase(true);
-    coarseLevel.SetupPhase(true);
 
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
-    fineLevel.Set("A",A,NULL);
+    fineLevel.Request("A");
+    fineLevel.Set("A",A);
 
     GenericPRFactory genericPR = GenericPRFactory();
     genericPR.SetMaxCoarseSize(500);
+    genericPR.DeclareInput(fineLevel,coarseLevel);
     r = genericPR.Build(fineLevel,coarseLevel);
     TEST_EQUALITY( r , false);
 

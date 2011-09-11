@@ -61,15 +61,17 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Request("A");
-  levelOne->Set("A",A);
+
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   out << "Providing no factories to FillHierarchy." << std::endl;
   H.FillHierarchy();
@@ -89,10 +91,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
   GenericPRFactory PRFact(PFact);
@@ -118,11 +122,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Request("A");
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
   RCP<TransPFactory>  RFact = rcp(new TransPFactory(PFact));
@@ -146,11 +151,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Set("A",A);
+
 
   Hierarchy H;
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
+
+  levelOne->Set("A",A);
 
 //   H.SetSmoothers();
 
@@ -185,10 +192,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   std::cout << "LA" << std::endl;
 
   RCP<Level> levelOne = rcp(new Level());
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Set("A",A);
 
   std::cout << "ICI2" << std::endl;
   H.SetCoarsestSolver(SmooFactory);
@@ -222,10 +230,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   SmootherFactory SmooFactory(smoother);
 
   RCP<Level> levelOne = rcp(new Level());
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Set("A",A);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
 
@@ -256,10 +265,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   SmootherFactory SmooFactory(smoother);
 
   RCP<Level> levelOne = rcp(new Level());
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Set("A",A);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
 
@@ -282,11 +292,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Request("A");
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   H.FullPopulate();
 } //FullPopulate
@@ -302,10 +313,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-  levelOne->Set("A",A);
 
   Hierarchy H;
   H.SetLevel(levelOne);
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
   RCP<GenericPRFactory> PRFact = rcp(new GenericPRFactory(PFact));
@@ -341,13 +353,14 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
+  H.SetLevel(Finest);
+
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                           //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
-  H.SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -435,13 +448,14 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
+  H.SetLevel(Finest);
+
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                           //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
-  H.SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
