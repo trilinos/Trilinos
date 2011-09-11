@@ -190,7 +190,10 @@ public:
 	LHS_(i,j) = 0.0;
 	RHS_(i,j) = 0.0;
       }
-
+     if (NumRows_!=0)
+       {
+       IFPACK_CHK_ERR(Solver_.SetVectors(LHS_,RHS_));
+       }
     return(0);
   }
 

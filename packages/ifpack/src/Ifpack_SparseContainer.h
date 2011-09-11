@@ -108,13 +108,17 @@ public:
     return(NumVectors_);
   }
 
-  //! Sets the number of vectors for LHS/RHS.
-  virtual int SetNumVectors(const int NumVectors_in)
-  {
-    if (NumVectors_ == NumVectors_in)
-      return(0);
-    IFPACK_CHK_ERR(-99); // STILL TO DO
-  }
+   //! Sets the number of vectors for LHS/RHS.
+   virtual int SetNumVectors(const int NumVectors_in)
+   {
+     if (NumVectors_ != NumVectors_in)
+       {
+       NumVectors_=NumVectors_in;
+       LHS_=Teuchos::rcp(new Epetra_MultiVector(*Map_,NumVectors_));
+       RHS_=Teuchos::rcp(new Epetra_MultiVector(*Map_,NumVectors_));
+       }
+   return(0);
+   }
 
   //! Returns the i-th component of the vector Vector of LHS.
   virtual double& LHS(const int i, const int Vector = 0);
