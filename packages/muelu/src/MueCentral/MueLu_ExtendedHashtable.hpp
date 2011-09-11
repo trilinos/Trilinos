@@ -286,26 +286,6 @@ private:
         return (i->second);
     }
 
-    /*inline
-    Teuchos::ParameterEntry* getEntryPtr(const std::string& ename, const FactoryBase* factory)
-    {
-        dataMapType& mapData = dataTable_[ename];
-        MapIterator i = mapData.find(factory);
-        if (i == mapData.end() )
-            return NULL;
-        return &entry(i);
-    }
-
-    inline
-    const Teuchos::ParameterEntry* getEntryPtr(const std::string& ename, const FactoryBase* factory) const
-    {
-        ConstIterator k = dataTable_.find(ename);
-        const dataMapType mapData = k->second;
-        ConstMapIterator i = mapData.find(factory);
-        if (i == mapData.end() )
-            return NULL;
-        return &entry(i);
-    }*/
 
     //@}
 

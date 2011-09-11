@@ -254,10 +254,6 @@ namespace MueLu {
           *out_ << "declareInput for P's, R's and RAP" << std::endl;
           PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
           AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
-          *out_ << "FineLevel: " << std::endl;
-          fineLevel.print(*out_);
-          *out_ << "CoarseLevel: " << std::endl;
-          coarseLevel.print(*out_);
 
           ++i;
         } //while
@@ -290,18 +286,18 @@ namespace MueLu {
         } //while
 
       ////////////////////////////////////////////////////////////
-      i = startLevel;
-      while (i < startLevel + Levels_.size() - 1)
-        {
-          Level & fineLevel = *Levels_[i];
-          Level & coarseLevel = *Levels_[i+1];
-          std::cout << "GenericPRFactory.Build: (start)" << std::endl;
-          std::cout << "FineLevel:" << std::endl;
-          fineLevel.print(std::cout);
-          std::cout << "CoarseLevel:" << std::endl;
-          coarseLevel.print(std::cout);
-          ++i;
-        }
+      //i = startLevel;
+      //while (i < startLevel + Levels_.size() - 1)
+      //  {
+      //    Level & fineLevel = *Levels_[i];
+      //    Level & coarseLevel = *Levels_[i+1];
+      //    std::cout << "GenericPRFactory.Build: (start)" << std::endl;
+      //    std::cout << "FineLevel:" << std::endl;
+      //    fineLevel.print(std::cout);
+      //    std::cout << "CoarseLevel:" << std::endl;
+      //    coarseLevel.print(std::cout);
+      //    ++i;
+      //  }
       ////////////////////////////////////////////////////////////
 
       Teuchos::ParameterList status;

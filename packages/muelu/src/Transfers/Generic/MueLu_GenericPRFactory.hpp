@@ -100,33 +100,15 @@ class GenericPRFactory : public PRFactory {
       
       //FIXME cache output level here
 
-      std::cout << "GenericPRFactory.Build: (start)" << std::endl;
-      std::cout << "Info: PFact_=" << PFact_.get() << " RFact_=" << RFact_.get() << std::endl;
-      std::cout << "Info: PRFact_=" << this << std::endl;
-      std::cout << "FineLevel:" << std::endl;
-      fineLevel.print(std::cout);
-      std::cout << "CoarseLevel:" << std::endl;
-      coarseLevel.print(std::cout);
-
-
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
       coarseLevel.Set< RCP<Operator> >("P", P, this);  // for the RAP factory
       coarseLevel.Release("P",PFact_);
-      //      PFact_->BuildP(fineLevel,coarseLevel);
-      //      if (RFact_ != Teuchos::null) {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
-        coarseLevel.Set< RCP<Operator> >("R", R, this); // for the RAP factory
-        coarseLevel.Release("R",RFact_);
-        //        RFact_->BuildR(fineLevel,coarseLevel);
-        //}
-      //FIXME restore output level here
 
-        std::cout << "GenericPRFactory.Build: (after build of PFactory and RFactory)" << std::endl;
-        std::cout << "FineLevel:" << std::endl;
-        fineLevel.print(std::cout);
-        std::cout << "CoarseLevel:" << std::endl;
-        coarseLevel.print(std::cout);
-        std::cout << "GenericPRFactory.Build: (end)" << std::endl;
+      RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_);
+      coarseLevel.Set< RCP<Operator> >("R", R, this); // for the RAP factory
+      coarseLevel.Release("R",RFact_);
+
+      //FIXME restore output level here
 
       return true;
     }

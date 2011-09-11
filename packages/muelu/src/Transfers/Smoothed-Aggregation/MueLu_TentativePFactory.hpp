@@ -98,8 +98,6 @@ namespace MueLu {
       RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_);
       RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_);
 
-      fineLevel.print(std::cout);
-
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative_"+buf.str()));
@@ -119,8 +117,6 @@ namespace MueLu {
       fineLevel.Release("A", AFact_);
       fineLevel.Release("Aggregates", aggregatesFact_);
       fineLevel.Release("Nullspace", nullspaceFact_);
-
-      fineLevel.print(std::cout);
 
       return true;
     }
