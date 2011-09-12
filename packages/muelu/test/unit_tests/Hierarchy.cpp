@@ -157,6 +157,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
 
+  levelOne->Request("A");
   levelOne->Set("A",A);
 
 //   H.SetSmoothers();
@@ -196,7 +197,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   Hierarchy H;
   H.SetLevel(levelOne);
 
+  levelOne->Request("A");
   levelOne->Set("A",A);
+
+  levelOne->Request("PreSmoother", &SmooFactory);
+  levelOne->Request("PostSmoother", &SmooFactory);
 
   std::cout << "ICI2" << std::endl;
   H.SetCoarsestSolver(SmooFactory);
@@ -233,8 +238,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-
+  levelOne->Request("A");
   levelOne->Set("A",A);
+
+  levelOne->Request("PreSmoother", &SmooFactory);
+  levelOne->Request("PostSmoother", &SmooFactory);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
 
@@ -268,8 +276,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-
+  levelOne->Request("A");
   levelOne->Set("A",A);
+
+  levelOne->Request("PreSmoother", &SmooFactory);
+  levelOne->Request("PostSmoother", &SmooFactory);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
 
@@ -355,12 +366,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   H.SetLevel(Finest);
 
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                           //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
+  Finest->Set("A",Op);
+  Finest->Set("Nullspace",nullSpace);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -450,12 +461,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   H.SetLevel(Finest);
 
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+  Finest->Request("A");
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                           //FIXME is implemented
 
-  Finest->Set("NullSpace",nullSpace);
+  Finest->Set("A",Op);
+  Finest->Set("Nullspace",nullSpace);
+
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
