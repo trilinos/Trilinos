@@ -141,10 +141,12 @@ SET(HEADERS ${HEADERS}
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
   Stokhos_ProductEpetraVector.hpp
   Stokhos_ProductEpetraMultiVector.hpp
+  Stokhos_ProductEpetraOperator.hpp
+  Stokhos_ProductEpetraMultiVectorOperator.hpp
   Stokhos_EpetraVectorOrthogPoly.hpp
   Stokhos_EpetraMultiVectorOrthogPoly.hpp
   Stokhos_EpetraOperatorOrthogPoly.hpp
-  Stokhos_ProductEpetraOperator.hpp
+  Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp
   Stokhos_PCECovarianceOp.hpp
   Stokhos_PCEAnasaziKL.hpp
   Stokhos_KL_OneDEigenPair.hpp
@@ -195,9 +197,11 @@ SET(SOURCES ${SOURCES}
   Stokhos_ProductEpetraVector.cpp
   Stokhos_ProductEpetraMultiVector.cpp
   Stokhos_ProductEpetraOperator.cpp
+  Stokhos_ProductEpetraMultiVectorOperator.cpp
   Stokhos_EpetraVectorOrthogPoly.cpp
   Stokhos_EpetraMultiVectorOrthogPoly.cpp
   Stokhos_EpetraOperatorOrthogPoly.cpp
+  Stokhos_EpetraMultiVectorOperatorOrthogPoly.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
   Stokhos_SGInverseModelEvaluator.cpp
