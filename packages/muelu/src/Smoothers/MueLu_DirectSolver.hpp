@@ -75,19 +75,23 @@ namespace MueLu {
       if (lib_ == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_AMESOS2
         return rcp( new Amesos2Smoother(type_, paramList_) );
+#else
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos2");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
         //#if defined(HAVE_MUELU_AMESOS2)
         // return rcp( new Amesos2Smoother(type_, paramList_) ); TODO: Amesos2 can also handle Epetra matrices but Amesos2Smoother can't for the moment.
         //#elif 
 #if defined(HAVE_MUELU_AMESOS)
-        return rcp( new AmesosSmoother(type_, paramList_) ); //TODO: for LONG LONG :(
+        return rcp( new AmesosSmoother(type_, paramList_) ); // TODO: for LONG LONG
+#else
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // or Amesos2
 #endif
       } else {
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       }
 
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for " + toString(lib_) + " matrices. Compile MueLu with Amesos (for Epetra matrices) or Amesos2 (for Tpetra matrices).");
+      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
     }
 
   private:

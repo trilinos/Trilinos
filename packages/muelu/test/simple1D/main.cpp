@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 
 // Teuchos
@@ -7,17 +8,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-//#include "MueLu_GaussSeidel.hpp"
-#include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
-
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_Utilities.hpp"
-
+// Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
@@ -30,10 +21,14 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-#include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
-#include <unistd.h>
-/**********************************************************************************/
+// MueLu
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_GenericPRFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_Utilities.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -42,6 +37,10 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 #endif
+
+// 
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
@@ -60,7 +59,7 @@ int main(int argc, char *argv[]) {
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
   MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
 
   // custom parameters
   LO maxLevels = 3;
@@ -139,9 +138,7 @@ int main(int argc, char *argv[]) {
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
-  RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   /*
@@ -151,21 +148,17 @@ int main(int argc, char *argv[]) {
   ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
   ifpackList.set("chebyshev: zero starting solution", false);
   */
+
+  std::string ifpackType;
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-#endif
+    ifpackType = "point relaxation stand-alone";
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
-#endif
-  }
-  if (smooProto == Teuchos::null) {
-    throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
+    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    ifpackType = "RELAXATION";
   }
 
+  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(xpetraParameters.GetLib(), ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -217,7 +210,7 @@ int main(int argc, char *argv[]) {
     X->putScalar( (SC) 0.0);
   
     typedef ST::magnitudeType                 MT;
-    typedef Xpetra::MultiVector<SC>          MV;
+    typedef Xpetra::MultiVector<SC>           MV;
     typedef Belos::OperatorT<MV>              OP;
   
     // Construct a Belos LinearProblem object
