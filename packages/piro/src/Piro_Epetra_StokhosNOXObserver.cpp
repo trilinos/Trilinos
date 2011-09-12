@@ -70,16 +70,16 @@ void Piro::Epetra::StokhosNOXObserver::observeSolution(
     *overlap_vec);
   if (save_moments <= 0) {
     for (int i=0; i< numSGBlocks; i++) {
-      noxObserver->observeSolution(vec_poly[i]);
+      noxObserver->observeSolution(vec_poly[i], i);
     }
   }
   else {
     // Always write out first moment
     vec_poly.computeMean(*moment);
-    noxObserver->observeSolution(*moment);
+    noxObserver->observeSolution(*moment, 1);
     if (save_moments >= 2) {
       vec_poly.computeStandardDeviation(*moment);
-      noxObserver->observeSolution(*moment);
+      noxObserver->observeSolution(*moment, 2);
     }
   }
   
