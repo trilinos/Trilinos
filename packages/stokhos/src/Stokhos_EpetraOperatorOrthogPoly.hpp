@@ -40,8 +40,8 @@ namespace Stokhos {
    * would have an expensive copy constructor.  
    */
   class EpetraOperatorOrthogPoly : 
-    public VectorOrthogPoly<Epetra_Operator>,
-    public ProductEpetraOperator {
+    public virtual VectorOrthogPoly<Epetra_Operator>,
+    public virtual ProductEpetraOperator {
   public:
 
     //! Typename of values
@@ -87,6 +87,18 @@ namespace Stokhos {
      * NOTE:  This is a shallow copy
      */
     EpetraOperatorOrthogPoly& operator=(const EpetraOperatorOrthogPoly& v);
+
+  protected:
+
+    //! Protected constructor to allow 2-stage derived setup
+    EpetraOperatorOrthogPoly(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm);
+
+    //! Second stage of setup
+    void setup(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+	       const Teuchos::RCP<const Epetra_Map>& range_base_map);
 
   }; // class EpetraOperatorOrthogPoly
 

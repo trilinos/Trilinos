@@ -36,6 +36,7 @@
 #include "Stokhos_SGPreconditionerFactory.hpp"
 #include "Stokhos_MatrixFreeOperator.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
+#include "Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
@@ -82,8 +83,6 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     x_sg_blocks(),
     f_sg_blocks(),
     W_sg_blocks(),
-    dgdx_dot_sg_blocks(),
-    dgdx_sg_blocks(),
     sg_x_init(),
     sg_p_init(),
     eval_W_with_f(false),
@@ -222,8 +221,6 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   num_g_sg = sg_g_index_map.size();
 
   sg_g_map.resize(num_g_sg);
-  dgdx_dot_sg_blocks.resize(num_g_sg);
-  dgdx_sg_blocks.resize(num_g_sg);
 
   // Create response maps
   for (int i=0; i<num_g_sg; i++) {
@@ -231,16 +228,6 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     sg_g_map[i] = 
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
 		     *g_map, *overlapped_stoch_row_map, *sg_comm));
-    
-    // Create dg/dxdot, dg/dx SG blocks
-    if (supports_x) {
-      dgdx_dot_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis,  overlapped_stoch_row_map));
-      dgdx_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis, overlapped_stoch_row_map));
-    }
   }
   
   // We don't support parallel for dgdx yet, so build a new EpetraCijk
@@ -372,31 +359,35 @@ Stokhos::SGModelEvaluator::create_DgDx_op(int j) const
  
   int jj = sg_g_index_map[j];
   Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(jj);
-  Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-    Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		   sg_basis, overlapped_stoch_row_map, x_map, 
-		   g_map, sg_g_map[j], sg_comm));
+  Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks;
   OutArgs me_outargs = me->createOutArgs();
   DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDx_sg, jj);
-  if (ds.supports(DERIV_LINEAR_OP))
+  if (ds.supports(DERIV_LINEAR_OP)) {
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, x_map, 
+		     g_map, sg_g_map[j], sg_comm));
     for (unsigned int i=0; i<num_sg_blocks; i++)
       sg_blocks->setCoeffPtr(i, me->create_DgDx_op(jj));
-  else if (ds.supports(DERIV_MV_BY_COL))
-    for (unsigned int i=0; i<num_sg_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-      sg_blocks->setCoeffPtr(i, block);
-    }
-  else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-    for (unsigned int i=0; i<num_sg_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-      sg_blocks->setCoeffPtr(i, block);
-    }
+  }
+  else if (ds.supports(DERIV_MV_BY_COL)) {
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, g_map, sg_g_map[j],
+		     sg_comm, x_map->NumMyElements()));
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		     sg_mv_blocks, false));
+  }
+  else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, x_map, sg_x_map,
+		     sg_comm, g_map->NumMyElements()));
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		     sg_mv_blocks, true));
+  }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_sg, " << jj
@@ -421,32 +412,35 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
   
   int jj = sg_g_index_map[j];
   Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(jj);
-  Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-    Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		   sg_basis, overlapped_stoch_row_map, x_map, 
-		   g_map, sg_g_map[j], sg_comm));
+  Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks;
   OutArgs me_outargs = me->createOutArgs();
   DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDx_dot_sg, jj);
-  if (ds.supports(DERIV_LINEAR_OP))
+  if (ds.supports(DERIV_LINEAR_OP)) {
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, x_map, 
+		     g_map, sg_g_map[j], sg_comm));
     for (unsigned int i=0; i<num_sg_blocks; i++)
       sg_blocks->setCoeffPtr(i, me->create_DgDx_dot_op(jj));
-  else if (ds.supports(DERIV_MV_BY_COL))
-    for (unsigned int i=0; i<num_sg_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-      sg_blocks->setCoeffPtr(i, block);
-    }
-  else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-    for (unsigned int i=0; i<num_sg_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
-      
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-      sg_blocks->setCoeffPtr(i, block);
-    }
+  }
+  else if (ds.supports(DERIV_MV_BY_COL)) {
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, g_map, sg_g_map[j],
+		     sg_comm, x_map->NumMyElements()));
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		     sg_mv_blocks, false));
+  }
+  else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		     sg_basis, overlapped_stoch_row_map, x_map, sg_x_map,
+		     sg_comm, g_map->NumMyElements()));
+    sg_blocks = 
+      Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		     sg_mv_blocks, true));
+  }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_dot_sg, " 
@@ -493,30 +487,35 @@ Stokhos::SGModelEvaluator::create_DgDp_op(int j, int i) const
   else {
     int ii = sg_p_index_map[i-num_p];
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(ii);
-    Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-      Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		     sg_basis, overlapped_stoch_row_map,
-		     p_map, g_map, sg_g_map[j], sg_comm));
+    Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks;
     DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDp_sg,jj,ii);
-    if (ds.supports(DERIV_LINEAR_OP))
+    if (ds.supports(DERIV_LINEAR_OP)) {
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map,
+		       p_map, g_map, sg_g_map[j], sg_comm));
       for (unsigned int l=0; l<num_sg_blocks; l++)
 	sg_blocks->setCoeffPtr(l, me->create_DgDp_op(jj,ii));
-    else if (ds.supports(DERIV_MV_BY_COL))
-      for (unsigned int l=0; l<num_sg_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*g_map, p_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-	sg_blocks->setCoeffPtr(l, block);
-      }
-    else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-      for (unsigned int l=0; l<num_sg_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*p_map, g_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-	sg_blocks->setCoeffPtr(l, block);
-      }
+    }
+    else if (ds.supports(DERIV_MV_BY_COL)) {
+      Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map, g_map, sg_g_map[j],
+		       sg_comm, p_map->NumMyElements()));
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		       sg_mv_blocks, false));
+    }
+    else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+      Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map, p_map, 
+		       sg_p_map[i-num_p],
+		       sg_comm, g_map->NumMyElements()));
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		       sg_mv_blocks, true));
+    }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DgDp_sg, " << jj
@@ -563,30 +562,35 @@ Stokhos::SGModelEvaluator::create_DfDp_op(int i) const
   else {
     int ii = sg_p_index_map[i-num_p];
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(ii);
-    Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-      Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		     sg_basis, overlapped_stoch_row_map,
-		     p_map, f_map, sg_overlapped_f_map, sg_comm));
+    Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks;
     DerivativeSupport ds = me_outargs.supports(OUT_ARG_DfDp_sg,ii);
-    if (ds.supports(DERIV_LINEAR_OP))
+    if (ds.supports(DERIV_LINEAR_OP)) {
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map,
+		       p_map, f_map, sg_overlapped_f_map, sg_comm));
       for (unsigned int l=0; l<num_sg_blocks; l++)
 	sg_blocks->setCoeffPtr(l, me->create_DfDp_op(ii));
-    else if (ds.supports(DERIV_MV_BY_COL))
-      for (unsigned int l=0; l<num_sg_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*f_map, p_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-	sg_blocks->setCoeffPtr(l, block);
-      }
-    else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-      for (unsigned int l=0; l<num_sg_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*p_map, f_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-	sg_blocks->setCoeffPtr(l, block);
-      }
+    }
+    else if (ds.supports(DERIV_MV_BY_COL)) {
+      Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map, f_map, sg_f_map,
+		       sg_comm, p_map->NumMyElements()));
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		       sg_mv_blocks, false));
+    }
+    else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+      Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_mv_blocks =
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+		       sg_basis, overlapped_stoch_row_map, p_map, 
+		       sg_p_map[i-num_p],
+		       sg_comm, f_map->NumMyElements()));
+      sg_blocks = 
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperatorOrthogPoly(
+		       sg_mv_blocks, true));
+    }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DfDp_sg, " << ii 
@@ -821,14 +825,10 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DfDp_sg(ii, SGDerivative(dfdp_op_sg));
 	else {
-	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dfdp_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   sg_basis, overlapped_stoch_row_map));
-	  for (unsigned int l=0; l<num_sg_blocks; l++) {
-	    Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dfdp_op_sg->getCoeffPtr(l), true);
-	    dfdp_sg->setCoeffPtr(l, mv_op->getMultiVector());
-	  }
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOperatorOrthogPoly> sg_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperatorOrthogPoly>(dfdp_op_sg, true);
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dfdp_sg =
+	    sg_mv_op->multiVectorOrthogPoly();
 	  if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_MV_BY_COL))
 	    me_outargs.set_DfDp_sg(
 	      ii, SGDerivative(dfdp_sg, DERIV_MV_BY_COL));
@@ -869,17 +869,15 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DgDx_dot_sg(ii, sg_blocks);
 	else {
-	  for (unsigned int k=0; k<num_sg_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_dot_sg_blocks[i]->setCoeffPtr(k, mv);
-	  }
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOperatorOrthogPoly> sg_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperatorOrthogPoly>(sg_blocks, true);
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdx_dot_sg =
+	    sg_mv_op->multiVectorOrthogPoly();
 	  if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
+	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg,
 							DERIV_MV_BY_COL));
 	  else
-	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
+	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg,
 							DERIV_TRANS_MV_BY_ROW));
 	}
       }
@@ -902,15 +900,10 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DgDx_sg(ii, sg_blocks);
 	else {
-	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdx_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   sg_basis, overlapped_stoch_row_map));
-	  for (unsigned int k=0; k<num_sg_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_sg->setCoeffPtr(k, mv);
-	  }
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOperatorOrthogPoly> sg_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperatorOrthogPoly>(sg_blocks, true);
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdx_sg =
+	    sg_mv_op->multiVectorOrthogPoly();
 	  if (me_outargs.supports(OUT_ARG_DgDx_sg, ii).supports(DERIV_MV_BY_COL))
 	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg,
 						    DERIV_MV_BY_COL));
@@ -971,14 +964,10 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	  if (me_outargs.supports(OUT_ARG_DgDp_sg,ii,jj).supports(DERIV_LINEAR_OP))
 	    me_outargs.set_DgDp_sg(ii, jj, SGDerivative(dgdp_op_sg));
 	  else {
-	    Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdp_sg = 
-	      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			     sg_basis, overlapped_stoch_row_map));
-	    for (unsigned int l=0; l<num_sg_blocks; l++) {
-	      Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-		Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dgdp_op_sg->getCoeffPtr(l), true);
-	      dgdp_sg->setCoeffPtr(l, mv_op->getMultiVector());
-	    }
+	    Teuchos::RCP<Stokhos::EpetraMultiVectorOperatorOrthogPoly> sg_mv_op =
+	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperatorOrthogPoly>(dgdp_op_sg, true);
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdp_sg =
+	    sg_mv_op->multiVectorOrthogPoly();
 	    if (me_outargs.supports(OUT_ARG_DgDp_sg,ii,jj).supports(DERIV_MV_BY_COL))
 	      me_outargs.set_DgDp_sg(
 		ii, jj, SGDerivative(dgdp_sg, DERIV_MV_BY_COL));

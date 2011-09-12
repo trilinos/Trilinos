@@ -35,7 +35,7 @@
 #include "Stokhos_MPPreconditionerFactory.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
 #include "Stokhos_ProductEpetraOperator.hpp"
-
+#include "Stokhos_ProductEpetraMultiVectorOperator.hpp"
 
 Stokhos::MPModelEvaluator::MPModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
@@ -62,8 +62,6 @@ Stokhos::MPModelEvaluator::MPModelEvaluator(
     mp_g_index_map(),
     mp_g_map(),
     W_mp_blocks(),
-    dgdx_dot_mp_blocks(),
-    dgdx_mp_blocks(),
     mp_p_init(),
     my_W(),
     my_x()
@@ -159,8 +157,6 @@ Stokhos::MPModelEvaluator::MPModelEvaluator(
   num_g_mp = mp_g_index_map.size();
 
   mp_g_map.resize(num_g_mp);
-  dgdx_dot_mp_blocks.resize(num_g_mp);
-  dgdx_mp_blocks.resize(num_g_mp);
 
   // Create response maps
   for (int i=0; i<num_g_mp; i++) {
@@ -168,12 +164,6 @@ Stokhos::MPModelEvaluator::MPModelEvaluator(
     mp_g_map[i] = 
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
 		     *g_map, *mp_block_map, *mp_comm));
-    
-    // Create dg/dxdot, dg/dx MP blocks
-    dgdx_dot_mp_blocks[i] = 
-      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(mp_block_map));
-    dgdx_mp_blocks[i] = 
-      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(mp_block_map));
   }
 }
 
@@ -285,30 +275,34 @@ Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
   
   int jj = mp_g_index_map[j];
   Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(jj);
-  Teuchos::RCP< Stokhos::ProductEpetraOperator > mp_blocks =
-    Teuchos::rcp(new Stokhos::ProductEpetraOperator(
-		   mp_block_map, x_map, g_map, mp_g_map[j], mp_comm));
+  Teuchos::RCP< Stokhos::ProductEpetraOperator > mp_blocks;
   OutArgs me_outargs = me->createOutArgs();
   DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDx_mp, jj);
-  if (ds.supports(DERIV_LINEAR_OP))
+  if (ds.supports(DERIV_LINEAR_OP)) {
+    mp_blocks = 
+      Teuchos::rcp(new Stokhos::ProductEpetraOperator(
+		     mp_block_map, x_map, g_map, mp_g_map[j], mp_comm));
     for (unsigned int i=0; i<num_mp_blocks; i++)
       mp_blocks->setCoeffPtr(i, me->create_DgDx_op(jj));
-  else if (ds.supports(DERIV_MV_BY_COL))
-    for (unsigned int i=0; i<num_mp_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-      mp_blocks->setCoeffPtr(i, block);
-    }
-  else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-    for (unsigned int i=0; i<num_mp_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-      mp_blocks->setCoeffPtr(i, block);
-    }
+  }
+  else if (ds.supports(DERIV_MV_BY_COL)) {
+    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		     mp_block_map, g_map, mp_g_map[j],
+		     mp_comm, x_map->NumMyElements()));
+    mp_blocks = 
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		     mp_mv_blocks, false));
+  }
+  else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		     mp_block_map, x_map, mp_x_map,
+		     mp_comm, g_map->NumMyElements()));
+    mp_blocks = 
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		     mp_mv_blocks, true));
+  }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_mp, " << j
@@ -331,32 +325,35 @@ Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
   
   int jj = mp_g_index_map[j];
   Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(jj);
-  Teuchos::RCP< Stokhos::ProductEpetraOperator > mp_blocks =
-    Teuchos::rcp(new Stokhos::ProductEpetraOperator(
-		   mp_block_map, x_map, g_map, mp_g_map[j], 
-		   mp_comm));
+  Teuchos::RCP< Stokhos::ProductEpetraOperator > mp_blocks;
   OutArgs me_outargs = me->createOutArgs();
   DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDx_dot_mp, jj);
-  if (ds.supports(DERIV_LINEAR_OP))
+  if (ds.supports(DERIV_LINEAR_OP)) {
+    mp_blocks =
+      Teuchos::rcp(new Stokhos::ProductEpetraOperator(
+		     mp_block_map, x_map, g_map, mp_g_map[j], 
+		     mp_comm));
     for (unsigned int i=0; i<num_mp_blocks; i++)
       mp_blocks->setCoeffPtr(i, me->create_DgDx_dot_op(jj));
-  else if (ds.supports(DERIV_MV_BY_COL))
-    for (unsigned int i=0; i<num_mp_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-      mp_blocks->setCoeffPtr(i, block);
-    }
-  else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-    for (unsigned int i=0; i<num_mp_blocks; i++) {
-      Teuchos::RCP<Epetra_MultiVector> mv = 
-	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
-      
-      Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-      mp_blocks->setCoeffPtr(i, block);
-    }
+  }
+  else if (ds.supports(DERIV_MV_BY_COL)) {
+    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		     mp_block_map, g_map, mp_g_map[j],
+		     mp_comm, x_map->NumMyElements()));
+    mp_blocks = 
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		     mp_mv_blocks, false));
+  }
+  else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		     mp_block_map, x_map, mp_x_map,
+		     mp_comm, g_map->NumMyElements()));
+    mp_blocks = 
+      Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		     mp_mv_blocks, true));
+  }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_dot_mp, " 
@@ -400,30 +397,34 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
   else {
     int ii = mp_p_index_map[i-num_p];
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(ii);
-    Teuchos::RCP< Stokhos::ProductEpetraOperator> mp_blocks =
-      Teuchos::rcp(new Stokhos::ProductEpetraOperator(
-		     mp_block_map, p_map, g_map, 
-		     mp_g_map[j], mp_comm));
+    Teuchos::RCP< Stokhos::ProductEpetraOperator> mp_blocks;
     DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDp_mp,jj,ii);
-    if (ds.supports(DERIV_LINEAR_OP))
+    if (ds.supports(DERIV_LINEAR_OP)) {
+      mp_blocks = 
+	Teuchos::rcp(new Stokhos::ProductEpetraOperator(
+		       mp_block_map, p_map, g_map, 
+		       mp_g_map[j], mp_comm));
       for (unsigned int l=0; l<num_mp_blocks; l++)
 	mp_blocks->setCoeffPtr(l, me->create_DgDp_op(jj,ii));
-    else if (ds.supports(DERIV_MV_BY_COL))
-      for (unsigned int l=0; l<num_mp_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*g_map, p_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-	mp_blocks->setCoeffPtr(l, block);
-      }
-    else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-      for (unsigned int l=0; l<num_mp_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*p_map, g_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-	mp_blocks->setCoeffPtr(l, block);
-      }
+    }
+    else if (ds.supports(DERIV_MV_BY_COL)) {
+      Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		       mp_block_map, g_map, mp_g_map[j],
+		       mp_comm, p_map->NumMyElements()));
+      mp_blocks = 
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		       mp_mv_blocks, false));
+    }
+    else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+      Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		       mp_block_map, p_map, mp_p_map[i-num_p],
+		       mp_comm, g_map->NumMyElements()));
+      mp_blocks = 
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		       mp_mv_blocks, true));
+    }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DgDp_mp, " << jj
@@ -467,30 +468,34 @@ Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
   else {
     int ii = mp_p_index_map[i-num_p];
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(ii);
-    Teuchos::RCP<Stokhos::ProductEpetraOperator> mp_blocks =
+    Teuchos::RCP<Stokhos::ProductEpetraOperator> mp_blocks;
+    DerivativeSupport ds = me_outargs.supports(OUT_ARG_DfDp_mp,ii);
+    if (ds.supports(DERIV_LINEAR_OP)) {
+      mp_blocks =
 	Teuchos::rcp(new Stokhos::ProductEpetraOperator(
 		       mp_block_map, me->get_p_map(ii), me->get_f_map(), 
 		       mp_f_map, mp_comm));
-    DerivativeSupport ds = me_outargs.supports(OUT_ARG_DfDp_mp,ii);
-    if (ds.supports(DERIV_LINEAR_OP))
       for (unsigned int l=0; l<num_mp_blocks; l++)
 	mp_blocks->setCoeffPtr(l, me->create_DfDp_op(ii));
-    else if (ds.supports(DERIV_MV_BY_COL))
-      for (unsigned int l=0; l<num_mp_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*f_map, p_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
-	mp_blocks->setCoeffPtr(l, block);
-      }
-    else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
-      for (unsigned int l=0; l<num_mp_blocks; l++) {
-	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*p_map, f_map->NumMyElements()));
-	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
-	mp_blocks->setCoeffPtr(l, block);
-      }
+    }
+    else if (ds.supports(DERIV_MV_BY_COL)) {
+      Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		       mp_block_map, f_map, mp_f_map,
+		       mp_comm, p_map->NumMyElements()));
+      mp_blocks = 
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		       mp_mv_blocks, false));
+    }
+    else if (ds.supports(DERIV_TRANS_MV_BY_ROW)) {
+      Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_mv_blocks =
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+		       mp_block_map, p_map, mp_p_map[i-num_p],
+		       mp_comm, f_map->NumMyElements()));
+      mp_blocks = 
+	Teuchos::rcp(new Stokhos::ProductEpetraMultiVectorOperator(
+		       mp_mv_blocks, true));
+    }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DfDp_mp, " << ii 
@@ -700,13 +705,10 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DfDp_mp,ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DfDp_mp(ii, MPDerivative(dfdp_op_mp));
 	else {
-	  Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dfdp_mp = 
-	    Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(mp_block_map));
-	  for (unsigned int l=0; l<num_mp_blocks; l++) {
-	    Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dfdp_op_mp->getCoeffPtr(i), true);
-	    dfdp_mp->setCoeffPtr(l, mv_op->getMultiVector());
-	  }
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVectorOperator> mp_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::ProductEpetraMultiVectorOperator>(dfdp_op_mp, true);
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dfdp_mp =
+	    mp_mv_op->productMultiVector();
 	  if (me_outargs.supports(OUT_ARG_DfDp_mp,ii).supports(DERIV_MV_BY_COL))
 	    me_outargs.set_DfDp_mp(
 	      ii, MPDerivative(dfdp_mp, DERIV_MV_BY_COL));
@@ -747,17 +749,15 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DgDx_dot_mp(ii, mp_blocks);
 	else {
-	  for (unsigned int k=0; k<num_mp_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		mp_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_dot_mp_blocks[i]->setCoeffPtr(k, mv);
-	  }
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVectorOperator> mp_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::ProductEpetraMultiVectorOperator>(mp_blocks, true);
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dgdx_dot_mp =
+	    mp_mv_op->productMultiVector();
 	  if (me_outargs.supports(OUT_ARG_DgDx_dot_mp, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_dot_mp(ii, MPDerivative(dgdx_dot_mp_blocks[i],
+	    me_outargs.set_DgDx_dot_mp(ii, MPDerivative(dgdx_dot_mp,
 							DERIV_MV_BY_COL));
 	  else
-	    me_outargs.set_DgDx_dot_mp(ii, MPDerivative(dgdx_dot_mp_blocks[i],
+	    me_outargs.set_DgDx_dot_mp(ii, MPDerivative(dgdx_dot_mp,
 							DERIV_TRANS_MV_BY_ROW));
 	}
       }
@@ -780,17 +780,15 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DgDx_mp(ii, mp_blocks);
 	else {
-	  for (unsigned int k=0; k<num_mp_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		mp_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_mp_blocks[i]->setCoeffPtr(k, mv);
-	  }
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVectorOperator> mp_mv_op =
+	    Teuchos::rcp_dynamic_cast<Stokhos::ProductEpetraMultiVectorOperator>(mp_blocks, true);
+	  Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dgdx_mp =
+	    mp_mv_op->productMultiVector();
 	  if (me_outargs.supports(OUT_ARG_DgDx_mp, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_mp(ii, MPDerivative(dgdx_mp_blocks[i],
+	    me_outargs.set_DgDx_mp(ii, MPDerivative(dgdx_mp,
 						    DERIV_MV_BY_COL));
 	  else
-	    me_outargs.set_DgDx_mp(ii, MPDerivative(dgdx_mp_blocks[i],
+	    me_outargs.set_DgDx_mp(ii, MPDerivative(dgdx_mp,
 						    DERIV_TRANS_MV_BY_ROW));
 	}
       }
@@ -841,13 +839,10 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 	  if (me_outargs.supports(OUT_ARG_DgDp_mp,ii,jj).supports(DERIV_LINEAR_OP))
 	    me_outargs.set_DgDp_mp(ii, jj, MPDerivative(dgdp_op_mp));
 	  else {
-	    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dgdp_mp = 
-	      Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(mp_block_map));
-	    for (unsigned int l=0; l<num_mp_blocks; l++) {
-	      Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-		Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dgdp_op_mp->getCoeffPtr(i), true);
-	      dgdp_mp->setCoeffPtr(l, mv_op->getMultiVector());
-	    }
+	    Teuchos::RCP<Stokhos::ProductEpetraMultiVectorOperator> mp_mv_op =
+	      Teuchos::rcp_dynamic_cast<Stokhos::ProductEpetraMultiVectorOperator>(dgdp_op_mp, true);
+	    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> dgdp_mp =
+	      mp_mv_op->productMultiVector();
 	    if (me_outargs.supports(OUT_ARG_DgDp_mp,ii,jj).supports(DERIV_MV_BY_COL))
 	      me_outargs.set_DgDp_mp(
 		ii, jj, MPDerivative(dgdp_mp, DERIV_MV_BY_COL));

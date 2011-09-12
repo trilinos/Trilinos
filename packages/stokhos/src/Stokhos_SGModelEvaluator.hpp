@@ -365,14 +365,6 @@ namespace Stokhos {
     //! W stochastic Galerkin components
     mutable Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > W_sg_blocks;
 
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dfdp_sg_blocks;
-
-    //! dg/dxdot stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dgdx_dot_sg_blocks;
-
-    //! dg/dx stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dgdx_sg_blocks;
-
     //! SG initial x
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_init;
 

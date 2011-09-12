@@ -187,3 +187,26 @@ OperatorRangeMap() const
     return *domain_base_map;
   return *product_range_map;
 }
+
+Stokhos::ProductEpetraOperator::
+ProductEpetraOperator(
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
+  ProductContainer<Epetra_Operator>(block_map),
+  product_comm(product_comm_),
+  useTranspose(false)
+{
+}
+
+void
+Stokhos::ProductEpetraOperator::
+setup(const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
+      const Teuchos::RCP<const Epetra_Map>& range_base_map_)
+{
+  domain_base_map = domain_base_map_;
+  range_base_map = range_base_map_;
+  product_range_map = 
+    Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map, 
+							   *(this->map_), 
+							   *product_comm));
+}

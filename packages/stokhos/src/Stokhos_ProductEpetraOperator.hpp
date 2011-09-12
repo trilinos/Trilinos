@@ -149,6 +149,17 @@ namespace Stokhos {
 
   protected:
 
+    //! Protected constructor to allow 2-stage derived setup
+    ProductEpetraOperator(
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+      const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm);
+
+    //! Second stage of setup
+    void setup(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+	       const Teuchos::RCP<const Epetra_Map>& range_base_map);
+
+  protected:
+
     //! Domain map of each coefficient
     Teuchos::RCP<const Epetra_Map> domain_base_map;
 

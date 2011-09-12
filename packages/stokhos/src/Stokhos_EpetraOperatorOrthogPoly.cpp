@@ -75,3 +75,22 @@ operator=(const Stokhos::EpetraOperatorOrthogPoly& v) {
   this->basis_ = v.basis_;
   return *this;
 }
+
+Stokhos::EpetraOperatorOrthogPoly::
+EpetraOperatorOrthogPoly(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
+  ProductContainer<Epetra_Operator>(block_map),
+  VectorOrthogPoly<Epetra_Operator>(basis, block_map),
+  ProductEpetraOperator(block_map, product_comm) 
+{
+}
+
+void
+Stokhos::EpetraOperatorOrthogPoly::
+setup(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+      const Teuchos::RCP<const Epetra_Map>& range_base_map)
+{
+  ProductEpetraOperator::setup(domain_base_map, range_base_map);
+}

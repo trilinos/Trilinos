@@ -233,12 +233,6 @@ namespace Stokhos {
     //! W multi-point components
     mutable Teuchos::RCP< Stokhos::ProductEpetraOperator> W_mp_blocks;
 
-    //! dg/dxdot multi-point components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::ProductEpetraMultiVector > > dgdx_dot_mp_blocks;
-
-    //! dg/dx multi-point components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::ProductEpetraMultiVector > > dgdx_mp_blocks;
-
     //! MP initial x
     Teuchos::RCP<Stokhos::ProductEpetraVector> mp_x_init;
 
