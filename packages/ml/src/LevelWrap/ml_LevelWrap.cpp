@@ -92,15 +92,15 @@ ML_Epetra::LevelWrap::~LevelWrap(){
 
 // Computes the preconditioner
 int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
-#ifdef xML_TIMING
+#ifdef ML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
 #endif
+  int output_level=List_.get("ML output",0);
 
   // Sanity check
   if(!A0_->DomainMap().SameAs(P0_->RangeMap())) return -1;
   if(!use_pt_ && !A0_->RangeMap().SameAs(R0_->DomainMap())) return -2;
-
 
   //********************
   // Setup smoother
@@ -144,8 +144,8 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   Teuchos::ParameterList & CoarseList=List_.sublist("levelwrap: coarse list");  
   A1prec_=rcp<MultiLevelPreconditioner>(new MultiLevelPreconditioner(*A1_,CoarseList,true));
 
-#ifdef xML_TIMING
-  StopTimer(&t_time_curr,&t_diff);
+#ifdef ML_TIMING
+  StopTimer(&t_time,&t_diff);
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
@@ -155,7 +155,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
   NumConstructions_++;
-  ConstructionTime_+=t_time_curr-t_time_start;
+  ConstructionTime_+=t_diff;
 #endif  
   return 0;
 }
@@ -163,7 +163,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
 
 // Apply the preconditioner w/ RHS B and get result X
 int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const{
-#ifdef xML_TIMING
+#ifdef ML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
 #endif
@@ -204,7 +204,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   // Copy to output
   X_=X;
 
-#ifdef xML_TIMING
+#ifdef ML_TIMING
   StopTimer(&t_time,&t_diff);
   /* Output */
   ML_Comm *comm_;
@@ -240,7 +240,7 @@ int ML_Epetra::LevelWrap::DestroyPreconditioner(){
   A1_=Teuchos::null;
 
 
-#ifdef xML_TIMING
+#ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
   ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);  

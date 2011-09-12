@@ -162,9 +162,9 @@ namespace ML_Epetra
     int NumApplications_;
     //! CPU time for all applications of the preconditioner
     mutable double ApplicationTime_;
-    bool FirstApplication_;
+    mutable bool FirstApplication_;
     //@ CPU time for first application
-    double FirstApplicationTime_;
+    mutable double FirstApplicationTime_;
     //! Number of construction phases
     int NumConstructions_;
     //! CPU time for construction of the preconditioner.
