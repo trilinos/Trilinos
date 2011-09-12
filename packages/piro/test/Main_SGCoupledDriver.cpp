@@ -121,11 +121,25 @@ int main(int argc, char *argv[]) {
     coupledSolver->evalModel(inArgs, outArgs);
 
     // Print results
-    for (int i=0; i<outArgs.Ng(); i++) 
+    for (int i=0; i<outArgs.Ng(); i++) {
       if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_g_sg, i)) {
-	std::cout << "Response vector " << i << ":" << std::endl
-		  << *(outArgs.get_g_sg(i)) << std::endl;
+	Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> g_sg = 
+	  outArgs.get_g_sg(i);
+	if (g_sg != Teuchos::null) {
+	  Epetra_Vector g_mean(*(coupledSolver->get_g_map(i)));
+	  Epetra_Vector g_std_dev(*(coupledSolver->get_g_map(i)));
+	  g_sg->computeMean(g_mean);
+	  g_sg->computeStandardDeviation(g_std_dev);
+	  std::cout.precision(12);
+	  std::cout << "Response " << i << " Mean =      " << std::endl 
+		    << g_mean << std::endl;
+	  std::cout << "Response " << i << " Std. Dev. = " << std::endl 
+		    << g_std_dev << std::endl;
+	  std::cout << "Response vector " << i << ":" << std::endl
+		    << *(outArgs.get_g_sg(i)) << std::endl;
+	}
       }
+    }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
