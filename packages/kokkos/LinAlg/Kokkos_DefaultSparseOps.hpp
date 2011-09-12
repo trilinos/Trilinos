@@ -685,7 +685,7 @@ namespace Kokkos {
     // 1D: array of offsets, pointer for ordinals, pointer for values.
     ArrayRCP<const size_t>  pbuf_offsets1D_;
     ArrayRCP<const Ordinal> pbuf_inds1D_;
-    ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<Scalar>  pbuf_vals1D_;
 
     size_t numRows_;
     bool indsInit_, valsInit_, isEmpty_;
