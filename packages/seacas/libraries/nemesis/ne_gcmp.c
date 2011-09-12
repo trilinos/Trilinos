@@ -81,7 +81,7 @@ int ne_get_cmap_params(int  neid,
   char   *func_name="ne_get_cmap_params";
 
   size_t  cnt, num_n_comm_maps, num_e_comm_maps, start[1], count[1];
-  int64_t cmap_info_idx[2], cmap_data_idx[2];
+  size_t  cmap_info_idx[2], cmap_data_idx[2];
   int     nmstat;
   int     status, map_idx, varid, dimid;
 

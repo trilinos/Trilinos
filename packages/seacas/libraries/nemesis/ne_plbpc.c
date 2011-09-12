@@ -341,7 +341,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_ELEM_MAP_INT_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_ELEM_MAP_INT_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[0])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -383,7 +383,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_ELEM_MAP_BOR_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_ELEM_MAP_BOR_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[1])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -426,7 +426,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_NODE_MAP_INT_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_NODE_MAP_INT_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[2])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -469,7 +469,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_NODE_MAP_BOR_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_NODE_MAP_BOR_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[3])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -512,7 +512,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_NODE_MAP_EXT_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_NODE_MAP_EXT_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[4])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -568,7 +568,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_N_COMM_INFO_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_N_COMM_INFO_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[5])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -623,7 +623,7 @@ int ne_put_loadbal_param_cc(int   neid,
     }
 
     /* and the index variable */
-    if ((status = nc_def_var(neid, VAR_E_COMM_INFO_IDX, NC_INT64, 1,
+    if ((status = nc_def_var(neid, VAR_E_COMM_INFO_IDX, NC_INT, 1,
 			     &dimid_npf, &varid_idx[6])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,

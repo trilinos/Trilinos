@@ -52,7 +52,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <netcdf.h>
 
@@ -73,7 +72,7 @@ int ne_get_elem_map(int  neid,
   char    ftype[2];
   int     dimid, varid, status;
   size_t  start[1], count[1];
-  int64_t varidx[2];
+  size_t  varidx[2];
   int  emstat;
 
   char   errmsg[MAX_ERR_LENGTH];

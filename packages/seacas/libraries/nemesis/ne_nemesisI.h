@@ -57,8 +57,6 @@
 #ifndef _NE_NEMESIS_H
 #define _NE_NEMESIS_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -502,8 +500,8 @@ ne_catstr2(char *name,	/* The name to attach num1 and num2 to */
 
 extern int
 ne_id_lkup(int   neid,		/* NetCDF/Exodus file ID */
-           char    *var_name,	/* Nemesis variable name */
-           int64_t *idx,         /* index variable for variable, length 2 */
+           char *var_name,	/* Nemesis variable name */
+           size_t *idx,         /* index variable for variable, length 2 */
            int   ne_var_id	/* NetCDF variable ID */
            );
 
@@ -522,10 +520,10 @@ ne_check_file_version(int neid	/* NetCDF/Exodus file ID */
                       );
 
 extern int
-ne_get_idx(int      neid,	   /* NetCDF/Exodus file ID */
-           char    *ne_var_name,   /* Nemesis index variable name */
-           int64_t *index,	   /* array of length 2 to hold results */
-           int      pos		   /* position of this proc/cmap in index */
+ne_get_idx(int   neid,		/* NetCDF/Exodus file ID */
+           char *ne_var_name,	/* Nemesis index variable name */
+           size_t *index,		/* array of length 2 to hold results */
+           int   pos		/* position of this proc/cmap in index */
            );
 
 #ifdef __cplusplus

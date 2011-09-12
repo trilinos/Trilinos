@@ -57,8 +57,6 @@ namespace Ioss {
 }
 
 namespace Iopg {
-  typedef std::vector<int> IntVector;
-
   class IOFactory : public Ioss::IOFactory
   {
   public:
@@ -198,10 +196,10 @@ namespace Iopg {
     int sidesetCount;
 
     // Communication Set Data
-    IntVector nodeCmapIds;
-    IntVector nodeCmapNodeCnts;
-    IntVector elemCmapIds;
-    IntVector elemCmapElemCnts;
+    int *nodeCmapIds;
+    int *nodeCmapNodeCnts;
+    int *elemCmapIds;
+    int *elemCmapElemCnts;
     int commsetNodeCount;
     int commsetElemCount;
 

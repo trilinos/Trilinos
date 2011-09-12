@@ -34,18 +34,18 @@
  */
 #include <Internals.h>
 
-#include <ExodusEntity.h>
-
-#include <algorithm>
-#include <cstring>
-#include <smart_assert.h>
-
 extern "C" {
 #define NO_NETCDF_2
 #include <netcdf.h>
 #include <exodusII.h>
 #include <exodusII_int.h>
 }
+
+#include <ExodusEntity.h>
+
+#include <algorithm>
+#include <cstring>
+#include <smart_assert.h>
 
 namespace {
   bool lessOffset(const Excn::Block& b1, const Excn::Block& b2) {

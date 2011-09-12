@@ -2,7 +2,7 @@
 CODE = algebra
 
 SRCS = \
-addvar.f algebra.f alicmd.f aparse.f caltim.f chkdis.f \
+addvar.f algebra2.f alicmd.f aparse.f caltim.f chkdis.f \
 chkerr.f chkfnc.f   chkpar.f chksyn.f cmdtim.f cnvnum.f \
 comand.f cpyvar.f   dbicon.f dbielb.f dbinam.f \
 dbiqa.f  dbivtt.f   dblist.f dboqa.f  dbpelb.f dbpini.f \

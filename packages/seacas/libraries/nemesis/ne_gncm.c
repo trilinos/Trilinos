@@ -74,7 +74,7 @@ int ne_get_node_cmap(int  neid,
 
   int     map_idx, dimid, varid[2], status;
   size_t  start[1], count[1];
-  int64_t varidx[2];
+  size_t  varidx[2];
 
   char    errmsg[MAX_ERR_LENGTH];
 

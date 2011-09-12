@@ -7,5 +7,5 @@ exmemy.c  extime.c   exname.c exupcs.c	getline_int.c
 
 OBJS = ${SRCS:.c=.o}
 
-LibraryTargetSubdirs(libsupes.a,$(OBJS),../)
+LibraryTargetSubdirs(libsupes.a,$(OBJS),../../)
 

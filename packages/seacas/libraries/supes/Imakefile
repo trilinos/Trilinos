@@ -17,7 +17,7 @@ F77OPTIONS = ParallelF77Options
 LIBDIR     = $(PLIBDIR)
 #endif
 
-SUBDIRS = ext_lib fre_fld mem_mgr
+SUBDIRS = ext_lib/portable fre_fld mem_mgr
 
 TESTS = exttest memtest ffrtest 
 

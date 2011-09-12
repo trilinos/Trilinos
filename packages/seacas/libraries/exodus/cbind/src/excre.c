@@ -160,21 +160,18 @@ int ex_create_int (const char *path,
   }
 #if defined(NC_NETCDF4)
   if (cmode & EX_NETCDF4) {
-    mode |= (NC_NETCDF4);
+    mode |= (NC_NETCDF4|NC_CLASSIC_MODEL);
   } else {
     if (netcdf4_mode == -1) {
       option = getenv("EXODUS_NETCDF4");
       if (option != NULL) {
 	fprintf(stderr, "EXODUSII: Using netcdf version 4 selected via EXODUS_NETCDF4 environment variable\n");
-	netcdf4_mode = NC_NETCDF4; 
+	netcdf4_mode = NC_NETCDF4|NC_CLASSIC_MODEL;
       } else {
 	netcdf4_mode = 0;
       }
     }
     mode |= netcdf4_mode;
-  }
-  if (! (cmode & EX_NOCLASSIC)) {
-    mode |= NC_CLASSIC_MODEL;
   }
 #endif
 

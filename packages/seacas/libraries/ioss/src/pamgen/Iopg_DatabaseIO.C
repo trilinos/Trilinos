@@ -137,9 +137,7 @@ namespace Iopg {
     spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-    commsetNodeCount(0), commsetElemCount(0),
-    sequentialNG2L(false), sequentialEG2L(false),
-    blockAdjacenciesCalculated(false)
+    sequentialNG2L(false), sequentialEG2L(false)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -371,9 +369,6 @@ namespace Iopg {
 				      myProcessor);
       if (error < 0)
 	pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-
-      commsetNodeCount = num_node_cmaps;
-      commsetElemCount = num_elem_cmaps;
 
       // A nemesis file typically separates nodes into multiple
       // communication sets by processor.  (each set specifies
@@ -632,20 +627,19 @@ namespace Iopg {
       // communications maps if the decomposition occurs along contact
       // surfaces.  In this case, we create empty node and element
       // communication maps.
-
       if (commsetNodeCount > 0 || commsetElemCount > 0) {
 	if (commsetNodeCount > 0) {
-	  nodeCmapIds.resize(commsetNodeCount);
-	  nodeCmapNodeCnts.resize(commsetNodeCount);
+	  nodeCmapIds      = new int[commsetNodeCount];
+	  nodeCmapNodeCnts = new int[commsetNodeCount];
 	}
 	if (commsetElemCount > 0) {
-	  elemCmapIds.resize(commsetElemCount);
-	  elemCmapElemCnts.resize(commsetElemCount);
+	  elemCmapIds      = new int[commsetElemCount];
+	  elemCmapElemCnts = new int[commsetElemCount];
 	}
 
 	int error = im_ne_get_cmap_params(get_file_pointer(),
-					  TOPTR(nodeCmapIds), TOPTR(nodeCmapNodeCnts),
-					  TOPTR(elemCmapIds), TOPTR(elemCmapElemCnts),
+					  nodeCmapIds, nodeCmapNodeCnts,
+					  elemCmapIds, elemCmapElemCnts,
 					  myProcessor);
 	if (error < 0)
 	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
@@ -1217,7 +1211,7 @@ namespace Iopg {
 	// sideset.  Because of this, the passed in 'data' may not be
 	// large enough to hold the data residing in the sideset and we
 	// may need to allocate a temporary array...  This can be checked
-	// by comparing the size of the sideset with the 'my_side_count' of
+	// by comparing the size of the sideset with the 'side_count' of
 	// the side block.
 
 	if (field.get_name() == "side_ids") {

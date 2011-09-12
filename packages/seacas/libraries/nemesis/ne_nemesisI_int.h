@@ -32,6 +32,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile: ne_nemesisI_int.h,v $
+ *
+ * $Author: gdsjaar $
+ *
+ * $Date: 2007/10/31 21:39:17 $
+ *
+ * $Revision: 1.21 $
+ *
+ * $Name:  $
+ *====================================================================*/
 
 /**********************************************************************
  * This file contains constant definitions used internally NEMESIS.
@@ -42,6 +57,8 @@
 
 #define NEMESIS_FILE_VERSION		2.6
 
+/* mms: start changing things, no longer need to distinguish **
+** between processors for dimensions and variables           */
 #define VAR_ELBLK_IDS_GLOBAL            "el_blk_ids_global"
 #define VAR_ELBLK_CNT_GLOBAL            "el_blk_cnt_global"
 #define VAR_NS_IDS_GLOBAL               "ns_ids_global"
@@ -80,6 +97,10 @@
 #define VAR_E_COMM_SIDS                 "e_comm_sids"
 #define VAR_E_COMM_PROC                 "e_comm_proc"
 #define VAR_E_COMM_DATA_IDX             "e_comm_data_idx"
+
+/* variable which allow me to take the tail off some names */
+#define END_CMAP_IDX                    "_info_idx"
+#define END_CMAP_IDS                    "_ids"
 
 #define DIM_NUM_INT_NODES               "num_int_node"
 #define DIM_NUM_BOR_NODES               "num_bor_node"

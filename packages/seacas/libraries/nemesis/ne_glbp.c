@@ -77,11 +77,11 @@ int ne_get_loadbal_param(int   neid,
 {
   char  *func_name="ne_get_loadbal_param";
 
-  int     dimid, varid, status;
-  size_t  start[1], ltempsv, ltempsv2;
-  int64_t varidx[2];
-  char    ftype[2];
-  int     nmstat;
+  int    dimid, varid, status;
+  size_t start[1], ltempsv, ltempsv2;
+  size_t varidx[2];
+  char   ftype[2];
+  int nmstat;
 
   char   errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
