@@ -92,10 +92,10 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      if(!coarseLevel.IsRequested("P",initialPFact_))
+      /*if(!coarseLevel.IsRequested("P",initialPFact_))
         initialPFact_->DeclareInput(fineLevel,coarseLevel);
       if(!fineLevel.IsRequested("A",AFact_))
-        AFact_->DeclareInput(fineLevel);
+        AFact_->DeclareInput(fineLevel);*/
       coarseLevel.Request("P",initialPFact_);
       fineLevel.Request("A",AFact_);
     };

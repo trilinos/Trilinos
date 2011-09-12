@@ -71,10 +71,10 @@ class GenericPRFactory : public PRFactory {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      if(PFact_ != Teuchos::null)
+      /*if(PFact_ != Teuchos::null)
         PFact_->DeclareInput(fineLevel,coarseLevel);
       if(RFact_ != Teuchos::null)
-        RFact_->DeclareInput(fineLevel,coarseLevel);
+        RFact_->DeclareInput(fineLevel,coarseLevel);*/
 
       coarseLevel.Request("P",PFact_);
       coarseLevel.Request("R",RFact_);

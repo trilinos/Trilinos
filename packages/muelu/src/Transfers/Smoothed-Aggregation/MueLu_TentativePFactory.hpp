@@ -56,7 +56,7 @@ namespace MueLu {
       // todo: check for reusable P -> do not call DeclareInput
 
       // request aggregates (only if not already requested or available)
-      if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
+      /*if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
           !fineLevel.IsAvailable("Aggregates", aggregatesFact_))
       {
         if(aggregatesFact_ == Teuchos::null)
@@ -68,7 +68,7 @@ namespace MueLu {
         }
         else
           aggregatesFact_->callDeclareInput(fineLevel);
-      }
+      }*/
       fineLevel.Request("Aggregates", aggregatesFact_);
       fineLevel.Request("A", AFact_);
       fineLevel.Request("Nullspace",  nullspaceFact_);

@@ -45,7 +45,8 @@ namespace MueLu {
 
     //!
     virtual void callDeclareInput(Level & requestedLevel) const {
-      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+    	if(requestedLevel.GetPreviousLevel() != Teuchos::null)
+    		DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //@}
