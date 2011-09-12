@@ -64,7 +64,6 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 3;
   LO its=10;
-  std::string coarseSolver="ifpack2";
   int pauseForDebugger=0;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -110,9 +109,9 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
+  RCP<Hierarchy> H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+  RCP<Level> Finest = rcp( new Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   Finest->Request("A");
@@ -138,33 +137,17 @@ int main(int argc, char *argv[]) {
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  /*
-  ifpackList.set("type", "Chebyshev");
-  ifpackList.set("chebyshev: degree", (int) 1);
-  ifpackList.set("chebyshev: max eigenvalue", (double) 2.0);
-  ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-  ifpackList.set("chebyshev: zero starting solution", false);
-  */
-
-  std::string ifpackType;
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    ifpackType = "point relaxation stand-alone";
-  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    ifpackType = "RELAXATION";
-  }
-
-  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(xpetraParameters.GetLib(), ifpackType, ifpackList) );
+  Teuchos::ParameterList smootherParamList;
+  smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+  smootherParamList.set("relaxation: sweeps", (LO) 1);
+  smootherParamList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(xpetraParameters.GetLib(), "RELAXATION", smootherParamList) );
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
-  //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
+  //RCP<Level> coarseLevel = H.GetLevel(1);
   //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";
   //Utils::Write(fileName,P);
