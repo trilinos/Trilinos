@@ -3058,6 +3058,9 @@ namespace {
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type)
   {
+    if (entities.empty())
+      return EX_NOERR;
+    
     std::vector<char*> names;
     
     names.resize(entities.size());
