@@ -304,7 +304,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   if (utils.isPrintType(NOX::Utils::Details)) {
     utils.out() << endl << "Final Solution" << endl
 		<< "****************" << endl;
-    finalSolution->Print(std::cout);
+    finalSolution->Print(utils.pout());
   }
 
   // Output the parameter list
