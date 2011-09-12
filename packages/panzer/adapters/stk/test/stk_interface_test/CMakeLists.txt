@@ -14,6 +14,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tLineMeshFactory
+  SOURCES tLineMeshFactory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   tSquareQuadMeshFactory
   SOURCES tSquareQuadMeshFactory.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2

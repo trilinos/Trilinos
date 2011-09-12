@@ -34,6 +34,7 @@ APPEND_SET(HEADERS
   Panzer_STK_SetupUtilitiesT.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
+  stk_interface/Panzer_STK_LineMeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
   stk_interface/Panzer_STK_ExodusReaderFactory.hpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
@@ -52,6 +53,7 @@ APPEND_SET(SOURCES
   Panzer_STKConnManager.cpp
   Panzer_STK_SetupUtilities.cpp
   stk_interface/Panzer_STK_Interface.cpp
+  stk_interface/Panzer_STK_LineMeshFactory.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
