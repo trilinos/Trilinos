@@ -64,8 +64,6 @@ SET(HDF5_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/hdf5-1.8.5-patch1/lib              CAC
 SET(HDF5_INCLUDE_DIRS /opt/gcc-4.5.1/tpls/hdf5-1.8.5-patch1/include          CACHE FILEPATH "")
 SET(EpetraExt_ENABLE_HDF5 OFF                                                CACHE BOOL "")
 
-SET(CMAKE_Fortran_FLAGS "-save -zero -nocheck -threads"          CACHE STRING   "")
-
 # To avoid problem with EpetraExt_inout_test failure in optimized code
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
 
