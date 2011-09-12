@@ -223,12 +223,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       for (i=0; i<num_obj; i++) 
         Zoltan_quicksort_list_inc_long((long *)adjncy_sort, perm, (int)xadj[i], (int)xadj[i+1]-1);
     }
-#ifdef HAVE_LONG_LONG_INT
-    else if (sizeof(indextype) == sizeof(long long)){
+    else if (sizeof(indextype) == sizeof(int64_t)){
       for (i=0; i<num_obj; i++) 
-        Zoltan_quicksort_list_inc_long_long((long long *)adjncy_sort, perm, (int)xadj[i], (int)xadj[i+1]-1);
+        Zoltan_quicksort_list_inc_long_long((int64_t*)adjncy_sort, perm, (int)xadj[i], (int)xadj[i+1]-1);
     }
-#endif
     else{
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in third party library data type support.");
       ierr = ZOLTAN_MEMERR;

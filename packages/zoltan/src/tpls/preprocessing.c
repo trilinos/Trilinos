@@ -69,6 +69,7 @@ static int scale_round_weights(float *, weighttype *, int, int,
                                int, weighttype, int, MPI_Comm);
 static int Zoltan_LB_Add_Part_Sizes_Weight(ZZ *, int, int, realtype *, realtype **);
 
+
 /****************************************************************************/
 
 static int
@@ -214,6 +215,8 @@ int Zoltan_Preprocess_Graph(
                              &gr->adjproc,
                              &float_ewgts, NULL);
 
+    ierr = Zoltan_Check_TPL_Data_Sizes(zz, gr->num_obj);
+    CHECK_IERR;
 
     FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_PINWGT);   /* its pointer is in float_ewgts */
 
@@ -310,6 +313,9 @@ int Zoltan_Preprocess_Graph(
 
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
                                gr->obj_wgt_dim, &float_vwgt, &input_part);
+    CHECK_IERR;
+
+    ierr = Zoltan_Check_TPL_Data_Sizes(zz, gr->num_obj);
     CHECK_IERR;
 
     if (prt) {
@@ -668,7 +674,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
 
   if (zz->Get_Obj_Size_Multi) {
 
-    if (sizeof(indextype) == sizeof(int) ){
+    if (sizeof(indextype) != sizeof(int) ){
       buf = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
       if (gr->num_obj && !buf){
         ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -682,7 +688,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
                            num_gid_entries, num_lid_entries, gr->num_obj,
                            *global_ids, *local_ids, buf, &ierr);
 
-    if (sizeof(indextype) == sizeof(int) ){
+    if (sizeof(indextype) != sizeof(int) ){
       for (i=0; i < gr->num_obj; i++){
         vsp->vsize[i] = (indextype)buf[i];
       }
@@ -1076,6 +1082,31 @@ End:
   return ierr;
 }
 
+/*****************************************************************************/
+int Zoltan_Check_TPL_Data_Sizes(ZZ *zz, int local_num_obj)
+{
+/* Ensure that the global number of objects will fit in type indextype. */
+int ierr = ZOLTAN_OK;
+ZOLTAN_GNO_TYPE tmp_num_obj, global_num_obj;
+MPI_Datatype mpignotype = Zoltan_mpi_gno_type();
+int64_t maxindextype = (int64_t)(((u_int64_t) 1<<((sizeof(indextype)<<3)-1))-1);
+
+  tmp_num_obj = local_num_obj;
+  MPI_Allreduce(&tmp_num_obj, &global_num_obj, 1, mpignotype,
+                MPI_SUM, zz->Communicator);
+
+  if (global_num_obj > maxindextype) {
+    char msg[500];
+    sprintf(msg, "Graph TPL is built with integer type that is too small for "
+            "the partitioning problem.  Max number of objects supported is "
+            "%lld; global number of objects is " ZOLTAN_GNO_SPEC "\n", 
+            maxindextype, global_num_obj);
+    ZOLTAN_PRINT_ERROR(zz->Proc, "check_data_sizes", msg);
+    ierr = ZOLTAN_FATAL;
+  }
+
+  return ierr;
+}
 
 #ifdef __cplusplus
 }

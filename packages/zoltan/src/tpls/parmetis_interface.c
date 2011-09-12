@@ -135,29 +135,6 @@ int Zoltan_ParMetis(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-#ifdef ZOLTAN_PARMETIS
-
-#if TPL_USE_DATATYPE != TPL_METIS_DATATYPES
-
-#ifdef TPL_FLOAT_WEIGHT
-  i = 1;
-#else
-  i = 0;
-#endif
-
-  if ((sizeof(indextype) != sizeof(idxtype)) ||
-      (sizeof(weighttype) != sizeof(idxtype)) || i){
-
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Not supported: Multiple 3rd party "
-                       "libraries with incompatible data types.");
-    return ZOLTAN_FATAL;
-  }
-
-#endif
-
-#endif /* ZOLTAN_PARMETIS */
-
-
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
                     imp_gids, imp_lids, imp_procs, imp_to_part,
                     exp_gids, exp_lids, exp_procs, exp_to_part);

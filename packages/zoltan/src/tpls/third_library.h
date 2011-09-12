@@ -171,6 +171,8 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 int Zoltan_matrix_Print(Zoltan_matrix *m, char *s);
 int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s);
 int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s);
+int Zoltan_Check_TPL_Data_Sizes(ZZ *, int);
+
 
 #ifdef __cplusplus
 }
