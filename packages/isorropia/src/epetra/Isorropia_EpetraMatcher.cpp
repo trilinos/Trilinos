@@ -417,17 +417,77 @@ int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
     return matched_;
 }
 
+Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyRowPermutation()
+{
+    int nmatch = matched_;
+    const int *mrows = &mateU_[0];
+    const int *mcols = &mateV_[0];
+
+    // Create a new matrix with row permutation
+    int max_entries = A_->MaxNumEntries();
+    // TODO: This row map is ok, but not optimal. Should we create a new row
+    // map with mrows[i] ??
+    Teuchos::RCP<Epetra_CrsMatrix> perm_matrix = Teuchos::RCP<Epetra_CrsMatrix>
+                    (new Epetra_CrsMatrix(Copy, A_->RowMap(), max_entries));
+    int n =  A_->NumGlobalRows();
+
+    double *values = new double[max_entries];
+    int *indices = new int[max_entries];
+    int num_entries;
+    for (int i = 0; i < n ; i++)
+    {
+        // All in serial Comm so 0..n is fine
+        A_->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
+                                    indices);
+        perm_matrix->InsertGlobalValues(mrows[i], num_entries,
+                            values, indices);
+    }
+    perm_matrix->FillComplete();
+
+    delete[] values;
+    delete[] indices;
+    return (perm_matrix);
+}
+
+Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyColumnPermutation()
+{
+    int nmatch = matched_;
+    const int *mrows = &mateU_[0];
+    const int *mcols = &mateV_[0];
+
+    // Create a new matrix with column permutation
+    int max_entries = A_->MaxNumEntries();
+    Teuchos::RCP<Epetra_CrsMatrix> perm_matrix = Teuchos::RCP<Epetra_CrsMatrix>
+                    (new Epetra_CrsMatrix(Copy, A_->RowMap(), max_entries));
+    int n =  A_->NumGlobalRows();
+
+    double *values = new double[max_entries];
+    int *indices = new int[max_entries];
+    int num_entries;
+    for (int i = 0; i < n ; i++)
+    {
+        // All in serial Comm so 0..n is fine
+        A_->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
+                                    indices);
+        for (int j = 0; j < num_entries; j++) indices[j]=mcols[indices[j]];
+        perm_matrix->InsertGlobalValues(i, num_entries, values, indices);
+    }
+    perm_matrix->FillComplete();
+    delete[] values;
+    delete[] indices;
+    return (perm_matrix);
+}
+
+/* // We don't have any use cases for these two functions now. We might use the
+   // getPermutedRowMap()
+   // when creating the matrix for applyRowPermutation(). Not exposing them for
+   // now.
 Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
 {
     int *ptr=new int[U_];
     complete_nonperfect_permutation();
     for(int i=0;i<U_;i++)
         ptr[i]=(A_->RowMap()).GID(mateU_[i]);
-   
-    /*std::cout<<"Ptr: ";
-    for(int i=0;i<U_;i++)
-        std::cout<<ptr[i]<<",";
-    std::cout<<std::endl;*/
    
    if(A_->Comm().NumProc()==1)
    {
@@ -458,7 +518,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
         std::cout<<"Original matrix is in distributed memory"<<std::endl;
         return NULL;
     }
-}
+}*/
 
 void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
 {

@@ -42,6 +42,7 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
+#include "Kokkos_DefaultSparseScaleKernelOps.hpp"
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
@@ -120,6 +121,10 @@ namespace Kokkos {
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
 
+    //! Left-scales a matrix by a vector
+    template <class VectorScalar>
+    void leftScale(const MultiVector<VectorScalar,Node> &X);
+
     //@}
 
   protected:
@@ -132,13 +137,13 @@ namespace Kokkos {
     // 1D/packed: arrays of offsets, array of ordinals, array of values.
     ArrayRCP<const Ordinal> inds1D_;
     ArrayRCP<const size_t>  begs1D_, ends1D_;
-    ArrayRCP<const Scalar>  vals1D_;
+    ArrayRCP<Scalar>  vals1D_;
     // 2D: array of pointers
     ArrayRCP<const ArrayRCP<Ordinal> > inds2D_;
     ArrayRCP<const ArrayRCP<Scalar> >  vals2D_;
     ArrayRCP<const size_t>          numEntries_;
     ArrayRCP<const Ordinal *> indPtrs_;
-    ArrayRCP<const Scalar  *> valPtrs_;
+    ArrayRCP<Scalar  *> valPtrs_;
 
     size_t numRows_;
     bool indsInit_, valsInit_, isEmpty_;
@@ -234,7 +239,7 @@ namespace Kokkos {
           const_cast<CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(matrix).get2DValues(vals);
           vals2D_ = vals;
         }
-        valPtrs_ = arcp<const Scalar *>(numRows_);
+        valPtrs_ = arcp<Scalar *>(numRows_);
         for (size_t r=0; r < numRows_; ++r) {
           valPtrs_[r] = vals2D_[r].getRawPtr();
         }
@@ -316,7 +321,7 @@ namespace Kokkos {
         rbh.begin();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer< Scalar *>(valPtrs_);
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
         rbh.end();
@@ -333,7 +338,7 @@ namespace Kokkos {
         rbh.begin();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer< Scalar *>(valPtrs_);
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
         rbh.end();
@@ -420,7 +425,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         rbh.end();
@@ -438,7 +443,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.xstride = X.getStride();
@@ -522,7 +527,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         rbh.end();
@@ -542,7 +547,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.xstride = X.getStride();
@@ -551,6 +556,45 @@ namespace Kokkos {
         const size_t numRHS = X.getNumCols();
         node_->template parallel_for<TOp2D>(0,numRHS,wdp);
       }
+    }
+    return;
+  }
+
+
+
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class VectorScalar>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X) 
+  {
+    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
+    typedef DefaultSparseScaleOp2<Scalar,Ordinal,VectorScalar>  Op2D;
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::leftScale(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    ReadyBufferHelper<Node> rbh(node_);
+    if (begs1D_ != null) {
+      Op1D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
+      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
+      wdp.vals    = rbh.template addNonConstBuffer<Scalar>(vals1D_);
+      wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+      rbh.end();
+      node_->template parallel_for<Op1D>(0,numRows_,wdp);	
+    }
+    else {
+      Op2D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
+      wdp.vals_beg   = rbh.template addNonConstBuffer<Scalar *>(valPtrs_);
+      wdp.x          = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+      rbh.end();
+      node_->template parallel_for<Op2D>(0,numRows_,wdp);
     }
     return;
   }
@@ -624,6 +668,11 @@ namespace Kokkos {
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
 
+
+    //! Left-scales a matrix by a vector
+    template <class VectorScalar>
+    void leftScale(const MultiVector<VectorScalar,Node> &X);
+
     //@}
 
   protected:
@@ -636,7 +685,7 @@ namespace Kokkos {
     // 1D: array of offsets, pointer for ordinals, pointer for values.
     ArrayRCP<const size_t>  pbuf_offsets1D_;
     ArrayRCP<const Ordinal> pbuf_inds1D_;
-    ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<Scalar>  pbuf_vals1D_;
 
     size_t numRows_;
     bool indsInit_, valsInit_, isEmpty_;
@@ -893,6 +942,40 @@ namespace Kokkos {
     }
     return;
   }
+
+
+
+
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class VectorScalar>
+  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
+  {
+    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::scale(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    ReadyBufferHelper<Node> rbh(node_);
+
+
+    Op1D wdp;
+    rbh.begin();
+    wdp.numRows = numRows_;
+    wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+    wdp.ends    = wdp.begs+1;
+    wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+    wdp.vals    = rbh.template addNonConstBuffer<Scalar>(pbuf_vals1D_);
+    wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+    rbh.end();
+    const size_t numRHS = X.getNumCols();
+    node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+    
+    return;
+  }
+
+
+
+
 
   /** \example CrsMatrix_DefaultMultiplyTests.hpp 
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.

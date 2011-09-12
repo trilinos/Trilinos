@@ -437,11 +437,10 @@ int  equal, larger;
   }
 }
 
-#ifdef HAVE_LONG_LONG_INT
 /* Exact same code except the list to be sorted is long long*/
 
 static void quickpart_list_inc_long_long (
-  long long *list, int *parlist, int start, int end, int *equal, int *larger)
+  int64_t *list, int *parlist, int start, int end, int *equal, int *larger)
 {
 int i, parchange;
 long long key, change;
@@ -469,7 +468,7 @@ long long key, change;
     }
 }
 
-void Zoltan_quicksort_list_inc_long_long(long long *list, int *parlist, int start, int end)
+void Zoltan_quicksort_list_inc_long_long(int64_t*list, int *parlist, int start, int end)
 {
 int  equal, larger;
 
@@ -479,7 +478,6 @@ int  equal, larger;
     Zoltan_quicksort_list_inc_long_long(list, parlist, larger, end);
   }
 }
-#endif
 
 
 
