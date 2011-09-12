@@ -237,7 +237,6 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     input_block[i] = sg_input.GetBlock(i);
   for (int i=0; i<result_block.size(); i++)
     result_block[i] = sg_result.GetBlock(i);
-  int N = result_block[0]->MyLength();
 
   // Apply block SG operator via
   // w_i = 
@@ -259,7 +258,7 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
 	int j = index(j_it);
 	for (int mm=0; mm<m; mm++) {
-	  j_ptr[l*m+mm] = input_block[j]->Values()+mm*N;
+	  j_ptr[l*m+mm] = (*input_block[j])[mm];
 	  mj_indices[l*m+mm] = l*m+mm;
 	}
 	l++;
