@@ -1,3 +1,5 @@
+#!/usr/bin/perl -w
+
 # @HEADER
 # ************************************************************************
 #
@@ -41,7 +43,6 @@
 # ************************************************************************
 # @HEADER
 
-#!/usr/bin/perl -w
 #
 # This perl script replaces a string with another string.
 # Here it is allowd for file_in and file_out to be the
