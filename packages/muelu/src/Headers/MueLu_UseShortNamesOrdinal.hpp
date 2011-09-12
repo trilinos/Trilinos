@@ -57,3 +57,7 @@ typedef MueLu::RFactory RFactory;
 #ifdef MUELU_AMESOS_SMOOTHER_SHORT
 typedef MueLu::AmesosSmoother AmesosSmoother;
 #endif
+
+#ifdef MUELU_IFPACK_SMOOTHER_SHORT
+typedef MueLu::IfpackSmoother IfpackSmoother;
+#endif

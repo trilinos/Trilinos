@@ -117,7 +117,7 @@ namespace MueLu {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Tpetra_CrsMatrix;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-    //! amesos2-specific key phrase that denote smoother type (same as SmootherBase::Type_)
+    //! amesos2-specific key phrase that denote smoother type
     std::string type_;
 
     //! parameter list that is used by Amesos2 internally

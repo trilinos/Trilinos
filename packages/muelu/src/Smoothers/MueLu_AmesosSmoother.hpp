@@ -144,7 +144,7 @@ namespace MueLu {
     
   private:
 
-    //! amesos-specific key phrase that denote smoother type (same as SmootherBase::Type_)
+    //! amesos-specific key phrase that denote smoother type
     std::string type_;
 
     //! parameter list that is used by Amesos internally
