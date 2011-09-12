@@ -1,4 +1,12 @@
 ADD_SUBDIRECTORY(Gallery)
-ADD_SUBDIRECTORY(MatrixVectorChecker)
-ADD_SUBDIRECTORY(Aggregation)
-ADD_SUBDIRECTORY(TentativePDebug)
+
+#ADD_SUBDIRECTORY(Simple)
+#ADD_SUBDIRECTORY(Facade)
+#ADD_SUBDIRECTORY(ParameterList)
+#ADD_SUBDIRECTORY(NativeInterface)
+
+#ADD_SUBDIRECTORY(AdvancedUsage)
+
+ADD_SUBDIRECTORY(Misc/Aggregation)
+ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
+ADD_SUBDIRECTORY(Misc/TentativePDebug)

@@ -1,0 +1,10 @@
+The 'Simple' example collection presents several flavors of the same minimalistic example.
+
+Simple           - Create a matrix and solve Ax=b using default parameters of MueLu.
+Simple-LongInt   - Demontrates how to change default template parameters. Same as Simple, but using GlobalOrdinal = long long int.
+Simple-Templated - Same as before, but without using the header file 'MueLu_UseShortNames.hpp'.
+
+Simple-Belos     - How to use MueLu as a preconditioner for Belos.
+Simple-Epetra    - How to use MueLu with Epetra.
+Simple-Tpetra    - How to use MueLu with Tpetra.
+
