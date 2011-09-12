@@ -27,15 +27,15 @@ int main(int argc, char *argv[])
 
   myParams.set("debug_level", 2);        
   myParams.set("debug_procs", "all");   
-  myParams.set("debug_ostream", "std::cout");
+  myParams.set("debug_output_stream", "std::cout");
 
-  myParams.set("timing_level", 1);  
-  myParams.set("timing_procs", "0"); 
-  myParams.set("timing_file", "appPerformance.txt");
+  myParams.set("profiling_level", 1);  
+  myParams.set("profiling_procs", "0"); 
+  myParams.set("profiling_output_file", "appPerformance.txt");
 
   // Normally an application would not call this.  The
   // Environment object will validate the entered parameters.
-  // Since debug_procs and timing_procs are IntegerRangeLists,
+  // Since debug_procs and profiling_procs are IntegerRangeLists,
   // this call will convert them to Teuchos::Arrays that use
   // a special flag to indicate "all" or "none".
 
@@ -52,19 +52,19 @@ int main(int argc, char *argv[])
   // Now let's see the validated parameters that Zoltan2 will see.
 
   int &debugLevel = myParams.get<int>(std::string("debug_level"));
-  int &timingLevel = myParams.get<int>(std::string("timing_level"));
+  int &profilingLevel = myParams.get<int>(std::string("profiling_level"));
 
   Teuchos::Array<int> &debugProcs = 
     myParams.get<Teuchos::Array<int> >(std::string("debug_procs"));
 
-  Teuchos::Array<int> &timerProcs = 
-    myParams.get<Teuchos::Array<int> >(std::string("timing_procs"));
+  Teuchos::Array<int> &profilerProcs = 
+    myParams.get<Teuchos::Array<int> >(std::string("profiling_procs"));
 
-  std::string &debugOstream = myParams.get<std::string>(std::string("debug_ostream"));
-  std::string &debugFile = myParams.get<std::string>(std::string("debug_file"));
+  std::string &debugOstream = myParams.get<std::string>(std::string("debug_output_stream"));
+  std::string &debugFile = myParams.get<std::string>(std::string("debug_output_file"));
 
-  std::string &timingOstream = myParams.get<std::string>(std::string("timing_ostream"));
-  std::string &timingFile = myParams.get<std::string>(std::string("timing_file"));
+  std::string &profilingOstream = myParams.get<std::string>(std::string("profiling_output_stream"));
+  std::string &profilingFile = myParams.get<std::string>(std::string("profiling_output_file"));
 
   std::cout << "Debug level " << debugLevel;
   std::cout << ", debug procs ";
@@ -75,14 +75,14 @@ int main(int argc, char *argv[])
   else
     std::cout << "Write debug output to " << debugOstream << std::endl;
 
-  std::cout << "Timing level " << timingLevel;
-  std::cout << ", timing procs ";
-  Zoltan2::printIntegralRangeList(std::cout, timerProcs);
+  std::cout << "Profiling level " << profilingLevel;
+  std::cout << ", profiling procs ";
+  Zoltan2::printIntegralRangeList(std::cout, profilerProcs);
   std::cout << std::endl;
-  if (timingFile.size() > 0)
-    std::cout << "Write timing output to " << timingFile << std::endl;
+  if (profilingFile.size() > 0)
+    std::cout << "Write profiling output to " << profilingFile << std::endl;
   else
-    std::cout << "Write timing output to " << timingOstream << std::endl;
+    std::cout << "Write profiling output to " << profilingOstream << std::endl;
 
   // Now let's leave some parameters unset and verify they get
   // set to the default.
@@ -100,15 +100,15 @@ int main(int argc, char *argv[])
   }
 
   debugLevel = lazyParams.get<int>(std::string("debug_level"));
-  timingLevel = lazyParams.get<int>(std::string("timing_level"));
+  profilingLevel = lazyParams.get<int>(std::string("profiling_level"));
   debugProcs = 
     lazyParams.get<Teuchos::Array<int> >(std::string("debug_procs"));
-  timerProcs = 
-    lazyParams.get<Teuchos::Array<int> >(std::string("timing_procs"));
-  debugOstream = lazyParams.get<std::string>(std::string("debug_ostream"));
-  debugFile = lazyParams.get<std::string>(std::string("debug_file"));
-  timingOstream = lazyParams.get<std::string>(std::string("timing_ostream"));
-  timingFile = lazyParams.get<std::string>(std::string("timing_file"));
+  profilerProcs = 
+    lazyParams.get<Teuchos::Array<int> >(std::string("profiling_procs"));
+  debugOstream = lazyParams.get<std::string>(std::string("debug_output_stream"));
+  debugFile = lazyParams.get<std::string>(std::string("debug_output_file"));
+  profilingOstream = lazyParams.get<std::string>(std::string("profiling_output_stream"));
+  profilingFile = lazyParams.get<std::string>(std::string("profiling_output_file"));
 
   std::cout << "Debug level " << debugLevel;
   std::cout << ", debug procs ";
@@ -119,14 +119,14 @@ int main(int argc, char *argv[])
   else
     std::cout << "Write debug output to " << debugOstream << std::endl;
 
-  std::cout << "Timing level " << timingLevel;
-  std::cout << ", timing procs ";
-  Zoltan2::printIntegralRangeList(std::cout, timerProcs);
+  std::cout << "Profiling level " << profilingLevel;
+  std::cout << ", profiling procs ";
+  Zoltan2::printIntegralRangeList(std::cout, profilerProcs);
   std::cout << std::endl;
-  if (timingFile.size() > 0)
-    std::cout << "Write timing output to " << timingFile << std::endl;
+  if (profilingFile.size() > 0)
+    std::cout << "Write profiling output to " << profilingFile << std::endl;
   else
-    std::cout << "Write timing output to " << timingOstream << std::endl;
+    std::cout << "Write profiling output to " << profilingOstream << std::endl;
 
   // Now let's entry a bad value for a parameter and make sure
   // we get an error.

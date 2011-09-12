@@ -122,13 +122,13 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "invalid TranslationType", 
     (tt==TRANSLATE_GNO_TO_GID) || (tt==TRANSLATE_GID_TO_GNO), 
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "Destination array is too small",
     ((tt==TRANSLATE_GNO_TO_GID) && (gid.size() >= gno.size())) || 
      ((tt==TRANSLATE_GID_TO_GNO) && (gno.size() >= gid.size())),
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){   
                               // our gnos are the app gids
@@ -148,7 +148,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       for (teuchos_size_t i=0; i < len; i++){
 
         Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, "invalid global number", 
-        (gno[i] < firstGno) || (gno[i] >= endGno), Z2_BASIC_ASSERTION);
+        (gno[i] < firstGno) || (gno[i] >= endGno), BASIC_ASSERTION);
 
         gid[i] = _myGids[gno[i] - firstGno];
       }
@@ -186,17 +186,17 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "invalid TranslationType", 
     (tt==TRANSLATE_GNO_TO_LID) || (tt==TRANSLATE_LID_TO_GNO), 
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "Destination array is too small",
     ((tt==TRANSLATE_GNO_TO_LID) && (lid.size() >= gno.size())) || ((tt==TRANSLATE_LID_TO_GNO) && (gno.size() >= lid.size())),
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "local ID translation is requested but none were provided",
      _haveLocalIds,
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   GNO firstGno(0), endGno(0);
   if (_gnoDist.size() > 0){
@@ -212,7 +212,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
           "invalid global number", 
           (gno[i] >= firstGno) && (gno[i] < endGno),
-          Z2_BASIC_ASSERTION);
+          BASIC_ASSERTION);
 
         idx = gno[i] - firstGno;
       }
@@ -267,7 +267,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "Destination array is too small", 
     (out_gno.size() >= len) && (out_proc.size() >= len),
-    Z2_BASIC_ASSERTION);
+    BASIC_ASSERTION);
 
   if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && (_gnoDist.size() > 0)){
 
@@ -624,7 +624,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
            "application global ID type is not supported",
            IdentifierTraits<AppGID>::is_valid_id_type() == true,
-           Z2_BASIC_ASSERTION);
+           BASIC_ASSERTION);
 
   _localNumberOfIds = _myGids.size();
 
@@ -651,7 +651,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
        "number of global IDs does not equal number of local IDs",
       !_haveLocalIds || (counts[0] == _localNumberOfIds),
-       Z2_BASIC_ASSERTION);
+       BASIC_ASSERTION);
 
   if (_haveLocalIds){   // hash LID to index in LID vector
     id2index_hash_t *p = NULL;

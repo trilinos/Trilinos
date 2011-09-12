@@ -115,7 +115,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  parameterName = std::string("debug_ostream");
+  parameterName = std::string("debug_output_stream");
   strDefault = std::string("std::cout");
   docString.str("todo");
   validChoices.clear();
@@ -132,7 +132,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  parameterName = std::string("debug_file");
+  parameterName = std::string("debug_output_file");
   strDefault = std::string();
   docString.str("todo");
   fnameValidatorP = Teuchos::rcp(new FileNameValidator(false));
@@ -145,14 +145,14 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  // TODO - I think we really want timing specifiers.
-  parameterName = std::string("timing_level");
+  // TODO - I think we really want profiling specifiers.
+  parameterName = std::string("profiling_level");
   intDefault = 0;
   intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(0,NUM_TIMING_LEVELS-1));
+    Teuchos::rcp(new EnhancedNumberValidator<int>(0,NUM_PROFILING_LEVELS-1));
   docString.str("");
   docString << "level of profiling output, an integer ranging from 0 to ";
-  docString << NUM_TIMING_LEVELS-1 << ".";
+  docString << NUM_PROFILING_LEVELS-1 << ".";
   entry = ParameterEntry(
         intDefault, isDefault, isNotList,
         docString.str(), 
@@ -162,7 +162,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  parameterName = std::string("timing_procs");
+  parameterName = std::string("profiling_procs");
   intArrayDefault = Array<int>(1,RANGE_INCLUDES_ALL);  
   intRangeValidatorP = Teuchos::rcp(new IntegerRangeListValidator<int>());
   docString.str("");
@@ -178,7 +178,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  parameterName = std::string("timing_ostream");
+  parameterName = std::string("profiling_output_stream");
   strDefault = std::string("std::cout");
   docString.str("todo");
   validChoices.clear();
@@ -195,7 +195,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
 
     /*-----------------------------------------*/
 
-  parameterName = std::string("timing_file");
+  parameterName = std::string("profiling_output_file");
   strDefault = std::string();
   docString.str("todo");
   fnameValidatorP = Teuchos::rcp(new FileNameValidator(false));

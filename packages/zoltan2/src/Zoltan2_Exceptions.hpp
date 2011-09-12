@@ -54,7 +54,8 @@
   if (level <= (env)._errorCheckLevel) { \
     if (!(assertion)){ \
       std::ostringstream oss; \
-      oss << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+      oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+      (env)._dbg->error(oss.str()); \
       throw std::runtime_error(oss.str()); \
     } \
   } \
@@ -64,7 +65,8 @@
   if (level <= (env)._errorCheckLevel) { \
     if (!(assertion)){ \
       std::ostringstream oss; \
-      oss << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+      oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+      (env)._dbg->error(oss.str()); \
       throw std::logic_error(oss.str()); \
     } \
   } \
@@ -75,7 +77,9 @@
 
 #define Z2_LOCAL_MEMORY_ASSERTION( comm, env, requestSize, assertion) { \
   if (!(assertion)){ \
-    *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
+    std::ostringstream _msg; \
+    _msg << __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
+    (env)._dbg->error(_msg.str()); \
     throw std::bad_alloc(); \
   } \
 }
@@ -86,10 +90,12 @@
     if (!(assertion)) fail = 1;  \
     Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
     if (gfail > 0){  \
-      std::ostringstream oss; \
-      if (fail > 0) \
-        oss << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      throw std::runtime_error(oss.str()); \
+      std::ostringstream _msg; \
+      if (fail > 0){ \
+        _msg << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+        (env)._dbg->error(_msg.str()); \
+      } \
+      throw std::runtime_error(_msg.str()); \
     } \
   } \
 }
@@ -100,10 +106,12 @@
     if (!(assertion)) fail = 1;  \
     Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
     if (gfail > 0){  \
-      std::ostringstream oss; \
-      if (fail > 0) \
-        oss << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      throw std::logic_error(oss.str()); \
+      std::ostringstream _msg; \
+      if (fail > 0){ \
+        _msg <<  __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
+        (env)._dbg->error(_msg.str()); \
+      } \
+      throw std::logic_error(_msg.str()); \
     } \
   } \
 }
@@ -116,8 +124,11 @@
   if (!(assertion)) fail = 1;  \
   Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
   if (gfail > 0){  \
-    if (fail > 0) \
-      *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
+    if (fail > 0){ \
+      std::ostringstream _msg; \
+      _msg <<  __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
+      (env)._dbg->error(_msg.str()); \
+    } \
     throw std::bad_alloc(); \
   } \
 }
@@ -127,7 +138,9 @@
 /*! Throw an error returned from outside the Zoltan2 library.
  */
 #define Z2_THROW_OUTSIDE_ERROR(env, e) { \
-  *(env)._errorOStream << __FILE__ << ":" << __LINE__ << " " << e.what() << std::endl; \
+   std::ostringstream oss; \
+   oss << __FILE__ << ":" << __LINE__ << " " << e.what() << std::endl; \
+   (env)._dbg->error(oss.str()); \
   throw e; \
 }
 

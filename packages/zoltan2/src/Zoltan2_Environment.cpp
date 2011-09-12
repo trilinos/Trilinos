@@ -10,34 +10,44 @@
     \brief The definition of the Environment object.
 */
 
-#ifndef _ZOLTAN2_ENVIRONMENT_DEF_HPP_
-#define _ZOLTAN2_ENVIRONMENT_DEF_HPP_
+#ifndef _ZOLTAN2_ENVIRONMENT_HPP_
+#define _ZOLTAN2_ENVIRONMENT_HPP_
 
-/*! \file Zoltan2_Environment_def.hpp
+/*! \file Zoltan2_Environment.hpp
   
   \brief Defines the Zoltan2::Environment class.
 
 */
 
 #include <ostream>
-#include <Zoltan2_Util.hpp>
 #include <Zoltan2_Environment.hpp>
+#include <Zoltan2_Exceptions.hpp>
 #include <Teuchos_RCP.hpp>
 
 namespace Zoltan2 {
 
-Environment::Environment(
-  Teuchos::ParameterList &problemParams, Teuchos::ParameterList &libraryConfig):
-    _errorCheckLevel(0), _errorOStream(&std::cerr)
+Environment::Environment( Teuchos::ParameterList &problemParams,
+  Teuchos::RCP<Teuchos::Comm<int> > &comm):
+  _params(problemParams), _validParams(), 
+  _myRank(0), _numProcs(0),
+  _printDebugMessages(false), _printProfilingMessages(false),
+  _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
+  _committed(false), _comm(comm)
 {
-  setProblemParameters(problemParams);
-  setLibraryConfiguration(libraryConfig);
+  _myRank = comm->getRank();
+  _numProcs = comm->getSize();
 }
 
-Environment::Environment()
+Environment::Environment():
+  _params(), _validParams(), 
+  _myRank(0), _numProcs(0),
+  _printDebugMessages(false), _printProfilingMessages(false),
+  _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
+  _committed(false)
 {
-  Teuchos::ParameterList emptyList;
-  Environment(emptyList, emptyList);
+  _comm = Teuchos::DefaultComm<int>::getComm();
+  _myRank = _comm->getRank();
+  _numProcs = _comm->getSize();
 }
 
 Environment::~Environment()
@@ -47,68 +57,110 @@ Environment::~Environment()
 Environment::Environment(const Environment &env)
 {
   _params = env._params;
-  _config = env._config;
-  _dbg.setOStream(env._dbg.getOStream());
-  _dbg.setDebugLevel(env._dbg.getDebugLevel());
+  _validParams = env._validParams;
+  _printDebugMessages = env._printDebugMessages;
+  _printProfilingMessages = env._printProfilingMessages;
   _errorCheckLevel = env._errorCheckLevel;
-  _errorOStream = env._errorOStream;
+  _debugDepthLevel = env._debugDepthLevel;
+  _profilingIndicator = env._profilingIndicator;
+  _comm = env._comm;
+  _dbg = env._dbg;
 }
 
 Environment &Environment::operator=(const Environment &env)
 {
   if (this == &env) return *this;
   this->_params = env._params;
-  this->_config = env._config;
-  this->_dbg.setOStream(env._dbg.getOStream());
-  this->_dbg.setDebugLevel(env._dbg.getDebugLevel());
+  this->_validParams = env._validParams;
+  this->_printDebugMessages = env._printDebugMessages;
+  this->_printProfilingMessages = env._printProfilingMessages;
   this->_errorCheckLevel = env._errorCheckLevel;
-  this->_errorOStream = env._errorOStream;
+  this->_debugDepthLevel = env._debugDepthLevel;
+  this->_profilingIndicator = env._profilingIndicator;
+  this->_dbg = env._dbg;
+  this->_comm = env._comm;
   return *this;
 }
 
-void Environment::setProblemParameters(Teuchos::ParameterList &problemParams)
+void Environment::setCommunicator(Teuchos::RCP<Teuchos::Comm<int> > &comm)
 {
-  _params = problemParams;
+  Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
+    "parameters are already committed",
+    _committed, BASIC_ASSERTION);
 
-  const std::string error_check_level("ERROR_CHECK_LEVEL");
-
-  int *checkLevel = _config.getPtr<int>(error_check_level);
-  if (checkLevel)
-    _errorCheckLevel = *checkLevel;
-
-  if (_errorCheckLevel< 0)
-    _errorCheckLevel = 0;
-  else if (_errorCheckLevel > Z2_MAX_CHECK_LEVEL)
-    _errorCheckLevel = Z2_MAX_CHECK_LEVEL;
+  _comm = comm;
+  _myRank = _comm->getRank();
+  _numProcs = _comm->getSize();
 }
 
-void Environment::setLibraryConfiguration(Teuchos::ParameterList &libraryConfig)
+void Environment::setParameters(Teuchos::ParameterList &params)
 {
-  _config = libraryConfig;
+  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+    "parameters are already committed",
+    _committed, BASIC_ASSERTION);
 
-#if 0
-  //Zoltan2::getOutputStreamFromParameterList(libraryConfig, "ERROR_OSTREAM", _errorOStream, std::cerr);
+  _params = params;
+}
 
-  std::ostream *os;
-  Zoltan2::getOutputStreamFromParameterList(libraryConfig, "DEBUG_OSTREAM", os, std::cout);
-  _dbg.setOStream(os);
+void Environment::addParameters(Teuchos::ParameterList &params)
+{
+  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+    "parameters are already committed",
+    _committed, BASIC_ASSERTION);
 
-  const std::string debug_level("DEBUG_LEVEL");
-  int *debugLevel = _config.getPtr<int>(debug_level);
-  if (debugLevel)
-    _dbg.setDebugLevel(*debugLevel);
-#endif
+  _params.setParameters(params);
+}
 
-#if 0
-  // Same for timing when we add profiling abilities
-  std::ostream *timingStream;
-  Z2::getOutputStreamFromParameterList(_config, "TIMING_OSTREAM", timingStream);
-  Teuchos::RCP<std::ostream> timingOut = Teuchos::rcp(timingStream);
-  const std::string timing_level("TIMING_LEVEL");
-  int *timingLevel = _config.getPtr<int>(timing_level);
-  if (timingLevel)
-    tmg.setTimingLevel(*timingLevel);
-#endif
+void Environment::commitParameters()
+{
+  if (_numProcs == 0){
+    std::string msg("Can not commit parameters because ");
+    msg += std::string("setCommunicator has not been called.");
+    throw std::runtime_error(msg);
+  }
+
+  createValidParameterList(_validParams);
+  _params.validateParametersAndSetDefaults(_validParams);
+
+  Teuchos::Array<int> reporters = 
+    _params.get<Teuchos::Array<int> >(std::string("debug_procs"));
+
+  _printDebugMessages = IsInRangeList(_myRank, reporters);
+
+  reporters = 
+    _params.get<Teuchos::Array<int> >(std::string("profiling_procs")); 
+
+  _printProfilingMessages = IsInRangeList(_myRank, reporters);
+
+  _errorCheckLevel = _params.get<int>(std::string("error_check_level"));
+  _debugDepthLevel = _params.get<int>(std::string("debug_level"));
+  _profilingIndicator = _params.get<int>(std::string("timing_level"));
+
+  std::string &fname = _params.get<std::string>(std::string("debug_output_file"));
+  std::ofstream dbgFile;
+  if (fname.size() > 0){
+    try{
+      dbgFile.open(fname.c_str(), std::ios::out|std::ios::trunc);
+    }
+    catch(std::exception &e){
+      // TODO
+    }
+    _dbg = Teuchos::rcp(new DebugManager(
+      _myRank, _printDebugMessages,  dbgFile, _debugDepthLevel));
+  }
+  else{
+    std::string &osname = _params.get<std::string>(std::string("debug_output_stream"));
+    if (osname == std::string("std::cout"))
+      _dbg = Teuchos::rcp(new DebugManager(
+        _myRank, _printDebugMessages,  std::cout, _debugDepthLevel));
+    else if (osname == std::string("std::cerr"))
+      _dbg = Teuchos::rcp(new DebugManager(
+        _myRank, _printDebugMessages,  std::cerr, _debugDepthLevel));
+  }
+
+  // TODO - do the same thing for profiling message data.
+
+  _committed = true;
 }
   
 }  //namespace Zoltan2

@@ -68,7 +68,7 @@ public:
     _edgeWeightDim = 0;
 
     Z2_GLOBAL_INPUT_ASSERTION(_comm, _env, "broke assumption about input", 
-        g.isLowerTriangular || g.isUpperTriangular, Z2_BASIC_ASSERTION);
+        g.isLowerTriangular || g.isUpperTriangular, BASIC_ASSERTION);
 
     LNO numVwgts = vertexWeights.size();
     LNO numEwgts = edgeWeights.size();
@@ -78,13 +78,13 @@ public:
     if (numVwgts > 0){
       _vtxWeightDim = numVwgts / numV;
       Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "bad number of weights", 
-         _vtxWeightDim * numV == numVwgts, Z2_BASIC_ASSERTION);
+         _vtxWeightDim * numV == numVwgts, BASIC_ASSERTION);
     }
 
     if (numEwgts > 0){
       _edgeWeightDim = numEwgts / numE;
       Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "bad number of weights", 
-         _edgeWeightDim * numE == numEwgts, Z2_BASIC_ASSERTION);
+         _edgeWeightDim * numE == numEwgts, BASIC_ASSERTION);
     }
 
     _edgeOffsets.clear();
@@ -162,7 +162,7 @@ public:
 
       Xpetra::LookupStatus s = getRemoteIndexList(vtxId, nodeId, nodeVtxLid);
       Z2_GLOBAL_INPUT_ASSERTION(_comm, _env, "getRemoteVertexList invalid IDs", 
-         s == Xpetra::AllIDsPresent, Z2_BASIC_ASSERTION);
+         s == Xpetra::AllIDsPresent, BASIC_ASSERTION);
     }
 
   /*! Find the process rank for the owner of each vertex in a list.
@@ -177,7 +177,7 @@ public:
 
       Xpetra::LookupStatus s = getRemoteIndexList(vtxId, nodeId);
       Z2_GLOBAL_INPUT_ASSERTION(_comm, _env, "getRemoteVertexList invalid IDs", 
-         s == Xpetra::AllIDsPresent, Z2_BASIC_ASSERTION);
+         s == Xpetra::AllIDsPresent, BASIC_ASSERTION);
     }
 
   /*! Get the list of vertex global IDs and their weights.
@@ -196,7 +196,7 @@ public:
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid input array size", 
       (wgt.size() >= numVtx*_vtxWeightDim) && (ids.size() >= numVtx), 
-      Z2_BASIC_ASSERTION);
+      BASIC_ASSERTION);
 
     LNO nweights = _vtxWeightDim * numVtx;
     if (nweights){
@@ -217,7 +217,7 @@ public:
     LNO numVtx = this->getLocalNumVertices();
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid input array size", 
-      ids.size() >= numVtx, Z2_BASIC_ASSERTION);
+      ids.size() >= numVtx, BASIC_ASSERTION);
 
     GNO *idTo= ids.getRawPtr();
     for (LNO i=0; i < _rowMap->getNodeNumElements(); i++){
@@ -313,12 +313,12 @@ public:
     LNO &numEdges) const{
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid global vertex ID", 
-     this->isNodeGlobalVertex(vtxId), Z2_BASIC_ASSERTION);
+     this->isNodeGlobalVertex(vtxId), BASIC_ASSERTION);
 
     numEdges = this->getNumNborsOfGlobalVertex(vtxId)
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid global vertex ID", 
-     edgeId.size() >= numEdges, ASIC_ASSERTION);
+     edgeId.size() >= numEdges, BASIC_ASSERTION);
 
     GNO *toId = edgeId.getRawPtr();
     Teuchos::ArrayView<GNO> nbors;
@@ -338,7 +338,7 @@ public:
     LNO &numEdges) const{
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid local vertex ID", 
-     this->isNodeLocalVertex(vtxId), Z2_BASIC_ASSERTION);
+     this->isNodeLocalVertex(vtxId), BASIC_ASSERTION);
 
     GNO globalVtxId = this->getGlobalVertex(vtxId);
 
@@ -353,7 +353,7 @@ public:
   void getGlobalVertexView(GNO vtxId, Teuchos::ArrayView<const GNO> &edgeId) const{
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid global vertex ID", 
-     this->isNodeGlobalVertex(vtxId), Z2_BASIC_ASSERTION);
+     this->isNodeGlobalVertex(vtxId), BASIC_ASSERTION);
 
     _graph.getGlobalRowView(vtxId, edgeId);
   }
@@ -368,7 +368,7 @@ public:
   void getLocalVertexView(LNO vtxId, Teuchos::ArrayView<const GNO> &edgeId) const{
 
     Z2_LOCAL_INPUT_ASSERTION(_comm, _env, "invalid local vertex ID", 
-     this->isNodeLocalVertex(vtxId), Z2_BASIC_ASSERTION);
+     this->isNodeLocalVertex(vtxId), BASIC_ASSERTION);
 
     GNO globalVtxId = this->getGlobalVertex(vtxId);
 

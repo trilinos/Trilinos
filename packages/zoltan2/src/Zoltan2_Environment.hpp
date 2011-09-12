@@ -21,6 +21,7 @@
 
 */
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Zoltan2_Parameters.hpp>
@@ -29,50 +30,39 @@
 namespace Zoltan2 {
 
 /*! Zoltan2::Environment
-    \brief The problem parameters, library configuration, and other information.
+    \brief The parameters and other information needed at runtime.
 
   This is object is passed to almost every method in the library.  We may want
   to have a memory manager here as well.
-
-  TODO: add teuchos validators, and all the other parameters
-  TODO: Do we need to template on AppLID and AppGID for fixed vertices?
 */
 
-// Definitions for ERROR_CHECK_LEVEL parameter.
-
-/*!  We should always check basic assertions.
-*/
-#define Z2_BASIC_ASSERTION      0
-
-/*!  Extra, more expensive level of checking.
- *
- * A parameter will state whether "extra" checking should be
- * done.  An example of extra checking is checking that an
- * input graph is valid.
- */
-#define Z2_COMPLEX_ASSERTION    1
-
-/*!  Even more extensive checking.
- *
- * This is extra checking we would do when debugging
- * a problem.
- *
- */
-#define Z2_DEBUG_MODE_ASSERTION  2
-
-#define Z2_MAX_CHECK_LEVEL Z2_DEBUG_MODE_ASSERTION
 
 class Environment{
 
 private:
-  /*! The problem parameters
+  /*! The user's parameters
    */
   Teuchos::ParameterList _params;
-  
-  /*! The library configuration 
+
+  /*! The parameters, their defaults, their validators,
+   *  and their documentation
    */
-  Teuchos::ParameterList _config;
-  
+  Teuchos::ParameterList _validParams;
+
+public:
+  /*! Values needed for quick access
+   */
+  int  _myRank;
+  int  _numProcs;
+  bool _printDebugMessages; // true if this proc prints
+  bool _printProfilingMessages;// true if this proc prints
+  int  _errorCheckLevel;    // how vigilant are we with assertions
+  int  _debugDepthLevel;    // how much info do we write out
+  int  _profilingIndicator;    // how much profiling (should really be
+                           // "what are we profiling", not a level)
+  bool _committed;
+  Teuchos::RCP<const Teuchos::Comm<int> > _comm;
+
 #if 0
   /*! The node description is not yet implemented.
    */
@@ -85,12 +75,11 @@ private:
   Teuchos::ParameterList _machine;
 #endif
 
-public:
   /*! Constructor 
       Because parameter lists are small, we save a
       copy of them instead of requiring an RCP.
    */
-  Environment(Teuchos::ParameterList &prob, Teuchos::ParameterList &config);
+  Environment(Teuchos::ParameterList &prob, Teuchos::RCP<Teuchos::Comm<int> > &comm);
 
   /*! Constructor
    */
@@ -105,26 +94,29 @@ public:
   /*! Assignment operator */
   Environment &operator=(const Environment &env);
 
+  /*! Set communicator */
+  void setCommunicator(Teuchos::RCP<Teuchos::Comm<int> > &comm);
+
   /*! Set or reset the problem parameters*/
-  void setProblemParameters(Teuchos::ParameterList &problemParams);
+  void setParameters(Teuchos::ParameterList &Params);
 
-  /*! Set or reset the library configuration */
-  void setLibraryConfiguration(Teuchos::ParameterList &libraryConfig);
+  /*! Add and to or replace the existing parameters with these */
+  void addParameters(Teuchos::ParameterList &Params);
 
-  /*! Get a reference to a read-only copy of the problem parameters. */
-  const Teuchos::ParameterList &getProblemParameters() const;
+  /*! Parameter setting is done, process parameters for use.
+      This should be done in the Problem.
+   */
+  void commitParameters();
 
-  /*! Get a reference to a read-only copy of the library configuration. */
-  const Teuchos::ParameterList &getLibraryConfiguration() const;
+  /*! Get a reference to a read-only copy of the parameters. */
+  const Teuchos::ParameterList &getParameters() const;
 
   /*! The debug manager, used by debug statements */
-  Zoltan2::DebugManager _dbg;
+  Teuchos::RCP<Zoltan2::DebugManager> _dbg;
 
-  /*! The level of checking to do at runtime.  See Zoltan2_Exceptions.hpp. */
-  int _errorCheckLevel;
+  // TODO: some kind of a manager for profiling, with
+  //   labels, hierarchy, and so on.
 
-  /*! The output stream for error messages. */
-  std::ostream *_errorOStream;
 };
   
   

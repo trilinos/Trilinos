@@ -16,17 +16,6 @@
 namespace Zoltan2
 {
 
-DebugManager::DebugManager(Teuchos::RCP<const Teuchos::Comm<int> > comm,
-    int debugLevel, std::ostream *os)
-    :
-    comm_(comm),
-    debugLevel_(debugLevel),
-    myOS_(os)
-{
-    myPID_ = (*comm_).getRank();
-    iPrint_ = (myPID_ == 0);
-}
-
 inline void DebugManager::print(int debugLevel, const std::string &output)
 {
 //#ifdef ZOLTAN2_DEBUG

@@ -44,11 +44,11 @@ enum DebugLevels{  // TODO
   MOST_DEBUGGING,
   NUM_DEBUG_LEVELS};
 
-enum TimingLevels{  // TODO - specifiers would be better
-  NO_TIMINGING,
-  MORE_TIMINGING,
-  MOST_TIMINGING,
-  NUM_TIMING_LEVELS};
+enum ProfilingLevels{  // TODO - specifiers would be better
+  NO_PROFILINGING,
+  MORE_PROFILINGING,
+  MOST_PROFILINGING,
+  NUM_PROFILING_LEVELS};
   
 template <typename Integral>
 const std::string IntegerRangeListValidator<Integral>::_listDelim(",");
@@ -353,6 +353,22 @@ template <typename Integral>
 // inList(std::vector<Integral> &val, std::vector<bool> &result)
 
 template <typename Integral>
+  bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &valList)
+{
+  if (allValuesAreInRangeList(valList))
+    return true;
+  else if (noValuesAreInRangeList(valList))
+    return false;
+
+  typename Teuchos::Array<Integral>::const_iterator flag = valList.end();
+  --flag;
+  if (std::binary_search(valList.begin(), flag, val))
+    return true;
+  else
+    return false;
+}
+
+template <typename Integral>
   bool IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e)
 {
   if (!e.isType<Teuchos::Array<Integral> >())
@@ -361,17 +377,7 @@ template <typename Integral>
   Teuchos::Array<Integral> *valPtr=NULL;
   Teuchos::Array<Integral> &valList = e.getValue(valPtr);
 
-  if (allValuesAreInRangeList(valList))
-    return true;
-  else if (noValuesAreInRangeList(valList))
-    return false;
-
-  typename Teuchos::Array<Integral>::iterator flag = valList.end();
-  --flag;
-  if (std::binary_search(valList.begin(), flag, val))
-    return true;
-  else
-    return false;
+  return IsInRangeList(val, valList);
 } 
 
 template <typename Integral>

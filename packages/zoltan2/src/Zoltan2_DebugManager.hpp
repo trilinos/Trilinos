@@ -29,42 +29,33 @@ class DebugManager
 {
     public:
 
-    DebugManager ( 
-     Teuchos::RCP<const Teuchos::Comm<int> > comm =
-                 Teuchos::DefaultComm<int>::getComm(),
-     int debugLevel = 0,
-     std::ostream *os = &std::cout
-     );
+    DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, int debugLevel){
+      myPID_ = rank;
+      iPrint_ = doPrinting;
+      myOS_ = Teuchos::rcp(&debugOs);
+      debugLevel_ = debugLevel;
+    }
 
     virtual ~DebugManager() {};
 
-    inline void setComm(const Teuchos::RCP<Teuchos::Comm<int> > &comm)
+    inline void setRank(int p)
     {
-      comm_ = comm;
+      myPID_ = p;
     }
 
-    inline void setOStream(std::ostream *os)
+    inline void setIPrint(bool p)
     {
-        myOS_ = os;
+      iPrint_ = p;
+    }
+
+    inline void setOStream(std::ostream &os)
+    {
+      myOS_ = Teuchos::rcp(&os);
     };
 
     inline void setDebugLevel(int debugLevel) { debugLevel_ = debugLevel; };
 
-    // TODO: Do we need this ?
-    inline std::ostream& stream()
-    {
-        if ( debugLevel_ && iPrint_ )
-            return *myOS_;
-        else
-            return myBHS_;
-    }
-
-    inline Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
-    {
-        return comm_;
-    };
-
-    inline std::ostream *getOStream() const { return myOS_; };
+    inline Teuchos::RCP<std::ostream> getOStream() const { return myOS_; };
 
     inline int getDebugLevel() const { return debugLevel_; };
 
@@ -83,12 +74,11 @@ class DebugManager
 
     private:
 
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+    int myPID_;
     int debugLevel_;
-    std::ostream *myOS_;
+    Teuchos::RCP<std::ostream> myOS_;
     Teuchos::oblackholestream myBHS_;
     bool iPrint_;
-    int myPID_;
 };
 
 } //namespace Zoltan2

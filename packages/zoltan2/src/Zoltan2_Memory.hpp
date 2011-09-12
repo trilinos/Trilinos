@@ -51,8 +51,11 @@ namespace Zoltan2{
   } \
   Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
   if (gfail > 0) { \
-    if (fail > 0) \
-      *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+    if (fail > 0){ \
+      std::ostringstream _msg;  \
+      _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+      (env)._dbg->error(_msg.str()); \
+    } \
     throw std::bad_alloc(); \
   } \
 }
@@ -65,7 +68,9 @@ namespace Zoltan2{
   if ((num) > 0) {\
     ptrname = new datatype [num]; \
     if (!ptrname) { \
-      *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+      std::ostringstream _msg;  \
+      _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+      (env)._dbg->error(msg); \
       throw std::bad_alloc(); \
     } \
   } \

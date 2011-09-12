@@ -56,7 +56,7 @@ template <typename Ordinal>
 {
   // TODO test this only once during the library execution
   Z2_GLOBAL_BUG_ASSERTION(*comm, env, "size of Ordinal assumption", 
-    sizeof(Ordinal) != sizeof(int), Z2_BASIC_ASSERTION);
+    sizeof(Ordinal) != sizeof(int), BASIC_ASSERTION);
 
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = comm->getRawMpiComm();
   MPI_Group mainGroup, subGroup;
@@ -64,15 +64,15 @@ template <typename Ordinal>
 
   int rc = MPI_Comm_group(*superComm, &mainGroup);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "obtaining group", 
-    rc != MPI_SUCCESS, Z2_BASIC_ASSERTION);
+    rc != MPI_SUCCESS, BASIC_ASSERTION);
 
   rc = MPI_Group_incl(mainGroup, members.size(), (int *)(&members[0]), &subGroup);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating subgroup", 
-    rc != MPI_SUCCESS, Z2_BASIC_ASSERTION);
+    rc != MPI_SUCCESS, BASIC_ASSERTION);
 
   rc = MPI_Comm_create(mainComm, subGroup, &subComm);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating sub communicator", 
-    rc != MPI_SUCCESS, Z2_BASIC_ASSERTION);
+    rc != MPI_SUCCESS, BASIC_ASSERTION);
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 
@@ -95,7 +95,7 @@ template <typename Ordinal>
 
   int rc = MPI_Comm_split(*superComm, color, 0, &subComm);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating sub communicator", 
-    rc != MPI_SUCCESS, Z2_BASIC_ASSERTION);
+    rc != MPI_SUCCESS, BASIC_ASSERTION);
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 

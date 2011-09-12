@@ -89,6 +89,9 @@ template <typename Integral>
   bool IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e);
 
 template <typename Integral>
+  bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &vals);
+
+template <typename Integral>
   void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl);
 
 // Function declarations
