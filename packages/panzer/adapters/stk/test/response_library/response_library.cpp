@@ -140,10 +140,6 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
     user_data.set<int>("Workset Size",workset_size);
 
-    Teuchos::ParameterList responseClosureModels("Response Closure");
-    responseClosureModels.sublist("eblock-0_0");
-    responseClosureModels.sublist("eblock-1_0");
-
     // setup and evaluate ResponseLibrary
     ///////////////////////////////////////////////////
  
@@ -166,7 +162,6 @@ namespace panzer {
   					       physics_blocks,
   					       *cm_factory,
                                                closure_models,
-  					       responseClosureModels,
   					       *elof,
   					       user_data,true);
 

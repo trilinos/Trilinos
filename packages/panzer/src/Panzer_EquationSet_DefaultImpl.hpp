@@ -38,6 +38,13 @@ namespace panzer {
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const;
 
+    virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                        const std::string & model_name,
+							const Teuchos::ParameterList& models,
+							const Teuchos::ParameterList& user_data) const;
+
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
 							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -46,14 +53,6 @@ namespace panzer {
 							    const LinearObjFactory<panzer::Traits> & lof,
 							    const Teuchos::ParameterList& user_data) const;
 
-    virtual void buildAndRegisterResponseEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
-						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						    const std::string& model_name,
-						    const Teuchos::ParameterList& models,
-						    const LinearObjFactory<panzer::Traits> & lof,
-						    const Teuchos::ParameterList& user_data) const;
-    
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
     
     virtual const std::vector<std::string> & getDOFNames() const;

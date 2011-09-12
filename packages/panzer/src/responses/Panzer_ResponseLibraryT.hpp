@@ -183,8 +183,7 @@ buildVolumeFieldManagersFromResponses(
                         const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-                        const Teuchos::ParameterList& equation_set_closure_models,
-                        const Teuchos::ParameterList& response_closure_models,
+                        const Teuchos::ParameterList& closure_models,
                         const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file,
@@ -209,15 +208,7 @@ buildVolumeFieldManagersFromResponses(
             = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
       
       // Choose model sublist for this element block
-      std::string closure_model_name = "";
-      if (response_closure_models.isSublist(blockId))
-        closure_model_name = blockId;
-      else if (response_closure_models.isSublist("Default"))
-        closure_model_name = "Default";
-      else 
-        TEST_FOR_EXCEPTION(true, std::logic_error, 
-                           "Failed to find response model for element block \"" << blockId << 
-                           "\".  You must provide a response model for each element block or set a default!" << response_closure_models);
+      std::string response_model_name = "Response Model";
      
       Teuchos::ParameterList tmp_user_data(user_data);
       tmp_user_data.set<bool>("Ignore Scatter",true);
@@ -225,13 +216,13 @@ buildVolumeFieldManagersFromResponses(
       // use the physics block to register evaluators
       pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
       pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, tmp_user_data);
-      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, equation_set_closure_models, user_data);
-      pb->buildAndRegisterResponseEvaluators(*fm, cm_factory,closure_model_name, response_closure_models,lo_factory, user_data);
+      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
+      if(closure_models.isSublist(response_model_name))
+         pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_model_name, closure_models, user_data);
 
       for(std::size_t i=0;i<contVector.size();i++) {
 
-         // if not container has been constructed, don't build
-         // a field manager
+         // if container has not been constructed, don'ta register responses
          if(contVector[i]==Teuchos::null) 
             continue;
 

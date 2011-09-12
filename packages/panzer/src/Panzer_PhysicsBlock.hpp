@@ -60,11 +60,10 @@ namespace panzer {
 						    const panzer::LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
 
-    void buildAndRegisterResponseEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+    void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 				            const std::string& model_name,
 					    const Teuchos::ParameterList& models,
-					    const panzer::LinearObjFactory<panzer::Traits> & lof,
 					    const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>

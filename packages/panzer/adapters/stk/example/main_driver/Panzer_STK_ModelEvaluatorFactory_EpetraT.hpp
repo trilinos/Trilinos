@@ -73,7 +73,6 @@ namespace panzer_stk {
       pl->sublist("Block ID to Physics ID Mapping");
       pl->sublist("Options");
       pl->sublist("Volume Responses");
-      pl->sublist("Response Models");
       pl->sublist("User Data");
       pl->sublist("User Data").sublist("Panzer Data");
      
@@ -252,7 +251,6 @@ namespace panzer_stk {
                                                                  physicsBlocks,
   					                         *cm_factory,
                                                                  p.sublist("Closure Models"),
-                                                                 p.sublist("Response Models"),
   					                         *linObjFactory,
   					                         user_data,write_dot_files,prefix);
     }
