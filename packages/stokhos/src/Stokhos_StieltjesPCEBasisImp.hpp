@@ -91,7 +91,8 @@ getQuadPoints(ordinal_type quad_order,
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
 
   // We can't reliably generate quadrature points of order > 2*p
-  if (!project_integrals && quad_order > 2*this->p)
+  //if (!project_integrals && quad_order > 2*this->p)
+  if (quad_order > 2*this->p)
     quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
