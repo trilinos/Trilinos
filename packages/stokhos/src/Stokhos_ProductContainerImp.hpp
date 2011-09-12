@@ -217,10 +217,10 @@ print(std::ostream& os) const
 {
   Teuchos::Array<ordinal_type> trm;
   ordinal_type sz = coeff_.size();
-  os << "Stokhos::ProductContainer of global size " << map->NumGlobalElements()
+  os << "Stokhos::ProductContainer of global size " << map_->NumGlobalElements()
      << ", local size " << sz << ":" << std::endl;
   for (ordinal_type i=0; i<sz; i++) {
-    os << "Term " << map->GID(i) << ":" << std::endl;
+    os << "Term " << map_->GID(i) << ":" << std::endl;
     traits_type::print(os, *(coeff_[i]));
   }
   
