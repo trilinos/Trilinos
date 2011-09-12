@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0) {
     matrixParameters.print();
     xpetraParameters.print();
-    // TODO: print custom parameters
+    // TODO: print custom parameters // Or use paramList::print()!
   }
 
   if (pauseForDebugger) {
