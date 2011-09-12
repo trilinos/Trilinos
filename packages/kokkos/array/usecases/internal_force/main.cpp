@@ -16,9 +16,9 @@
 int main()
 {
   std::cout << "Kokkos Host SM miniapp: " << std::endl;
-  const int x = 100;
-  const int y = 10;
-  const int z = 10;
+  const int x = 10;
+  const int y = 1;
+  const int z = 1;
   const int num_elements = x * y * z;
 
   double time = internal_force_test<double, Kokkos::DeviceHost>( x, y, z );

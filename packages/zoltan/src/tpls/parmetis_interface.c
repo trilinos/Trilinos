@@ -140,9 +140,10 @@ int Zoltan_ParMetis(
                     exp_gids, exp_lids, exp_procs, exp_to_part);
 
   if (sizeof(realtype) != sizeof(float)) {
+    int tmp = zz->LB.Num_Global_Parts * MAX(zz->Obj_Weight_Dim, 1);
     prt.input_part_sizes = (realtype *)
-                   ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(realtype));
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+                   ZOLTAN_MALLOC(tmp * sizeof(realtype));
+    for (i = 0; i < tmp; i++) 
       prt.input_part_sizes[i] = (realtype) part_sizes[i];
     prt.part_sizes = prt.input_part_sizes;
   }

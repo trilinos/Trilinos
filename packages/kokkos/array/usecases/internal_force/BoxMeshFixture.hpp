@@ -43,7 +43,7 @@
 #include <stdexcept>
 #include <Kokkos_MDArrayView.hpp>
 
-//  construct a structured, rectangular prism mesh of Hex elements, 
+//  construct a structured, rectangular prism mesh of Hex elements,
 //  with dimensions given by elems_x, elems_y, elems_z
 
 template < class int_mdarray , class scalar_mdarray >
@@ -57,6 +57,9 @@ public:
   const int elem_count_x ;
   const int elem_count_y ;
   const int elem_count_z ;
+
+  const int nelems;
+  const int nnodes;
 
   //        7 -------------- 6
   //       /|               /|
@@ -87,12 +90,8 @@ public:
 
   void verify_connectivity_and_coordinates() const
   {
-    const int nnodes = ( elem_count_x + 1 ) *
-                       ( elem_count_y + 1 ) *
-                       ( elem_count_z + 1 );
-
     for ( int i = 0 ; i < nnodes ; ++i ) {
-      for ( int j = node_elem_offset(i) ; 
+      for ( int j = node_elem_offset(i) ;
                 j < node_elem_offset(i+1) ; ++j ) {
         const int elem_index = node_elem_ids(j,0);
         const int node_local = node_elem_ids(j,1);
@@ -113,11 +112,11 @@ public:
           int elem_node_coords[3][8];
 
           elem_node_coords[ 0 ][ 0 ] = i;
-          elem_node_coords[ 1 ][ 0 ] = j;        
+          elem_node_coords[ 1 ][ 0 ] = j;
           elem_node_coords[ 2 ][ 0 ] = k ;
 
           elem_node_coords[ 0 ][ 1 ] = i + 1;
-          elem_node_coords[ 1 ][ 1 ] = j;        
+          elem_node_coords[ 1 ][ 1 ] = j;
           elem_node_coords[ 2 ][ 1 ] = k ;
 
           elem_node_coords[ 0 ][ 2 ] = i + 1;
@@ -125,7 +124,7 @@ public:
           elem_node_coords[ 2 ][ 2 ] = k;
 
           elem_node_coords[ 0 ][ 3 ] = i;
-          elem_node_coords[ 1 ][ 3 ] = j + 1 ;        
+          elem_node_coords[ 1 ][ 3 ] = j + 1 ;
           elem_node_coords[ 2 ][ 3 ] = k;
 
           elem_node_coords[ 0 ][ 4 ] = i;
@@ -137,11 +136,11 @@ public:
           elem_node_coords[ 2 ][ 5 ] = k + 1;
 
           elem_node_coords[ 0 ][ 6 ] = i + 1;
-          elem_node_coords[ 1 ][ 6 ] = j + 1;        
+          elem_node_coords[ 1 ][ 6 ] = j + 1;
           elem_node_coords[ 2 ][ 6 ] = k + 1;
 
           elem_node_coords[ 0 ][ 7 ] = i;
-          elem_node_coords[ 1 ][ 7 ] = j + 1;        
+          elem_node_coords[ 1 ][ 7 ] = j + 1;
           elem_node_coords[ 2 ][ 7 ] = k + 1 ;
 
 
@@ -171,12 +170,12 @@ public:
   , elem_count_x( elems_x )
   , elem_count_y( elems_y )
   , elem_count_z( elems_z )
+  , nelems(elems_x*elems_y*elems_z)
+  , nnodes( (elems_x+1)*(elems_y+1)*(elems_z+1))
   {
     const int nx = elems_x + 1;
     const int ny = elems_y + 1;
     const int nz = elems_z + 1;
-    const int nnodes = nx * ny * nz;
-    const int nelems = elems_x * elems_y * elems_z;
 
     elem_node_ids    = Kokkos::create_mdarray< int_mdarray    >(nelems, 8);
     node_coords      = Kokkos::create_mdarray< scalar_mdarray >(nnodes, 3);
@@ -193,7 +192,7 @@ public:
         }
       }
     }
-  
+
     // Initialize element-node connectivity:
 
     for(int k = 0; k < elems_z; k++){
@@ -209,7 +208,7 @@ public:
             node0_index + 1 ,
             node0_index + 1 + nx ,
             node0_index     + nx ,
- 
+
             node0_index          + nx * ny ,
             node0_index + 1      + nx * ny ,
             node0_index + 1 + nx + nx * ny ,

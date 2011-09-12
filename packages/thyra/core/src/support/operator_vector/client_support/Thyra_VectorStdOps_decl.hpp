@@ -230,6 +230,15 @@ void ele_wise_conj_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
 
 
+/** \brief Element-wise scaling:
+ * <tt>y(i) *= x(i), i = 0...y->space()->dim()-1</tt>.
+ *
+ * \relates VectorBase
+ */
+template<class Scalar>
+void ele_wise_scale( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y );
+
+
 /** \brief Element-wise product update:
  * <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
  *

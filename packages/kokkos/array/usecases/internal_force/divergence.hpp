@@ -70,8 +70,8 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const array_type  hg_resist;
 	const array_type  hg_energy;
 
-	const array_type  two_mu;
-	const array_type  bulk_mod;
+	const Scalar  two_mu;
+	const Scalar  bulk_mod;
 
 	const Scalar     hg_stiff;
 	const Scalar     hg_visc;
@@ -79,7 +79,6 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const Scalar     quadBulkVisc;
 	const Scalar     dt;
 
-	const bool    scaleHGRotation;
 
   const int        current_state;
   const int        previous_state;
@@ -105,14 +104,13 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 				const array_type & arg_hg,
 				const array_type & arg_hgr,
 				const array_type & arg_hge,
-				const array_type & arg_tmu,
-				const array_type & arg_blk,
+				const Scalar arg_tmu,
+				const Scalar arg_blk,
 				const Scalar arg_hgs,
 				const Scalar arg_hgv,
 				const Scalar arg_l,
 				const Scalar arg_q,
 				const Scalar delta_t,
-				const bool arg_scale,
         const int arg_current_state,
         const int arg_previous_state)
 
@@ -143,7 +141,6 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
           , linBulkVisc(arg_l)
           , quadBulkVisc(arg_q)
           , dt(delta_t)
-          , scaleHGRotation(arg_scale)
           , current_state(arg_current_state)
           , previous_state(arg_previous_state)
         {}
@@ -527,98 +524,40 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
     vz[6] = velocity(nodes[6], Z, current_state);
     vz[7] = velocity(nodes[7], Z, current_state);
 
-		if (!scaleHGRotation){
 
-			for(int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i) {
 
-				Scalar hg_rate_0 = 0, hg_rate_1 = 0, hg_rate_2 = 0;
-				Scalar hg_resist_old_0 = hg_resist(ielem, (3 * i) + 0, 0);
-				Scalar hg_resist_old_1 = hg_resist(ielem, (3 * i) + 1, 0);
-				Scalar hg_resist_old_2 = hg_resist(ielem, (3 * i) + 2, 0);
+      Scalar hg_rate_0 = 0, hg_rate_1 = 0, hg_rate_2 = 0;
+      Scalar hg_resist_old_0 = hg_resist(ielem, (3 * i) + 0, 0);
+      Scalar hg_resist_old_1 = hg_resist(ielem, (3 * i) + 1, 0);
+      Scalar hg_resist_old_2 = hg_resist(ielem, (3 * i) + 2, 0);
 
-				for(int j = 0; j < 8; j++){
+      for(int j = 0; j < 8; j++){
 
-					hg_temp[j] = hgop(ielem, i * 8 + j, 1);
+        hg_temp[j] = hgop(ielem, i * 8 + j, 1);
 
-				}
+      }
 
-				for(int j = 0; j < 8; j++){
+      for(int j = 0; j < 8; j++){
 
-					hg_rate_0 += hg_temp[j] * vx[j];
-					hg_rate_1 += hg_temp[j] * vy[j];
-					hg_rate_2 += hg_temp[j] * vz[j];
+        hg_rate_0 += hg_temp[j] * vx[j];
+        hg_rate_1 += hg_temp[j] * vy[j];
+        hg_rate_2 += hg_temp[j] * vz[j];
 
-				}
+      }
 
-				hg_resist(ielem, (i * 3) + 0, 1)   = hg_resist_old_0 + dwxy*hg_resist_old_1 - dwzx*hg_resist_old_2 + fac1* hg_rate_0 ;
-				hg_resist_total[(i * 3) + 0]      = hg_resist(ielem, (i * 3) + 0, 1) + fac2* hg_rate_0 ;
+      hg_resist(ielem, (i * 3) + 0, 1)   = hg_resist_old_0 + dwxy*hg_resist_old_1 - dwzx*hg_resist_old_2 + fac1* hg_rate_0 ;
+      hg_resist_total[(i * 3) + 0]      = hg_resist(ielem, (i * 3) + 0, 1) + fac2* hg_rate_0 ;
 
-				hg_resist(ielem, (i * 3) + 1, 1)   = hg_resist_old_1 - dwxy*hg_resist_old_0 + dwyz*hg_resist_old_2 + fac1* hg_rate_1 ;
-				hg_resist_total[(i * 3) + 1]       = hg_resist(ielem, (i * 3) + 1, 1) + fac2* hg_rate_1 ;
+      hg_resist(ielem, (i * 3) + 1, 1)   = hg_resist_old_1 - dwxy*hg_resist_old_0 + dwyz*hg_resist_old_2 + fac1* hg_rate_1 ;
+      hg_resist_total[(i * 3) + 1]       = hg_resist(ielem, (i * 3) + 1, 1) + fac2* hg_rate_1 ;
 
-				hg_resist(ielem, (i * 3) + 2, 1)   = hg_resist_old_2 + dwzx*hg_resist_old_0 - dwyz*hg_resist_old_1 + fac1* hg_rate_2 ;
-				hg_resist_total[(i * 3) + 2]       = hg_resist(ielem, (i * 3) + 2, 1) + fac2* hg_rate_2 ;
+      hg_resist(ielem, (i * 3) + 2, 1)   = hg_resist_old_2 + dwzx*hg_resist_old_0 - dwyz*hg_resist_old_1 + fac1* hg_rate_2 ;
+      hg_resist_total[(i * 3) + 2]       = hg_resist(ielem, (i * 3) + 2, 1) + fac2* hg_rate_2 ;
 
-			}
+    }
 
-		}
 
-		else {
-
-			for(int i = 0; i < 4; ++i) {
-
-				Scalar hg_rate_0 = 0, hg_rate_1 = 0, hg_rate_2 = 0;
-				Scalar hg_resist_old_0 = hg_resist(ielem, (3 * i) + 0, 0);
-				Scalar hg_resist_old_1 = hg_resist(ielem, (3 * i) + 1, 0);
-				Scalar hg_resist_old_2 = hg_resist(ielem, (3 * i) + 2, 0);
-
-				for(int j = 0; j < 8; j++){
-
-					hg_temp[j] = hgop(ielem, i * 8 + j, 1);
-
-				}
-
-				for(int j = 0; j < 8; j++){
-
-					hg_rate_0 += hg_temp[j] * vx[j];
-					hg_rate_1 += hg_temp[j] * vy[j];
-					hg_rate_2 += hg_temp[j] * vz[j];
-				}
-
-				const Scalar rot_hg_resist_old_0 = hg_resist_old_0 + dwxy*hg_resist_old_1 - dwzx*hg_resist_old_2;
-				const Scalar rot_hg_resist_old_1 = hg_resist_old_1 - dwxy*hg_resist_old_0 + dwyz*hg_resist_old_2;
-				const Scalar rot_hg_resist_old_2 = hg_resist_old_2 + dwzx*hg_resist_old_0 - dwyz*hg_resist_old_1;
-
-				Scalar fnorm = 	rot_hg_resist_old_0 *rot_hg_resist_old_0  +
-								rot_hg_resist_old_1 *rot_hg_resist_old_1  +
-								rot_hg_resist_old_2 *rot_hg_resist_old_2 ;
-
-				if (fnorm > 1.e-30){
-
-					fnorm = sqrt ( (hg_resist_old_0*hg_resist_old_0 +
-					hg_resist_old_1*hg_resist_old_1 +
-					hg_resist_old_2*hg_resist_old_2) / fnorm );
-					hg_resist(ielem, i * 3 + 0, 1) = fnorm*rot_hg_resist_old_0 + fac1*hg_rate_0 ;
-					hg_resist(ielem, i * 3 + 1, 1) = fnorm*rot_hg_resist_old_1 + fac1*hg_rate_1 ;
-					hg_resist(ielem, i * 3 + 2, 1) = fnorm*rot_hg_resist_old_2 + fac1*hg_rate_2 ;
-
-				}
-
-				else {
-
-					hg_resist(ielem, i * 3 + 0, 1) = rot_hg_resist_old_0 + fac1*hg_rate_0 ;
-					hg_resist(ielem, i * 3 + 1, 1) = rot_hg_resist_old_1 + fac1*hg_rate_1 ;
-					hg_resist(ielem, i * 3 + 2, 1) = rot_hg_resist_old_2 + fac1*hg_rate_2 ;
-
-				}
-
-				hg_resist_total[(i * 3) + 0] = hg_resist(ielem, (i * 3) + 0, 1) + fac2*hg_rate_0 ;
-				hg_resist_total[(i * 3) + 1] = hg_resist(ielem, (i * 3) + 1, 1) + fac2*hg_rate_1 ;
-				hg_resist_total[(i * 3) + 2] = hg_resist(ielem, (i * 3) + 2, 1) + fac2*hg_rate_2 ;
-
-			}
-
-		}
 
 		Scalar hg_force_0[8];
 		Scalar hg_force_1[8];
@@ -674,8 +613,29 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 									force_new(ielem, 2, i)*vz[i];
 
 		}
-
 	}
+
+	KOKKOS_MACRO_DEVICE_FUNCTION
+    void get_stress(int ielem) const
+    {
+      const int kxx = 0;
+      const int kyy = 1;
+      const int kzz = 2;
+      const int kxy = 3;
+      const int kyz = 4;
+      const int kzx = 5;
+
+      const Scalar e = (rot_stret(ielem,kxx)+rot_stret(ielem,kyy)+rot_stret(ielem,kzz))/3.0;
+
+      stress_new(ielem,kxx) += dt * (two_mu * (rot_stret(ielem,kxx)-e)+3*bulk_mod*e);
+      stress_new(ielem,kyy) += dt * (two_mu * (rot_stret(ielem,kyy)-e)+3*bulk_mod*e);
+      stress_new(ielem,kzz) += dt * (two_mu * (rot_stret(ielem,kzz)-e)+3*bulk_mod*e);
+
+      stress_new(ielem,kxy) += dt * two_mu * rot_stret(ielem,kxy);
+      stress_new(ielem,kyz) += dt * two_mu * rot_stret(ielem,kyz);
+      stress_new(ielem,kzx) += dt * two_mu * rot_stret(ielem,kzx);
+
+    }
 
 	KOKKOS_MACRO_DEVICE_FUNCTION
     void operator()( int ielem )const {
@@ -689,8 +649,8 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		comp_hgop(ielem,x,y,z);
 
 		Scalar fac1_pre = dt * hg_stiff * 0.0625;
-		Scalar shr = elem_shrmod(ielem) = two_mu(ielem);
-		Scalar dil = elem_dilmod(ielem) = ( bulk_mod(ielem) + 2.0*shr ) * (1.0 / 3.0);
+		Scalar shr = elem_shrmod(ielem) = two_mu;
+		Scalar dil = elem_dilmod(ielem) = ( bulk_mod + 2.0*shr ) * (1.0 / 3.0);
 
 
 		Scalar aspect = comp_aspect(ielem);
@@ -708,7 +668,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 		elem_t_step(ielem) = cur_time_step;
 
-    // \TODO compute stress_new
+    get_stress(ielem);
 
 		rotate_tensor_backward(ielem);
 

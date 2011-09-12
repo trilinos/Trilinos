@@ -10,8 +10,11 @@
 #include "grad_hgop.hpp"
 #include "decomp_rotate.hpp"
 #include "divergence.hpp"
-#include "simple_hex_fixture.hpp"
+#include "BoxMeshFixture.hpp"
 #include "ForceGather.hpp"
+#include "initialize_element.hpp"
+#include "initialize_nodal_mass.hpp"
+#include "compute_acceleration_velocity_displacement.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -32,55 +35,26 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
 
   timeval start, stop, result;
 
-  fixture::simple_hex_fixture mesh(ex,ey,ez);
-  mesh.generate_mesh();
+  BoxMeshFixture<int_array_h, scalar_array_h> mesh(ex,ey,ez);
 
   const int NumStates = 2;
 
-  const unsigned nelems = mesh.m_num_elements;;
-  const unsigned nnodes = mesh.m_num_nodes;
+  const unsigned nelems = mesh.nelems;;
+  const unsigned nnodes = mesh.nnodes;
 
   //  Initialize Host mesh data structures:
-  int_array_h     elem_node_connectivity_h
-    = Kokkos::create_mdarray< int_array_h >( mesh.m_num_elements, 8 ); //hardwired to hex8
-
-  int_array_h     node_elem_offset_h
-    = Kokkos::create_mdarray< int_array_h >( mesh.m_num_nodes );
-
-  int_array_h     node_elem_ids_h
-    = Kokkos::create_mdarray< int_array_h >( mesh.m_mesh.node_elem_ids.size() );
-
-  scalar_array_h  model_coords_h
-    = Kokkos::create_mdarray< scalar_array_h >( mesh.m_num_nodes, 3 );
-
-  unsigned offset = 0;
-  for ( unsigned ielem = 0; ielem < mesh.m_num_elements; ++ielem) {
-    for ( unsigned inode = 0; inode < 8u; ++inode) {
-      elem_node_connectivity_h(ielem,inode) = mesh.m_mesh.elem_node_connectivity[offset++];
-    }
-  }
-
-  for ( unsigned inode=0; inode < mesh.m_num_nodes; ++inode) {
-    node_elem_offset_h(inode) = mesh.m_mesh.node_elem_offset[inode];
-    for ( unsigned coord = 0; coord < 3u; ++coord) {
-      model_coords_h(inode,coord) = mesh.m_coord_field[3*inode+coord];
-    }
-  }
-
-  for ( unsigned i=0; i < mesh.m_mesh.node_elem_ids.size(); ++i) {
-    node_elem_ids_h(i) = mesh.m_mesh.node_elem_ids[i];
-  }
+  int_array_h     elem_node_connectivity_h = mesh.elem_node_ids;
+  int_array_h     node_elem_offset_h = mesh.node_elem_offset;
+  int_array_h     node_elem_ids_h = mesh.node_elem_ids;
+  scalar_array_h  model_coords_h = mesh.node_coords;
 
   scalar_array_h  velocity_h     =  Kokkos::create_mdarray< scalar_array_h >(nnodes, 3, 2); // two state field
 
   //setup the initial condition on velecity
   {
-    unsigned ix=0;
-    for (unsigned iy=0; iy<ey+1; ++iy) {
-      for (unsigned iz=0; iz<ez+1; ++iz) {
-        const unsigned inode = mesh.node_index(ix,iy,iz);
-        const unsigned X = 0;
-        //set both states to the initial value
+    const unsigned X = 0;
+    for (unsigned inode = 0; inode< nnodes; ++inode) {
+      if ( model_coords_h(inode,X) == 0) {
         velocity_h(inode,X,0) = 1.0e3;
         velocity_h(inode,X,1) = 1.0e3;
       }
@@ -93,7 +67,7 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   scalar_array_h  internal_force_h =  Kokkos::create_mdarray< scalar_array_h >(nnodes, 3);
   scalar_array_h  nodal_mass_h     =  Kokkos::create_mdarray< scalar_array_h >(nnodes);
   scalar_array_h  elem_mass_h      =  Kokkos::create_mdarray< scalar_array_h >(nelems);
-  scalar_array_h  stress_new_h    =  Kokkos::create_mdarray< scalar_array_h >(nelems,6);
+  scalar_array_h  stress_new_h     =  Kokkos::create_mdarray< scalar_array_h >(nelems,6);
 
   //scalar_h current_time_step_h = Kokkos::create_value< scalar_h >();
 
@@ -139,7 +113,6 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   scalar_array_d  hgop =          Kokkos::create_mdarray< scalar_array_d >(nelems, 32, NumStates); // hgop and mid_hgop
   scalar_array_d  vel_grad =      Kokkos::create_mdarray< scalar_array_d >(nelems, 9);
   scalar_array_d  stretch =       Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
-  scalar_array_d  s_temp =        Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  vorticity =     Kokkos::create_mdarray< scalar_array_d >(nelems, 3);
   scalar_array_d  rot_stret =     Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
   scalar_array_d  rot_stress =    Kokkos::create_mdarray< scalar_array_d >(nelems, 6);
@@ -149,22 +122,33 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   scalar_array_d  elem_t_step =   Kokkos::create_mdarray< scalar_array_d >(nelems);
   scalar_array_d  hg_energy =     Kokkos::create_mdarray< scalar_array_d >(nelems);
   scalar_array_d  intern_energy = Kokkos::create_mdarray< scalar_array_d >(nelems);
-  scalar_array_d  bulk_modulus =  Kokkos::create_mdarray< scalar_array_d >(nelems);
-  scalar_array_d  two_mu =        Kokkos::create_mdarray< scalar_array_d >(nelems);
 
   // how do we create in shared memory
+
+  //scalar_h curr_dt_h = Kokkos::create_value< scalar_h >();
+
   //scalar_d prev_dt = Kokkos::create_value< scalar_d >();
   //scalar_d curr_dt = Kokkos::create_value< scalar_d >();
   //scalar_d next_dt = Kokkos::create_value< scalar_d >();
 
   // Parameters required for the internal force computations.
-  const Scalar  dt = 1.0e-6;
+  const Scalar dt = 1.0e-6;
   const Scalar  end_time = 0.0050;
+
+  // fudge factors
   const Scalar  lin_bulk_visc = 0.06;
   const Scalar  quad_bulk_visc = 1.2;
   const Scalar  hg_stiffness = 0.03;
   const Scalar  hg_viscosity = 0.001;
-  const bool    scaleHGRotation = false;
+
+  // material properties
+  const Scalar youngs_modulus=1.0e6;
+  const Scalar poissons_ratio=0.0;
+
+  const Scalar  two_mu = youngs_modulus/(1+poissons_ratio);
+  const Scalar  bulk_modulus = youngs_modulus/(3*(1-2*poissons_ratio));
+
+  const Scalar  density = 8.0e-4;
 
   //  before starting the internal force calculations,
   //  copy the Host generated mesh information to the accelerator device
@@ -182,9 +166,62 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   // Global memory accees have read/write cost and memory subsystem contention cost.
   //--------------------------------------------------------------------------
 
+  Kokkos::parallel_for( nelems,
+      initialize_element<Scalar,device_type>(
+        elem_node_connectivity,
+        model_coords,
+        elem_mass,
+        stretch,
+        rotation,
+        density
+        )
+      );
+
+  Kokkos::parallel_for( nnodes,
+      initialize_nodal_mass<Scalar,device_type>(
+        node_elem_offset,
+        node_elem_ids,
+        elem_mass,
+        nodal_mass
+        )
+      );
+
+  Kokkos::deep_copy(nodal_mass_h,nodal_mass);
+  Kokkos::deep_copy(elem_mass_h,elem_mass);
+
+#if 0
+  std::cout << "Element Mass\n";
+  for(unsigned i = 0; i<nelems; ++i) {
+    std::cout << elem_mass_h(i) << ",";
+    if ((i+1)%20 == 0) std::cout << "\n";
+  }
+
+  std::cout << "\n\n";
+
+  std::cout << "Nodal Mass\n";
+  for(unsigned i = 0; i<nnodes; ++i) {
+    std::cout << nodal_mass_h(i) << ",";
+    if ((i+1)%20 == 0) std::cout << "\n";
+  }
+
+  std::cout << "\n\n";
+
+  std::cout << "Nodal Velocity\n";
+  for(unsigned i = 0; i<nnodes; ++i) {
+    std::cout << '(';
+    std::cout << velocity_h(i,0,0) << ",";
+    std::cout << velocity_h(i,1,0) << ",";
+    std::cout << velocity_h(i,2,0) << "), ";
+    if ((i+1)%10 == 0) std::cout << "\n";
+  }
+
+  std::cout << "\n\n";
+#endif
+
   int current_state = 0;
   int previous_state = 1;
-  for (Scalar sim_time = 0.0; sim_time < end_time; sim_time += dt) {
+  //for (Scalar sim_time = 0.0; sim_time < end_time; sim_time += dt) {
+  for (int sim_time = 0; sim_time < 20; ++sim_time) {
 
     //rotate the states
     previous_state = current_state;
@@ -213,7 +250,6 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
     Kokkos::parallel_for( nelems , decomp_rotate<Scalar, device_type>
         ( rotation,
           vel_grad,
-          s_temp,
           stretch,
           vorticity,
           rot_stret,
@@ -254,7 +290,6 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
           lin_bulk_visc,
           quad_bulk_visc,
           dt,
-          scaleHGRotation,
           current_state,
           previous_state)   , compute_time );
 
@@ -272,11 +307,36 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
            current_state,
            previous_state) , compute_time);
 
+    Kokkos::parallel_for( nnodes ,
+        compute_acceleration_velocity_displacement<Scalar, device_type>
+        (  internal_force,
+           nodal_mass,
+           acceleration,
+           velocity,
+           displacement,
+           dt,
+           current_state,
+           previous_state) ,
+        compute_time);
+
     total += compute_time;
 
-    break;
   }
 
+  Kokkos::deep_copy(stress_new_h,stress_new);
+
+  std::cout << "Element Stress\n";
+  for(unsigned i = 0; i<nelems; ++i) {
+    std::cout << "(";
+    std::cout << stress_new_h(i,0) << ",";
+    std::cout << stress_new_h(i,1) << ",";
+    std::cout << stress_new_h(i,2) << ",";
+    std::cout << stress_new_h(i,3) << ",";
+    std::cout << stress_new_h(i,4) << ",";
+    std::cout << stress_new_h(i,5) << "), ";
+    if ((i+1)%5 == 0) std::cout << "\n";
+  }
+  std::cout << "\n\n";
 
   return total;
 }

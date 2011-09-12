@@ -593,6 +593,25 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
         )
       ) success=false;
   }
+  
+  // Test ele_wise_scale
+  out << "\n"<<tc<<") Testing ele_wise_scale(*v1, z.ptr()) ...\n";
+  ++tc;
+  {
+    v1  = createMember(vecSpc);
+    z   = createMember(vecSpc);
+    V_S(v1.ptr(), as<Scalar>(2.0));
+    V_S(z.ptr(), as<Scalar>(3.0));
+    ele_wise_scale( *v1, z.ptr() );
+    if (!testRelErr(
+        "norm_2(*z)", norm_2(*z),
+        "ST::squareroot(n*sqr(3.0*2.0))", ST::squareroot(n*36.0),
+        "error_tol", error_tol(),
+        "warning_tol", warning_tol(),
+        &out
+        )
+      ) success=false;
+  }
 
   // Test Vt_StV
   out << "\n"<<tc<<") Testing Vt_StV(z.ptr(), alpha, *v) ...\n";

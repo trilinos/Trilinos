@@ -3,7 +3,7 @@
 ************************************************************************
 
               Isorropia: Partitioning and Load Balancing Package
-                Copyright (2006) Sandia Corporation
+                Copyright (2006,2011) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 license for use of this work by or on behalf of the U.S. Government.
@@ -67,7 +67,7 @@ namespace Epetra {
     for input sparse matrices.
 \ingroup matcher_grp
 */
-class Isorropia_EpetraMatcher {
+class Matcher {
 private:
     int* mateU_;
     int* mateV_;
@@ -102,7 +102,7 @@ private:
     int DW_phase();
 
 public:
-    Isorropia_EpetraMatcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Matcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
 
     \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
@@ -112,7 +112,7 @@ public:
 \ingroup matching_grp
     */
     
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Matcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
 
     \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
@@ -122,7 +122,7 @@ public:
 \ingroup matching_grp
     */
     
-    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Matcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
 
     \param[in] Epetra_CRSGraph which holds the graph
@@ -132,7 +132,7 @@ public:
 \ingroup matching_grp
     */
     
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Matcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
 
     \param[in] Epetra_CRSGraph which holds the graph
@@ -142,7 +142,7 @@ public:
 \ingroup matching_grp
     */
     
-     virtual ~Isorropia_EpetraMatcher();
+     virtual ~Matcher();
     /** Destructor
 \ingroup matching_grp
     */

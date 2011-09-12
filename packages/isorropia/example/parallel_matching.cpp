@@ -28,11 +28,11 @@ int main(int argc, char** argv) {
 		
 		Teuchos::ParameterList paramlist;
 		paramlist.set("Matching Algorithm",argv[2]);
-        Isorropia::Epetra::Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+        Isorropia::Epetra::Matcher pm(matrixPtr,paramlist);
 		
         //Teuchos::RCP<const Epetra_CrsMatrix> r(Teuchos::RCP<const
         //Epetra_CrsMatrix>(matrixPtr,true));
-        //Isorropia::Epetra::Isorropia_EpetraMatcher pm(r,paramlist);
+        //Isorropia::Epetra::Matcher pm(r,paramlist);
         
         pm.match();
 
