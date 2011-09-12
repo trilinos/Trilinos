@@ -46,7 +46,7 @@ namespace {
       
       out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
+      RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
       {

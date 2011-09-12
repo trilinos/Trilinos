@@ -18,21 +18,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
 #include "MueLu_UseShortNames.hpp"
 
-  private:
-    // List of smoothers. It is an ArrayRCP of RCP because:
-    //  1) I need a vector of pointers (to avoid slicing problems) 
-    //  2) I can use an std::vector insead of an ArrayRCP but then the constructor will do a copy of user input
-    ArrayRCP<RCP<SmootherPrototype> > smootherList_;
-
-    //
-    bool reverseOrder_;
-
-    // tmp, for debug
-    bool verbose_;
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
-
   public:
     // UNUSED: typedef vector::size_type size_type;
     //         ArrayRCP<RCP<SmootherPrototype>>::size_type
@@ -245,10 +230,24 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     //@}
 
+  protected:
+    RCP<Teuchos::FancyOStream> out_;
+
+  private:
+    // List of smoothers. It is an ArrayRCP of RCP because:
+    //  1) I need a vector of pointers (to avoid slicing problems) 
+    //  2) I can use an std::vector insead of an ArrayRCP but then the constructor will do a copy of user input
+    ArrayRCP<RCP<SmootherPrototype> > smootherList_;
+
+    //
+    bool reverseOrder_;
+
+    // tmp, for debug
+    bool verbose_;
+
   }; //class MergedSmoother
 
 } //namespace MueLu
 
 #define MUELU_MERGED_SMOOTHER_SHORT
-
 #endif //ifndef MUELU_MERGED_SMOOTHER_HPP

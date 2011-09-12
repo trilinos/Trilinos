@@ -54,20 +54,20 @@ typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::GaussSeidel<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GaussSeidel;
 #endif
 
-#ifdef MUELU_IFPACK_SMOOTHER_SHORT
-typedef MueLu::IfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IfpackSmoother;
-#endif
-
 #ifdef MUELU_IFPACK2_SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ifpack2Smoother;
 #endif
 
-#ifdef MUELU_AMESOS_SMOOTHER_SHORT
-typedef MueLu::AmesosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmesosSmoother;
-#endif
-
 #ifdef MUELU_AMESOS2_SMOOTHER_SHORT
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
+#endif
+
+#ifdef MUELU_DIRECT_SOLVER_SHORT
+typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
+#endif
+
+#ifdef MUELU_TRILINOS_SMOOTHER_SHORT
+typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
 #endif
 
 #ifdef MUELU_MERGED_SMOOTHER_SHORT

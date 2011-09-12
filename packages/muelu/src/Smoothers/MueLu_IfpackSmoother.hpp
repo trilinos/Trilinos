@@ -5,44 +5,31 @@
 
 #ifdef HAVE_MUELU_IFPACK
 
+#include "Ifpack.h"
+
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
-
-#include "Ifpack.h"
 
 namespace MueLu {
 
-class Level;
-
-/*!
-  @class IfpackSmoother
-  @brief Class that encapsulates Ifpack smoothers.
-
-  This class creates an Ifpack preconditioner factory.  The factory creates a smoother based on the
-  type and ParameterList passed into the constructor.  See the constructor for more information.
-*/
-
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class IfpackSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  /*!
+    @class IfpackSmoother
+    @brief Class that encapsulates Ifpack smoothers.
+    
+    This class creates an Ifpack preconditioner factory.  The factory creates a smoother based on the
+    type and ParameterList passed into the constructor.  See the constructor for more information.
+  */
+  class IfpackSmoother : public SmootherPrototype<double,int,int>
   {
 
+    typedef double Scalar;
+    typedef int    LocalOrdinal;
+    typedef int    GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "MueLu_UseShortNames.hpp"
-
-  private:
-
-    //! Ifpack-specific key phrase that denote smoother type (not to be confused with SmootherBase::Type_)
-    std::string ifpackType_;
-    //! overlap when using the smoother in additive Schwarz mode
-    LO overlap_;
-    RCP<Ifpack_Preconditioner> prec_;
-    //! matrix operator 
-    RCP<Operator> A_;
-    //! parameter list that is used by Ifpack internally
-    Teuchos::ParameterList list_;
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -83,62 +70,73 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
         See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
-    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & list, LO const &overlap=0)
-      : ifpackType_(type), list_(list), out_(this->getOStream())
-    {
-      overlap_ = overlap;
-      std::string label;
-      if (type == "point relaxation stand-alone")
-        label = "Ifpack: " + list_.get("relaxation: type","unknown relaxation");
-      else
-        label = "Ifpack: " + type;
-      //TODO      SmootherBase::SetType(label);
-      SmootherPrototype::IsSetup(false);
-    }
+    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0) //TODO: empty paramList valid for Ifpack??
+      : type_(type), paramList_(paramList), overlap_(overlap)
+    { }
 
     //! Destructor
     virtual ~IfpackSmoother() {}
+
     //@}
 
     //! @name Set/Get methods
 
     //@{
 
-    /*! @brief Set the number of smoothing sweeps/degree.
+    //! Set smoother parameters
+    void SetParameters(Teuchos::ParameterList const & paramList) {
+      paramList_ = paramList;
 
-       If the smoother is relaxation, this sets the number of sweeps.
-       If the smoother is Chebyshev, this sets the polynomial degree.
+      if (SmootherPrototype::IsSetup()) {
+        // It might be invalid to change parameters after the setup, but it depends entirely on Ifpack implementation.
+        // TODO: I don't know if Ifpack returns an error code or exception or ignore parameters modification in this case...
 
-       Note:  This can be called after the preconditioner is set up, i.e., after
-       calling IfpackSmoother::Setup().
-    */
-    void SetNIts(LO const &nIts) {
-      if (!SmootherPrototype::IsSetup()) //FIXME precond doesn't have to be setup
-        throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
-      if (ifpackType_ == "point relaxation stand-alone") list_.set("relaxation: sweeps", nIts);
-      else if (ifpackType_ == "Chebyshev")               list_.set("chebyshev: degree", nIts);
-      else throw(Exceptions::RuntimeError("SetNIts: unknown smoother type"));
-      prec_->SetParameters(list_);
+        Teuchos::ParameterList nonConstParamList = paramList; // because Ifpack SetParameters() input argument is not const...
+        prec_->SetParameters(nonConstParamList);
+      }
     }
 
-    /*! @brief Get the number of smoothing sweeps.
+    //! Get smoother parameters
+    Teuchos::ParameterList const & GetParameters() { return paramList_; }
 
-       If the smoother is relaxation, this returns the number of sweeps.
-       If the smoother is Chebyshev, this returns the polynomial degree.
-    */
-    LO GetNIts() {
-      if (ifpackType_ == "point relaxation stand-alone")
-      {
-        if (list_.isParameter("relaxation: sweeps") == false)
-          throw(Exceptions::RuntimeError("number of iterations is not set"));
-        return list_.get("relaxation: sweeps",1);
-      } else if (ifpackType_ == "Chebyshev") {
-        if (list_.isParameter("chebyshev: degree") == false)
-          throw(Exceptions::RuntimeError("Chebyshev degree is not set"));
-        return list_.get("chebyshev: degree",1);
-      } else 
-        throw(Exceptions::RuntimeError("GetNIts: unknown smoother type"));
-    }
+    //JG: I'm not sure if it's a good idea to provide Get/Set NIts (for code maintainability)
+    
+    //     /*! @brief Set the number of smoothing sweeps/degree.
+    //
+    //        If the smoother is relaxation, this sets the number of sweeps.
+    //        If the smoother is Chebyshev, this sets the polynomial degree.
+    //
+    //        Note:  This can be called after the preconditioner is set up, i.e., after
+    //        calling IfpackSmoother::Setup().
+    //     */
+    //     void SetNIts(LO const &nIts) {
+    //       if (!SmootherPrototype::IsSetup()) //FIXME precond doesn't have to be setup
+    //         throw(Exceptions::RuntimeError("Call Setup before setting sweeps"));
+    //       if (type_ == "point relaxation stand-alone") paramList_.set("relaxation: sweeps", nIts);
+    //       else if (type_ == "Chebyshev")               paramList_.set("chebyshev: degree", nIts);
+    //       else throw(Exceptions::RuntimeError("SetNIts: unknown smoother type"));
+    //       prec_->SetParameters(paramList_);
+    //     }
+    //
+    //     /*! @brief Get the number of smoothing sweeps.
+    //
+    //        If the smoother is relaxation, this returns the number of sweeps.
+    //        If the smoother is Chebyshev, this returns the polynomial degree.
+    //     */
+    //     LO GetNIts() {
+    //       if (type_ == "point relaxation stand-alone")
+    //       {
+    //         if (paramList_.isParameter("relaxation: sweeps") == false)
+    //           throw(Exceptions::RuntimeError("number of iterations is not set"));
+    //         return paramList_.get("relaxation: sweeps",1);
+    //       } else if (type_ == "Chebyshev") {
+    //         if (paramList_.isParameter("chebyshev: degree") == false)
+    //           throw(Exceptions::RuntimeError("Chebyshev degree is not set"));
+    //         return paramList_.get("chebyshev: degree",1);
+    //       } else 
+    //         throw(Exceptions::RuntimeError("GetNIts: unknown smoother type"));
+    //     }
+
     //@}
 
     //! @name Computational methods.
@@ -150,6 +148,9 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         supplied to the constructor to the Ifpack object, and computes the preconditioner.
     */
     void Setup(Level &level) {
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
+
+      RCP<Teuchos::FancyOStream> out_ = this->getOStream();
       Teuchos::OSTab tab(out_);
 
       A_ = level.Get< RCP<Operator> >("A");
@@ -164,24 +165,23 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
-      prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
-      if (ifpackType_ == "Chebyshev") {
-        Scalar maxEigenValue = list_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
+      prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
+      if (type_ == "Chebyshev") {
+        Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
         if (maxEigenValue == -1.0) {
           maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
-          list_.set("chebyshev: max eigenvalue",maxEigenValue);
+          paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
         }
-        *out_ << prefix << "Ifpack Chebyshev, degree " << list_.get("chebyshev: degree",1) << std::endl;
-        *out_ << prefix << "lambda_min=" << list_.get("chebyshev: min eigenvalue",-1.0)
-              << ", lambda_max=" << list_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
+        *out_ << prefix << "Ifpack Chebyshev, degree " << paramList_.get("chebyshev: degree",1) << std::endl;
+        *out_ << prefix << "lambda_min=" << paramList_.get("chebyshev: min eigenvalue",-1.0)
+              << ", lambda_max=" << paramList_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
       }
       out_->setOutputToRootOnly(rootRank);
-      prec_->SetParameters(list_);
+      prec_->SetParameters(paramList_);
       prec_->Compute();
 
       SmootherPrototype::IsSetup(true);
     }
-
 
     /*! @brief Apply the preconditioner.
 
@@ -191,17 +191,19 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         @param B right-hand side
         @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
-    {
-      if (!SmootherPrototype::IsSetup())
-        throw(Exceptions::RuntimeError("Setup has not been called"));
-      Teuchos::ParameterList  ifpackList;
-      if (ifpackType_ == "Chebyshev") {
-        ifpackList.set("chebyshev: zero starting solution", InitialGuessIsZero);
-      } else if (ifpackType_ == "point relaxation stand-alone") {
-        ifpackList.set("relaxation: zero starting solution", InitialGuessIsZero);
-      } else if  (ifpackType_ == "ILU") {
-         if (InitialGuessIsZero==false) {
+    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const {
+      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+
+      RCP<Teuchos::FancyOStream> out_ = this->getOStream();
+
+      // Forward the InitialGuessIsZero option to Ifpack
+      Teuchos::ParameterList  paramList;
+      if (type_ == "Chebyshev") {
+        paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      } else if (type_ == "point relaxation stand-alone") {
+        paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      } else if  (type_ == "ILU") {
+         if (InitialGuessIsZero == false) {
            Teuchos::OSTab tab(out_);
            *out_ << "WARNING:  Ifpack2 ILUT has no provision for a nonzero initial guess." << std::endl;
          }
@@ -209,13 +211,14 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
         // we should remove the if/else/elseif and just test if this
         // option is supported by current ifpack2 preconditioner
-        throw(Exceptions::RuntimeError("IfpackSmoother::Apply(): Ifpack preconditioner '"+ifpackType_+"' not supported"));
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
       }
-      prec_->SetParameters(ifpackList);
+      prec_->SetParameters(paramList);
 
+      // Apply
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
-      prec_->ApplyInverse(epB,epX);
+      prec_->ApplyInverse(epB, epX);
     }
 
     //@}
@@ -223,36 +226,41 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //! @name Utilities
     //@{
 
-    void Print(std::string prefix) const {
-      Teuchos::OSTab tab(out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Print()" << std::endl;
-      prec_->Print(*out_);
-    }
-
-    RCP<SmootherPrototype> Copy() const
-    {
+    RCP<SmootherPrototype> Copy() const {
       return rcp(new IfpackSmoother(*this) );
-    }
-
-    void CopyParameters(RCP<SmootherPrototype> source)
-    {
-      RCP<IfpackSmoother> ifpackSmoo = rcp_dynamic_cast<IfpackSmoother>(source);
-      //TODO check if dynamic cast fails
-      ifpackType_ = ifpackSmoo->ifpackType_;
-      prec_ = ifpackSmoo->prec_;
-      A_ = ifpackSmoo->A_;
-      overlap_ = ifpackSmoo->overlap_;
-      list_ = ifpackSmoo->list_;
     }
 
     //@}
 
-  }; //class IfpackSmoother
+  private:
 
-} //namespace MueLu
+    //! ifpack-specific key phrase that denote smoother type
+    std::string type_;
+
+    //! parameter list that is used by Ifpack internally
+    Teuchos::ParameterList paramList_;
+
+    //! overlap when using the smoother in additive Schwarz mode
+    LO overlap_;
+
+    //! pointer to Ifpack solver object
+    RCP<Ifpack_Preconditioner> prec_;
+
+    //! Operator. Not used directly, but held inside of prec_. So we have to keep an RCP pointer to it!
+    RCP<Operator> A_;
+
+  }; // class IfpackSmoother
+
+} // namespace MueLu
 
 #define MUELU_IFPACK_SMOOTHER_SHORT
-
 #endif //ifdef HAVE_MUELU_IFPACK
-
 #endif //ifndef MUELU_IFPACK_SMOOTHER_HPP
+
+// For describe()
+//       std::string label;
+//       if (type == "point relaxation stand-alone")
+//         label = "Ifpack: " + paramList_.get("relaxation: type","unknown relaxation");
+//       else
+//         label = "Ifpack: " + type;
+//       //TODO      SmootherBase::SetType(label);

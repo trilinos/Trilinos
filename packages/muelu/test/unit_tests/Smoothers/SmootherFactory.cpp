@@ -108,7 +108,7 @@ namespace MueLuTests {
   
     TEUCHOS_UNIT_TEST(SmootherFactory, Constructor_OneArg) 
     {
-      testCollection(&testConstructor1, out, success);               // TEST: Valid input argument
+      testCollection(&testConstructor1, out, success);               // TEST: Valid input parameter
       testInvalidCollection(&testInvalidConstructor1, out, success); // TEST: Invalid input parameter
     }
 
@@ -274,7 +274,8 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
       Level level; level.SetupPhase(true);
-      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+
       smooFact->Build(level);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, MueLu::BOTH, out, success);
@@ -293,7 +294,8 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
       
       Level level; level.SetupPhase(true);
-      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+
       smooFact->BuildSmoother(level, preOrPost);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, preOrPost, out, success);
@@ -309,7 +311,8 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
       
       Level level; level.SetupPhase(true);
-      MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+
       smooFact->BuildSmoother(level);
 
       testBuildCheck(smooFact, level, smooProtoA, smooProtoB, MueLu::BOTH, out, success);

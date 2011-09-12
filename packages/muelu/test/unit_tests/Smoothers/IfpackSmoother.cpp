@@ -17,7 +17,7 @@
 
 namespace MueLuTests {
 
-  using namespace Smoother;
+  using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
   {
@@ -34,7 +34,7 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra) {
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: type", "Gauss-Seidel");
@@ -64,7 +64,7 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra) {
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: type", "Gauss-Seidel");
@@ -126,7 +126,7 @@ namespace MueLuTests {
 
       ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorms < 1e-10, true);
       } else {

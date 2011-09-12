@@ -10,12 +10,13 @@
 // See .hpp file for description
 
 namespace MueLuTests {
+  namespace TestHelpers {
+    namespace Smoothers {
 
-  namespace Smoother {
 #include "MueLu_UseShortNames.hpp"
 
     // SmootherPrototype test
-    void testApplyNoSetup(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
+    void testApplyNoSetup(SmootherPrototype const & smoother, Teuchos::FancyOStream & out, bool & success) {
       GO numGlobalElements = 125;
       RCP<const Map> map = MapFactory::Build(Parameters::getLib(), numGlobalElements, 0, Parameters::getDefaultComm());
       
@@ -80,8 +81,10 @@ namespace MueLuTests {
 
     // SmootherPrototype helper function
     void setupSmoother(RCP<Operator>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Level level; MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-      level.Request("A", NULL);
+
+      Level level; TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+      level.Request("A", NULL); //FIXME
+
       level.Set("A", A, NULL);
       
       smoother.Setup(level);
@@ -89,7 +92,7 @@ namespace MueLuTests {
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X1_RHS0(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
       setupSmoother(A, smoother, out, success);
       return testApply_X1_RHS0(*A, smoother, out, success); // in MueLuTests::SmootherBase
@@ -97,7 +100,7 @@ namespace MueLuTests {
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X0_RandomRHS(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
       
       setupSmoother(A, smoother, out, success);
       return testApply_X0_RandomRHS(*A, smoother, out, success); // in MueLuTests::SmootherBase
@@ -108,9 +111,9 @@ namespace MueLuTests {
       TEST_EQUALITY(residualNorms < 1e-12, true);
     }
 
-  } // namespace Smoother
-  
-} // MueLuTests
+  } // namespace Smoothers
+  } // namespace  TestHelpers
+} // namespace MueLuTests
 
 
 // TODO: add a test to check if Apply() throw an exception if vectors are not compatible with the smoother object (ie: with A)

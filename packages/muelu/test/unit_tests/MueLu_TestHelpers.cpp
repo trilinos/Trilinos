@@ -2,5 +2,9 @@
 
 #include "MueLu_TestHelpers.hpp"
 
-// static members initialization of the class MueLu::TestHelpers::Parameters
-Xpetra::Parameters MueLu::TestHelpers::Parameters::xpetraParameters = Xpetra::Parameters(Teuchos::UnitTestRepository::getCLP());
+namespace MueLuTests {
+
+  // static members initialization of the class TestHelpers::Parameters
+  Xpetra::Parameters TestHelpers::Parameters::xpetraParameters = Xpetra::Parameters(Teuchos::UnitTestRepository::getCLP());
+
+}

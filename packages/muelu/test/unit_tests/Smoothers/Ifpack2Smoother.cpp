@@ -17,7 +17,7 @@
 
 namespace MueLuTests {
 
-  using namespace Smoother;
+  using namespace TestHelpers::Smoothers;
   
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
   {     
@@ -44,7 +44,7 @@ namespace MueLuTests {
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();   
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();   
       switch (comm->getSize()) {
       case 1:
       case 4:
@@ -73,7 +73,7 @@ namespace MueLuTests {
     
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
       case 1:
         TEST_FLOATING_EQUALITY(residualNorms, 8.326553652741774e-02, 1e-12);
@@ -121,7 +121,7 @@ namespace MueLuTests {
     
       ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
-      RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorms < 1e-10, true);
       } else {

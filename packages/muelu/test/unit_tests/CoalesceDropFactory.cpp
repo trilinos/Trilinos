@@ -23,9 +23,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel;
-    MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
+    TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
+    RCP<Operator> A = TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
     fineLevel.SetupPhase(true);
     fineLevel.Set("A",A,NULL);
 

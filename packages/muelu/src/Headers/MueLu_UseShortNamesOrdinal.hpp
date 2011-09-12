@@ -53,3 +53,11 @@ typedef MueLu::PFactory PFactory;
 #ifdef MUELU_RFACTORY_SHORT
 typedef MueLu::RFactory RFactory;
 #endif
+
+#ifdef MUELU_AMESOS_SMOOTHER_SHORT
+typedef MueLu::AmesosSmoother AmesosSmoother;
+#endif
+
+#ifdef MUELU_IFPACK_SMOOTHER_SHORT
+typedef MueLu::IfpackSmoother IfpackSmoother;
+#endif

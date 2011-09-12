@@ -10,16 +10,13 @@
 
 namespace MueLuTests {
 
-  using namespace Smoother;
+  using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Amesos2Smoother, NotSetup)
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
-#ifdef HAVE_AMESOS_KLU
-        Amesos2Smoother smoother("Klu", Teuchos::ParameterList());
-        testApplyNoSetup(smoother, out, success);
-#endif
+        testApplyNoSetup(Amesos2Smoother(), out, success);
       }
   }
 
@@ -27,13 +24,13 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
-#ifdef HAVE_AMESOS_KLU
-        Amesos2Smoother smoother("Klu", Teuchos::ParameterList());
+#ifdef HAVE_AMESOS2_KLU2
+        Amesos2Smoother smoother("Klu");
         testDirectSolver(smoother, out, success);
 #endif
 
-#ifdef HAVE_AMESOS_SUPERLU
-        Amesos2Smoother smoother("Superlu", Teuchos::ParameterList());
+#ifdef HAVE_AMESOS2_SUPERLU
+        Amesos2Smoother smoother("Superlu");
         testDirectSolver(smoother, out, success);
 #endif
       }
