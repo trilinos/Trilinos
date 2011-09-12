@@ -121,30 +121,49 @@ int main(int argc, char *argv[])
     // solve the system
     {
       
-
       // Set inputs
       Thyra::ModelEvaluatorBase::InArgs<double> inArgs = solver->createInArgs();
       const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = solver->getNominalValues();
 
       // Set outputs
       Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = solver->createOutArgs();
-      int num_g = outArgs.Ng();
-      assert (num_g == 1);  // for now only solution is returned
+      // int num_g = outArgs.Ng();
+      // assert (num_g == 1);  // for now only solution is returned
 
       // Solution vector is returned as extra respons vector
       RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
-      outArgs.set_g(0,gx);
+      for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
+         outArgs.set_g(i,Teuchos::null);
+      outArgs.set_g(rLibrary->getLabeledResponseCount(),gx);
 
       // Now, solve the problem and return the responses
       solver->evalModel(inArgs, outArgs);
       
       //std::cout << *gx << std::endl;
       
-    }
- 
-    *out << "Lets print volume containers!" << std::endl;
-    rLibrary->printVolumeContainers(*out);
+      // get responses if there are any
+      //////////////////////////////////////////////
+      if(rLibrary->getLabeledResponseCount()>0) {
+         std::vector<std::string> labels;
+         rLibrary->getVolumeResponseLabels(labels);
 
+         Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
+         Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
+   
+         respInArgs.set_x(gx);
+   
+         RCP<Thyra::VectorBase<double> > response0 = Thyra::createMember(*physics->get_g_space(0));
+         respOutArgs.set_g(0,response0);
+   
+         *out << "Lets print volume containers!" << std::endl;
+         rLibrary->printVolumeContainers(*out);
+   
+         // Now, solve the problem and return the responses
+         physics->evalModel(respInArgs, respOutArgs);
+   
+         *out << "Response Value \"" << labels[0] << "\": " << *response0 << std::endl;
+      }
+    }
   }
   catch (std::exception& e) {
     *out << "*********** Caught Exception: Begin Error Report ***********" << std::endl;

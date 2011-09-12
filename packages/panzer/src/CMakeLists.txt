@@ -188,6 +188,7 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
   dofmngr/Panzer_SGEpetraLinearObjContainer.cpp
   responses/Panzer_ResponseUtilities.cpp
+  responses/Panzer_ResponseFunctional_Aggregator.cpp
   )
 
 #

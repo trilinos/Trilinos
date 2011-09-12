@@ -171,7 +171,8 @@ namespace panzer {
     eloc->x->PutScalar(0.0);
 
     out << "evaluating VFM" << std::endl;
-    rLibrary->evaluateVolumeFieldManagers<EvalT>(volume_worksets,loc,*tcomm);
+    panzer::AssemblyEngineInArgs ae_inargs(loc,loc);
+    rLibrary->evaluateVolumeFieldManagers<EvalT>(volume_worksets,ae_inargs,*tcomm);
 
     double sum_dog = 0.0;
     double sum_horse = 0.0;

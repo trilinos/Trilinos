@@ -39,6 +39,7 @@ namespace panzer {
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
+    Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
     InArgs createInArgs() const;
     OutArgs createOutArgs() const;
     void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
@@ -46,6 +47,8 @@ namespace panzer {
     //@}
 
   private:
+ 
+    void fillResponses(const OutArgs & outArgs) const;
 
     // /////////////////////////////////////
     // Private member data
@@ -57,14 +60,18 @@ namespace panzer {
     Teuchos::RCP<Epetra_Vector> x_dot_init_;
     mutable Teuchos::RCP<Epetra_Vector> dummy_f_;    
     
+    // parameters
     std::vector<Teuchos::RCP<Epetra_Map> > p_map_;
     std::vector<Teuchos::RCP<Epetra_Vector> > p_init_;
+
+    // responses
+    std::vector<Teuchos::RCP<Epetra_Map> > g_map_;
     
     Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
+    mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     bool build_transient_support_;
 

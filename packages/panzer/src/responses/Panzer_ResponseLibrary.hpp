@@ -16,6 +16,7 @@
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
 #include "Panzer_RLDynamicDispatch.hpp"
 
+#include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 namespace panzer {
@@ -129,7 +130,8 @@ public:
      */
    template <typename EvalT>
    void evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                                    const Teuchos::RCP<panzer::LinearObjContainer> & loc,const Teuchos::Comm<int> & comm);
+                                    const panzer::AssemblyEngineInArgs & ae_in,
+                                    const Teuchos::Comm<int> & comm);
 
    /** @} */
 
@@ -155,6 +157,16 @@ public:
    //! Define some default aggregators used in panzer
    void defineDefaultAggregators()
    { ResponseAggregator_Manager<TraitsT>::defineDefaultAggregators(getAggregatorManager()); }
+
+   //! How many responses are contained by this library.
+   std::size_t getLabeledResponseCount() const 
+   { return labeledResponses_.size(); }
+
+   //! get all labeled respones
+   void getLabeledVolumeResponses(std::vector<Teuchos::RCP<const Response<TraitsT> > > & responses) const;
+
+   //! get volume response labels
+   void getVolumeResponseLabels(std::vector<std::string> & labels) const;
 
 protected:
    //! Access a container field for a specified element block

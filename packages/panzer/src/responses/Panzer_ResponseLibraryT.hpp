@@ -62,7 +62,7 @@ reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
    // add labeled responses
    labeledResponses_[label].rid = rid;
    labeledResponses_[label].elmtBlocks = eBlocks;
-   labeledResponses_[label].evalTypes = eBlocks;
+   labeledResponses_[label].evalTypes = evalTypes;
 
    // loop over element blocks
    for(std::list<std::string>::const_iterator eBlk=eBlocks.begin(); 
@@ -142,9 +142,9 @@ getVolumeResponseByLabel(const std::string & label) const
    TEST_FOR_EXCEPTION(itr==labeledResponses_.end(),std::logic_error,
                       "ResponseLibrary::getVolumeResponseByLabel: Cannot find response labeled \""+label+"\"!");
    
-   const ResponseId & rid = itr->rid;
-   const std::list<std::string> & eBlocks = itr->elementBlocks;
-   const std::list<std::string> & evalTypes = itr->evalTypes;
+   const ResponseId & rid = itr->second.rid;
+   const std::list<std::string> & eBlocks = itr->second.elmtBlocks;
+   const std::list<std::string> & evalTypes = itr->second.evalTypes;
 
    // get responses for each element block
    std::list<RCP<const Response<TraitsT> > > blkResponses;
@@ -247,7 +247,8 @@ template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                            const Teuchos::RCP<panzer::LinearObjContainer> & loc,const Teuchos::Comm<int> & comm)
+                            const panzer::AssemblyEngineInArgs & ae_in,
+                            const Teuchos::Comm<int> & comm)
 {
   int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 
@@ -265,8 +266,13 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
        for (std::size_t i = 0; i < w.size(); ++i) {
          panzer::Workset& workset = w[i];
    
-         workset.linContainer = loc;
-   
+         workset.ghostedLinContainer = ae_in.ghostedContainer_;
+         workset.linContainer = ae_in.container_;
+         workset.alpha = ae_in.alpha;
+         workset.beta = ae_in.beta;
+         workset.time = ae_in.time;
+         workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
+
          fm->evaluateFields<EvalT>(workset);
        }
    
@@ -301,6 +307,30 @@ printVolumeContainers(std::ostream & os) const
             os << "   " << *respContVec[i] << std::endl;
       }
    }
+}
+
+//! get all labeled respones
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+getLabeledVolumeResponses(std::vector<Teuchos::RCP<const Response<TraitsT> > > & responses) const
+{
+   responses.clear();
+
+   for(typename std::map<std::string,ResponseDescriptor>::const_iterator itr=labeledResponses_.begin();
+       itr!=labeledResponses_.end();++itr)
+      responses.push_back(getVolumeResponseByLabel(itr->first));
+}
+
+//! get all labeled respones
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+getVolumeResponseLabels(std::vector<std::string> & labels) const
+{
+   labels.clear();
+
+   for(typename std::map<std::string,ResponseDescriptor>::const_iterator itr=labeledResponses_.begin();
+       itr!=labeledResponses_.end();++itr)
+      labels.push_back(itr->first);
 }
 
 }

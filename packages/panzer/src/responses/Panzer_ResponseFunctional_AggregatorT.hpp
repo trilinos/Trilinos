@@ -132,13 +132,6 @@ aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const R
    dest.setValue(val);
 }
 
-template < >
-Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggregator_Builder::
-build<panzer::Traits::Residual>() const
-{ 
-   return Teuchos::rcp(new ResponseFunctional_Aggregator<panzer::Traits::Residual,panzer::Traits>); 
-}
-
 }
 
 #endif

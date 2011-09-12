@@ -268,7 +268,7 @@ namespace panzer_stk {
       p_names.push_back(p_0);
     }
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,Teuchos::null,ep_lof, p_names, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, is_transient));
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
@@ -556,11 +556,8 @@ namespace panzer_stk {
      mesh.getElementBlockNames(validEBlocks);
 
      // build a map of all responses 
-     pl.print(std::cout);
      ResponseMap responses;
      panzer::buildResponseMap(pl,responses);
-
-     std::cout << "Response count = " << responses.size() << std::endl;
 
      // reserve each response for every evaluation type
      for(typename ResponseMap::const_iterator respItr=responses.begin();
@@ -569,8 +566,6 @@ namespace panzer_stk {
         const panzer::ResponseId & rid = respItr->second.first;
         const std::list<std::string> & eBlocks = respItr->second.second.first;
         const std::list <std::string> & eTypes = respItr->second.second.second;
-
-        std::cout << "reserving: " << label << " - " << rid << std::endl;
 
         // sanity check for valid element blocks
         for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++)

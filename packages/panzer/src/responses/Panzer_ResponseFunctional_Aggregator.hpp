@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "Panzer_Traits.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -137,6 +138,10 @@ public:
    Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > build() const
    { return Teuchos::null; }
 };
+
+// declaration so methods are not inlined
+template < >
+Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggregator_Builder::build<panzer::Traits::Residual>() const;
 
 }
 

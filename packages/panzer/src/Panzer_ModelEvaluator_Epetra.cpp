@@ -1,11 +1,16 @@
 #include "Panzer_ModelEvaluator_Epetra.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Epetra_CrsMatrix.h"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_LocalMap.h"
+
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
@@ -28,6 +33,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   x_dot_init_->PutScalar(0.0);
   
   
+  // setup parameters
   for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
        p != p_names_.end(); ++p) {
     RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap((*p)->size(), 0, map_x_->Comm())) ;
@@ -35,6 +41,12 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
     RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
     ep_vec->PutScalar(0.0);
     p_init_.push_back(ep_vec);
+  }
+
+  // setup response maps
+  for (std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++) {
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(1, 0, map_x_->Comm()));
+    g_map_.push_back(local_map);
   }
 
   // Initialize the graph for W CrsMatrix object
@@ -108,6 +120,12 @@ panzer::ModelEvaluator_Epetra::get_p_init(int l) const
   return p_init_[l];
 }
 
+Teuchos::RCP<const Epetra_Map> 
+panzer::ModelEvaluator_Epetra::get_g_map(int l) const
+{
+  return g_map_[l];
+}
+
 EpetraExt::ModelEvaluator::InArgs
 panzer::ModelEvaluator_Epetra::createInArgs() const
 {
@@ -129,9 +147,10 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(p_init_.size(), 0);
+  outArgs.set_Np_Ng(p_init_.size(), g_map_.size());
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
+  // outArgs.setSupports(OUT_ARG_g,true); //does this exist??? is it not needed
   outArgs.set_W_properties(
     DerivativeProperties(
       DERIV_LINEARITY_NONCONST
@@ -263,6 +282,10 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
     //Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
     //J.Print(std::cout);
   }
+  
+  // field response fields
+  if(outArgs.Ng()>0)
+     fillResponses(outArgs);
 
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
@@ -272,4 +295,41 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   epGlobalContainer->f = Teuchos::null;
   epGlobalContainer->A = Teuchos::null;
 
+}
+
+void 
+panzer::ModelEvaluator_Epetra::
+fillResponses(const OutArgs & outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) 
+      activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
+   if(!activeGArgs) // didn't find any g args
+      return;
+
+   // build a teuchos comm from an mpi comm
+   Teuchos::RCP<Teuchos::Comm<int> > tComm 
+      = Teuchos::rcp(new Teuchos::MpiComm<int>(
+        Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(map_x_->Comm()).Comm())));
+
+   const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& worksetVec = fmb_->getWorksets();
+  
+   // convert vector of vectors of worksets into a map from block IDs to worksets
+   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
+   for(std::size_t i=0;i<worksetVec.size();i++) {
+      std::string blockId = (*worksetVec[i])[0].block_id;
+      worksets[blockId] = worksetVec[i];
+   }
+
+   // evaluator responses
+   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(worksets,*ae_inargs_,*tComm);
+
+   std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
+   responseLibrary_->getLabeledVolumeResponses(responses);
+   for(std::size_t i=0;i<responses.size();i++) {
+      Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
+      TEUCHOS_ASSERT(vec!=Teuchos::null);  // something bad happened!
+      (*vec)[0] = responses[i]->getValue();
+   }
 }

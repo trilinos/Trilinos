@@ -67,7 +67,7 @@ public:
  
    //! set value for 
    void setValue(typename TraitsT::RealType v)
-   { std::cout << "Setting value = " << v << std::endl; value_ = v; hasValue_ = true; }
+   { value_ = v; hasValue_ = true; }
 
    /** The derivative is assumed to be stored in the residual vector.
      *
