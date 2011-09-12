@@ -69,6 +69,7 @@ modifications".  NetCDF version 4.1 or later is highly recommended.
 The netcdf library must be modified slightly in order to handle the
 exodusII datamodel. The specific changes are:
 
+PRE netcdf-4.1.2:
 1. libsrc/netcdf.h -- Modify the following defines:
    libsrc4/netcdf_base.h (netcdf-4.X only)
    libsrc4/netcdf.h      (netcdf-4.X only if it exists)
@@ -76,6 +77,14 @@ exodusII datamodel. The specific changes are:
 #define NC_MAX_DIMS	65536	 /* max dimensions per file */
 #define NC_MAX_VARS	524288	 /* max variables per file */
 #define NC_MAX_VAR_DIMS	8        /* max per variable dimensions */
+
+netcdf-4.1.2 or later:
+1. include/netcdf.h -- Modify the following defines:
+
+#define NC_MAX_DIMS	65536	 /* max dimensions per file */
+#define NC_MAX_VARS	524288	 /* max variables per file */
+#define NC_MAX_VAR_DIMS	8        /* max per variable dimensions */
+
 
 If these changes are not made, the exodus library will still function
 for "normal" size models, but it will fail for "large" models. The

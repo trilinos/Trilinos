@@ -45,7 +45,7 @@ F77DEBUGFLAGS = -g
 
 SRCS1 = \
 chgint.f comand.f dbmir1.f dbmirr.f dorot.f  expxyz.f \
-fixmap.f getall.f gjoin2.f indexx.f inigen.f initin.f \
+fixmap.f getall.f gjoin.f indexx.f inigen.f initin.f \
 intcnt.f irennp.f matxyz.f mirss.f  movint.f movrea.f \
 munelb.f muness.f munnps.f munxyz.f offset.f \
 ordix.f  ordstr.f outlog.f \

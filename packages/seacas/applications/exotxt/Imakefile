@@ -4,7 +4,7 @@ CODE = exotxt
 
 SRCS = \
 dbicon.f dbielb.f dbign.f  dbinam.f  dbiqa.f  dbiste.f \
-dbivtt.f dbpini.f dbvini.f exotxt2.f rwpval.f wrelb.f  \
+dbivtt.f dbpini.f dbvini.f exotxt.f rwpval.f wrelb.f  \
 wress.f  wrinit.f wrmap.f  wrname.f  wrnps.f  wrqa.f   \
 wrstep.f wrxyz.f
 

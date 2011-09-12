@@ -76,7 +76,7 @@ int ne_get_node_map(int  neid,
   char    ftype[2];
   int     status, varid, dimid;
   size_t  start[1], count[1];
-  size_t  varidx[2];
+  int64_t varidx[2];
   int  nmstat;
 
   char    errmsg[MAX_ERR_LENGTH];

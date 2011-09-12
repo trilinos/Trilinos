@@ -78,7 +78,7 @@ int ne_get_elem_cmap(int  neid,
 
   int     map_idx, dimid, varid[3], status;
   size_t  start[1], count[1];
-  size_t  varidx[2];
+  int64_t varidx[2];
 
   char    errmsg[MAX_ERR_LENGTH];
 /*-----------------------------Execution begins-----------------------------*/
