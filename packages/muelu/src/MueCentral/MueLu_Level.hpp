@@ -274,6 +274,8 @@ public:
           fac = GetDefaultFactoryPtr(ename);
       }
 
+      TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level::Request(): ptr to generating factory must not be null! ERROR.");
+
       // 1) check if 'ename' has already been requested or is already available
       //    if not: call DeclareInput of generating factory 'fac'
       if(/*ename != "A" &&*/
