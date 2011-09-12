@@ -1089,7 +1089,7 @@ int Zoltan_Check_TPL_Data_Sizes(ZZ *zz, int local_num_obj)
 int ierr = ZOLTAN_OK;
 ZOLTAN_GNO_TYPE tmp_num_obj, global_num_obj;
 MPI_Datatype mpignotype = Zoltan_mpi_gno_type();
-int64_t maxindextype = (int64_t)(((u_int64_t) 1<<((sizeof(indextype)<<3)-1))-1);
+int64_t maxindextype = (int64_t)(((uint64_t) 1<<((sizeof(indextype)<<3)-1))-1);
 
   tmp_num_obj = local_num_obj;
   MPI_Allreduce(&tmp_num_obj, &global_num_obj, 1, mpignotype,
