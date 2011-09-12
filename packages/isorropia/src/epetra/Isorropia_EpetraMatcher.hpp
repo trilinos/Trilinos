@@ -166,14 +166,29 @@ public:
 \ingroup matching_grp
     */
     int getNumberOfMatchedVertices();
-    /** Provides the number of vertices in the Maximum Cardinality Matching set.
-\ingroup matching_grp
+
+    /* Provides the number of vertices in the Maximum Cardinality Matching set
     */
-    Epetra_Map* getPermutedRowMap();
-    /** Provides the row map which is actually the complete row permutation
-\ingroup matching_grp
+    /** Applies the row permutation from matching and returns a new matrix.
+
+    \param[out] Epetra_CrsMatrix with permuted rows.
+
     */
-    Epetra_Map* getPermutedColumnMap();
+    Teuchos::RCP<Epetra_CrsMatrix> applyRowPermutation();
+
+    /** Applies the column permutation from matching and returns a new matrix.
+
+    \param[out] Epetra_CrsMatrix with permuted columns.
+
+    */
+    Teuchos::RCP<Epetra_CrsMatrix> applyColumnPermutation();
+
+    //Epetra_Map* getPermutedRowMap();
+
+    /* Provides the row map which is actually the complete row permutation
+    */
+    //Epetra_Map* getPermutedColumnMap();
+
     /** Provides the column map which is actually the complete column
      * permutation
 \ingroup matching_grp

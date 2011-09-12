@@ -36,56 +36,17 @@ int main(int argc, char** argv) {
         
         pm.match();
 
-        // Get the result of the matching
-        int nmatch = pm.getNumberOfMatchedVertices();
-        int *mrows = new int[nmatch];
-        int *mcols = new int[nmatch];
-        int len;
-        pm.getMatchedColumnsForRowsCopy(nmatch, len, mrows);
-        pm.getMatchedRowsForColumnsCopy(nmatch, len, mcols);
-        
         cout << endl << "Original Matrix:" << endl;
         std::cout<<*matrixPtr<<std::endl;
 
-        // Create a new matrix with column permutation
-        int max_entries = matrixPtr->MaxNumEntries();
-        Epetra_CrsMatrix perm_matrix(Copy, matrixPtr->RowMap(), max_entries);
-        int n =  matrixPtr->NumGlobalRows();
-
-        double *values = new double[max_entries];
-        int *indices = new int[max_entries];
-        int num_entries;
-        for (int i = 0; i < n ; i++)
-        {
-            // All in serial Comm so 0..n is fine
-            matrixPtr->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
-                                        indices);
-            for (int j = 0; j < num_entries; j++) indices[j]=mcols[indices[j]];
-            perm_matrix.InsertGlobalValues(i, num_entries, values, indices);
-        }
-        perm_matrix.FillComplete();
+        Teuchos::RCP<Epetra_CrsMatrix> perm_matrix =
+                                        pm.applyColumnPermutation();
         cout << endl << "After Column permutation:" << endl;
-        cout << perm_matrix << endl;
+        cout << *perm_matrix << endl;
 
-        Epetra_CrsMatrix perm_matrix2(Copy, matrixPtr->RowMap(), max_entries);
-
-        // Create a new matrix with row permutation
-        for (int i = 0; i < n ; i++)
-        {
-            // All in serial Comm so 0..n is fine
-            matrixPtr->ExtractGlobalRowCopy(i, max_entries, num_entries, values,
-                                        indices);
-            perm_matrix2.InsertGlobalValues(mrows[i], num_entries,
-                                values, indices);
-        }
+        perm_matrix = pm.applyRowPermutation();
         cout << endl << "After Row permutation:" << endl;
-        perm_matrix2.FillComplete();
-        cout << perm_matrix2 << endl;
-
-        delete[] values;
-        delete[] indices;
-        delete[] mrows;
-        delete[] mcols;
+        cout << *perm_matrix << endl;
 
 #else
 		 fail = 0;
