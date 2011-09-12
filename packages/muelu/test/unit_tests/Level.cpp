@@ -25,7 +25,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level aLevel;
-    MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator

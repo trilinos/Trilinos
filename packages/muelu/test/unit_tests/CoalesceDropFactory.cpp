@@ -25,7 +25,7 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
+    RCP<Operator> A = TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
     fineLevel.Set("A",A);
 
     CoalesceDropFactory coalesceDropFact;
