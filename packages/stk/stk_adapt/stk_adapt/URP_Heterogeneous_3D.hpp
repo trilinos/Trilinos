@@ -108,12 +108,12 @@ namespace stk {
 
       }
 
-      virtual const CellTopologyData * const getFromTopology()
+      virtual const CellTopologyData *  getFromTopology()
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getFromTopology()");
       }
 
-      virtual const CellTopologyData * const getToTopology() { 
+      virtual const CellTopologyData *  getToTopology() { 
         throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getToTopology()");
       }
 
