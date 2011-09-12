@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 
   /* Create the ExodusII/Nemesis file */
   printf("creating ExodusII file..."); fflush(stdout);
-  if ((ne_file_id=ex_create(file_name, EX_CLOBBER|EX_NETCDF4|EX_NOCLASSIC, &cpu_ws, &io_ws)) < 0) {
+  if ((ne_file_id=ex_create(file_name, EX_CLOBBER, &cpu_ws, &io_ws)) < 0) {
     printf("FAILED\n");
     t_fail++;
     fprintf(stderr, "[%s]: ERROR, unable to create test file \"%s\"!\n",
