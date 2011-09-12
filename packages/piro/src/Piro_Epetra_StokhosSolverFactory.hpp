@@ -32,6 +32,7 @@
 #define PIRO_EPETRA_STOKHOS_SOLVER_FACTORY_H
 
 #include "EpetraExt_ModelEvaluator.h"
+#include "Teuchos_VerboseObject.hpp"
 #include "Piro_Epetra_StokhosNOXObserver.hpp"
 
 #include "Stokhos_SGModelEvaluator.hpp"
@@ -46,7 +47,8 @@
 namespace Piro {
 namespace Epetra {
 
-  class StokhosSolverFactory {
+  class StokhosSolverFactory : 
+    public Teuchos::VerboseObject<StokhosSolverFactory> {
   public:
 
     //! SG method

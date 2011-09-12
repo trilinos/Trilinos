@@ -35,6 +35,8 @@
 #include "Stokhos.hpp"
 #include "Stokhos_Epetra.hpp"
 
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"
 #include "NOX_Epetra_LinearSystem_MPBD.hpp"
@@ -46,6 +48,11 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
 	      const Teuchos::RCP<const Epetra_Comm>& globalComm) :
   piroParams(piroParams_)
 {
+  // Setup VerboseObject
+  Teuchos::readVerboseObjectSublist(piroParams.get(), this);
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
   //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   // Validate parameters
@@ -73,8 +80,8 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   
   // Create SG basis
   basis = Stokhos::BasisFactory<int,double>::create(sgParams);
-  if (globalComm->MyPID()==0) 
-    std::cout << "Basis size = " << basis->size() << std::endl;
+  if (verbLevel != Teuchos::VERB_NONE)
+    *out << "Basis size = " << basis->size() << std::endl;
 
   // Create SG Quadrature
   Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
@@ -84,8 +91,8 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
       sg_method == SG_NI ||
       sg_method == SG_MPNI) {
     quad = Stokhos::QuadratureFactory<int,double>::create(sgParams);
-    if (globalComm->MyPID()==0) 
-      std::cout << "Quadrature size = " << quad->size() << std::endl;
+    if (verbLevel != Teuchos::VERB_NONE)
+      *out << "Quadrature size = " << quad->size() << std::endl;
   }
 
   // Create SG expansion & triple-product
