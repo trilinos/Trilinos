@@ -46,7 +46,6 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
 	decomp_rotate(	const array_type & arg_r,
 					const array_type & arg_v_gr,
-					const array_type & arg_str_ten,
 					const array_type & arg_str,
 					const array_type & arg_v,
 					const array_type & arg_rs,
@@ -55,10 +54,9 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
           const int arg_previous_state)
 		: rotation( arg_r )
 		, vel_grad( arg_v_gr )
-		, stretching_tensor( arg_str_ten )
 		, stretch( arg_str )
 		, vorticity( arg_v )
-		, rot_stret( arg_v_gr )
+		, rot_stret( arg_rs )
 		, dt( arg_dt )
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
@@ -85,12 +83,12 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	//
 	//  Symmetric part
 	//
-		stretching_tensor(ielem, K_S_XX) = str_ten[K_S_XX] = v_gr[K_F_XX];
-		stretching_tensor(ielem, K_S_YY) = str_ten[K_S_YY] = v_gr[K_F_YY];
-		stretching_tensor(ielem, K_S_ZZ) = str_ten[K_S_ZZ] = v_gr[K_F_ZZ];
-		stretching_tensor(ielem, K_S_XY) = str_ten[K_S_XY] = 0.5*(v_gr[K_F_XY] + v_gr[K_F_YX]);
-		stretching_tensor(ielem, K_S_YZ) = str_ten[K_S_YZ] = 0.5*(v_gr[K_F_YZ] + v_gr[K_F_ZY]);
-		stretching_tensor(ielem, K_S_ZX) = str_ten[K_S_ZX] = 0.5*(v_gr[K_F_ZX] + v_gr[K_F_XZ]);
+		str_ten[K_S_XX] = v_gr[K_F_XX];
+		str_ten[K_S_YY] = v_gr[K_F_YY];
+		str_ten[K_S_ZZ] = v_gr[K_F_ZZ];
+		str_ten[K_S_XY] = 0.5*(v_gr[K_F_XY] + v_gr[K_F_YX]);
+		str_ten[K_S_YZ] = 0.5*(v_gr[K_F_YZ] + v_gr[K_F_ZY]);
+		str_ten[K_S_ZX] = 0.5*(v_gr[K_F_ZX] + v_gr[K_F_XZ]);
 
 	}
 
@@ -117,7 +115,6 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 				str_ten[K_S_XY] * str[K_S_YZ] + str_ten[K_S_ZZ] * str[K_S_ZX] - str_ten[K_S_ZX] * str[K_S_ZZ];
 		Scalar z3 = str_ten[K_S_XX] * str[K_S_XY] - str_ten[K_S_XY] * str[K_S_XX] + str_ten[K_S_XY] * str[K_S_YY] -
 				str_ten[K_S_YY] * str[K_S_XY] + str_ten[K_S_ZX] * str[K_S_YZ] - str_ten[K_S_YZ] * str[K_S_ZX];
-
 
 	// 	forward elimination
 		const Scalar a1inv = 1.0 / (str[K_S_YY] + str[K_S_ZZ]);
