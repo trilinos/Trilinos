@@ -19,9 +19,9 @@ int minL,maxL;
 std::vector<int> med;
 #endif
 
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList& paramlist)
+Matcher::Matcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList& paramlist)
 {
-	//Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>(matrixPtr,false), paramlist);
+	//Matcher(Teuchos::RCP<const Epetra_CrsMatrix>(matrixPtr,false), paramlist);
 	
 	int rc=0,i;
     A_=matrixPtr; 
@@ -106,11 +106,11 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
     //std::cout<<"finished:"<<endl;
 }
 
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
+Matcher::Matcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
 {
     
     //A_=matrixPtr.getRawPtr(); 
-    //Isorropia_EpetraMatcher(A_,paramlist);
+    //Matcher(A_,paramlist);
     
     int rc=0,i;
     rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
@@ -194,7 +194,7 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMa
     std::cout<<"finished:"<<endl;
 }
 
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
+Matcher::Matcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
 {
     U_=graphPtr->NumMyRows();
     V_=graphPtr->NumMyCols();
@@ -284,7 +284,7 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPt
 #endif
 }
 
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
+Matcher::Matcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
 {
     U_=graphPtr->NumMyRows();
     V_=graphPtr->NumMyCols();
@@ -375,7 +375,7 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGr
 }
 
 
-Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher() 
+Matcher::~Matcher() 
 {
     delete [] mateU_;
     delete [] mateV_;
@@ -398,26 +398,26 @@ Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher()
     
 }
 
-void Isorropia_EpetraMatcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
+void Matcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateU_[0];    
     size=MIN(matched_,len);
     memcpy (array, ptr, size * sizeof(int));
 }
 
-void Isorropia_EpetraMatcher::getMatchedRowsForColumnsCopy(int len, int& size, int* array) const
+void Matcher::getMatchedRowsForColumnsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateV_[0];
     size=MIN(matched_,len);
     memcpy (array, ptr, size * sizeof(int));
 }
 
-int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
+int Matcher::getNumberOfMatchedVertices()
 {
     return matched_;
 }
 
-Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyRowPermutation()
+Teuchos::RCP<Epetra_CrsMatrix> Matcher::applyRowPermutation()
 {
     int nmatch = matched_;
     const int *mrows = &mateU_[0];
@@ -449,7 +449,7 @@ Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyRowPermutation()
     return (perm_matrix);
 }
 
-Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyColumnPermutation()
+Teuchos::RCP<Epetra_CrsMatrix> Matcher::applyColumnPermutation()
 {
     int nmatch = matched_;
     const int *mrows = &mateU_[0];
@@ -482,7 +482,7 @@ Teuchos::RCP<Epetra_CrsMatrix> Isorropia_EpetraMatcher::applyColumnPermutation()
    // getPermutedRowMap()
    // when creating the matrix for applyRowPermutation(). Not exposing them for
    // now.
-Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
+Epetra_Map* Matcher::getPermutedRowMap()
 {
     int *ptr=new int[U_];
     complete_nonperfect_permutation();
@@ -501,7 +501,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
         return NULL;
    }
 }
-Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
+Epetra_Map* Matcher::getPermutedColumnMap()
 {
     int *ptr=new int[V_];
     complete_nonperfect_permutation();
@@ -520,7 +520,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
     }
 }*/
 
-void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
+void Matcher::complete_nonperfect_permutation()
 {
     int i,j,rowfill,colfill,flag;
     
@@ -595,7 +595,7 @@ void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
     }
 }
 
-void Isorropia_EpetraMatcher::delete_matched_v() 
+void Matcher::delete_matched_v() 
 {
     // This function only applicable to HK and HKDW.
     // It removes the matched vertices in the last layer of the layered graph.
@@ -612,7 +612,7 @@ void Isorropia_EpetraMatcher::delete_matched_v()
 #endif
 }
 
-int Isorropia_EpetraMatcher::augment_matching(int tv)
+int Matcher::augment_matching(int tv)
 {
     //This function increases the matching size by one with the help of a
     //augmenting path. The input is an integer which is the id of the last
@@ -636,7 +636,7 @@ int Isorropia_EpetraMatcher::augment_matching(int tv)
     return lnt;
 }
 
-int Isorropia_EpetraMatcher::construct_layered_graph()
+int Matcher::construct_layered_graph()
 {
     //This function is used by the HK and HKDW. This is the BFS phase of HK/HKDW
     //where we implicitely build the layered sub graph out of the original
@@ -784,7 +784,7 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 }
 
 
-int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
+int Matcher::recursive_path_finder(int k, int p)
 {
     //This function is used by HK and HKDW. This the DFS phase of the HK/HKDW
     //where we try to find the vertex disjoint augmenting path from the just
@@ -822,7 +822,7 @@ int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
     return -1;
 }
 
-int Isorropia_EpetraMatcher::dfs_path_finder(int u)
+int Matcher::dfs_path_finder(int u)
 {
     //This function is almost similar to the previous function which is to find
     //a vertex disjoint path. It is used for the algorithm DFS, PPF and in HKDW. The
@@ -917,7 +917,7 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
     return -1;
 }
 
-int Isorropia_EpetraMatcher::find_set_del_M()
+int Matcher::find_set_del_M()
 {
     //This function starts the BFS phase for the HK and HKDW. It starts from the
     //layer 0 vertices and tries to find a vertex disjoint path from each of
@@ -956,7 +956,7 @@ int Isorropia_EpetraMatcher::find_set_del_M()
     return count;
 }
 
-int Isorropia_EpetraMatcher::DW_phase()
+int Matcher::DW_phase()
 {
     //This is the additional Duff and Wiberg phase for the HKDW. This function
     //does nothing but first unset the locks and then runs PPF from the
@@ -1007,7 +1007,7 @@ int Isorropia_EpetraMatcher::DW_phase()
     return count;
 }
 
-int Isorropia_EpetraMatcher::dfs_augment()
+int Matcher::dfs_augment()
 {
 
     //This function is the starter function for PPF and DFS. It unsets the locks
@@ -1105,7 +1105,7 @@ int Isorropia_EpetraMatcher::dfs_augment()
     return totc;
 }
 
-int Isorropia_EpetraMatcher::SGM()
+int Matcher::SGM()
 {
     int i,j,lock,ind,count=0;
 #ifdef ISORROPIA_HAVE_OMP
@@ -1136,7 +1136,7 @@ int Isorropia_EpetraMatcher::SGM()
     }
     return count;
 }
-int Isorropia_EpetraMatcher::match_dfs()
+int Matcher::match_dfs()
 {
     // Forking function for DFS based algorithm
     int totc=0;
@@ -1157,7 +1157,7 @@ int Isorropia_EpetraMatcher::match_dfs()
     return totc;
 }
 
-int Isorropia_EpetraMatcher::match_hk()
+int Matcher::match_hk()
 {
     // Forking function for HK based algorithm
     int totc=0,count=0;
@@ -1200,7 +1200,7 @@ int Isorropia_EpetraMatcher::match_hk()
     return totc;
 }
 
-int Isorropia_EpetraMatcher::match()
+int Matcher::match()
 {
     // User interface function for the matching..
 
