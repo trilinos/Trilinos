@@ -5,12 +5,12 @@
 
 #ifdef HAVE_MUELU_IFPACK
 
+#include "Ifpack.h"
+
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
-
-#include "Ifpack.h"
 
 namespace MueLu {
 
@@ -196,7 +196,7 @@ namespace MueLu {
 
       RCP<Teuchos::FancyOStream> out_ = this->getOStream();
 
-      // InitialGuessIsZero
+      // Forward the InitialGuessIsZero option to Ifpack
       Teuchos::ParameterList  paramList;
       if (type_ == "Chebyshev") {
         paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
@@ -226,8 +226,7 @@ namespace MueLu {
     //! @name Utilities
     //@{
 
-    RCP<SmootherPrototype> Copy() const
-    {
+    RCP<SmootherPrototype> Copy() const {
       return rcp(new IfpackSmoother(*this) );
     }
 
