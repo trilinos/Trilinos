@@ -30,7 +30,7 @@
 #define THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DEF_HPP
 
 #include "Thyra_DefaultFiniteDifferenceModelEvaluator_decl.hpp"
-#include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Thyra {
@@ -78,10 +78,9 @@ std::string ScaledResidualModelEvaluator<Scalar>::description() const
 
 template<class Scalar>
 void ScaledResidualModelEvaluator<Scalar>::
-setScalingDiagonal(const RCP<Thyra::VectorBase<Scalar> >& s)
+set_f_scaling(const RCP<Thyra::VectorBase<Scalar> >& f_scaling)
 {
-  s_ = s;
-  diag_ = Thyra::diagonal(s);
+  f_scaling_ = f_scaling;
 }
 
 
@@ -112,10 +111,15 @@ void ScaledResidualModelEvaluator<Scalar>::evalModelImpl(
 
   thyraModel->evalModel(inArgs,outArgs);
 
-  // Scale residual and Jacobian
-  // Use default diagonal linear op.
-  //Thyra::
+  if (nonnull(f_scaling_)) {
+    const RCP<VectorBase<Scalar> > f = outArgs.get_f();
+    if (nonnull(f)) {
+      ele_wise_scale( *f_scaling_, f.ptr() );
+    }
+    
+    // ToDo: Scale W!
 
+  }
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
  

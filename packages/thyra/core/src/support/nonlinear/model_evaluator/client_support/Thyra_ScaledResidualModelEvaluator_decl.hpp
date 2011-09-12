@@ -57,7 +57,7 @@ public:
   
   std::string description() const;
 
-  void setScalingDiagonal(const RCP<Thyra::VectorBase<Scalar> >& s);
+  void set_f_scaling(const RCP<Thyra::VectorBase<Scalar> >& f_scaling);
 
 private:
 
@@ -74,10 +74,8 @@ private:
   
 private:
   //* Diagonal scaling vector */
-  RCP<Thyra::VectorBase<Scalar> > s_;
+  RCP<Thyra::VectorBase<Scalar> > f_scaling_;
 
-  //* Diagonal scaling operator */
-  RCP< const LinearOpBase<Scalar> > diag_;
 };
 
 } // namespace Thyra
