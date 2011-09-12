@@ -1,3 +1,5 @@
+#!/bin/env python
+
 # @HEADER
 # ************************************************************************
 #
@@ -52,8 +54,6 @@
 #
 # ************************************************************************
 # @HEADER
-
-#!/bin/env python
 
 
 # TODO: Put a time limit on the command so that it will not run past the
