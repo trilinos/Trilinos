@@ -33,29 +33,24 @@ class Level : public Needs {
 private:
     mutable int levelID_; // id number associated with level
     RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
-
-    // linked list of Level
-    RCP<Level> previousLevel_;
-
-protected:
-    RCP<Teuchos::FancyOStream> out_;
+    RCP<Level> previousLevel_;  // linked list of Level
 
 public:
 
     //@{
+
     //! @name Constructors / Destructors
-    Level() : levelID_(-1), out_(this->getOStream()) {
-        //Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating new uninitialized Level" << std::endl;
-    }
+    Level() : levelID_(-1) { }
 
     //! Constructor
-    Level(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler), out_(this->getOStream()) {
-    }
+    Level(RCP<DefaultFactoryHandlerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler) { }
 
     //! Copy constructor.
     explicit Level(const Level& source) {
         levelID_ = source.levelID_;
         defaultFactoryHandler_ = source.defaultFactoryHandler_;
+        previousLevel_ = source.previousLevel_;
+        // TODO copyKeepStatus ??? + factorize with Build()
     }
 
     //@}
@@ -76,17 +71,11 @@ public:
 
     virtual ~Level() {}
 
-    void Print(std::ostream &os) {
-        os << this << std::endl;
-    }
-
     //@{
     //! @name Level handling
 
     //! @brief Set level number.
-    void SetLevelID(int i) const {
-        levelID_ = i;
-    }
+    void SetLevelID(int i) const { levelID_ = i; }
 
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
