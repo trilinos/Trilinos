@@ -113,14 +113,14 @@ LinearSystemStratimikos(
   timeApplyJacbianInverse(0.0),
   getLinearSolveToleranceFromNox(false)
 {
-  // Allocate solver
-  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
-  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
-
   jacType = getOperatorType(*jacPtr);
   precType = jacType;
 
   reset(stratSolverParams.sublist("NOX Stratimikos Options"));
+
+  // Allocate solver
+  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
 }
 
 //***********************************************************************
@@ -161,14 +161,14 @@ LinearSystemStratimikos(
     precMatrixSource = SeparateMatrix;
   }
 
-  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
-  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
-
   // Both operators are supplied
   jacType = getOperatorType(*jacPtr);
   precType = getOperatorType(*precPtr);
 
   reset(stratSolverParams.sublist("NOX Stratimikos Options"));
+
+  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
+  tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
 }
 
 //***********************************************************************
@@ -181,9 +181,6 @@ NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos()
 void NOX::Epetra::LinearSystemStratimikos::
 initializeStratimikos(Teuchos::ParameterList& stratParams)
 {
-  Teuchos::RCP<Teuchos::FancyOStream> out
-     = Teuchos::VerboseObjectBase::getDefaultOStream();
-
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
   linearSolverBuilder.setParameterList(Teuchos::rcp(&stratParams, false));
@@ -193,7 +190,7 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
   lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
 
   // Setup output stream and the verbosity level
-  lowsFactory->setOStream(out);
+  lowsFactory->setOStream(outputStream);
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   // Initialize the LinearOpWithSolve
@@ -255,6 +252,12 @@ reset(Teuchos::ParameterList& noxStratParams)
   linearSolveCount = 0;
 #endif
 #endif
+
+  if (noxStratParams.isParameter("Output Stream"))
+    outputStream = 
+      noxStratParams.get< Teuchos::RCP<Teuchos::FancyOStream> >("Output Stream");
+  else
+    outputStream = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 }
 

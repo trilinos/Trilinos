@@ -63,7 +63,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
-
+#include "Teuchos_FancyOStream.hpp"
 
 // Forward declares
 namespace NOX {
@@ -418,6 +418,9 @@ protected:
 #ifdef HAVE_NOX_EPETRAEXT
   mutable int linearSolveCount;
 #endif
+
+  //! Output stream for stratimikos
+  Teuchos::RCP<Teuchos::FancyOStream> outputStream;
 
 };
 
