@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_IFPACK) && !defined(HAVE_TEUCHOS_LONG_LONG_INT)
     if (smooType == "sgs") {
       ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
       smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
       smooProto = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
     }
 #else
-  throw(MueLu::Exceptions::RuntimeError("Ifpack must be enabled."));
+  throw(MueLu::Exceptions::RuntimeError("Ifpack must be enabled. Long Long must be disabled"));
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_AMESOS) && !defined(HAVE_TEUCHOS_LONG_LONG_INT)
     Teuchos::ParameterList amesosList;
     amesosList.set("PrintTiming",true);
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
