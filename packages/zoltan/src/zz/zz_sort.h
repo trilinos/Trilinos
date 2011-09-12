@@ -36,7 +36,7 @@ void Zoltan_quicksort_list_inc_gno          (ZOLTAN_GNO_TYPE *, int*,   int,  in
 void Zoltan_quicksort_list_inc_long          (long*, int*,   int,  int);
 
 void Zoltan_quicksort_pointer_inc_long_long_int   (int*, long long*, int *, int, int);
-void Zoltan_quicksort_list_inc_long_long          (long long*, int*,   int,  int);
+void Zoltan_quicksort_list_inc_long_long          (int64_t*, int*,   int,  int);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
