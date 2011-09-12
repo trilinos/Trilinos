@@ -40,6 +40,8 @@
 //@HEADER
 
 #include "EpetraExt_MultiMpiComm.h" 
+#include "Teuchos_TestForException.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 namespace EpetraExt {
 
@@ -48,6 +50,17 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 	myComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
         subComm(0)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  // The default output stream only outputs to proc 0, which is not what
+  // we generally want.  Manually override this if necessary so we get output
+  // to all processors
+  int outputRootRank = out->getOutputToRootOnly();
+  if (outputRootRank >= 0) {
+    out->setOutputToRootOnly(-1);
+  }
+
   //Need to construct subComm for each sub domain, compute subDomainRank,
   //and check that all integer arithmatic works out correctly.
  
@@ -55,11 +68,11 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   ierrmpi = MPI_Comm_size(globalMpiComm, &size);
   ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
 
-  if (size % subDomainProcs != 0) {
-    cout << "ERROR: num subDomainProcs "<< subDomainProcs
-	 << " does not divide into num total procs " << size << endl; 
-    exit(-1);
-  }
+  TEST_FOR_EXCEPTION(
+    size % subDomainProcs != 0,
+    std::logic_error,
+    "ERROR: num subDomainProcs "<< subDomainProcs << 
+    " does not divide into num total procs " << size << std::endl);
 
   numSubDomains = size / subDomainProcs;
   numTimeDomains = subDomainProcs;
@@ -81,12 +94,21 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   // Compute number of time steps on this sub domain
   ResetNumTimeSteps(numTimeSteps_);
 
-  if (numTimeSteps_ > 0)
-    cout << "Processor " << rank << " is on subdomain " << subDomainRank 
-         << " and owns " << numTimeStepsOnDomain << " time steps, starting with " 
-         <<  firstTimeStepOnDomain << endl;
-  else
-    cout << "Processor " << rank << " is on subdomain " << subDomainRank << endl;
+  if (verbLevel != Teuchos::VERB_NONE) {
+    if (numTimeSteps_ > 0)
+      *out << "Processor " << rank << " is on subdomain " << subDomainRank 
+	   << " and owns " << numTimeStepsOnDomain 
+	   << " time steps, starting with " 
+	   <<  firstTimeStepOnDomain << std::endl;
+    else
+      *out << "Processor " << rank << " is on subdomain " << subDomainRank 
+	   << std::endl;
+  }
+
+  // Reset output flag if we changed it
+  if (outputRootRank >= 0) {
+    out->setOutputToRootOnly(outputRootRank);
+  }
 }
 
 // This constructor is for just one subdomain, so only adds the info

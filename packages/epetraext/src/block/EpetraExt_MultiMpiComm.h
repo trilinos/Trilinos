@@ -45,6 +45,7 @@
 #include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_MultiComm.h" 
 #include "Epetra_MpiComm.h" 
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_RCP.hpp"
 
 //! EpetraExt::MultiMpiComm is a class for keeping track of two levels of
@@ -63,7 +64,8 @@
 
 namespace EpetraExt {
 
-class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm {
+class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
+  public Teuchos::VerboseObject<MultiMpiComm> {
  public:
 
   //@{ \name Constructors/Destructor.
