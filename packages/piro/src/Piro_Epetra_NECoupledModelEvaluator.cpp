@@ -6,6 +6,7 @@
 
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_StieltjesGramSchmidtBuilder.hpp"
@@ -26,6 +27,9 @@ NECoupledModelEvaluator(
   params(params_),
   comm(comm_)
 {
+  // Setup VerboseObject
+  Teuchos::readVerboseObjectSublist(params.get(), this);
+
   // Create solvers for models A and B
   bool stochastic = params->get("Stochastic", false);
   if (stochastic) {
@@ -469,6 +473,9 @@ void
 Piro::Epetra::NECoupledModelEvaluator::
 evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
   EpetraExt::ModelEvaluator::InArgs solverA_inargs = solverA->createInArgs();
   EpetraExt::ModelEvaluator::InArgs solverB_inargs = solverB->createInArgs();
   EpetraExt::ModelEvaluator::OutArgs solverA_outargs = solverA->createOutArgs();
@@ -726,15 +733,15 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   // Evaluate models
   {
   TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Model A nonlinear elimination");
-  if (proc == 0)
-    std::cout << "Eliminating model A states...";
+  if (verbLevel != Teuchos::VERB_NONE)
+    *out << "Eliminating model A states...";
   solverA_red->evalModel(solverA_inargs_red, solverA_outargs_red);
   }
 
   {
   TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Model B nonlinear elimination");
-  if (proc == 0)
-    std::cout << "Eliminating model B states...";
+  if (verbLevel != Teuchos::VERB_NONE)
+    *out << "Eliminating model B states...";
   solverB_red->evalModel(solverB_inargs_red, solverB_outargs_red);
   }
 
@@ -933,7 +940,8 @@ do_dimension_reduction(
     if (solver_inargs.supports(IN_ARG_p_sg, i) &&
 	solver_inargs.get_p_sg(i) != Teuchos::null) {
       InArgs::sg_const_vector_t p_sg = solver_inargs.get_p_sg(i);
-      p_opa[index].reset(basis);
+      for (int k=0; k<p_sg->coefficientMap()->NumMyElements(); k++)
+	p_opa[index+k].reset(basis);
       for (int j=0; j<sz; j++) {
 	for (int k=0; k<(*p_sg)[j].MyLength(); k++)
 	  p_opa[index+k][j] = (*p_sg)[j][k];
@@ -971,20 +979,17 @@ do_dimension_reduction(
       // 		 basis, new_order+1));
     }
     for (int i=0; i<p_opa.size(); i++) {
-      std::cout << "p_opa[" << i << "] = " << p_opa[i] << std::endl;
       new_coordinate_bases[i] = Teuchos::rcp(
 	new Stokhos::StieltjesPCEBasis<int,double>(
 	  new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
 	  false, false, true, Cijk));
-      // std::cout << "new_coordinate_bases[" << i << "] = " << std::endl
-      // 		<< *new_coordinate_bases[i] << std::endl;
     }
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
       Teuchos::rcp(
 	new Stokhos::CompletePolynomialBasis<int,double>(new_coordinate_bases)
 	);
     red_basis = tensor_basis;
-    if (red_basis->dimension() <= 0)
+    if (red_basis->dimension() <= 3)
       red_quad = 
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
 		       tensor_basis));
@@ -1132,9 +1137,6 @@ do_dimension_projection(
   OutArgs& solver_outargs) const
 {
   TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- dimension projection");
-
-  // First copy the out args to set everything we don't modify
-  solver_outargs = reduced_outargs;
 
   // Make sure there is something to do
   InArgs::sg_const_vector_t x_sg;

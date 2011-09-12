@@ -2,6 +2,7 @@
 #define PIRO_EPETRA_NE_COUPLED_MODEL_EVALUATOR_HPP
 
 #include "EpetraExt_ModelEvaluator.h"
+#include "Teuchos_VerboseObject.hpp"
 #include "Piro_Epetra_StokhosSolver.hpp"
 
 #include "Epetra_Comm.h"
@@ -21,7 +22,9 @@
 namespace Piro {
   namespace Epetra {
 
-    class NECoupledModelEvaluator : public EpetraExt::ModelEvaluator {
+    class NECoupledModelEvaluator : 
+      public EpetraExt::ModelEvaluator,
+      public Teuchos::VerboseObject<NECoupledModelEvaluator> {
     public:
 
       /** \brief . */
