@@ -47,8 +47,8 @@
 #include "stddef.h"
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.12f
-#define EX_API_VERS_NODOT 512
+#define EX_API_VERS 5.13f
+#define EX_API_VERS_NODOT 513
 #define EX_VERS EX_API_VERS
 
 
@@ -84,6 +84,7 @@ extern "C" {
 #define EX_NETCDF4              8 /**< use the hdf5-based netcdf4 output */
 #define EX_NOSHARE             16 /**< Do not open netcdf file in "share" mode */
 #define EX_SHARE               32 /**< Do open netcdf file in "share" mode */
+#define EX_NOCLASSIC           64 /**< Do not force netcdf to classic mode in netcdf4 mode */
 
 #define EX_READ                 0
 #define EX_WRITE                1
