@@ -34,7 +34,7 @@ namespace Isorropia {
 #ifdef HAVE_EPETRA
 namespace Epetra {
 
-#define ISORROPIA_MATCHING_STATS
+//#define ISORROPIA_MATCHING_STATS
 
 #ifdef ISORROPIA_MATCHING_STATS
 int minL,maxL;
