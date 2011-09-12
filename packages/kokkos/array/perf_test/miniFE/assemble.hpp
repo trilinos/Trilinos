@@ -113,20 +113,22 @@ struct assembleFE<Scalar, KOKKOS_MACRO_DEVICE> {
   scalar_array  element_stiffness;
   scalar_array  element_vectors;
   GaussPoints< numGaussPointsPerDim > gauss ;
-  Scalar k ;
-  Scalar Q ;
+  Scalar coeff_K ;
+  Scalar coeff_Q ;
 
   assembleFE( const index_array  & arg_elem_node_ids ,
               const scalar_array & arg_node_coords ,
               const scalar_array & arg_element_stiffness , 
-              const scalar_array & arg_element_vectors )
+              const scalar_array & arg_element_vectors ,
+              const Scalar       & arg_coeff_K ,
+              const Scalar       & arg_coeff_Q )
   : elem_node_ids( arg_elem_node_ids )
   , node_coords(   arg_node_coords )
   , element_stiffness( arg_element_stiffness )
   , element_vectors( arg_element_vectors )
   , gauss()
-  , k( 2.0 )
-  , Q( 1.0 )
+  , coeff_K( arg_coeff_K )
+  , coeff_Q( arg_coeff_Q )
   {}
 
 
@@ -397,8 +399,8 @@ struct assembleFE<Scalar, KOKKOS_MACRO_DEVICE> {
 
           inverse_and_determinant3x3(J, invJ, detJ);
 
-          const Scalar k_detJ_wi_wj_wk = k * detJ * wi_wj_wk;
-          const Scalar Q_detJ_wi_wj_wk = Q * detJ * wi_wj_wk;
+          const Scalar k_detJ_wi_wj_wk = coeff_K * detJ * wi_wj_wk;
+          const Scalar Q_detJ_wi_wj_wk = coeff_Q * detJ * wi_wj_wk;
 
           contributeDiffusionMatrix( k_detJ_wi_wj_wk ,
                                      grad_vals , invJ ,

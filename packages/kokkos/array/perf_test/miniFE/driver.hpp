@@ -62,21 +62,27 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   typedef Kokkos::MultiVectorView<index_type, device_type>  index_vector_d;
 
   typedef scalar_array_d::HostView  scalar_array_h ;
-  typedef index_array_d   ::HostView  index_array_h ;
+  typedef index_array_d ::HostView  index_array_h ;
 
   typedef scalar_vector_d::HostView  scalar_vector_h ;
-  typedef index_vector_d   ::HostView  index_vector_h ;
+  typedef index_vector_d ::HostView  index_vector_h ;
+
+  // Problem coefficients
+
+  const Scalar elem_coeff_K = 2 ;
+  const Scalar elem_load_Q  = 1 ;
 
   //  Host Data Structures
 
-  index_vector_h  A_row_h , A_col_h;
+  index_vector_h  A_row_h , A_col_h ;
+  scalar_vector_h X_h ;
 
   //  Device Data Structures
 
   scalar_array_d  elem_stiffness, elem_load;
 
-  index_vector_d A_row_d , A_col_d;
-  scalar_vector_d A, b, X;
+  index_vector_d A_row_d , A_col_d, dirichlet_flag_d ;
+  scalar_vector_d A, b, X , dirichlet_value_d ;
   
   timeval start,stop,result;
   double time = 0.0;
@@ -85,6 +91,8 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   gettimeofday(&start, NULL);
 
   const BoxMeshFixture< Scalar , device_type > mesh( x , y , z );
+
+  mesh.init_dirichlet_z( dirichlet_flag_d , dirichlet_value_d );
 
   init_crsgraph( mesh.h_mesh.node_elem_offset ,
                  mesh.h_mesh.node_elem_ids ,
@@ -125,7 +133,8 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   Kokkos::parallel_for( mesh.elem_count,
     assembleFE<Scalar, device_type>( mesh.d_mesh.elem_node_ids ,
                                      mesh.d_mesh.node_coords ,
-                                     elem_stiffness, elem_load ), time);
+                                     elem_stiffness, elem_load ,
+                                     elem_coeff_K , elem_load_Q ), time);
 
   total_time += time;  
   times[1] = time;
@@ -142,7 +151,10 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   total_time += time;  
   times[2] = time;
 
-  Kokkos::parallel_for(mesh.node_count , Dirichlet<Scalar , device_type>(A, A_row_d ,A_col_d, b,x+1,y+1,z+1,1.0) , time);
+  Kokkos::parallel_for(mesh.node_count ,
+    Dirichlet<Scalar , device_type>(A, A_row_d ,A_col_d, b,
+                                    dirichlet_flag_d , dirichlet_value_d ) , time);
+
   total_time += time;
   times[3] = time;
 
@@ -153,8 +165,25 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   
   times[6] = total_time;
 
+  X_h = Kokkos::mirror_create( X );
+
+  Kokkos::mirror_update( X_h , X );
+
+  for ( int i = 0 ; i < (int) mesh.node_count_z ; ++i ) {
+    const int ix = mesh.node_count_x - 1 ;
+    const int iy = mesh.node_count_y - 1 ;
+    const Scalar val00 = X_h( mesh.node_id( 0 , 0 , i ) );
+    const Scalar valX0 = X_h( mesh.node_id( ix , 0 , i ) );
+    const Scalar valXY = X_h( mesh.node_id( ix , iy , i ) );
+    const Scalar val0Y = X_h( mesh.node_id( 0 , iy , i ) );
+    std::cout << "corners_00_X0_XY_Y0("<<i<<") = "
+              << val00 << " " << valX0 << " "
+              << valXY << " " << val0Y << std::endl ;
+  }
+
 //  printGLUT<Scalar , scalar_vector_d , scalar_array_h , index_array_h>
 //      ("X.txt", X , elem_coords_h , elem_nodeIDs_h,x,y,z);
 }
 
-} //Test
+} // namespace Test
+

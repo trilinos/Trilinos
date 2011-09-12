@@ -85,6 +85,7 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
     element_load(arg_element_load)
   {}
 
+
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()(index_type irow) const {
 
@@ -108,15 +109,17 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
       b(irow) += element_load(nelem, elem_row_index);
 
       //  for each node in a particular related element  
+      //  gather the contents of the element stiffness
+      //  matrix that belong in irow
+
       for(index_type j = 0; j < 8; j++){
 
-        //  gather the contents of the element stiffness
-        //  matrix that belong in irow
+        const index_type node_id = elem_nodeIDs(nelem, j);
+
+        // Find the A matrix index for this node
 
         index_type column_search = base_index;
   
-        const index_type node_id = elem_nodeIDs(nelem, j);
-
         for ( index_type len = last_index - base_index ; 0 < len ; ) {
   
           const index_type half = len >> 1;
