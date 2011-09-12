@@ -42,216 +42,10 @@
 
 #include <stdexcept>
 #include <Kokkos_MDArrayView.hpp>
+#include <Kokkos_MultiVectorView.hpp>
 
 //  construct a structured, rectangular prism mesh of Hex elements, 
 //  with dimensions given by elems_x, elems_y, elems_z
-
-#if 0
-
-template < class int_mdarray , class scalar_mdarray >
-class BoxMeshFixture {
-public:
-  enum { ELEMENT_NODE_COUNT = 8 };
-
-  int_mdarray    elem_node_ids ;
-  int_mdarray    node_elem_offset ;
-  int_mdarray    node_elem_ids ;
-  scalar_mdarray node_coords ;
-
-  const int elem_count_x ;
-  const int elem_count_y ;
-  const int elem_count_z ;
-  const int elem_count ;
-  const int node_count_x ;
-  const int node_count_y ;
-  const int node_count_z ;
-  const int node_count ;
-
-  //        7 -------------- 6
-  //       /|               /|
-  //      / |              / |
-  //     /  |             /  |
-  //    /   |            /   |
-  //   4 -------------- 5    |
-  //   |    |           |    |
-  //   |    |           |    |
-  //   |    3 --------- | -- 2
-  //   |   /            |   /
-  //   |  /             |  /
-  //   | /              | /
-  //   |/               |/
-  //   0 -------------- 1
-  //
-  //   Coordinate system:
-  //     X = grid-i
-  //     Y = grid-j
-  //     Z = grid-k
-  //
-  //   Z   Y
-  //   |  /
-  //   | /
-  //   |/
-  //   O-----X
-  //
-
-  int node_id( const int ix , const int iy , const int iz ) const
-  { return ix + node_count_x * ( iy + node_count_y * iz ); }
-
-  int elem_id( const int ix , const int iy , const int iz ) const
-  { return ix + elem_count_x * ( iy + elem_count_y * iz ); }
-
-  void node_grid( int id , int & ix , int & iy , int & iz ) const
-  {
-    ix = id % node_count_x ; id /= node_count_x ;
-    iy = id % node_count_y ; id /= node_count_y ;
-    iz = id ;
-  }
-
-  void elem_grid( int id , int & ix , int & iy , int & iz ) const
-  {
-    ix = id % elem_count_x ; id /= elem_count_x ;
-    iy = id % elem_count_y ; id /= elem_count_y ;
-    iz = id ;
-  }
-
-  void verify_connectivity_and_coordinates() const
-  {
-    for ( int node_index = 0 ; node_index < node_count; ++node_index ) {
-      for ( int j = node_elem_offset( node_index ) ; 
-                j < node_elem_offset( node_index + 1 ) ; ++j ) {
-        const int elem_index = node_elem_ids(j,0);
-        const int node_local = node_elem_ids(j,1);
-        const int en_id = elem_node_ids( elem_index , node_local );
-        if ( node_index != en_id ) {
-          throw std::runtime_error( std::string("node_elem_ids mapping failure") );
-        }
-      }
-    }
-
-    for ( int elem_index = 0 ; elem_index < elem_count; ++elem_index ) {
-
-      const int elem_node_local_coord[ ELEMENT_NODE_COUNT ][3] =
-        { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
-          { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
-
-      int g[3] ;
-
-      elem_grid( elem_index , g[0] , g[1] , g[2] );
-
-      for ( int nn = 0 ; nn < ELEMENT_NODE_COUNT ; ++nn ) {
-        const int node_index = elem_node_ids( elem_index , nn );
-
-        for ( int nc = 0 ; nc < 3 ; ++nc ) {
-          const int en_coord = g[nc] + elem_node_local_coord[ nn ][ nc ];
-          const int n_coord  = (int) node_coords( node_index , nc );
-
-          if ( en_coord != n_coord ) {
-            throw std::runtime_error( std::string("elem_node_coord mapping failure") );
-          }
-        }
-      }
-    }
-  }
-
-private:
-
-  void populate_node_element()
-  {
-    const int count_node_elem = elem_count * ELEMENT_NODE_COUNT ;
-
-    node_elem_offset = Kokkos::create_mdarray< int_mdarray >( node_count + 1 );
-    node_elem_ids    = Kokkos::create_mdarray< int_mdarray >( count_node_elem , 2 );
-
-    int_mdarray node_elem_count = Kokkos::create_mdarray< int_mdarray >( node_count );
-
-    for(int i = 0; i < node_count + 1 ; i++){
-      node_elem_count( i ) = 0 ;
-    }
-
-    for ( int i = 0 ; i < elem_count ; ++i ) {
-      for ( int n = 0 ; n < ELEMENT_NODE_COUNT  ; ++n ) {
-        ++node_elem_count( elem_node_ids(i,n) );
-      }
-    }
-
-    node_elem_offset(0) = 0 ;
-    for(int i = 0; i < node_count ; ++i ){
-      node_elem_offset( i + 1 ) = node_elem_offset(i) + node_elem_count(i);
-      node_elem_count( i ) = 0 ;
-    }
-
-    // Looping in element order insures the list of elements
-    // is sorted by element index.
-
-    for ( int i = 0 ; i < elem_count ; ++i ) {
-      for ( int n = 0 ; n < ELEMENT_NODE_COUNT ; ++n ) {
-        const int nid = elem_node_ids(i, n);
-        const int j = node_elem_offset(nid) + node_elem_count(nid);
-
-        node_elem_ids( j , 0 ) = i ;
-        node_elem_ids( j , 1 ) = n ;
-
-        ++node_elem_count( nid );
-      }
-    }
-  }
-
-public:
-
-  BoxMeshFixture( const int elems_x ,
-                  const int elems_y ,
-                  const int elems_z )
-  : elem_node_ids()
-  , node_elem_offset()
-  , node_elem_ids()
-  , node_coords()
-  , elem_count_x( elems_x )
-  , elem_count_y( elems_y )
-  , elem_count_z( elems_z )
-  , elem_count(   elems_z * elems_y * elems_x )
-  , node_count_x( elems_x + 1 )
-  , node_count_y( elems_y + 1 )
-  , node_count_z( elems_z + 1 )
-  , node_count( ( elems_z + 1 ) * ( elems_y + 1 ) * ( elems_x + 1 ) )
-  {
-    const int elem_node_local_coord[ ELEMENT_NODE_COUNT ][3] =
-      { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
-        { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
-
-    elem_node_ids = Kokkos::create_mdarray< int_mdarray    >(elem_count,  ELEMENT_NODE_COUNT );
-    node_coords   = Kokkos::create_mdarray< scalar_mdarray >(node_count, 3);
-
-    // Initialize node coordinates of grid.
-
-    for ( int node_index = 0 ; node_index < node_count ; ++node_index ) {
-      int ig , jg , kg ;
-      node_grid( node_index , ig , jg , kg );
-      node_coords(node_index,0) = ig ;
-      node_coords(node_index,1) = jg ;
-      node_coords(node_index,2) = kg ;
-    }
-
-    // Initialize element-node connectivity:
-
-    for ( int elem_index = 0 ; elem_index < elem_count ; ++elem_index ) {
-      int ig , jg , kg ;
-      elem_grid( elem_index , ig , jg , kg );
-
-      for ( int nn = 0 ; nn < ELEMENT_NODE_COUNT ; ++nn ) {
-        elem_node_ids( elem_index , nn ) =
-          node_id( ig + elem_node_local_coord[nn][0] ,
-                   jg + elem_node_local_coord[nn][1] ,
-                   kg + elem_node_local_coord[nn][2] );
-      }
-    }
-
-    populate_node_element();
-
-    verify_connectivity_and_coordinates();
-  }
-};
-
-#else
 
 template < class IndexArray , class ScalarArray >
 class MeshFixture {
@@ -272,9 +66,13 @@ public:
 
   typedef Kokkos::MDArrayView< index_type ,  Device > index_array_d ;
   typedef Kokkos::MDArrayView< scalar_type , Device > scalar_array_d ;
+  typedef Kokkos::MultiVectorView< index_type ,  Device > index_vector_d ;
+  typedef Kokkos::MultiVectorView< scalar_type , Device > scalar_vector_d ;
 
-  typedef typename index_array_d ::HostView  index_array_h ;
-  typedef typename scalar_array_d::HostView  scalar_array_h ;
+  typedef typename index_array_d  ::HostView  index_array_h ;
+  typedef typename scalar_array_d ::HostView  scalar_array_h ;
+  typedef typename index_vector_d ::HostView  index_vector_h ;
+  typedef typename scalar_vector_d::HostView  scalar_vector_h ;
 
   MeshFixture< index_array_d , scalar_array_d > d_mesh ;
   MeshFixture< index_array_h , scalar_array_h > h_mesh ;
@@ -476,9 +274,29 @@ public:
     Kokkos::mirror_update( d_mesh.node_elem_offset , h_mesh.node_elem_offset );
     Kokkos::mirror_update( d_mesh.node_elem_ids ,    h_mesh.node_elem_ids );
   }
-};
 
-#endif
+
+  void init_dirichlet_z( index_vector_d & node_flag , scalar_vector_d & node_value ) const
+  {
+    node_flag  = Kokkos::create_multivector< index_vector_d >( node_count );
+    node_value = Kokkos::create_multivector< scalar_vector_d >( node_count );
+
+    index_vector_h  flag_h  = Kokkos::mirror_create( node_flag );
+    scalar_vector_h value_h = Kokkos::mirror_create( node_value );
+
+    index_type ig , jg , kg ;
+    for ( index_type i = 0 ; i < node_count ; ++i ) {
+      node_grid( i , ig , jg , kg );
+      if ( kg == 0 || ( kg + 1 ) == node_count_z ) {
+        flag_h(i)  = 1 ;
+        value_h(i) = kg ;
+      }
+    }
+
+    Kokkos::mirror_update( node_flag ,  flag_h );
+    Kokkos::mirror_update( node_value , value_h );
+  }
+};
 
 #endif /* #ifndef KOKKOS_BOXMESHFIXTURE_HPP */
 
