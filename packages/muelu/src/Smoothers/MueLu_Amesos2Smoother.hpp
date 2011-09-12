@@ -35,10 +35,9 @@ namespace MueLu {
     /*! @brief Constructor
       Creates a MueLu interface to the direct solvers in the Amesos2 package.
     */
-    Amesos2Smoother()
-      : type_("")
+    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
+      : type_(type), paramList_(paramList)
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
 
 #if defined(HAVE_AMESOS2_SUPERLU)
       type_ = "Superlu";
@@ -46,12 +45,7 @@ namespace MueLu {
       type_ = "Klu";
 #endif
       TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without KLU and SuperLU. Cannot define a solver by default for this Amesos2Smoother object");
-    }
 
-    Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
-      : type_(type), paramList_(paramList)
-    {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
     }
 
     //! Destructor

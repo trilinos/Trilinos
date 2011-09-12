@@ -61,10 +61,9 @@ namespace MueLu {
 
     */
 
-    AmesosSmoother()
-      : type_("")
+    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
+      : type_(type), paramList_(paramList)
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
 
 #if defined(HAVE_AMESOS_SUPERLU)
       type_ = "Superlu";
@@ -72,11 +71,7 @@ namespace MueLu {
       type_ = "Klu";
 #endif
       TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU and SuperLU. Cannot define a solver by default for this AmesosSmoother object");
-    }
 
-    AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
-      : type_(type), paramList_(paramList)
-    {
       TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
     }
 
