@@ -304,8 +304,15 @@ ENDIF()
   # when installed.
   ######
 
-  SET(LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
-  SET(INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+  # Set the include and library directories relative to the location
+  # at which the ${PROJECT_NAME}Config.cmake file is going to be
+  # installed. Note the variable reference below is escaped so it
+  # won't be replaced until a client project attempts to locate
+  # directories using the installed config file. This is to deal with
+  # installers that allow relocation of the install tree at *install*
+  # time.
+  SET(LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../lib")
+  SET(INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../include")
 
   # Custom code in configuration file.
   SET(PACKAGE_CONFIG_CODE "")
@@ -317,7 +324,7 @@ ENDIF()
 # Import ${PROJECT_NAME} targets
 IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
   SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
-  INCLUDE(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake\")
+  INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/../${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake\")
 ENDIF()
 ")
   ENDIF()
@@ -344,6 +351,14 @@ ENDIF()
     # of the cmake version only slightly changed so that it can be directly imported into
     # a Makefile.
     ######
+
+    # Generated Make imports must use CMAKE_INSTALL_PREFIX, rather
+    # than the more platform friendly method of locating the libraries
+    # and includes using the config file path above. The underlying
+    # assumption here is that a generator that uses
+    # CMAKE_INSTALL_PREFIX is being used.
+    SET(LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+    SET(INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
 
     LIST_TO_STRING("${LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
     LIST_TO_STRING("${INCLUDE_DIRS}" "-I" MAKEFILE_INCLUDE_DIRS)
@@ -492,9 +507,16 @@ ENDIF()
   # file isn't generally useful inside the build tree. It will be placed in the base
   # install directory for ${PROJECT_NAME} when installed.
   ######
-
-  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
-  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  
+  # Set the include and library directories relative to the location
+  # at which the ${PROJECT_NAME}Config.cmake file is going to be
+  # installed. Note the variable reference below is escaped so it
+  # won't be replaced until a client project attempts to locate
+  # directories using the installed config file. This is to deal with
+  # installers that allow relocation of the install tree at *install*
+  # time.
+  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../include")
+  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../lib")
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
@@ -517,7 +539,7 @@ ENDIF()
 # Import ${PROJECT_NAME} targets
 IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
   SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
-  INCLUDE(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake\")
+  INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")
 ENDIF()
 ")
   ENDIF()
@@ -525,7 +547,7 @@ ENDIF()
   # Appending the logic to include each package's config file.
   SET(LOAD_CODE "# Load configurations from enabled packages\n")
   FOREACH(PACKAGE ${FULL_PACKAGE_SET})
-    SET(LOAD_CODE "${LOAD_CODE}include(\"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE}/${PACKAGE}Config.cmake\")\n")
+    SET(LOAD_CODE "${LOAD_CODE}include(\"\${CMAKE_CURRENT_LIST_DIR}/../${PACKAGE}/${PACKAGE}Config.cmake\")\n")
   ENDFOREACH()
   SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
 
@@ -544,6 +566,14 @@ ENDIF()
     # of the cmake version only slightly changed so that it can be directly imported into
     # a Makefile.
     ######
+
+    # Generated Make imports must use CMAKE_INSTALL_PREFIX, rather
+    # than the more platform friendly method of locating the libraries
+    # and includes using the config file path above. The underlying
+    # assumption here is that a generator that uses
+    # CMAKE_INSTALL_PREFIX is being used.
+    SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+    SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
 
     LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
     LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
