@@ -220,11 +220,11 @@ namespace MueLu {
       // keep variables A, P and R on all multigrid levels
 
       // set operator A to be generated with AcFact
-      Levels_[startLevel]->Keep("A", rcpFromRef(AcFact));
-      Levels_[startLevel]->Set<RCP<Operator> >("A", A, rcpFromRef(AcFact));
+      Levels_[startLevel]->Keep("A", &AcFact);
+      Levels_[startLevel]->Set<RCP<Operator> >("A", A, &AcFact);
 
-      Levels_[startLevel]->Keep("P", rcpFromRef(PRFact));
-      Levels_[startLevel]->Keep("R", rcpFromRef(PRFact));
+      Levels_[startLevel]->Keep("P", &PRFact);
+      Levels_[startLevel]->Keep("R", &PRFact);
 
       // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
       defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
@@ -282,7 +282,7 @@ namespace MueLu {
             break;
           }
           //RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A");
-          totalNnz += coarseLevel.Get< RCP<Operator> >("A", rcpFromRef(AcFact))->getGlobalNumEntries();
+          totalNnz += coarseLevel.Get< RCP<Operator> >("A", &AcFact)->getGlobalNumEntries();
 
           ++i;
         } //while
@@ -322,7 +322,7 @@ namespace MueLu {
     */
     void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
       LO clevel = GetNumberOfLevels()-1;
-      Levels_[clevel]->Keep("PreSmoother");
+      Levels_[clevel]->Keep("PreSmoother");  // TODO check me
       Levels_[clevel]->Keep("PostSmoother");
       smooFact.BuildSmoother(*Levels_[clevel], pop);
     }
@@ -358,7 +358,7 @@ namespace MueLu {
       }
 
       for (int i=startLevel; i<=lastLevel; i++) {
-        Levels_[i]->Keep("PreSmoother");
+        Levels_[i]->Keep("PreSmoother"); // TODO check me
         Levels_[i]->Keep("PostSmoother");
         smooFact.Build(*Levels_[i]);
       }

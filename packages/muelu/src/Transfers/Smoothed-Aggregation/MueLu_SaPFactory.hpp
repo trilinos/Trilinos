@@ -96,8 +96,8 @@ namespace MueLu {
         initialPFact_->DeclareInput(fineLevel,coarseLevel);
       if(!fineLevel.IsRequested("A",AFact_))
         AFact_->DeclareInput(fineLevel);*/
-      coarseLevel.Request("P",initialPFact_);
-      fineLevel.Request("A",AFact_);
+      coarseLevel.Request("P",initialPFact_.get());
+      fineLevel.Request("A",AFact_.get());
     };
 
     //@}
@@ -122,11 +122,11 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_);
-      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_);
+      RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
+      RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
 
-      fineLevel.Release("A", AFact_);
-      coarseLevel.Release("P", initialPFact_);
+      fineLevel.Release("A", AFact_.get());
+      coarseLevel.Release("P", initialPFact_.get());
 
       //Build final prolongator
       RCP<Operator> finalP; // output

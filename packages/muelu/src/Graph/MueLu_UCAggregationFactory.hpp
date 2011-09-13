@@ -81,7 +81,7 @@ namespace MueLu {
         if( defaultFactory == NULL) std::cout << "UCAggregationFactory::DeclareInput: Error: default factory == NULL" << std::endl;
         defaultFactory->callDeclareInput(currentLevel);
       }*/
-      currentLevel.Request("Graph", graphFact_); // we should request data...
+      currentLevel.Request("Graph", graphFact_.get()); // we should request data...
     }
 
     //@}
@@ -100,8 +100,8 @@ namespace MueLu {
       timer->start(true);
 
       // Level Get
-      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_);
-      currentLevel.Release("Graph", graphFact_); // release graph
+      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
+      currentLevel.Release("Graph", graphFact_.get()); // release graph
 
       // Build
       RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 
