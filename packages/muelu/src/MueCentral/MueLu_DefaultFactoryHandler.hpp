@@ -17,7 +17,6 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_DummyFactory.hpp"
 
 namespace MueLu {
 
@@ -48,8 +47,6 @@ namespace MueLu {
         if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
         if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
         if (varName == "PostSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
-
-        //else return SetAndReturnDefaultFactory(varName, rcp(new DummyFactory())); // TODO remove me
 
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
 
