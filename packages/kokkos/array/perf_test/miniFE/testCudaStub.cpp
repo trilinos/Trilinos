@@ -42,8 +42,8 @@
 
 namespace Test 
 {
-	void test_Cuda(int beg , int end, int runs)
-	{
-		std::cout<<"No CUDA Device"<<std::endl;
-	}
+  void test_Cuda(int beg , int end, int runs)
+  {
+    std::cout<<"\"MiniFE : NO Kokkos CUDA Device\"" << std::endl;
+  }
 }
