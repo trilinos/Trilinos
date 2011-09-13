@@ -603,7 +603,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     V_S(v1.ptr(), as<Scalar>(2.0));
     V_S(z.ptr(), as<Scalar>(3.0));
     ele_wise_scale( *v1, z.ptr() );
-    if (!testRelErr(
+    if (!testRelErr<Scalar>(
         "norm_2(*z)", norm_2(*z),
         "ST::squareroot(n*sqr(3.0*2.0))", ST::squareroot(n*36.0),
         "error_tol", error_tol(),

@@ -62,7 +62,7 @@ using Thyra::simple2DModelEvaluator;
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, construct, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DModelEvaluator, construct, Scalar )
 {
   RCP<Simple2DModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
   TEST_ASSERT(model != null);
@@ -81,11 +81,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, construct, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  SimpleModelEvaluator, construct )
+  Simple2DModelEvaluator, construct )
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, eval, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DModelEvaluator, eval, Scalar )
 {
+  using Teuchos::as;
+
   RCP<Simple2DModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> in_args = model->getNominalValues();
@@ -108,14 +110,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, eval, Scalar )
   ScalarMag tol = 
     Teuchos::as<ScalarMag>(10.0) * Teuchos::ScalarTraits<Scalar>::eps();
 
-  // Make sure all entries zeroed out
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), 0.0, tol);
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), 0.0, tol);  
+  const Scalar zero = Teuchos::as<Scalar>(0.0);
 
-  TEST_FLOATING_EQUALITY(M_dv(0,0), 0.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(0,1), 0.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,0), 0.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,1), 0.0, tol);
+  // Make sure all entries zeroed out
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), zero, tol);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), zero, tol);  
+
+  TEST_FLOATING_EQUALITY(M_dv(0,0), zero, tol);
+  TEST_FLOATING_EQUALITY(M_dv(0,1), zero, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,0), zero, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,1), zero, tol);
 
   out_args.set_f(f);
   out_args.set_W_op(W_op);
@@ -123,18 +127,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, eval, Scalar )
   model->evalModel(in_args, out_args);
 
   // Based on nominalValue settings x0=1, x1=1, p0=2, p1=0, d=10
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), 1.0+1.0*1.0-2.0, tol);
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), 10.0*(1.0*1.0-1.0-0.0), tol);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), as<Scalar>(1.0+1.0*1.0-2.0), tol);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), as<Scalar>(10.0*(1.0*1.0-1.0-0.0)), tol);
 
-  TEST_FLOATING_EQUALITY(M_dv(0,0), 1.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(0,1), 2.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,0), 10.0 * 2.0 * 1.0, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,1), -10.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(0,0), as<Scalar>(1.0), tol);
+  TEST_FLOATING_EQUALITY(M_dv(0,1), as<Scalar>(2.0), tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,0), as<Scalar>(10.0 * 2.0 * 1.0), tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,1), as<Scalar>(-10.0), tol);
   
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  SimpleModelEvaluator, eval )
+  Simple2DModelEvaluator, eval )
 
 
 } // namespace

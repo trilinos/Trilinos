@@ -25,6 +25,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
   typedef Thyra::Ordinal Ordinal;
   typedef Thyra::ModelEvaluatorBase MEB;
   using Thyra::derivativeGradient;
+  using Teuchos::as;
 
   RCP<Thyra::ModelEvaluator<Scalar> > model = 
     Thyra::simple2DModelEvaluator<Scalar>();
@@ -67,10 +68,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
   scaled_model->evalModel(in_args, out_args);
 
   ScalarMag tol = Teuchos::as<ScalarMag>(10.0) * ST::eps();
+  const Scalar two = as<Scalar>(2.0);
 
-  TEST_FLOATING_EQUALITY(2.0 * Thyra::get_ele(*f,0), Thyra::get_ele(*f_scaled,0),
+  TEST_FLOATING_EQUALITY(two * Thyra::get_ele(*f,0), Thyra::get_ele(*f_scaled,0),
 			 tol);
-  TEST_FLOATING_EQUALITY(2.0 * Thyra::get_ele(*f,1), Thyra::get_ele(*f_scaled,1),
+  TEST_FLOATING_EQUALITY(two * Thyra::get_ele(*f,1), Thyra::get_ele(*f_scaled,1),
 			 tol);
 
   RCP<Thyra::MultiVectorBase<Scalar> > M = 
@@ -84,10 +86,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
   Thyra::DetachedMultiVectorView<Scalar> M_dv_scaled(*M_scaled);
 
 /*
-  TEST_FLOATING_EQUALITY(2.0 * M_dv(0,0), M_dv_scaled(0,0), tol);
-  TEST_FLOATING_EQUALITY(2.0 * M_dv(0,1), M_dv_scaled(0,1), tol);
-  TEST_FLOATING_EQUALITY(2.0 * M_dv(1,0), M_dv_scaled(1,0), tol);
-  TEST_FLOATING_EQUALITY(2.0 * M_dv(1,1), M_dv_scaled(1,1), tol);
+  TEST_FLOATING_EQUALITY(two * M_dv(0,0), M_dv_scaled(0,0), tol);
+  TEST_FLOATING_EQUALITY(two * M_dv(0,1), M_dv_scaled(0,1), tol);
+  TEST_FLOATING_EQUALITY(two * M_dv(1,0), M_dv_scaled(1,0), tol);
+  TEST_FLOATING_EQUALITY(two * M_dv(1,1), M_dv_scaled(1,1), tol);
 */
   
 }
