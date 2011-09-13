@@ -189,45 +189,30 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
   Kokkos::deep_copy(nodal_mass_h,nodal_mass);
   Kokkos::deep_copy(elem_mass_h,elem_mass);
 
-#if 0
-  std::cout << "Element Mass\n";
-  for(unsigned i = 0; i<nelems; ++i) {
-    std::cout << elem_mass_h(i) << ",";
-    if ((i+1)%20 == 0) std::cout << "\n";
-  }
-
-  std::cout << "\n\n";
-
-  std::cout << "Nodal Mass\n";
-  for(unsigned i = 0; i<nnodes; ++i) {
-    std::cout << nodal_mass_h(i) << ",";
-    if ((i+1)%20 == 0) std::cout << "\n";
-  }
-
-  std::cout << "\n\n";
-
-  std::cout << "Nodal Velocity\n";
-  for(unsigned i = 0; i<nnodes; ++i) {
-    std::cout << '(';
-    std::cout << velocity_h(i,0,0) << ",";
-    std::cout << velocity_h(i,1,0) << ",";
-    std::cout << velocity_h(i,2,0) << "), ";
-    if ((i+1)%10 == 0) std::cout << "\n";
-  }
-
-  std::cout << "\n\n";
-#endif
-
   int current_state = 0;
   int previous_state = 1;
   //for (Scalar sim_time = 0.0; sim_time < end_time; sim_time += dt) {
-  for (int sim_time = 0; sim_time < 20; ++sim_time) {
+  for (int sim_time = 0; sim_time < 3; ++sim_time) {
+
 
     //rotate the states
     previous_state = current_state;
     ++current_state;
     current_state %= NumStates;
 
+    Kokkos::parallel_for( nnodes ,
+        compute_acceleration_velocity_displacement<Scalar, device_type>
+        (  internal_force,
+           nodal_mass,
+           acceleration,
+           velocity,
+           displacement,
+           model_coords, //to apply simple fixed BC
+           ex+1,           //to apply simple fixed BC
+           dt,
+           current_state,
+           previous_state) ,
+        compute_time);
 
     // First kernel 'grad_hgop' combines three functions:
     // gradient, velocity gradient, and hour glass operator.
@@ -307,36 +292,52 @@ double internal_force_test( const size_t ex, const size_t ey, const size_t ez )
            current_state,
            previous_state) , compute_time);
 
-    Kokkos::parallel_for( nnodes ,
-        compute_acceleration_velocity_displacement<Scalar, device_type>
-        (  internal_force,
-           nodal_mass,
-           acceleration,
-           velocity,
-           displacement,
-           dt,
-           current_state,
-           previous_state) ,
-        compute_time);
 
     total += compute_time;
 
-  }
+#if 0
+    std::cout << "Time step = " << sim_time << std::endl << std::endl;
 
-  Kokkos::deep_copy(stress_new_h,stress_new);
+    std::cout << "Element Stress\n";
+    for(unsigned i = 0; i<nelems; ++i) {
+      std::cout << "(";
+      std::cout << stress_new(i,0) << ",";
+      std::cout << stress_new(i,1) << ",";
+      std::cout << stress_new(i,2) << ",";
+      std::cout << stress_new(i,3) << ",";
+      std::cout << stress_new(i,4) << ",";
+      std::cout << stress_new(i,5) << "), ";
+    }
+    std::cout << "\n\n";
 
-  std::cout << "Element Stress\n";
-  for(unsigned i = 0; i<nelems; ++i) {
-    std::cout << "(";
-    std::cout << stress_new_h(i,0) << ",";
-    std::cout << stress_new_h(i,1) << ",";
-    std::cout << stress_new_h(i,2) << ",";
-    std::cout << stress_new_h(i,3) << ",";
-    std::cout << stress_new_h(i,4) << ",";
-    std::cout << stress_new_h(i,5) << "), ";
-    if ((i+1)%5 == 0) std::cout << "\n";
+    for (unsigned inode = 0; inode<nnodes; ++inode) {
+      std::cout << "Node = " << inode << std::endl;
+
+      std::cout << "nodal_mass = " << nodal_mass(inode) << std::endl;
+
+      std::cout << "internal_force = (";
+      std::cout << internal_force(inode,0) << ",";
+      std::cout << internal_force(inode,1) << ",";
+      std::cout << internal_force(inode,2) << ")" << std::endl;
+
+      std::cout << "acceleration = (";
+      std::cout << acceleration(inode,0) << ",";
+      std::cout << acceleration(inode,1) << ",";
+      std::cout << acceleration(inode,2) << ")" << std::endl;
+
+      std::cout << "velocity (current) = (";
+      std::cout << velocity(inode,0,current_state) << ",";
+      std::cout << velocity(inode,1,current_state) << ",";
+      std::cout << velocity(inode,2,current_state) << ")" << std::endl;
+
+      std::cout << "displacement (current) = (";
+      std::cout << displacement(inode,0,current_state) << ",";
+      std::cout << displacement(inode,1,current_state) << ",";
+      std::cout << displacement(inode,2,current_state) << ")" << std::endl << std::endl;
+    }
+#endif
+
   }
-  std::cout << "\n\n";
 
   return total;
 }

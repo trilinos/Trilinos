@@ -30,7 +30,7 @@ struct initialize_nodal_mass<Scalar, KOKKOS_MACRO_DEVICE>
 
     Scalar node_mass = 0;
     for(int i = begin; i != end; ++i) {
-      node_mass += elem_mass(node_elem_ids(i)) / NumNodePerElement;
+      node_mass += elem_mass(node_elem_ids(i,0)) / NumNodePerElement;
     }
 
     nodal_mass(inode) = node_mass;
