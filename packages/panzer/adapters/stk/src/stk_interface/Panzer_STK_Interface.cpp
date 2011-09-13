@@ -146,7 +146,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
       if(!stk::io::is_part_io_part(*nodesPart_))
 	stk::io::put_io_part_attribute(*nodesPart_);
 
-      stk::io::set_field_role(*coordinatesField_, Ioss::Field::ATTRIBUTE);
+      stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
 
       // add solution fields
@@ -233,8 +233,8 @@ void STK_Interface::addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::P
       bulkData_->declare_relation(element,*node,i);
    }
 
-   int * procId = stk::mesh::field_data(*processorIdField_,element);
-   procId[0] = Teuchos::as<int>(procRank_);
+   ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
+   procId[0] = Teuchos::as<ProcIdData>(procRank_);
 
    // std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
    // localId[0] = currentLocalId_;
@@ -642,8 +642,8 @@ void STK_Interface::buildLocalElementIDs()
       stk::mesh::Entity & element = *((*elements)[index]);
 
       // set processor rank
-      int * procId = stk::mesh::field_data(*processorIdField_,element);
-      procId[0] = Teuchos::as<int>(procRank_);
+      ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
+      procId[0] = Teuchos::as<ProcIdData>(procRank_);
 
       // set local element ID
       std::size_t * localId = stk::mesh::field_data(*localIdField_,element);

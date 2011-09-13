@@ -48,9 +48,10 @@ buildElementDescriptor(stk::mesh::EntityId elmtId,std::vector<stk::mesh::EntityI
 
 class STK_Interface {
 public:
+   typedef double ProcIdData;
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
-   typedef stk::mesh::Field<int> ProcIdFieldType;
+   typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
    typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
 
    // some simple exception classes

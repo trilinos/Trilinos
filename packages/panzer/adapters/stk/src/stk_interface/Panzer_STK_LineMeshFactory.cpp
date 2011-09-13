@@ -111,7 +111,6 @@ void LineMeshFactory::initializeWithDefaults()
 
 void LineMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
-   typedef shards::Quadrilateral<4> QuadTopo;
    typedef shards::Line<2> LineTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<LineTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(0,0);
@@ -154,13 +153,11 @@ void LineMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,ST
    int totalXElems = nXElems_*xBlocks_;
 
    double deltaX = (xf_-x0_)/double(totalXElems);
- 
-   std::vector<double> coord(1,0.0);
 
    // build the nodes
+   std::vector<double> coord(1,0.0);
    for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
       coord[0] = double(nx)*deltaX+x0_;
-
       mesh.addNode(nx+1,coord);
    }
 
