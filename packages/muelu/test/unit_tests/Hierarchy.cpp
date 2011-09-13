@@ -156,8 +156,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
 
-  levelOne->Request("A");
-  levelOne->Set("A",A);
+  levelOne->Request("A",NULL);
+  levelOne->Set("A",A,NULL);
 
 //   H.SetSmoothers();
 
@@ -196,8 +196,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  levelOne->Request("A");
-  levelOne->Set("A",A);
+  levelOne->Request("A",NULL);
+  levelOne->Set("A",A,NULL);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
@@ -237,8 +237,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-  levelOne->Request("A");
-  levelOne->Set("A",A);
+  levelOne->Request("A",NULL);
+  levelOne->Set("A",A,NULL);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
@@ -275,8 +275,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-  levelOne->Request("A");
-  levelOne->Set("A",A);
+  levelOne->Request("A",NULL);
+  levelOne->Set("A",A,NULL);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
@@ -298,17 +298,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  Hierarchy H;
-  H.SetLevel(levelOne);
-
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
   levelOne->Request("A");
   levelOne->Set("A",A);
 
+  Hierarchy H;
+  H.SetLevel(levelOne);
   H.FullPopulate();
 } //FullPopulate
 
@@ -319,15 +318,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  Hierarchy H;
-  H.SetLevel(levelOne);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
   levelOne->Request("A");
   levelOne->Set("A",A);
+
+  Hierarchy H;
+  H.SetLevel(levelOne);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
   RCP<GenericPRFactory> PRFact = rcp(new GenericPRFactory(PFact));
@@ -358,19 +358,18 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
-  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  H.SetLevel(Finest);
-
-  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                          //FIXME is implemented
-
+  Finest->Request("A");
+  Finest->Request("Nullspace");
   Finest->Set("NullSpace",nullSpace);
   Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  H.SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -452,21 +451,17 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
-  H.SetImplicitTranspose(true);
-  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-
-  H.SetLevel(Finest);
-
   Finest->Request("A");
-  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                          //FIXME is implemented
-
+  Finest->Request("Nullspace");
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  H.SetImplicitTranspose(true);
+  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  H.SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
