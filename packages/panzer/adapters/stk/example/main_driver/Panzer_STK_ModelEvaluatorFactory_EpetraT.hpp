@@ -6,6 +6,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Panzer_config.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Panzer_STK_LineMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_MultiBlockMeshFactory.hpp"
@@ -421,8 +422,14 @@ namespace panzer_stk {
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
 
       int dimension = mesh_params.sublist("Inline Mesh").get<int>("Mesh Dimension");
-      
-      if (dimension == 2) {
+
+      if (dimension == 1) {
+	mesh_factory = Teuchos::rcp(new panzer_stk::LineMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if (dimension == 2) {
 	mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
 	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
 	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");

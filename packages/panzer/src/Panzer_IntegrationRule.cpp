@@ -19,6 +19,8 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
     topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
   else if (spatial_dimension == 2)
     topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+  else if (spatial_dimension == 1)
+    topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()));
   
   TEST_FOR_EXCEPTION(Teuchos::is_null(topology), std::runtime_error,
 		     "Failed to allocate cell topology!");
@@ -26,13 +28,25 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > 
     cubature_factory;
 
+  // Intrepid does support a quadrature on a 0-dimensional object
+  // (which doesn't make much sense anyway) to work around this we
+  // will adjust the integration rule manually
+  if(cell_data.isSide() && spatial_dimension==1) {
+     side = cell_data.side();
+
+     // do some specialized work for nodal case
+     setup0DimIntRule(); 
+
+     return;
+  }
+
   if (cell_data.isSide()) {
     side = cell_data.side();
 
     TEST_FOR_EXCEPTION( (side >= static_cast<int>(topology->getSideCount())), 
 			std::runtime_error, "Error - local side " 
 			<< side << " is not in range (0->" << topology->getSideCount()-1 
-			<< ") of topologic entity!");
+   			<< ") of topologic entity!");
     
     side_topology = Teuchos::rcp(new shards::CellTopology(topology->getCellTopologyData(topology->getDimension()-1,side)));
   }
@@ -71,4 +85,27 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
 bool panzer::IntegrationRule::isSide()
 {
   return (!Teuchos::is_null(side_topology));
+}
+
+// setup 0-dimensional integration rule (a node)
+void panzer::IntegrationRule::setup0DimIntRule()
+{
+  side_topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData<shards::Node>()));
+
+  num_points = 1;
+
+  using Teuchos::rcp;
+  using PHX::MDALayout;
+  
+  dl_scalar = 
+    rcp(new MDALayout<Cell,IP>(workset_size,num_points));
+  
+  dl_vector = 
+    rcp(new MDALayout<Cell,IP,Dim>(workset_size, num_points,
+				   spatial_dimension));
+  
+  dl_tensor = 
+    rcp(new MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points,
+				       spatial_dimension,
+				       spatial_dimension));
 }

@@ -37,6 +37,10 @@ namespace panzer {
     int num_points;
     //! Defaults to -1 if this is volume and not sideset
     int side;
+  
+  private:
+
+    void setup0DimIntRule();
 
   };
 

@@ -16,6 +16,57 @@ namespace panzer {
   template<>
   inline
   void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
+  setupArraysForNodeRule(const Teuchos::RCP<panzer::IntegrationRule>& ir)
+  {
+    int num_nodes = ir->topology->getNodeCount();
+    int num_cells = ir->workset_size;
+    int num_space_dim = ir->topology->getDimension();
+
+    int num_ip = 1;
+    cub_points = Intrepid::FieldContainer<double>(num_ip, num_space_dim);
+
+    if (ir->isSide())
+      side_cub_points = 
+	Intrepid::FieldContainer<double>(num_ip, 
+					 ir->side_topology->getDimension());
+    
+    cub_weights = Intrepid::FieldContainer<double>(num_ip);
+    
+    node_coordinates = 
+      Intrepid::FieldContainer<double>(num_cells, num_nodes, num_space_dim);
+    
+    jac = Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim,
+					   num_space_dim);
+    
+    jac_inv = Intrepid::FieldContainer<double>(num_cells, num_ip, 
+					       num_space_dim,
+					       num_space_dim);
+    
+    jac_det = Intrepid::FieldContainer<double>(num_cells, num_ip);
+    
+    weighted_measure = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip);
+    
+    covarient = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+				       num_space_dim,
+				       num_space_dim);
+
+    contravarient = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+				       num_space_dim,
+				       num_space_dim);
+
+    norm_contravarient = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip);
+
+    ip_coordinates = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim);
+  }
+  
+  template<>
+  inline
+  void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
   setupArrays(const Teuchos::RCP<panzer::IntegrationRule>& ir)
   {
     int_rule = ir;
@@ -23,6 +74,12 @@ namespace panzer {
     int num_nodes = ir->topology->getNodeCount();
     int num_cells = ir->workset_size;
     int num_space_dim = ir->topology->getDimension();
+
+    // specialize content if this is quadrature at anode
+    if(num_space_dim==1 && ir->isSide()) {
+       setupArraysForNodeRule(ir); 
+       return;
+    }
 
     Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > 
       cubature_factory;
@@ -77,7 +134,7 @@ namespace panzer {
       Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim);
       
   }
-  
+
 // ***********************************************************
 // * Evaluation of values - NOT specialized
 // ***********************************************************
@@ -88,6 +145,12 @@ namespace panzer {
   void panzer::IntegrationValues<Scalar,Array>::
     evaluateValues(const NodeCoordinateArray& in_node_coordinates)
   {
+    int num_space_dim = int_rule->topology->getDimension();
+    if (int_rule->isSide() && num_space_dim==1) {
+       std::cout << "WARNING: 0-D quadrature rule ifrastructure does not exist!!! Will not be able to do "
+                 << "non-natural integration rules.";
+       return; 
+    }
     
     Intrepid::CellTools<Scalar> cell_tools;
     

@@ -13,6 +13,8 @@ namespace panzer {
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<panzer::IntegrationRule>& ir);
 
+    void setupArraysForNodeRule(const Teuchos::RCP<panzer::IntegrationRule>& ir);
+
     template<typename NodeCoordinateArray>
     void evaluateValues(const NodeCoordinateArray& node_coordinates);
 

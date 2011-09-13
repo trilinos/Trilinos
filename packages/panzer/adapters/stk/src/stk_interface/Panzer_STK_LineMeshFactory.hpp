@@ -1,5 +1,5 @@
-#ifndef __Panzer_STK_SquareQuadMeshFactory_hpp__
-#define __Panzer_STK_SquareQuadMeshFactory_hpp__
+#ifndef __Panzer_STK_LineMeshFactory_hpp__
+#define __Panzer_STK_LineMeshFactory_hpp__
 
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
