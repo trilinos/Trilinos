@@ -31,6 +31,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "MockModelEval_A.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #include "Piro_ConfigDefs.hpp"
 #ifdef Piro_ENABLE_NOX
@@ -39,12 +40,29 @@
 #include "Stokhos_Epetra.hpp"
 #include "Piro_Epetra_StokhosSolverFactory.hpp"
 #include "MockModelEval_C.hpp"
+
+#include "Piro_Epetra_StokhosSolver.hpp"
+#include "Piro_Epetra_NECoupledModelEvaluator.hpp"
+#include "MockModelEval_D.hpp"
+
+#include "Thyra_EpetraModelEvaluator.hpp"
+#include "Piro_PerformAnalysis.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 #endif
 #endif
+
 
 namespace {
 
 #ifdef Piro_ENABLE_NOX
+
+void setOStream(const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                Teuchos::ParameterList& params) 
+{
+  params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Stratimikos Linear Solver").sublist("NOX Stratimikos Options").set("Output Stream", out);
+  params.sublist("NOX").sublist("Printing").set("Output Stream", out->getOStream());
+} 
 
 void testSensitivities(const std::string& inputFile, 
 		       bool use_op, bool use_op_trans,
@@ -64,6 +82,7 @@ void testSensitivities(const std::string& inputFile,
   RCP<Teuchos::ParameterList> piroParams =
     rcp(new Teuchos::ParameterList("Piro Parameters"));
   Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+  setOStream(rcp(&out,false), *piroParams);
   
   // Use these two objects to construct a Piro solved application 
   //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
@@ -118,6 +137,36 @@ void testSensitivities(const std::string& inputFile,
   }
 }
 
+int testResponses(const Epetra_Vector& g, 
+		  const Teuchos::Array<double> testValues,
+		  double absTol, double relTol,
+		  const std::string& tag,
+                  Teuchos::FancyOStream& out)
+{
+  int failures = 0;
+  TEST_FOR_EXCEPTION(g.MyLength() != testValues.size(),
+		     std::logic_error,
+		     tag << " Test Values array has size " << 
+		     testValues.size() << "but expected size " <<
+		     g.MyLength());
+  for (int i=0; i<testValues.size(); i++) {
+    bool success = 
+      std::abs(g[i]-testValues[i]) <= relTol*std::abs(testValues[i])+absTol;
+    if (!success) 
+      ++failures;
+    out << tag << " test " << i;
+    if (success)
+      out << " passed";
+    else
+      out << " failed";
+    out << ":  Expected:  " << testValues[i] << ", got:  " << g[i]
+	  << ", abs tol = " << absTol << ", rel tol = " << relTol
+	  << "." << std::endl;
+  }
+
+  return failures;
+}
+
 TEUCHOS_UNIT_TEST( Piro, ForwardSensitivities )
 {
   std::string inputFile="input_Solve_NOX_1.xml";
@@ -149,6 +198,10 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
   using Teuchos::rcp;
   using Teuchos::ParameterList;
 
+  RCP<Teuchos::FancyOStream> default_out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(rcp(&out,false));
+
   // Create a communicator for Epetra objects
   RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
@@ -166,6 +219,7 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
   // Create stochastic Galerkin solver factory
   RCP<ParameterList> piroParams = 
     rcp(&(appParams->sublist("Piro")),false);
+  setOStream(rcp(&out,false), *piroParams);
   Piro::Epetra::StokhosSolverFactory sg_solver_factory(piroParams, 
 						       globalComm);
 
@@ -299,6 +353,233 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
   out << "Infinity norm of d(Var)/dp error = " << nrm_mean << std::endl;
   double tol = 10*delta;
   success = (nrm_mean < tol) && (nrm_var < tol);
+
+  Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
+}
+
+TEUCHOS_UNIT_TEST( Piro, SGCoupled )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+
+  RCP<Teuchos::FancyOStream> default_out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(rcp(&out,false));
+
+  // Create a communicator for Epetra objects
+  RCP<const Epetra_Comm> globalComm;
+#ifdef HAVE_MPI
+  globalComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  globalComm = rcp(new Epetra_SerialComm);
+#endif
+
+  std::string problem1_filename = "input_problem1.xml";
+  std::string problem2_filename = "input_problem2.xml";
+  std::string coupled_filename = "input_coupled.xml";
+
+  // Setup stochastic coupled problem to get spatial comm's
+  RCP<ParameterList> coupledParams = 
+    Teuchos::getParametersFromXmlFile(coupled_filename);
+  setOStream(rcp(&out,false), *coupledParams);
+  RCP<Piro::Epetra::StokhosSolver> coupledSolver =
+    rcp(new Piro::Epetra::StokhosSolver(coupledParams, globalComm));
+  RCP<const Epetra_Comm> app_comm = coupledSolver->getSpatialComm();
+
+  // Setup problem 1
+  RCP<ParameterList> piroParams1 = 
+    Teuchos::getParametersFromXmlFile(problem1_filename);
+  setOStream(rcp(&out,false), *piroParams1);
+  RCP<EpetraExt::ModelEvaluator> model1 = rcp(new MockModelEval_D(app_comm));
+  
+  // Setup problem 2
+  RCP<ParameterList> piroParams2 = 
+    Teuchos::getParametersFromXmlFile(problem2_filename);
+  setOStream(rcp(&out,false), *piroParams2);
+  RCP<EpetraExt::ModelEvaluator> model2 = rcp(new MockModelEval_D(app_comm));
+  
+  // Setup coupled model
+  RCP<Piro::Epetra::NECoupledModelEvaluator> coupledModel =
+    rcp(new Piro::Epetra::NECoupledModelEvaluator(model1, model2,
+						  piroParams1, piroParams2,
+						  coupledParams, globalComm));
+  coupledModel->setOStream(rcp(&out,false));
+
+  // Setup solver
+  coupledSolver->setup(coupledModel);
+  
+  Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> x_sg_init =
+    coupledSolver->get_x_sg_init();
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> x_sg_init_new =
+    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(*x_sg_init));
+  Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis =
+    coupledSolver->getBasis();
+  for (int i=0; i<basis->dimension(); i++)
+    (*x_sg_init_new)[i+1].PutScalar(1.0);
+  coupledSolver->set_x_sg_init(*x_sg_init_new);
+    
+  // Solve coupled system
+  EpetraExt::ModelEvaluator::InArgs inArgs = coupledSolver->createInArgs();
+  EpetraExt::ModelEvaluator::OutArgs outArgs = coupledSolver->createOutArgs();
+  for (int i=0; i<inArgs.Np(); i++)
+    if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_p_sg, i))
+      inArgs.set_p_sg(i, coupledSolver->get_p_sg_init(i));
+  for (int i=0; i<outArgs.Ng(); i++) 
+    if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_g_sg, i)) {
+      RCP<Stokhos::EpetraVectorOrthogPoly> g_sg = 
+	coupledSolver->create_g_sg(i);
+      outArgs.set_g_sg(i, g_sg);
+    }
+  coupledSolver->evalModel(inArgs, outArgs);
+
+  // Regression tests
+  int failures = 0;
+  Teuchos::ParameterList& testParams = 
+    coupledParams->sublist("Regression Tests");
+  double relTol = testParams.get("Relative Tolerance", 1.0e-3);
+  double absTol = testParams.get("Absolute Tolerance", 1.0e-8);
+
+  
+  // Print results
+  for (int i=0; i<outArgs.Ng(); i++) {
+    if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_g_sg, i)) {
+      Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> g_sg = 
+	outArgs.get_g_sg(i);
+      if (g_sg != Teuchos::null) {
+	Epetra_Vector g_mean(*(coupledSolver->get_g_map(i)));
+	Epetra_Vector g_std_dev(*(coupledSolver->get_g_map(i)));
+	g_sg->computeMean(g_mean);
+	g_sg->computeStandardDeviation(g_std_dev);
+	out.precision(12);
+	out << "Response " << i << " Mean =      " << std::endl 
+	    << g_mean << std::endl;
+	out << "Response " << i << " Std. Dev. = " << std::endl 
+	    << g_std_dev << std::endl;
+	out << "Response vector " << i << ":" << std::endl
+	    << *(outArgs.get_g_sg(i)) << std::endl;
+
+       	// Test mean
+	std::stringstream ss1;
+	ss1 << "Response " << i << " Mean Test Values";
+	bool testMean = 
+	  testParams.isType< Teuchos::Array<double> >(ss1.str());
+	if (testMean) { 
+	  Teuchos::Array<double> testValues =
+	    testParams.get<Teuchos::Array<double> >(ss1.str());
+	  failures += testResponses(g_mean, testValues, absTol, relTol, "Mean", 
+				    out);
+	}
+
+	// Test std. dev.
+	std::stringstream ss2;
+	ss2 << "Response " << i << " Standard Deviation Test Values";
+	bool testSD = 
+	  testParams.isType< Teuchos::Array<double> >(ss2.str());
+	if (testSD) { 
+	  Teuchos::Array<double> testValues =
+	    testParams.get<Teuchos::Array<double> >(ss2.str());
+	  failures += testResponses(g_std_dev, testValues, absTol, relTol, 
+				    "Standard Deviation", out);
+	}
+
+      }
+    }
+  }
+
+  success = failures == 0;
+  Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
+}
+
+TEUCHOS_UNIT_TEST( Piro, SGAnalysis )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+
+  RCP<Teuchos::FancyOStream> default_out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(rcp(&out,false));
+
+  // Create a communicator for Epetra objects
+  RCP<const Epetra_Comm> globalComm;
+#ifdef HAVE_MPI
+    globalComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+    globalComm = rcp(new Epetra_SerialComm);
+#endif
+
+  std::string xml_filename = "input_SGAnalysis.xml";
+
+  // Set up application parameters
+  RCP<ParameterList> appParams = 
+    Teuchos::getParametersFromXmlFile(xml_filename);
+    
+  // Create stochastic Galerkin solver factory
+  RCP<ParameterList> piroParams = 
+    rcp(&(appParams->sublist("Piro")),false);
+  setOStream(rcp(&out,false), *piroParams);
+  Piro::Epetra::StokhosSolverFactory sg_solver_factory(piroParams, 
+						       globalComm);
+
+  // Get comm for spatial problem
+  RCP<const Epetra_Comm> app_comm = sg_solver_factory.getSpatialComm();
+  
+  // Create application model evaluator
+  RCP<EpetraExt::ModelEvaluator> model = rcp(new MockModelEval_C(app_comm));
+
+  // Setup rest of solver
+  RCP<Stokhos::SGModelEvaluator> sg_model = 
+    sg_solver_factory.createSGModel(model);
+  RCP<EpetraExt::ModelEvaluator> sg_solver =
+    sg_solver_factory.createSGSolver(sg_model);
+  RCP<EpetraExt::ModelEvaluator> rs_model =
+    sg_solver_factory.createRSModel(sg_solver);
+
+  Thyra::EpetraModelEvaluator rs_model_thyra;
+  rs_model_thyra.initialize(rs_model, Teuchos::null);
+
+  RCP< ::Thyra::VectorBase<double> > p;
+  ParameterList& analysisParams = piroParams->sublist("Analysis");
+  int status = Piro::PerformAnalysis(rs_model_thyra, analysisParams, p); 
+  int failures = 0;
+  if (status != 0)
+    failures += 1000;
+  
+  out << "Analysis results = " << std::endl << *p;
+
+  // Regression tests
+  Teuchos::ParameterList& testParams = 
+    appParams->sublist("Regression Tests");
+  double relTol = testParams.get("Relative Tolerance", 1.0e-3);
+  double absTol = testParams.get("Absolute Tolerance", 1.0e-8);
+  if (testParams.isType< Teuchos::Array<double> >("Test Values")) { 
+    Teuchos::Array<double> testValues =
+      testParams.get<Teuchos::Array<double> >("Test Values");
+    Thyra::DetachedVectorView<double> my_p(p);
+    TEST_FOR_EXCEPTION(my_p.subDim() != testValues.size(),
+		       std::logic_error,
+		       "Test Values array has size " << 
+		       testValues.size() << "but expected size " <<
+		       my_p.subDim());
+    for (int i=0; i<testValues.size(); i++) {
+      bool success = 
+	std::abs(my_p[i]-testValues[i]) <= relTol*std::abs(testValues[i])+absTol;
+      if (!success) 
+	++failures;
+      out << " test " << i;
+      if (success)
+	out << " passed";
+      else
+	out << " failed";
+      out << ":  Expected:  " << testValues[i] << ", got:  " << my_p[i]
+	  << ", abs tol = " << absTol << ", rel tol = " << relTol
+	  << "." << std::endl;
+    }
+  }
+    
+  success = failures == 0;
+  Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
 }
 #endif
 #endif

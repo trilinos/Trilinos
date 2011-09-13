@@ -11,6 +11,9 @@
       <ParameterList name="Newton">
         <Parameter name="Forcing Term Method" type="string" value="Constant"/>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+	<ParameterList name="Linear Solver">
+	  <Parameter name="Write Linear System" type="bool" value="false"/>
+	</ParameterList>
         <ParameterList name="Stratimikos Linear Solver">
           <ParameterList name="NOX Stratimikos Options">
           </ParameterList>
@@ -61,7 +64,7 @@
         <Parameter name="Warning" type="bool" value="1"/>
         <Parameter name="Outer Iteration" type="bool" value="1"/>
         <Parameter name="Parameters" type="bool" value="0"/>
-        <Parameter name="Details" type="bool" value="1"/>
+        <Parameter name="Details" type="bool" value="0"/>
         <Parameter name="Linear Solver Details" type="bool" value="1"/>
         <Parameter name="Stepper Iteration" type="bool" value="1"/>
         <Parameter name="Stepper Details" type="bool" value="1"/>
@@ -94,7 +97,7 @@
       <Parameter name="Isotropic" type="bool" value="true"/>
       <Parameter name="Type" type="string" value="Legendre"/>
       <Parameter name="Dimension" type="int" value="2"/>
-      <Parameter name="Order" type="int" value="5"/>
+      <Parameter name="Order" type="int" value="3"/>
       <Parameter name="Normalize" type="bool" value="false"/>
       <Parameter name="Cijk Drop Tolerance" type="double" value="1e-12"/>
     </ParameterList>
@@ -102,11 +105,11 @@
       <Parameter name="Number of SG Parameter Vectors" type="int" value="2"/>
       <ParameterList name="SG Parameter Vector 0">
 	<Parameter name="Parameter Vector Index" type="int" value="0"/>
-	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 1.0, 0.0 }"/>
+	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.1, 0.0 }"/>
       </ParameterList>
       <ParameterList name="SG Parameter Vector 1">
 	<Parameter name="Parameter Vector Index" type="int" value="1"/>
-	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.0, 1.0 }"/>
+	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.0, 0.1 }"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Expansion">
@@ -126,5 +129,17 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
+  <ParameterList name="Regression Tests">
+    <Parameter  name="Response 0 Mean Test Values" type="Array(double)" value="{-2.41443477761}"/>
+    <Parameter  name="Response 0 Standard Deviation Test Values" type="Array(double)" value="{0.0603614149637}"/>
+    <Parameter  name="Response 1 Mean Test Values" type="Array(double)" value="{-2.41443477761}"/>
+    <Parameter  name="Response 1 Standard Deviation Test Values" type="Array(double)" value="{0.0603614149637}"/>
+    <Parameter  name="Response 2 Mean Test Values" type="Array(double)" value="{-0.414434777609, -0.414434777609}"/>
+    <Parameter  name="Response 2 Standard Deviation Test Values" type="Array(double)" value="{0.0103693702038, 0.0103693702038}"/>
+    <Parameter  name="Relative Tolerance" type="double" value="1.0e-3"/>
+    <Parameter  name="Absolute Tolerance" type="double" value="1.0e-8"/>
+  </ParameterList>
+
 
 </ParameterList>

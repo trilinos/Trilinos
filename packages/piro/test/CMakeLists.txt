@@ -17,6 +17,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     MockModelEval_A.hpp
     MockModelEval_C.cpp
     MockModelEval_C.hpp
+    MockModelEval_D.cpp
+    MockModelEval_D.hpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -82,52 +84,6 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_TriKota) 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      SGAnalysisDriver
-      SOURCES 
-      Main_SGAnalysisDriver.cpp
-      MockModelEval_C.cpp
-      MockModelEval_C.hpp
-      NUM_MPI_PROCS 1
-      ARGS -v
-      PASS_REGULAR_EXPRESSION "TEST PASSED"
-    )
-
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(copySGTestInputFiles
-      DEST_FILES input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
-      SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
-      SOURCE_PREFIX "_"
-      EXEDEPS SGAnalysisDriver
-    )
-
-    PACKAGE_ADD_EXECUTABLE(
-      CoupledDriver
-      SOURCES 
-      Main_CoupledDriver.cpp
-      MockModelEval_D.cpp
-      MockModelEval_D.hpp
-    )
-
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      SGCoupledDriver
-      SOURCES 
-      Main_SGCoupledDriver.cpp
-      MockModelEval_D.cpp
-      MockModelEval_D.hpp
-      NUM_MPI_PROCS 1
-      ARGS -v
-      PASS_REGULAR_EXPRESSION "TEST PASSED"
-    )
-
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(copySGCoupledTestInputFiles
-      DEST_FILES input_problem1.xml input_problem2.xml input_coupled.xml
-      SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
-      SOURCE_PREFIX "_"
-      EXEDEPS SGAnalysisDriver
-    )
-  ENDIF()
-
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
@@ -141,6 +97,8 @@ IF (Piro_ENABLE_NOX)
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml 
           input_Solve_RythmosMatrixFree_Fails.xml
 	  input_SGSolve.xml 
+	  input_problem1.xml input_problem2.xml input_coupled.xml
+	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
     EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests
