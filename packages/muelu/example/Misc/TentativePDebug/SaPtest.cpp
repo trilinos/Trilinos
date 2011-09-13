@@ -36,6 +36,8 @@
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include "MueLu_NoFactory.hpp"
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
@@ -130,14 +132,14 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  Finest->Request("A",MueLu::NoFactory::get());
+  Finest->Set("A",Op,MueLu::NoFactory::get());
 
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
+  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetLevel(Finest);
-  Finest->Request("A");
-  Finest->Set("A",Op);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
