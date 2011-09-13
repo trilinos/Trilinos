@@ -42,13 +42,16 @@ namespace MueLu {
     virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
-        if      (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
-        else if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
-        else if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-        else if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
-        else if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
-        else return SetAndReturnDefaultFactory(varName, rcp(new DummyFactory()));
-        //TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
+    	if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+        if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
+        if (varName == "PostSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
+
+        //else return SetAndReturnDefaultFactory(varName, rcp(new DummyFactory())); // TODO remove me
+
+        TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
 
       }
 

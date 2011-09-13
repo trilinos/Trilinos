@@ -11,6 +11,8 @@
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
+#include "MueLu_NoFactory.hpp"
+
 // used as default:
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -211,9 +213,9 @@ namespace MueLu {
                                          TwoLevelFactoryBase const &AcFact,
                                          int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
-
-      RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
-      Levels_[startLevel]->Release("A");
+  	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+      RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
+      Levels_[startLevel]->Release("A",MueLu::NoFactory::get());
 
       // keep variables A, P and R on all multigrid levels
 

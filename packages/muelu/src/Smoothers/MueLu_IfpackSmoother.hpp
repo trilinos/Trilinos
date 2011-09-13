@@ -153,7 +153,7 @@ namespace MueLu {
       RCP<Teuchos::FancyOStream> out_ = this->getOStream();
       Teuchos::OSTab tab(out_);
 
-      A_ = level.Get< RCP<Operator> >("A");
+      A_ = level.Get< RCP<Operator> >("A",NULL);
 
       // output information
       std::ostringstream buf; buf << level.GetLevelID();
