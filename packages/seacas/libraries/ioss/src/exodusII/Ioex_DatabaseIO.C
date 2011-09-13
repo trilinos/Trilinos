@@ -2379,7 +2379,9 @@ namespace Ioex {
 	      // memory to read in the data and then map into supplied
 	      // 'data'
 	      std::vector<double> x(num_to_get);
-	      std::vector<double> y(num_to_get);
+	      std::vector<double> y;
+	      if (spatialDimension > 1)
+		y.resize(num_to_get);
 	      std::vector<double> z;
 	      if (spatialDimension == 3)
 		z.resize(num_to_get);
@@ -2394,7 +2396,8 @@ namespace Ioex {
 	      int index = 0;
 	      for (size_t i=0; i < num_to_get; i++) {
 		rdata[index++] = x[i];
-		rdata[index++] = y[i];
+		if (spatialDimension > 1)
+		  rdata[index++] = y[i];
 		if (spatialDimension == 3)
 		  rdata[index++] = z[i];
 	      }
@@ -3745,7 +3748,9 @@ namespace Ioex {
 	      // so we have to allocate some scratch memory to read in the data
 	      // and then map into supplied 'data'
 	      std::vector<double> x(num_to_get);
-	      std::vector<double> y(num_to_get);
+	      std::vector<double> y;
+	      if (spatialDimension > 1)
+		y.resize(num_to_get);
 	      std::vector<double> z;
 	      if (spatialDimension == 3)
 		z.resize(num_to_get);
@@ -3756,7 +3761,8 @@ namespace Ioex {
 	      int index = 0;
 	      for (size_t i=0; i < num_to_get; i++) {
 		x[i] = rdata[index++];
-		y[i] = rdata[index++];
+		if (spatialDimension > 1)
+		  y[i] = rdata[index++];
 		if (spatialDimension == 3)
 		  z[i] = rdata[index++];
 	      }
