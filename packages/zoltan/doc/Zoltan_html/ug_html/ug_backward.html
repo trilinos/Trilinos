@@ -40,12 +40,35 @@ applications use new Zoltan functionality.
 <p>
 Enhancements to the Zoltan interface are described below.
 <blockquote>
-<a href="#Backward v3.2">Versions 3.2 and higher</a>
+<a href="#Backward v3.6">Versions 3.6 and higher</a>
+<br><a href="#Backward v3.2">Versions 3.2 and higher</a>
 <br><a href="#Backward v3.1">Versions 3.1 and higher</a>
 <br><a href="#Backward v3.0">Versions 3.0 and higher</a>
 <br><a href="#Backward v1.5">Versions 1.5 and higher</a>
 <br><a href="#Backward v1.3">Versions 1.3 and higher</a>
 </blockquote>
+
+<!---------------------------------------------------------------------------->
+
+<h2><a name="Backward v3.6"></a>
+<hr>Backward Compatibility: Versions 3.6 and higher
+</h2>
+<ul>
+<li>
+Interfaces to Zoltan defined in lbi_const.h are now deprecated.  Users should
+upgrade to interfaces in zoltan.h.  File lbi_const.h should not be included
+in user files; rather, file zoltan.h should be included.  File lbi_const.h will
+not be distributed in future versions of Zoltan.
+</li>
+<li>
+The OCTPART/OCTREE partitioning method is deprecated and will not be supported 
+in future versions of Zoltan.  This method is now disabled by default in the 
+CMake build system; it can be enabled with CMake configuration flag
+-DZoltan_ENABLE_OCT:BOOL=ON.  Users should switch to Zoltan method HSFC 
+(Hilbert Space-Filling Curve partitioning), which should provide very similar
+decompositions, or consider RCB partitioning.
+</li>
+</ul>
 
 <!---------------------------------------------------------------------------->
 
