@@ -1426,7 +1426,7 @@ Returns the Space on which this vector is defined. ";
 %feature("docstring")  MLAPI::MultiVector::GetVectorSpace "Space&
 MLAPI::MultiVector::GetVectorSpace()
 
-Returns the Space on which this vector is defined (non-const). ";
+Returns the Space on which this vector is defined (non-const) ";
 
 %feature("docstring")  MLAPI::MultiVector::GetNumVectors "int
 MLAPI::MultiVector::GetNumVectors() const
@@ -1446,23 +1446,23 @@ Returns the global length of each vector. ";
 %feature("docstring")  MLAPI::MultiVector::GetValues "double*
 MLAPI::MultiVector::GetValues(const int v)
 
-Returns a pointer to the double array (non-const version). ";
+Returns a pointer to the double array (non-const version) ";
 
 %feature("docstring")  MLAPI::MultiVector::GetValues "const double*
 MLAPI::MultiVector::GetValues(const int v) const
 
-Returns a pointer to the double array (const version). ";
+Returns a pointer to the double array (const version) ";
 
 %feature("docstring")  MLAPI::MultiVector::GetRCPValues "Teuchos::RefCountPtr<DoubleVector>&
 MLAPI::MultiVector::GetRCPValues(const int v)
 
-Returns a pointer to the double array (non-const version). ";
+Returns a pointer to the double array (non-const version) ";
 
 %feature("docstring")  MLAPI::MultiVector::GetRCPValues "const
 Teuchos::RefCountPtr<DoubleVector>&
 MLAPI::MultiVector::GetRCPValues(const int v) const
 
-Returns a pointer to the double array (const version). ";
+Returns a pointer to the double array (const version) ";
 
 %feature("docstring")  MLAPI::MultiVector::SetRCPValues "void
 MLAPI::MultiVector::SetRCPValues(const Teuchos::RefCountPtr<
@@ -2166,7 +2166,7 @@ Creates a new vector, x, such that x = y. ";
 %feature("docstring")  MLAPI::Duplicate "MultiVector
 MLAPI::Duplicate(const MultiVector &y, const int v)
 
-Creates a new vector, x, such that x = y(:,v). ";
+Creates a new vector, x, such that x = y(:,v) ";
 
 %feature("docstring")  MLAPI::Extract "MultiVector
 MLAPI::Extract(const MultiVector &y, const int v)
