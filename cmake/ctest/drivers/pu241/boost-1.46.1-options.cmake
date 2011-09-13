@@ -54,5 +54,8 @@
 # @HEADER
 
 SET(TPL_ENABLE_Boost ON CACHE BOOL "")
-SET(Boost_INCLUDE_DIRS /opt/tpls_src/boost_1_46_1 CACHE FILEPATH "")
-SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS} CACHE PATH "" FORCE) # For Dakota
+SET(Boost_INCLUDE_DIRS /opt/gcc-4.5.1/tpls/boost-1.46.1/include CACHE FILEPATH "")
+SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS}                      CACHE PATH     "" FORCE) # For Dakota
+SET(BoostLib_LIBRARY_NAMES "boost_thread"                       CACHE STRING   "")
+SET(BoostLib_INCLUDE_DIRS ${Boost_INCLUDE_DIRS}                 CACHE FILEPATH "")
+SET(BoostLib_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/boost-1.46.1/lib  CACHE FILEPATH "")

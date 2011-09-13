@@ -57,3 +57,6 @@
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-options.cmake)
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/boost-1.46.1-options.cmake)
 SET(Intrepid_ENABLE_DEBUG_INF_CHECK OFF CACHE BOOL "")
+# Some tests, e.g., BOA, run very slowly in a pure debug build. 
+SET(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "")
+SET(Trilinos_ENABLE_DEBUG ON CACHE BOOL "")
