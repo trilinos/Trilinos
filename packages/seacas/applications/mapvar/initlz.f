@@ -96,3 +96,7 @@ C     with a node
 C STRLMT=tolerance for isoparametric coords to lie within an element
 C
       END
+
+      subroutine init
+      return
+      end

@@ -65,7 +65,6 @@ namespace Epetra {
     matching algorithms provides an interface to solve the Bipartite Matching
     problem as well as it also provides permutation to get zero free diagonal
     for input sparse matrices.
-\ingroup matcher_grp
 */
 class Matcher {
 private:
@@ -102,83 +101,77 @@ private:
     int DW_phase();
 
 public:
-    Matcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
-
-    \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
-    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
-    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW".
-    
-\ingroup matching_grp
+    \param[in] Epetra_CRSMatrix* compressed row matrix
+    \param[in] paramlist this parameter list is used to select the algorithm.
+     The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
+     Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg , parallel DFS and
+     parallel Pothen-Fan respectively. The default is the "PHKDW".
     */
+    Matcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList&
+    paramlist=Teuchos::ParameterList("EmptyParameterList"));
     
-    Matcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     /** Constructor
-
-    \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
-    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
-    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW"
-    
-\ingroup matching_grp
+    \param[in] RCP of the CrsMatrix
+    \param[in] paramlist this parameter list is used to select the algorithm.
+     The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
+     Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg , parallel DFS and
+     parallel Pothen-Fan respectively. The default is the "PHKDW".
     */
-    
+    Matcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList&
+    paramlist=Teuchos::ParameterList("EmptyParameterList"));
+
+    /** Constructor
+    \param[in] Pointer to the Epetra_CrsGraph
+    \param[in] paramlist this parameter list is used to select the algorithm.
+     The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
+     Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg , parallel DFS and
+     parallel Pothen-Fan respectively. The default is the "PHKDW".
+    */
     Matcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    
     /** Constructor
-
-    \param[in] Epetra_CRSGraph which holds the graph
-    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
-    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW"
-    
-\ingroup matching_grp
+    \param[in] RCP of the Epetra_CrsGraph
+    \param[in] paramlist this parameter list is used to select the algorithm.
+     The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
+     Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg , parallel DFS and
+     parallel Pothen-Fan respectively. The default is the "PHKDW".
     */
-    
     Matcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    /** Constructor
-
-    \param[in] Epetra_CRSGraph which holds the graph
-    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
-    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW".
     
-\ingroup matching_grp
-    */
-    
-     virtual ~Matcher();
     /** Destructor
-\ingroup matching_grp
     */
-    
-    void getMatchedColumnsForRowsCopy(int, int&, int* ) const;
-    /** Provides the matched columns corresponding to each row
+     virtual ~Matcher();
+
+    /** Copies the matched columns corresponding to each row in a user given
+    array.
    
     \param[in] The length of the array provided by the user
     \param[out] The amount of data copied into the array
-    \param[in] The user array
-
-\ingroup matching_grp
+    \param[in/out] The user array
     */
-    void getMatchedRowsForColumnsCopy(int, int&, int*) const;
-    /** Provides the matched rows corresponding to each column
+    void getMatchedColumnsForRowsCopy(int, int&, int* ) const;
+
+    /** Copies the matched rows corresponding to each column in a user given
+    array.
 
     \param[in] The length of the array provided by the user
     \param[out] The amount of data copied into the array
-    \param[in] The user array
-    
-\ingroup matching_grp
+    \param[in/out] The user array
+    */
+    void getMatchedRowsForColumnsCopy(int, int&, int*) const;
+
+    /* Returns the number of matched vertices from Maximum Cardinality
+     Matching set
     */
     int getNumberOfMatchedVertices();
 
-    /* Provides the number of vertices in the Maximum Cardinality Matching set
-    */
     /** Applies the row permutation from matching and returns a new matrix.
-
-    \param[out] Epetra_CrsMatrix with permuted rows.
 
     */
     Teuchos::RCP<Epetra_CrsMatrix> applyRowPermutation();
 
     /** Applies the column permutation from matching and returns a new matrix.
-
-    \param[out] Epetra_CrsMatrix with permuted columns.
 
     */
     Teuchos::RCP<Epetra_CrsMatrix> applyColumnPermutation();
@@ -191,13 +184,12 @@ public:
 
     /** Provides the column map which is actually the complete column
      * permutation
-\ingroup matching_grp
+    */
+
+    /** Computes the maximum cardinality matching, user should call this
+     * function after calling the constructor.
     */
     int match();
-    /** Computes the maximum cardinality mathcing, user should call this
-     * function after calling the constructor.
-\ingroup matching_grp
-    */
 };
 }
 }

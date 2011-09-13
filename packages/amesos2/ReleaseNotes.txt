@@ -1,0 +1,10 @@
+Release notes for Isorropia in Trilinos 10.8 (Sept. 2011):
+------------------------------------------------------------
+ - Initial Public release of Amesos2. Amesos2 provides a common interface to
+   different direct solver libraries from Trilinos. 
+ - Supports SuperLU, SuperLU_MT and SuperLU_Dist direct solvers.
+ - Supports Epetra and Tpetra matrices and mulitvectors.
+ - Supports 64-bit and complex data types.
+
+
+

@@ -182,8 +182,8 @@ namespace stk {
       virtual void doBreak()=0;
 
       virtual unsigned getFromTypeKey()=0;
-      virtual const CellTopologyData * const getFromTopology()=0;
-      virtual const CellTopologyData * const getToTopology()=0;
+      virtual const CellTopologyData *  getFromTopology()=0;
+      virtual const CellTopologyData *  getToTopology()=0;
 
 
       stk::mesh::EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
@@ -357,8 +357,8 @@ namespace stk {
 
       // return the type of element this pattern can refine
       virtual unsigned getFromTypeKey() { return fromTopoKey; }
-      virtual const CellTopologyData * const getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
-      virtual const CellTopologyData * const getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
+      virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
+      virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)

@@ -660,70 +660,149 @@ FileName:  - (In) Name of grid file. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::NumDimensions
 "virtual int Galeri::FiniteElements::FileGrid::NumDimensions() const
-";
+
+Returns the number of dimensions of the grid. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumVerticesPerElement "virtual int
-Galeri::FiniteElements::FileGrid::NumVerticesPerElement() const ";
+Galeri::FiniteElements::FileGrid::NumVerticesPerElement() const
+
+Returns the number of vertices contained in each element. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumFacesPerElement "virtual int
-Galeri::FiniteElements::FileGrid::NumFacesPerElement() const ";
+Galeri::FiniteElements::FileGrid::NumFacesPerElement() const
+
+Returns the number of faces contained in each element. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumVerticesPerFace "virtual int
-Galeri::FiniteElements::FileGrid::NumVerticesPerFace() const ";
+Galeri::FiniteElements::FileGrid::NumVerticesPerFace() const
+
+Returns the number of vertices contained in each face. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::ElementType "virtual string Galeri::FiniteElements::FileGrid::ElementType() const
-";
+
+Returns a string containing the element type.
+
+Returns a string containing the type of element. This string is used
+in the quadrature class. Currently supported options are:
+\"GALERI_TRIANGLE\"
+
+\"GALERI_QUAD\"
+
+\"GALERI_HEX\"
+
+\"GALERI_TET\" ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::Comm "virtual const Epetra_Comm& Galeri::FiniteElements::FileGrid::Comm()
-const ";
+const
+
+Returns a reference to the communicator object. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::NumMyElements
 "virtual int Galeri::FiniteElements::FileGrid::NumMyElements() const
-";
+
+Returns the number of finite elements on the calling process. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumGlobalElements "virtual int
-Galeri::FiniteElements::FileGrid::NumGlobalElements() const ";
+Galeri::FiniteElements::FileGrid::NumGlobalElements() const
+
+Returns the global number of finite elements. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::NumMyVertices
 "virtual int Galeri::FiniteElements::FileGrid::NumMyVertices() const
-";
+
+Returns the number of vertices on the calling process. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumGlobalVertices "virtual int
-Galeri::FiniteElements::FileGrid::NumGlobalVertices() const ";
+Galeri::FiniteElements::FileGrid::NumGlobalVertices() const
+
+Returns the global number of vertices. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumMyBoundaryFaces "virtual int
-Galeri::FiniteElements::FileGrid::NumMyBoundaryFaces() const ";
+Galeri::FiniteElements::FileGrid::NumMyBoundaryFaces() const
+
+Returns the number of boundary faces on the calling process. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumGlobalBoundaryFaces "virtual int
-Galeri::FiniteElements::FileGrid::NumGlobalBoundaryFaces() const ";
+Galeri::FiniteElements::FileGrid::NumGlobalBoundaryFaces() const
+
+Returns the global number of boundary faces. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::VertexCoord "virtual void Galeri::FiniteElements::FileGrid::VertexCoord(const int
-LocalID, double *coord) const ";
+LocalID, double *coord) const
+
+Returns the coordinates of local vertex LocalVertex in vector coord.
+
+Parameters:
+-----------
+
+LocalVertex:  - (In) Local ID of the vertex for whic coordinates are
+required. Must be contained in the interval [0, NumMyVertices())
+
+coord:  - (Out) double array of size 3. In output, contains the x-, y-
+and z-coordinate of the specified vertex.
+
+Parameter coord must be allocated of size 3 for both 2D and 3D
+problems. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::VertexCoord "virtual void Galeri::FiniteElements::FileGrid::VertexCoord(const int
-Length, const int *IDs, double *x, double *y, double *z) const ";
+Length, const int *IDs, double *x, double *y, double *z) const
+
+Returns the coordinates of specified local vertices.
+
+Parameters:
+-----------
+
+Length:  - (In) Length of array IDs.
+
+IDs:  - (In) Contains the list of vertices of which coordinates are
+required.
+
+x:  - (Out) double array of size Length. In output, contains the
+x-coordinates of the specified vertices.
+
+y:  - (Out) double array of size Length. In output, contains the
+y-coordinates of the specified vertices.
+
+z:  - (Out) double array of size Length. In output, contains the
+z-coordinates of the specified vertices.
+
+The z array must be allocated for both 2D and 3D problems. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ElementVertices "virtual void
 Galeri::FiniteElements::FileGrid::ElementVertices(const int LocalID,
-int *elements) const ";
+int *elements) const
+
+Returns the local vertex IDs of the specified local finite element.
+
+Parameters:
+-----------
+
+LocalElement:  - (In) ID of the required local element.
+
+elements:  - (Out) array of length NumElementVertices(), in output
+will contain the local ID of the vertices of the specified element. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ElementMinLength "virtual double
 Galeri::FiniteElements::FileGrid::ElementMinLength(const int
-LocalElement) const ";
+LocalElement) const
+
+Returns the volume of the specified local finite element. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ElementMaxLength "virtual double
 Galeri::FiniteElements::FileGrid::ElementMaxLength(const int
-LocalElement) const ";
+LocalElement) const
+
+Returns the volume of the specified local finite element. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::RCPVertexMap
 "virtual const RefCountPtr<Epetra_Map>
@@ -734,13 +813,19 @@ Galeri::FiniteElements::FileGrid::RCPVertexMap() const ";
 Galeri::FiniteElements::FileGrid::RCPElementMap() const ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::VertexMap "virtual const Epetra_Map&
-Galeri::FiniteElements::FileGrid::VertexMap() const ";
+Galeri::FiniteElements::FileGrid::VertexMap() const
+
+Returns a reference to the map representing the vertex distribution.
+";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::ElementMap "virtual const Epetra_Map&
 Galeri::FiniteElements::FileGrid::ElementMap() const ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::RowMap "virtual const Epetra_Map& Galeri::FiniteElements::FileGrid::RowMap()
-const ";
+const
+
+Returns a reference to the map representing the distribution of rows.
+";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::Importer "virtual const Epetra_Import&
 Galeri::FiniteElements::FileGrid::Importer() const ";
@@ -757,44 +842,72 @@ const ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::FaceVertices
 "virtual void Galeri::FiniteElements::FileGrid::FaceVertices(const
-int LocalFace, int &tag, int *IDs) const ";
+int LocalFace, int &tag, int *IDs) const
+
+Returns the local vertex IDs of vertices contained in the specified
+boundary face. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::FacePatch "int Galeri::FiniteElements::FileGrid::FacePatch(const int LocalFace)
-const ";
+const
+
+Returns the patch ID of the specified face.
+
+Returns an integer ID that identifies the given boundary face as
+belonging to a given part of the domain. It can be used by the user to
+specify the value and the type of the boundary condition. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::ElementVolume
 "virtual double Galeri::FiniteElements::FileGrid::ElementVolume(const
-int LocalElement) const ";
+int LocalElement) const
+
+Returns the volume of the specified local finite element.
+
+Returns the area (in 2D) or the volume (in 3D) of the specified local
+element ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::FaceArea "virtual double Galeri::FiniteElements::FileGrid::FaceArea(const int
-LocalFace) const ";
+LocalFace) const
 
-%feature("docstring")  Galeri::FiniteElements::FileGrid::MyVolume "virtual double Galeri::FiniteElements::FileGrid::MyVolume() const ";
+Returns the area of the specified local face.
+
+Returns the length (in 2D) or the area (in 3D) of the specified
+boundary face ";
+
+%feature("docstring")  Galeri::FiniteElements::FileGrid::MyVolume "virtual double Galeri::FiniteElements::FileGrid::MyVolume() const
+
+Returns the volume of all local elements. ";
 
 %feature("docstring")  Galeri::FiniteElements::FileGrid::GlobalVolume
 "virtual double Galeri::FiniteElements::FileGrid::GlobalVolume()
-const ";
+const
+
+Returns the global volume of the grid. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ExportToVertexMap "void
 Galeri::FiniteElements::FileGrid::ExportToVertexMap(const
 Epetra_DistObject &RowObject, Epetra_DistObject &VertexObject) const
-";
+
+Exports distributed object from RowMap() to VertexMap(). ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ExportToRowMap "void
 Galeri::FiniteElements::FileGrid::ExportToRowMap(const
 Epetra_DistObject &VertexObject, Epetra_DistObject &RowObject) const
-";
+
+Exports distributed object from VertexMap() to RowMap(). ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::NumNeighborsPerElement "int
-Galeri::FiniteElements::FileGrid::NumNeighborsPerElement() const ";
+Galeri::FiniteElements::FileGrid::NumNeighborsPerElement() const
+
+Returns the number of neighboring elements. ";
 
 %feature("docstring")
 Galeri::FiniteElements::FileGrid::ElementNeighbors "void
 Galeri::FiniteElements::FileGrid::ElementNeighbors(int, int *) const
-";
+
+Returns the local IDs of neighboring elements. ";
 
 
 // File: classGaleri__FileGrid.xml
@@ -2719,7 +2832,9 @@ Galeri::FiniteElements::TRIANGLEGrid::~TRIANGLEGrid "Galeri::FiniteElements::TRI
 
 %feature("docstring")
 Galeri::FiniteElements::TRIANGLEGrid::NumDimensions "virtual int
-Galeri::FiniteElements::TRIANGLEGrid::NumDimensions() const ";
+Galeri::FiniteElements::TRIANGLEGrid::NumDimensions() const
+
+Returns the number of dimensions of the grid. ";
 
 %feature("docstring")
 Galeri::FiniteElements::TRIANGLEGrid::NumVerticesPerElement "virtual
@@ -2749,7 +2864,9 @@ Returns a string containing the element type. ";
 %feature("docstring")
 Galeri::FiniteElements::TRIANGLEGrid::NumNeighborsPerElement "virtual
 int Galeri::FiniteElements::TRIANGLEGrid::NumNeighborsPerElement()
-const ";
+const
+
+Returns the number of neighboring elements. ";
 
 %feature("docstring")
 Galeri::FiniteElements::TRIANGLEGrid::NumMyElements "virtual int
@@ -2833,7 +2950,9 @@ boundary face. ";
 %feature("docstring")
 Galeri::FiniteElements::TRIANGLEGrid::ElementNeighbors "virtual void
 Galeri::FiniteElements::TRIANGLEGrid::ElementNeighbors(const int
-LocalElement, int *elements) const ";
+LocalElement, int *elements) const
+
+Returns the local IDs of neighboring elements. ";
 
 %feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::FacePatch
 "virtual int Galeri::FiniteElements::TRIANGLEGrid::FacePatch(const
@@ -3900,17 +4019,17 @@ Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 // File: ml_MLAPI.xml
 
 
-// File: dir_8d6ec39255227c32b6813817f7513eb7.xml
+// File: dir_83c6dce543ad695bb9704f6bf70daa7f.xml
 
 
-// File: dir_347d51bafdcf61a66121545003bff02d.xml
+// File: dir_da9a02cbd345ffddae58604b9dfe1707.xml
 
 
-// File: dir_eda0f75ded20dac31e993c87ae13ee4b.xml
+// File: dir_3e4054923dec99bc1d6b48fcf5433e95.xml
 
 
-// File: dir_dcb8d2d986b683b679a68691f3601949.xml
+// File: dir_467b95ce87aa0ef5cd28c6f7bf50ec25.xml
 
 
-// File: dir_5418183199cd559ccef832d1dd1a4374.xml
+// File: dir_ffaff38ab9f6978c2d165634937e41a3.xml
 

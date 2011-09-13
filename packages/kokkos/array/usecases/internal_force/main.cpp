@@ -16,7 +16,7 @@
 int main()
 {
   std::cout << "Kokkos Host SM miniapp: " << std::endl;
-  const int x = 10;
+  const int x = 3;
   const int y = 1;
   const int z = 1;
   const int num_elements = x * y * z;

@@ -27,10 +27,6 @@ C++ includes: AztecOO.h ";
 
 /*  Constructors/destructors.  */
 
-/*
-
-*/
-
 %feature("docstring")  AztecOO::AztecOO "AztecOO::AztecOO(Epetra_Operator *A, Epetra_MultiVector *X,
 Epetra_MultiVector *B)
 
@@ -117,10 +113,6 @@ AztecOO Destructor.
 Completely deletes a AztecOO object. ";
 
 /*  Post-construction setup methods.  */
-
-/*
-
-*/
 
 %feature("docstring")  AztecOO::SetProblem "int
 AztecOO::SetProblem(const Epetra_LinearProblem &prob, bool
@@ -274,10 +266,6 @@ stderr. ";
 /*  Explicit preconditioner construction/assessment/destruction
 methods.  */
 
-/*
-
-*/
-
 %feature("docstring")  AztecOO::ConstructPreconditioner "int
 AztecOO::ConstructPreconditioner(double &condest)
 
@@ -317,10 +305,6 @@ Returns the condition number estimate for the current preconditioner,
 if one exists, returns -1.0 if no estimate. ";
 
 /*  Check/Attribute Access Methods.  */
-
-/*
-
-*/
 
 %feature("docstring")  AztecOO::CheckInput "int AztecOO::CheckInput()
 const
@@ -378,10 +362,6 @@ only produce a matrix file if the run-time-type of the matrix is
 either Epetra_CrsMatrix or Epetra_VbrMatrix. ";
 
 /*  Standard AztecOO option and parameter setting methods.  */
-
-/*
-
-*/
 
 %feature("docstring")  AztecOO::SetAztecDefaults "int
 AztecOO::SetAztecDefaults()
@@ -465,10 +445,6 @@ Set all Aztec parameter values using an existing Aztec params array.
 
 /*  Standard AztecOO solve methods.  */
 
-/*
-
-*/
-
 %feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(int
 MaxIters, double Tolerance)
 
@@ -488,10 +464,6 @@ Tolerance is reached.. ";
 
 /*  Specialist AztecOO solve method.  */
 
-/*
-
-*/
-
 %feature("docstring")  AztecOO::recursiveIterate "int
 AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 
@@ -510,10 +482,6 @@ Returns pointer to the underlying Aztec Status array (of length
 AZ_STATUS_SIZE). See the Aztec documenation. ";
 
 /*  Adaptive Solve methods.  */
-
-/*
-
-*/
 
 %feature("docstring")  AztecOO::SetUseAdaptiveDefaultsTrue "int
 AztecOO::SetUseAdaptiveDefaultsTrue()
@@ -569,10 +537,6 @@ Attempts to solve the given linear problem using an adaptive strategy.
 
 /*  Post-solve access functions  */
 
-/*
-
-*/
-
 %feature("docstring")  AztecOO::NumIters "int AztecOO::NumIters()
 const
 
@@ -609,14 +573,14 @@ of length AZ_STATUS_SIZE as defined in the az_aztec.h header file. ";
 %feature("docstring")  AztecOO::SetPreconditioner "int
 AztecOO::SetPreconditioner(AZ_PRECOND *Prec)
 
-AztecOO External Preconditioner Set (object).
+AztecOO External Preconditioner Set (object)
 
 Associates an already defined Aztec preconditioner with this solve. ";
 
 %feature("docstring")  AztecOO::SetPreconditioner "int
 AztecOO::SetPreconditioner(AZ_PREC_FUN prec_function, void *prec_data)
 
-AztecOO External Preconditioner Set (function and data).
+AztecOO External Preconditioner Set (function and data)
 
 Associates an external function and data pointer with preconditioner
 ";

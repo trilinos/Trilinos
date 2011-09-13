@@ -177,7 +177,7 @@ namespace stk {
               {
                 unsigned itf  = cell_topo_data->side[i_face].node[ i_tri_on_face ];
                 unsigned itfp = cell_topo_data->side[i_face].node[ (i_tri_on_face + 1) % 4];
-                if (0 > itf || itf > 7)
+                if ( itf > 7)
                   {
                     throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_20 logic err");
                   }
