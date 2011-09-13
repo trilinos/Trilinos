@@ -248,9 +248,8 @@ void STK_Interface::writeToExodus(const std::string & filename)
 
       Ioss::Init::Initializer io;
       stk::io::MeshData meshData;
-      // stk::io::create_output_mesh(filename, "", "", comm, 
-      //                                                *bulkData_, *metaData_,meshData);
       stk::io::create_output_mesh(filename, comm, *bulkData_, meshData);
+      stk::io::define_output_fields(meshData,*metaData_);
 
       stk::io::process_output_request(meshData, *bulkData_, 0.0);
    #else 
@@ -262,12 +261,11 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
 {
    #ifdef HAVE_IOSS
       stk::ParallelMachine comm = bulkData_->parallel();
-      meshData_ = Teuchos::rcp(new stk::io::MeshData);
-      
+
       Ioss::Init::Initializer io;
-      // stk::io::create_output_mesh(filename, "", "", comm, 
-      //                                                *bulkData_, *metaData_,*meshData_);
+      meshData_ = Teuchos::rcp(new stk::io::MeshData);
       stk::io::create_output_mesh(filename, comm, *bulkData_, *meshData_);
+      stk::io::define_output_fields(*meshData_,*metaData_);
    #else 
       TEUCHOS_ASSERT(false);
    #endif
