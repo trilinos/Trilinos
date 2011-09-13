@@ -66,16 +66,15 @@ C
         INVCN(J,I) = 0
     5 CONTINUE
 C
-C      NNODES = NNELM(ITYPE)
       NNODES = NELNDA
       IF (ITYPE .EQ. 6) NNODES = 4
       DO 20 J = 1, NUMEBA
         DO 10 I = 1, NNODES
-          node = icona(i,j) 
+          node = icona(i,j)
           IF (invln(node) .eq. 0 .or.
      *      INVCN(INVLN(node),node) .NE. J) THEN
             INVLN(node) = INVLN(node) + 1
-            IF (INVLN(node) .GT. MAXLN) 
+            IF (INVLN(node) .GT. MAXLN)
      &        CALL ERROR('INVCON',' ',
      &        'TOO MANY ELEMENTS CONNECTED TO NODE',
      &        node,'INVCN ARRAY DIMENSIONED FOR NO MORE THAN',
@@ -86,4 +85,4 @@ C      NNODES = NNELM(ITYPE)
  20   CONTINUE
       RETURN
       END
-      
+

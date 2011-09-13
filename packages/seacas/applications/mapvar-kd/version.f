@@ -37,7 +37,6 @@ C************************************************************************
 
       include 'exodusII.inc'
       character*(mxstln) qainfo(6)
-      character*(mxstln) cvsrev, cvsdat
 
 C     The CVS* variables are updated by the CVS/RCS program every time
 C     this routine is commited to the repository.  Therefore, whenever 
@@ -54,12 +53,9 @@ C      --   (5) = date of current run
 C      --   (6) = time of current run
 
       
-      cvsrev = '$Revision: 1.17 $'
-      cvsdat = '$Date: 2011/06/16 10:43:50 $'
-
       qainfo(1) = 'mapvar-kd                       '
-      qainfo(2) = '2011/07/01                      '
-      qainfo(3) = ' 1.18                           '
+      qainfo(2) = '2011/09/13 08:20:00             '
+      qainfo(3) = ' 1.19                           '
       qainfo(4) = '                                '
       qainfo(5) = '                                '
       qainfo(6) = '                                '

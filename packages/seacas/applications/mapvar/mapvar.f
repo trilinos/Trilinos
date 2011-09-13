@@ -285,6 +285,8 @@ c      call excpus(timin)
 c      write(nout,1001)
 c      write(ntpout,1001)
 C
+      call init
+
 C disable netcdf warning messages
 C
       CALL EXOPTS(0,IERR)

@@ -136,6 +136,8 @@ C            "SUPES", FOR DETAILS OF THE MEMORY MANAGER.
 C
 C     ******************************************************************
 C
+      call init
+      
 C open all disk files
 C
       call debug('OPNFIL')

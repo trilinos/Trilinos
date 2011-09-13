@@ -35,7 +35,7 @@ C=======================================================================
 *DECK,INTRPE
       SUBROUTINE INTRPE (ICONA,SOLENA,IELPT,STRPT,
      &                   SOLEB,IDBLK,XB,YB,ZB,
-     &                   ICONB,ITT,IM,TIMES,
+     &                   ICONB,ITT,IBLK,TIMES,
      &                   CENTER,ISTP,IST,INSUB,ICOMPL,DUME)
 C     
 C     ******************************************************************
@@ -88,7 +88,7 @@ C
         IROT = 0
         IROTF = 0
         DO 40 IVAR=1,NVAREL
-          IF (ITT(IVAR,IM) .EQ. 0)GO TO 40
+          IF (ITT(IVAR,IBLK) .EQ. 0)GO TO 40
 C
 C Initialize SOLEB if first time in subroutine for this element block
 C After first time into subroutine 
@@ -326,13 +326,6 @@ c
           END IF
         END IF
  40     CONTINUE
-        IF (IROTF .NE. 1) THEN
-          CALL ERROR('INTRPE',
-     &      'ROTATION MATRIX NORMALLY REQUIRED FOR RESTART',
-     &      'DIMENSION ',NDIMB,
-     &      'NUMBER OF ROTATION MATRIX COMPONENTS FOUND',IROT,
-     &      'THIS IS ONLY A WARNING',' ',0)
-        END IF
 c########################################################################
 C     
       RETURN

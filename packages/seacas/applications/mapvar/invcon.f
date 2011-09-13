@@ -68,17 +68,21 @@ C
 C
       NNODES = NELNDA
       IF (ITYPE .EQ. 6) NNODES = 4
-      DO 10 J = 1, NUMEBA
-      DO 10 I = 1, NNODES
-        IF (INVCN(INVLN(ICONA(I,J)),ICONA(I,J)) .NE. J)THEN
-          INVLN(ICONA(I,J)) = INVLN(ICONA(I,J)) + 1
-          IF (INVLN(ICONA(I,J)) .GT. MAXLN) 
-     &     CALL ERROR('INVCON',' ',
-     &      'TOO MANY ELEMENTS CONNECTED TO NODE',
-     &      ICONA(I,J),'INVCN ARRAY DIMENSIONED FOR NO MORE THAN',
-     &      MAXLN,'RESET IN SUBROUTINE RDA2',' ',1)
-          INVCN(INVLN(ICONA(I,J)),ICONA(I,J)) = J
-        END IF
-   10 CONTINUE
+      DO 20 J = 1, NUMEBA
+        DO 10 I = 1, NNODES
+          node = icona(i,j)
+          IF (invln(node) .eq. 0 .or.
+     *      INVCN(INVLN(node),node) .NE. J) THEN
+            INVLN(node) = INVLN(node) + 1
+            IF (INVLN(node) .GT. MAXLN)
+     &        CALL ERROR('INVCON',' ',
+     &        'TOO MANY ELEMENTS CONNECTED TO NODE',
+     &        node,'INVCN ARRAY DIMENSIONED FOR NO MORE THAN',
+     &        MAXLN,'RESET IN SUBROUTINE RDA2',' ',1)
+            INVCN(INVLN(node),node) = J
+          END IF
+ 10     CONTINUE
+ 20   CONTINUE
       RETURN
       END
+
