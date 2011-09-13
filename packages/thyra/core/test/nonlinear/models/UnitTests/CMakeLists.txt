@@ -21,7 +21,6 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-
 PACKAGE_ADD_TEST(
   DiagonalQuadraticResponseOnlyModelEvaluatorUnitTests
   POSTFIX_AND_ARGS_0 ld1 --local-dim=1 --show-test-details=ALL
