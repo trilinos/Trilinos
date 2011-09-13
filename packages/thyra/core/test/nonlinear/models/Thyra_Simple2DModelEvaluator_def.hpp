@@ -49,6 +49,7 @@
 #include "Thyra_Simple2DModelEvaluator_decl.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -174,7 +175,37 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  RCP< const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+  RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
+  RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
+
+  if (f_out.get()) {
+    Scalar x0 = Thyra::get_ele(*x,0);
+    Scalar x1 = Thyra::get_ele(*x,1);
+
+    Scalar f0 = x0 + x1 * x1 - p_[0];
+    Scalar f1 = d_ * (x0 * x0 - x1 - p_[1]);
+
+    Thyra::set_ele(0, f0 , f_out.ptr());
+    Thyra::set_ele(1, f1, f_out.ptr());
+  }
+
+  if (W_out.get()) {
+    Scalar x0 = Thyra::get_ele(*x,0);
+    Scalar x1 = Thyra::get_ele(*x,1);
+    
+    RCP<MultiVectorBase<Scalar> > M = Teuchos::rcp_dynamic_cast<MultiVectorBase<Scalar> >(W_out);
+      
+    TEUCHOS_ASSERT(Teuchos::nonnull(M));
+
+    Thyra::DetachedMultiVectorView<Scalar> M_dv(*M);
+    
+    M_dv(0,0) = 1.0;
+    M_dv(0,1) = 2.0 * x1;
+    M_dv(1,0) = d_ * 2.0 * x0;;
+    M_dv(1,1) = -d_;
+  }
+  
 }
 
 
@@ -205,6 +236,7 @@ Simple2DModelEvaluator<Scalar>::Simple2DModelEvaluator()
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
+  outArgs.setSupports(MEB::OUT_ARG_W_op);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;

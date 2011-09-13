@@ -68,6 +68,7 @@
 #include "RTOpPack_TOpEleWiseProd.hpp"
 #include "RTOpPack_TOpEleWiseConjProd.hpp"
 #include "RTOpPack_TOpEleWiseProdUpdate.hpp"
+#include "RTOpPack_TOpEleWiseScale.hpp"
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "RTOpPack_TOpReciprocal.hpp"
@@ -296,6 +297,16 @@ void Thyra::ele_wise_conj_prod(
   RTOpPack::TOpEleWiseConjProd<Scalar> ele_wise_conj_prod_op(alpha);
   applyOp<Scalar>( ele_wise_conj_prod_op, tuple(ptrInArg(v_rhs1),ptrInArg(v_rhs2)),
     tuple(v_lhs), null );
+}
+
+
+template<class Scalar>
+void Thyra::ele_wise_scale( const VectorBase<Scalar>& x,
+  const Ptr<VectorBase<Scalar> > &y )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpEleWiseScale<Scalar> ele_wise_scale;
+  applyOp<Scalar>( ele_wise_scale, tuple(ptrInArg(x)), tuple(y), null );
 }
 
 
@@ -693,6 +704,9 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
+   \
+  template void ele_wise_scale( const VectorBase<SCALAR>& x, \
+    const Ptr<VectorBase<SCALAR> > &y ); \
    \
   template void Vp_StVtV(  \
     const Ptr<VectorBase<SCALAR > > &v_lhs,  \

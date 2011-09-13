@@ -87,8 +87,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleModelEvaluator, eval, Scalar )
 {
   RCP<Simple2DModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
-  // ToDo: Finish this!
-  //TEST_FOR_EXCEPT(true);
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> in_args = model->getNominalValues();
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> out_args = model->createOutArgs();
+
+  RCP<const Thyra::VectorSpaceBase<Scalar> > f_space = model->get_f_space();
+  RCP<Thyra::VectorBase<Scalar> > f = createMember(f_space);
+  RCP<Thyra::LinearOpBase<Scalar> > W_op = model->create_W_op();
+
+  Thyra::V_S(f.ptr(),Teuchos::ScalarTraits<Scalar>::zero());
+
+  RCP<Thyra::MultiVectorBase<Scalar> > M = 
+    Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_op);
+  TEUCHOS_ASSERT(Teuchos::nonnull(M));
+  Thyra::DetachedMultiVectorView<Scalar> M_dv(*M);
+
+  Thyra::assign(M.ptr(),Teuchos::ScalarTraits<Scalar>::zero());
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  ScalarMag tol = 
+    Teuchos::as<ScalarMag>(10.0) * Teuchos::ScalarTraits<Scalar>::eps();
+
+  // Make sure all entries zeroed out
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), 0.0, tol);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), 0.0, tol);  
+
+  TEST_FLOATING_EQUALITY(M_dv(0,0), 0.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(0,1), 0.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,0), 0.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,1), 0.0, tol);
+
+  out_args.set_f(f);
+  out_args.set_W_op(W_op);
+
+  model->evalModel(in_args, out_args);
+
+  // Based on nominalValue settings x0=1, x1=1, p0=2, p1=0, d=10
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), 1.0+1.0*1.0-2.0, tol);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), 10.0*(1.0*1.0-1.0-0.0), tol);
+
+  TEST_FLOATING_EQUALITY(M_dv(0,0), 1.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(0,1), 2.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,0), 10.0 * 2.0 * 1.0, tol);
+  TEST_FLOATING_EQUALITY(M_dv(1,1), -10.0, tol);
+  
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
