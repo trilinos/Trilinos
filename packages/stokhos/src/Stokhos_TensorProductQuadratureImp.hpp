@@ -84,7 +84,7 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     ++cnt;
   }
 
-  std::cout << "Number of quadrature points = " << ntot << std::endl;
+  //std::cout << "Number of quadrature points = " << ntot << std::endl;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -142,7 +142,7 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     ++cnt;
   }
 
-  std::cout << "Number of quadrature points = " << ntot << std::endl;
+  //std::cout << "Number of quadrature points = " << ntot << std::endl;
 }
 
 template <typename ordinal_type, typename value_type>

@@ -58,7 +58,7 @@ SparseGridQuadrature(
       level = p;
   }
 
-  std::cout << "Sparse grid level = " << level << std::endl;
+  //std::cout << "Sparse grid level = " << level << std::endl;
 
   // Compute quad points, weights, values
   Teuchos::Array<int> rules(d), growthRules(d);
@@ -118,7 +118,7 @@ SparseGridQuadrature(
     product_basis->evaluateBases(quad_points[i], quad_values[i]);
   }
 
-  std::cout << "Number of quadrature points = " << ntot << std::endl;
+  //std::cout << "Number of quadrature points = " << ntot << std::endl;
 }
 
 template <typename ordinal_type, typename value_type>
