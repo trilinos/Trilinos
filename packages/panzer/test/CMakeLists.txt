@@ -6,7 +6,6 @@ ADD_SUBDIRECTORY(closure_model)
 ADD_SUBDIRECTORY(physics_block)
 ADD_SUBDIRECTORY(epetra_gatherscatter)
 ADD_SUBDIRECTORY(la_factory)
-ADD_SUBDIRECTORY(vector_tm)
 ADD_SUBDIRECTORY(evaluator_tests)
 ADD_SUBDIRECTORY(response_library)
 

@@ -82,8 +82,6 @@ APPEND_SET(HEADERS
   Panzer_Workset.hpp
   Panzer_Workset_Builder.hpp
   Panzer_Workset_BuilderT.hpp
-  Panzer_VectorTemplateManager.hpp
-  Panzer_VectorTemplateIterator.hpp
   Panzer_ZeroSensitivities.hpp
   dofmngr/Panzer_FieldPattern.hpp
   dofmngr/Panzer_IntrepidFieldPattern.hpp
