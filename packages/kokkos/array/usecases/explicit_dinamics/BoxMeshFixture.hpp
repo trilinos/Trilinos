@@ -49,6 +49,8 @@
 template < class int_mdarray , class scalar_mdarray >
 class BoxMeshFixture {
 public:
+  enum { SpatialDim = 3 };
+
   int_mdarray    elem_node_ids ;
   int_mdarray    node_elem_offset ;
   int_mdarray    node_elem_ids ;

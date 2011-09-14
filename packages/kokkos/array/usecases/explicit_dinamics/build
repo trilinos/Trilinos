@@ -4,15 +4,11 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set INC_PATH="-I../../../../ThreadPool/src -I. -I../../src"
+set INC_PATH="-I. -I../../src"
 
-set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp simple_hex_fixture.cpp"
+set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp"
 
 #-----------------------------------------------------------------------------
-
-set GCC_SOURCES="${GCC_SOURCES} ../../../../ThreadPool/src/*.c ../../src/DeviceTPI/*.cpp"
-
-set LIB="-lpthread"
 
 #-----------------------------------------------------------------------------
 
@@ -23,15 +19,14 @@ set LIB="-lpthread"
 
 #-----------------------------------------------------------------------------
 
-echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+set LIB="-lpthread"
 
 set GCC_FLAGS="-Wall -g -O0 -fopenmp ${INC_PATH}"
 
 g++ $GCC_FLAGS -c ${GCC_SOURCES}
 
-g++ $GCC_FLAGS -o internal_force.exe *.o ${LIB} 
+g++ $GCC_FLAGS -o explicit_dynamics_app.x *.o ${LIB} 
 
-rm -f *.o *.a ThreadPool_config.h
 
 #-----------------------------------------------------------------------------
 

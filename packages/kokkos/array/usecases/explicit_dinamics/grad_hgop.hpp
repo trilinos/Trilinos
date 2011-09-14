@@ -46,26 +46,21 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   const int        current_state;
   const int        previous_state;
 
+  typedef Region<Scalar,device_type> MyRegion;
+
   // Constructor on the Host to populate this device functor.
   // All array view copies are shallow.
-    grad_hgop(
-               const int_array_type & arg_enc,
-               const array_type & arg_p,
-               const array_type & arg_disp,
-               const array_type & arg_v,
-               const array_type & arg_mv,
-               const array_type & arg_vg,
-               const array_type & arg_hg,
+    grad_hgop( const MyRegion & region,
                const Scalar delta_t,
                const int arg_current_state,
                const int arg_previous_state)
-    : elem_node_connectivity(arg_enc)
-    , model_coords( arg_p )
-    , displacement( arg_disp )
-    , velocity( arg_v )
-    , mid_vol ( arg_mv )
-    , vel_grad( arg_vg )
-    , hgop    ( arg_hg )
+    : elem_node_connectivity(region.elem_node_connectivity)
+    , model_coords(region.model_coords)
+    , displacement(region.displacement)
+    , velocity(region.velocity)
+    , mid_vol (region.mid_vol)
+    , vel_grad(region.vel_grad)
+    , hgop    (region.hgop)
     , dt( delta_t )
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)

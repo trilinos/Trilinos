@@ -39,24 +39,22 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	const array_type stretching_tensor;
 	const array_type stretch;
 	const array_type vorticity;
-	const array_type rot_stret;
+	const array_type rot_stretch;
 	const Scalar     dt;
   const int        current_state;
   const int        previous_state;
 
-	decomp_rotate(	const array_type & arg_r,
-					const array_type & arg_v_gr,
-					const array_type & arg_str,
-					const array_type & arg_v,
-					const array_type & arg_rs,
+  typedef Region<Scalar,device_type> MyRegion;
+
+	decomp_rotate(	const MyRegion & region,
 					const Scalar       arg_dt,
           const int arg_current_state,
           const int arg_previous_state)
-		: rotation( arg_r )
-		, vel_grad( arg_v_gr )
-		, stretch( arg_str )
-		, vorticity( arg_v )
-		, rot_stret( arg_rs )
+		: rotation( region.rotation )
+		, vel_grad( region.vel_grad )
+		, stretch( region.stretch )
+		, vorticity( region.vorticity )
+		, rot_stretch( region.rot_stretch )
 		, dt( arg_dt )
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
@@ -240,13 +238,13 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		t[7] = str_ten[K_S_YX]*rot_new[K_F_XZ] + str_ten[K_S_YY]*rot_new[K_F_YZ] + str_ten[K_S_YZ]*rot_new[K_F_ZZ];
 		t[8] = str_ten[K_S_ZX]*rot_new[K_F_XZ] + str_ten[K_S_ZY]*rot_new[K_F_YZ] + str_ten[K_S_ZZ]*rot_new[K_F_ZZ];
 
-		rot_stret(ielem, K_S_XX) = rot_new[K_F_XX] * t[0] + rot_new[K_F_YX] * t[1] + rot_new[K_F_ZX] * t[2];
-		rot_stret(ielem, K_S_YY) = rot_new[K_F_XY] * t[3] + rot_new[K_F_YY] * t[4] + rot_new[K_F_ZY] * t[5];
-		rot_stret(ielem, K_S_ZZ) = rot_new[K_F_XZ] * t[6] + rot_new[K_F_YZ] * t[7] + rot_new[K_F_ZZ] * t[8];
+		rot_stretch(ielem, K_S_XX) = rot_new[K_F_XX] * t[0] + rot_new[K_F_YX] * t[1] + rot_new[K_F_ZX] * t[2];
+		rot_stretch(ielem, K_S_YY) = rot_new[K_F_XY] * t[3] + rot_new[K_F_YY] * t[4] + rot_new[K_F_ZY] * t[5];
+		rot_stretch(ielem, K_S_ZZ) = rot_new[K_F_XZ] * t[6] + rot_new[K_F_YZ] * t[7] + rot_new[K_F_ZZ] * t[8];
 
-		rot_stret(ielem, K_S_XY) = rot_new[K_F_XX] * t[3] + rot_new[K_F_YX] * t[4] + rot_new[K_F_ZX] * t[5];
-		rot_stret(ielem, K_S_YZ) = rot_new[K_F_XY] * t[6] + rot_new[K_F_YY] * t[7] + rot_new[K_F_ZY] * t[8];
-		rot_stret(ielem, K_S_ZX) = rot_new[K_F_XZ] * t[0] + rot_new[K_F_YZ] * t[1] + rot_new[K_F_ZZ] * t[2];
+		rot_stretch(ielem, K_S_XY) = rot_new[K_F_XX] * t[3] + rot_new[K_F_YX] * t[4] + rot_new[K_F_ZX] * t[5];
+		rot_stretch(ielem, K_S_YZ) = rot_new[K_F_XY] * t[6] + rot_new[K_F_YY] * t[7] + rot_new[K_F_ZY] * t[8];
+		rot_stretch(ielem, K_S_ZX) = rot_new[K_F_XZ] * t[0] + rot_new[K_F_YZ] * t[1] + rot_new[K_F_ZZ] * t[2];
 
 		stretch(ielem, 0) = str[0];
 		stretch(ielem, 1) = str[1];

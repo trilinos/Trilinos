@@ -10,20 +10,10 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
 
   enum { NumNodePerElement = 8 };
 
-  initialize_element(
-      const int_array_type & arg_elem_node_connectivity,
-      const array_type     & arg_model_coords,
-      const array_type     & arg_elem_mass,
-      const array_type     & arg_stretch,
-      const array_type     & arg_rotation,
-      const Scalar           arg_density
-      )
-    : elem_node_connectivity(arg_elem_node_connectivity)
-    , model_coords(arg_model_coords)
-    , elem_mass(arg_elem_mass)
-    , stretch(arg_stretch)
-    , rotation(arg_rotation)
-    , density(arg_density)
+  typedef Region<Scalar,device_type> MyRegion;
+
+  initialize_element( const MyRegion & arg_region )
+    : region(arg_region)
   {}
 
 
@@ -31,7 +21,7 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
   void get_nodes( int ielem, int * nodes) const
   {
     for( int i=0; i<NumNodePerElement; ++i) {
-      nodes[i] = elem_node_connectivity(ielem,i);
+      nodes[i] = region.elem_node_connectivity(ielem,i);
     }
   }
 
@@ -48,24 +38,24 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
     const int K_YY = 1;
     const int K_ZZ = 2;
 
-    stretch(ielem,K_XX) = 1;
-    stretch(ielem,K_YY) = 1;
-    stretch(ielem,K_ZZ) = 1;
+    region.stretch(ielem,K_XX) = 1;
+    region.stretch(ielem,K_YY) = 1;
+    region.stretch(ielem,K_ZZ) = 1;
 
-    rotation(ielem,K_XX,0) = 1;
-    rotation(ielem,K_YY,0) = 1;
-    rotation(ielem,K_ZZ,0) = 1;
+    region.rotation(ielem,K_XX,0) = 1;
+    region.rotation(ielem,K_YY,0) = 1;
+    region.rotation(ielem,K_ZZ,0) = 1;
 
-    rotation(ielem,K_XX,1) = 1;
-    rotation(ielem,K_YY,1) = 1;
-    rotation(ielem,K_ZZ,1) = 1;
+    region.rotation(ielem,K_XX,1) = 1;
+    region.rotation(ielem,K_YY,1) = 1;
+    region.rotation(ielem,K_ZZ,1) = 1;
 
     Scalar x[NumNodePerElement];
     Scalar y[NumNodePerElement];
     Scalar z[NumNodePerElement];
 
     for( int i=0; i<NumNodePerElement; ++i) {
-      z[i] = model_coords(nodes[i], Z);
+      z[i] = region.model_coords(nodes[i], Z);
     }
 
     //   calc Z difference vectors
@@ -95,7 +85,7 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
     Scalar t6 =(R75 + R31);
 
     for( int i=0; i<NumNodePerElement; ++i) {
-      y[i] = model_coords(nodes[i], Y);
+      y[i] = region.model_coords(nodes[i], Y);
     }
 
     Scalar grad_x[NumNodePerElement];
@@ -110,10 +100,10 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
     grad_x[7] = (y[4] *  t2) - (y[6] *  t1) + (y[5] * R75) - (y[3] *  t6) - (y[2] * R74) + (y[0] * R54);
 
     for( int i=0; i<NumNodePerElement; ++i) {
-      x[i] = model_coords(nodes[i], X);
+      x[i] = region.model_coords(nodes[i], X);
     }
 
-    elem_mass(ielem) = (1.0/12.0) * density *
+    region.elem_mass(ielem) = (1.0/12.0) * region.density *
                       ( x[0] * grad_x[0] +
                         x[1] * grad_x[1] +
                         x[2] * grad_x[2] +
@@ -125,10 +115,5 @@ struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
 
   }
 
-  const int_array_type elem_node_connectivity;
-	const array_type  model_coords;
-	const array_type  elem_mass;
-	const array_type  stretch;
-	const array_type  rotation;
-  const Scalar      density;
+  const MyRegion region;
 };

@@ -10,7 +10,7 @@
 #include <Kokkos_DeviceHost_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceHost_macros.hpp>
-#include <internal_force_driver.hpp>
+#include <explicit_dynamics_app.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
 int main()
@@ -21,7 +21,7 @@ int main()
   const int z = 1;
   const int num_elements = x * y * z;
 
-  double time = internal_force_test<double, Kokkos::DeviceHost>( x, y, z );
+  double time = explicit_dynamics_app<double, Kokkos::DeviceHost>( x, y, z );
   std::cout <<	std::setw(8) << num_elements << ", " <<
     std::setw(8) << 1000 * time << ", " <<
     std::setw(8) << 1000 * time / num_elements << std::endl;

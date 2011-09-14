@@ -46,24 +46,26 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
   typedef typename Kokkos::MDArrayView<int,device_type>    int_array_type ;
 
+  typedef Region<Scalar,device_type> MyRegion;
+
   const int_array_type elem_node_connectivity;
 
 	const array_type  model_coords;
 	const array_type  displacement;
 
 	const array_type  velocity;
-	const array_type  force_new;
+	const array_type  element_force;
 	const array_type  vorticity;
 	const array_type  rotation;
 	const array_type  stress_new;
 	const array_type  rot_stress;
-	const array_type  rot_stret;
+	const array_type  rot_stretch;
 	const array_type  gradop12;
 	const array_type  elem_mass;
 	const array_type  elem_dilmod;
 	const array_type  elem_shrmod;
 	const array_type  elem_t_step;
-	const array_type  intern_energy;
+	const array_type  internal_energy;
 	const array_type  mid_vol;
 
 	const array_type  hgop;
@@ -71,12 +73,12 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const array_type  hg_energy;
 
 	const Scalar  two_mu;
-	const Scalar  bulk_mod;
+	const Scalar  bulk_modulus;
 
-	const Scalar     hg_stiff;
-	const Scalar     hg_visc;
-	const Scalar     linBulkVisc;
-	const Scalar     quadBulkVisc;
+	const Scalar     hg_stiffness;
+	const Scalar     hg_viscosity;
+	const Scalar     lin_bulk_visc;
+	const Scalar     quad_bulk_visc;
 	const Scalar     dt;
 
 
@@ -84,66 +86,41 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
   const int        previous_state;
 
 	divergence(
-        const int_array_type & arg_enc,
-        const array_type & arg_p,
-        const array_type & arg_disp,
-				const array_type & arg_v,
-				const array_type & arg_f,
-				const array_type & arg_vort,
-				const array_type & arg_r,
-				const array_type & arg_sn,
-				const array_type & arg_rstrss,
-				const array_type & arg_rstret,
-				const array_type & arg_g,
-				const array_type & arg_em,
-				const array_type & arg_ed,
-				const array_type & arg_es,
-				const array_type & arg_et,
-				const array_type & arg_ie,
-				const array_type & arg_mv,
-				const array_type & arg_hg,
-				const array_type & arg_hgr,
-				const array_type & arg_hge,
-				const Scalar arg_tmu,
-				const Scalar arg_blk,
-				const Scalar arg_hgs,
-				const Scalar arg_hgv,
-				const Scalar arg_l,
-				const Scalar arg_q,
-				const Scalar delta_t,
-        const int arg_current_state,
-        const int arg_previous_state)
-
-          : elem_node_connectivity( arg_enc)
-          , model_coords(arg_p)
-          , displacement(arg_disp)
-          , velocity(arg_v)
-          , force_new(arg_f)
-          , vorticity(arg_vort)
-          , rotation(arg_r)
-          , stress_new(arg_sn)
-          , rot_stress(arg_rstrss)
-          , rot_stret(arg_rstret)
-          , gradop12(arg_g)
-          , elem_mass(arg_em)
-          , elem_dilmod(arg_ed)
-          , elem_shrmod(arg_es)
-          , elem_t_step(arg_et)
-          , intern_energy(arg_ie)
-          , mid_vol(arg_mv)
-          , hgop(arg_hg)
-          , hg_resist(arg_hgr)
-          , hg_energy(arg_hge)
-          , two_mu(arg_tmu)
-          , bulk_mod(arg_blk)
-          , hg_stiff(arg_hgs)
-          , hg_visc(arg_hgv)
-          , linBulkVisc(arg_l)
-          , quadBulkVisc(arg_q)
-          , dt(delta_t)
-          , current_state(arg_current_state)
-          , previous_state(arg_previous_state)
-        {}
+      const MyRegion & region,
+			const Scalar delta_t,
+      const int arg_current_state,
+      const int arg_previous_state
+      )
+      : elem_node_connectivity(region.elem_node_connectivity)
+      , model_coords(region.model_coords)
+      , displacement(region.displacement)
+      , velocity(region.velocity)
+      , element_force(region.element_force)
+      , vorticity(region.vorticity)
+      , rotation(region.rotation)
+      , stress_new(region.stress_new)
+      , rot_stress(region.rot_stress)
+      , rot_stretch(region.rot_stretch)
+      , gradop12(region.gradop12)
+      , elem_mass(region.elem_mass)
+      , elem_dilmod(region.dilmod)
+      , elem_shrmod(region.shrmod)
+      , elem_t_step(region.elem_t_step)
+      , internal_energy(region.internal_energy)
+      , mid_vol(region.mid_vol)
+      , hgop(region.hgop)
+      , hg_resist(region.hg_resist)
+      , hg_energy(region.hg_energy)
+      , two_mu(region.two_mu)
+      , bulk_modulus(region.bulk_modulus)
+      , hg_stiffness(region.hg_stiffness)
+      , hg_viscosity(region.hg_viscosity)
+      , lin_bulk_visc(region.lin_bulk_visc)
+      , quad_bulk_visc(region.quad_bulk_visc)
+      , dt(delta_t)
+      , current_state(arg_current_state)
+      , previous_state(arg_previous_state)
+  {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
     void get_nodes( int ielem, int * nodes) const
@@ -564,7 +541,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		Scalar hg_force_2[8];
 
 		hg_energy(ielem) = 0.0;
-		intern_energy(ielem) = 0.0;
+		internal_energy(ielem) = 0.0;
 
 		for(int i = 0; i < 8; ++i) {
 
@@ -588,29 +565,29 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 		}
 
-		for(int i = 0; i < 8; ++i) {
-			force_new(ielem, 0, i) =
-				total_stress12th[K_S_XX] * gradop12(ielem, 0, i) +
-				total_stress12th[K_S_XY] * gradop12(ielem, 1, i) +
-				total_stress12th[K_S_XZ] * gradop12(ielem, 2, i) + hg_force_0[i] ;
+		for(int inode = 0; inode < 8; ++inode) {
+			element_force(ielem, 0, inode) =
+				total_stress12th[K_S_XX] * gradop12(ielem, 0, inode) +
+				total_stress12th[K_S_XY] * gradop12(ielem, 1, inode) +
+				total_stress12th[K_S_XZ] * gradop12(ielem, 2, inode) + hg_force_0[inode] ;
 
-			force_new(ielem, 1, i) =
-				total_stress12th[K_S_YX] * gradop12(ielem, 0, i) +
-				total_stress12th[K_S_YY] * gradop12(ielem, 1, i) +
-				total_stress12th[K_S_YZ] * gradop12(ielem, 2, i) + hg_force_1[i] ;
+			element_force(ielem, 1, inode) =
+				total_stress12th[K_S_YX] * gradop12(ielem, 0, inode) +
+				total_stress12th[K_S_YY] * gradop12(ielem, 1, inode) +
+				total_stress12th[K_S_YZ] * gradop12(ielem, 2, inode) + hg_force_1[inode] ;
 
-			force_new(ielem, 2, i) =
-				total_stress12th[K_S_ZX] * gradop12(ielem, 0, i) +
-				total_stress12th[K_S_ZY] * gradop12(ielem, 1, i) +
-				total_stress12th[K_S_ZZ] * gradop12(ielem, 2, i) + hg_force_2[i] ;
+			element_force(ielem, 2, inode) =
+				total_stress12th[K_S_ZX] * gradop12(ielem, 0, inode) +
+				total_stress12th[K_S_ZY] * gradop12(ielem, 1, inode) +
+				total_stress12th[K_S_ZZ] * gradop12(ielem, 2, inode) + hg_force_2[inode] ;
 
-			hg_energy(ielem)  +=	hg_force_0[i]   * vx[i] +
-									hg_force_1[i]   *vy[i] +
-									hg_force_2[i]   *vz[i];
+			hg_energy(ielem)  +=	hg_force_0[inode]   * vx[inode] +
+									hg_force_1[inode]   *vy[inode] +
+									hg_force_2[inode]   *vz[inode];
 
-			intern_energy(ielem) +=	force_new(ielem, 0, i)*vx[i] +
-									force_new(ielem, 1, i)*vy[i] +
-									force_new(ielem, 2, i)*vz[i];
+			internal_energy(ielem) +=	element_force(ielem, 0, inode)*vx[inode] +
+									element_force(ielem, 1, inode)*vy[inode] +
+									element_force(ielem, 2, inode)*vz[inode];
 
 		}
 	}
@@ -625,15 +602,15 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       const int kyz = 4;
       const int kzx = 5;
 
-      const Scalar e = (rot_stret(ielem,kxx)+rot_stret(ielem,kyy)+rot_stret(ielem,kzz))/3.0;
+      const Scalar e = (rot_stretch(ielem,kxx)+rot_stretch(ielem,kyy)+rot_stretch(ielem,kzz))/3.0;
 
-      stress_new(ielem,kxx) += dt * (two_mu * (rot_stret(ielem,kxx)-e)+3*bulk_mod*e);
-      stress_new(ielem,kyy) += dt * (two_mu * (rot_stret(ielem,kyy)-e)+3*bulk_mod*e);
-      stress_new(ielem,kzz) += dt * (two_mu * (rot_stret(ielem,kzz)-e)+3*bulk_mod*e);
+      stress_new(ielem,kxx) += dt * (two_mu * (rot_stretch(ielem,kxx)-e)+3*bulk_modulus*e);
+      stress_new(ielem,kyy) += dt * (two_mu * (rot_stretch(ielem,kyy)-e)+3*bulk_modulus*e);
+      stress_new(ielem,kzz) += dt * (two_mu * (rot_stretch(ielem,kzz)-e)+3*bulk_modulus*e);
 
-      stress_new(ielem,kxy) += dt * two_mu * rot_stret(ielem,kxy);
-      stress_new(ielem,kyz) += dt * two_mu * rot_stret(ielem,kyz);
-      stress_new(ielem,kzx) += dt * two_mu * rot_stret(ielem,kzx);
+      stress_new(ielem,kxy) += dt * two_mu * rot_stretch(ielem,kxy);
+      stress_new(ielem,kyz) += dt * two_mu * rot_stretch(ielem,kyz);
+      stress_new(ielem,kzx) += dt * two_mu * rot_stretch(ielem,kzx);
 
     }
 
@@ -648,9 +625,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		comp_grad(ielem,nodes,x,y,z);
 		comp_hgop(ielem,x,y,z);
 
-		Scalar fac1_pre = dt * hg_stiff * 0.0625;
+		Scalar fac1_pre = dt * hg_stiffness * 0.0625;
 		Scalar shr = elem_shrmod(ielem) = two_mu;
-		Scalar dil = elem_dilmod(ielem) = ( bulk_mod + 2.0*shr ) * (1.0 / 3.0);
+		Scalar dil = elem_dilmod(ielem) = ( bulk_modulus + 2.0*shr ) * (1.0 / 3.0);
 
 
 		Scalar aspect = comp_aspect(ielem);
@@ -658,9 +635,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		Scalar inv_aspect = 1.0 / aspect;
 
 		Scalar dtrial = sqrt(elem_mass(ielem) * aspect / dil);
-		Scalar traced = (rot_stret(ielem, 0) + rot_stret(ielem, 1) + rot_stret(ielem, 2));
+		Scalar traced = (rot_stretch(ielem, 0) + rot_stretch(ielem, 1) + rot_stretch(ielem, 2));
 
-		Scalar eps = traced < 0 ? (linBulkVisc - quadBulkVisc * traced * dtrial) : linBulkVisc ;
+		Scalar eps = traced < 0 ? (lin_bulk_visc - quad_bulk_visc * traced * dtrial) : lin_bulk_visc ;
 
 		Scalar bulkq = eps * dil * dtrial * traced;
 
@@ -680,8 +657,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		total_stress12th[4] = ONE12TH*(rot_stress(ielem, 4));
 		total_stress12th[5] = ONE12TH*(rot_stress(ielem, 5));
 
+
 		Scalar fac1 = fac1_pre * shr * inv_aspect;
-		Scalar fac2 = hg_visc * sqrt(shr * elem_mass(ielem) * inv_aspect);
+		Scalar fac2 = hg_viscosity * sqrt(shr * elem_mass(ielem) * inv_aspect);
 
 		comp_force(ielem, nodes, fac1, fac2, total_stress12th);
 
