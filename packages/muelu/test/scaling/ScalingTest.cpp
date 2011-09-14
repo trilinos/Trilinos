@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 
 // Teuchos
@@ -7,51 +8,29 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+// Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Memory.hpp"
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-//#include "MueLu_GaussSeidel.hpp"
-#include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
-
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_Amesos2Smoother.hpp"
-#include "MueLu_Utilities.hpp"
-
-#include "MueLu_Exceptions.hpp"
 
 // Gallery
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-
-//#include "MueLu_UseDefaultTypes.hpp"
-typedef double Scalar;
-typedef int    LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int    GlobalOrdinal;
-//typedef int    GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#warning Teuchos support for long long not enabled.
-#endif
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
-
-#include "MueLu_UseShortNames.hpp"
-#include <unistd.h>
-/**********************************************************************************/
+// MueLu
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Memory.hpp"
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_GenericPRFactory.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_Exceptions.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -61,6 +40,20 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 #endif
+
+//
+typedef double Scalar;
+typedef int    LocalOrdinal;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+typedef long long int GlobalOrdinal;
+#else
+typedef int GlobalOrdinal;
+#endif
+//
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
+typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+//
+#include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
@@ -100,14 +93,12 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 10;
   LO its=10;
-  std::string coarseSolver;
-  std::string smooType="SGS";
+  std::string smooType="sgs";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
   int useExplicitR=0;
-  int coarseSweeps=50;
-  int fineSweeps=1;
+  int sweeps=1;
   int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
@@ -115,29 +106,20 @@ int main(int argc, char *argv[]) {
   int minPerAgg=2;
   int maxNbrAlreadySelected=0;
 
-#if   defined(HAVE_MUELU_AMESOS2)
-  coarseSolver="amesos2";
-#elif defined(HAVE_MUELU_IFPACK2)
-  coarseSolver="ifpack2";
-#else
-  throw(MueLu::Exceptions::RuntimeError("Either Amesos2 or Ifpack2 must be enabled."));
-#endif
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
-  clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
-  clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
-  clp.setOption("fineSweeps",&fineSweeps,"sweeps to be used in SGS (or Chebyshev degree) on the finer levels");
+  clp.setOption("sweeps",&sweeps,"sweeps to be used in SGS (or Chebyshev degree)");
   clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
   clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  clp.setOption("smooType",&smooType,"smoother type (SGS or Cheby)");
+  clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -152,6 +134,8 @@ int main(int argc, char *argv[]) {
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters
+  std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
+  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   if (comm->getRank() == 0) {
     matrixParameters.print();
@@ -164,11 +148,9 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   mtime.push_back(M.getNewTimer("Matrix Build"));
   (mtime.back())->start();
-  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  const RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
   mtime.back()->stop();
-
-  //  return EXIT_SUCCESS;
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -234,52 +216,27 @@ int main(int argc, char *argv[]) {
   PRfact->SetMaxCoarseSize((GO) maxCoarseSize);
 
   RCP<SmootherPrototype> smooProto;
+  std::string ifpackType;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) fineSweeps);
+  ifpackList.set("relaxation: sweeps", (LO) sweeps);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_IFPACK) && !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-    if (smooType == "sgs") {
-      ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-    } else if (smooType == "cheby") {
-      ifpackList.set("chebyshev: degree", (LO) fineSweeps);
-      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
-      ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
-      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-      ifpackList.set("chebyshev: zero starting solution", true);
-      smooProto = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
-    }
-#else
-  throw(MueLu::Exceptions::RuntimeError("Ifpack must be enabled. Long Long must be disabled"));
-#endif
-  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
-    if (smooType == "sgs") {
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
-    } else if (smooType == "cheby") {
-      ifpackList.set("chebyshev: degree", (LO) fineSweeps);
-      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
-      ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
-      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-      ifpackList.set("chebyshev: zero starting solution", true);
-      smooProto = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpackList) );
-    }
-#else
-  throw(MueLu::Exceptions::RuntimeError("Ifpack2 must be enabled."));
-#endif
-  }
-  if (smooProto == Teuchos::null) {
-    throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
+  if (smooType == "sgs") {
+    ifpackType = "RELAXATION";
+    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+  } else if (smooType == "cheby") {
+    ifpackType = "CHEBYSHEV";
+    ifpackList.set("chebyshev: degree", (LO) sweeps);
+    ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+    ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
+    ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+    ifpackList.set("chebyshev: zero starting solution", true);
   }
 
+  smooProto = rcp( new TrilinosSmoother(lib, ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;
   if (maxLevels > 1) 
     SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
@@ -287,67 +244,13 @@ int main(int argc, char *argv[]) {
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
-  RCP<SmootherPrototype> coarseProto;
-
-  //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
-
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) && !defined(HAVE_TEUCHOS_LONG_LONG_INT)
-    Teuchos::ParameterList amesosList;
-    amesosList.set("PrintTiming",true);
-    coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-    //#elif HAVE_MUELU_IFPACK...
-#endif
-  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-    if (coarseSolver=="amesos2") {
-#ifdef HAVE_MUELU_AMESOS2
-      if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
-      Teuchos::ParameterList paramList; //unused
-      coarseProto = rcp( new Amesos2Smoother("amesos2_superlu", paramList) );
-#else
-      std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
-      return EXIT_FAILURE;
-#endif // HAVE_MUELU_AMESOS2
-    } else if(coarseSolver=="ifpack2") {
-#if defined(HAVE_MUELU_IFPACK2)
-        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
-        if (comm->getRank() == 0) std::cout << "            symmetric Gauss-Seidel" << std::endl;
-        Teuchos::ParameterList coarseIfpackList;
-        coarseIfpackList.set("relaxation: sweeps", (LO) coarseSweeps);
-        coarseIfpackList.set("relaxation: damping factor", (SC) 1.0);
-        coarseIfpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-        coarseProto = rcp( new Ifpack2Smoother("RELAXATION",coarseIfpackList) );
-/*
-        FIXME this causes problems in parallel
-        FIXME our best guess is that the import/export stuff in Ifpack2's ILUT is wrong
-
-        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
-        Teuchos::ParameterList ifpack2List;
-        ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-        ifpack2List.set("fact: drop tolerance", 0);
-        ifpack2List.set("fact: absolute threshold", 0);
-        ifpack2List.set("fact: relative threshold", 0);
-        coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
-*/
-#else
-        std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
-        return EXIT_FAILURE;
-#endif
-    } else {
-      std::cout  << "Unknown coarse grid solver """ << coarseSolver << """.  Try  --coarseSolver=ifpack2 or --coarseSolver=amesos2." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  if (coarseProto == Teuchos::null) {
-    throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
-  }
-
+  Teuchos::ParameterList amesosList;
+  amesosList.set("PrintTiming",true);
+  RCP<DirectSolver> coarseProto = rcp( new DirectSolver(lib, "", amesosList) );
   SmootherFactory coarseSolveFact(coarseProto);
 
   //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
   H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
-
-
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -365,7 +268,6 @@ int main(int argc, char *argv[]) {
   if (amgAsSolver) {
     //*out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
-  
     {
       X->putScalar( (SC) 0.0);
 
@@ -382,7 +284,7 @@ int main(int argc, char *argv[]) {
 #endif //ifdef AMG_SOLVER
 
   // Use AMG as a preconditioner in Belos
-  if (amgAsPrecond && xpetraParameters.GetLib()==Xpetra::UseTpetra)
+  if (amgAsPrecond && lib == Xpetra::UseTpetra)
   {
 #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
 #define BELOS_SOLVER
@@ -499,3 +401,6 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
+
+// TODO: add warning if:
+// DEBUG_MODE, LONG_LONG or KLU

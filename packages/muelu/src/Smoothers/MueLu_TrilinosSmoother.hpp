@@ -88,6 +88,7 @@ namespace MueLu {
     // See https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c5 for what I proposed to do
     static std::string Ifpack2ToIfpack1Type(std::string const & type) {
       if (type == "RELAXATION") { return "point relaxation stand-alone"; }
+      if (type == "CHEBYSHEV")  { return "Chebyshev"; }
     
       TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
     }
