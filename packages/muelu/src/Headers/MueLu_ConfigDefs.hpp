@@ -3,14 +3,18 @@
 
 #include "MueLu_config.hpp"
 
-// mem management
+// Memory management
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
 
+// Verbose levels
+#include <Teuchos_Describable.hpp>
+
 //! Namespace for MueLu classes and methods
 namespace MueLu {
+
   // import Teuchos memory management classes into MueLu
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -25,10 +29,15 @@ namespace MueLu {
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcpFromRef;
-}
 
-// //! Namespace for MueLu example classes
-// namespace MueLuExamples {
-// }
+  // verbose levels
+  using Teuchos::VERB_DEFAULT;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
+
+}
 
 #endif /* MUELU_CONFIGDEFS_H */

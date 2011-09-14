@@ -58,9 +58,9 @@ namespace MueLu {
   private:
     bool isSetup_;
   
-  }; //class SmootherPrototype
+  }; // class SmootherPrototype
 
-} //namespace MueLu
+} // namespace MueLu
 
 #define MUELU_SMOOTHERPROTOTYPE_SHORT
 #endif //ifndef MUELU_SMOOTHERPROTOTYPE_HPP

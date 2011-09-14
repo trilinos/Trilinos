@@ -13,17 +13,6 @@
 
 namespace MueLu {
 
-  //TODO: move
-  std::string toString(Xpetra::UnderlyingLib lib) {
-    if (lib == Xpetra::UseTpetra) {
-      return "Tpetra";
-    } else if (lib == Xpetra::UseEpetra) {
-      return "Epetra";
-    } else {
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
-    }
-  }
-
   /*!
     @class DirectSolver
     @brief Class that encapsulates direct solvers. Autoselection of AmesosSmoother or Amesos2Smoother according to the compile time configuration of Trilinos
@@ -94,11 +83,45 @@ namespace MueLu {
       TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
     }
 
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << SmootherPrototype::description();
+      out << "{lib = " << toString(lib_) << ", type = " << type_ << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { //TODO: remove Teuchos::Describable::
+      using std::endl;
+      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      if (vl == VERB_NONE) return;
+      
+      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
+      
+      Teuchos::OSTab tab1(out);
+
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        out << "Linear Algebra: " << toString(lib_) << endl;
+        out << "PrecType: " << type_ << endl;
+        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      }
+      
+      if (VERB_EXTREME) {
+        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+      }
+    }
+
+    //@}
+
   private:
     //! Tpetra or Epetra?
     Xpetra::UnderlyingLib lib_;
 
-    //! amesos-specific key phrase that denote smoother type (same as SmootherBase::Type_)
+    //! amesos1/2-specific key phrase that denote smoother type
     std::string type_;
     
     //! parameter list that is used by Amesos internally

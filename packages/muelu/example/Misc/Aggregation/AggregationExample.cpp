@@ -6,7 +6,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
-#include "Teuchos_VerboseObject.hpp"
+#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 // Xpetra

@@ -34,6 +34,7 @@ namespace MueLu {
 
     /*! @brief Constructor
       Creates a MueLu interface to the direct solvers in the Amesos2 package.
+      If you are using type=="", then either SuperLU or KLU2 are used by default.
     */
     Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
       : type_(type), paramList_(paramList)
@@ -112,6 +113,45 @@ namespace MueLu {
     RCP<SmootherPrototype> Copy() const {
       return rcp( new Amesos2Smoother(*this) );
     }
+
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const {
+      using std::endl;
+      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      if (vl == VERB_NONE) return;
+      
+      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
+      
+      Teuchos::OSTab tab1(out);
+
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        out << "Prec. type: " << type_ << endl;
+        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      }
+      
+      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+        if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
+      }
+
+      if (vl == VERB_EXTREME) {
+        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+        out << "-" << endl;
+        out << "RCP<prec_>: " << prec_ << std::endl; 
+      }
+    }
+
+    //@}
 
   private:
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Tpetra_CrsMatrix;

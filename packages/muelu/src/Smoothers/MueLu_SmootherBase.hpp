@@ -1,11 +1,11 @@
 #ifndef MUELU_SMOOTHERBASE_HPP
 #define MUELU_SMOOTHERBASE_HPP
 
+#include <Xpetra_MultiVector.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
-
   /*!
     @class SmootherBase
     @brief Base class for smoothers

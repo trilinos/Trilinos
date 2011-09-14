@@ -2,6 +2,7 @@
 #define XPETRA_LOOKUPSTATUS_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
+
 #ifdef HAVE_XPETRA_TPETRA  
 #include "Tpetra_ConfigDefs.hpp"
 #endif
@@ -10,12 +11,17 @@
 #include "Epetra_CombineMode.h"
 #endif
 
+#include "Xpetra_Map.hpp" // definition of UnderlyingLib
+
 namespace Xpetra {
+
+  //! Convert a Xpetra::UnderlyingLib to a std::string
+  std::string toString(UnderlyingLib lib);
 
 #ifdef HAVE_XPETRA_TPETRA  
   
   //! Convert a Tpetra::LookupStatus to a Xpetra::LookupStatus.
-  Xpetra::LookupStatus  toXpetra(Tpetra::LookupStatus);
+  Xpetra::LookupStatus   toXpetra(Tpetra::LookupStatus);
 
   //! Convert a Xpetra::OptimizeOption to a Tpetra::OptimizeOption.
   Tpetra::ProfileType    toTpetra(Xpetra::ProfileType);
@@ -34,7 +40,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA  
   
   //! Convert a Epetra return value to a Xpetra::LookupStatus.
-  Xpetra::LookupStatus  toXpetra(int);
+  Xpetra::LookupStatus   toXpetra(int);
   
   //! Convert a Xpetra::ProfileType to an Epetra StaticProfil boolean
   bool                   toEpetra(Xpetra::ProfileType);

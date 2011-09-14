@@ -81,3 +81,4 @@ namespace MueLu {
 
 // TODO: print default factory used in debug mode
 // TODO: if varName already available in Level but using another factory, print a warning.
+// TODO: desallocation of DefaultFactory not set by users

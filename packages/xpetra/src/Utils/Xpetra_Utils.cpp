@@ -3,6 +3,16 @@
 
 namespace Xpetra {
 
+  std::string toString(Xpetra::UnderlyingLib lib) {
+    if (lib == Xpetra::UseTpetra) {
+      return "Tpetra";
+    } else if (lib == Xpetra::UseEpetra) {
+      return "Epetra";
+    } else {
+      TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
+    }
+  }
+
 #ifdef HAVE_XPETRA_TPETRA
 
   Xpetra::LookupStatus toXpetra(Tpetra::LookupStatus ls) {

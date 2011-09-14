@@ -13,6 +13,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_Utilities.hpp"
 
+// Default types for Scalar, LocalOrdinal and GlobalOrdinal
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 

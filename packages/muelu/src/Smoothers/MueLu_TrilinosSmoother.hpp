@@ -35,11 +35,6 @@ namespace MueLu {
     { 
       TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
-
-      if (lib_ == Xpetra::UseEpetra) {
-        type_ = TrilinosSmoother::Ifpack2ToIfpack1Type(type_);
-        paramList_ = TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_);
-      }
     }
     
     //! Destructor
@@ -72,7 +67,7 @@ namespace MueLu {
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
-        return rcp( new IfpackSmoother(type_, paramList_, overlap_) );
+        return rcp( new IfpackSmoother(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_) );
 #else
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif
@@ -117,11 +112,52 @@ namespace MueLu {
       return ifpack1List;
     }
 
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << SmootherPrototype::description();
+      out << "{lib = " << toString(lib_) << ", type = " << type_ << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { //TODO: remove Teuchos::Describable::
+      using std::endl;
+      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      if (vl == VERB_NONE) return;
+      
+      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
+      
+      Teuchos::OSTab tab1(out);
+
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        out << "Linear Algebra: " << toString(lib_) << endl;
+        out << "PrecType: " << type_ << endl;
+        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        out << "Overlap: " << overlap_ << endl;
+      }
+      
+      if (vl == VERB_EXTREME) {
+        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+        if (lib_ == Xpetra::UseEpetra) {
+          out << "-" << endl;
+          out << "Epetra PrecType: " << Ifpack2ToIfpack1Type(type_) << std::endl; 
+          out << "Epetra Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << Ifpack2ToIfpack1Param(paramList_); }
+        }
+      }
+
+    }
+
+    //@}
+
   private:
     //! Tpetra or Epetra?
     Xpetra::UnderlyingLib lib_;
 
-    //! ifpack1/2-specific key phrase that denote smoother type (same as SmootherBase::Type_)
+    //! ifpack1/2-specific key phrase that denote smoother type
     std::string type_;
     
     //! parameter list that is used by Ifpack/Ifpack2 internally

@@ -153,7 +153,7 @@ namespace MueLu {
       RCP<Teuchos::FancyOStream> out_ = this->getOStream();
       Teuchos::OSTab tab(out_);
 
-      A_ = level.Get< RCP<Operator> >("A",NULL);
+      A_ = level.Get< RCP<Operator> >("A", NULL);
 
       // output information
       std::ostringstream buf; buf << level.GetLevelID();
@@ -232,6 +232,49 @@ namespace MueLu {
 
     //@}
 
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
+      using std::endl;
+      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      if (vl == VERB_NONE) return;
+      
+      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
+      
+      Teuchos::OSTab tab1(out);
+
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        out << "Prec. type: " << type_ << endl;
+        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        out << "Overlap: " << overlap_ << endl;
+      }
+      
+      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+        if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
+      }
+
+      if (vl == VERB_EXTREME) {
+        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+        out << "-" << endl;
+        out << "RCP<A_>: " << A_ << std::endl;
+        out << "RCP<prec_>: " << prec_ << std::endl; 
+
+      }
+
+    }
+
+    //@}
+
   private:
 
     //! ifpack-specific key phrase that denote smoother type
@@ -254,13 +297,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_IFPACK_SMOOTHER_SHORT
-#endif //ifdef HAVE_MUELU_IFPACK
-#endif //ifndef MUELU_IFPACK_SMOOTHER_HPP
-
-// For describe()
-//       std::string label;
-//       if (type == "point relaxation stand-alone")
-//         label = "Ifpack: " + paramList_.get("relaxation: type","unknown relaxation");
-//       else
-//         label = "Ifpack: " + type;
-//       //TODO      SmootherBase::SetType(label);
+#endif // ifdef HAVE_MUELU_IFPACK
+#endif // ifndef MUELU_IFPACK_SMOOTHER_HPP

@@ -57,6 +57,8 @@ namespace MueLu {
             - parameter list options
                 - none required
 
+        If you are using type=="", then either SuperLU or KLU are used by default.
+
         See also Amesos_Klu and Amesos_Superlu.
 
     */
@@ -90,7 +92,7 @@ namespace MueLu {
     void Setup(Level &level) {
       TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
 
-      A_ = level.Get< RCP<Operator> >("A",NULL);
+      A_ = level.Get< RCP<Operator> >("A",NULL); //TODO NULL!!
 
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       linearProblem_ = rcp( new Epetra_LinearProblem() );
@@ -142,6 +144,47 @@ namespace MueLu {
       return rcp( new AmesosSmoother(*this) );
     }
     
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const {
+      using std::endl;
+      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      if (vl == VERB_NONE) return;
+      
+      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
+      
+      Teuchos::OSTab tab1(out);
+
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        out << "Prec. type: " << type_ << endl;
+        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      }
+      
+      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+        if (prec_ != Teuchos::null) { prec_->PrintStatus(); prec_->PrintTiming(); }
+      }
+
+      if (vl == VERB_EXTREME) {
+        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+        out << "-" << endl;
+        out << "RCP<A_>: " << A_ << std::endl;
+        out << "RCP<linearProblem__>: " << linearProblem_ << std::endl;
+        out << "RCP<prec_>: " << prec_ << std::endl; 
+      }
+    }
+
+    //@}
+
   private:
 
     //! amesos-specific key phrase that denote smoother type
