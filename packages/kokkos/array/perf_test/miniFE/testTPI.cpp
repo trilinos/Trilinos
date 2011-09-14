@@ -37,6 +37,7 @@
  *************************************************************************
  */
 
+#include <sstream>
 #include <iostream>
 #include <math.h>
 
@@ -68,8 +69,12 @@ void test_TPI( int beg, int end, int runs, int threads )
 {
   Kokkos::DeviceTPI::initialize( threads );
 
-  MiniFE< double , Kokkos::DeviceTPI >::driver( "TPI-double" , beg , end , runs );
-  MiniFE< float  , Kokkos::DeviceTPI >::driver( "TPI-float" , beg , end , runs );
+  std::ostringstream label_double , label_float;
+  label_double << "TPI[" << threads << "]-double" ;
+  label_float  << "TPI[" << threads << "]-float" ;
+
+  MiniFE< double , Kokkos::DeviceTPI >::driver( label_double.str().c_str(), beg , end , runs );
+  MiniFE< float  , Kokkos::DeviceTPI >::driver( label_float.str().c_str() , beg , end , runs );
 
   Kokkos::DeviceTPI::finalize();
 
