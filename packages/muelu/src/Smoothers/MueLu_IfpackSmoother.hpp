@@ -246,7 +246,7 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
       using std::endl;
-      int vl = (vl == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+      int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
       if (vl == VERB_NONE) return;
       
       if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
@@ -268,7 +268,6 @@ namespace MueLu {
         out << "-" << endl;
         out << "RCP<A_>: " << A_ << std::endl;
         out << "RCP<prec_>: " << prec_ << std::endl; 
-
       }
 
     }
