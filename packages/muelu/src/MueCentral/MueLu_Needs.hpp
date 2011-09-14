@@ -31,10 +31,6 @@ namespace MueLu {
     by calling the Request function. Then the data can be set by calling SetData.
     With GetData the user can fetch data when needed. Release decrements the reference counter
     for the given variable.
-
-    Note: There is a SetupPhase flag/function. If SetupPhase == true, the data given to the Set
-    function is always stored even if not requested before! (default: SetupPhase = false)
-
   */
   class Needs : public BaseClass {
 
@@ -52,12 +48,6 @@ namespace MueLu {
     //! Stores data associated with a need.
     MueLu::UTILS::ExtendedHashtable dataTable_;
 
-    //! flag: setup phase
-    /*!
-     * if setupPhase=true, store always data, even if not requested
-     * Note: handling slightly different than in MueMat!
-     */
-    bool setupPhase_;
   protected:
     RCP<Teuchos::FancyOStream> out_;
 
@@ -67,7 +57,6 @@ namespace MueLu {
 
     //! Default constructor.
     Needs() : out_(this->getOStream()) {
-      setupPhase_ = false;  // default behaviour: store data only if requested.
     }
 
     virtual ~Needs() {}
@@ -86,9 +75,8 @@ namespace MueLu {
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void SetData(const std::string& ename, const T &entry, const FactoryBase* factory) {
-        // check if in setupPhase (=store all data) or data is requested
-        if(setupPhase_ ||
-            (countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0))
+        // check if data is requested
+        if(countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0)
         {
           if(!countTable_.isKey(ename, factory))
             countTable_.Set(ename,0,factory);    // make sure that 'ename' is counted
