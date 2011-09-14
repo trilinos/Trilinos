@@ -215,7 +215,6 @@ namespace MueLu {
     {
   	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
-      Levels_[startLevel]->Release("A",MueLu::NoFactory::get());
 
       // keep variables A, P and R on all multigrid levels
 

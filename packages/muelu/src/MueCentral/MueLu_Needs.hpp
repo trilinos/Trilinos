@@ -229,9 +229,9 @@ namespace MueLu {
             throw(Exceptions::RuntimeError(msg));
       }
 
-      int numReq = -1;
+      int numReq = -2;
       countTable_.Get<int>(ename,numReq,factory);
-      if(numReq==-1) throw(Exceptions::RuntimeError("NumRequests: number of requests for " + ename + " cannot be determined. Error."));
+      if(numReq==-2) throw(Exceptions::RuntimeError("NumRequests: number of requests for " + ename + " cannot be determined. Error."));
       return numReq;
     } //
 
