@@ -43,18 +43,41 @@ namespace panzer {
     InArgs createInArgs() const;
     OutArgs createOutArgs() const;
     void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
+
     
     //@}
 
   private:
- 
-    void fillResponses(const OutArgs & outArgs) const;
+
+    // /////////////////////////////////////
+    // Private methods
+
+    /** Initialize Epetra linear objects.
+      *
+      * \note Requires lof_ to be set.
+      */
+    void initializeEpetraObjs();
+
+    // /////////////////////////////////////
+    // Private evaluation methods
+
+    //! for evaluation and handling of normal quantities, x,f,W, etc
+    void evalModel_basic( const InArgs& inArgs, const OutArgs& outArgs ) const; 
+
+    #ifdef HAVE_STOKHOS
+       //! for evaluation and handling of Stochastic Galerkin quantities, x_sg, f_sg, W_sg, etc
+       void evalModel_sg( const InArgs& inArgs, const OutArgs& outArgs ) const;
+    #endif
+
+    //! handles evaluation of responses g, dgdx
+    void evalModel_responses(const InArgs & inArgs,const OutArgs & outArgs) const;
 
     // /////////////////////////////////////
     // Private member data
     
-    bool      isInitialized_;
-    
+    /** \defgroup EpetraObjs Underlying epetra types
+      * @{ 
+      */
     Teuchos::RCP<const Epetra_Map>   map_x_;
     Teuchos::RCP<Epetra_Vector> x0_;
     Teuchos::RCP<Epetra_Vector> x_dot_init_;
@@ -68,12 +91,16 @@ namespace panzer {
     std::vector<Teuchos::RCP<Epetra_Map> > g_map_;
     
     Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
+
+    /** @} */
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
     mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     bool build_transient_support_;
+
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
+
 
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
     mutable Teuchos::RCP<panzer::AssemblyEngineInArgs> ae_inargs_;

@@ -92,6 +92,11 @@ public:
      */
    void initializeGhostedContainer(int mem,LinearObjContainer & loc) const;
 
+   /** Extract underlying epetra factory from SGEpetraLinearOpFactory
+     */
+   Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > getEpetraFactory() const
+   { return epetraFact_; }
+
 protected:
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > epetraFact_;
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion_;

@@ -128,7 +128,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 
    // type was not a SGEpetraLinearObjContainer, try the Epetra type
    if(!completed) {
-      // this had many perils, primarily that the exception will come
+      // this has many perils, primarily that the exception will come
       // from the epetra factory.
       epetraFact_->initializeContainer(mem,loc);
    }
@@ -153,7 +153,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 
    // type was not a SGEpetraLinearObjContainer, try the Epetra type
    if(!completed) {
-      // this had many perils, primarily that the exception will come
+      // this has many perils, primarily that the exception will come
       // from the epetra factory.
       epetraFact_->initializeGhostedContainer(mem,loc);
    }

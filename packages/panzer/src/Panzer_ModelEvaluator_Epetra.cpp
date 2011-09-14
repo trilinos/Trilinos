@@ -19,41 +19,19 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 		      bool build_transient_support) : 
   fmb_(fmb),
-  lof_(lof),
   responseLibrary_(rLibrary),
   p_names_(p_names),
-  build_transient_support_(build_transient_support)
+  build_transient_support_(build_transient_support),
+  lof_(lof)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  map_x_ = lof->getMap();
-  x0_ = rcp(new Epetra_Vector(*map_x_));
-  x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
-  x_dot_init_->PutScalar(0.0);
-  
-  
-  // setup parameters
-  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
-       p != p_names_.end(); ++p) {
-    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap((*p)->size(), 0, map_x_->Comm())) ;
-    p_map_.push_back(local_map);
-    RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
-    ep_vec->PutScalar(0.0);
-    p_init_.push_back(ep_vec);
-  }
-
-  // setup response maps
-  for (std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++) {
-    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(1, 0, map_x_->Comm()));
-    g_map_.push_back(local_map);
-  }
-
-  // Initialize the graph for W CrsMatrix object
-  W_graph_ = lof->getGraph();
-
   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
+
+  // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
+  initializeEpetraObjs();
 
   ae_inargs_ = rcp(new panzer::AssemblyEngineInArgs(lof->buildGhostedLinearObjContainer(),
                                                     lof->buildLinearObjContainer()));
@@ -66,8 +44,43 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
                                    panzer::EpetraLinearObjContainer::DxDt |
                                    panzer::EpetraLinearObjContainer::F |
                                    panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+}
 
-  isInitialized_ = true;
+void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
+{
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+ 
+  TEST_FOR_EXCEPTION(lof_==Teuchos::null,std::logic_error,
+                     "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The linear object factory "
+                     "was not correctly initialized before calling initializeEpetraObjs.");
+  TEST_FOR_EXCEPTION(responseLibrary_==Teuchos::null,std::logic_error,
+                     "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The response library "
+                     "was not correctly initialized before calling initializeEpetraObjs.");
+
+  map_x_ = lof_->getMap();
+  x0_ = rcp(new Epetra_Vector(*map_x_));
+  x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
+  x_dot_init_->PutScalar(0.0);
+
+  // setup parameters
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
+       p != p_names_.end(); ++p) {
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap((*p)->size(), 0, map_x_->Comm())) ;
+    p_map_.push_back(local_map);
+    RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
+    ep_vec->PutScalar(0.0);
+    p_init_.push_back(ep_vec);
+  }
+  
+  // setup response maps
+  for (std::size_t i=0;i<responseLibrary_->getLabeledResponseCount();i++) {
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(1, 0, map_x_->Comm()));
+    g_map_.push_back(local_map);
+  }
+
+  // Initialize the graph for W CrsMatrix object
+  W_graph_ = lof_->getGraph();
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -139,6 +152,20 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
     inArgs.setSupports(IN_ARG_beta,true);
   }
   inArgs.set_Np(p_init_.size());
+
+#ifdef HAVE_STOKHOS
+  inArgs.setSupports(IN_ARG_x_sg,true);
+  // inArgs.setSupports(IN_ARG_x_dot_sg,true); NOT YET!
+ 
+  // no parameter support yet!
+  // for (int i=0; i<number of prameters; i++)
+  //    inArgs.setSupports(IN_ARG_p_sg, i, true);
+
+  inArgs.setSupports(IN_ARG_sg_basis,true);
+  inArgs.setSupports(IN_ARG_sg_quadrature,true);
+  inArgs.setSupports(IN_ARG_sg_expansion,true);
+#endif
+
   return inArgs;
 }
 
@@ -150,7 +177,6 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
   outArgs.set_Np_Ng(p_init_.size(), g_map_.size());
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
-  // outArgs.setSupports(OUT_ARG_g,true); //does this exist??? is it not needed
   outArgs.set_W_properties(
     DerivativeProperties(
       DERIV_LINEARITY_NONCONST
@@ -158,10 +184,30 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
       ,true // supportsAdjoint
       )
     );
+
+#ifdef HAVE_STOKHOS
+  outArgs.setSupports(OUT_ARG_f_sg,true);
+  outArgs.setSupports(OUT_ARG_W_sg,true);
+#endif
+
   return outArgs;
 }
 
+
 void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs, 
+					       const OutArgs& outArgs ) const
+{
+  evalModel_basic(inArgs,outArgs); // use x,p to evaluate, f, W
+
+  #ifdef HAVE_STOKHOS
+    evalModel_sg(inArgs,outArgs);  // use x_sg, p_sg to evaluate f_sg, W_sg
+  #endif
+
+  // build responses
+  evalModel_responses(inArgs,outArgs);
+}
+
+void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs, 
 					       const OutArgs& outArgs ) const
 {
   using Teuchos::dyn_cast;
@@ -177,11 +223,6 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   // Make sure construction built in transient support
   TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
 		     "ModelEvaluator was not built with transient support enabled!");
-
-//   if (is_transient)
-//     cout << "ME:evalModel() is transient (x_dot is non-null)!" << endl;
-//   else 
-//     cout << "ME:evalModel() is steady-state (x_dot is null)!" << endl;
 
   //
   // Get the input arguments
@@ -199,9 +240,6 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
     ae_inargs_->evaluate_transient_terms = true;
   }
   
-//   cout << "ME: alpha = " << ae_inargs_->alpha << endl;
-//   cout << "ME: beta = " << ae_inargs_->beta << endl;
-
   //
   // Get the output arguments
   //
@@ -278,15 +316,8 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
     epGhostedContainer->A->PutScalar(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
-
-    //Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
-    //J.Print(std::cout);
   }
   
-  // field response fields
-  if(outArgs.Ng()>0)
-     fillResponses(outArgs);
-
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
@@ -294,13 +325,25 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
   epGlobalContainer->dxdt = Teuchos::null;
   epGlobalContainer->f = Teuchos::null;
   epGlobalContainer->A = Teuchos::null;
-
 }
+
+#ifdef HAVE_STOKHOS
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
+{
+//   TEUCHOS_ASSERT(false);
+}
+#endif
 
 void 
 panzer::ModelEvaluator_Epetra::
-fillResponses(const OutArgs & outArgs) const
+evalModel_responses(const InArgs & inArgs,const OutArgs & outArgs) const
 {
+   // nothing to do
+   if(outArgs.Ng()<=0) 
+      return;
+
    // determine if any of the outArgs are not null!
    bool activeGArgs = false;
    for(int i=0;i<outArgs.Ng();i++) 

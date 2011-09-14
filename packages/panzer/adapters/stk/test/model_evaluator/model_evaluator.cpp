@@ -182,8 +182,13 @@ namespace panzer {
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
 
-      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      #ifdef HAVE_STOKHOS
+        TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      #else
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      #endif
       
       
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
@@ -222,9 +227,13 @@ namespace panzer {
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
 
-      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      
+      #ifdef HAVE_STOKHOS
+        TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      #else
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      #endif
       
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       x->Update(1.0, *(me->get_x_init()), 0.0);
