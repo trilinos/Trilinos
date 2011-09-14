@@ -39,6 +39,10 @@ IF(Trilinos_ENABLE_Teuchos)
   SET(HAVE_TEUCHOS ON)
 ENDIF(Trilinos_ENABLE_Teuchos)
 
+IF(Trilinos_ENABLE_STK)
+  SET(HAVE_STK ON)
+ENDIF(Trilinos_ENABLE_STK)
+
 IF(NOX_ENABLE_Epetra)
   SET(HAVE_NOX_EPETRA ON)
 ENDIF(NOX_ENABLE_Epetra)
@@ -217,7 +221,9 @@ MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 # directory.  This needs to be done before the following loop over the
 # PyTrilinos modules, because of the call to GET_DIRECTORY_PROPERTY().
 ADD_SUBDIRECTORY(PyTrilinos)
-
+if (HAVE_STK)
+    ADD_SUBDIRECTORY(stk)
+endif (HAVE_STK)
 #
 # Add the script subdirectory
 ADD_SUBDIRECTORY(scripts)

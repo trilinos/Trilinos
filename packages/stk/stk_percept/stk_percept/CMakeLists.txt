@@ -51,10 +51,15 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/../stk_util/stk_util/unit_test_
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
+SET_AND_INC_DIRS(DIR ${STK_SOURCE_DIR}/stk_search)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 PACKAGE_ADD_LIBRARY(
 	stk_percept
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
+        DEPLIBS stk_mesh_base stk_mesh_fem stk_io stk_search stk_expreval stk_io_util
 )

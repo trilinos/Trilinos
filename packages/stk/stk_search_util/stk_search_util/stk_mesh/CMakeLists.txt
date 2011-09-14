@@ -49,6 +49,7 @@ ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   stk_search_util
+  DEPLIBS stk_util_util stk_mesh_base stk_mesh_fem
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

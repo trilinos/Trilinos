@@ -41,6 +41,7 @@ PACKAGE_ADD_LIBRARY(
 	stk_adapt
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
+	DEPLIBS stk_mesh_base stk_mesh_fem stk_percept
 )
 
 ADD_SUBDIRECTORY(main)

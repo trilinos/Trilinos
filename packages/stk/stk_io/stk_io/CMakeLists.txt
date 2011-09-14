@@ -47,6 +47,7 @@ PACKAGE_ADD_LIBRARY(
   NOINSTALLHEADERS ${HEADERS}
   DEPLIBS stk_mesh_base stk_mesh_fem
   SOURCES ${SOURCES}
+  DEPLIBS stk_mesh_base stk_mesh_fem
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
