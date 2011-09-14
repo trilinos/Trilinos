@@ -83,7 +83,7 @@
 // prototypes
 
 int checkValues( double x, double y, string message = "", bool verbose = false) { 
-  if (fabs((x-y)/x) > 0.01) {
+  if (fabs((x-y)/x) > 0.01 && x > 1.0e-12) {
     if (verbose) cout << "********** " << message << " check failed.********** " << endl;
     return(1); 
   }
