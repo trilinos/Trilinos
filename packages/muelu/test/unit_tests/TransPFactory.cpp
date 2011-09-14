@@ -29,7 +29,6 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Level fineLevel, coarseLevel;
-    //fineLevel.SetupPhase(true); coarseLevel.SetupPhase(true);
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // Test of createTwoLevelHierarchy: to be moved...

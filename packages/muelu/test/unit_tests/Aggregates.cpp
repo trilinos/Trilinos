@@ -21,13 +21,16 @@ namespace MueLuTests {
     aggFact.SetPhase3AggCreation(0.5);
 
     Level level;
-    level.SetupPhase(true);
+    //level.SetupPhase(true);
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+    level.Request("A",NULL);
     level.Set("A",A,NULL);
 
+    level.Request("Aggregates", &aggFact);
     aggFact.Build(level);
-
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",Teuchos::rcp(&aggFact,false)); // fix me
+    level.Release("Aggregates", &aggFact);
+
     return aggregates;
   }  //gimmeAggregates
 
@@ -36,6 +39,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
     RCP<Aggregates> aggregates = gimmeAggregates(A);
+    TEST_EQUALITY(aggregates != Teuchos::null, true);
   }
 
 ///////////////////////////////////////////////////////////////////////////

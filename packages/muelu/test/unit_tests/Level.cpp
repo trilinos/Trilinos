@@ -25,17 +25,25 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level aLevel;
-    aLevel.SetupPhase(true);  // store all data, even though it's not requested...
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
+    aLevel.Request("Hitchhiker's Guide");
+    TEST_EQUALITY(aLevel.IsRequested("Hitchhiker's Guide"), true);
     aLevel.Set("Hitchhiker's Guide",42);
     int fff = aLevel.Get<int>("Hitchhiker's Guide");
     TEST_EQUALITY(fff, 42);
+    TEST_EQUALITY(aLevel.IsRequested("PI"), false);
+    aLevel.Request("PI");
+    TEST_EQUALITY(aLevel.IsRequested("PI"), true);
     aLevel.Set("PI",3.14159265);
     double ggg = aLevel.Get<double>("PI");
     TEST_EQUALITY(ggg, 3.14159265);
+    TEST_EQUALITY(aLevel.IsAvailable("PI"), true);
+    aLevel.Release("PI");
+    TEST_EQUALITY(aLevel.IsAvailable("PI"), false);
+    aLevel.Request("Hello MueLu");
     aLevel.Set("Hello MueLu", std::string("Greetings to MueMat"));
     std::string hhh = aLevel.Get<std::string>("Hello MueLu");
     TEST_EQUALITY(hhh, "Greetings to MueMat");
@@ -56,19 +64,6 @@ namespace MueLuTests {
 
     aLevel.print(std::cout);
 
-    /*
-      RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
-      TEST_EQUALITY(aLevel.Get< RCP<SmootherPrototype> >("PreSmoother"), preSmoo);
-      //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, Operator>();
-      */
-
-
-    //out << aLevel << std::endl;
-    /*
-      out << "Testing copy ctor" << std::endl;
-      Level secondLevel(aLevel);
-      //out << secondLevel << std::endl;
-      */
   }
 
 } // namespace MueLuTests
