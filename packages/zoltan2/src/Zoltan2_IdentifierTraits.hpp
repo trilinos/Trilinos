@@ -10,6 +10,7 @@
 
 #include <utility>
 #include <iostream>
+#include <stdint.h>
 #include <Zoltan2_config.h>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_SerializationTraits.hpp>
