@@ -271,6 +271,48 @@ setObserver( const Teuchos::RCP<NOX::Epetra::Observer> & observer_ )
 // *****************************************************************
 // *****************************************************************
 
+void
+LOCA::Epetra::ModelEvaluatorInterface::
+postProcessContinuationStep(
+          LOCA::Abstract::Iterator::StepStatus stepStatus,
+          LOCA::Epetra::Group& group)
+{
+  // Evaluate responses in model evaluator after successful step
+  if (stepStatus != LOCA::Abstract::Iterator::Successful) return;
+
+  // Create inargs
+  const NOX::Epetra::Vector& ex = dynamic_cast<const NOX::Epetra::Vector&>(group.getX());
+  const Epetra_Vector& x = ex.getEpetraVector();
+
+  EpetraExt::ModelEvaluator::InArgs inargs = model_->createInArgs();
+  inargs.set_x(Teuchos::rcp(&x, false));
+  inargs.set_p(0, Teuchos::rcp(&param_vec, false));
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot)) {
+    // Create x_dot, filled with zeros
+    if (x_dot == NULL)
+      x_dot = new Epetra_Vector(x.Map());
+    inargs.set_x_dot(Teuchos::rcp(x_dot, false));
+  }
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha))
+    inargs.set_alpha(0.0);
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_beta))
+    inargs.set_beta(1.0);
+
+  // Create outargs
+  EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
+  int num_g = outargs.Ng();
+  if (num_g > 0) {
+    Teuchos::RCP<Epetra_Vector> g0 = Teuchos::rcp(new Epetra_Vector(*(model_->get_g_map(0))));
+
+    outargs.set_g(0,g0);
+
+    model_->evalModel(inargs, outargs);
+  }
+}
+
+// *****************************************************************
+// *****************************************************************
+
 LOCA::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(const LOCA::Epetra::ModelEvaluatorInterface& m) :
   NOX::Epetra::ModelEvaluatorInterface(m),

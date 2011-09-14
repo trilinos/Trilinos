@@ -49,6 +49,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
+#include "LOCA_Epetra_Group.H"
 
 namespace LOCA {
   namespace Epetra {
@@ -121,6 +122,16 @@ namespace LOCA {
 		  const vector<int>& param_ids,
 		  NOX::Abstract::MultiVector& result,
 		  bool isValidF) const;
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.
+       */
+      void
+      postProcessContinuationStep(
+                           LOCA::Abstract::Iterator::StepStatus stepStatus,
+                           LOCA::Epetra::Group& group);
     
     protected:
 
