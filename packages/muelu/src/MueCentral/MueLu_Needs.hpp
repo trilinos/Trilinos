@@ -59,6 +59,11 @@ namespace MueLu {
     Needs() : out_(this->getOStream()) {
     }
 
+    //! copy constructor
+    //explicit Needs(const Needs& source) {
+    	// TODO copy constructor
+    //}
+
     virtual ~Needs() {}
     //@}
 
@@ -118,7 +123,7 @@ namespace MueLu {
       int numReq = -2;
       countTable_.Get<int>(ename,numReq,factory);
       if(numReq==-2) throw(Exceptions::RuntimeError("Release: error reading countTable_(" + ename + ")"));
-      if (numReq == 0) // todo: handle keepAll
+      if (numReq == 0)
       {
         countTable_.Remove(ename,factory);
         dataTable_.Remove(ename,factory);
@@ -358,24 +363,15 @@ namespace MueLu {
     //! @name Helper functions
     //@{
 
-    void copyKeepStatus(const RCP<Needs>& newNeeds) const
-    {
-      std::vector<std::string> ekeys = countTable_.keys();
-      for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
-      {
-          std::vector<const MueLu::FactoryBase*> ehandles = countTable_.handles(*it);
-          for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
-          {
-            const std::string ename = *it;
-            const MueLu::FactoryBase* fac = *kt;
-            if(isKept(ename,fac))
-            {
-              if(fac == NULL) newNeeds->Keep(ename);
-              else newNeeds->Keep(ename,fac);
-            }
-          }
-      }
-    }
+    std::vector<std::string> RequestedKeys()
+	{
+    	return countTable_.keys();
+	}
+
+    std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string ename)
+	{
+    	return countTable_.handles(ename);
+	}
 
     //@}
 
