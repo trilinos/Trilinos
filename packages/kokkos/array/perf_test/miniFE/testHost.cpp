@@ -60,7 +60,7 @@ void test_Host(int beg, int end, int runs){
 
   std::cout << "\"MiniFE with Kokkos Host\"" << std::endl;
   std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"seconds\" , \"seconds\"" << std::endl ;
+            << "\"elements\" , \"seconds\" , \"seconds\" , \"MFlop/sec\"" << std::endl ;
 
   for(int i = beg ; i < end; i+=2)
   {

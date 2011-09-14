@@ -66,8 +66,8 @@ public:
   static
   void run( const multivector_type & dst , const multivector_type & src )
   {
-    const DeviceCuda::size_type n = dst.m_dim[ multivector_type::RankLength ] *
-                                    dst.m_dim[ multivector_type::RankStride ] ; 
+    const DeviceCuda::size_type n = dst.m_dim[ multivector_type::RankStride ] *
+                                    dst.m_dim[ multivector_type::RankCount ] ; 
     parallel_for( n , DeepCopyContiguous< ValueType , DeviceCuda >
                         ( dst.m_memory.ptr_on_device() ,
                           src.m_memory.ptr_on_device() ) );

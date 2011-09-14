@@ -52,8 +52,8 @@ int main(int argc, char ** argv){
 
   if ( argc != 5) 
   {
-    int beg = 20;
-    int end = 30;
+    int beg = 20 ;
+    int end = 30 ;
     int runs = 1;
     int threads = 4;
 

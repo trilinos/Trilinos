@@ -69,7 +69,7 @@ void test_TPI( int beg, int end, int runs, int threads )
 
   std::cout << "\"MiniFE with Kokkos TPI[" << threads << "]\"" << std::endl ;
   std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"seconds\" , \"seconds\"" << std::endl ;
+            << "\"elements\" , \"seconds\" , \"seconds\" , \"MFlop/sec\"" << std::endl ;
 
   for(int i = beg ; i < end; i+=2)
   {

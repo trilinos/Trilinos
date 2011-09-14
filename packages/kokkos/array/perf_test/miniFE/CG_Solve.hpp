@@ -43,6 +43,7 @@
 #include <Dot.hpp>
 #include <Divide.hpp>
 #include <CRSMatVec.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 
 template <class Scalar , class DeviceType >
@@ -58,130 +59,115 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   typedef Kokkos::MultiVectorView<Scalar , device_type>  scalar_vector;
   typedef Kokkos::MultiVectorView<index_type , device_type>    index_vector;
 
-
   typedef Kokkos::ValueView<Scalar , device_type>     value;
   typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
 
   
-  static double run(scalar_vector & A_value , index_vector & A_row , index_vector & A_col , scalar_vector & b , scalar_vector & x , double* times)
-  {
-    double time = 0.0;
-    double total_time = 0.0;
-    double waxpby_time = 0.0;
-    double matvec_time = 0.0;
-    double dot_time = 0.0;
-    double iter_time = 0.0;
-    host_val one_host = Kokkos::create_value<Scalar , Kokkos::DeviceHost>();
-    host_val zero_host = Kokkos::create_value<Scalar , Kokkos::DeviceHost>();
-    *one_host = 1.0; *zero_host = 0.0; 
-    value one = Kokkos::create_value<Scalar , device_type>();
-    value zero = Kokkos::create_value<Scalar , device_type>();
-    Kokkos::deep_copy(one,one_host);
-    Kokkos::deep_copy(zero,zero_host);
-    Scalar tolerance =  std::numeric_limits<Scalar>::epsilon();
+  // Return megaflops / second for iterations
 
+  static double run( scalar_vector & A_value ,
+                     index_vector  & A_row ,
+                     index_vector & A_col ,
+                     scalar_vector & b ,
+                     scalar_vector & x ,
+                     double* times)
+  {
+    const Scalar tolerance = std::numeric_limits<Scalar>::epsilon();
+    const int maximum_iteration = 200 ;
     const size_t rows = A_row.length()-1;
+
+    value one  = Kokkos::create_value<Scalar , device_type>();
+    value zero = Kokkos::create_value<Scalar , device_type>();
+
+    Kokkos::deep_copy( one,  Scalar( 1 ) );
+    Kokkos::deep_copy( zero, Scalar( 0 ) );
+
+    // Solvers' working temporaries:
+
     scalar_vector r = Kokkos::create_labeled_multivector<scalar_vector>("r",rows);
     scalar_vector p = Kokkos::create_labeled_multivector<scalar_vector>("p",rows);
     scalar_vector Ap = Kokkos::create_labeled_multivector<scalar_vector>("Ap",rows);
 
-
-    value rtrans = Kokkos::create_value<Scalar , device_type>();
-    value ptrans = Kokkos::create_value<Scalar , device_type>();
+    value rtrans    = Kokkos::create_value<Scalar , device_type>();
+    value ptrans    = Kokkos::create_value<Scalar , device_type>();
     value oldrtrans = Kokkos::create_value<Scalar , device_type>();  
-    host_val check = Kokkos::create_value<Scalar , Kokkos::DeviceHost>();
+    value alpha     = Kokkos::create_value<Scalar , device_type>();          
+    value beta      = Kokkos::create_value<Scalar , device_type>();  
+
     double normr = 1000; 
     
-    timeval start,stop,result;  
-    value alpha = Kokkos::create_value<Scalar , device_type>();          
-    value beta = Kokkos::create_value<Scalar , device_type>();  
+    Kokkos::deep_copy( p , x );
 
-    //create CRSMatVec object for A * x
-    CRSMatVec<Scalar,device_type> U(A_value, A_row , A_col , x , Ap);
-    
-    gettimeofday(&start, NULL);
-    U.MatVec(1.0 , 0.0);  //Compute Ap = A * x
-    device_type::wait_functor_completion();  //Synchronize threads
-    gettimeofday(&stop, NULL);  
-    
-    timersub(&stop, &start, &result);
-    time = (result.tv_sec + result.tv_usec/1000000.0);
-    matvec_time += time;
-    
-    //create CRSMatVec object for A * p
-    CRSMatVec<Scalar,device_type> V(A_value, A_row , A_col , p , Ap);
+    // create CRSMatVec object for A * p
+    CRSMatVec<Scalar,device_type> A_mult_p(A_value, A_row , A_col , p , Ap);
+
+    A_mult_p.MatVec( 1.0 , 0.0 ); // Ap = 1.0 * A * p + 0.0 * Ap
   
-    //r = b - Ap
-    Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ap , r),time);
-    waxpby_time += time;
+    // r = b - Ap
+    Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ap , r) );
     
-    //p = r
-    Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , r , zero , r , p), time);
-    waxpby_time += time;
-            
-       double iteration = 0;
-    int k;
-    while ( normr > tolerance )
-    {
+    // p = r
+    Kokkos::deep_copy( p , r );
 
-      gettimeofday(&start , NULL);
-      //Run 25 times before checking residual to allow pipelining
+    int iteration = 0 ;
+
+    Kokkos::Impl::Timer wall_clock ;
+
+    while ( normr > tolerance  && iteration < maximum_iteration )
+    {
+      int k;
+
+      // Iterate 25 times before checking residual to
+      // avoid the device-host synchronization
+      // required by a copy-back of residual data.
+
       for(k = 0; k < 25 ; k++) 
       {
-        //Ap = A*p
-        V.MatVec(1.0 , 0.0); 
+        // Ap = A*p
+        A_mult_p.MatVec(1.0 , 0.0); 
         
-        //ptrans = p • Ap
+        // ptrans = p • Ap
         Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(p , Ap) , ptrans );
 
-        //oldrtrans = r • r
-        //alpha = rtrans / ptrans
+        // oldrtrans = r • r
+        // alpha = rtrans / ptrans
         Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) ,  
                         Divide<Scalar , device_type>(ptrans,alpha,oldrtrans));
 
-        //x = x + alpha*p 
+        // x = x + alpha * p 
         Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , x , alpha , p , x) );
     
-        //r = rk - alpha*Ap
+        // r = rk - alpha * Ap
         Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , r , alpha , Ap , r) );
 
-        //rtrans = r • r
-        //beta = rtrans / oldrtrans
+        // rtrans = r • r
+        // beta = rtrans / oldrtrans
         Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) , 
                         Divide<Scalar , device_type>(oldrtrans , beta, rtrans) );
                                   
-        // p = r + beta*p
+        // p = r + beta * p
         Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , r , beta , p , p) );
-
       }
-      
-      device_type::wait_functor_completion();
-      gettimeofday(&stop, NULL);
-      timersub(&stop, &start, &result);
-      time = (result.tv_sec + result.tv_usec/1000000.0);
-      iter_time += time;
 
-      iteration+=k;
+      Scalar check = 0 ;
       Kokkos::deep_copy(check,oldrtrans);
-      normr = sqrt(*check);
+
+      iteration += k ;
+      normr = sqrt(check);
 
 //      std::cout<<"Iteration: "<<iteration<<" Residual "<<normr<<std::endl;
     }
-#if 0
-    //Compute floating point operations
-    double waxpby_flOps =   (3 * (3 * iteration + 2) * rows);
-    double dot_flOps =   (2 * (3* iteration) * rows );
-    double matvec_flOps = ( (2 * A_col.dimension(0)  + rows) * (iteration + 1) );
 
-    double total_flOps = waxpby_flOps + dot_flOps + matvec_flOps;
+    const double iter_time = wall_clock.seconds();
 
-    times[2] = (total_flOps/(1e6 * total_time));  //Mega floating point operations/second
-#endif
+    // Compute floating point operations performed during iterations
 
-    total_time = waxpby_time + dot_time + matvec_time + iter_time;
-    times[4] = iter_time/iteration; //iteration time/# of iterations
-    times[5] = total_time; //Total CG Solve Time
+    size_t iter_waxpby_flops = ( 3 * iteration ) * ( 3 * rows ); // y = a * x + b * y
+    size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
+    size_t iter_matvec_flops = iteration * ( 2 * A_col.length() );
+    size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
 
-    return total_time;
+    return (double) iter_total_flops / ( iter_time * 1.0e6 );
   }
 };
+

@@ -61,7 +61,8 @@ public:
                    const ValueType & src )
   {
     ValueType * const d = dst.m_memory.ptr_on_device();
-    Impl::copy_to_cuda_from_host( d , & src, sizeof(ValueType), 1 );
+    ValueType * const s = & src ;
+    Impl::copy_to_cuda_from_host( d, s, sizeof(ValueType), 1 );
   }
 
   static void run( const ValueView< ValueType , DeviceCuda > & dst ,
@@ -81,8 +82,9 @@ public:
   static void run( ValueType & dst ,
                    const ValueView< ValueType , DeviceCuda > & src )
   {
+    ValueType * const d = & dst ;
     ValueType * const s = src.m_memory.ptr_on_device();
-    Impl::copy_to_host_from_cuda( & dst , s, sizeof(ValueType), 1 );
+    Impl::copy_to_host_from_cuda( d , s, sizeof(ValueType), 1 );
   }
 
   static void run( const ValueView< ValueType , DeviceHost > & dst ,
