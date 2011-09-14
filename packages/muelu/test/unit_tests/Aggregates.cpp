@@ -27,7 +27,7 @@ namespace MueLuTests {
     level.Request("Aggregates", &aggFact);
     aggFact.DeclareInput(level);
     aggFact.Build(level);
-    RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",Teuchos::rcp(&aggFact,false)); // fix me
+    RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",&aggFact); // fix me
     level.Release("Aggregates", &aggFact);
     return aggregates;
   }  //gimmeAggregates

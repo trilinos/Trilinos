@@ -358,33 +358,6 @@ namespace MueLu {
     //! @name Helper functions
     //@{
 
-    /*bool SetupPhase(bool bSetup)
-    {
-      setupPhase_ = bSetup;
-
-      if(!setupPhase_)
-      {
-        // desallocation of data, that has not been requested
-        std::vector<string> dataKeys = dataTable_.keys();
-        for(std::vector<string>::iterator it = dataKeys.begin(); it!=dataKeys.end(); ++it)
-        {
-          for(std::vector<const MueLu::FactoryBase*>::iterator ith = dataTable_.handles(*it).begin(); ith!=dataTable_.handles(*it).end(); ++ith)
-          {
-            RCP<const MueLu::FactoryBase> rcpFacBase = Teuchos::rcp(*ith);
-            if(!countTable_.isKey(*it,*ith) || countTable_.Get<int>(*it,*ith) == 0)
-            {
-              std::cout << "Warning: SetupPhaseDesalloc: " << *it << " is present at the Level structure but has not been requested (-> removed)" << std::endl;
-              dataTable_.Remove(*it, *ith);
-              countTable_.Remove(*it, *ith);
-            }
-          }
-        }
-
-      }
-
-      return setupPhase_;
-    }*/
-
     void copyKeepStatus(const RCP<Needs>& newNeeds) const
     {
       std::vector<std::string> ekeys = countTable_.keys();
