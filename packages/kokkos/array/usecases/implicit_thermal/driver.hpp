@@ -47,10 +47,10 @@
 namespace Test {
 
 template< typename Scalar , class Device >
-struct MiniFE ;
+struct MiniImplTherm ;
 
 template< typename Scalar >
-struct MiniFE< Scalar , KOKKOS_MACRO_DEVICE > {
+struct MiniImplTherm< Scalar , KOKKOS_MACRO_DEVICE > {
 
 static void run(int x, int y, int z, double* times) 
 {
@@ -182,7 +182,7 @@ static void run(int x, int y, int z, double* times)
 static void driver( const char * label , int beg , int end , int runs )
 {
   std::cout << std::endl ;
-  std::cout << "\"MiniFE with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
   std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
             << "\"elements\" , \"seconds\" , \"KElem/sec\" , \"MFlop/sec\"" << std::endl ;
 

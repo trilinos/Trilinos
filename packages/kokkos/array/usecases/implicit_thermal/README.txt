@@ -37,33 +37,31 @@
  *************************************************************************
  */
 
-#include <iostream>
-#include <math.h>
+"Mini Implicit Thermal Conduction Application"
+  - mini-application
+  - simple linear finite elements
+  - simple thermal conduction problem on a box
+  - generation and solution of sparse linear system
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+Purpose:
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <assemble.hpp>
-#include <CRSMatrixGatherFill.hpp>
-#include <Dirichlet.hpp>
-#include <CG_Solve.hpp>
-#include <driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+To analyze performance and evaluate
+usability of the Kokkos Array programming model.
 
-namespace Test{
+History:
 
-void test_Host(int beg, int end, int runs)
-{
-  MiniFE< double, Kokkos::DeviceHost >::driver( "Host-double" , beg , end , runs );
-  MiniFE< float , Kokkos::DeviceHost >::driver( "Host-float" , beg , end , runs );
+Kernels for MiniImplTherm were extracted from the
+Mantevo miniFE mini-application.  MiniImplTherm
+is not a replacement for the Mantevo miniFE.
 
-} //test_host
+Build Script:
 
-}// namespace
+The 'build.sh' script is intended to gather
+build configurations for various platforms.
+The list of options is intended to be extended
+as platform-specific build configurations are
+required.  As these configurations are identified
+please add them to the options list and update
+this simple build script.
 
 

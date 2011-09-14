@@ -52,47 +52,6 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-// See section B.17 of Cuda C Programming Guide Version 3.2
-// for discussion of
-//   __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
-// function qualifier which could be used to improve performance.
-//----------------------------------------------------------------------------
-// Maximize L1 cache and minimize shared memory:
-//   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferL1 );
-// For 2.0 capability: 48 KB L1 and 16 KB shared
-//----------------------------------------------------------------------------
-
-template< class DriverType >
-__global__
-
-#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
-
-static void cuda_parallel_for()
-{
-  // The driver functor has been copied to constant memory
-  const DriverType & driver = 
-    *((const DriverType *) kokkos_device_cuda_constant_memory_buffer );
-
-#else
-
-static void cuda_parallel_for( const DriverType driver )
-{
-
-#endif
-
-  typedef DeviceCuda::size_type size_type ;
-
-  const size_type work_count  = driver.m_work_count ;
-  const size_type work_stride = driver.m_work_stride ;
-
-  size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
-
-  for ( ; iwork < work_count ; iwork += work_stride ) {
-    driver.m_work_functor( iwork );
-  }
-}
-
-//----------------------------------------------------------------------------
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceCuda > {
@@ -115,13 +74,27 @@ private:
   ParallelFor();
   ParallelFor & operator = ( const ParallelFor & );
 
+public:
+
   ParallelFor( const ParallelFor & rhs )
     : m_work_functor( rhs.m_work_functor )
     , m_work_count(   rhs.m_work_count )
     , m_work_stride(  rhs.m_work_stride )
     {}
 
-public:
+  inline
+  __device__
+  void execute_on_device() const
+  {
+    const DeviceCuda::size_type work_count  = m_work_count ;
+    const DeviceCuda::size_type work_stride = m_work_stride ;
+
+    DeviceCuda::size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+
+    for ( ; iwork < work_count ; iwork += work_stride ) {
+      m_work_functor( iwork );
+    }
+  }
 
   static void execute( const size_t work_count ,
                        const FunctorType & functor )
@@ -144,19 +117,16 @@ public:
 
     DeviceCuda::clear_dispatch_functor();
 
-#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
+    if ( KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY ) {
+      // Copy functor to constant memory on the device
+      cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(self_type) );
 
-    // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(self_type) );
-
-    // Invoke the driver function on the device
-    cuda_parallel_for< self_type > <<< grid , block >>>();
-
-#else
-
-    cuda_parallel_for< self_type > <<< grid , block >>>( driver );
-
-#endif
+      // Invoke the driver function on the device
+      cuda_parallel_launch_constant_memory< self_type > <<< grid , block >>>();
+    }
+    else {
+      cuda_parallel_launch_local_memory< self_type > <<< grid , block >>>( driver );
+    }
   }
 };
 

@@ -47,9 +47,11 @@ TBB | tbb )
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 )
   CXXFLAGS="${CXXFLAGS} -O3"
+  NVCCFLAGS="${NVCCFLAGS} -O3"
   ;;
 DBG | dbg | g | -g )
   CXXFLAGS="${CXXFLAGS} -g"
+  NVCCFLAGS="${NVCCFLAGS} -g"
   ;;
 #-------------------------------
 #---------- COMPILERS ----------
@@ -73,10 +75,11 @@ done
 
 if [ -n "${NVCC}" ] ;
 then
-  ${NVCC} ${CXXFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
+  echo "Building CUDA files as: " ${NVCC} ${NVCCFLAGS}
+  ${NVCC} ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
 fi
 
-echo ${CXX} ${CXXFLAGS}
+echo "Building regular files as: " ${CXX} ${CXXFLAGS}
 
 ${CXX} ${CXXFLAGS} ${INC_PATH} ${TEST_MACRO} -o mini_test.exe main.cpp ${CXX_SOURCES} ${LIB}
 

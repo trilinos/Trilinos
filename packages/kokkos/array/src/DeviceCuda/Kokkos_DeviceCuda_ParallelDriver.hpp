@@ -80,14 +80,44 @@ public:
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
-#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY
-
 /** \brief  Access to constant memory on the device */
 __device__ __constant__
 Kokkos::Impl::DeviceCudaTraits::ConstantGlobalBufferType
 kokkos_device_cuda_constant_memory_buffer ;
 
-#endif
+namespace Kokkos {
+namespace Impl {
+
+//----------------------------------------------------------------------------
+// See section B.17 of Cuda C Programming Guide Version 3.2
+// for discussion of
+//   __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
+// function qualifier which could be used to improve performance.
+//----------------------------------------------------------------------------
+// Maximize L1 cache and minimize shared memory:
+//   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferL1 );
+// For 2.0 capability: 48 KB L1 and 16 KB shared
+//----------------------------------------------------------------------------
+
+template< class DriverType >
+__global__
+static void cuda_parallel_launch_constant_memory()
+{
+  const DriverType & driver =
+    *((const DriverType *) kokkos_device_cuda_constant_memory_buffer );
+
+  driver.execute_on_device();
+}
+
+template< class DriverType >
+__global__
+static void cuda_parallel_launch_local_memory( const DriverType driver )
+{
+  driver.execute_on_device();
+}
+
+}
+}
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 

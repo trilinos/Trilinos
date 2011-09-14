@@ -47,14 +47,7 @@
 #include <Kokkos_DeviceHost_ParallelFor.hpp>
 #include <Kokkos_DeviceHost_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
-
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <assemble.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
@@ -62,15 +55,15 @@
 #include <driver.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
-__global__ void dummy_kernel(){}
+namespace Test{
 
-namespace Test {
-
-void test_Cuda(int beg, int end, int runs)
+void test_Host(int beg, int end, int runs)
 {
-  MiniFE<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
-  MiniFE<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
-}
+  MiniImplTherm< double, Kokkos::DeviceHost >::driver( "Host-double" , beg , end , runs );
+  MiniImplTherm< float , Kokkos::DeviceHost >::driver( "Host-float" , beg , end , runs );
+
+} //test_host
 
 }// namespace
+
 

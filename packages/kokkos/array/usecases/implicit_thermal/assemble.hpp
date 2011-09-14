@@ -45,7 +45,6 @@
 
 #include <impl/Kokkos_Preprocessing_macros.hpp>
 
-
 /********************************************************/
 
 #define numNodesPerElem 8 /* don't change */
@@ -123,13 +122,97 @@ struct TensorIntegration<Scalar,3,Order>
 
 //----------------------------------------------------------------------------
 
+template< typename Scalar >
+struct ShapeFunctionEvaluation {
+  enum { PointCount = 9 };
+  enum { FunctionCount = 8 };
+  enum { SpatialDimension = 3 };
+  enum { IntegrationOrder = 2 };
+
+  Scalar value   [ PointCount ][ FunctionCount ] ;
+  Scalar gradient[ PointCount ][ FunctionCount * SpatialDimension ];
+  Scalar weight  [ PointCount ];
+
+  ShapeFunctionEvaluation()
+  {
+    const TensorIntegration< Scalar , SpatialDimension , IntegrationOrder > 
+      integration ;
+
+    const Scalar ONE8TH = 0.125 ;
+
+    for ( int i = 0 ; i < PointCount ; ++i ) {
+
+      const Scalar u = 1.0 - integration.pts[i][0];
+      const Scalar v = 1.0 - integration.pts[i][1];
+      const Scalar w = 1.0 - integration.pts[i][2];
+
+      const Scalar up1 = 1.0 + integration.pts[i][0];
+      const Scalar vp1 = 1.0 + integration.pts[i][1];
+      const Scalar wp1 = 1.0 + integration.pts[i][2];
+
+      weight[i] = integration.wts[i] ;
+
+      // Vaues:
+      value[i][0] = ONE8TH *   u *   v *  w ;
+      value[i][1] = ONE8TH * up1 *   v *  w ;
+      value[i][2] = ONE8TH * up1 * vp1 *  w ;
+      value[i][3] = ONE8TH *   u * vp1 *  w ;
+
+      value[i][4] = ONE8TH *   u *   v *  wp1 ;
+      value[i][5] = ONE8TH * up1 *   v *  wp1 ;
+      value[i][6] = ONE8TH * up1 * vp1 *  wp1 ;
+      value[i][7] = ONE8TH *   u * vp1 *  wp1 ;
+
+      //fn 0 = u * v * w
+      gradient[i][ 0] = ONE8TH * -1  *  v  *  w  ;
+      gradient[i][ 1] = ONE8TH *  u  * -1  *  w  ;
+      gradient[i][ 2] = ONE8TH *  u  *  v  * -1  ;
+
+      //fn 1 = up1 * v * w
+      gradient[i][ 3] = ONE8TH *  1  *  v  *  w  ;
+      gradient[i][ 4] = ONE8TH * up1 * -1  *  w  ;
+      gradient[i][ 5] = ONE8TH * up1 *  v  * -1  ;
+
+      //fn 2 = up1 * vp1 * w
+      gradient[i][ 6] = ONE8TH *  1  * vp1 *  w ;
+      gradient[i][ 7] = ONE8TH * up1 *  1  *  w ;
+      gradient[i][ 8] = ONE8TH * up1 * vp1 * -1 ;
+
+      //fn 3 = u * vp1 * w
+      gradient[i][ 9] = ONE8TH * -1 * vp1 *  w ;
+      gradient[i][10] = ONE8TH *  u *  1  *  w ;
+      gradient[i][11] = ONE8TH *  u * vp1 * -1 ;
+
+      //fn 4 = u * v * wp1
+      gradient[i][12] = ONE8TH * -1  *  v  * wp1 ;
+      gradient[i][13] = ONE8TH *  u  * -1  * wp1 ;
+      gradient[i][14] = ONE8TH *  u  *  v  *  1  ;
+
+      //fn 5 = up1 * v * wp1
+      gradient[i][15] = ONE8TH *  1  *  v  * wp1 ;
+      gradient[i][16] = ONE8TH * up1 * -1  * wp1 ;
+      gradient[i][17] = ONE8TH * up1 *  v  *  1  ;
+
+      //fn 6 = up1 * vp1 * wp1
+      gradient[i][18] = ONE8TH *  1  * vp1 * wp1 ;
+      gradient[i][19] = ONE8TH * up1 *  1  * wp1 ;
+      gradient[i][20] = ONE8TH * up1 * vp1 *  1 ;
+
+      //fn 7 = u * vp1 * wp1
+      gradient[i][21] = ONE8TH * -1 * vp1 * wp1 ;
+      gradient[i][22] = ONE8TH *  u *  1  * wp1 ;
+      gradient[i][23] = ONE8TH *  u * vp1 *  1 ;
+    }
+  }
+};
+
+//----------------------------------------------------------------------------
+
 template< typename Scalar , typename ScalarCoord , class DeviceType >
 struct assembleFE;
 
 template<typename Scalar , typename ScalarCoord >
 struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
-
-  enum { numGaussPointsPerDim = 2 };
 
   typedef KOKKOS_MACRO_DEVICE                            device_type;
   typedef Scalar                                         scalar_type ;
@@ -137,14 +220,17 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   typedef Kokkos::MDArrayView<index_type,device_type>    index_array ;
   typedef Kokkos::MDArrayView<Scalar,      device_type>  scalar_array ;
   typedef Kokkos::MDArrayView<ScalarCoord, device_type>  coord_array ;
+  typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
-  index_array   elem_node_ids ;
-  coord_array   node_coords ;
-  scalar_array  element_stiffness;
-  scalar_array  element_vectors;
-  TensorIntegration< Scalar , spatialDim , numGaussPointsPerDim > integration ;
-  Scalar coeff_K ;
-  Scalar coeff_Q ;
+  enum { FunctionCount = shape_function_data::FunctionCount };
+
+  shape_function_data  shape_eval ;
+  index_array          elem_node_ids ;
+  coord_array          node_coords ;
+  scalar_array         element_stiffness;
+  scalar_array         element_vectors;
+  Scalar               coeff_K ;
+  Scalar               coeff_Q ;
 
   assembleFE( const index_array  & arg_elem_node_ids ,
               const coord_array  & arg_node_coords ,
@@ -152,85 +238,15 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
               const scalar_array & arg_element_vectors ,
               const Scalar       & arg_coeff_K ,
               const Scalar       & arg_coeff_Q )
-  : elem_node_ids( arg_elem_node_ids )
+  : shape_eval()
+  , elem_node_ids( arg_elem_node_ids )
   , node_coords(   arg_node_coords )
   , element_stiffness( arg_element_stiffness )
   , element_vectors( arg_element_vectors )
-  , integration()
   , coeff_K( arg_coeff_K )
   , coeff_Q( arg_coeff_Q )
   {}
 
-
-  //  Shape function values and gradients
-  //  with respect to master element coordinate system
-
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void shape_fns( const Scalar* x,
-                  Scalar * fn_value ,
-                  Scalar * fn_grad )const
-  {
-    const Scalar ONE8TH = 0.125 ;
-
-    const Scalar u = 1.0 - x[0];
-    const Scalar v = 1.0 - x[1];
-    const Scalar w = 1.0 - x[2];
-
-    const Scalar up1 = 1.0 + x[0];
-    const Scalar vp1 = 1.0 + x[1];
-    const Scalar wp1 = 1.0 + x[2];
-
-    // Vaues:
-    fn_value[0] = ONE8TH *   u *   v *  w ;
-    fn_value[1] = ONE8TH * up1 *   v *  w ;
-    fn_value[2] = ONE8TH * up1 * vp1 *  w ;
-    fn_value[3] = ONE8TH *   u * vp1 *  w ;
-
-    fn_value[4] = ONE8TH *   u *   v *  wp1 ;
-    fn_value[5] = ONE8TH * up1 *   v *  wp1 ;
-    fn_value[6] = ONE8TH * up1 * vp1 *  wp1 ;
-    fn_value[7] = ONE8TH *   u * vp1 *  wp1 ;
-
-    //fn 0 = u * v * w
-    fn_grad[ 0] = ONE8TH * -1  *  v  *  w  ;
-    fn_grad[ 1] = ONE8TH *  u  * -1  *  w  ;
-    fn_grad[ 2] = ONE8TH *  u  *  v  * -1  ;
-
-    //fn 1 = up1 * v * w
-    fn_grad[ 3] = ONE8TH *  1  *  v  *  w  ;
-    fn_grad[ 4] = ONE8TH * up1 * -1  *  w  ;
-    fn_grad[ 5] = ONE8TH * up1 *  v  * -1  ;
-
-    //fn 2 = up1 * vp1 * w
-    fn_grad[ 6] = ONE8TH *  1  * vp1 *  w ;
-    fn_grad[ 7] = ONE8TH * up1 *  1  *  w ;
-    fn_grad[ 8] = ONE8TH * up1 * vp1 * -1 ;
-
-    //fn 3 = u * vp1 * w
-    fn_grad[ 9] = ONE8TH * -1 * vp1 *  w ;
-    fn_grad[10] = ONE8TH *  u *  1  *  w ;
-    fn_grad[11] = ONE8TH *  u * vp1 * -1 ;
-
-    //fn 4 = u * v * wp1
-    fn_grad[12] = ONE8TH * -1  *  v  * wp1 ;
-    fn_grad[13] = ONE8TH *  u  * -1  * wp1 ;
-    fn_grad[14] = ONE8TH *  u  *  v  *  1  ;
-
-    //fn 5 = up1 * v * wp1
-    fn_grad[15] = ONE8TH *  1  *  v  * wp1 ;
-    fn_grad[16] = ONE8TH * up1 * -1  * wp1 ;
-    fn_grad[17] = ONE8TH * up1 *  v  *  1  ;
-
-    //fn 6 = up1 * vp1 * wp1
-    fn_grad[18] = ONE8TH *  1  * vp1 * wp1 ;
-    fn_grad[19] = ONE8TH * up1 *  1  * wp1 ;
-    fn_grad[20] = ONE8TH * up1 * vp1 *  1 ;
-
-    //fn 7 = u * vp1 * wp1
-    fn_grad[21] = ONE8TH * -1 * vp1 * wp1 ;
-    fn_grad[22] = ONE8TH *  u *  1  * wp1 ;
-    fn_grad[23] = ONE8TH *  u * vp1 *  1 ;
-  }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void jacobian( const ScalarCoord * x, 
@@ -239,16 +255,6 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
                  const Scalar * grad_vals, 
                  Scalar * J) const
   {
-    J[0] = 0.0;
-    J[1] = 0.0;
-    J[2] = 0.0;
-    J[3] = 0.0;
-    J[4] = 0.0;
-    J[5] = 0.0;
-    J[6] = 0.0;
-    J[7] = 0.0;
-    J[8] = 0.0;
-
     int i_X_spatialDim = 0;
 
     for(int i = 0; i < 8; ++i) {
@@ -266,7 +272,6 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
       i_X_spatialDim += spatialDim;
     }
-
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -386,11 +391,6 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
     ScalarCoord x[8], y[8], z[8];
 
-    Scalar psi[numNodesPerElem];
-    Scalar grad_vals[numNodesPerElem*spatialDim];
-
-    Scalar J[spatialDim*spatialDim];
-
     for ( int i = 0 ; i < 8 ; ++i ) {
       const int node_index = elem_node_ids( ielem , i );
       x[i] = node_coords( node_index , 0 );
@@ -399,25 +399,25 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     }
 
     // This loop could be parallelized; however,
-    // it would require per-thread temporaries
+    // it would require additional per-thread temporaries
     // of 'elem_vec' and 'elem_stiff' which would
-    // have to be reduced.
+    // consume more local memory and have to be reduced.
 
-    for ( int i = 0 ; i < integration.N ; ++i ) {
+    for ( int i = 0 ; i < shape_eval.PointCount ; ++i ) {
 
-      shape_fns(integration.pts[i] , psi, grad_vals);
+      Scalar J[spatialDim*spatialDim] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
 
-      jacobian( x, y, z, grad_vals, J );
+      jacobian( x, y, z, shape_eval.gradient[i] , J );
 
       // Overwrite J with its inverse
       const Scalar detJ = inverse_and_determinant3x3(J);
 
-      const Scalar k_detJ_w = coeff_K * detJ * integration.wts[i] ;
-      const Scalar Q_detJ_w = coeff_Q * detJ * integration.wts[i] ;
+      const Scalar k_detJ_w = coeff_K * detJ * shape_eval.weight[i] ;
+      const Scalar Q_detJ_w = coeff_Q * detJ * shape_eval.weight[i] ;
 
-      contributeDiffusionMatrix( k_detJ_w , grad_vals , J , elem_stiff );
+      contributeDiffusionMatrix( k_detJ_w , shape_eval.gradient[i] , J , elem_stiff );
 
-      contributeSourceVector( Q_detJ_w , psi , elem_vec );
+      contributeSourceVector( Q_detJ_w , shape_eval.value[i] , elem_vec );
     }
 
     for(int i=0; i<numNodesPerElem; ++i) {

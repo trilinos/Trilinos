@@ -47,14 +47,14 @@
 #include <Kokkos_DeviceHost_ParallelFor.hpp>
 #include <Kokkos_DeviceHost_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceTBB.hpp>
-#include <Kokkos_DeviceTBB_ValueView.hpp>
-#include <Kokkos_DeviceTBB_MultiVectorView.hpp>
-#include <Kokkos_DeviceTBB_MDArrayView.hpp>
-#include <Kokkos_DeviceTBB_ParallelFor.hpp>
-#include <Kokkos_DeviceTBB_ParallelReduce.hpp>
+#include <Kokkos_DeviceCuda.hpp>
+#include <Kokkos_DeviceCuda_ValueView.hpp>
+#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
+#include <Kokkos_DeviceCuda_MDArrayView.hpp>
+#include <Kokkos_DeviceCuda_ParallelFor.hpp>
+#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceTBB_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <assemble.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
@@ -62,14 +62,15 @@
 #include <driver.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
-namespace Test{
+__global__ void dummy_kernel(){}
 
-void test_TBB(int beg, int end, int runs)
+namespace Test {
+
+void test_Cuda(int beg, int end, int runs)
 {
-  MiniFE< double , Kokkos::DeviceTBB >::driver( "TBB-double" , beg , end , runs );
-  MiniFE< float ,  Kokkos::DeviceTBB >::driver( "TBB-float" , beg , end , runs );
-}//test_TBB
+  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
+  MiniImplTherm<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
+}
 
 }// namespace
-
 
