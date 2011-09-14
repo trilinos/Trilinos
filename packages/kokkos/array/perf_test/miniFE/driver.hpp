@@ -42,6 +42,7 @@
 #include <BoxMeshFixture.hpp>
 #include <CRSGraph.hpp>
 
+#define  PRINT_SAMPLE_OF_SOLUTION  0
 
 namespace Test {
 
@@ -75,20 +76,18 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
   //  Host Data Structures
 
   index_vector_h  A_row_h , A_col_h ;
-  scalar_vector_h X_h ;
 
   //  Device Data Structures
 
-  scalar_array_d  elem_stiffness, elem_load;
+  scalar_array_d  elem_stiffness, elem_load ;
 
   index_vector_d A_row_d , A_col_d, dirichlet_flag_d ;
   scalar_vector_d A, b, X , dirichlet_value_d ;
-  
-  timeval start,stop,result;
-  double time = 0.0;
-  double total_time = 0.0;
 
-  gettimeofday(&start, NULL);
+  //------------------------------
+  // Generate mesh and corresponding sparse matrix graph
+
+  Kokkos::Impl::Timer wall_clock ;
 
   const BoxMeshFixture< Scalar , device_type > mesh( x , y , z );
 
@@ -99,73 +98,62 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
                  mesh.h_mesh.elem_node_ids ,
                  A_row_h , A_col_h );
 
-  gettimeofday(&stop, NULL);
-  timersub(&stop, &start, &result);
-  time = (result.tv_sec + result.tv_usec/1000000.0);
-
-  total_time += time;  
-  times[0] = time;
-
-//  copy host data to device
+  // Copy sparse matrix graph to device
 
   A_row_d = Kokkos::create_labeled_multivector< index_array_d >("A_row_d",A_row_h.length());
   A_col_d = Kokkos::create_labeled_multivector< index_array_d >("A_col_d",A_col_h.length());
 
-  elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
-  elem_load      =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8);
+  Kokkos::deep_copy(A_row_d, A_row_h);
+  Kokkos::deep_copy(A_col_d, A_col_h);
+
+  device_type::wait_functor_completion();
+
+  times[0] = wall_clock.seconds(); // Mesh and graph allocation and population.
+
+  //------------------------------
+  // Allocate device memory for linear system and element contributions.
 
   A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());  
   b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.elem_count, 8);  
   X = Kokkos::create_labeled_multivector< scalar_vector_d > ("X",mesh.node_count);
 
-  gettimeofday(&start, NULL);
+  elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
+  elem_load      =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8);
 
-  Kokkos::deep_copy(A_row_d, A_row_h);
-  Kokkos::deep_copy(A_col_d, A_col_h);
-
-  gettimeofday(&stop, NULL);
-  timersub(&stop, &start, &result);
-  time = (result.tv_sec + result.tv_usec/1000000.0);
-
-  total_time += time;  
-
+  wall_clock.reset();
 
   Kokkos::parallel_for( mesh.elem_count,
     assembleFE<Scalar, device_type>( mesh.d_mesh.elem_node_ids ,
                                      mesh.d_mesh.node_coords ,
                                      elem_stiffness, elem_load ,
-                                     elem_coeff_K , elem_load_Q ), time);
+                                     elem_coeff_K , elem_load_Q ) );
 
-  total_time += time;  
-  times[1] = time;
-
-
-  Kokkos::parallel_for(mesh.node_count,
+  Kokkos::parallel_for( mesh.node_count,
     CRSMatrixGatherFill<Scalar, device_type>( A, b, A_row_d, A_col_d,
                                               mesh.d_mesh.node_elem_offset ,
                                               mesh.d_mesh.node_elem_ids,
                                               mesh.d_mesh.elem_node_ids,
                                               elem_stiffness,
-                                              elem_load), time);
-
-  total_time += time;  
-  times[2] = time;
+                                              elem_load) );
 
   Kokkos::parallel_for(mesh.node_count ,
     Dirichlet<Scalar , device_type>(A, A_row_d ,A_col_d, b,
-                                    dirichlet_flag_d , dirichlet_value_d ) , time);
+                                    dirichlet_flag_d , dirichlet_value_d ) );
 
-  total_time += time;
-  times[3] = time;
+  device_type::wait_functor_completion();
+
+  times[1] = wall_clock.seconds(); // Matrix computation and assembly
 
 //  printSparse< scalar_vector_d , index_vector_d>("A.txt",A,A_row_d,A_col_d);
 
-  time = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X ,times );
-  total_time += time;
-  
-  times[6] = total_time;
+  //------------------------------
+  // Solve linear sytem
 
-  X_h = Kokkos::mirror_create( X );
+  times[2] = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X ,times );
+
+#if  PRINT_SAMPLE_OF_SOLUTION
+
+  scalar_vector_h X_h Kokkos::mirror_create( X );
 
   Kokkos::mirror_update( X_h , X );
 
@@ -180,6 +168,8 @@ void run_kernel<KOKKOS_MACRO_DEVICE>(int x, int y, int z, double* times)
               << val00 << " " << valX0 << " "
               << valXY << " " << val0Y << std::endl ;
   }
+
+#endif
 
 //  printGLUT<Scalar , scalar_vector_d , scalar_array_h , index_array_h>
 //      ("X.txt", X , elem_coords_h , elem_nodeIDs_h,x,y,z);

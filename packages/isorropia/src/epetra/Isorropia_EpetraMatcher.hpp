@@ -57,8 +57,9 @@ USA
 namespace Isorropia {
 namespace Epetra {
 
-/** An implementation of the Matcher interface that operates on
-    Epetra matrices and Graphs.
+/** @ingroup matching_grp
+    An implementation of the Matcher interface that operates on Epetra matrices
+    and Graphs.
     
     One of the use of Maximum Cardinality Matching is that it provides nonzero
     diagonal for the sparse matrices. This multithreaded version of the
@@ -101,7 +102,8 @@ private:
     int DW_phase();
 
 public:
-    /** Constructor
+    /** @ingroup matching_grp
+    Constructor
     \param[in] Epetra_CRSMatrix* compressed row matrix
     \param[in] paramlist this parameter list is used to select the algorithm.
      The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
@@ -111,7 +113,8 @@ public:
     Matcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList&
     paramlist=Teuchos::ParameterList("EmptyParameterList"));
     
-    /** Constructor
+    /** @ingroup matching_grp
+    Constructor
     \param[in] RCP of the CrsMatrix
     \param[in] paramlist this parameter list is used to select the algorithm.
      The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
@@ -121,7 +124,8 @@ public:
     Matcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList&
     paramlist=Teuchos::ParameterList("EmptyParameterList"));
 
-    /** Constructor
+    /** @ingroup matching_grp
+    Constructor
     \param[in] Pointer to the Epetra_CrsGraph
     \param[in] paramlist this parameter list is used to select the algorithm.
      The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
@@ -130,7 +134,8 @@ public:
     */
     Matcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     
-    /** Constructor
+    /** @ingroup matching_grp
+    Constructor
     \param[in] RCP of the Epetra_CrsGraph
     \param[in] paramlist this parameter list is used to select the algorithm.
      The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel
@@ -139,11 +144,13 @@ public:
     */
     Matcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
     
-    /** Destructor
+    /** @ingroup matching_grp
+    Destructor
     */
      virtual ~Matcher();
 
-    /** Copies the matched columns corresponding to each row in a user given
+    /** @ingroup matching_grp
+    Copies the matched columns corresponding to each row in a user given
     array.
    
     \param[in] The length of the array provided by the user
@@ -152,7 +159,8 @@ public:
     */
     void getMatchedColumnsForRowsCopy(int, int&, int* ) const;
 
-    /** Copies the matched rows corresponding to each column in a user given
+    /** @ingroup matching_grp
+    Copies the matched rows corresponding to each column in a user given
     array.
 
     \param[in] The length of the array provided by the user
@@ -161,33 +169,38 @@ public:
     */
     void getMatchedRowsForColumnsCopy(int, int&, int*) const;
 
-    /* Returns the number of matched vertices from Maximum Cardinality
+    /* @ingroup matching_grp
+    Returns the number of matched vertices from Maximum Cardinality
      Matching set
     */
     int getNumberOfMatchedVertices();
 
-    /** Applies the row permutation from matching and returns a new matrix.
+    /** @ingroup matching_grp
+    Applies the row permutation from matching and returns a new matrix.
 
     */
     Teuchos::RCP<Epetra_CrsMatrix> applyRowPermutation();
 
-    /** Applies the column permutation from matching and returns a new matrix.
+    /** @ingroup matching_grp
+    Applies the column permutation from matching and returns a new matrix.
 
     */
     Teuchos::RCP<Epetra_CrsMatrix> applyColumnPermutation();
 
     //Epetra_Map* getPermutedRowMap();
 
-    /* Provides the row map which is actually the complete row permutation
+    /* @ingroup matching_grp
+    Provides the row map which is actually the complete row permutation
     */
     //Epetra_Map* getPermutedColumnMap();
 
-    /** Provides the column map which is actually the complete column
+    /** @ingroup matching_grp
+    Provides the column map which is actually the complete column
      * permutation
     */
 
-    /** Computes the maximum cardinality matching, user should call this
-     * function after calling the constructor.
+    /** @ingroup matching_grp
+    Computes the maximum cardinality matching.
     */
     int match();
 };

@@ -116,12 +116,7 @@ ELSE()
       ctest_linux_nightly_serial_release_icpc_12.0.4_casl_dev.cmake
       TIMEOUT_MINUTES 240
       )
-  
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_RELEASE_ICPC_CASLDEV_NATIVEBUILDS
-      ctest_linux_nightly_serial_release_icpc_12.0.4_casl_dev_native.cmake
-      TIMEOUT_MINUTES 240
-      )
+
 
   ENDIF()
   

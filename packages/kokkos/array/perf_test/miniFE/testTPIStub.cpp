@@ -44,6 +44,6 @@ namespace Test
 {
   void test_TPI(int beg , int end, int runs, int threads)
   {
-    std::cout<<"No TPI Device"<<std::endl;
+    std::cout<<"\"MiniFE : NO Kokkos TPI Device\"" << std::endl;
   }
 }
