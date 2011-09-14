@@ -1,3 +1,4 @@
+
 <!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
@@ -101,6 +102,38 @@ such restriction.
   until all objects are ordered. </td>
 </tr>
 
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="RECOLORING_NUM_OF_ITERATIONS"></a><i>&nbsp;&nbsp;RECOLORING_NUM_OF_ITERATIONS </i></td>
+
+<td>Number of recoloring iterations to be performed after first
+  coloring phase. A value of zero disables recoloring.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="RECOLORING_TYPE"></a><i>&nbsp;&nbsp;RECOLORING_TYPE</i></td>
+
+<td> Valid values are "SYNCHRONOUS" and "ASYNCHRONOUS". If
+"SYNCHRONOUS" is selected, each processor waits for its neighboors to
+finish processing one color before processing the next one. If
+"ASYNCHRONOUS" is selected, each processor itself recolors all of its
+vertices in specified order, independent from other processors. It is
+then necessary to detect and resolve conflicts. </td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="RECOLORING_PERMUTATION"></a><i>&nbsp;&nbsp;RECOLORING_PERMUTATION</i></td>
+
+<td>Valid values are "FORWARD", "REVERSE", "NONDECREASING" and
+"NONINCREASING". The "FORWARD" permutation orders the colors in
+increasing order of their color identifiers. The "REVERSE" permutation
+is the opposite one. The "NONDECREASING" orders the colors in
+non-decreasing order of the number of time the colors are used in the
+whole graph. In other words, the less used colors are colored
+first. "NONINCREASING" is the opposite of "NONDECREASING".
+
+</td>
+</tr>
+
 <!-- commenting this section
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="COLORING_METHOD"></a><i>&nbsp;&nbsp;COLORING_METHOD</i></td>
@@ -150,6 +183,29 @@ the object that is being colored. </td>
 <tr VALIGN=TOP>
 <td></td>
 
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>RECOLORING_NUM_OF _ITERATIONS</i> = 0</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>RECOLORING_TYPE</i> = SYNCHRONOUS</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>RECOLORING_PERMUTATION</i> = NONDECREASING</td>
+</tr>
+
+<tr VALIGN=TOP>
 <!-- commenting 
 <td><i>COLORING_METHOD</i> = F</td>
 -->
@@ -163,5 +219,3 @@ Parallel Coloring</a>&nbsp; |&nbsp; <a href="ug_order_parmetis.html">Previous:&n
 Nested Dissection by ParMETIS</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
 </body>
 </html>
-
-

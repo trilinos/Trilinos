@@ -33,30 +33,66 @@ The parallel coloring algorithm in Zoltan is based on the work of
 <a href="ug_refs.html#d1color">Boman et al.</a> for distance-1
 coloring and <a href="ug_refs.html#d2color">Bozdag et al.</a> for
 distance-2 coloring. It was implemented in Zoltan by Doruk Bozdag and
-Umit Catalyurek, Department of Biomedical Informatics, Ohio State University. 
-Distance-1 coloring algorithm is an iterative data parallel algorithm
-that proceeds in two-phased 
-rounds. In the first phase, processors concurrently color the vertices
-assigned to them. Adjacent vertices colored in the same parallel step
-of this phase may result in inconsistencies. In the second phase,
-processors concurrently check the validity of the colors assigned to
-their respective vertices and identify a set of vertices that needs to
-be re-colored in the next round to resolve the detected
+Umit V. Catalyurek, Department of Biomedical Informatics, the Ohio State
+University.  Distance-1 coloring algorithm is an iterative data
+parallel algorithm that proceeds in two-phased rounds. In the first
+phase, processors concurrently color the vertices assigned to
+them. Adjacent vertices colored in the same parallel step of this
+phase may result in inconsistencies. In the second phase, processors
+concurrently check the validity of the colors assigned to their
+respective vertices and identify a set of vertices that needs to be
+re-colored in the next round to resolve the detected
 inconsistencies. The algorithm terminates when every vertex has been
 colored correctly. To reduce communication frequency, the coloring
 phase is further decomposed into computation and communication
-sub-phases. In a communication sub-phase processors exchange
-recent color information. During a computation sub-phase, a number of vertices
-determined by the SUPERSTEP_SIZE parameter,
-rather than a single vertex, is colored based on currently available
-color information. With an appropriate choice
-of a value for SUPERSTEP_SIZE, the number of ensuing conflicts can be kept low
-while at the same time preventing the runtime from being dominated by
-the sending of a large number of small messages. 
-The distance-2 graph coloring problem aims at partitioning the vertex
-set of a graph into the fewest sets consisting of vertices pairwise at
-distance greater than two from each other. The algorithm is an
-extension of the parallel distance-1 coloring algorithm.
+sub-phases. In a communication sub-phase processors exchange recent
+color information. During a computation sub-phase, a number of
+vertices determined by the SUPERSTEP_SIZE parameter, rather than a
+single vertex, is colored based on currently available color
+information. With an appropriate choice of a value for SUPERSTEP_SIZE,
+the number of ensuing conflicts can be kept low while at the same time
+preventing the runtime from being dominated by the sending of a large
+number of small messages.  The distance-2 graph coloring problem aims
+at partitioning the vertex set of a graph into the fewest sets
+consisting of vertices pairwise at distance greater than two from each
+other. The algorithm is an extension of the parallel distance-1
+coloring algorithm.
+
+<br/><br/>
+
+Apart from the distance-1 and distance-2 coloring algorithms, a
+post-processing to coloring, named as <em>recoloring</em>, is also implemented
+in Zoltan by Ahmet Erdem Sariyuce, Erik Saule and Umit V. Catalyurek,
+Department of Biomedical Informatics, the Ohio State University. Its
+details are presented in <a href="ug_refs.html#sariyuce">Sariyuce et
+al.<a/>.  Recoloring is an iterative improvement algorithm first
+proposed in <a href="ug_refs.html#culberson">Culberson 92<a/> for
+sequential architecture. The algorithm uses an existing coloring of a
+graph to produce an new coloring. The vertices of the graph are
+sorted according to a given permutation of the colors so that vertices
+with the same color are recolored concurrently. There are two modes
+of the recoloring procedure that are controlled by 
+RECOLORING_TYPE parameter. In asynchronous recoloring, the vertices
+are colored using the same algorithm used for the original coloring;
+the only difference is the ordering of the vertices, which is expected
+to present less conflicts (and therefore is faster and leads to fewer
+colors). In synchronous recoloring, each processor waits for its
+neighboors to finish coloring the vertices of a given color before
+starting to color the vertices of the next color. Using a simple first
+fit color allocation policy, the algorithm guarantees that no
+conflicts will be generated and that the number of colors will not
+increase. The order in which the colors are considers is given by the
+RECOLORING_PERMUTATION parameter. The forward order processes the
+colors in increasing value of the color identifier; while the reverse
+order processes them in the opposite order. The non-decreasing order
+processes the colors so that the most used color in the graph is
+colored last; while the non-increasing order is the opposite
+order. The number of times the recoloring procedure is applied is
+controlled by the RECOLORING_NUM_OF_ITERATIONS parameter (setting it
+to zero disables recoloring).
+ 
+
+
 
 <br>&nbsp;
 <br>&nbsp;
