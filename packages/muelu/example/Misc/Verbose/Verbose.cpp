@@ -91,13 +91,18 @@ int main(int argc, char *argv[]) {
   IfpackSmoother ifpackSmoo("point relaxation stand-alone", smootherParamList);
   ifpackSmoo.setObjectLabel("My Ifpack Smoother");
 
-  ifpackSmoo.describe(*fos, verbLevel);
+  SmootherFactory smooFact(rcpFromRef(ifpackSmoo), rcpFromRef(ifpackSmoo));
+  //  SmootherFactory smooFact(rcpFromRef(ifpackSmoo));
+
+  smooFact.describe(*fos, verbLevel);
+
+  //ifpackSmoo.describe(*fos, verbLevel);
 
   cout << endl << endl;  
   ifpackSmoo.Setup(l);
   cout << endl << endl;
 
-  ifpackSmoo.describe(*fos, verbLevel);
+  //ifpackSmoo.describe(*fos, verbLevel);
 
   //
   //
