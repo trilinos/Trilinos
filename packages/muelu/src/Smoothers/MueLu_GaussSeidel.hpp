@@ -36,7 +36,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
   //! Set up the smoother. (Right now, just grab A from the Level.)
   void Setup(RCP<Level> const level)
   {
-    A_ = level.Get< RCP<Operator> >("A");
+    A_ = level.Get< RCP<Operator> >("A",NULL);
     SmootherPrototype::IsSetup(true);
   }
 

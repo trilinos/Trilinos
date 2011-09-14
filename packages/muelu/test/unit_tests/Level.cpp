@@ -16,8 +16,6 @@
 #include "MueLu_UseShortNames.hpp"
 
 
-
-
 namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Level, SetCoreData)

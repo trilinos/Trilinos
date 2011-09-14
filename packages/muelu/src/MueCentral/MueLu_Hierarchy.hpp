@@ -11,6 +11,8 @@
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
+#include "MueLu_NoFactory.hpp"
+
 // used as default:
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -211,18 +213,18 @@ namespace MueLu {
                                          TwoLevelFactoryBase const &AcFact,
                                          int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
-
-      RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
-      Levels_[startLevel]->Release("A");
+  	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+      RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
+      Levels_[startLevel]->Release("A",MueLu::NoFactory::get());
 
       // keep variables A, P and R on all multigrid levels
 
       // set operator A to be generated with AcFact
-      Levels_[startLevel]->Keep("A", rcpFromRef(AcFact));
-      Levels_[startLevel]->Set<RCP<Operator> >("A", A, rcpFromRef(AcFact));
+      Levels_[startLevel]->Keep("A", &AcFact);
+      Levels_[startLevel]->Set<RCP<Operator> >("A", A, &AcFact);
 
-      Levels_[startLevel]->Keep("P", rcpFromRef(PRFact));
-      Levels_[startLevel]->Keep("R", rcpFromRef(PRFact));
+      Levels_[startLevel]->Keep("P", &PRFact);
+      Levels_[startLevel]->Keep("R", &PRFact);
 
       // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
       defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
@@ -280,7 +282,7 @@ namespace MueLu {
             break;
           }
           //RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A");
-          totalNnz += coarseLevel.Get< RCP<Operator> >("A", rcpFromRef(AcFact))->getGlobalNumEntries();
+          totalNnz += coarseLevel.Get< RCP<Operator> >("A", &AcFact)->getGlobalNumEntries();
 
           ++i;
         } //while
@@ -320,8 +322,8 @@ namespace MueLu {
     */
     void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
       LO clevel = GetNumberOfLevels()-1;
-      Levels_[clevel]->Keep("PreSmoother");
-      Levels_[clevel]->Keep("PostSmoother");
+      Levels_[clevel]->Keep("PreSmoother" ,NULL);  // TODO check me
+      Levels_[clevel]->Keep("PostSmoother",NULL);
       smooFact.BuildSmoother(*Levels_[clevel], pop);
     }
 
@@ -356,8 +358,8 @@ namespace MueLu {
       }
 
       for (int i=startLevel; i<=lastLevel; i++) {
-        Levels_[i]->Keep("PreSmoother");
-        Levels_[i]->Keep("PostSmoother");
+        Levels_[i]->Keep("PreSmoother" ,NULL); // TODO check me, use SmoFact?
+        Levels_[i]->Keep("PostSmoother",NULL);
         smooFact.Build(*Levels_[i]);
       }
 
@@ -440,13 +442,13 @@ namespace MueLu {
         if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
           {
             bool emptySolve = true;
-            if (Fine->IsAvailable("PreSmoother")) { // important do use IsAvailable before Get here. Avoid building default smoother
-              RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+            if (Fine->IsAvailable("PreSmoother",NULL)) { // important do use IsAvailable before Get here. Avoid building default smoother
+              RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother",NULL);
               preSmoo->Apply(X, B, false);
               emptySolve=false;
             }
             if (Fine->IsAvailable("PostSmoother")) { // important do use IsAvailable before Get here. Avoid building default smoother
-              RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+              RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother",NULL);
               postSmoo->Apply(X, B, false); 
               emptySolve=false;
             }
@@ -457,7 +459,7 @@ namespace MueLu {
           RCP<Level> Coarse = Levels_[startLevel+1];
 
           //TODO: add IsAvailable test to avoid building default smoother
-          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother",NULL);
           preSmoo->Apply(X, B, zeroGuess);
 
           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A",NULL)),X,B);
@@ -491,7 +493,7 @@ namespace MueLu {
 
           //X.norm2(norms);
           //TODO: add IsAvailable test to avoid building default smoother
-          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother",NULL);
           postSmoo->Apply(X, B, false);
         }
         zeroGuess=false;

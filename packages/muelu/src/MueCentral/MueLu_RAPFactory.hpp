@@ -40,9 +40,9 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      fineLevel.Request("A", AFact_);     // AFact per default Teuchos::null -> default factory for this
-      coarseLevel.Request("P",PRFact_);   // transfer operators (from PRFactory, not from PFactory and RFactory!)
-      coarseLevel.Request("R",PRFact_);
+      fineLevel.Request("A", AFact_.get());     // AFact per default Teuchos::null -> default factory for this
+      coarseLevel.Request("P",PRFact_.get());   // transfer operators (from PRFactory, not from PFactory and RFactory!)
+      coarseLevel.Request("R",PRFact_.get());
     }
 
     //@}
@@ -56,9 +56,9 @@ class RAPFactory : public TwoLevelFactoryBase {
 
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PRFact_);
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PRFact_.get());
 
-      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_);
+      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
 
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
 apTimer->start(true);
@@ -75,7 +75,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         //Utils::Write(filename,AP);
         RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
       } else {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", PRFact_);
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", PRFact_.get());
 RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
         RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
@@ -84,14 +84,14 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
 
       }
       
-      coarseLevel.Set("A", RAP, AFact_);
+      coarseLevel.Set("A", RAP, AFact_.get());
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
-      fineLevel.Release("A",AFact_);
-      coarseLevel.Release("P",PRFact_);
-      coarseLevel.Release("R",PRFact_);
+      fineLevel.Release("A",AFact_.get());
+      coarseLevel.Release("P",PRFact_.get());
+      coarseLevel.Release("R",PRFact_.get());
 
       return true;
     }

@@ -33,13 +33,13 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      currentLevel.Request("A", AFact_);
+      currentLevel.Request("A", AFact_.get());
     }
 
     //@}
 
     bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_);
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
       //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 

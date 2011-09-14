@@ -69,9 +69,9 @@ namespace MueLu {
         else
           aggregatesFact_->callDeclareInput(fineLevel);
       }*/
-      fineLevel.Request("Aggregates", aggregatesFact_);
-      fineLevel.Request("A", AFact_);
-      fineLevel.Request("Nullspace",  nullspaceFact_);
+      fineLevel.Request("Aggregates", aggregatesFact_.get());
+      fineLevel.Request("A", AFact_.get());
+      fineLevel.Request("Nullspace",  nullspaceFact_.get());
     }
 
     //@}
@@ -94,9 +94,9 @@ namespace MueLu {
 
     bool BuildP(Level & fineLevel, Level & coarseLevel) const {
       // get data from fine level
-      RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_);
-      RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_);
-      RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_);
+      RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+      RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
+      RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
@@ -110,13 +110,13 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_);
+      coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get());
       coarseLevel.Set("P", Ptentative, this); //TODO: should be P when 'extended needs' implemented
 
       // release data from fine level
-      fineLevel.Release("A", AFact_);
-      fineLevel.Release("Aggregates", aggregatesFact_);
-      fineLevel.Release("Nullspace", nullspaceFact_);
+      fineLevel.Release("A", AFact_.get());
+      fineLevel.Release("Aggregates", aggregatesFact_.get());
+      fineLevel.Release("Nullspace", nullspaceFact_.get());
 
       return true;
     }

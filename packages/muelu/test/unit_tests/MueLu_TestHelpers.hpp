@@ -24,6 +24,8 @@
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
 
+#include "MueLu_NoFactory.hpp"
+
 namespace MueLuTests {
   using Teuchos::RCP;
   using Teuchos::rcp;

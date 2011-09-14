@@ -62,7 +62,7 @@ namespace MueLu {
     void Setup(Level &level) {
       TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
 
-      RCP<Operator> A_ = level.Get< RCP<Operator> >("A");
+      RCP<Operator> A_ = level.Get< RCP<Operator> >("A",NULL);
 
       RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
   

@@ -2,6 +2,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_DefaultFactoryHandler.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -12,8 +14,6 @@ namespace MueLuTests {
   // Little utility to generate aggregates.
   RCP<Aggregates> gimmeAggregates(RCP<Operator> const &A)
   {
-    //    RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "someGraphLabel"));
-
     UCAggregationFactory aggFact;
     aggFact.SetMinNodesPerAggregate(3);
     aggFact.SetMaxNeighAlreadySelected(0);
@@ -21,16 +21,14 @@ namespace MueLuTests {
     aggFact.SetPhase3AggCreation(0.5);
 
     Level level;
-    //level.SetupPhase(true);
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-    level.Request("A",NULL);
+    level.Request("A",NULL);	// use default factory handler
     level.Set("A",A,NULL);
-
     level.Request("Aggregates", &aggFact);
+    aggFact.DeclareInput(level);
     aggFact.Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",Teuchos::rcp(&aggFact,false)); // fix me
     level.Release("Aggregates", &aggFact);
-
     return aggregates;
   }  //gimmeAggregates
 

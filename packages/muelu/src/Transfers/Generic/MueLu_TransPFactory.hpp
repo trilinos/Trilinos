@@ -46,7 +46,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      coarseLevel.Request("P",PFact_);
+      coarseLevel.Request("P",PFact_.get());
     }
 
     //@}
@@ -84,8 +84,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
       Teuchos::OSTab tab(this->out_);
       Teuchos::ParameterList matrixList;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_);
-      coarseLevel.Release("P", PFact_);
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
+      coarseLevel.Release("P", PFact_.get());
       //doesn't work -- bug in EpetraExt?
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);

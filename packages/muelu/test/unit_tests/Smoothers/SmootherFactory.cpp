@@ -207,10 +207,10 @@ namespace MueLuTests {
     // test if a smoother created by Build() is correct (check if it corresponds to the prototype)
     void testBuildCheckOutput(RCP<SmootherFactory> smooFact, Level& level, RCP<SmootherPrototype> smooProto, const std::string& tag, Teuchos::FancyOStream & out, bool & success) {
       if (smooProto == Teuchos::null) {
-        TEST_EQUALITY(level.IsAvailable(tag, smooFact), false);
+        TEST_EQUALITY(level.IsAvailable(tag, smooFact.get()), false);
       } else {
         RCP<SmootherBase> smoother;
-        TEST_NOTHROW(smoother = level.Get< RCP<SmootherBase> >(tag, smooFact));
+        TEST_NOTHROW(smoother = level.Get< RCP<SmootherBase> >(tag, smooFact.get()));
 
         TEST_INEQUALITY(smoother, Teuchos::null);
         TEST_INEQUALITY(smoother, smooProto);
@@ -251,18 +251,18 @@ namespace MueLuTests {
         // ReUse: if pre and post prototype are the same, then pre smoother == post smoother
         // otherwise, they are different (have not been tested by previous tests)
         RCP<SmootherBase> smooA, smooB;
-        if (smooProtoA != Teuchos::null) { smooA = level.Get< RCP<SmootherBase> >("PreSmoother",  smooFact); }
-        if (smooProtoB != Teuchos::null) { smooB = level.Get< RCP<SmootherBase> >("PostSmoother", smooFact); }
+        if (smooProtoA != Teuchos::null) { smooA = level.Get< RCP<SmootherBase> >("PreSmoother",  smooFact.get()); }
+        if (smooProtoB != Teuchos::null) { smooB = level.Get< RCP<SmootherBase> >("PostSmoother", smooFact.get()); }
         if (smooProtoA == smooProtoB) { TEST_EQUALITY(smooA, smooB); } else { TEST_INEQUALITY(smooA, smooB); }
 
       } else if (preOrPost == MueLu::PRE) {
 
         testBuildCheckOutput(smooFact, level, smooProtoA, "PreSmoother", out, success);
-        TEST_EQUALITY(level.IsAvailable("PostSmoother", smooFact), false);
+        TEST_EQUALITY(level.IsAvailable("PostSmoother", smooFact.get()), false);
 
       } else if (preOrPost == MueLu::POST) {
 
-        TEST_EQUALITY(level.IsAvailable("PreSmoother", smooFact), false);
+        TEST_EQUALITY(level.IsAvailable("PreSmoother", smooFact.get()), false);
         testBuildCheckOutput(smooFact, level, smooProtoB, "PostSmoother", out, success);
 
       } else { TEST_EQUALITY(true, false); }
