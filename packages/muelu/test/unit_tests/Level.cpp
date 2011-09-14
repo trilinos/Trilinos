@@ -60,7 +60,7 @@ namespace MueLuTests {
     aLevel.SetLevelID(42);
     TEST_EQUALITY(aLevel.GetLevelID(), 42); //TODO: test default value of LevelID
 
-    //aLevel.print(std::cout);
+    aLevel.print(std::cout);
 
   }
 

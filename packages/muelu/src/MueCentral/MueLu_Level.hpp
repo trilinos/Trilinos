@@ -332,14 +332,99 @@ public:
         defaultFactoryHandler_ = defaultFactoryHandler;
     }
 
+    //@}
+
+    //! @name I/O Functions
+    //@{
+
+    /*! \brief Printing method for Needs class.*/
+    std::ostream& print(std::ostream& os) const
+    {
+        Teuchos::TabularOutputter outputter(os);
+        outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT,Teuchos::TabularOutputter::GENERAL,32);
+        outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+        outputter.pushFieldSpec("gen by", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 6);
+        outputter.pushFieldSpec("req", Teuchos::TabularOutputter::INT,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
+        outputter.pushFieldSpec("type", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
+        outputter.pushFieldSpec("data", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
+        outputter.outputHeader();
+
+        std::vector<std::string> ekeys = needs_->RequestedKeys();
+        for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
+        {
+            std::vector<const MueLu::FactoryBase*> ehandles = needs_->RequestedHandles(*it);
+            for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+            {
+                outputter.outputField(*it);   // variable name
+                outputter.outputField(*kt);   // factory ptr
+
+                if(defaultFactoryHandler_->IsAvailable(*it)) // check if default factory is available for variable name
+                {
+                    if(GetDefaultFactoryPtr(*it)==*kt)
+                       	outputter.outputField("def"); // factory ptr (deault factory)
+                }
+                else
+                {
+                    if (*kt == MueLu::NoFactory::get())
+                    	outputter.outputField("user"); // factory ptr (user generated)
+                    else
+                    	outputter.outputField(" ");
+                }
+
+                int reqcount = 0;             // request counter
+                reqcount = needs_->NumRequests(*it, *kt);
+                outputter.outputField(reqcount);
+                                              // variable type
+                std::string strType = needs_->GetDataType(*it,*kt);
+                if(strType.find("Xpetra::Operator")!=std::string::npos)
+                {
+                    outputter.outputField("Operator" );
+                    outputter.outputField(" ");
+                }
+                else if(strType.find("Xpetra::MultiVector")!=std::string::npos)
+                {
+                  outputter.outputField("Vector");
+                  outputter.outputField("");
+                }
+                else if(strType == "int")
+                {
+                    outputter.outputField(strType);
+                    int data = 0; needs_->GetData<int>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else if(strType == "double")
+                {
+                    outputter.outputField(strType);
+                    double data = 0.0; needs_->GetData<double>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else if(strType == "string")
+                {
+                    outputter.outputField(strType);
+                    std::string data = ""; needs_->GetData<std::string>(*it,data,*kt);
+                    outputter.outputField(data);
+                }
+                else
+                {
+                    outputter.outputField(strType);
+                    outputter.outputField("unknown");
+                }
+
+                outputter.nextRow();
+            }
+        }
+        return os;
+    }
 
     //@}
+
 private:
 
     //! Get ptr to default factory.
-    const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) {
-	    TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
-	    return defaultFactoryHandler_->GetDefaultFactoryRCP(varname).get();
+    const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) const
+    {
+  		TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
+   		return defaultFactoryHandler_->GetDefaultFactoryRCP(varname).get();
     }
 
     //! Get RCP to default factory for given variable 'varname'.
