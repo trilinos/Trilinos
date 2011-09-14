@@ -4,4 +4,5 @@ ADD_SUBDIRECTORIES(
   unit
   util
   temp
+  partitioning
   )
