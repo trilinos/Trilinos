@@ -48,32 +48,24 @@ namespace Test{
   void test_Cuda(int beg, int end, int r);
 }
 
-int main(int argc, char ** argv){
+int main(int argc, char ** argv)
+{
+  int beg = 10 ;
+  int end = 15 ;
+  int runs = 1 ;
+  int threads = 4;
 
-  if ( argc != 5) 
-  {
-    int beg = 20 ;
-    int end = 30 ;
-    int runs = 1;
-    int threads = 4;
-
-    Test::test_Host(beg, end, runs);
-    Test::test_TPI (beg, end, runs, threads);
-    Test::test_TBB (beg, end, runs, threads);
-    Test::test_Cuda(beg , end, runs);
-    
+  if ( argc == 5) {
+    beg = atoi(argv[1]);
+    end = atoi(argv[2]);
+    runs = atoi(argv[3]);
+    threads = atoi(argv[4]);
   }
-  else {
-    int beg = atoi(argv[1]);
-    int end = atoi(argv[2]);
-    int runs = atoi(argv[3]);
-    int threads = atoi(argv[4]);
 
-    Test::test_Host(beg, end, runs);
-    Test::test_TPI (beg, end, runs, threads);
-    Test::test_TBB (beg, end, runs, threads);
-    Test::test_Cuda(beg , end, runs);
-  }
+  Test::test_Host(beg, end, runs);
+  Test::test_TPI (beg, end, runs, threads);
+  Test::test_TBB (beg, end, runs, threads);
+  Test::test_Cuda(beg , end, runs);
+
   return 0;
-
 }

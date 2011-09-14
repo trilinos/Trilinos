@@ -37,116 +37,134 @@
  *************************************************************************
  */
 
-#if defined KOKKOS_DEVICE_CUDA
-#include <cuda_runtime.h>
-#include "cusparse.h"
-#endif
-
-#include <MatVecMult.hpp>
+#include <stdexcept>
+#include <string>
+//----------------------------------------------------------------------------
 
 template<class Scalar, class DeviceType>
-struct CRSMatVec;
+struct CRSMatVec
+{
+  typedef DeviceType                                       device_type;
+  typedef typename device_type::size_type                  index_type ;
+  typedef Scalar                                           scalar_type ;
+  typedef Kokkos::MultiVectorView<index_type,  device_type> index_vector;   
+  typedef Kokkos::MultiVectorView<scalar_type, device_type> scalar_vector;
+  
+
+  scalar_vector A ;
+  index_vector  A_row , A_col ;
+  scalar_vector x , b ;
+
+  CRSMatVec( const scalar_vector & arg_A ,
+             const index_vector  & arg_row ,
+             const index_vector  & arg_col,
+             const scalar_vector & arg_x ,
+             const scalar_vector & arg_b )
+  : A(arg_A) , A_row(arg_row) , A_col(arg_col)
+  , x(arg_x) , b(arg_b)      
+  {}
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( index_type irow ) const
+  {
+    const index_type jEnd = A_row(irow+1);
+
+    double sum = 0 ;
+
+    for ( index_type j = A_row(irow) ; j < jEnd ; ++j ) {
+      sum += A(j) * x( A_col(j) );
+    }
+
+    b(irow) = sum ;
+  }
+
+  void apply() const
+  {
+    const index_type n = A_row.length() - 1 ;
+    parallel_for( n , *this );
+  }
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #if defined KOKKOS_DEVICE_CUDA
-//Specialize MatVecMult functor of CUDA device
+
+#include <cuda_runtime.h>
+#include "cusparse.h"
+
+// Specialize CRSMatVect for CUDA sparse library
+
 template<class Scalar>
 struct CRSMatVec<Scalar , Kokkos::DeviceCuda>
 {
   typedef Kokkos::DeviceCuda      device_type ;
   typedef device_type::size_type  index_type ;
   typedef Kokkos::MultiVectorView<Scalar, device_type>     scalar_vector;
-  typedef Kokkos::MultiVectorView<index_type, device_type> int_vector;   
-  
-  void MatVec(Scalar , Scalar);
-  cusparseStatus_t status;
-  cusparseHandle_t handle;
-  cusparseMatDescr_t descra;
+  typedef Kokkos::MultiVectorView<index_type, device_type> index_vector;   
   
   Scalar * value, *x , *b ;
   int * row ,* col;
   int m;
   
+  cusparseStatus_t status;
+  cusparseHandle_t handle;
+  cusparseMatDescr_t descra;
+  
   //Constructor that initalizes cusparse library and 
   //gets pointers on the device to use 
-  CRSMatVec(scalar_vector & arg_value , int_vector & arg_row , int_vector arg_col,
-           scalar_vector & arg_x , scalar_vector & arg_b)
+  CRSMatVec( scalar_vector & arg_value ,
+             index_vector  & arg_row ,
+             index_vector  & arg_col ,
+             scalar_vector & arg_x ,
+             scalar_vector & arg_b )
+  : value( (Scalar*)arg_value.ptr_on_device() )
+  , row( (int*)arg_row.ptr_on_device() )
+  , col( (int*)arg_col.ptr_on_device() )
+  , x( (Scalar*)arg_x.ptr_on_device() )
+  , b( (Scalar*)arg_b.ptr_on_device() )
+  , m( arg_row.length() - 1 )
   {
     status = cusparseCreate(&handle);
     if(status != CUSPARSE_STATUS_SUCCESS)
     {
-      std::cout<<"ERROR - Library Initialization failed"<<std::endl;
+      throw std::runtime_error( std::string("ERROR - CUSPARSE Library Initialization failed" ) );
     }
 
     status = cusparseCreateMatDescr(&descra);
     if(status != CUSPARSE_STATUS_SUCCESS)
     {
-      std::cout<<"ERROR - Matrix descriptor failed"<<std::endl;
+      throw std::runtime_error( std::string("ERROR - CUSPARSE Library Matrix descriptor failed" ) );
     }
 
     cusparseSetMatType(descra , CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descra , CUSPARSE_INDEX_BASE_ZERO);
 
-    value = (Scalar*)arg_value.ptr_on_device();
-    row = (int*)arg_row.ptr_on_device();
-    col = (int*)arg_col.ptr_on_device();
-    x = (Scalar*)arg_x.ptr_on_device();
-    b = (Scalar*)arg_b.ptr_on_device();
-    m = arg_row.length() - 1;
   }
+
+  void apply() const ;
 };
 
 //Compute equivalent MatVec operation using 
 //cuda sparse library function
-template<>
-void CRSMatVec<float, Kokkos::DeviceCuda >::MatVec(float alpha , float beta)
-{
 
+template<>
+void CRSMatVec<float, Kokkos::DeviceCuda >::apply() const
+{
+  float alpha = 1 , beta = 0 ;
   cusparseScsrmv(handle , CUSPARSE_OPERATION_NON_TRANSPOSE , m, m , alpha , 
         descra , value , row , col , x , beta , b);
 }
 
 template<>
-void CRSMatVec<double, Kokkos::DeviceCuda>::MatVec(double alpha , double beta)
+void CRSMatVec<double, Kokkos::DeviceCuda>::apply() const
 {
+  double alpha = 1 , beta = 0 ;
   cusparseDcsrmv(handle , CUSPARSE_OPERATION_NON_TRANSPOSE , m, m , alpha , 
         descra , value , row , col , x , beta , b);
 }
 
 #endif
 
-
-
-template<class Scalar, class DeviceType>
-struct CRSMatVec
-{
-  typedef DeviceType                    device_type;
-  typedef typename device_type::size_type  index_type ;
-  typedef Kokkos::MultiVectorView<Scalar, device_type>  scalar_vector;
-  typedef Kokkos::MultiVectorView<index_type, device_type>     int_vector;   
-  
-  void MatVec(Scalar alpha , Scalar beta);
-  int rows;
-
-  scalar_vector value ;
-  int_vector row , col;
-  scalar_vector x , b;
-  CRSMatVec(scalar_vector & arg_value , int_vector & arg_row , int_vector & arg_col,
-           scalar_vector & arg_x , scalar_vector & arg_b)
-      : value(arg_value) , row(arg_row) , col(arg_col) , x(arg_x) , b(arg_b)      
-  {
-    value = arg_value;
-    row = arg_row;
-    col = arg_col;
-    x = arg_x;
-    b = arg_b;
-    rows = arg_row.length() - 1;
-  }
-};
-
-
-template<class Scalar , class DeviceType>
-void CRSMatVec<Scalar , DeviceType>::MatVec(Scalar alpha , Scalar beta)
-{
-  Kokkos::parallel_for(rows , MatVecMult<Scalar , DeviceType>(value , row , col , x , b , beta) );
-}
+//----------------------------------------------------------------------------
 

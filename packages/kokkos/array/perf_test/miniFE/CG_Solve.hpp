@@ -101,7 +101,7 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     // create CRSMatVec object for A * p
     CRSMatVec<Scalar,device_type> A_mult_p(A_value, A_row , A_col , p , Ap);
 
-    A_mult_p.MatVec( 1.0 , 0.0 ); // Ap = 1.0 * A * p + 0.0 * Ap
+    A_mult_p.apply(); // Ap = A * p
   
     // r = b - Ap
     Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ap , r) );
@@ -124,7 +124,7 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       for(k = 0; k < 25 ; k++) 
       {
         // Ap = A*p
-        A_mult_p.MatVec(1.0 , 0.0); 
+        A_mult_p.apply();
         
         // ptrans = p • Ap
         Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(p , Ap) , ptrans );

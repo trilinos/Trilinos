@@ -66,13 +66,9 @@ public:
 
   typedef Kokkos::MDArrayView< index_type ,  Device > index_array_d ;
   typedef Kokkos::MDArrayView< scalar_type , Device > scalar_array_d ;
-  typedef Kokkos::MultiVectorView< index_type ,  Device > index_vector_d ;
-  typedef Kokkos::MultiVectorView< scalar_type , Device > scalar_vector_d ;
 
   typedef typename index_array_d  ::HostView  index_array_h ;
   typedef typename scalar_array_d ::HostView  scalar_array_h ;
-  typedef typename index_vector_d ::HostView  index_vector_h ;
-  typedef typename scalar_vector_d::HostView  scalar_vector_h ;
 
   MeshFixture< index_array_d , scalar_array_d > d_mesh ;
   MeshFixture< index_array_h , scalar_array_h > h_mesh ;
@@ -276,13 +272,21 @@ public:
   }
 
 
-  void init_dirichlet_z( index_vector_d & node_flag , scalar_vector_d & node_value ) const
+  template< typename ValueType >
+  void init_dirichlet_z( Kokkos::MultiVectorView< index_type, Device > & node_flag ,
+                         Kokkos::MultiVectorView< ValueType , Device > & node_value ) const
   {
-    node_flag  = Kokkos::create_multivector< index_vector_d >( node_count );
-    node_value = Kokkos::create_multivector< scalar_vector_d >( node_count );
+    typedef Kokkos::MultiVectorView< index_type, Device > index_vector_d ;
+    typedef Kokkos::MultiVectorView< ValueType , Device > value_vector_d ;
 
-    index_vector_h  flag_h  = Kokkos::mirror_create( node_flag );
-    scalar_vector_h value_h = Kokkos::mirror_create( node_value );
+    typedef typename value_vector_d::HostView  value_vector_h ;
+    typedef typename index_vector_d::HostView  index_vector_h ;
+
+    node_flag  = Kokkos::create_multivector< index_vector_d >( node_count );
+    node_value = Kokkos::create_multivector< value_vector_d >( node_count );
+
+    index_vector_h flag_h  = Kokkos::mirror_create( node_flag );
+    value_vector_h value_h = Kokkos::mirror_create( node_value );
 
     index_type ig , jg , kg ;
     for ( index_type i = 0 ; i < node_count ; ++i ) {

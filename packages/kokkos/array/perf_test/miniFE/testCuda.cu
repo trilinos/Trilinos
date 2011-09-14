@@ -38,8 +38,7 @@
  */
 
 #include <iostream>
-#include <iomanip>
-#include <sys/time.h>
+#include <math.h>
 
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceHost_ValueView.hpp>
@@ -56,7 +55,6 @@
 #include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
-#include <CRSMesh.hpp>
 #include <assemble.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
@@ -68,38 +66,11 @@ __global__ void dummy_kernel(){}
 
 namespace Test {
 
-void test_Cuda(int beg, int end, int runs){
-
-  std::cout << "\"MiniFE with Kokkos Host\"" << std::endl;
-  std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"seconds\" , \"MFlop/sec\"" << std::endl ;
-
-  for(int i = beg ; i < end; i+=2)
-  {
-    const int ix = i ;
-    const int iy = ix + 1 ;
-    const int iz = iy + 1 ;
-    const int n  = ix * iy * iz ;
-
-    double times[3], mins[3];
-
-    for(int j = 0; j < runs; j++){
-
-     run_kernel<Kokkos::DeviceCuda>(ix,iy,iz,times);
-
-     if(j == 0) {
-       mins[0] = times[0];
-       mins[1] = times[1];
-       mins[2] = times[2];
-     }
-
-     for(int k = 0 ; k < 3 ; k++)
-     {
-       if(times[k] < mins[k]) mins[k] = times[k];
-     }
-   }
-   std::cout << n << " , " << mins[0] << " , " << mins[1] << " , " << mins[2] << std::endl ;
-  }
+void test_Cuda(int beg, int end, int runs)
+{
+  MiniFE<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
+  MiniFE<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
 }
+
 }// namespace
 

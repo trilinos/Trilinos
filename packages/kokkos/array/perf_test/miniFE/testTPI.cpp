@@ -38,6 +38,7 @@
  */
 
 #include <iostream>
+#include <math.h>
 
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceHost_ValueView.hpp>
@@ -67,36 +68,8 @@ void test_TPI( int beg, int end, int runs, int threads )
 {
   Kokkos::DeviceTPI::initialize( threads );
 
-  std::cout << "\"MiniFE with Kokkos TPI[" << threads << "]\"" << std::endl ;
-  std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"seconds\" , \"MFlop/sec\"" << std::endl ;
-
-  for(int i = beg ; i < end; i+=2)
-  {
-    const int ix = i ;
-    const int iy = ix + 1 ;
-    const int iz = iy + 1 ;
-    const int n  = ix * iy * iz ;
-
-    double times[3], mins[3];
-
-    for(int j = 0; j < runs; j++){
-
-     run_kernel<Kokkos::DeviceTPI>(ix,iy,iz,times);
-
-     if(j == 0) {
-       mins[0] = times[0];
-       mins[1] = times[1];
-       mins[2] = times[2];
-     }
-
-     for(int k = 0 ; k < 3 ; k++)
-     {
-       if(times[k] < mins[k]) mins[k] = times[k];
-     }
-   }
-   std::cout << n << " , " << mins[0] << " , " << mins[1] << " , " << mins[2] << std::endl ;
-  }
+  MiniFE< double , Kokkos::DeviceTPI >::driver( "TPI-double" , beg , end , runs );
+  MiniFE< float  , Kokkos::DeviceTPI >::driver( "TPI-float" , beg , end , runs );
 
   Kokkos::DeviceTPI::finalize();
 

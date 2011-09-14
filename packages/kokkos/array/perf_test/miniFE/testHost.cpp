@@ -38,6 +38,7 @@
  */
 
 #include <iostream>
+#include <math.h>
 
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceHost_ValueView.hpp>
@@ -56,38 +57,10 @@
 
 namespace Test{
 
-void test_Host(int beg, int end, int runs){
-
-  std::cout << "\"MiniFE with Kokkos Host\"" << std::endl;
-  std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"seconds\" , \"MFlop/sec\"" << std::endl ;
-
-  for(int i = beg ; i < end; i+=2)
-  {
-    const int ix = i ;
-    const int iy = ix + 1 ;
-    const int iz = iy + 1 ;
-    const int n  = ix * iy * iz ;
-
-    double times[3], mins[3];
-
-    for(int j = 0; j < runs; j++){
-
-     run_kernel<Kokkos::DeviceHost>(ix,iy,iz,times);
-   
-     if(j == 0) {
-       mins[0] = times[0];
-       mins[1] = times[1];
-       mins[2] = times[2];
-     }
-
-     for(int k = 0 ; k < 3 ; k++)
-     {
-       if(times[k] < mins[k]) mins[k] = times[k];
-     }
-   }
-   std::cout << n << " , " << mins[0] << " , " << mins[1] << " , " << mins[2] << std::endl ;
- }
+void test_Host(int beg, int end, int runs)
+{
+  MiniFE< double, Kokkos::DeviceHost >::driver( "Host-double" , beg , end , runs );
+  MiniFE< float , Kokkos::DeviceHost >::driver( "Host-float" , beg , end , runs );
 
 } //test_host
 
