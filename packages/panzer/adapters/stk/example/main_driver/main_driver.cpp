@@ -152,8 +152,11 @@ int main(int argc, char *argv[])
    
          respInArgs.set_x(gx);
    
-         RCP<Thyra::VectorBase<double> > response0 = Thyra::createMember(*physics->get_g_space(0));
-         respOutArgs.set_g(0,response0);
+         // set up response out args
+         for(int i=0;i<respOutArgs.Ng();i++) {
+            RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
+            respOutArgs.set_g(i,response);
+         }
    
          *out << "Lets print volume containers!" << std::endl;
          rLibrary->printVolumeContainers(*out);
@@ -161,7 +164,14 @@ int main(int argc, char *argv[])
          // Now, solve the problem and return the responses
          physics->evalModel(respInArgs, respOutArgs);
    
-         *out << "Response Value \"" << labels[0] << "\": " << *response0 << std::endl;
+         // loop over out args for printing
+         for(int i=0;i<respOutArgs.Ng();i++) {
+            RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
+
+            TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
+
+            *out << "Response Value \"" << labels[i] << "\": " << *response << std::endl;
+         }
       }
     }
   }

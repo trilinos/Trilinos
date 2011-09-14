@@ -329,7 +329,7 @@ fillResponses(const OutArgs & outArgs) const
    responseLibrary_->getLabeledVolumeResponses(responses);
    for(std::size_t i=0;i<responses.size();i++) {
       Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
-      TEUCHOS_ASSERT(vec!=Teuchos::null);  // something bad happened!
-      (*vec)[0] = responses[i]->getValue();
+      if(vec!=Teuchos::null)
+         (*vec)[0] = responses[i]->getValue();
    }
 }
