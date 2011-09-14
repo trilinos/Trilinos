@@ -204,7 +204,7 @@ namespace Teuchos {
     }
     static magnitudeType magnitude(const ScalarType& a) {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(a), std::runtime_error,
+      TEST_FOR_EXCEPTION(is_pce_real(a) == false, std::runtime_error,
 			 "Complex conjugate is not defined for "
 			 "complex PCE inputs.");
 #endif
@@ -230,7 +230,7 @@ namespace Teuchos {
     // Conjugate is only defined for real derivative components
     static ScalarType conjugate(const ScalarType& x) {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(x), std::runtime_error,
+      TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
 			 "Complex conjugate is not defined for "
 			 "complex PCE inputs.");
 #endif
