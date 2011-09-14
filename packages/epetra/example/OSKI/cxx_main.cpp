@@ -52,7 +52,7 @@ ${ROOT}.o: ${ROOT}.cpp
 // ************************************************************************
 // 
 //               Epetra: Linear Algebra Services Package 
-//                 Copyright 2001 Sandia Corporation
+//                 Copyright 2011 Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.

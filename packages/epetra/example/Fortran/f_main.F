@@ -3,7 +3,7 @@ C @HEADER
 C ************************************************************************
 C 
 C               Epetra: Linear Algebra Services Package 
-C                 Copyright 2001 Sandia Corporation
+C                 Copyright 2011 Sandia Corporation
 C 
 C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 C the U.S. Government retains certain rights in this software.
