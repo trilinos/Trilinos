@@ -43,7 +43,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
-    TEST_THROW( needs.NumRequests("nonExistentNeed"), std::logic_error );
+    TEST_THROW( needs.NumRequests("nonExistentNeed",NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests)
@@ -53,7 +53,7 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     needs.Request(aNeed,NULL);
     needs.Request(aNeed,NULL);
-    TEST_EQUALITY(needs.NumRequests(aNeed), 2);
+    TEST_EQUALITY(needs.NumRequests(aNeed,NULL), 2);
   }
 
   TEUCHOS_UNIT_TEST(Needs, Get_Exception)
@@ -110,7 +110,7 @@ namespace MueLuTests {
     needs.GetData(aNeed,value);
     needs.Release(aNeed,NULL);
     TEST_EQUALITY(trueValue,value);
-    TEST_EQUALITY(needs.NumRequests(aNeed),1);
+    TEST_EQUALITY(needs.NumRequests(aNeed,NULL),1);
     value = 0;
     needs.GetData(aNeed,value);
     needs.Release(aNeed,NULL);

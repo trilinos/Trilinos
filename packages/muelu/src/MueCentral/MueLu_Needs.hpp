@@ -254,15 +254,6 @@ namespace MueLu {
     Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
     hasn't been saved.
     */
-    int NumRequests(const std::string ename, RCP<const FactoryBase> factory = Teuchos::null) {
-        return NumRequests(ename,factory.get());
-    } //NumRequests
-
-    /*! @brief Return the number of outstanding requests for a need.
-
-    Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
-    hasn't been saved.
-    */
     int NumRequests(const std::string ename, const FactoryBase* factory) {
       //FIXME should we return 0 instead of throwing an exception?
 
@@ -372,6 +363,11 @@ namespace MueLu {
 	{
     	return countTable_.handles(ename);
 	}
+
+    std::string GetDataType(const std::string ename, const FactoryBase* fac) const
+    {
+    	return dataTable_.GetType(ename,fac);
+    }
 
     //@}
 
