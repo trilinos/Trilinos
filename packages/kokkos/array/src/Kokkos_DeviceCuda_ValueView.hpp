@@ -61,7 +61,7 @@ public:
                    const ValueType & src )
   {
     ValueType * const d = dst.m_memory.ptr_on_device();
-    ValueType * const s = & src ;
+    const ValueType * const s = & src ;
     Impl::copy_to_cuda_from_host( d, s, sizeof(ValueType), 1 );
   }
 
