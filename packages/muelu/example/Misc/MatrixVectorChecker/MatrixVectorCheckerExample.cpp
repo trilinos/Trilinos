@@ -56,9 +56,9 @@ int main(int argc, char *argv[])
   matrixParameters.check();
   xpetraParameters.check();
 
-  matrixParameters.print();
-  xpetraParameters.print();
-
+  if (comm->getRank() == 0) {
+    std::cout << xpetraParameters << matrixParameters;
+  }
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/

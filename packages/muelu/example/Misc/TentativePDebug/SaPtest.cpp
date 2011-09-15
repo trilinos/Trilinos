@@ -103,8 +103,7 @@ int main(int argc, char *argv[]) {
   // TODO: check custom parameters
 
   if (comm->getRank() == 0) {
-    matrixParameters.print();
-    xpetraParameters.print();
+    std::cout << xpetraParameters << matrixParameters;
     // TODO: print custom parameters
   }
 

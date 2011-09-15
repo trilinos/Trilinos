@@ -51,7 +51,7 @@ int main(int argc, char** argv)
   }
   
   matrixParameters.check();
-  matrixParameters.print();
+  std::cout << matrixParameters;
 
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */

@@ -246,7 +246,7 @@ namespace MueLu {
       // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
       defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
       defaultFactoryHandler_->SetDefaultFactory("R", rcpFromRef(PRFact));
-      defaultFactoryHandler_->SetDefaultFactory("A", rcpFromRef(AcFact)); // overwrite default factory handler for A!
+      defaultFactoryHandler_->SetDefaultFactory("A", rcpFromRef(AcFact)); // overwrite default factory handler for A!  -- //TODO: do something else
 
       Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
       Xpetra::global_size_t totalNnz = fineNnz;

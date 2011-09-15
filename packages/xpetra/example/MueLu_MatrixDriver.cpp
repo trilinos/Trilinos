@@ -60,8 +60,7 @@ int main(int argc, char* argv[])
   xpetraParameters.check();
 
   if (comm->getRank() == 0) {
-    matrixParameters.print();
-    xpetraParameters.print();
+    std::cout << xpetraParameters << matrixParameters;
   }
 
 //   std::cout << "#threads = " << numThreads << std::endl;

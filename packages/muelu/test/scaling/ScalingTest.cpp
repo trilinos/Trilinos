@@ -138,8 +138,7 @@ int main(int argc, char *argv[]) {
   Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   if (comm->getRank() == 0) {
-    matrixParameters.print();
-    xpetraParameters.print();
+    std::cout << xpetraParameters << matrixParameters;
     // TODO: print custom parameters
   }
 

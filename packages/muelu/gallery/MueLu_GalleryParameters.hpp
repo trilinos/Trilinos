@@ -1,10 +1,12 @@
 #ifndef MUELU_GALLERYPARAMETERS_HPP
 #define MUELU_GALLERYPARAMETERS_HPP
 
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_Exceptions.hpp"
+#include "MueLu_Exceptions.hpp" // Dependency to MueLu should be remove
 
 namespace MueLu {
   
@@ -13,11 +15,12 @@ namespace MueLu {
     // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
 
     template<typename GO>
-    class Parameters
+    class Parameters 
+      : public Teuchos::VerboseObject<Parameters<GO> >, public Teuchos::Describable
     {
 
     public:
-    
+      
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
         clp.setOption("nx", &nx_, "mesh points in x-direction.");
         clp.setOption("ny", &ny_, "mesh points in y-direction.");
@@ -25,13 +28,11 @@ namespace MueLu {
         clp.setOption("matrixType", &matrixType_, "matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
       }
       
-      void check() {
-        
+      void check() const {
         //if (nx < 0) ...
-
       }
       
-      GO GetNumGlobalElements() {
+      GO GetNumGlobalElements() const {
         check();
 
         GO numGlobalElements=-1;
@@ -48,32 +49,59 @@ namespace MueLu {
         return numGlobalElements;
       }
 
-      const std::string & GetMatrixType() {
+      const std::string & GetMatrixType() const {
         check();
         return matrixType_;
       }
 
-      Teuchos::ParameterList & GetParameterList() {
-        check();
-        //TODO: check if already on it...
-        paramList.set("nx", static_cast<GO>(nx_));
-        paramList.set("ny", static_cast<GO>(ny_));
-        paramList.set("nz", static_cast<GO>(nz_));
+      Teuchos::ParameterList & GetParameterList() const {
+        paramList_ = Teuchos::ParameterList();
 
-        return paramList;
+        check();
+
+        paramList_.set("nx", static_cast<GO>(nx_));
+        paramList_.set("ny", static_cast<GO>(ny_));
+        paramList_.set("nz", static_cast<GO>(nz_));
+
+        return paramList_;
       }
 
-      void print() { // TODO: Teuchos::Describale 
-        check();
-        std::cout << "Gallery parameters: " << std::endl
-                  << " * matrix type  = " << matrixType_ << std::endl
-                  << " * problem size = " << GetNumGlobalElements() << std::endl
-                  << std::endl;
+      //! @name Overridden from Teuchos::Describable 
+      //@{
+    
+      //! Return a simple one-line description of this object.
+      std::string description() const {
+        std::ostringstream out;
+        out << Teuchos::Describable::description();
+        out << "{type = "  << matrixType_ << ", size = " << GetNumGlobalElements() << "} ";
+        return out.str();
       }
+    
+      //! Print the object with some verbosity level to an FancyOStream object.
+      void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
+        using std::endl;
+        int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+        if (vl == VERB_NONE) return;
+      
+        if (vl == VERB_LOW) { out << description() << endl; } else { out << Teuchos::Describable::description() << endl; }
+      
+        if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+          Teuchos::OSTab tab1(out);
+
+          out << "Matrix type: " << matrixType_ << endl
+              << "Probleme size: " << GetNumGlobalElements();
+
+          if (matrixType_ == "Laplace2D")       out << " (" << nx_ << "x" << ny_ << ")";
+          else if (matrixType_ == "Laplace3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
+
+          out << endl;
+        }
+      
+      }
+
+      //@}
 
     private:
-      Teuchos::ParameterList paramList;
-
       // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
       double nx_;
       double ny_;
@@ -83,6 +111,8 @@ namespace MueLu {
       // GO nz_;
 
       std::string matrixType_;
+
+      mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
     };
   
   }

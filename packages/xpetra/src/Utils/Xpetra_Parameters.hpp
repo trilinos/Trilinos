@@ -1,12 +1,17 @@
 #ifndef XPETRA_PARAMETERS_HPP
 #define XPETRA_PARAMETERS_HPP
 
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+
 #include <Xpetra_Map.hpp> // for UnderlyingLib definition
+#include <Xpetra_Utils.hpp> // for toString(lib_)
 
 namespace Xpetra {
   
   class Parameters
+    : public Teuchos::VerboseObject<Parameters>, public Teuchos::Describable
   {
 
   public:
@@ -44,28 +49,42 @@ namespace Xpetra {
 
     }
 
-    void check() {
+    void check() const {
       //TODO with ifdef...
     }
       
-    Xpetra::UnderlyingLib GetLib() {
+    Xpetra::UnderlyingLib GetLib() const {
       check();
       return lib_;
     }
-     
-    void print() { // TODO: Teuchos::Describable 
-      check();
-     
-      std::cout << "Xpetra parameters: " << std::endl;
-
-      if (lib_ == Xpetra::UseTpetra)
-        std::cout << " * linAlgebra = Tpetra" << std::endl;
-      else if (lib_ == Xpetra::UseEpetra)
-        std::cout << " * linAlgebra = Epetra" << std::endl;
-
-      std::cout << std::endl;
+   
+    //! @name Overridden from Teuchos::Describable 
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << Teuchos::Describable::description();
+      out << "{lib = "  << toString(lib_) << "} ";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
+      using std::endl;
+      int vl = (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+      if (vl == Teuchos::VERB_NONE) return;
+      
+      if (vl == Teuchos::VERB_LOW) { out << description() << endl; } else { out << Teuchos::Describable::description() << endl; }
+      
+      if (vl == Teuchos::VERB_MEDIUM || vl == Teuchos::VERB_HIGH || vl == Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab1(out);
+        out << "Linear algebra library: " << toString(lib_) << endl;
+      }
     }
 
+    //@}
+    
   private:
     Xpetra::UnderlyingLib lib_;
   };
