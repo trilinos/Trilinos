@@ -114,8 +114,7 @@ void Environment::addParameters(Teuchos::ParameterList &params)
 void Environment::commitParameters()
 {
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
-    "Can not commit parameters because "+
-    "setCommunicator has not been called.",
+    "Can not commit parameters because setCommunicator has not been called.",
     _numProcs > 0, BASIC_ASSERTION);
 
   createValidParameterList(_validParams);
