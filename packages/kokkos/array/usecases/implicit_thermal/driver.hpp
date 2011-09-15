@@ -52,7 +52,7 @@ struct MiniImplTherm ;
 template< typename Scalar >
 struct MiniImplTherm< Scalar , KOKKOS_MACRO_DEVICE > {
 
-static void run(int x, int y, int z, double* times) 
+static void run(int x, int y, int z, double* perf ) 
 {
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
@@ -109,7 +109,7 @@ static void run(int x, int y, int z, double* times)
 
   device_type::wait_functor_completion();
 
-  times[0] = wall_clock.seconds(); // Mesh and graph allocation and population.
+  perf[0] = wall_clock.seconds(); // Mesh and graph allocation and population.
 
   //------------------------------
   // Allocate device memory for linear system and element contributions.
@@ -123,11 +123,13 @@ static void run(int x, int y, int z, double* times)
 
   wall_clock.reset();
 
+  typedef assembleFE< Scalar , double , device_type > AssembleFunctor ;
+
   Kokkos::parallel_for( mesh.elem_count,
-    assembleFE<Scalar, double, device_type>( mesh.d_mesh.elem_node_ids ,
-                                             mesh.d_mesh.node_coords ,
-                                             elem_stiffness, elem_load ,
-                                             elem_coeff_K , elem_load_Q ) );
+    AssembleFunctor( mesh.d_mesh.elem_node_ids ,
+                     mesh.d_mesh.node_coords ,
+                     elem_stiffness, elem_load ,
+                     elem_coeff_K , elem_load_Q ) );
 
   Kokkos::parallel_for( mesh.node_count,
     CRSMatrixGatherFill<Scalar, device_type>( A, b, A_row_d, A_col_d,
@@ -137,20 +139,30 @@ static void run(int x, int y, int z, double* times)
                                               elem_stiffness,
                                               elem_load) );
 
+  device_type::wait_functor_completion();
+
+  const double fill_time = wall_clock.seconds(); // Matrix computation and assembly
+
+  const size_t assemble_fill_flops =
+    (size_t) AssembleFunctor::FLOPS_operator * (size_t) mesh.elem_count +
+    (size_t) elem_stiffness.size() + (size_t) elem_load.size();
+
+  perf[1] = ( (double) mesh.elem_count ) / ( fill_time * 1e3 );
+  perf[2] = ( (double) assemble_fill_flops ) / ( fill_time * 1e6 );
+
+  //------------------------------
+
   Kokkos::parallel_for(mesh.node_count ,
     Dirichlet<Scalar , device_type>(A, A_row_d ,A_col_d, b,
                                     dirichlet_flag_d , dirichlet_value_d ) );
 
-  device_type::wait_functor_completion();
-
-  times[1] = wall_clock.seconds(); // Matrix computation and assembly
 
 //  printSparse< scalar_vector_d , index_vector_d>("A.txt",A,A_row_d,A_col_d);
 
   //------------------------------
   // Solve linear sytem
 
-  times[2] = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X ,times );
+  perf[3] = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X );
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 
@@ -183,8 +195,8 @@ static void driver( const char * label , int beg , int end , int runs )
 {
   std::cout << std::endl ;
   std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
-  std::cout << "\"Size\" , \"Setup\" , \"Populate\" , \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"KElem/sec\" , \"MFlop/sec\"" << std::endl ;
+  std::cout << "\"Size\" ,     \"Setup\" ,   \"Fill\" ,      \"Fill\" ,      \"Solve\"" << std::endl
+            << "\"elements\" , \"seconds\" , \"KElem/sec\" , \"MFlop/sec\" , \"MFlop/sec\"" << std::endl ;
 
   for(int i = beg ; i < end; ++i )
   {
@@ -194,7 +206,7 @@ static void driver( const char * label , int beg , int end , int runs )
     const int n  = ix * iy * iz ;
 
     // [ setup time , fill time , solve iteration MFlop/sec ]
-    double perf[3], best[3] = { 0 , 0 , 0 };
+    double perf[4], best[4] = { 0 , 0 , 0 , 0 };
 
     for(int j = 0; j < runs; j++){
 
@@ -204,17 +216,20 @@ static void driver( const char * label , int beg , int end , int runs )
        best[0] = perf[0];
        best[1] = perf[1];
        best[2] = perf[2];
+       best[3] = perf[3];
      }
      else {
        if ( perf[0] < best[0] ) best[0] = perf[0] ;
-       if ( perf[1] < best[1] ) best[1] = perf[1] ;
-       if ( best[2] < perf[2] ) best[2] = perf[2] ;
+       if ( perf[1] > best[1] ) best[1] = perf[1] ;
+       if ( best[2] > perf[2] ) best[2] = perf[2] ;
+       if ( best[3] > perf[3] ) best[3] = perf[3] ;
      }
    }
    std::cout << n << " , "
              << best[0] << " , "
-             << ( ( (double) n ) / ( best[1] * 1e3 ) ) << " , "
-             << best[2] << std::endl ;
+             << best[1] << " , "
+             << best[2] << " , "
+             << best[3] << std::endl ;
   }
 }
 
