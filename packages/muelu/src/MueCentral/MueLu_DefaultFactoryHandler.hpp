@@ -68,6 +68,14 @@ namespace MueLu {
 
     //! helper
     const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) {
+
+      // warning:
+      std::cout << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      std::cout << " A default factory is automatically generated for" << std::endl;
+      std::cout << " variable " << varName << std::endl;
+      std::cout << " This may caus strange behaviour!" << std::endl;
+      std::cout << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+
       DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //return factory;
     }
