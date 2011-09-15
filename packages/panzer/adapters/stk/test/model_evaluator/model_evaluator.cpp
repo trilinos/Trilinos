@@ -30,6 +30,15 @@ using Teuchos::rcp;
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
+#ifdef HAVE_STOKHOS
+   #include "Panzer_SGEpetraLinearObjFactory.hpp"
+ 
+   #include "Stokhos_HermiteBasis.hpp"
+   #include "Stokhos_CompletePolynomialBasis.hpp"
+   #include "Stokhos_QuadOrthogPolyExpansion.hpp"
+   #include "Stokhos_TensorProductQuadrature.hpp"
+#endif
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -37,31 +46,19 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-   void pause_to_attach()
-   {
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-      out.setShowProcRank(true);
-      out.setOutputToRootOnly(-1);
-
-      out << "PID = " << getpid();
-
-      if (comm->getRank() == 0)
-         getchar();
-      comm->barrier();
-   }
+  RCP<Epetra_Vector> basic_ss_f;
+  RCP<Epetra_Vector> basic_trans_f;
+  RCP<Epetra_CrsMatrix> basic_ss_J;
+  RCP<Epetra_CrsMatrix> basic_trans_J;
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
+  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order);
 
   TEUCHOS_UNIT_TEST(model_evaluator, basic)
   {
     using Teuchos::RCP;
   
-    // pause_to_attach();
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -182,13 +179,8 @@ namespace panzer {
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
 
-      #ifdef HAVE_STOKHOS
-        TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      #else
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      #endif
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
       
       
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
@@ -209,6 +201,16 @@ namespace panzer {
 
       me->evalModel(in_args, out_args);
 
+      // compare or save residual vector for comparison with SG version
+      if(basic_trans_f==Teuchos::null)
+         basic_trans_f = out_args.get_f();
+      else {
+         double norm=0.0, diff=0.0;
+         f->Norm2(&norm);
+         f->Update(-1.0,*basic_trans_f,1.0);    
+         f->Norm2(&diff);
+         TEST_ASSERT(diff/norm <= 1e-15);
+      }
     }
 
     // Test a steady-state me
@@ -227,13 +229,8 @@ namespace panzer {
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
       TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
 
-      #ifdef HAVE_STOKHOS
-        TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      #else
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
-        TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
-      #endif
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
       
       RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
       x->Update(1.0, *(me->get_x_init()), 0.0);
@@ -247,9 +244,260 @@ namespace panzer {
       out_args.set_W(J);
 
       me->evalModel(in_args, out_args);
+
+      // compare or save residual vector for comparison with SG version
+      if(basic_ss_f==Teuchos::null)
+         basic_ss_f = out_args.get_f();
+      else {
+         double norm=0.0, diff=0.0;
+         f->Norm2(&norm);
+         f->Update(-1.0,*basic_ss_f,1.0);    
+         f->Norm2(&diff);
+         out << diff << " " << norm << std::endl;
+         TEST_ASSERT(diff/norm <= 1e-15);
+      }
     }
 
   }
+
+#ifdef HAVE_STOKHOS
+  TEUCHOS_UNIT_TEST(model_evaluator, sg)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+  
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",6);
+    pl->set("Y Elements",4);
+    
+    panzer_stk::SquareQuadMeshFactory factory;
+    factory.setParameterList(pl);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+
+    panzer::InputPhysicsBlock ipb;
+    std::vector<panzer::BC> bcs;
+    testInitialzation(ipb, bcs);
+
+    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
+    RCP<panzer::FieldManagerBuilder<int,int> > fmb = rcp(new panzer::FieldManagerBuilder<int,int>);
+    RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = rcp(new panzer::ResponseLibrary<panzer::Traits>);
+
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    const std::size_t workset_size = 20;
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
+
+    {
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      
+      std::map<std::string,panzer::InputPhysicsBlock> 
+        physics_id_to_input_physics_blocks;
+      physics_id_to_input_physics_blocks["test physics"] = ipb;
+  
+      for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+	   block != block_ids_to_physics_ids.end(); ++block)
+	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
+
+      bool build_transient_support = true;
+      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
+                              physics_id_to_input_physics_blocks,
+                              Teuchos::as<int>(mesh->getDimension()), workset_size,
+                              eqset_factory,
+			      build_transient_support,
+                              physicsBlocks);
+    }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+       = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+
+    // build DOF Manager
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
+    const Teuchos::RCP<panzer::ConnManager<int,int> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
+
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+    Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sgLinObjFactory
+          = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(eLinObjFactory,sgExpansion));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = sgLinObjFactory;
+
+    // setup field manager build
+    /////////////////////////////////////////////////////////////
+ 
+    // Add in the application specific closure model factory
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+
+    Teuchos::ParameterList closure_models("Closure Models");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
+
+    Teuchos::ParameterList user_data("User Data");
+
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+
+    typedef double ScalarT;
+    typedef std::size_t LO;
+    typedef std::size_t GO;
+    typedef Kokkos::DefaultNode::DefaultNodeType NODE;
+    
+    // Test a transient me, with basic values (no SG)
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      bool build_transient_support = true;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_beta));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
+
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg)); // not currently supported
+      
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      RCP<Epetra_Vector> x_dot = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->Update(1.0, *(me->get_x_init()), 0.0);
+      x_dot->PutScalar(0.0);
+      in_args.set_x(x);
+      in_args.set_x_dot(x_dot);
+      in_args.set_alpha(0.0);
+      in_args.set_beta(1.0);
+      
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+      RCP<Epetra_Operator> J_tmp = me->create_W();
+      RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
+      TEST_ASSERT(!Teuchos::is_null(J));
+      out_args.set_f(f);
+      out_args.set_W(J);
+
+      me->evalModel(in_args, out_args);
+
+      // compare or save residual vector for comparison with SG version
+      if(basic_trans_f==Teuchos::null)
+         basic_trans_f = out_args.get_f();
+      else {
+         double norm=0.0, diff=0.0;
+         f->Norm2(&norm);
+         f->Update(-1.0,*basic_trans_f,1.0);    
+         f->Norm2(&diff);
+         TEST_ASSERT(diff/norm <= 1e-15);
+      }
+    }
+
+    // Test a steady-state me, basic values (no SG)
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      bool build_transient_support = false;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_beta));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_f));
+      TEST_ASSERT(out_args.supports(EpetraExt::ModelEvaluator::OUT_ARG_W));
+
+      TEST_ASSERT(in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_sg));
+      TEST_ASSERT(!in_args.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot_sg));
+      
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->Update(1.0, *(me->get_x_init()), 0.0);
+      in_args.set_x(x);
+      
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+      RCP<Epetra_Operator> J_tmp = me->create_W();
+      RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
+      TEST_ASSERT(!Teuchos::is_null(J));
+      out_args.set_f(f);
+      out_args.set_W(J);
+
+      me->evalModel(in_args, out_args);
+
+      // compare or save residual vector for comparison with SG version
+      if(basic_ss_f==Teuchos::null)
+         basic_ss_f = out_args.get_f();
+      else {
+         double norm=0.0, diff=0.0;
+         f->Norm2(&norm);
+         f->Update(-1.0,*basic_ss_f,1.0);    
+         f->Norm2(&diff);
+         out << diff << " " << norm << std::endl;
+         TEST_ASSERT(diff/norm <= 1e-15);
+      }
+    }
+
+    // Test a steady-state me, SG values
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      bool build_transient_support = false;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      RCP<Epetra_Map> x_map = me->get_x_map();
+      RCP<Epetra_Map> f_map = me->get_f_map();
+      RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me->create_W());
+      TEST_ASSERT(!Teuchos::is_null(J));
+
+      me->evalModel(in_args, out_args);
+    }
+
+  }
+
+  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order)
+  { 
+     Teuchos::Array<Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(numDim);
+     for(int i=0;i<numDim;i++)
+        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(order));
+     Teuchos::RCP<Stokhos::ProductBasis<int,double> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    
+     // build Cijk and "expansion"
+     int kExpOrder = basis->size();
+     // if(!fullExpansion)
+     //    kExpOrder = numDim+1;
+     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
+     Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    
+     return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));
+  }
+
+#endif
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)

@@ -24,6 +24,14 @@ namespace panzer {
        , evaluate_transient_terms(false)
     { }
 
+    AssemblyEngineInArgs()
+       : ghostedContainer_(Teuchos::null), container_(Teuchos::null) 
+       , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
+       , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
+       , time(Teuchos::ScalarTraits<double>::nan())
+       , evaluate_transient_terms(false)
+    { }
+
     Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
     Teuchos::RCP<panzer::LinearObjContainer> container_;
 

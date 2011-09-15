@@ -16,8 +16,10 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
+  template<typename, typename>  class SGEpetraLinearObjFactory;
   template<typename>  class ResponseLibrary;
   class EpetraLinearObjContainer;
+  class SGEpetraLinearObjContainer;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
@@ -25,6 +27,12 @@ namespace panzer {
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
+			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  bool build_transient_support);
+
+    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                          const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+			  const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 			  bool build_transient_support);
     
@@ -64,13 +72,34 @@ namespace panzer {
     //! for evaluation and handling of normal quantities, x,f,W, etc
     void evalModel_basic( const InArgs& inArgs, const OutArgs& outArgs ) const; 
 
-    #ifdef HAVE_STOKHOS
-       //! for evaluation and handling of Stochastic Galerkin quantities, x_sg, f_sg, W_sg, etc
-       void evalModel_sg( const InArgs& inArgs, const OutArgs& outArgs ) const;
-    #endif
+    /** handles evaluation of responses g, dgdx
+      *
+      * \note This method should (basically) be a no-op if <code>required_basic_g(outArgs)==false</code>.
+      *       However, for efficiency this is not checked.
+      */
+    void evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
 
-    //! handles evaluation of responses g, dgdx
-    void evalModel_basic_g(const InArgs & inArgs,const OutArgs & outArgs) const;
+    //! Are their required responses in the out args? g (and soon DgDx) 
+    bool required_basic_g(const OutArgs & outArgs) const;
+
+    #ifdef HAVE_STOKHOS
+       /** for evaluation and handling of Stochastic Galerkin quantities, x_sg, f_sg, W_sg, etc
+         *
+         * \note A precondition for this is that <code>sg_lof_</code> has been initialized
+         *       with a call to the appropriate constructor.
+         */
+       void evalModel_sg( const InArgs& inArgs, const OutArgs& outArgs ) const;
+
+       //! Are their required responses in the out args? g (and soon DgDx) 
+       bool required_sg_g(const OutArgs & outArgs) const;
+
+       /** handles evaluation of responses g, dgdx
+         *
+         * \note This method should (basically) be a no-op if <code>required_basic_g(outArgs)==false</code>.
+         *       However, for efficiency this is not checked.
+         */
+       void evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
+    #endif
 
     // /////////////////////////////////////
     // Private member data
@@ -95,15 +124,18 @@ namespace panzer {
     /** @} */
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
-    mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
+    mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
+    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;   // they control and provide access to evaluate
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     bool build_transient_support_;
-    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
 
+    // basic specific linear object objects
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
-
-    mutable Teuchos::RCP<panzer::AssemblyEngineInArgs> ae_inargs_;
     mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_;
+
+    // sg specific linear object objects
+    Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
+    mutable Teuchos::RCP<SGEpetraLinearObjContainer> sg_ghostedContainer_;
   };
   
 }

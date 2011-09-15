@@ -140,15 +140,21 @@ int main(int argc, char *argv[])
       solver->evalModel(inArgs, outArgs);
       
       //std::cout << *gx << std::endl;
+
+      // number of responses, minus the solution vector
+      TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==outArgs.Ng()-1);
       
       // get responses if there are any
       //////////////////////////////////////////////
       if(rLibrary->getLabeledResponseCount()>0) {
+
          std::vector<std::string> labels;
          rLibrary->getVolumeResponseLabels(labels);
 
          Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
          Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
+
+         TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==respOutArgs.Ng());
    
          respInArgs.set_x(gx);
    
