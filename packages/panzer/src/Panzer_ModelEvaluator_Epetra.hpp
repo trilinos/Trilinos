@@ -70,7 +70,7 @@ namespace panzer {
     #endif
 
     //! handles evaluation of responses g, dgdx
-    void evalModel_responses(const InArgs & inArgs,const OutArgs & outArgs) const;
+    void evalModel_basic_g(const InArgs & inArgs,const OutArgs & outArgs) const;
 
     // /////////////////////////////////////
     // Private member data
@@ -98,13 +98,12 @@ namespace panzer {
     mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     bool build_transient_support_;
+    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
 
-
-    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;
     mutable Teuchos::RCP<panzer::AssemblyEngineInArgs> ae_inargs_;
-    mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_, container_;
+    mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_;
   };
   
 }

@@ -33,17 +33,9 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
 
-  ae_inargs_ = rcp(new panzer::AssemblyEngineInArgs(lof->buildGhostedLinearObjContainer(),
-                                                    lof->buildLinearObjContainer()));
-  
-  // for convenience save the container objects
-  ghostedContainer_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
-  container_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
-
-  lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
-                                   panzer::EpetraLinearObjContainer::DxDt |
-                                   panzer::EpetraLinearObjContainer::F |
-                                   panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+  // ae_inargs_ = rcp(new panzer::AssemblyEngineInArgs(lof->buildGhostedLinearObjContainer(),
+  //                                                   lof->buildLinearObjContainer()));
+  ae_inargs_ = rcp(new panzer::AssemblyEngineInArgs(Teuchos::null,Teuchos::null));
 }
 
 void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
@@ -197,14 +189,13 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
 void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs, 
 					       const OutArgs& outArgs ) const
 {
-  evalModel_basic(inArgs,outArgs); // use x,p to evaluate, f, W
+  // use x,p to evaluate, f, W and associated responses
+  evalModel_basic(inArgs,outArgs); 
 
   #ifdef HAVE_STOKHOS
-    evalModel_sg(inArgs,outArgs);  // use x_sg, p_sg to evaluate f_sg, W_sg
+    // use x_sg, p_sg to evaluate f_sg, W_sg and associated responses
+    evalModel_sg(inArgs,outArgs);  
   #endif
-
-  // build responses
-  evalModel_responses(inArgs,outArgs);
 }
 
 void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs, 
@@ -225,10 +216,36 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 		     "ModelEvaluator was not built with transient support enabled!");
 
   //
+  // Get the output arguments
+  //
+  const RCP<Epetra_Vector> f_out = outArgs.get_f();
+  const RCP<Epetra_Operator> W_out = outArgs.get_W();
+
+  // see if the user wants us to do anything
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
+     // nothing to do!
+     return;
+  }
+
+  // the user requested work from this method
+  // keep on moving
+
+  // if neccessary build a ghosted container
+  if(Teuchos::is_null(ghostedContainer_)) {
+     ghostedContainer_ = rcp_dynamic_cast<EpetraLinearObjContainer>(lof_->buildGhostedLinearObjContainer());
+     lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
+                                      panzer::EpetraLinearObjContainer::DxDt |
+                                      panzer::EpetraLinearObjContainer::F |
+                                      panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+  }
+
+  //
   // Get the input arguments
   //
   const RCP<const Epetra_Vector> x = inArgs.get_x();
   RCP<const Epetra_Vector> x_dot;
+  ae_inargs_->container_ = lof_->buildLinearObjContainer(); // we use a new global container
+  ae_inargs_->ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
   ae_inargs_->alpha = 0.0;
   ae_inargs_->beta = 1.0;
   ae_inargs_->evaluate_transient_terms = false;
@@ -240,20 +257,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     ae_inargs_->evaluate_transient_terms = true;
   }
   
-  //
-  // Get the output arguments
-  //
-  const RCP<Epetra_Vector> f_out = outArgs.get_f();
-  const RCP<Epetra_Operator> W_out = outArgs.get_W();
-  
-  // Zero out global container objects
+  // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
+
   TEUCHOS_ASSERT(!Teuchos::is_null(epGlobalContainer));
-  epGlobalContainer->x = Teuchos::null;
-  epGlobalContainer->dxdt = Teuchos::null;
-  epGlobalContainer->f = Teuchos::null;
-  epGlobalContainer->A = Teuchos::null;
 
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient thatn
@@ -273,8 +281,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     epGlobalContainer->dxdt = Teuchos::rcp_const_cast<Epetra_Vector>(x_dot);
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-    //std::cout << "F AND J" << std::endl;
-    
+
     // Set the targets
     epGlobalContainer->f = f_out;
     epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
@@ -284,13 +291,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     epGhostedContainer->A->PutScalar(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
-    
-    //f_out->Print(std::cout);
-    //Epetra_CrsMatrix& J = dynamic_cast<Epetra_CrsMatrix&>(*W_out);
-    //J.Print(std::cout);
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
-    //std::cout << "F only" << std::endl;
 
     epGlobalContainer->f = f_out;
 
@@ -299,17 +301,14 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
     ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(*ae_inargs_);
 
-    f_out->Update(1.0, *(container_->f), 0.0);
-
-    //f_out->Print(std::cout);
+    f_out->Update(1.0, *(epGlobalContainer->f), 0.0);
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-    //std::cout << "J only" << std::endl;
 
+    // this dummy nonsense is needed only for scattering dirichlet conditions
     if (Teuchos::is_null(dummy_f_))
       dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-
-    epGlobalContainer->f = dummy_f_;
+    epGlobalContainer->f = dummy_f_; 
     epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
 
     // Zero values in ghosted container objects
@@ -317,28 +316,27 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(*ae_inargs_);
   }
+
+  // evaluate responses...uses the stored assembly arguments and containers
+  evalModel_basic_g(inArgs,outArgs);
   
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
+
   epGlobalContainer->x = Teuchos::null;
   epGlobalContainer->dxdt = Teuchos::null;
   epGlobalContainer->f = Teuchos::null;
   epGlobalContainer->A = Teuchos::null;
-}
 
-#ifdef HAVE_STOKHOS
-void 
-panzer::ModelEvaluator_Epetra::
-evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
-{
-//   TEUCHOS_ASSERT(false);
+  // forget previous containers
+  ae_inargs_->container_ = Teuchos::null;
+  ae_inargs_->ghostedContainer_ = Teuchos::null;
 }
-#endif
 
 void 
 panzer::ModelEvaluator_Epetra::
-evalModel_responses(const InArgs & inArgs,const OutArgs & outArgs) const
+evalModel_basic_g(const InArgs & inArgs,const OutArgs & outArgs) const
 {
    // nothing to do
    if(outArgs.Ng()<=0) 
@@ -376,3 +374,12 @@ evalModel_responses(const InArgs & inArgs,const OutArgs & outArgs) const
          (*vec)[0] = responses[i]->getValue();
    }
 }
+
+#ifdef HAVE_STOKHOS
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
+{
+//   TEUCHOS_ASSERT(false);
+}
+#endif
