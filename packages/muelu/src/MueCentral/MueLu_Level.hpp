@@ -385,18 +385,12 @@ public:
                 outputter.outputField(*it);   // variable name
                 outputter.outputField(*kt);   // factory ptr
 
-                if(defaultFactoryHandler_->IsAvailable(*it)) // check if default factory is available for variable name
-                {
-                    if(GetDefaultFactoryPtr(*it)==*kt)
-                       	outputter.outputField("def"); // factory ptr (deault factory)
-                }
+                if(defaultFactoryHandler_->IsAvailable(*it) && GetDefaultFactoryPtr(*it)==*kt)
+                    outputter.outputField("def"); // factory ptr (deault factory)
+                else if (*kt == MueLu::NoFactory::get())
+                    outputter.outputField("user"); // factory ptr (user generated)
                 else
-                {
-                    if (*kt == MueLu::NoFactory::get())
-                    	outputter.outputField("user"); // factory ptr (user generated)
-                    else
-                    	outputter.outputField(" ");
-                }
+                    outputter.outputField(" ");
 
                 int reqcount = 0;             // request counter
                 reqcount = needs_->NumRequests(*it, *kt);
@@ -411,6 +405,11 @@ public:
                 else if(strType.find("Xpetra::MultiVector")!=std::string::npos)
                 {
                   outputter.outputField("Vector");
+                  outputter.outputField("");
+                }
+                else if(strType.find("MueLu::SmootherBase")!=std::string::npos)
+                {
+                  outputter.outputField("SmootherBase");
                   outputter.outputField("");
                 }
                 else if(strType == "int")
