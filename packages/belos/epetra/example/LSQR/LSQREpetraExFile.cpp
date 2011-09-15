@@ -52,6 +52,8 @@
 #include "BelosLSQRSolMgr.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
+#include "EpetraExt_MultiVectorIn.h"
+
 #include "Epetra_Map.h"
 #ifdef EPETRA_MPI
   #include "Epetra_MpiComm.h"
@@ -92,24 +94,26 @@ int main(int argc, char *argv[]) {
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  std::string filename("orsirr1_scaled.hb");
-  MT relResTol = 2.0e-4;     // relative residual tolerance
+  std::string filenameMatrix("orsirr1_scaled.hb");
+  std::string filenameRHS;   // blank mean unset
+  MT relResTol = 3.0e-4;     // relative residual tolerance
   // Like CG, LSQR is a short recurrence method that 
   // does not have the "n" step convergence property in finite precision arithmetic.
-  MT resGrowthFactor = 2.0;   // In this example, warn if |resid| > resGrowthFactor * relResTol
+  MT resGrowthFactor = 4.0;   // In this example, warn if |resid| > resGrowthFactor * relResTol
   // With no preconditioner, this is only the difference between the "implicit" and the "explict
   // residual.  
 
-  MT relMatTol = 1.4e-7;     // relative Matrix error, default value sqrt(eps)
-  MT maxCond  = 1.e+16;      // maximum condition number default value 1/eps
-  MT damp = 0.;              // regularization (or damping) parameter 
+  MT relMatTol = 1.e-4;     // relative Matrix error, default value sqrt(eps)
+  MT maxCond  = 1.e+8;      // maximum condition number default value 1/eps
+  MT damp = 0.;             // regularization (or damping) parameter 
 
   Teuchos::CommandLineProcessor cmdp(false,true); // e.g. ./a.out --tol=.1 --filename=foo.hb
 
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+  cmdp.setOption("filename",&filenameMatrix,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+  cmdp.setOption("rhsFilename",&filenameRHS,"Filename for right-hand side.  Acceptable file extension: *.mtx");
   cmdp.setOption("lambda",&damp,"Regularization parameter");
   cmdp.setOption("tol",&relResTol,"Relative residual tolerance");
   cmdp.setOption("matrixTol",&relMatTol,"Relative error in Matrix");
@@ -121,6 +125,9 @@ int main(int argc, char *argv[]) {
 
 
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef EPETRA_MPI
+    MPI_Finalize();
+#endif
     return -1;
   }
   if (!verbose)
@@ -132,14 +139,20 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
   RCP<Epetra_Vector> vecB, vecX;
-  // Trilinos_Util_ReadMatrixMarket2Epetra vecX := 0,  vecB = A*randVec
-  // It is odd that the exact solution is discarded.
-  EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
+  EpetraExt::readEpetraLinearSystem(filenameMatrix, Comm, &A, &Map, &vecX, &vecB);
+  // Rectangular matrices are embedded in square matrices.  vecX := 0,  vecB = A*randVec
   A->OptimizeStorage();
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
 
+  bool isRHS = false;
+  if ( filenameRHS != "" ) 
+    {
+      isRHS = true;  
+    }
+
   // Check to see if the number of right-hand sides is the same as requested.
   if (numrhs>1) {
+    isRHS = false; // numrhs > 1 not yet supported
     X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
     B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
     X->Seed();
@@ -148,30 +161,58 @@ int main(int argc, char *argv[]) {
     X->PutScalar( 0.0 );   // annihilate X
   }
   else {
-    int locNumCol = Map->MaxLID() + 1;
-    int globNumCol = Map->MaxAllGID() + 1;
-    for( int li = 0; li < locNumCol; li++){   // assume consecutive lid
-      int gid = Map->GID(li);
-      double value = (double) ( globNumCol -1 - gid ); 
-      int numEntries = 1;
-      vecX->ReplaceGlobalValues( numEntries, &value, &gid );
-    }
-    bool Trans = false;
-    A->Multiply( Trans, *vecX, *vecB );
-    bool goodInitGuess = false;
-    if( goodInitGuess )
+    if ( isRHS )  
       {
-        double value = 1.e-2;  // solution norm ~ n^(3/2) ~ 10^6
-        int numEntries = 1;   
-        int index = 0;
-        vecX->SumIntoMyValues(  numEntries, &value, &index); 
+        Epetra_MultiVector * BmustDelete;
+        int mmRHSioflag = 0;
+        const char * charPtrRHSfn = filenameRHS.c_str();
+        mmRHSioflag = EpetraExt::MatrixMarketFileToMultiVector(charPtrRHSfn, *Map, BmustDelete);
+        //std::cout << "rhs from input file " << std::endl;
+        //BmustDelete->Print(std::cout);
+        
+        if( mmRHSioflag )
+          {
+            if (proc_verbose)
+              std::cout << "Error " <<  mmRHSioflag << " occured while attempting to read file " << filenameRHS << std::endl; 
+#ifdef EPETRA_MPI
+            MPI_Finalize();
+#endif
+            return -1;
+          }
+        X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
+        X->Scale( 0.0 ); 
+        B = rcp( new MV(*BmustDelete));
+        delete BmustDelete;
       }
-    // no initial guess
-    vecX->PutScalar( 0.0 ); // code breaks with nonzero initial guess.  ok .. that's my job.
-    // Is the relative residual threshold reset when there is an initial guess? 
-    // If so, then where?
-    X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
-    B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
+    else 
+      {
+        int locNumCol = Map->MaxLID() + 1; // Create a known solution
+        int globNumCol = Map->MaxAllGID() + 1;
+        for( int li = 0; li < locNumCol; li++){   // assume consecutive lid
+          int gid = Map->GID(li);
+          double value = (double) ( globNumCol -1 - gid ); 
+          int numEntries = 1;
+          vecX->ReplaceGlobalValues( numEntries, &value, &gid );
+        }
+        bool Trans = false;
+        A->Multiply( Trans, *vecX, *vecB ); // Create a consistent linear system
+        // At this point, the initial guess is exact.
+        bool goodInitGuess = true; // perturb initial guess
+        bool zeroInitGuess = false; // annihilate initial guess
+        if( goodInitGuess )
+          {
+            double value = 1.e-2; // "Rel RHS Err" and "Rel Mat Err" apply to the residual equation,
+            int numEntries = 1;   // norm( b - A x_k ) ?<? relResTol norm( b- Axo).
+            int index = 0;        // norm(b) is inaccessible to LSQR. 
+            vecX->SumIntoMyValues(  numEntries, &value, &index); 
+          }
+        if( zeroInitGuess )
+          {
+            vecX->PutScalar( 0.0 ); // 
+          }
+        X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
+        B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
+      }
   }
   //
   // ********Other information used by block solver***********
@@ -185,7 +226,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Lambda", damp );                // Regularization parameter
   belosList.set( "Rel RHS Err", relResTol );      // Relative convergence tolerance requested
   belosList.set( "Rel Mat Err", relMatTol );      // Maximum number of restarts allowed
-  belosList.set( "Condition limit", maxCond);     // upper bound for cond(A)
+  belosList.set( "Condition Limit", maxCond);     // upper bound for cond(A)
   belosList.set( "Maximum Iterations", maxiters );// Maximum number of iterations allowed
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
@@ -204,8 +245,13 @@ int main(int argc, char *argv[]) {
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-    return -1;
+      {
+        std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      }
+#ifdef EPETRA_MPI
+      MPI_Finalize();
+#endif
+      return -1;
   }
   // *******************************************************************
   // ******************* Apply Single Vector LSQR **********************
@@ -264,6 +310,9 @@ int main(int argc, char *argv[]) {
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;	
+#ifdef EPETRA_MPI
+    MPI_Finalize();
+#endif
     return -1;
   }
   if (proc_verbose)

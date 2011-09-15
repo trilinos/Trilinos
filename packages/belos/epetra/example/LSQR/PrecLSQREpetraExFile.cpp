@@ -100,9 +100,8 @@ int main(int argc, char *argv[]) {
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   std::string filename("orsirr1_scaled.hb");
-  MT relResTol = 1.0e-5;     // relative residual tolerance
-  //MT resGrowthFactor = 2.0;  // In this example, warn if |resid| > resGrowthFactor * relResTol
-  // un-used variable
+  MT relResTol = 1.0e-5;     // relative residual tolerance for the preconditioned linear system
+  MT resGrowthFactor = 1.0;  // In this example, warn if |resid| > resGrowthFactor * relResTol
 
   MT relMatTol = 1.e-10;     // relative Matrix error, default value sqrt(eps)
   MT maxCond  = 1.e+5;       // maximum condition number default value 1/eps
@@ -147,6 +146,33 @@ int main(int argc, char *argv[]) {
     X->PutScalar( 0.0 );
   }
   else {
+    int locNumCol = Map->MaxLID() + 1; // Create a known solution
+    int globNumCol = Map->MaxAllGID() + 1;
+    for( int li = 0; li < locNumCol; li++){   // assume consecutive lid
+      int gid = Map->GID(li);
+      double value = (double) ( globNumCol -1 - gid );
+      int numEntries = 1;
+      vecX->ReplaceGlobalValues( numEntries, &value, &gid );
+    }
+    bool Trans = false;
+    A->Multiply( Trans, *vecX, *vecB ); // Create a consistent linear system
+    // At this point, the initial guess is exact.  
+    bool zeroInitGuess = false; // annihilate initial guess
+    bool goodInitGuess = true; // initial guess near solution
+    if( zeroInitGuess )
+      {
+        vecX->PutScalar( 0.0 ); 
+      }
+    else    
+      {
+        if( goodInitGuess )
+          {
+            double value = 1.e-2; // "Rel RHS Err" and "Rel Mat Err" apply to the residual equation,
+            int numEntries = 1;   // norm( b - A x_k ) ?<? relResTol norm( b- Axo).
+            int index = 0;        // norm(b) is inaccessible to LSQR. 
+            vecX->SumIntoMyValues(  numEntries, &value, &index);
+          }
+      }
     X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
     B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
   }
@@ -162,8 +188,7 @@ int main(int argc, char *argv[]) {
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
   std::string PrecType = "ILU"; // incomplete LU
-  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
-                        // it is ignored.
+  int OverlapLevel = 1; // nonnegative
 
   RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
   assert(Prec != Teuchos::null);
@@ -212,7 +237,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Lambda", damp );                // Regularization parameter
   belosList.set( "Rel RHS Err", relResTol );      // Relative convergence tolerance requested
   belosList.set( "Rel Mat Err", relMatTol );      // Maximum number of restarts allowed
-  belosList.set( "Condition limit", maxCond);     // upper bound for cond(A)
+  belosList.set( "Condition Limit", maxCond);     // upper bound for cond(A)
   belosList.set( "Maximum Iterations", maxiters );// Maximum number of iterations allowed
   if (numrhs > 1) {
     belosList.set( "Show Maximum Residual Norm Only", true );  // Show only the maximum residual norm
@@ -300,7 +325,7 @@ int main(int argc, char *argv[]) {
     for ( int i=0; i<numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
       std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > relResTol) badRes = true;
+      if (actRes > relResTol * resGrowthFactor ) badRes = true;
     }
   }
 
