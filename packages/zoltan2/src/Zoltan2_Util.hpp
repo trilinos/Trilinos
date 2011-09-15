@@ -29,6 +29,7 @@ void getOutputStreamFromParameterList(
 /*! Convert an MPI communicator to a Teuchos::MpiComm object.
  */
 
+#ifdef HAVE_MPI
 template <typename Ordinal>
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm comm)
@@ -102,5 +103,6 @@ template <typename Ordinal>
   return getTeuchosMpiComm<Ordinal>(subComm);
 }
 
+#endif
 
 }  //namespace Zoltan2
