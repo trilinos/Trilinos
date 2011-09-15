@@ -41,9 +41,9 @@ namespace MueLu {
     /*! @brief Constructor.
       \param AggregationFact -- (optional) factory that creates aggregates.
     */
-    TentativePFactory(RCP<FactoryBase> aggregatesFact = Teuchos::null, RCP<FactoryBase> nullspaceFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
+    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null)
       : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-        QR_(false) {    }
+        QR_(false) { }
     
     //! Destructor.
     virtual ~TentativePFactory() {}
@@ -500,9 +500,9 @@ namespace MueLu {
     //@}
 
   private:
-    RCP<FactoryBase> aggregatesFact_; //! Factory that creates aggregates
-    RCP<FactoryBase> nullspaceFact_;
-    RCP<FactoryBase> AFact_;
+    RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
+    RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
+    RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
 

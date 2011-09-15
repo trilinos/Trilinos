@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact, rcp(MueLu::NoFactory::get(), false))); //ugly!!!
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);
