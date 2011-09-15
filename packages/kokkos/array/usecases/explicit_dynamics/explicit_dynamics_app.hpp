@@ -150,10 +150,15 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
 
     total += compute_time;
 
+    Kokkos::parallel_reduce( region.num_elements,
+        minimum_stable_time_step<Scalar, device_type>( region, current_state, next_state), //reduction op
+        set_next_time_step<Scalar,device_type>(region,current_state,next_state),           //post process
+        compute_time);
+
+
     // Assembly of elements' contributions to nodal force into
     // a nodal force vector.  Update the accelerations, velocities,
     // displacements.
-    //
     // The same pattern can be used for matrix-free residual computations.
     Kokkos::parallel_for( region.num_nodes ,
         finish_step<Scalar, device_type>( region,
