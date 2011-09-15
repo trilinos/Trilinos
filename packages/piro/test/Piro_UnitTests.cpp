@@ -491,6 +491,7 @@ TEUCHOS_UNIT_TEST( Piro, SGCoupled )
   Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
 }
 
+#ifdef Piro_ENABLE_TriKota
 TEUCHOS_UNIT_TEST( Piro, SGAnalysis )
 {
   using Teuchos::RCP;
@@ -581,6 +582,7 @@ TEUCHOS_UNIT_TEST( Piro, SGAnalysis )
   success = failures == 0;
   Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
 }
+#endif
 #endif
 #endif
 
