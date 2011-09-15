@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   Epetra_MpiComm commObj(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm commObj();
+  Epetra_SerialComm commObj;
 #endif
 
 
