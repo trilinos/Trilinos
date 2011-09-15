@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
 
   H->SetLevel(Finest); // first associate level with hierarchy (for defaultFactoryHandler!)
 
-  Finest->Request("A");
-  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+  //Finest->Request("A");
+  //Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                 //FIXME is implemented
 
   Finest->Set("A",Op);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact, rcp(MueLu::NoFactory::get(), false))); //ugly!!!
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);
@@ -187,6 +187,8 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
+
+  Finest->print(std::cout);
 
   //#define JG_TODO
 #ifdef JG_TODO

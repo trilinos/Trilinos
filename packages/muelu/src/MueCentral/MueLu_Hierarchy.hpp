@@ -213,12 +213,30 @@ namespace MueLu {
                                          TwoLevelFactoryBase const &AcFact,
                                          int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
+      // check for fine level matrix A
   	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
 
+      // check for fine level nullspace
+      if(Levels_[startLevel]->IsAvailable("Nullspace",MueLu::NoFactory::get()))
+      {
+          // user-defined nullspace -> default nullspace
+          RCP<MultiVector> nsp = Levels_[startLevel]->Get<RCP<MultiVector> >("Nullspace",MueLu::NoFactory::get());
+          Levels_[startLevel]->Delete("Nullspace",MueLu::NoFactory::get());
+          RCP<NullspaceFactory> nspfac = rcp(new NullspaceFactory());
+          defaultFactoryHandler_->SetDefaultFactory("Nullspace",nspfac);
+          Levels_[startLevel]->Keep("Nullspace", nspfac.get());
+          Levels_[startLevel]->Set<RCP<MultiVector> >("Nullspace",nsp,nspfac.get());
+      }
+      else
+      {
+          // create nullspace factory
+          RCP<NullspaceFactory> nspfac = rcp(new NullspaceFactory());
+          defaultFactoryHandler_->SetDefaultFactory("Nullspace",nspfac);
+      }
       // keep variables A, P and R on all multigrid levels
 
-      // set operator A to be generated with AcFact
+      // set operator A to be generated with AcFact (from FillHierarchy parameters)
       Levels_[startLevel]->Keep("A", &AcFact);
       Levels_[startLevel]->Set<RCP<Operator> >("A", A, &AcFact);
 
@@ -228,7 +246,7 @@ namespace MueLu {
       // Set default, very important to do that! (Otherwise, factory use default factories instead of user defined factories - ex: RAPFactory will request a new "P" from default factory)
       defaultFactoryHandler_->SetDefaultFactory("P", rcpFromRef(PRFact)); // TODO: remove rcpFromRef
       defaultFactoryHandler_->SetDefaultFactory("R", rcpFromRef(PRFact));
-      defaultFactoryHandler_->SetDefaultFactory("A", rcpFromRef(AcFact));
+      defaultFactoryHandler_->SetDefaultFactory("A", rcpFromRef(AcFact)); // overwrite default factory handler for A!
 
       Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
       Xpetra::global_size_t totalNnz = fineNnz;

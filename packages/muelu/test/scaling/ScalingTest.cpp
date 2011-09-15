@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
 
   H->SetLevel(Finest);
 
-  Finest->Request("A");
-  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+//  Finest->Request("A");
+//  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                 //FIXME is implemented
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact, rcp(MueLu::NoFactory::get(), false))); //ugly!!
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   Pfact->SetDampingFactor(SADampingFactor);
