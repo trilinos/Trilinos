@@ -86,7 +86,7 @@ void Environment::setCommunicator(Teuchos::RCP<Teuchos::Comm<int> > &comm)
 {
   Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
     "parameters are already committed",
-    _committed, BASIC_ASSERTION);
+    !_committed, BASIC_ASSERTION);
 
   _comm = comm;
   _myRank = _comm->getRank();
@@ -97,7 +97,7 @@ void Environment::setParameters(Teuchos::ParameterList &params)
 {
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
     "parameters are already committed",
-    _committed, BASIC_ASSERTION);
+    !_committed, BASIC_ASSERTION);
 
   _params = params;
 }
@@ -106,18 +106,17 @@ void Environment::addParameters(Teuchos::ParameterList &params)
 {
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
     "parameters are already committed",
-    _committed, BASIC_ASSERTION);
+    !_committed, BASIC_ASSERTION);
 
   _params.setParameters(params);
 }
 
 void Environment::commitParameters()
 {
-  if (_numProcs == 0){
-    std::string msg("Can not commit parameters because ");
-    msg += std::string("setCommunicator has not been called.");
-    throw std::runtime_error(msg);
-  }
+  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+    "Can not commit parameters because "+
+    "setCommunicator has not been called.",
+    _numProcs > 0, BASIC_ASSERTION);
 
   createValidParameterList(_validParams);
   _params.validateParametersAndSetDefaults(_validParams);
@@ -145,6 +144,7 @@ void Environment::commitParameters()
     catch(std::exception &e){
       // TODO
     }
+    // TODO DebugManager destructor should close dbgFile if necessary
     _dbg = Teuchos::rcp(new DebugManager(
       _myRank, _printDebugMessages,  dbgFile, _debugDepthLevel));
   }
