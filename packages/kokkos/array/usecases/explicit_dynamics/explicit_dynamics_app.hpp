@@ -14,6 +14,7 @@
 #include "grad_hgop.hpp"
 #include "decomp_rotate.hpp"
 #include "divergence.hpp"
+#include "minimum_stable_time_step.hpp"
 #include "finish_step.hpp"
 
 //----------------------------------------------------------------------------
@@ -35,9 +36,14 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
   double compute_time = 0.0;
   double total = 0.0;
 
+  const Scalar user_dt = 1.0e-5;
+  //const Scalar  end_time = 0.0050;
+
   // element block parameters
-  const Scalar  lin_bulk_visc = 0.06;
-  const Scalar  quad_bulk_visc = 1.2;
+  const Scalar  lin_bulk_visc = 0.0;
+  const Scalar  quad_bulk_visc = 0.0;
+  //const Scalar  lin_bulk_visc = 0.06;
+  //const Scalar  quad_bulk_visc = 1.2;
   const Scalar  hg_stiffness = 0.0;
   const Scalar  hg_viscosity = 0.0;
   //const Scalar  hg_stiffness = 0.03;
@@ -84,8 +90,6 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
   Kokkos::deep_copy(region.velocity, velocity_h);
 
   // Parameters required for the internal force computations.
-  const Scalar dt = 1.0e-6;
-  const Scalar  end_time = 0.0050;
 
 
   //--------------------------------------------------------------------------
@@ -107,7 +111,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
   int previous_state = 0;
   int next_state = 0;
   //for (Scalar sim_time = 0.0; sim_time < end_time; sim_time += dt) {
-  for (int sim_time = 0; sim_time < 3; ++sim_time) {
+  for (int sim_time = 0; sim_time < 10; ++sim_time) {
 
     //rotate the states
     previous_state = current_state;
@@ -115,11 +119,14 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     ++next_state;
     next_state %= NumStates;
 
+    std::cout << "--------------------------------------------------------------------\n\n";
+    std::cout << "Time = " << sim_time << std::endl;
+    std::cout << "Time Step = " << region.delta_t(current_state) << std::endl << std::endl;
+
     // First kernel 'grad_hgop' combines three functions:
     // gradient, velocity gradient, and hour glass operator.
     Kokkos::parallel_for( region.num_elements ,
         grad_hgop<Scalar, device_type> ( region,
-                                         dt,
                                          current_state,
                                          previous_state
                                        )
@@ -130,7 +137,6 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     // Combine tensor decomposition and rotation functions.
     Kokkos::parallel_for( region.num_elements ,
         decomp_rotate<Scalar, device_type> ( region,
-                                             dt,
                                              current_state,
                                              previous_state
                                            )
@@ -142,7 +148,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     // did not notice any opportunity for splitting.
     Kokkos::parallel_for( region.num_elements ,
         divergence<Scalar, device_type> ( region,
-                                          dt,
+                                          user_dt,
                                           current_state,
                                           previous_state
                                         )
@@ -151,8 +157,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     total += compute_time;
 
     Kokkos::parallel_reduce( region.num_elements,
-        minimum_stable_time_step<Scalar, device_type>( region, current_state, next_state), //reduction op
-        set_next_time_step<Scalar,device_type>(region,current_state,next_state),           //post process
+        minimum_stable_time_step<Scalar, device_type>( region),    //reduction op
+        set_next_time_step<Scalar,device_type>(region,next_state), //post process
         compute_time);
 
 
@@ -163,7 +169,6 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     Kokkos::parallel_for( region.num_nodes ,
         finish_step<Scalar, device_type>( region,
                                           ex+1,
-                                          dt,
                                           current_state,
                                           next_state
                                         )
@@ -173,20 +178,33 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     total += compute_time;
 
 
-    std::cout << "Time step = " << sim_time << std::endl << std::endl;
-
-    std::cout << "Element Stress\n";
+    std::cout << "\n";
     for(int i = 0; i<region.num_elements; ++i) {
+      std::cout << "Element " << i << " stress: ";
       std::cout << "(";
       std::cout << region.stress_new(i,0) << ",";
       std::cout << region.stress_new(i,1) << ",";
       std::cout << region.stress_new(i,2) << ",";
       std::cout << region.stress_new(i,3) << ",";
       std::cout << region.stress_new(i,4) << ",";
-      std::cout << region.stress_new(i,5) << "), ";
+      std::cout << region.stress_new(i,5) << ")\n";
     }
+
+    std::cout << "\n";
+    for(int i = 0; i<region.num_elements; ++i) {
+      std::cout << "Element " << i << " rot_stress: ";
+      std::cout << "(";
+      std::cout << region.rot_stress(i,0) << ",";
+      std::cout << region.rot_stress(i,1) << ",";
+      std::cout << region.rot_stress(i,2) << ",";
+      std::cout << region.rot_stress(i,3) << ",";
+      std::cout << region.rot_stress(i,4) << ",";
+      std::cout << region.rot_stress(i,5) << ")\n";
+    }
+
     std::cout << "\n\n";
 
+#if 0
     for (int inode = 0; inode<region.num_nodes; ++inode) {
       std::cout << "Node = " << inode << std::endl;
 
@@ -212,6 +230,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
       std::cout << region.displacement(inode,1,current_state) << ",";
       std::cout << region.displacement(inode,2,current_state) << ")" << std::endl << std::endl;
     }
+#endif
+
   }
 
   return total;

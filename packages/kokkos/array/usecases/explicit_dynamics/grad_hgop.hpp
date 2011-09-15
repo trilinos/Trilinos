@@ -6,7 +6,8 @@
 #ifndef GRAD_HGOP
 #define GRAD_HGOP
 
-#define ONE12TH 0.083333333333333333333333
+//#define ONE12TH 0.083333333333333333333333
+#define ONE12TH (1.0/12.0)
 //
 //  Indexes into a full 3 by 3 tensor stored as a length 9 vector
 //
@@ -38,11 +39,10 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   const array_type model_coords;
   const array_type displacement;
   const array_type velocity;
-  const array_type mid_vol;
   const array_type vel_grad;
   const array_type hgop;
 
-  const Scalar     dt;
+	const Scalar     dt;
   const int        current_state;
   const int        previous_state;
 
@@ -51,20 +51,20 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   // Constructor on the Host to populate this device functor.
   // All array view copies are shallow.
     grad_hgop( const MyRegion & region,
-               const Scalar delta_t,
                const int arg_current_state,
                const int arg_previous_state)
     : elem_node_connectivity(region.elem_node_connectivity)
     , model_coords(region.model_coords)
     , displacement(region.displacement)
     , velocity(region.velocity)
-    , mid_vol (region.mid_vol)
     , vel_grad(region.vel_grad)
     , hgop    (region.hgop)
-    , dt( delta_t )
+    , dt( region.delta_t(arg_current_state) )
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
-    {}
+    {
+      //std::cout << "grad_hgop dt: " << dt << std::endl;
+    }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
     void get_nodes( int ielem, int * nodes) const
@@ -277,101 +277,119 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     void v_grad(  int ielem,
       Scalar * vx,       Scalar * vy,       Scalar * vz,
       Scalar * grad_x,     Scalar * grad_y,     Scalar * grad_z,
-      Scalar inv_vol) const {
+      Scalar inv_vol_1_12) const {
 
   //   Calculate Velocity Gradients
-    vel_grad(ielem, K_F_XX) = inv_vol * (    vx[0] * grad_x[0] + \
-                        vx[1] * grad_x[1] + \
-                        vx[2] * grad_x[2] + \
-                        vx[3] * grad_x[3] + \
-                        vx[4] * grad_x[4] + \
-                        vx[5] * grad_x[5] + \
-                        vx[6] * grad_x[6] + \
+    vel_grad(ielem, K_F_XX) = inv_vol_1_12 * (    vx[0] * grad_x[0] +
+                        vx[1] * grad_x[1] +
+                        vx[2] * grad_x[2] +
+                        vx[3] * grad_x[3] +
+                        vx[4] * grad_x[4] +
+                        vx[5] * grad_x[5] +
+                        vx[6] * grad_x[6] +
                         vx[7] * grad_x[7] );
 
-    vel_grad(ielem, K_F_YX) = inv_vol * (    vy[0] * grad_x[0] + \
-                        vy[1] * grad_x[1] + \
-                        vy[2] * grad_x[2] + \
-                        vy[3] * grad_x[3] + \
-                        vy[4] * grad_x[4] + \
-                        vy[5] * grad_x[5] + \
-                        vy[6] * grad_x[6] + \
+    vel_grad(ielem, K_F_YX) = inv_vol_1_12 * (    vy[0] * grad_x[0] +
+                        vy[1] * grad_x[1] +
+                        vy[2] * grad_x[2] +
+                        vy[3] * grad_x[3] +
+                        vy[4] * grad_x[4] +
+                        vy[5] * grad_x[5] +
+                        vy[6] * grad_x[6] +
                         vy[7] * grad_x[7] );
 
-    vel_grad(ielem, K_F_ZX) = inv_vol * (    vz[0] * grad_x[0] + \
-                        vz[1] * grad_x[1] + \
-                        vz[2] * grad_x[2] + \
-                        vz[3] * grad_x[3] + \
-                        vz[4] * grad_x[4] + \
-                        vz[5] * grad_x[5] + \
-                        vz[6] * grad_x[6] + \
+    vel_grad(ielem, K_F_ZX) = inv_vol_1_12 * (    vz[0] * grad_x[0] +
+                        vz[1] * grad_x[1] +
+                        vz[2] * grad_x[2] +
+                        vz[3] * grad_x[3] +
+                        vz[4] * grad_x[4] +
+                        vz[5] * grad_x[5] +
+                        vz[6] * grad_x[6] +
                         vz[7] * grad_x[7] );
 
 
 
-    vel_grad(ielem, K_F_XY) = inv_vol * (    vx[0] * grad_y[0] + \
-                        vx[1] * grad_y[1] + \
-                        vx[2] * grad_y[2] + \
-                        vx[3] * grad_y[3] + \
-                        vx[4] * grad_y[4] + \
-                        vx[5] * grad_y[5] + \
-                        vx[6] * grad_y[6] + \
+    vel_grad(ielem, K_F_XY) = inv_vol_1_12 * (    vx[0] * grad_y[0] +
+                        vx[1] * grad_y[1] +
+                        vx[2] * grad_y[2] +
+                        vx[3] * grad_y[3] +
+                        vx[4] * grad_y[4] +
+                        vx[5] * grad_y[5] +
+                        vx[6] * grad_y[6] +
                         vx[7] * grad_y[7] );
 
-    vel_grad(ielem, K_F_YY) = inv_vol * (    vy[0] * grad_y[0] + \
-                        vy[1] * grad_y[1] + \
-                        vy[2] * grad_y[2] + \
-                        vy[3] * grad_y[3] + \
-                        vy[4] * grad_y[4] + \
-                        vy[5] * grad_y[5] + \
-                        vy[6] * grad_y[6] + \
+    vel_grad(ielem, K_F_YY) = inv_vol_1_12 * (    vy[0] * grad_y[0] +
+                        vy[1] * grad_y[1] +
+                        vy[2] * grad_y[2] +
+                        vy[3] * grad_y[3] +
+                        vy[4] * grad_y[4] +
+                        vy[5] * grad_y[5] +
+                        vy[6] * grad_y[6] +
                         vy[7] * grad_y[7] );
 
-    vel_grad(ielem, K_F_ZY) = inv_vol * (    vz[0] * grad_y[0] + \
-                        vz[1] * grad_y[1] + \
-                        vz[2] * grad_y[2] + \
-                        vz[3] * grad_y[3] + \
-                        vz[4] * grad_y[4] + \
-                        vz[5] * grad_y[5] + \
-                        vz[6] * grad_y[6] + \
+    vel_grad(ielem, K_F_ZY) = inv_vol_1_12 * (    vz[0] * grad_y[0] +
+                        vz[1] * grad_y[1] +
+                        vz[2] * grad_y[2] +
+                        vz[3] * grad_y[3] +
+                        vz[4] * grad_y[4] +
+                        vz[5] * grad_y[5] +
+                        vz[6] * grad_y[6] +
                         vz[7] * grad_y[7] );
 
 
 
-    vel_grad(ielem, K_F_XZ) = inv_vol * (    vx[0] * grad_z[0] + \
-                        vx[1] * grad_z[1] + \
-                        vx[2] * grad_z[2] + \
-                        vx[3] * grad_z[3] + \
-                        vx[4] * grad_z[4] + \
-                        vx[5] * grad_z[5] + \
-                        vx[6] * grad_z[6] + \
+    vel_grad(ielem, K_F_XZ) = inv_vol_1_12 * (    vx[0] * grad_z[0] +
+                        vx[1] * grad_z[1] +
+                        vx[2] * grad_z[2] +
+                        vx[3] * grad_z[3] +
+                        vx[4] * grad_z[4] +
+                        vx[5] * grad_z[5] +
+                        vx[6] * grad_z[6] +
                         vx[7] * grad_z[7] );
 
-    vel_grad(ielem, K_F_YZ) = inv_vol * (    vy[0] * grad_z[0] + \
-                        vy[1] * grad_z[1] + \
-                        vy[2] * grad_z[2] + \
-                        vy[3] * grad_z[3] + \
-                        vy[4] * grad_z[4] + \
-                        vy[5] * grad_z[5] + \
-                        vy[6] * grad_z[6] + \
+    vel_grad(ielem, K_F_YZ) = inv_vol_1_12 * (    vy[0] * grad_z[0] +
+                        vy[1] * grad_z[1] +
+                        vy[2] * grad_z[2] +
+                        vy[3] * grad_z[3] +
+                        vy[4] * grad_z[4] +
+                        vy[5] * grad_z[5] +
+                        vy[6] * grad_z[6] +
                         vy[7] * grad_z[7] );
 
-    vel_grad(ielem, K_F_ZZ) = inv_vol * (    vz[0] * grad_z[0] + \
-                        vz[1] * grad_z[1] + \
-                        vz[2] * grad_z[2] + \
-                        vz[3] * grad_z[3] + \
-                        vz[4] * grad_z[4] + \
-                        vz[5] * grad_z[5] + \
-                        vz[6] * grad_z[6] + \
+    vel_grad(ielem, K_F_ZZ) = inv_vol_1_12 * (    vz[0] * grad_z[0] +
+                        vz[1] * grad_z[1] +
+                        vz[2] * grad_z[2] +
+                        vz[3] * grad_z[3] +
+                        vz[4] * grad_z[4] +
+                        vz[5] * grad_z[5] +
+                        vz[6] * grad_z[6] +
                         vz[7] * grad_z[7] );
 
+#if 0
+    std::cout << "Element " << ielem << " vx: ";
+    for(int i = 0; i<8; ++i) {
+      std::cout << vx[i] << ",";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Element " << ielem << " grad_x: ";
+    for(int i = 0; i<8; ++i) {
+      std::cout << grad_x[i] << ",";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Element " << ielem << " vel_grad(x): ";
+    std::cout << vel_grad(ielem,0) << std::endl;
+#endif
+
   }
+
 
   KOKKOS_MACRO_DEVICE_FUNCTION
     void comp_hgop(    int ielem,
             Scalar * x,     Scalar * y,     Scalar * z,
             Scalar * grad_x,   Scalar * grad_y,   Scalar * grad_z,
-            Scalar inv_vol) const {
+            Scalar inv_vol_1_12) const {
 
   //   KHP: Alternatively, we could have
   //   hx0,hx1,hx2,hx3,...,hz0,hz1,hz2,hz3
@@ -382,30 +400,30 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     Scalar q2 = x[4] - x[5];
     Scalar q3 = x[6] - x[7];
 
-    hgconst12th[0] = ( (x[0]+x[1]) - (x[2]+x[3]) - (x[4]+x[5]) + (x[6]+x[7]) ) * inv_vol;
-    hgconst12th[1] = (  q0 - q1 - q2 + q3 ) * inv_vol;
-    hgconst12th[2] = (  q0 + q1 + q2 + q3 ) * inv_vol;
-    hgconst12th[3] = ( -q0 - q1 + q2 + q3 ) * inv_vol;
+    hgconst12th[0] = ( (x[0]+x[1]) - (x[2]+x[3]) - (x[4]+x[5]) + (x[6]+x[7]) ) * inv_vol_1_12;
+    hgconst12th[1] = (  q0 - q1 - q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[2] = (  q0 + q1 + q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[3] = ( -q0 - q1 + q2 + q3 ) * inv_vol_1_12;
 
     q0 = (y[0] - y[1]);
     q1 = (y[2] - y[3]);
     q2 = (y[4] - y[5]);
     q3 = (y[6] - y[7]);
 
-    hgconst12th[4] = ( (y[0]+y[1]) - (y[2]+y[3]) - (y[4]+y[5]) + (y[6]+y[7]) ) * inv_vol;
-    hgconst12th[5] = (  q0 - q1 - q2 + q3 ) * inv_vol;
-    hgconst12th[6] = (  q0 + q1 + q2 + q3 ) * inv_vol;
-    hgconst12th[7] = ( -q0 - q1 + q2 + q3 ) * inv_vol;
+    hgconst12th[4] = ( (y[0]+y[1]) - (y[2]+y[3]) - (y[4]+y[5]) + (y[6]+y[7]) ) * inv_vol_1_12;
+    hgconst12th[5] = (  q0 - q1 - q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[6] = (  q0 + q1 + q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[7] = ( -q0 - q1 + q2 + q3 ) * inv_vol_1_12;
 
     q0 = (z[0] - z[1]);
     q1 = (z[2] - z[3]);
     q2 = (z[4] - z[5]);
     q3 = (z[6] - z[7]);
 
-    hgconst12th[8]  = ( (z[0]+z[1]) - (z[2]+z[3]) - (z[4]+z[5]) + (z[6]+z[7]) ) * inv_vol;
-    hgconst12th[9]  = (  q0 - q1 - q2 + q3 ) * inv_vol;
-    hgconst12th[10] = (  q0 + q1 + q2 + q3 ) * inv_vol;
-    hgconst12th[11] = ( -q0 - q1 + q2 + q3 ) * inv_vol;
+    hgconst12th[8]  = ( (z[0]+z[1]) - (z[2]+z[3]) - (z[4]+z[5]) + (z[6]+z[7]) ) * inv_vol_1_12;
+    hgconst12th[9]  = (  q0 - q1 - q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[10] = (  q0 + q1 + q2 + q3 ) * inv_vol_1_12;
+    hgconst12th[11] = ( -q0 - q1 + q2 + q3 ) * inv_vol_1_12;
 
 
   //  In the original code, an array of 32 doubles was used to store the
@@ -470,24 +488,20 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     comp_grad(nodes, x, y, z, vx, vy, vz, grad_x, grad_y, grad_z);
 
   //  Calculate hexahedral volume from x model_coords and gradient information
-    Scalar inv_vol;
+    Scalar inv_vol_1_12;
 
-    inv_vol = mid_vol(ielem) = ONE12TH *(    x[0] * grad_x[0] +\
-                        x[1] * grad_x[1] +\
-                        x[2] * grad_x[2] +\
-                        x[3] * grad_x[3] +\
-                        x[4] * grad_x[4] +\
-                        x[5] * grad_x[5] +\
-                        x[6] * grad_x[6] +\
-                        x[7] * grad_x[7] );
+    inv_vol_1_12 = 1.0 / ( x[0] * grad_x[0] +
+                      x[1] * grad_x[1] +
+                      x[2] * grad_x[2] +
+                      x[3] * grad_x[3] +
+                      x[4] * grad_x[4] +
+                      x[5] * grad_x[5] +
+                      x[6] * grad_x[6] +
+                      x[7] * grad_x[7] );
 
-    inv_vol = 1.0 / inv_vol;
+    v_grad(ielem, vx, vy, vz, grad_x, grad_y, grad_z, inv_vol_1_12);
 
-    v_grad(ielem, vx, vy, vz, grad_x, grad_y, grad_z, inv_vol);
-
-    inv_vol *= ONE12TH;
-
-    comp_hgop(ielem, x, y, z, grad_x, grad_y, grad_z, inv_vol);
+    comp_hgop(ielem, x, y, z, grad_x, grad_y, grad_z, inv_vol_1_12);
 
   }
 

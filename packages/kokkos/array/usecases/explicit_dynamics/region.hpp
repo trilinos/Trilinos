@@ -41,6 +41,7 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
     , node_elem_offset(Kokkos::create_mdarray<int_array>(mesh.node_elem_offset.dimension(0),mesh.node_elem_offset.dimension(1)))
     , model_coords(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
     // input/output
+    , delta_t(Kokkos::create_mdarray<scalar_array>(num_states))
     , displacement(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
     , velocity(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
     , acceleration(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
@@ -88,9 +89,10 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   int_array elem_node_connectivity;
   int_array node_elem_ids;
   int_array node_elem_offset;
+  scalar_array  model_coords;
 
   // input / output
-  scalar_array  model_coords;
+  scalar_array  delta_t;
   scalar_array  displacement;
   scalar_array  velocity;
   scalar_array  acceleration;

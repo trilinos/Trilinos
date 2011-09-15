@@ -47,7 +47,6 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
   typedef Region<Scalar,device_type> MyRegion;
 
 	decomp_rotate(	const MyRegion & region,
-					const Scalar       arg_dt,
           const int arg_current_state,
           const int arg_previous_state)
 		: rotation( region.rotation )
@@ -55,10 +54,11 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		, stretch( region.stretch )
 		, vorticity( region.vorticity )
 		, rot_stretch( region.rot_stretch )
-		, dt( arg_dt )
+		, dt( region.delta_t(arg_current_state) )
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
-		{}
+		{
+    }
 
 
 
