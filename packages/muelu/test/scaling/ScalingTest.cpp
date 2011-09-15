@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact, rcp(MueLu::NoFactory::get(), false))); //ugly!!
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   Pfact->SetDampingFactor(SADampingFactor);
