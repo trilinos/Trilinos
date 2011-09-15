@@ -67,7 +67,7 @@ namespace MueLu {
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
-        return rcp( new IfpackSmoother(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_) );
+        return GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_);
 #else
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif

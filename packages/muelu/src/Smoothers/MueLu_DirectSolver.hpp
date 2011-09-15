@@ -71,11 +71,14 @@ namespace MueLu {
         //#if defined(HAVE_MUELU_AMESOS2)
         // return rcp( new Amesos2Smoother(type_, paramList_) ); TODO: Amesos2 can also handle Epetra matrices but Amesos2Smoother can't for the moment.
         //#elif 
+
 #if defined(HAVE_MUELU_AMESOS)
-        return rcp( new AmesosSmoother(type_, paramList_) ); // TODO: for LONG LONG
+        return MueLu::GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // or Amesos2
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when done.
+        return Teuchos::null;
 #endif
+
       } else {
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       }
@@ -126,7 +129,7 @@ namespace MueLu {
     
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList paramList_;
-
+      
   }; // class DirectSolver
 
 } // namespace MueLu
