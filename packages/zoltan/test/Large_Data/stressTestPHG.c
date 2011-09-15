@@ -288,7 +288,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i;
-ZOLTAN_ID_TYPE lid, before, after, left=0, right;
+ZOLTAN_ID_TYPE lid, before, after, left=0, right=0;
 float wgt;
 
   *ierr = ZOLTAN_OK;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   double localMBytes, min, max, avg;
-  float cutn[10], cutl[10], imbalance[10];
+  float cutn[2], cutl[2], imbalance[2];
   struct timeval t1, t2;
   char factorBuf[64], levelBuf[64];
   time_t startusecs, endusecs, diff;
@@ -375,6 +375,8 @@ int main(int argc, char *argv[])
   int do_rcb =0;
   float hybrid_reduction_factor =.1;
   int hybrid_reduction_levels  =2;
+
+  cutn[0] = cutn[1] = cutl[0] = cutl[1] = imbalance[0] = imbalance[1] = 0.0;
 
 #ifdef LINUX_HOST
   signal(SIGSEGV, meminfo_signal_handler);
@@ -520,6 +522,7 @@ int main(int argc, char *argv[])
   sprintf(levelBuf, "%d", hybrid_reduction_levels);
 
   if (!myRank){
+    printf("|========================================================|\n");
     printf("Creating graph with approximately %lld vertices.\n",numGlobalVertices);
     if (do_rcb)
       printf("Using method RCB.\n");
@@ -672,7 +675,7 @@ int main(int argc, char *argv[])
   }
 
   if (myRank == 0){
-    printf("\nBALANCE after running Zoltan\n");
+    printf("\nBALANCE after running Zoltan with %d processes.\n", numProcs);
   }
 
   rc = get_partition_quality(zz, cutn+1, cutl+1, imbalance+1);   /* new partition quality */
@@ -715,7 +718,7 @@ int main(int argc, char *argv[])
     startusecs = (t1.tv_sec * 1e6) + t1.tv_usec;
     endusecs = (t2.tv_sec * 1e6) + t2.tv_usec;
     diff = endusecs - startusecs;
-    printf("Time spent in partitioning (s): %lf\n",(double)diff/1e6);
+    printf("Time spent in partitioning (s): %f\n",(double)diff/1e6);
   }
 
   status = 0;
@@ -741,6 +744,7 @@ static int create_a_graph()
   int midProc;
   int random_weights = (vwgt_dim > 0);
   int heavyPart = (myRank % 3 == 0);
+  double radius, radianStride, radians;
 
   nvtxs = (int)(numGlobalVertices / numProcs);
 
@@ -760,9 +764,9 @@ static int create_a_graph()
   ** Some coordinates.
   ******************************************************************/
 
-  double radius = (double)num4/4.0;
-  double radianStride = M_PI/2.0/(num4 + 1);
-  double radians = M_PI/2.0 - radianStride;
+  radius = (double)num4/4.0;
+  radianStride = M_PI/2.0/(num4 + 1);
+  radians = M_PI/2.0 - radianStride;
   x_coord = (double *)malloc(sizeof(double) * num4);
   y_coord = (double *)malloc(sizeof(double) * num4);
 
