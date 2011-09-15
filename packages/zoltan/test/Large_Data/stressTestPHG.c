@@ -31,6 +31,10 @@
 #include <sys/time.h>
 #include "zz_const.h"
 
+#ifndef M_PI
+#define M_PI 3.14159
+#endif
+
 extern long long atoll(const char *);
 
 static int myRank, numProcs, numPins, nborCount;
@@ -363,6 +367,7 @@ int main(int argc, char *argv[])
   float cutn[10], cutl[10], imbalance[10];
   struct timeval t1, t2;
   char factorBuf[64], levelBuf[64];
+  time_t startusecs, endusecs, diff;
 
   int use_hg = 1;
   int use_graph = 0;
@@ -707,9 +712,9 @@ int main(int argc, char *argv[])
     printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3f / %12.3f / %12.3f\n",
              min, avg, max);
 
-    time_t startusecs = (t1.tv_sec * 1e6) + t1.tv_usec;
-    time_t endusecs = (t2.tv_sec * 1e6) + t2.tv_usec;
-    time_t diff = endusecs - startusecs;
+    startusecs = (t1.tv_sec * 1e6) + t1.tv_usec;
+    endusecs = (t2.tv_sec * 1e6) + t2.tv_usec;
+    diff = endusecs - startusecs;
     printf("Time spent in partitioning (s): %lf\n",(double)diff/1e6);
   }
 
