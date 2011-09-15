@@ -222,7 +222,8 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   typedef Kokkos::MDArrayView<ScalarCoord, device_type>  coord_array ;
   typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
-  enum { FunctionCount = shape_function_data::FunctionCount };
+  enum { SpatialDimension = shape_function_data::SpatialDimension };
+  enum { FunctionCount    = shape_function_data::FunctionCount };
 
   shape_function_data  shape_eval ;
   index_array          elem_node_ids ;
@@ -247,6 +248,7 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   , coeff_Q( arg_coeff_Q )
   {}
 
+  enum { FLOPS_jacobian = FunctionCount * SpatialDimension * SpatialDimension * 2 };
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void jacobian( const ScalarCoord * x, 
@@ -255,24 +257,31 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
                  const Scalar * grad_vals, 
                  Scalar * J) const
   {
-    int i_X_spatialDim = 0;
+    int i_grad = 0 ;
 
-    for(int i = 0; i < 8; ++i) {
-      J[0] += grad_vals[i_X_spatialDim+0]*x[i];
-      J[1] += grad_vals[i_X_spatialDim+0]*y[i];
-      J[2] += grad_vals[i_X_spatialDim+0]*z[i];
+    for(int i = 0; i < 8; ++i , i_grad += SpatialDimension ) {
+      const Scalar g0 = grad_vals[ i_grad ];
+      const Scalar g1 = grad_vals[ i_grad + 1 ];
+      const Scalar g2 = grad_vals[ i_grad + 2 ];
+      const Scalar x0 = x[i] ;
+      const Scalar x1 = y[i] ;
+      const Scalar x2 = z[i] ;
 
-      J[3] += grad_vals[i_X_spatialDim+1]*x[i];
-      J[4] += grad_vals[i_X_spatialDim+1]*y[i];
-      J[5] += grad_vals[i_X_spatialDim+1]*z[i];
+      J[0] += g0 * x0 ;
+      J[1] += g0 * x1 ;
+      J[2] += g0 * x2 ;
 
-      J[6] += grad_vals[i_X_spatialDim+2]*x[i];
-      J[7] += grad_vals[i_X_spatialDim+2]*y[i];
-      J[8] += grad_vals[i_X_spatialDim+2]*z[i];
+      J[3] += g1 * x0 ;
+      J[4] += g1 * x1 ;
+      J[5] += g1 * x2 ;
 
-      i_X_spatialDim += spatialDim;
+      J[3] += g2 * x0 ;
+      J[4] += g2 * x1 ;
+      J[5] += g2 * x2 ;
     }
   }
+
+  enum { FLOPS_inverse_and_det = 46 };
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   Scalar inverse_and_determinant3x3( Scalar * const J ) const
@@ -294,7 +303,6 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     const Scalar term2 = J12*J01 - J11*J02;
 
     const Scalar detJ = J00*term0 - J10*term1 + J20*term2;
-
     const Scalar inv_detJ = 1.0/detJ;
 
     J[0] =  term0*inv_detJ;
@@ -331,6 +339,8 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
   }
 
+  enum { FLOPS_contributeDiffusionMatrix = FunctionCount * ( 3 * 5 + FunctionCount * 7 ) };
+
   KOKKOS_MACRO_DEVICE_FUNCTION
   void contributeDiffusionMatrix(
     const Scalar weight ,
@@ -340,21 +350,19 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   {
     Scalar dpsidx[8], dpsidy[8], dpsidz[8];
 
-    for(int i = 0; i < numNodesPerElem ; i++){
+    int i_grad = 0 ;
+    for(int i = 0; i < FunctionCount ; ++i , i_grad += 3 ) {
+      const Scalar g0 = grad_vals[i_grad+0];
+      const Scalar g1 = grad_vals[i_grad+1];
+      const Scalar g2 = grad_vals[i_grad+2];
 
-      dpsidx[i] = grad_vals[i * 3 + 0] * invJ[0] + 
-                  grad_vals[i * 3 + 1] * invJ[1] + 
-                  grad_vals[i * 3 + 2] * invJ[2];
-      dpsidy[i] = grad_vals[i * 3 + 0] * invJ[3] + 
-                  grad_vals[i * 3 + 1] * invJ[4] + 
-                  grad_vals[i * 3 + 2] * invJ[5];
-      dpsidz[i] = grad_vals[i * 3 + 0] * invJ[6] + 
-                  grad_vals[i * 3 + 1] * invJ[7] + 
-                  grad_vals[i * 3 + 2] * invJ[8];
+      dpsidx[i] = g0 * invJ[0] + g1 * invJ[1] + g2 * invJ[2];
+      dpsidy[i] = g0 * invJ[3] + g1 * invJ[4] + g2 * invJ[5];
+      dpsidz[i] = g0 * invJ[6] + g1 * invJ[7] + g2 * invJ[8];
     }
 
-    for(int m = 0; m < numNodesPerElem; m++) {
-      for(int n = 0; n < numNodesPerElem; n++) {
+    for(int m = 0; m < FunctionCount; m++) {
+      for(int n = 0; n < FunctionCount; n++) {
 
         elem_stiff[m][n] += weight * 
           ((dpsidx[m] * dpsidx[n]) + 
@@ -364,17 +372,26 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     }
   }
 
+  enum { FLOPS_contributeSourceVector = FunctionCount * 2 };
+
   KOKKOS_MACRO_DEVICE_FUNCTION
   void contributeSourceVector( const Scalar term ,
                                const Scalar psi[] ,
                                Scalar elem_vec[] ) const
   {
-     for(int i=0; i<numNodesPerElem; ++i) {
+     for(int i=0; i< FunctionCount ; ++i) {
        elem_vec[i] += psi[i] * term ;
      }
   }
 
-  
+
+  enum { FLOPS_operator =
+           shape_function_data::PointCount * ( 3
+             + FLOPS_jacobian
+             + FLOPS_inverse_and_det
+             + FLOPS_contributeDiffusionMatrix
+             + FLOPS_contributeSourceVector ) };
+
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {
 
@@ -403,17 +420,16 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     // of 'elem_vec' and 'elem_stiff' which would
     // consume more local memory and have to be reduced.
 
-    for ( int i = 0 ; i < shape_eval.PointCount ; ++i ) {
+    for ( int i = 0 ; i < shape_function_data::PointCount ; ++i ) {
 
       Scalar J[spatialDim*spatialDim] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
 
       jacobian( x, y, z, shape_eval.gradient[i] , J );
 
-      // Overwrite J with its inverse
-      const Scalar detJ = inverse_and_determinant3x3(J);
-
-      const Scalar k_detJ_w = coeff_K * detJ * shape_eval.weight[i] ;
-      const Scalar Q_detJ_w = coeff_Q * detJ * shape_eval.weight[i] ;
+      // Overwrite J with its inverse to save scratch memory space.
+      const Scalar detJ_w   = shape_eval.weight[i] * inverse_and_determinant3x3(J);
+      const Scalar k_detJ_w = coeff_K * detJ_w ;
+      const Scalar Q_detJ_w = coeff_Q * detJ_w ;
 
       contributeDiffusionMatrix( k_detJ_w , shape_eval.gradient[i] , J , elem_stiff );
 
@@ -430,7 +446,6 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
       }
     }
   }
-
 
 };// assembleFE
 

@@ -143,11 +143,11 @@ public:
       }
     }
 
-    for ( index_type elem_index = 0 ; elem_index < elem_count; ++elem_index ) {
+    const index_type elem_node_local_coord[ ELEMENT_NODE_COUNT ][3] =
+      { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
+        { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
 
-      const index_type elem_node_local_coord[ ELEMENT_NODE_COUNT ][3] =
-        { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
-          { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
+    for ( index_type elem_index = 0 ; elem_index < elem_count; ++elem_index ) {
 
       index_type g[3] ;
 

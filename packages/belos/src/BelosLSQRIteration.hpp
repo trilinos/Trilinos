@@ -74,7 +74,7 @@ namespace Belos {
     Teuchos::RCP<const MV> W;
 
     /*! \brief The damping value. */
-    ScalarType lambda;
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType lambda;
 
     /*! \brief The current residual norm. */
     ScalarType resid_norm;

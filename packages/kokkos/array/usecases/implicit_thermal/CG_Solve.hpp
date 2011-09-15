@@ -69,8 +69,7 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
                      index_vector  & A_row ,
                      index_vector & A_col ,
                      scalar_vector & b ,
-                     scalar_vector & x ,
-                     double* times)
+                     scalar_vector & x )
   {
     const Scalar tolerance = std::numeric_limits<Scalar>::epsilon();
     const int maximum_iteration = 200 ;
