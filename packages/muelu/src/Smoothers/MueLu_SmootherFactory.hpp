@@ -167,7 +167,7 @@ namespace MueLu {
         
         // Level Set
         currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
-        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, NULL);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother);
       }
       
       if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
@@ -211,7 +211,7 @@ namespace MueLu {
             
             // Level Set
             currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, NULL);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother);
           }
         
         return true; //?
