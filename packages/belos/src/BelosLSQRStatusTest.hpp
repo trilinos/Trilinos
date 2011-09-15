@@ -296,24 +296,38 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   // the difference between the preconditioned residual and the unpreconditioned residual.
   //
 
+/*
   std::cout << "  b-AX " << state.resid_norm 
-            << "  A' r  " << state.mat_resid_norm 
+            << "  Atr  " << state.mat_resid_norm 
             << "  A " << state.frob_mat_norm 
             << "  cond  " << state.mat_cond_num
-  << std::endl;
+            << "  relResNorm " << state.resid_norm/state.bnorm
+            << "  LS " << state.mat_resid_norm /( state.resid_norm * state.frob_mat_norm )
+            << std::endl;
+*/
 
   const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  ScalarType stop_crit_1 = state.resid_norm / state.bnorm;
-  ScalarType stop_crit_2;
-  if( state.frob_mat_norm  > zero )
+  ScalarType stop_crit_1 = zero; // b = 0, done
+  if( state.bnorm  > zero )
+    {
+      stop_crit_1 = state.resid_norm / state.bnorm;
+    }
+  ScalarType stop_crit_2 = zero;
+  if( state.frob_mat_norm  > zero  && state.resid_norm > zero )
     {
       stop_crit_2 = (state.resid_norm > zero) ? state.mat_resid_norm / (state.frob_mat_norm * state.resid_norm) : zero;
     }
   else
-    { // initial iteration
-      stop_crit_2 = one; // force test to fail 
-     // Intuitively 0 < rel_mat_err < 1. However other values might finesse the convergence tests.
+    { 
+     if( state.resid_norm == zero )
+       {
+         stop_crit_2 = zero; 
+       }
+     else 
+       {
+         stop_crit_2 = one; // Initial mat_norm always vanishes
+       }
     }
   ScalarType stop_crit_3 = one / state.mat_cond_num;
   ScalarType resid_tol = rel_rhs_err_ + rel_mat_err_ * state.mat_resid_norm * state.sol_norm / state.bnorm;
