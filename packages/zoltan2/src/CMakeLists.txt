@@ -44,7 +44,8 @@ APPEND_SET(HEADERS
   Zoltan2_DebugManager.hpp
   Zoltan2_IdentifierMap_decl.hpp
   Zoltan2_IdentifierTraits.hpp
-  Zoltan2_Partitioner.hpp
+  Zoltan2_Problem.hpp
+  Zoltan2_PartitioningProblem.hpp
   Zoltan2_Environment.hpp
   Zoltan2_IdentifierMap_def.hpp
   Zoltan2_Memory.hpp

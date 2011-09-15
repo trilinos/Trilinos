@@ -7,6 +7,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
 
 using Teuchos::RCP;
 using namespace std;
@@ -79,15 +80,17 @@ int main(int narg, char** arg)
   origVector->randomize();
 
   ////// Specify problem parameters
+  Teuchos::ParameterList params;
+  params.set("APPROACH", "PARTITION");
+  params.set("METHOD", "GRAPH");
+  params.set("GRAPH_PACKAGE", "PTSCOTCH");
 
   ////// Create and solve partitioning problem
+  Zoltan2::PartitioningProblem<Scalar,LocalOrdinal,GlobalOrdinal>
+                               problem(*origMatrix, params);
+  problem.solve();
 
-  ////// Redstribute matrix and vector into new matrix and vector.
-  //Zoltan2::PartitioningProblem<LocalOrdinal, GlobalOrdinal> 
-//    partitioningProblem(A, params, configuration);
-
- // partitioningProblem.solve();
-
+  ////// Redistribute matrix and vector into new matrix and vector.
 
   ////// Verify that redistribution is "correct"; perform matvec with 
   ////// original and redistributed matrices/vectors and compare norms.
@@ -95,7 +98,7 @@ int main(int narg, char** arg)
 
   origMatrix->apply(*origVector, *origProd);
 
-  Scalar origNorm, newNorm;
+  Scalar origNorm;
   origNorm = origProd->norm2();
   if (me == 0)
     cout << "Norm of Original matvec prod:  " << origNorm << endl;
