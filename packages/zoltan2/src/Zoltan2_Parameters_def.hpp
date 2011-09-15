@@ -45,9 +45,9 @@ enum DebugLevels{  // TODO
   NUM_DEBUG_LEVELS};
 
 enum ProfilingLevels{  // TODO - specifiers would be better
-  NO_PROFILINGING,
-  MORE_PROFILINGING,
-  MOST_PROFILINGING,
+  NO_PROFILING,
+  MORE_PROFILING,
+  MOST_PROFILING,
   NUM_PROFILING_LEVELS};
   
 template <typename Integral>
