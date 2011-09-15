@@ -61,12 +61,12 @@ Piro::NOXSolver<Scalar>::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParam
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::NOXSolver " <<
-                     "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::NOXSolver " <<
-                     "Not Implemented for Ng>1 : " << num_g << std::endl);
+  // TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+  //                    std::endl << "Error in Piro::NOXSolver " <<
+  //                    "Not Implemented for Np>1 : " << num_p << std::endl);
+  // TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+  //                    std::endl << "Error in Piro::NOXSolver " <<
+  //                    "Not Implemented for Ng>1 : " << num_g << std::endl);
 
   // Create the initial guess
   RCP< ::Thyra::VectorBase<double> >
