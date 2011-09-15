@@ -69,9 +69,9 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
       Scalar a_current[3];
 
       if (model_coords(inode,0) != x_bc ) { //not on x boundary
-        acceleration(inode,0) = a_current[0] = local_force[0] / nodal_mass(inode);
-        acceleration(inode,1) = a_current[1] = local_force[1] / nodal_mass(inode);
-        acceleration(inode,2) = a_current[2] = local_force[2] / nodal_mass(inode);
+        acceleration(inode,0) = a_current[0] = -local_force[0] / nodal_mass(inode);
+        acceleration(inode,1) = a_current[1] = -local_force[1] / nodal_mass(inode);
+        acceleration(inode,2) = a_current[2] = -local_force[2] / nodal_mass(inode);
       } else { //enforce fixed BC
         acceleration(inode,0) = a_current[0] = 0;
         acceleration(inode,1) = a_current[1] = 0;
