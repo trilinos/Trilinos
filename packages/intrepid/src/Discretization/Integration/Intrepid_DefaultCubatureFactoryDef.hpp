@@ -142,5 +142,15 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
   return create(cellTopology, d);
 }
 
+// third create method for polygons
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Scalar,ArrayPoint,ArrayWeight>::create(const shards::CellTopology& cellTopology,
+														     const ArrayPoint& cellVertices,
+														     int degree){
+  return Teuchos::rcp(new CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>(cellTopology,cellVertices, degree));
+}
+
+
+
 
 } // namespace Intrepid

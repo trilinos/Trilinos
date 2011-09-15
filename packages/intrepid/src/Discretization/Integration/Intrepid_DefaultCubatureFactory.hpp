@@ -61,6 +61,7 @@
 #include "Intrepid_CubatureDirectTetDefault.hpp"
 #include "Intrepid_CubatureCompositeTet.hpp"
 #include "Intrepid_CubatureTensor.hpp"
+#include "Intrepid_CubaturePolygon.hpp"
 
 ///// end of list of default cubature includes /////
 
@@ -105,7 +106,20 @@ class DefaultCubatureFactory {
   */
   Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology & cellTopology,
                                                                 int   degree);
-    
+  
+  /** \brief Factory method for polygon cubature.
+      
+      \param cellTopology   [in]   - Cell topology
+      \param cellVertices   [in]   - Vertices of physical cell
+      \param degree         [in]   - A single polynomial degree used for all triangles in tessalation
+      
+      \return 
+               - RCP to cubature with given specifications.
+  */
+  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology& cellTopology,
+								const ArrayPoint& cellVertices,
+								int degree);
+
 };
   
 }// namespace Intrepid
