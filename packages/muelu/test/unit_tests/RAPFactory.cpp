@@ -32,10 +32,21 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    // build test-specific default factory handler
+    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+    defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
+    // overwrite default factory handler...
+    fineLevel.SetDefaultFactoryHandler(defHandler);
+    coarseLevel.SetDefaultFactoryHandler(defHandler);
+
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    fineLevel.Request("A",NULL);
+    fineLevel.Request("A",NULL,false); // don't call DeclareInput for default factory of "A"
     fineLevel.Set("A",Op,NULL);
 
     TentativePFactory tentpFactory;
@@ -92,11 +103,22 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    // build test-specific default factory handler
+    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+    defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+
     Level fineLevel, coarseLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
+    // overwrite default factory handler...
+    fineLevel.SetDefaultFactoryHandler(defHandler);
+    coarseLevel.SetDefaultFactoryHandler(defHandler);
+
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
-    fineLevel.Request("A",NULL);
+    fineLevel.Request("A",NULL,false);
     fineLevel.Set("A",Op,NULL);
 
     TentativePFactory tentpFactory;

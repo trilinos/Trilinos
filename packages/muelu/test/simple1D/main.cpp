@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
       std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
-  Finest->print(std::cout);
+  //Finest->print(std::cout);
 
   //#define JG_TODO
 #ifdef JG_TODO
