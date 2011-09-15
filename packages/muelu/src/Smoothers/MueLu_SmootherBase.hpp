@@ -1,6 +1,9 @@
 #ifndef MUELU_SMOOTHERBASE_HPP
 #define MUELU_SMOOTHERBASE_HPP
 
+#include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_DefaultKernels.hpp>
+
 #include <Xpetra_MultiVector.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
