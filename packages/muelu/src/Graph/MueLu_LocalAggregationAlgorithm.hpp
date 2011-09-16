@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
+#include "MueLu_FactoryBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 

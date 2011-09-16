@@ -8,6 +8,10 @@
 #ifndef XPETRA_MAPEXTRACTORFACTORY_HPP_
 #define XPETRA_MAPEXTRACTORFACTORY_HPP_
 
+#include <Kokkos_DefaultNode.hpp>
+
+#include <Xpetra_MapExtractor.hpp>
+
 #ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMapExtractor.hpp>
 #endif
@@ -18,7 +22,7 @@
 namespace Xpetra
 {
   // factory class
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class MapExtractorFactory {
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;

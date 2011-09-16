@@ -1,7 +1,12 @@
 #ifndef MUELU_GAUSSSEIDEL_HPP
 #define MUELU_GAUSSSEIDEL_HPP
 
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_VectorFactory.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
@@ -36,7 +41,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
   //! Set up the smoother. (Right now, just grab A from the Level.)
   void Setup(RCP<Level> const level)
   {
-    A_ = level.Get< RCP<Operator> >("A",NULL);
+    A_ = level->Get< RCP<Operator> >("A",NULL);
     SmootherPrototype::IsSetup(true);
   }
 

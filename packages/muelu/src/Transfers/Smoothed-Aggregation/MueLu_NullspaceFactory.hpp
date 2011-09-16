@@ -2,6 +2,7 @@
 #define MUELU_NULLSPACEFACTORY_HPP
 
 #include "Xpetra_Operator.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
