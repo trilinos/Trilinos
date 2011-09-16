@@ -94,6 +94,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_CubatureTensor.hpp
   Discretization/Integration/Intrepid_CubatureTensorSortedDef.hpp
   Discretization/Integration/Intrepid_CubatureTensorSorted.hpp
+  Discretization/Integration/Intrepid_CubaturePolygonDef.hpp
+  Discretization/Integration/Intrepid_CubaturePolygon.hpp
   Discretization/Integration/Intrepid_CubaturePolylib.hpp
   Discretization/Integration/Intrepid_CubaturePolylibDef.hpp
   Discretization/Integration/Intrepid_DefaultCubatureFactoryDef.hpp
@@ -114,6 +116,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_POLY_C1_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_POLY_C1_FEMDef.hpp  
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C2_FEM.hpp
