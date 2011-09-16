@@ -300,6 +300,11 @@ namespace MueLu {
     TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "IfpackSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
+  //
+  template <>
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap) { 
+    return rcp( new IfpackSmoother(type, paramList) );
+  }
 
 } // namespace MueLu
 
