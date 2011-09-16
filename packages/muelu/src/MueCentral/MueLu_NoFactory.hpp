@@ -40,7 +40,7 @@ namespace MueLu
         //@{
 
         void DeclareInput(Level &currentLevel) const
-        { std::cout << "Declare input of DummyFactory " << std::endl;     }
+        { /*std::cout << "Declare input of DummyFactory " << std::endl;*/     }
 
         //@}
 

@@ -256,7 +256,7 @@ namespace MueLu {
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         out << "Prec. type: " << type_ << endl;
         out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-        out << "Overlap: " << overlap_ << endl;
+        out << "Overlap: " << overlap_ << std::endl;
       }
       
       if (vl == VERB_HIGH || vl == VERB_EXTREME) {

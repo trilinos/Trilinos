@@ -80,12 +80,14 @@ namespace MueLu {
     typedef GO global_size_t; //TODO
     typedef LO my_size_t; //TODO
 
+
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
     LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null):
+      out_(this->getOStream()),
       ordering_(NATURAL), 
       minNodesPerAggregate_(1), 
       maxNeighAlreadySelected_(0)
@@ -208,7 +210,7 @@ namespace MueLu {
                 try {
                   supernode->list = Teuchos::arcp<int>(length+1);
                 } catch (std::bad_alloc&) {
-                  std::cout << "Error: couldn't allocate memory for supernode! " << length << std::endl;
+                  *out_ << "Error: couldn't allocate memory for supernode! " << length << std::endl;
                   exit(1); //TODO: exception instead
                 }
 
@@ -320,10 +322,13 @@ namespace MueLu {
 
       /* Verbose */
       // TODO: replace AllReduce by Reduce to proc 0
-      if (1) { // GetPrintFlag() < 7) { //FIXME
+      int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME)
+      {
         const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-        int myPid = comm->getRank();
-          
+
+        *out_ << "Aggregation:" << std::endl;
+
         {
           GO localReady=0, globalReady;
             
@@ -334,10 +339,10 @@ namespace MueLu {
           // Compute 'globalReady'
           sumAll(comm, localReady, globalReady);
             
-          if (myPid == 0 && globalReady > 0)
-            std::cout << "Aggregation(UC) : Phase 1 (WARNING) - " << globalReady << " READY nodes left\n" << std::endl;
+          if(globalReady > 0)
+        	*out_ << "Aggregation(UC) : Phase 1 (WARNING) - " << globalReady << " READY nodes left" << std::endl;
         }
-          
+
         {
           // Compute 'localSelected'
           LO localSelected=0;
@@ -350,16 +355,14 @@ namespace MueLu {
           // Compute 'globalNRows'
           GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
             
-          if (myPid == 0)
-            std::cout << "Aggregation(UC) : Phase 1 - nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
+          *out_ << "Aggregation(UC) : Phase 1 - nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
         }
           
         {
           GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
-          if (myPid == 0)
-            std::cout << "Aggregation(UC) : Phase 1 - total aggregates = " << nAggregatesGlobal << std::endl;
+          *out_ << "Aggregation(UC) : Phase 1 - total aggregates = " << nAggregatesGlobal << std::endl;
         }
-          
+
       } // if myPid == 0 ...
         
       /* ------------------------------------------------------------- */
@@ -375,6 +378,9 @@ namespace MueLu {
         }
 
     } //CoarsenUncoupled
+
+  protected:
+    RCP<Teuchos::FancyOStream> out_; //< output stream
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)

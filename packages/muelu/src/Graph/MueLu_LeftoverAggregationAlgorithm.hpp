@@ -31,6 +31,7 @@ namespace MueLu {
 
     //! Constructor.
     LeftoverAggregationAlgorithm():
+      out_(this->getOStream()),
       phase3AggCreation_(.5),
       minNodesPerAggregate_(1),
       graphName_("UC_CleanUp")
@@ -381,21 +382,22 @@ namespace MueLu {
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
       distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
-      if (1) { // GetPrintFlag() < 7) { //FIXME
+      int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         GO Nphase1_agg = nAggregates;
         GO total_aggs;
 
         sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
         if (myPid == 0) {
-          std::cout << "Aggregation(" << graphName_ << ") : Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
-          std::cout << "Aggregation(" << graphName_ << ") : Phase 1 - total aggregates = " << total_aggs << std::endl;
+          *out_ << "Aggregation(" << graphName_ << ") : Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
+          *out_ << "Aggregation(" << graphName_ << ") : Phase 1 - total aggregates = " << total_aggs << std::endl;
         }
         GO i = nAggregates - Nphase1_agg;
 
         { GO ii; sumAll(graph.GetComm(),i,ii); i = ii; }
         if ( myPid == 0 ) {
-          std::cout << "Aggregation(" << graphName_ << ") : Phase 3 - additional aggregates = " << i << std::endl;
+          *out_ << "Aggregation(" << graphName_ << ") : Phase 3 - additional aggregates = " << i << std::endl;
         }
       }
 
@@ -799,13 +801,14 @@ namespace MueLu {
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
-      if (1) { // GetPrintFlag() < 7) { //FIXME
+      vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);    
         GO total_Nleftover=0; sumAll(graph.GetComm(), (GO)Nleftover,   total_Nleftover);
         GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
         if ( myPid == 0 ) {
-          std::cout << "Aggregation(" << graphName_ << ") : Phase 3 - total aggregates = " << total_aggs << std::endl;
-          std::cout << "Aggregation(" << graphName_ << ") : Phase 6 - leftovers = " <<  total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
+          *out_ << "Aggregation(" << graphName_ << ") : Phase 3 - total aggregates = " << total_aggs << std::endl;
+          *out_ << "Aggregation(" << graphName_ << ") : Phase 6 - leftovers = " <<  total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
         }
       }
 
@@ -904,6 +907,8 @@ namespace MueLu {
   
       //@}
   
+  protected:
+    RCP<Teuchos::FancyOStream> out_; //< output stream
 
   private:
     double phase3AggCreation_;

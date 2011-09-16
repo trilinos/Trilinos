@@ -70,11 +70,16 @@ namespace MueLu {
     const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) {
 
       // warning:
-      std::cout << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-      std::cout << " A default factory is automatically generated for" << std::endl;
-      std::cout << " variable " << varName << std::endl;
-      std::cout << " This may caus strange behaviour!" << std::endl;
-      std::cout << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+    	RCP<Teuchos::FancyOStream> out = this->getOStream();
+        int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
+        if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME)
+        {
+        	*out << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        	*out << " A default factory is automatically generated for" << std::endl;
+        	*out << " variable " << varName << std::endl;
+        	*out << " This may caus strange behaviour!" << std::endl;
+        	*out << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        }
 
       DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //return factory;
