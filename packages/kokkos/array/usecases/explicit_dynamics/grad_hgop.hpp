@@ -499,6 +499,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
                       x[6] * grad_x[6] +
                       x[7] * grad_x[7] );
 
+
     v_grad(ielem, vx, vy, vz, grad_x, grad_y, grad_z, inv_vol_1_12);
 
     comp_hgop(ielem, x, y, z, grad_x, grad_y, grad_z, inv_vol_1_12);

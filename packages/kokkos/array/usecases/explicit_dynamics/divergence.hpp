@@ -635,7 +635,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 		Scalar fac1_pre = dt * hg_stiffness * 0.0625;
 		Scalar shr = elem_shrmod(ielem) = two_mu;
-		Scalar dil = elem_dilmod(ielem) = ( bulk_modulus + 2.0*shr ) * (1.0 / 3.0);
+		Scalar dil = elem_dilmod(ielem) =  bulk_modulus + ((2.0*shr)/3.0);
 
     std::cout << "dil: " << dil << std::endl;
 

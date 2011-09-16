@@ -22,6 +22,7 @@
 template<typename Scalar, class device_type>
 double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez )
 {
+  std::cout << std::scientific;
   typedef typename Kokkos::MDArrayView<Scalar,device_type>::HostView  scalar_array_h;
   typedef typename Kokkos::MDArrayView<int,device_type>::HostView     int_array_h;
 
@@ -168,7 +169,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
     // The same pattern can be used for matrix-free residual computations.
     Kokkos::parallel_for( region.num_nodes ,
         finish_step<Scalar, device_type>( region,
-                                          ex+1,
+                                          ex,
                                           current_state,
                                           next_state
                                         )
@@ -204,8 +205,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
 
     std::cout << "\n\n";
 
-#if 0
     for (int inode = 0; inode<region.num_nodes; ++inode) {
+    //for (int inode = 0; inode<1; ++inode) {
       std::cout << "Node = " << inode << std::endl;
 
       std::cout << "nodal_mass = " << region.nodal_mass(inode) << std::endl;
@@ -230,7 +231,6 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez 
       std::cout << region.displacement(inode,1,current_state) << ",";
       std::cout << region.displacement(inode,2,current_state) << ")" << std::endl << std::endl;
     }
-#endif
 
   }
 

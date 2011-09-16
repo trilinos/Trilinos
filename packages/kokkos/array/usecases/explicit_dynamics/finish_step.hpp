@@ -71,7 +71,9 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
       Scalar v_new[3];
       Scalar a_current[3];
 
-      if (model_coords(inode,0) != x_bc ) { //not on x boundary
+      const Scalar tol = 1.0e-7;
+
+      if ( fabs(model_coords(inode,0)-x_bc) > tol ) { //not on x boundary
         acceleration(inode,0) = a_current[0] = -local_force[0] / nodal_mass(inode);
         acceleration(inode,1) = a_current[1] = -local_force[1] / nodal_mass(inode);
         acceleration(inode,2) = a_current[2] = -local_force[2] / nodal_mass(inode);
@@ -84,12 +86,6 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
       velocity(inode,0,next_state) = v_new[0] = velocity(inode,0,current_state) + (dt+dt_next)/2.0*a_current[0];
       velocity(inode,1,next_state) = v_new[1] = velocity(inode,1,current_state) + (dt+dt_next)/2.0*a_current[1];
       velocity(inode,2,next_state) = v_new[2] = velocity(inode,2,current_state) + (dt+dt_next)/2.0*a_current[2];
-
-#if 0
-      velocity(inode,0,next_state) = v_new[0] = velocity(inode,0,current_state) + (dt_next)*a_current[0];
-      velocity(inode,1,next_state) = v_new[1] = velocity(inode,1,current_state) + (dt_next)*a_current[1];
-      velocity(inode,2,next_state) = v_new[2] = velocity(inode,2,current_state) + (dt_next)*a_current[2];
-#endif
 
       displacement(inode,0,next_state) = displacement(inode,0,current_state) + dt_next*v_new[0];
       displacement(inode,1,next_state) = displacement(inode,1,current_state) + dt_next*v_new[1];
