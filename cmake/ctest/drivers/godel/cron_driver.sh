@@ -26,6 +26,9 @@ export TDD_PARALLEL_LEVEL=4
 
 #export PYTHONPATH=/Users/jmwille/install/lib/python2.5/site-packages
 
+# Ensure the tests can find the Intel libraries at runtime.
+export LD_LIBRARY_PATH=/opt/intel/cc/10.1.015/lib
+
 # Machine independent cron_driver:
 #
 
