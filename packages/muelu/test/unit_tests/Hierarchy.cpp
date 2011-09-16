@@ -67,7 +67,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));  // dummy factory for Aggregates
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));        // real graph factory for Ptent
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
 
   levelOne->Request("A");
@@ -123,7 +128,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));  // dummy factory for Aggregates
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));        // real graph factory for Ptent
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
 
   levelOne->Request("A");
@@ -152,14 +162,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
 
   levelOne->Request("A",NULL);
   levelOne->Set("A",A,NULL);
-
-//   H.SetSmoothers();
 
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
@@ -193,7 +205,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
 
   levelOne->Request("A",NULL);
@@ -235,7 +251,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
   levelOne->Request("A",NULL);
   levelOne->Set("A",A,NULL);
@@ -273,7 +293,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
   levelOne->Request("A",NULL);
   levelOne->Set("A",A,NULL);
@@ -306,7 +330,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   levelOne->Request("A");
   levelOne->Set("A",A);
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
   H.FullPopulate();
 } //FullPopulate
@@ -326,7 +355,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   levelOne->Request("A");
   levelOne->Set("A",A);
 
-  Hierarchy H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+
+  Hierarchy H(defHandler);
   H.SetLevel(levelOne);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
@@ -367,7 +401,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   Finest->Set("NullSpace",nullSpace);
   Finest->Set("A",Op);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H(defHandler);
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H.SetLevel(Finest);
 
@@ -458,7 +496,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  // build test-specific default factory handler
+  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H(defHandler);
   H.SetImplicitTranspose(true);
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H.SetLevel(Finest);

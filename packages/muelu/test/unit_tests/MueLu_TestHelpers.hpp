@@ -139,15 +139,15 @@ namespace MueLuTests {
  
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and DefaultFactoryHandlers
-      static void createSingleLevelHierarchy(Level& currentLevel) {
-        Hierarchy H;
+      static void createSingleLevelHierarchy(Level& currentLevel, RCP<DefaultFactoryHandlerBase> defHandler = Teuchos::null) {
+        Hierarchy H(defHandler);
         H.SetLevel(rcpFromRef(currentLevel)); // rcpFromRef safe here
       }
       
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelIDs, DefaultFactoryHandlers and references to previous level
-      static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
-        Hierarchy H;
+      static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel, RCP<DefaultFactoryHandlerBase> defHandler = Teuchos::null) {
+        Hierarchy H(defHandler);
         H.SetLevel(rcpFromRef(fineLevel));   // rcpFromRef safe here
         H.SetLevel(rcpFromRef(coarseLevel)); // rcpFromRef safe here
       }

@@ -39,11 +39,11 @@ namespace MueLuTests {
     defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
     defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
 
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
 
     // overwrite default factory handler...
-    fineLevel.SetDefaultFactoryHandler(defHandler);
-    coarseLevel.SetDefaultFactoryHandler(defHandler);
+//    fineLevel.SetDefaultFactoryHandler(defHandler);
+//    coarseLevel.SetDefaultFactoryHandler(defHandler);
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Request("A",NULL,false); // don't call DeclareInput for default factory of "A"

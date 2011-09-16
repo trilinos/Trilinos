@@ -40,15 +40,20 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
+    // build test-specific default factory handler
+    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Request("A",NULL);
     fineLevel.Set("A",A,NULL);
 
-
-    LO NSdim = 2;
+      LO NSdim = 2;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
       fineLevel.Request("Nullspace",NULL);
@@ -103,8 +108,14 @@ namespace MueLuTests {
       out << "version: " << MueLu::Version() << std::endl;
       out << "Test QR with user-supplied nullspace" << std::endl;
 
+      // build test-specific default factory handler
+      RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+      defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+      defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+      defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+
       Level fineLevel, coarseLevel;
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
 
       RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
       fineLevel.Request("A",NULL);
@@ -173,7 +184,13 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    // build test-specific default factory handler
+    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+
+    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
     fineLevel.Request("A",NULL);

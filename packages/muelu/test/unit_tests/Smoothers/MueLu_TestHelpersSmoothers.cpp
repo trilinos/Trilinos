@@ -82,7 +82,11 @@ namespace MueLuTests {
     // SmootherPrototype helper function
     void setupSmoother(RCP<Operator>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
 
-      Level level; TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+      // build test-specific default factory handler
+	  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+	  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));  // provide default factory for A
+
+      Level level; TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level, defHandler);
       level.Request("A", NULL); //FIXME
 
       level.Set("A", A, NULL);
