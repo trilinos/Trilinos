@@ -34,7 +34,6 @@ namespace MueLu {
     DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList())
       : lib_(lib), type_(type), paramList_(paramList) 
     { 
-      std::cout << lib_ << std::endl;
       TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
     }
     
@@ -47,7 +46,7 @@ namespace MueLu {
     //@{
 
     //! DirectSolver cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
-    void Setup(Level &level) {
+    void Setup(Level &currentLevel) {
       TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Setup(): DirectSolver objects are only prototypes and DirectSolver::Setup() cannot be called. Use Copy() to create an Amesos or Amesos2 smoother.");
     }
 
@@ -93,28 +92,26 @@ namespace MueLu {
     std::string description() const {
       std::ostringstream out;
       out << SmootherPrototype::description();
-      out << "{lib = " << toString(lib_) << ", type = " << type_ << "} ";
+      out << "{lib = " << toString(lib_) << ", type = " << type_ << "}";
       return out.str();
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { //TODO: remove Teuchos::Describable::
-      using std::endl;
-      int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-      if (vl == VERB_NONE) return;
-      
-      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
-      
-      Teuchos::OSTab tab1(out);
+    using MueLu::BaseClass::describe; // overloading, not hiding
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
 
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        out << "Linear Algebra: " << toString(lib_) << endl;
-        out << "PrecType: " << type_ << endl;
-        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      if (verbLevel & Parameters0) {
+        out0 << "Prec. type: " << type_ << endl;
       }
       
-      if (VERB_EXTREME) {
-        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
+      if (verbLevel & Parameters1) { 
+        out0 << "Linear Algebra: " << toString(lib_) << endl;
+        out0 << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      }
+      
+      if (verbLevel & Debug) {
+        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
       }
     }
 

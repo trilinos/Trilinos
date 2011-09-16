@@ -82,7 +82,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
       timer->start(true);
 
-      Teuchos::OSTab tab(this->out_);
+      Teuchos::OSTab tab(this->getOStream());
       Teuchos::ParameterList matrixList;
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
       coarseLevel.Release("P", PFact_.get());

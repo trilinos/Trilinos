@@ -270,7 +270,6 @@ int main(int argc, char *argv[]) {
     {
       X->putScalar( (SC) 0.0);
 
-      H->PrintResidualHistory(true);
       mtime.push_back(M.getNewTimer("Fixed Point Solve"));
       mtime.back()->start();
       H->Iterate(*RHS,its,*X);
@@ -307,7 +306,6 @@ int main(int argc, char *argv[]) {
 
     // Construct a Belos LinearProblem object
     RCP<OP> belosOp   = rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );    // Turns a Xpetra::Operator object into a Belos 'OP'
-    H->PrintResidualHistory(false);
     RCP<OP> belosPrec = rcp( new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );

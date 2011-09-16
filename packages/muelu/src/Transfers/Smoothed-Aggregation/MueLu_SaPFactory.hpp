@@ -128,6 +128,7 @@ namespace MueLu {
       //FIXME SC lambdaMax = A->GetDinvALambda();
 
       if (dampingFactor_ != 0) {
+        Monitor m(*this, "Prolongator smoothing");
 
         RCP<Teuchos::Time> sapTimer;
         //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
@@ -167,9 +168,8 @@ namespace MueLu {
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-        if (comm->getRank() == 0)
-          std::cout << "damping factor = " << dampingFactor_/lambdaMax << " ("
-                    << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
+
+        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
         sapTimer = rcp(new Teuchos::Time("SaPFactory:Pt_plus_DinvAPtent_"+buf.str()));
         sapTimer->start(true);

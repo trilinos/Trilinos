@@ -1,17 +1,14 @@
 #ifndef MUELU_NEEDS_HPP
 #define MUELU_NEEDS_HPP
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_TestForException.hpp"
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_TestForException.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include <MueLu_ExtendedHashtable.hpp>
-
-#define MueLu_cout(minimumVerbLevel)                                    \
-  if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
+#include "MueLu_ExtendedHashtable.hpp"
 
 namespace MueLu {
   
@@ -48,16 +45,12 @@ namespace MueLu {
     //! Stores data associated with a need.
     MueLu::UTILS::ExtendedHashtable dataTable_;
 
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
-
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Default constructor.
-    Needs() : out_(this->getOStream()) {
-    }
+    Needs() {}
 
     //! copy constructor
     //explicit Needs(const Needs& source) {
@@ -192,7 +185,7 @@ namespace MueLu {
       if (!countTable_.isKey(ename,factory)) return; // data not available?
       if (countTable_.Get<int>(ename,factory) != -1)
       {
-        std::cout << "Needs::Delete(): This method is intended to be used when the automatic garbage collector is disabled. Use Release instead to decrement the reference counter!" << std::endl;
+        GetOStream(Errors,0) << "Needs::Delete(): This method is intended to be used when the automatic garbage collector is disabled. Use Release() instead to decrement the reference counter!" << std::endl;
       }
 
       countTable_.Remove(ename,factory);

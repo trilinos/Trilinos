@@ -81,10 +81,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   out << "Providing no factories to FillHierarchy." << std::endl;
   H.FillHierarchy();
 
-  bool ToF = H.PrintResidualHistory();
-  H.PrintResidualHistory(!ToF);
-  TEST_INEQUALITY(H.PrintResidualHistory(), ToF);
-} //FillHierarchy_NoFactoriesGiven
+} // FillHierarchy_NoFactoriesGiven
 
 #ifdef FAILING_ONE_PROC_TERMINATING_BADLY_DONT_KNOW_WHY
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
@@ -455,7 +452,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   RHS->putScalar( (SC) 0.0);
 
-  H.PrintResidualHistory(false);
   int iterations=10;
   H.Iterate(*RHS,iterations,*X);
 
@@ -551,7 +547,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   RHS->putScalar( (SC) 0.0);
 
-  H.PrintResidualHistory(false);
   int iterations=10;
   H.Iterate(*RHS,iterations,*X);
 

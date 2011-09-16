@@ -2,13 +2,7 @@
 #define MUELU_RFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp" //TODO: inheritence of RFactory
-#include "MueLu_Exceptions.hpp"
-
-#define MueLu_cout(minimumVerbLevel) \
-    if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
-
-#include <iostream>
+#include "MueLu_TwoLevelFactoryBase.hpp"
 
 namespace MueLu {
 
@@ -21,19 +15,12 @@ namespace MueLu {
 
 class RFactory : public TwoLevelFactoryBase {
 
-  protected:
-     RCP<Teuchos::FancyOStream> out_;
-
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    RFactory() : out_(this->getOStream())
-    {
-      //Teuchos::OSTab tab(this->out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "RFactory: Instantiating a new factory" << std::endl;
-    }
+    RFactory() { }
 
     //! Destructor.
     virtual ~RFactory() {}

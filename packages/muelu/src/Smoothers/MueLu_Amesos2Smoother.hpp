@@ -10,6 +10,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -60,21 +61,18 @@ namespace MueLu {
       This creates the underlying Amesos2 solver object according to the parameter list options passed into the
       Amesos2Smoother constructor.  This includes doing a numeric factorization of the matrix.
     */
-    void Setup(Level &level) {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
+    void Setup(Level &currentLevel) {
+      Monitor m(*this, "Setup Smoother");
+      if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
 
-      RCP<Operator> A_ = level.Get< RCP<Operator> >("A",NULL);
+      RCP<Operator> A_ = currentLevel.Get< RCP<Operator> >("A",NULL);
 
       RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
   
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
+      TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
-      if (prec_ == Teuchos::null) {
-        std::string msg = "Amesos2::create returns Teuchos::null";
-        throw(Exceptions::RuntimeError(msg));
-      }
       //TODO      prec_->setParameters(paramList_);
-
       //TODO
       // int rv = prec_->numericFactorization();
       //       if (rv != 0) {
@@ -121,33 +119,31 @@ namespace MueLu {
     std::string description() const {
       std::ostringstream out;
       out << SmootherPrototype::description();
-      out << "{type = " << type_ << "} ";
+      out << "{type = " << type_ << "}";
       return out.str();
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const {
-      using std::endl;
-      int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-      if (vl == VERB_NONE) return;
-      
-      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
-      
-      Teuchos::OSTab tab1(out);
+    using MueLu::BaseClass::describe; // overloading, not hiding
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
 
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        out << "Prec. type: " << type_ << endl;
-        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      if (verbLevel & Parameters0) {
+        out0 << "Prec. type: " << type_ << endl;
       }
       
-      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      if (verbLevel & Parameters1) { 
+        out0 << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      }
+      
+      if (verbLevel & External) {
         if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
       }
 
-      if (vl == VERB_EXTREME) {
-        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
-        out << "-" << endl;
-        out << "RCP<prec_>: " << prec_ << std::endl; 
+      if (verbLevel & Debug) {
+        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl
+             << "-" << endl
+             << "RCP<prec_>: " << prec_ << std::endl;
       }
     }
 

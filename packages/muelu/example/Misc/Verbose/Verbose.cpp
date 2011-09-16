@@ -36,6 +36,22 @@ int main(int argc, char *argv[]) {
 
   RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
 
+
+  //
+  //
+  //
+  //  fos->setShowProcRank(true);
+//   fos->setOutputToRootOnly(0);
+//   Teuchos::OSTab tab(fos, 1, "TEST");
+//   fos->setShowLinePrefix(true);
+//   //  fos->pushLinePrefix("Lvl 1: Smoother");
+
+//   //  fos->setTabIndentStr("my line");
+//   *fos << "Hello" << endl << "Hello";
+
+//   return 0;
+
+
   //
   //
   //
@@ -92,17 +108,17 @@ int main(int argc, char *argv[]) {
   ifpackSmoo.setObjectLabel("My Ifpack Smoother");
 
   SmootherFactory smooFact(rcpFromRef(ifpackSmoo), rcpFromRef(ifpackSmoo));
-  //  SmootherFactory smooFact(rcpFromRef(ifpackSmoo));
+  //SmootherFactory smooFact(rcpFromRef(ifpackSmoo));
 
-  smooFact.describe(*fos, verbLevel);
+  //  smooFact.describe(*fos, verbLevel);
 
   //ifpackSmoo.describe(*fos, verbLevel);
 
   cout << endl << endl;  
   ifpackSmoo.Setup(l);
   cout << endl << endl;
-
-  //ifpackSmoo.describe(*fos, verbLevel);
+  
+  ifpackSmoo.describe(*fos, verbLevel);
 
   //
   //

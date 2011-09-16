@@ -234,6 +234,7 @@ public:
         return v;
     }
 
+  //TODO: use describe()
     void Print(std::ostream &out)
     {
         Teuchos::TabularOutputter outputter(out);
@@ -253,21 +254,6 @@ public:
                 outputter.outputField(GetType(*it,*kt));
                 outputter.nextRow();
             }
-        }
-    }
-
-    //! Return a simple one-line description of this object.
-    std::string description() const
-    {
-        return "ExtendedHashtable";
-    }
-
-    //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
-    {
-        if (verbLevel != Teuchos::VERB_NONE)
-        {
-            out << description() << std::endl;
         }
     }
 

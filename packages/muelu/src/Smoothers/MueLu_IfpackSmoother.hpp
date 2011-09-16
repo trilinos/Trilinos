@@ -147,36 +147,25 @@ namespace MueLu {
         This creates the underlying Ifpack smoother object, copies any parameter list options
         supplied to the constructor to the Ifpack object, and computes the preconditioner.
     */
-    void Setup(Level &level) {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): Setup() has already been called"); //TODO: Valid. To be replace by a warning.
+    void Setup(Level &currentLevel) {
+      Monitor m(*this, "Setup Smoother");
+      if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
-      RCP<Teuchos::FancyOStream> out_ = this->getOStream();
-      Teuchos::OSTab tab(out_);
+      A_ = currentLevel.Get< RCP<Operator> >("A", NULL);
 
-      A_ = level.Get< RCP<Operator> >("A", NULL);
-
-      // output information
-      std::ostringstream buf; buf << level.GetLevelID();
-      std::string prefix = "Smoother (level " + buf.str() + ") : ";
-      LO rootRank = out_->getOutputToRootOnly();
-      out_->setOutputToRootOnly(0);
-      *out_ << prefix << "# global rows = " << A_->getGlobalNumRows()
-            << ", estim. global nnz = " << A_->getGlobalNumEntries() << std::endl;
+      if (type_ == "Chebyshev") {
+        Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
+        if (maxEigenValue == -1.0) {
+          maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
+          paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
+          
+          GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
+        }
+      }
 
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
       prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
-      if (type_ == "Chebyshev") {
-        Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
-        if (maxEigenValue == -1.0) {
-          maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
-          paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
-        }
-        *out_ << prefix << "Ifpack Chebyshev, degree " << paramList_.get("chebyshev: degree",1) << std::endl;
-        *out_ << prefix << "lambda_min=" << paramList_.get("chebyshev: min eigenvalue",-1.0)
-              << ", lambda_max=" << paramList_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
-      }
-      out_->setOutputToRootOnly(rootRank);
       prec_->SetParameters(paramList_);
       prec_->Compute();
 
@@ -194,8 +183,6 @@ namespace MueLu {
     void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const {
       TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
-      RCP<Teuchos::FancyOStream> out_ = this->getOStream();
-
       // Forward the InitialGuessIsZero option to Ifpack
       Teuchos::ParameterList  paramList;
       if (type_ == "Chebyshev") {
@@ -203,10 +190,13 @@ namespace MueLu {
       } else if (type_ == "point relaxation stand-alone") {
         paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
       } else if  (type_ == "ILU") {
-         if (InitialGuessIsZero == false) {
-           Teuchos::OSTab tab(out_);
-           *out_ << "WARNING:  Ifpack2 ILUT has no provision for a nonzero initial guess." << std::endl;
-         }
+        if (InitialGuessIsZero == false) {
+          if (IsPrint(Warnings0, 0)) {
+            static int warning_only_once=0;
+            if ((warning_only_once++) == 0)
+              this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): ILUT has no provision for a nonzero initial guess." << std::endl;
+          }
+        }
       } else {
         // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
         // we should remove the if/else/elseif and just test if this
@@ -214,7 +204,7 @@ namespace MueLu {
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
       }
       prec_->SetParameters(paramList);
-
+      
       // Apply
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
@@ -232,44 +222,41 @@ namespace MueLu {
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
     
     //! Return a simple one-line description of this object.
     std::string description() const {
       std::ostringstream out;
       out << SmootherPrototype::description();
-      out << "{type = " << type_ << "} ";
+      out << "{type = " << type_ << "}";
       return out.str();
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
-      using std::endl;
-      int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-      if (vl == VERB_NONE) return;
-      
-      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherPrototype::description() << endl; }
-      
-      Teuchos::OSTab tab1(out);
+    using MueLu::BaseClass::describe; // overloading, not hiding
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
 
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        out << "Prec. type: " << type_ << endl;
-        out << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-        out << "Overlap: " << overlap_ << std::endl;
+      if (verbLevel & Parameters0) {
+        out0 << "Prec. type: " << type_ << endl;
       }
       
-      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      if (verbLevel & Parameters1) { 
+        out0 << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        out0 << "Overlap: "        << overlap_ << std::endl;
+      }
+      
+      if (verbLevel & External) {
         if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
       }
 
-      if (vl == VERB_EXTREME) {
-        out << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl;
-        out << "-" << endl;
-        out << "RCP<A_>: " << A_ << std::endl;
-        out << "RCP<prec_>: " << prec_ << std::endl; 
+      if (verbLevel & Debug) {
+        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl
+             << "-" << endl
+             << "RCP<A_>: " << A_ << std::endl
+             << "RCP<prec_>: " << prec_ << std::endl;
       }
-
     }
 
     //@}

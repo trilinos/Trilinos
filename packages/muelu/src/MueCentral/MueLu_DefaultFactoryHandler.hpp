@@ -41,15 +41,14 @@ namespace MueLu {
     virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
-        if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
-    	if (varName == "Nullspace")   return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
-        if (varName == "Graph")       return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-        if (varName == "Aggregates")  return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
-        if (varName == "PreSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
+        if (varName == "A")            return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
+    	if (varName == "Nullspace")    return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+        if (varName == "PreSmoother")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
         if (varName == "PostSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
 
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
-
       }
 
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName);
@@ -69,17 +68,9 @@ namespace MueLu {
     //! helper
     const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) {
 
-      // warning:
-    	RCP<Teuchos::FancyOStream> out = this->getOStream();
-        int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
-        if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME)
-        {
-        	*out << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        	*out << " A default factory is automatically generated for" << std::endl;
-        	*out << " variable " << varName << std::endl;
-        	*out << " This may caus strange behaviour!" << std::endl;
-        	*out << "!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        }
+      GetOStream(Warnings0, 0)  << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
+      GetOStream(Warnings00, 0) << "         using default factory: ";
+      { Teuchos::OSTab tab(getOStream(), 8); factory->describe(GetOStream(Warnings00), getVerbLevel()); }
 
       DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //return factory;
