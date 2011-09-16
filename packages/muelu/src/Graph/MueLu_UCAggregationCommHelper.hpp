@@ -8,6 +8,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
+#include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
 

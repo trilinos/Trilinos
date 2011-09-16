@@ -31,7 +31,6 @@ namespace MueLu {
 
   class AmesosSmoother : public SmootherPrototype<double, int, int>
   {
-
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
@@ -217,6 +216,11 @@ namespace MueLu {
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList()) { 
     TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
+  }
+  //
+  template <>
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList) { 
+    return rcp( new AmesosSmoother(type, paramList) );
   }
 
 } // namespace MueLu

@@ -1,9 +1,11 @@
 #ifndef XPETRA_OPERATORVIEW_HPP
 #define XPETRA_OPERATORVIEW_HPP
 
-#include "Xpetra_ConfigDefs.hpp"
-
 #include <Teuchos_Describable.hpp>
+#include <Kokkos_DefaultNode.hpp>
+
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Map.hpp"
 
 /** \file Xpetra_Operator.hpp
 
