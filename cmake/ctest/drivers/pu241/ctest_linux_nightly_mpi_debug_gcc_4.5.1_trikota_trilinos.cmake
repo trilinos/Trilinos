@@ -72,6 +72,7 @@ SET(Trilinos_PACKAGES TriKota Piro LIME)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 SET(EXTRA_CONFIGURE_OPTIONS
   -DTrilinos_ENABLE_TriKota:BOOL=
+  -DSTK_ENABLE_BoostLib:BOOL=OFF
   )
 
 # Above, we override -DTrilinos_ENABLE_TriKota:BOOL=OFF in the default
