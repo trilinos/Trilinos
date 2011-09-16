@@ -60,6 +60,12 @@ namespace MueLu {
     //! Default constructor.
     Hierarchy() : printResidualHistory_(false), implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())), out_(this->getOStream()) {}
 
+    //! constructor with special default factory handler
+    Hierarchy(RCP<DefaultFactoryHandlerBase> defHandler) : printResidualHistory_(false), implicitTranspose_(false), defaultFactoryHandler_(defHandler), out_(this->getOStream()) {
+    	if(defHandler == Teuchos::null)
+    		defaultFactoryHandler_ = rcp(new DefaultFactoryHandler());
+    }
+
     //! Copy constructor.
     Hierarchy(Hierarchy const &inHierarchy) {
       std::cerr << "Not implemented yet." << std::endl;
@@ -213,10 +219,14 @@ namespace MueLu {
                                          TwoLevelFactoryBase const &AcFact,
                                          int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
+      // 1) check for fine level input
       // check for fine level matrix A
   	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
+      Levels_[startLevel]->Delete("A",MueLu::NoFactory::get());
 
+      // 2) prepare multigrid hierarchy
+      // 2.1) transfer fine level nullspace information
       // check for fine level nullspace
       if(Levels_[startLevel]->IsAvailable("Nullspace",MueLu::NoFactory::get()))
       {
@@ -234,12 +244,13 @@ namespace MueLu {
           RCP<NullspaceFactory> nspfac = rcp(new NullspaceFactory());
           defaultFactoryHandler_->SetDefaultFactory("Nullspace",nspfac);
       }
-      // keep variables A, P and R on all multigrid levels
 
+      // 2.2) transfer fine level matrix to multigrid hierarchy
       // set operator A to be generated with AcFact (from FillHierarchy parameters)
       Levels_[startLevel]->Keep("A", &AcFact);
       Levels_[startLevel]->Set<RCP<Operator> >("A", A, &AcFact);
 
+      // keep variables P and R on all multigrid levels
       Levels_[startLevel]->Keep("P", &PRFact);
       Levels_[startLevel]->Keep("R", &PRFact);
 
@@ -251,11 +262,11 @@ namespace MueLu {
       Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
       Xpetra::global_size_t totalNnz = fineNnz;
 
-      ////////////////////////////////////////////
-      // create levels and declare input/requests
+      // 3) setup level structure
       int i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
         {
+    	  // 3.1) setup levels
           Level & fineLevel = *Levels_[i];
 
           if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
@@ -270,6 +281,7 @@ namespace MueLu {
           TEST_FOR_EXCEPTION(coarseLevel.GetLevelID() != i+2, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): CoarseLevel have a wrong level ID");
           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
+          // 3.2) declare input for levels (recursively)
           *out_ << "declareInput for P's, R's and RAP" << std::endl;
           PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
           AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
@@ -277,7 +289,7 @@ namespace MueLu {
           ++i;
         } //while
 
-      // build levels
+      // 4) build levels
       bool goodBuild=true;
       i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
@@ -319,6 +331,7 @@ namespace MueLu {
       //  }
       ////////////////////////////////////////////////////////////
 
+      // 5) gather statistics
       Teuchos::ParameterList status;
       status.set("fine nnz",fineNnz);
       status.set("total nnz",totalNnz);
