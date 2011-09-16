@@ -500,6 +500,7 @@ Piro::Epetra::StokhosSolverFactory::getValidSGParameters() const
   validPL->set<int>("Save Moments", -1, "Set to 2 for Mean and Variance. Default writes Coeffs");
   validPL->set<int>("Number of Spatial Processors", -1, "");
   validPL->sublist("Isorropia", false, "");
+  validPL->sublist("Response KL", false, "");
 
   return validPL;
 }
