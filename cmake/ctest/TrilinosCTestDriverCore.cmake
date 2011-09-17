@@ -807,7 +807,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Must be set here after CTEST_BINARY_DIRECTORY is set!
   SET(FAILED_PACKAGES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/failedPackages.txt")
 
-  
+  # For coverage dashboards, send results to /extended/cdash by default
+  IF (CTEST_DO_COVERAGE_TESTING)
+    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_SITE "testing.sandia.gov" )
+    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_LOCATION "/extended/cdash/submit.php?project=Trilinos" )
+  ENDIF()
+
+
   #
   # Some platform-independent setup
   #
