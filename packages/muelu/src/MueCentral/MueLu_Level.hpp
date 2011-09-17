@@ -157,10 +157,10 @@ public:
         if (factory == NULL)
         {
             const FactoryBase* defaultFactory = GetDefaultFactoryPtr(ename);
-            if( defaultFactory == NULL)
+            /*if( defaultFactory == NULL)
             {
               return needs_->GetData<T>(ename,defaultFactory);
-            }
+            }*/
             // check if data for default factory has already been generated
             if(!needs_->IsAvailable(ename,defaultFactory))
             {
