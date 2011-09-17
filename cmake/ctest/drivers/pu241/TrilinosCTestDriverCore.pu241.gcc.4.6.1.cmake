@@ -29,13 +29,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
-    -DTrilinos_ENABLE_Zoltan:BOOL=OFF
-    -DTrilinos_ENABLE_Anasazi:BOOL=OFF
-    -DTrilinos_ENABLE_Tpetra:BOOL=OFF
-    -DTrilinos_ENABLE_Kokkos:BOOL=OFF
-    -DTrilinos_ENABLE_ThreadPool:BOOL=OFF
-    -DTrilinos_ENABLE_Galeri:BOOL=OFF
-    -DTrilinos_ENABLE_Triutils:BOOL=OFF
     # Allow user to override these by putting theirs at the bottom
     ${EXTRA_CONFIGURE_OPTIONS}
     )

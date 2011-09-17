@@ -78,21 +78,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     TriKota # Not building with Intel yet.
     TrilinosFramework # Brings down tests with error
     )
-  SET(EXTRA_CONFIGURE_OPTIONS
-    -DTrilinos_ENABLE_TriKota:BOOL=OFF
-    -DTrilinos_ENABLE_Mesquite:BOOL=OFF
-    -DTrilinos_ENABLE_Sundance:BOOL=OFF
-    -DTrilinos_ENABLE_Zoltan:BOOL=OFF
-    -DTrilinos_ENABLE_Anasazi:BOOL=OFF
-    -DTrilinos_ENABLE_Tpetra:BOOL=OFF
-    -DTrilinos_ENABLE_Kokkos:BOOL=OFF
-    -DTrilinos_ENABLE_ThreadPool:BOOL=OFF
-    -DTrilinos_ENABLE_Galeri:BOOL=OFF
-    -DTrilinos_ENABLE_Triutils:BOOL=OFF
-    # Allow user to override these by putting theirs at the bottom
-    ${EXTRA_CONFIGURE_OPTIONS}
-    )
-  
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.4")
   
@@ -106,7 +91,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/intel-12.0.4-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTPL_ENABLE_MPI:BOOL=OFF"
-      ${EXTRA_CONFIGURE_OPTIONS}
+      "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+      "-DTrilinos_ENABLE_Mesquite:BOOL=OFF"
+      "-DTrilinos_ENABLE_Sundance:BOOL=OFF"
     )
 
   #   "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"
