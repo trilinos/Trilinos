@@ -536,7 +536,7 @@ namespace Belos {
 	   TMVB& y,
 	   ETrans trans = NOTRANS)
     { 
-      const Thyra::EOpTransp whichOp;
+      Thyra::EOpTransp whichOp;
 
       // We don't check here whether the operator implements the
       // requested operation.  Call HasApplyTranspose() to check.

@@ -116,6 +116,9 @@ namespace Belos {
     /// state on destruction.
     class EpetraOperatorTransposeScopeGuard {
     private:
+      //! Reference to the Epetra_Operator instance to protect.
+      const Epetra_Operator& Op_;
+      
       //! The original transpose state of the operator.
       const bool originalTransposeFlag_;
 
@@ -129,7 +132,8 @@ namespace Belos {
     public:
       EpetraOperatorTransposeScopeGuard (const Epetra_Operator& Op, 
 					 const ETrans trans)
-	: originalTransposeFlag_ (Op.UseTranspose ()),
+	: Op_ (Op),
+	  originalTransposeFlag_ (Op.UseTranspose ()),
 	  newTransposeFlag_ (trans != NOTRANS)
       {
 	// If necessary, set (or unset) the transpose flag to the value
@@ -138,7 +142,7 @@ namespace Belos {
 	  // Toggle the transpose flag.  The destructor will restore
 	  // its original value.
 	  const int info = 
-	    const_cast<Epetra_Operator &>(Op).SetUseTranspose (newTransposeFlag_);
+	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (newTransposeFlag_);
 	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
 			     "Toggling the transpose flag of the operator failed, "
 			     "returning a nonzero error code of " << info 
@@ -161,7 +165,7 @@ namespace Belos {
 	// applicable, we have to change the state back.
 	if (newTransposeFlag_ != originalTransposeFlag_) {
 	  const int info = 
-	    const_cast<Epetra_Operator &>(Op).SetUseTranspose (originalTransposeFlag_);
+	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (originalTransposeFlag_);
 	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
 			     "Resetting the original "
 			     "transpose flag value of the Epetra_Operator failed, "
@@ -189,7 +193,7 @@ namespace Belos {
 	// the value of the flag, so if we call that method twice, it might
 	// have the right value on the second call.  This would make the
 	// resulting exception message confusing.
-	const bool finalTransposeFlag = Op.UseTranspose ();
+	const bool finalTransposeFlag = Op_.UseTranspose ();
 	TEST_FOR_EXCEPTION(originalTransposeFlag_ != finalTransposeFlag,
 			   std::logic_error,
 			   "Belos::OperatorTraits::Apply: The value of the "
@@ -463,7 +467,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
 
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
-  EpetraOperatorTransposeScopeGuard guard (Op, trans);
+  EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
 
   // Apply the operator to x and put the result in y.
   const int info = Epetra_Op->Apply (*vec_x, *vec_y);
@@ -508,7 +512,7 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
-  EpetraOperatorTransposeScopeGuard guard (Op, trans);
+  EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
 
   // EpetraPrecOp's Apply() methods apply the inverse of the
   // underlying operator.  This may not succeed for all

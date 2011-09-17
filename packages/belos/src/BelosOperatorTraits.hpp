@@ -147,7 +147,7 @@ namespace Belos {
     /// of OperatorTraits for OP to advertise that operators of type
     /// OP may implement applying the transpose, override the default
     /// implementation in the specialization.
-    static bool HasApplyTranspose (const OP& Op) const {
+    static bool HasApplyTranspose (const OP& Op) {
       return false;
     }
   };
