@@ -600,6 +600,12 @@ namespace Belos {
 			   "Please report this bug to the Belos developers.");
       }
     }
+
+    static bool
+    HasApplyTranspose (const Tpetra::Operator<Scalar,LO,GO,Node>& Op)
+    {
+      return Op.hasTransposeApply ();
+    }
   };
 
 } // end of Belos namespace 
