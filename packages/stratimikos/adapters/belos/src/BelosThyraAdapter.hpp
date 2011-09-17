@@ -505,8 +505,10 @@ namespace Belos {
   /// Thyra::MultiVectorBase class as the multivector type.  This
   /// interface will ensure that any LinearOpBase and MultiVectorBase
   /// implementations will be accepted by the Belos templated solvers.
-  template <class ScalarType> 
-  class OperatorTraits < ScalarType, Thyra::MultiVectorBase<ScalarType>, Thyra::LinearOpBase<ScalarType> >
+  template<class ScalarType> 
+  class OperatorTraits <ScalarType, 
+			Thyra::MultiVectorBase<ScalarType>, 
+			Thyra::LinearOpBase<ScalarType> >
   {
   private:
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
@@ -518,9 +520,58 @@ namespace Belos {
     /// This method takes the MultiVectorBase \c x and applies the
     /// LinearOpBase \c Op to it, resulting in the MultiVectorBase \c
     /// y.
-    static void Apply (const TLOB& Op, const TMVB& x, TMVB& y)
+    ///
+    /// If x is not in the domain of the operator or y is not in the
+    /// range of the operator, then the operator will throw a
+    /// Thyra::Exceptions::IncompatibleVectorSpaces exception.
+    ///
+    /// We don't check here whether the operator implements the
+    /// requested \c trans operation.  Call HasApplyTranspose() to
+    /// check, for the cases trans=TRANS or CONJTRANS.  If the
+    /// operation is not supported, the operator will throw a
+    /// Thyra::Exceptions::OpNotSupported exception.
+    static void 
+    Apply (const TLOB& Op, 
+	   const TMVB& x, 
+	   TMVB& y,
+	   ETrans trans = NOTRANS)
     { 
-      Thyra::apply<ScalarType>(Op, Thyra::NOTRANS, x, Teuchos::outArg(y));
+      const Thyra::EOpTransp whichOp;
+
+      // We don't check here whether the operator implements the
+      // requested operation.  Call HasApplyTranspose() to check.
+      // Thyra::LinearOpBase implementations are not required to
+      // implement NOTRANS.  However, Belos needs NOTRANS
+      // (obviously!), so we assume that Op implements NOTRANS.
+      if (trans == NOTRANS)
+	whichOp = Thyra::NOTRANS;
+      else if (trans == TRANS)
+	whichOp = Thyra::TRANS;
+      else if (trans == CONJTRANS)
+	whichOp = Thyra::CONJTRANS;
+      else
+	TEST_FOR_EXCEPTION(true, std::invalid_argument,
+			   "Belos::OperatorTraits::Apply (Thyra specialization): "
+			   "'trans' argument must be neither NOTRANS=" << NOTRANS 
+			   << ", TRANS=" << TRANS << ", or CONJTRANS=" << CONJTRANS
+			   << ", but instead has an invalid value of " << trans << ".");
+      Thyra::apply<ScalarType>(Op, whichOp, x, Teuchos::outArg(y));
+    }
+
+    //! Whether the operator implements applying the transpose.
+    static bool HasApplyTranspose (const TLOB& Op)
+    {
+      typedef Teuchos::ScalarTraits<ScalarType> STS;
+
+      // Thyra::LinearOpBase's interface lets you check whether the
+      // operator implements any of all four possible combinations of
+      // conjugation and transpose.  Belos only needs transpose
+      // (TRANS) if the operator is real; in that case, Apply() does
+      // the same thing with trans = CONJTRANS or TRANS.  If the
+      // operator is complex, Belos needs both transpose and conjugate
+      // transpose (CONJTRANS) if the operator is complex.  
+      return Op.opSupported (Thyra::TRANS) && 
+	(! STS::isComplex || Op.opSupported (Thyra::CONJTRANS));
     }
   };
 
