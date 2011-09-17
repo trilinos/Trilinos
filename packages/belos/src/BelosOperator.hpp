@@ -62,16 +62,17 @@ namespace Belos {
   ///
   /// Belos' linear solvers are templated on the scalar (Scalar),
   /// multivector (MV), and operator (OP) types.  The term "operator"
-  /// includes the matrix A in the linear system \f$AX = B\f$, any left
-  /// or right preconditioners, and any left or right scaling operators.
-  /// If you have enabled the right packages, you can use Belos' solvers
-  /// directly with OP = Epetra_Operator, Tpetra::Operator, or
-  /// Thyra::LinearOpBase.  Alternately, you may wish to use some other
-  /// object as an operator.  If so, you can make that object inherit
-  /// from Belos::Operator<Scalar>, and make its corresponding
-  /// multivector objects inherit from Belos::MultiVec<Scalar>.  Belos'
-  /// solvers may also be instantiated with MV = Belos::MultiVec<Scalar>
-  /// and OP = Belos::Operator<Scalar>.
+  /// includes the matrix A in the linear system \f$AX = B\f$, any
+  /// left or right preconditioners, and any left or right scaling
+  /// operators.  If you have enabled the corresponding Trilinos
+  /// packages, you can use Belos' solvers directly with OP =
+  /// Epetra_Operator, Tpetra::Operator, or Thyra::LinearOpBase.
+  /// Alternately, you may wish to use some other object as an
+  /// operator.  If so, you can make that object inherit from
+  /// Belos::Operator<Scalar>, and make its corresponding multivector
+  /// objects inherit from Belos::MultiVec<Scalar>.  Belos' solvers
+  /// may also be instantiated with MV = Belos::MultiVec<Scalar> and
+  /// OP = Belos::Operator<Scalar>.
   ///
   /// A concrete implementation of this class is necessary.  Users may
   /// create their own implementation if the supplied implementations
@@ -79,7 +80,6 @@ namespace Belos {
   template <class ScalarType>
   class Operator {
   public:
-    
     //! @name Constructor/Destructor
     //@{ 
     
@@ -90,22 +90,59 @@ namespace Belos {
     virtual ~Operator() {};
     //@}
     
-    //! @name Operator application method
+    //! @name Methods relating to applying the operator
     //@{ 
 
     /// \brief Apply the operator to x, putting the result in y.
     ///
-    /// This routine takes the Belos::MultiVec \c x and applies the
-    /// operator (or its transpose or Hermitian transpose) to it,
-    /// writing the result into the Belos::MultiVec \c y.
+    /// Take the Belos::MultiVec \c x and apply the operator (or its
+    /// transpose or Hermitian transpose) to it, writing the result
+    /// into the Belos::MultiVec \c y.
     ///
-    /// \note It is expected that any problem with applying this
-    ///   operator to \c x will be indicated by an std::exception
-    ///   being thrown.
+    /// \param x [in] The input multivector.
+    ///
+    /// \param y [out] The output multivector.  x and y may not alias
+    ///   (i.e., be views of) one another.
+    ///
+    /// \param trans [in] Whether to apply the operator (NOTRANS), its
+    ///   transpose (TRANS), or its Hermitian transpose (CONJTRANS).
+    ///   The default is NOTRANS.
+    ///
+    /// Your Operator subclass' implementation of Apply() is not
+    /// required to support applying the transpose (or Hermitian
+    /// transpose, if applicable).  If the caller passes in a value of
+    /// \c trans which your Apply() implementation does not support,
+    /// it should throw a subclass of std::exception.  In general,
+    /// subclasses' implementations should signal any problems
+    /// applying the operator by throwing a subclass of
+    /// std::exception.
     virtual void 
     Apply (const MultiVec<ScalarType>& x, 
 	   MultiVec<ScalarType>& y, 
 	   ETrans trans=NOTRANS) const = 0;
+
+    /// \brief Whether this operator implements applying the transpose.
+    ///
+    /// Your Operator subclass' implementation of Apply() is not
+    /// required to support applying the transpose (or Hermitian
+    /// transpose, if applicable).  If it <i>does</i> support applying
+    /// the transpose, this method should return true.  Otherwise, it
+    /// should return false.  
+    ///
+    /// We assume that if an operator can apply its transpose, it can
+    /// also apply its Hermitian transpose, if the operator is complex
+    /// (otherwise the transpose and Hermitian transpose are the same
+    /// operation).
+    ///
+    /// We provide a default implementation of this method that
+    /// conservatively returns false.  If you want your Operator
+    /// subclass to advertise that it implements applying the
+    /// transpose, override the default implementation in your
+    /// subclass.
+    virtual bool HasApplyTranspose () const {
+      return false;
+    }
+    //@}
   };
   
   ////////////////////////////////////////////////////////////////////
@@ -134,6 +171,13 @@ namespace Belos {
 	   ETrans trans=NOTRANS)
     { 
       Op.Apply (x, y, trans); 
+    }
+
+    //! Specialization of HasApplyTranspose() for Operator objects.
+    static bool
+    HasApplyTranspose (const Operator<ScalarType>& Op)
+    {
+      return Op.HasApplyTranspose ();
     }
   };
 
@@ -199,10 +243,14 @@ namespace Belos {
     /// \note The contents of Y on input may be relevant, depending on
     ///   the inner solver implementation.  For example, Y on input
     ///   may be treated as the initial guess of an iterative solver.
-    void 
-    apply(const multivector_type& X,
-	  multivector_type& Y,
-	  ETrans mode = NOTRANS) const
+    ///
+    /// This function is virtual, in case you would like to override
+    /// its default behavior of not implementing the transpose
+    /// operation.
+    virtual void 
+    Apply (const multivector_type& X,
+	   multivector_type& Y,
+	   ETrans mode = NOTRANS) const
     {
       using Teuchos::rcpFromRef;
 
@@ -211,6 +259,14 @@ namespace Belos {
 			 " operator itself, not its transpose or conjugate "
 			 "transpose.");
       solver_->solve (rcpFromRef (Y), rcpFromRef (X));
+    }
+
+    /// \brief Whether this operator implements applying the transpose.
+    /// 
+    /// By default, we assume that it doesn't.  You may override this
+    /// behavior in derived classes.
+    virtual bool HasApplyTranspose() const {
+      return false;
     }
 
   private:
