@@ -182,25 +182,57 @@ namespace Belos {
   };
   
   /// \class EpetraOp
-  /// \brief Implementation of Belos::Operator using Epetra_Operator.
+  /// \brief Belos::Operator implementation that wraps an Epetra_Operator instance.
+  ///
+  /// An instance of this class wraps an Epetra_Operator instance so
+  /// that it can be handled as a Belos::Operator.  Its Apply() method
+  /// just invokes the underlying Epetra_Operator's Apply().
+  ///
+  /// Important note on applying the transpose: Epetra_Operator
+  /// objects, unlike Tpetra or Thyra operators, have a persistent
+  /// "use the transpose" state.  This state can be set or unset using
+  /// Epetra_Operator::SetUseTranspose().  Epetra_Operator instances
+  /// are not required to implement applying the transpose.  However,
+  /// if the wrapped Epetra_Operator object does implement applying
+  /// the transpose, and if its transpose state is set on input,
+  /// EpetraOp follows the convention that calling Apply() with
+  /// trans=TRANS (or CONJTRANS) applies the transpose, not the
+  /// transpose of the transpose.  Similarly, calling Apply() with
+  /// trans=NOTRANS temporary unsets the transpose state, applies the
+  /// operator, and restores the transpose state on exit.  This
+  /// preserves the historical behavior of Belos' Epetra interface,
+  /// without permanently changing the state of the operator.
   ///
   class EpetraOp : public virtual Operator<double> {
   public:
-    EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op );
-    ~EpetraOp() {};
-    void Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+    /// \brief Constructor.
+    ///
+    /// \param Op [in] The Epetra_Operator instance to wrap.
+    EpetraOp (const Teuchos::RCP<Epetra_Operator> &Op);
+
+    //! Destructor.
+    ~EpetraOp () {}
+
+    //! Apply the operator (or its transpose) to x and put the result in y.
+    void Apply (const MultiVec<double>& x, 
+		MultiVec<double>& y, 
+		ETrans trans=NOTRANS) const;
+
+    //! Whether the operator knows how to apply its transpose.
+    bool HasApplyTranspose() const;
+
   private:
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
   };
   
 
   /// \class EpetraPrecOp
-  /// \brief Implementation of Belos::Operator using Epetra_Operator as a preconditioner.
+  /// \brief Belos::Operator implementation that wraps Epetra_Operator as a preconditioner.
   ///
-  /// This class wraps an \c Epetra_Operator, when the wrapped
-  /// operator is a preconditioner or other object that is normally
-  /// applied using ApplyInverse().  EpetraPrecOp's \c Apply() method
-  /// thus invokes the underlying object's
+  /// An instance of this class wraps an \c Epetra_Operator, when the
+  /// wrapped operator is a preconditioner or other object that is
+  /// normally applied using ApplyInverse().  EpetraPrecOp's \c
+  /// Apply() method thus invokes the underlying object's
   /// Epetra_Operator::ApplyInverse() method, and its \c
   /// ApplyInverse() method invokes the underlying object's
   /// Epetra_Operator::Apply() method.
@@ -258,6 +290,9 @@ namespace Belos {
     Apply (const MultiVec<double>& x, 
 	   MultiVec<double>& y, 
 	   ETrans trans=NOTRANS) const;
+
+    //! Whether the operator knows how to apply its transpose.
+    bool HasApplyTranspose() const;
 
     /// \brief Apply the operator to x, putting the result in y.
     ///
@@ -361,7 +396,7 @@ namespace Belos {
     const Epetra_Map& OperatorRangeMap() const { 
       return Epetra_Op->OperatorRangeMap();
     }
-    
+
   private:
     //! The underlying operator that this EpetraPrecOp instance wraps.
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
@@ -945,11 +980,23 @@ namespace Belos {
     ///    (which it indicates by returning a nonzero value).
     /// 2. If you attempt to apply the transpose and the underlying
     ///    operator does not implement the transpose.
+    ///
+    /// Epetra_Operator objects have a "persistent" transpose state,
+    /// which means that the input Op might already be set to use the
+    /// transpose.  We assume in that case that trans=NOTRANS means
+    /// don't apply the transpose, and trans=TRANS means apply the
+    /// transpose (not the "transpose of the transpose").  Thus, trans
+    /// has its literal meaning.  However, we leave Op on exit of this
+    /// routine with the same transpose setting that it had on entry.
     static void 
     Apply (const Epetra_Operator& Op, 
 	   const Epetra_MultiVector& x, 
 	   Epetra_MultiVector& y,
 	   ETrans trans=NOTRANS);
+
+    //! Whether Op implements applying the transpose.
+    static bool
+    HasApplyTranspose (const Epetra_Operator& Op);
   };
 
 } // end of Belos namespace 

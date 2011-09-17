@@ -48,11 +48,165 @@
 
 namespace Belos {
 
-  //-------------------------------------------------------------
-  
-  //////////////////////////////////////////////////////////////////////
+  // An anonymous namespace restricts the scope of its definitions to
+  // this file.
+  namespace {
+
+    /// \fn implementsApplyTranspose
+    /// \brief Whether Op implements applying the transpose.
+    ///
+    /// Epetra_Operator instances are not required to implement
+    /// applying the transpose (or conjugate transpose, if
+    /// applicable).  This function lets you ask.  
+    ///
+    /// We need this function because Epetra_Operator doesn't have a
+    /// direct query method.  We query by asking it to set using the
+    /// transpose, and examine the returned error code.  Epetra
+    /// operators have a persistent "use the transpose" state that you
+    /// can set or unset using Epetra_Operator::SetUseTranspose().
+    ///
+    /// \note This function is not thread-safe, because it makes no
+    ///   effort to protect Op against simultaneous calls to its
+    ///   Apply() or SetUseTranspose() methods.
+    ///
+    /// We use this function multiple times in this file, so it's
+    /// worthwhile breaking it out into a separate function, rather
+    /// than copying and pasting.
+    bool 
+    implementsApplyTranspose (const Epetra_Operator& Op)
+    {
+      // We must first check Op's current transpose state, so that we
+      // leave Op in the same state as it was given to us.
+      const bool transposed = Op.UseTranspose ();
+
+      // If Op is already transposed, Apply() doesn't need to do anything
+      // in order to apply the transpose.  (Apply() will just apply the
+      // already transposed operator in that case.)
+      if (transposed)
+	return true;
+
+      // SetUseTranspose() is a nonconst method, so we have to cast away
+      // const-ness of Op in order to call it.  Epetra_Operator gives us
+      // no other way to query whether it knows how to apply the
+      // transpose.
+      const int errcode = const_cast<Epetra_Operator&>(Op).SetUseTranspose (true);
+
+      // SetUseTranspose() follows the POSIX convention that returning
+      // zero means success.  If SetUseTranspose() failed, the best we can
+      // do is assume that the state of Op was not changed.  Any
+      // reasonable implementation of SetUseTranspose() should not change
+      // the state of the operator if setting the transpose failed.
+      if (errcode != 0)
+	return false;
+
+      // Now we need to restore the original transpose state.
+      if (! transposed)
+	// We assume that this call succeeds.
+	(void) const_cast<Epetra_Operator&>(Op).SetUseTranspose (false);
+
+      return errcode == 0;
+    }
+
+    /// \class EpetraOperatorTransposeScopeGuard
+    /// \brief Safely sets and unsets an Epetra_Operator's transpose state.
+    ///
+    /// This class uses RAII (Resource Acquisition Is Instantiation)
+    /// techniques to set the transpose state of an Epetra_Operator
+    /// instance on construction, and restore its original transpose
+    /// state on destruction.
+    class EpetraOperatorTransposeScopeGuard {
+    private:
+      //! The original transpose state of the operator.
+      const bool originalTransposeFlag_;
+
+      /// \brief Whether we want to apply the transpose of the operator.
+      ///
+      /// Recall that Epetra operators are always real-valued, never
+      /// complex-valued, so the conjugate transpose means the same
+      /// thing as the transpose.
+      const bool newTransposeFlag_;
+
+    public:
+      EpetraOperatorTransposeScopeGuard (const Epetra_Operator& Op, 
+					 const ETrans trans)
+	: originalTransposeFlag_ (Op.UseTranspose ()),
+	  newTransposeFlag_ (trans != NOTRANS)
+      {
+	// If necessary, set (or unset) the transpose flag to the value
+	// corresponding to 'trans'.
+	if (newTransposeFlag_ != originalTransposeFlag_) {
+	  // Toggle the transpose flag.  The destructor will restore
+	  // its original value.
+	  const int info = 
+	    const_cast<Epetra_Operator &>(Op).SetUseTranspose (newTransposeFlag_);
+	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
+			     "Toggling the transpose flag of the operator failed, "
+			     "returning a nonzero error code of " << info 
+			     << ".  That probably means that the Epetra_Operator "
+			     "subclass instance doesn't know how to apply its "
+			     "transpose.  Are you perhaps using a subclass of "
+			     "Epetra_Operator for which applying the transpose "
+			     "is not implemented?  Anyway, just to help with "
+			     "debugging, you specified trans=" 
+			     << (trans == NOTRANS ? "NOTRANS" : (trans == TRANS ? "TRANS" : "CONJTRANS"))
+			     << ", and the original operator was set "
+			     << (originalTransposeFlag_ ? "" : "NOT ")
+			     << "to apply the transpose.");
+	}
+      }
+
+      ~EpetraOperatorTransposeScopeGuard ()
+      {
+	// SetUseTranspose() changes the state of the operator, so if
+	// applicable, we have to change the state back.
+	if (newTransposeFlag_ != originalTransposeFlag_) {
+	  const int info = 
+	    const_cast<Epetra_Operator &>(Op).SetUseTranspose (originalTransposeFlag_);
+	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
+			     "Resetting the original "
+			     "transpose flag value of the Epetra_Operator failed, "
+			     "returning a nonzero error code of " << info << ".  "
+			     "This is an unusual error, since we were able to call "
+			     "its SetUseTranspose() method successfully before.  "
+			     "This suggests a bug in the subclass of Epetra_Operator "
+			     "which you are currently using.  This is probably not a "
+			     "Belos bug.");
+	}
+
+	// Make sure that the transpose flag has its original value.  If
+	// not, we throw std::logic_error instead of EpetraOpFailure, since
+	// that's definitely a bug.  It's safe to do this check whether or
+	// not we actually had to toggle the transpose flag.  Any reasonable
+	// implementation of Epetra_Operator should make calling
+	// UseTranspose() cheap.
+	//
+	// Note to code maintainers: The reason we capture the value of
+	// UseTranspose() instead of just calling it twice, is that if the
+	// exception test really does trigger, then there is something
+	// fundamentally wrong.  If something is that wrong, then we want to
+	// avoid further calls to the operator's methods.  For example, it
+	// could be that the UseTranspose() method is erroneously changing
+	// the value of the flag, so if we call that method twice, it might
+	// have the right value on the second call.  This would make the
+	// resulting exception message confusing.
+	const bool finalTransposeFlag = Op.UseTranspose ();
+	TEST_FOR_EXCEPTION(originalTransposeFlag_ != finalTransposeFlag,
+			   std::logic_error,
+			   "Belos::OperatorTraits::Apply: The value of the "
+			   "Epetra_Operator's transpose flag changed unexpectedly!"
+			   "  The original value at the top of this method was "
+			   << originalTransposeFlag_ << ", and its new value is "
+			   << finalTransposeFlag << ".  This suggests either a "
+			   "bug in Belos (in the implementation of this routine), "
+			   "or a bug in the operator.");
+      }
+    };
+
+  } // namespace (anonymous)
+
+  // ///////////////////////////////////////////////////////////////////
   // Construction/Destruction
-  //////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////
   
   
 EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, 
@@ -285,46 +439,45 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
 
 ///////////////////////////////////////////////////////////////
 //
-// implementation of the BelosEpetraOp class.
+// Implementation of the Belos::EpetraOp class.
 //
-////////////////////////////////////////////////////////////////////
-//
-// BelosOperator constructors
-//
+///////////////////////////////////////////////////////////////
 
 EpetraOp::EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op ) 
   : Epetra_Op(Op)
 {
 }
 
-//
-// BelosOperator applications
-//
-void EpetraOp::Apply ( const MultiVec<double>& x, 
-                       MultiVec<double>& y, ETrans trans ) const {
-  int info=0;
+void 
+EpetraOp::Apply (const MultiVec<double>& x, 
+		 MultiVec<double>& y, 
+		 ETrans trans) const 
+{
   MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-  //
-  TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
-		      "Belos::EpetraOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
-  //
-  // Set the operator to apply the transpose if that is requested.
-  //
-  if ( trans ) { 
-    info = Epetra_Op->SetUseTranspose( true );
-  }
-  info = Epetra_Op->Apply( *vec_x, *vec_y );
-  
-  if ( trans ) { 
-    info = Epetra_Op->SetUseTranspose( false );
-  }
-  
-  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
-		     "Belos::EpetraOp::Apply call to Apply() returned a nonzero value."); 
 
+  TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+		      "Belos::EpetraOp::Apply: x and/or y could not be "
+		      "dynamic cast to an Epetra_MultiVector.");
+
+  // Temporarily set the transpose state of Op, if it's not the same
+  // as trans, and restore it on exit of this scope.
+  EpetraOperatorTransposeScopeGuard guard (Op, trans);
+
+  // Apply the operator to x and put the result in y.
+  const int info = Epetra_Op->Apply (*vec_x, *vec_y);
+  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+		     "Belos::EpetraOp::Apply: The Epetra_Operator's Apply() "
+		     "method returned a nonzero value of " << info << ".");
 }
+
+bool 
+EpetraOp::HasApplyTranspose() const
+{
+  return implementsApplyTranspose (*Epetra_Op);
+}
+
 
 // ///////////////////////////////////////////////////////////////////
 //
@@ -343,7 +496,6 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 		     MultiVec<double>& y, 
 		     ETrans trans) const 
 {
-  int info = 0;
   MultiVec<double>&  temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
@@ -354,92 +506,20 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 		     "Belos::EpetraPrecOp::Apply: The MultiVec<double> input y "
 		     "cannot be dynamic cast to an Epetra_MultiVector.");
 
-  // Remember the original value of the transpose flag, so that we can
-  // restore it on exit.
-  //
-  // Do NOT change this behavior just because you don't want an
-  // exception to be thrown.  The semantics of Belos::Operator demand
-  // that this version of the Apply() method be STATELESS, and that
-  // the 'trans' argument have its literal meaning.  If the underlying
-  // operator doesn't implement applying the transpose, then it is
-  // RIGHT for this method to throw an exception immediately, rather
-  // than to silently compute the wrong thing.  However, if you don't
-  // try to apply the transpose, then no exception will be thrown.
-  const bool originalTransposeFlag = Epetra_Op->UseTranspose ();
-
-  // Whether we want to apply the transpose of the operator.
-  // Recall that Epetra operators are always real-valued, never
-  // complex-valued, so the conjugate transpose means the same
-  // thing as the transpose.
-  const bool newTransposeFlag = (trans != NOTRANS);
-
-  // If necessary, set (or unset) the transpose flag to the value
-  // corresponding to 'trans'.
-  if (newTransposeFlag != originalTransposeFlag) {
-    // Toggle the transpose flag temporarily.  We will restore the
-    // original flag's value before this method exits.
-    info = Epetra_Op->SetUseTranspose (newTransposeFlag);
-    TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-		       "Belos::EpetraPrecOp::Apply: Toggling the transpose flag "
-		       "of the operator failed, returning a nonzero error code " 
-		       "of " << info << ".  That probably means the underlying "
-		       "Epetra_Operator object doesn't know how to apply its "
-		       "transpose.  Are you perhaps using a preconditioner for "
-		       "which applying the transpose is not implemented?");
-  }
+  // Temporarily set the transpose state of Op, if it's not the same
+  // as trans, and restore it on exit of this scope.
+  EpetraOperatorTransposeScopeGuard guard (Op, trans);
 
   // EpetraPrecOp's Apply() methods apply the inverse of the
   // underlying operator.  This may not succeed for all
   // implementations of Epetra_Operator, so we have to check.
-  info = Epetra_Op->ApplyInverse (*vec_x, *vec_y);
+  const int info = Epetra_Op->ApplyInverse (*vec_x, *vec_y);
   TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
 		     "Belos::EpetraPrecOp::Apply: Calling ApplyInverse() on the "
 		     "underlying Epetra_Operator object failed, returning a "
 		     "nonzero error code of " << info << ".  This probably means"
 		     " that the underlying Epetra_Operator object doesn't know "
 		     "how to apply its inverse.");
-
-  // SetUseTranspose() changes the state of the operator, so if
-  // applicable, we have to change the state back.
-  if (newTransposeFlag != originalTransposeFlag) {
-    info = Epetra_Op->SetUseTranspose (originalTransposeFlag);
-    TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-		       "Belos::EpetraPrecOp::Apply: Resetting the original "
-		       "transpose flag value of the underlying Epetra_Operator "
-		       "failed, returning a nonzero error code of " << info
-		       << ".  This is an unusual error, since we were able to "
-		       "call its SetUseTranspose method successfully before.  "
-		       "This suggests a bug in the subclass of Epetra_Operator "
-		       "which you are currently using.  This is probably not a "
-		       "Belos bug.");
-  }
-
-  // Make sure that the transpose flag has its original value.  If
-  // not, we throw std::logic_error instead of EpetraOpFailure, since
-  // that's definitely a bug.  It's safe to do this check whether or
-  // not we actually had to toggle the transpose flag.  Any reasonable
-  // implementation of Epetra_Operator should make calling
-  // UseTranspose() cheap.
-  //
-  // Note to code maintainers: The reason we capture the value of
-  // UseTranspose() instead of just calling it twice, is that if the
-  // exception test really does trigger, then there is something
-  // fundamentally wrong.  If something is that wrong, then we want to
-  // avoid further calls to the operator's methods.  For example, it
-  // could be that the UseTranspose() method is erroneously changing
-  // the value of the flag, so if we call that method twice, it might
-  // have the right value on the second call.  This would make the
-  // resulting exception message confusing.
-  const bool finalTransposeFlag = Epetra_Op->UseTranspose ();
-  TEST_FOR_EXCEPTION(originalTransposeFlag != finalTransposeFlag,
-		     std::logic_error,
-		     "Belos::EpetraPrecOp::Apply: The value of the underlying "
-		     "Epetra_Operator's transpose flag changed unexpectedly! "
-		     "The original value at the top of this method was " 
-		     << originalTransposeFlag << ", and its new value is " 
-		     << finalTransposeFlag << ".  This suggests either a bug in "
-		     "Belos (in the implementation of this routine), or a bug in"
-		     " the underlying operator.");
 }
 
 // The version of Apply() that takes two arguments and returns int
@@ -448,10 +528,8 @@ int
 EpetraPrecOp::Apply (const Epetra_MultiVector &X, 
 		     Epetra_MultiVector &Y) const 
 {
-  //
-  // This operator applies Y = A^{-1}*X
-  //
-  int info = Epetra_Op->ApplyInverse( X, Y );
+  // This operation computes Y = A^{-1}*X.
+  const int info = Epetra_Op->ApplyInverse( X, Y );
   return info;
 }
 
@@ -460,11 +538,15 @@ int
 EpetraPrecOp::ApplyInverse (const Epetra_MultiVector &X, 
 			    Epetra_MultiVector &Y) const
 {
-  //
-  // This operator applies Y = A*X
-  //
-  int info = Epetra_Op->Apply( X, Y );
+  // This operation computes Y = A*X.
+  const int info = Epetra_Op->Apply( X, Y );
   return info;
+}
+
+bool 
+EpetraPrecOp::HasApplyTranspose() const
+{
+  return implementsApplyTranspose (*Epetra_Op);
 }
 
 
@@ -481,95 +563,24 @@ Apply (const Epetra_Operator& Op,
        Epetra_MultiVector& y,
        ETrans trans)
 { 
-  int info = 0;
+  // Temporarily set the transpose state of Op, if it's not the same
+  // as trans, and restore it on exit of this scope.
+  EpetraOperatorTransposeScopeGuard guard (Op, trans);
 
-  // Remember the original value of the transpose flag, so that we can
-  // restore it on exit.
-  //
-  // Do NOT change this behavior just because you don't want an
-  // exception to be thrown.  The semantics of OperatorTraits demand
-  // that the Apply() method be STATELESS, and that the 'trans'
-  // argument have its literal meaning.  If the underlying operator
-  // doesn't implement applying the transpose, then it is RIGHT for
-  // this method to throw an exception immediately, rather than to
-  // silently compute the wrong thing.  However, if you don't try to
-  // apply the transpose, then no exception will be thrown.
-  const bool originalTransposeFlag = Op.UseTranspose ();
-
-  // Whether we want to apply the transpose of the operator.  Recall
-  // that Epetra operators are always real-valued, never complex-
-  // valued, so the conjugate transpose means the same thing as the
-  // transpose.
-  const bool newTransposeFlag = (trans != NOTRANS);
-
-  // If necessary, set (or unset) the transpose flag to the value
-  // corresponding to 'trans'.
-  if (newTransposeFlag != originalTransposeFlag) {
-    // Toggle the transpose flag temporarily.  We will restore the
-    // original flag's value before this method exits.
-    info = const_cast<Epetra_Operator &>(Op).SetUseTranspose (newTransposeFlag);
-    TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-		       "Belos::OperatorTraits::Apply: Toggling the "
-		       "transpose flag of the operator failed, returning a "
-		       "nonzero error code of " << info << ".  That probably"
-		       " means that the Epetra_Operator object doesn't know "
-		       "how to apply its transpose.  Are you perhaps using a"
-		       " subclass of Epetra_Operator for which applying the "
-		       "transpose is not implemented?  Anyway, just to help "
-		       "with debugging, you specified trans=" 
-		       << (trans == NOTRANS ? "NOTRANS" : (trans == TRANS ? "TRANS" : "CONJTRANS"))
-		       << ", and the original operator was set "
-		       << (originalTransposeFlag ? "" : "NOT ")
-		       << "to apply the transpose.");
-  }
-
-  info = Op.Apply (x, y);
+  const int info = Op.Apply (x, y);
   TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
-		     "Belos::OperatorTraits::Apply: Calling Apply() on the "
-		     "Epetra_Operator object failed, returning a nonzero "
-		     "error code of " << info << ".");
-
-  // SetUseTranspose() changes the state of the operator, so if
-  // applicable, we have to change the state back.
-  if (newTransposeFlag != originalTransposeFlag) {
-    info = const_cast<Epetra_Operator &>(Op).SetUseTranspose (originalTransposeFlag);
-    TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
-		       "Belos::OperatorTraits::Apply: Resetting the original "
-		       "transpose flag value of the Epetra_Operator failed, "
-		       "returning a nonzero error code of " << info << ".  "
-		       "This is an unusual error, since we were able to call "
-		       "its SetUseTranspose method successfully before.  "
-		       "This suggests a bug in the subclass of Epetra_Operator "
-		       "which you are currently using.  This is probably not a "
-		       "Belos bug.");
-  }
-
-  // Make sure that the transpose flag has its original value.  If
-  // not, we throw std::logic_error instead of EpetraOpFailure, since
-  // that's definitely a bug.  It's safe to do this check whether or
-  // not we actually had to toggle the transpose flag.  Any reasonable
-  // implementation of Epetra_Operator should make calling
-  // UseTranspose() cheap.
-  //
-  // Note to code maintainers: The reason we capture the value of
-  // UseTranspose() instead of just calling it twice, is that if the
-  // exception test really does trigger, then there is something
-  // fundamentally wrong.  If something is that wrong, then we want to
-  // avoid further calls to the operator's methods.  For example, it
-  // could be that the UseTranspose() method is erroneously changing
-  // the value of the flag, so if we call that method twice, it might
-  // have the right value on the second call.  This would make the
-  // resulting exception message confusing.
-  const bool finalTransposeFlag = Op.UseTranspose ();
-  TEST_FOR_EXCEPTION(originalTransposeFlag != finalTransposeFlag,
-		     std::logic_error,
-		     "Belos::OperatorTraits::Apply: The value of the "
-		     "Epetra_Operator's transpose flag changed unexpectedly!"
-		     "  The original value at the top of this method was "
-		     << originalTransposeFlag << ", and its new value is "
-		     << finalTransposeFlag << ".  This suggests either a "
-		     "bug in Belos (in the implementation of this routine), "
-		     "or a bug in the operator.");
+		     "Belos::OperatorTraits::Apply (Epetra specialization): "
+		     "Calling the Epetra_Operator object's Apply() method "
+		     "failed, returning a nonzero error code of " << info
+		     << ".");
 }
+
+bool
+OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
+HasApplyTranspose (const Epetra_Operator& Op)
+{
+  return implementsApplyTranspose (Op);
+}
+
 
 }  // end namespace Belos
