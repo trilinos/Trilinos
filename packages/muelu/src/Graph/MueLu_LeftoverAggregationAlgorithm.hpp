@@ -260,7 +260,6 @@ namespace MueLu {
         ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
         ArrayRCP<double>    weights     = distWeights->getDataNonConst(0);
           
-        distWeights->putScalar(0.);
         for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
           if (procWinner[i] == MUELU_UNASSIGNED) {
             if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
@@ -274,7 +273,7 @@ namespace MueLu {
       }
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-      distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+      // All tentatively assigned vertices are now definitive
 
       // Tentatively assign any vertex (ghost or local) which neighbors a root
       // to the aggregate associated with the root.
@@ -303,7 +302,7 @@ namespace MueLu {
       }
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-      distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+      // All tentatively assigned vertices are now definitive
 
       // Record the number of aggregated vertices
       GO total_phase_one_aggregated = 0;
@@ -369,7 +368,7 @@ namespace MueLu {
       }
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-      distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
+      //All tentatively assigned vertices are now definitive
 
       if (IsPrint(Statistics1)) {
         GO Nphase1_agg = nAggregates;
@@ -392,11 +391,10 @@ namespace MueLu {
       //         std::cout << "exp_nrows=" << exp_nRows << " (nVertices= " << nVertices << ", numGhost=" << graph.GetNodeNumGhost() << ")" << std::endl;
       //         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
 
-      RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
+      RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap,false); //no need to zero out vector in ctor
       temp_->putScalar(1.);  
 
       RCP<Xpetra::Vector<double,LO,GO,NO> > tempOutput_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
-      tempOutput_->putScalar(0.); 
 
       myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Xpetra::ADD);
 
@@ -510,7 +508,7 @@ namespace MueLu {
             // views on distributed vectors are freed here.
           }
           myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-          distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+          // All tentatively assigned vertices are now definitive
           nAggregatesLocal=nAggregates;
           sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal);
 
@@ -607,13 +605,16 @@ namespace MueLu {
       int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
       // Stick unaggregated vertices into existing aggregates as described above. 
+
+      {
+      int ncalls=0;
       for (int kk = 0; kk < 10; kk += 2) {
         bestScoreCutoff = thresholds[kk];
         for (int i = 0; i < exp_nRows; i++) {
 
-          ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
-          ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
-          ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+           ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+           ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
+           ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
 
           if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
@@ -713,8 +714,13 @@ namespace MueLu {
           // views on distributed vectors are freed here.
         }
 
+        ++ncalls;
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-        distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+        // All tentatively assigned vertices are now definitive
+      }
+
+      if (graph.GetComm()->getRank()==0)
+        std::cout << "#calls to Arb&Comm=" << ncalls << std::endl;
       }
 
       // Phase 6: Aggregate remain unaggregated vertices and try at all costs
@@ -873,7 +879,7 @@ namespace MueLu {
       nAggregates = NewNAggs;
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
-      distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
+      // All tentatively assigned vertices are now definitive
 
       // procWinner is not set correctly for aggregates which have 
       // been eliminated
