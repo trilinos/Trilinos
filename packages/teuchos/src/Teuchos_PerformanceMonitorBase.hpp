@@ -187,7 +187,8 @@ namespace Teuchos
     /// It is currently possible to create multiple counters with the
     /// same name using \c getNewCounter().  If multiple counters with
     /// the given name exist, this method simply returns the first in
-    /// the list.
+    /// the list.  Do not rely on the ability to create multiple
+    /// counters with the same name; this may go away in the future.
     ///
     /// If you want to create a counter with a given name if it doesn't
     /// yet exist, do the following:
@@ -200,17 +201,45 @@ namespace Teuchos
     /// ("lookupOrCreateCounter()"), because it is easy to misspell a
     /// timer name.  If timers that don't exist yet are created
     /// silently, misspelled timer names can cause hard-to-find bugs.
+    /// (Analogies: Fortran's "implicit none" or Perl's "use strict.")
     static RCP<T> 
     lookupCounter (const std::string& name);
 
-    /// \brief "Forget" about all timers created with \c getNewCounter().
+    /// \brief "Forget" about all counters created with \c getNewCounter().
     ///
-    /// This removes all timers from the current list of timers (as
-    /// would be returned by \c counters()).
-    static void clearTimers ();
+    /// This removes all counters from the current list of counters
+    /// (as would be returned by \c counters()).
+    static void clearCounters ();
 
-    //! "Forget" about any timers named "name" created with \c getNewCounter().
-    static void clearTimer (const std::string& name);
+    /// \brief "Forget" about all counters created with \c getNewCounter().
+    ///
+    /// This removes all counters from the current list of counters
+    /// (as would be returned by \c counters()).
+    ///
+    /// \warning This method is DEPRECATED, because the name is
+    ///   inaccurate (the template parameter of PerformanceMonitorBase
+    ///   may be any kind of performance counter, not just a timer).
+    ///   Use \c clearCounters() instead.
+    static TEUCHOS_DEPRECATED void clearTimers ();
+
+    /// \brief "Forget" about any counters with the given name.
+    /// 
+    /// If one or more counters with the given name was created using
+    /// \c getNewCounter(), calling this method with that name will
+    /// remove them from the global list of counters.
+    static void clearCounter (const std::string& name);
+
+    /// \brief "Forget" about any counters with the given name.
+    /// 
+    /// If one or more counters with the given name was created using
+    /// \c getNewCounter(), calling this method with that name will
+    /// remove them from the global list of counters.
+    ///
+    /// \warning This method is DEPRECATED, because the name is
+    ///   inaccurate (the template parameter of PerformanceMonitorBase
+    ///   may be any kind of performance counter, not just a timer).
+    ///   Use \c clearCounter() instead.
+    static TEUCHOS_DEPRECATED void clearTimer (const std::string& name);
 
   protected:
     
@@ -222,8 +251,10 @@ namespace Teuchos
 
     /// \brief Whether we are currently in a recursive call of the counter.
     ///
-    /// This can matter in cases such as timing, where we don't want to
-    /// start and stop timers multiple times within a single call stack.
+    /// Subclasses of PerformanceMonitorBase may use this information
+    /// to control whether to start or stop the given counter.  This
+    /// matters in cases such as timing, where we don't want to start
+    /// and stop timers multiple times within a single call stack.
     bool isRecursiveCall() const { return isRecursiveCall_; }
       
     //! The array of all counters created using \c getNewCounter().
@@ -266,7 +297,7 @@ namespace Teuchos
 
   template<class T>
   void
-  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
+  PerformanceMonitorBase<T>::clearCounter (const std::string& name)
   {
     Array<RCP<T> > newCounters;
     // Only fill newCounters with counters whose name is not the given
@@ -285,7 +316,21 @@ namespace Teuchos
 
   template<class T>
   void
+  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
+  {
+    clearCounter (name);
+  }
+
+  template<class T>
+  void
   PerformanceMonitorBase<T>::clearTimers ()
+  {
+    clearCounters ();
+  }
+
+  template<class T>
+  void
+  PerformanceMonitorBase<T>::clearCounters ()
   {
     // Just resizing an Array to have length zero may not necessarily
     // free its storage.  The standard idiom is to swap with an empty
@@ -293,12 +338,7 @@ namespace Teuchos
     Array<RCP<T> > newCounters;
     counters().swap (newCounters);
   }
-
-
-
-
   
 } // namespace Teuchos
 
-
-#endif
+#endif // TEUCHOS_PERFORMANCEMONITORBASE_H
