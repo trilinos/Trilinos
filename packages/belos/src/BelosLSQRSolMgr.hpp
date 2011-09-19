@@ -54,9 +54,7 @@
 
 #include "BelosLSQRIteration.hpp"
 #include "BelosLSQRIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosLSQRStatusTest.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -573,7 +571,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       // Euclidean inner product, so we set the inner product matrix M
       // to null.
       RCP<const OP> M = null;
-      RCP<ParameterList> orthoParams = factory.getDefaultParameters (orthoType_);
+      RCP<const ParameterList> orthoParams = factory.getDefaultParameters (orthoType_);
       ortho_ = factory.makeMatOrthoManager (orthoType_, M, printer_, label_, orthoParams);
     }
   }
@@ -587,7 +585,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       // type of orthoKappa for that.
       orthoKappa_ = params->get<MagnitudeType> ("Orthogonalization Constant");
 
-      if (orthoKappa_ > 0 && ! ortho_.is_null) {
+      if (orthoKappa_ > 0 && ! ortho_.is_null()) {
 	typedef DGKSOrthoManager<ScalarType,MV,OP> ortho_impl_type;
 	rcp_dynamic_cast<ortho_impl_type> (ortho_)->setDepTol (orthoKappa_);
       }
@@ -683,7 +681,7 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
 		     "LSQRSolMgr::solve(): The current implementation of LSQR "
 		     "only knows how to solve problems with one right-hand "
 		     "side, but the linear problem to solve has " 
-		     << MVT::GetNumberVecs (*(problem->getRHS ())) 
+		     << MVT::GetNumberVecs (*(problem_->getRHS ())) 
 		     << " right-hand sides.");
 
   // We've validated the LinearProblem instance above.  If any of the
