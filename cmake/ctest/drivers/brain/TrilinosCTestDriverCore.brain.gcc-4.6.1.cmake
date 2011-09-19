@@ -2,7 +2,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for s903186 using gcc
+# Platform/compiler specific options for brain.sandia.gov using gcc 4.6.1
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -19,17 +19,20 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
   
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  # Set up the compiler environment.
+  SET(brain_GCC_ROOT "$ENV{HOME}/compilers/gcc/4.6.1")
+  SET(ENV{LD_LIBRARY_PATH} "${brain_GCC_ROOT}/lib64:$ENV{LD_LIBRARY_PATH}")
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    "-DTPL_ENABLE_MATLAB=OFF"
+    "-DCMAKE_C_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/gcc"
+    "-DCMAKE_CXX_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/g++"
+    "-DCMAKE_Fortran_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/gfortran"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
   
   IF (COMM_TYPE STREQUAL MPI)
   
