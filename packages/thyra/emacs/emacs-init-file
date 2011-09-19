@@ -2,15 +2,6 @@
 
 (add-to-list 'load-path (expand-file-name "~/elisp/"))
 
-;; Load custom Thyra C++ styles
-(require 'cpp-thyra-styles)
-
-;; Set my style to the Thyra style!
-(setq c-set-style "thyra")
-
-;;; Load the C++ function menu
-(require 'cpp-func-menu)
-
 ;;; Load GNU global
 ;;;(require 'gtags)
 (autoload 'gtags-mode "gtags" "" t)
@@ -36,6 +27,7 @@
  '(column-number-mode t)
  '(current-language-environment "English")
  '(fill-column 78)
+ '(column-number-mode t)
  '(font-lock-auto-fontify t)
  '(font-lock-maximum-decoration t)
  '(font-lock-mode t nil (font-lock))
@@ -59,3 +51,12 @@
 ;; Setup the PSGML mode to indent elements automatically!
 (setq sgml-indent-data t)
 (setq sgml-indent-step 2)
+
+;; Load custom Thyra C++ styles
+(require 'cpp-thyra-styles)
+
+;; Set my style to the Thyra style!
+(setq c-set-style "thyra")
+
+;;; Load the C++ function menu
+(require 'cpp-func-menu)
