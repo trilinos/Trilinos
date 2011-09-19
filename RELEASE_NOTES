@@ -4,17 +4,137 @@
 #                                                                             #
 ###############################################################################
 
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 10.8 general release contains 50 packages: Amesos, Amesos2*,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos^, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS*, Shards, STK,
+Stokhos, Stratimikos, Sundance, Teko*, Teuchos, ThreadPool, Thyra, Tpetra,
+TriKota, TrilinosCouplings, Triutils, Zoltan.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
 Framework Release Notes:
 
-- MPI Fortran compiler wrapper search change
+  - MPI Fortran compiler wrapper search change
+    Starting with Trilinos 10.8, when MPI is enabled and a specific Fortran
+    compiler is not specified at configure time, the first wrapper searched for
+    will be mpif90 instead of mpif77.  If a mpif90 wrapper is not found, the
+    search will continue and attempt to find mpif77.  Depending on the
+    underlying compilers used and the mpi configuration, a mpif90 wrapper may 
+    exist, but not be functional.  In those cases, a functional Fortran compiler
+    wrapper should be specified at configure time.
 
-Starting with Trilinos 10.8, when MPI is enabled and a specific Fortran
-compiler is not specified at configure time, the first wrapper searched for
-will be mpif90 instead of mpif77.  If a mpif90 wrapper is not found, the
-search will continue and attempt to find mpif77.  Depending on the underlying
-compilers used and the mpi configuration, a mpif90 wrapper may exist, but not
-be functional.  In those cases, a functional Fortran compiler wrapper should
-be specified at configure time.
+  - CMake export system changes:
+    The CMake export system used for finding Trilinos in other CMake projects
+    has had some changes to better support CMake projects. First there are now
+    CMake targets for each library that is exported. This will allow easier
+    handling of dependencies for libraries as all of that information is now
+    stored in the CMake Target. The location of the installed *Config.cmake
+    files has changed. They are no longer in the <install prefix>/include
+    directory, but are instead in <install prefix>/lib/cmake/<package
+    name>/<package name>Config.cmake. These paths are more like what CMake
+    expects and should only require minor changes to the search path you give to
+    find_package(...). You should only need to point to the install prefix where
+    Trilinos was installed when using find_package now. 
+
+More information:
+
+Trilinos website: http://trilinos.sandia.gov
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+Amesos2
+  - Initial Public release of Amesos2. Amesos2 provides a common interface to
+    different direct solver libraries from Trilinos. 
+
+  - Supports SuperLU, SuperLU_MT and SuperLU_Dist direct solvers.
+
+  - Supports Epetra and Tpetra matrices and mulitvectors.
+
+  - Supports 64-bit and complex data types.
+
+
+Isorropia
+  - New class Isorropia::Epetra::Matcher solves the
+    maximum cardinality matching problem for the bipartite graph.
+    This is also known as a maximum transversal, and is
+    typically used to permute a sparse matrix to zero-free diagonal form. 
+    The current implementation uses OpenMP and shared memory model.
+    It does not work on distributed matrices.
+
+  - Isorropia is now supported in PyTrilinos.
+
+Kokkos
+  - New multidimensional array sub-package in kokkos/array subdirectory.
+    The MDArrayView<Type,Device>, MultiVectorView<Type,Device>,
+    and ValueView<Type,Device> template classes manage allocated
+    memory on the 'Device' and perform compile-time selection of a
+    device-optimal mapping of array's multi-index space to data members.
+    Includes unit tests, performance tests, and example mini-applications.
+
+PyTrilinos
+  - Improved the MPI initialization logic in Teuchos and Epetra modules.
+    Previously, both modules would call MPI_Init() when they were imported
+    into the python interpretter and register MPI_Finalize() with the
+    atexit module (each module did perform checks before executing the
+    calls in case the other module beat it to the punch).  Now, each
+    module checks to see if MPI_Init() has already been called, and if so,
+    it does not register MPI_Finalize() with atexit.  This way, if the
+    user initializes MPI ahead of importing Teuchos or Epetra (such as
+    with mpi4py, for example), then the user is responsible for
+    finalization, and can assume finer control.
+
+  - Added the Isorropia package, for partitioning Epetra objects.  This
+    includes an IsorropiaVisualizer.py script.
+
+  - This release contains a large number of internal changes mostly not
+    visible to end users, except for increased stability and bug fixes.
+    One big change is that C++ referenced counted pointers (via the
+    Teuchos::RCP class) are now properly handled.  Fixed a couple of bugs
+    in the Amesos, AztecOO and EpetraExt wrappers.  Changed the Amesos
+    example scripts to follow PyTrilinos coding standards.  Put all C++
+    code within the PyTrilinos namespace.  Changed C++ file names to have
+    PyTrilinos_ prefix.
+
+Teuchos
+  - Added automatic stack tracing info for exception messages, segfaults, and
+    aborts.  Thanks to the work of Ondrej Certik we now have built-in support
+    for generating strack traces when using g++ when uncaught exceptions are
+    encountered or when a segfault or about occurs.  See the Doxygen
+    documentation for more details for how your project can take advantage of
+    this feature.
+
+Zoltan
+  - Added new recoloring capability to Zoltan coloring algorithms, providing
+    lower numbers of colors at small additional cost.
+
+
+  - Updated Zoltan to allow use of third-party libraries ParMETIS versions 3.1
+    and 4.0 and Scotch versions up to 5.1.12.
+
+  - Updated Zoltan's hierarchical partitioning for greater efficiency.
+
+  - Fixed bug in autotools installation of Zoltan; file Zoltan_config.h is now
+    installed in the specified include directory.
+
+  - Fixed Fortran90 interface issues that caused compilation and run-time
+    problems with gcc 4.5 and later when compiler optimization was enabled.
+
+  - Added support for 64-bit builds of Zoltan, enabling operation on more
+    than 2B objects. See details for building in the Zoltan User's Guide.
 
 ###############################################################################
 #                                                                             #
