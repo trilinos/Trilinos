@@ -82,7 +82,12 @@ namespace Xpetra {
     void putScalar(const Scalar &value) { vec_->putScalar(value); }
 
     //! Set multi-vector values to random numbers.
-    void randomize() { vec_->randomize(); }
+    void randomize(bool bUseXpetraImplementation = false) {
+        if(bUseXpetraImplementation)
+            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+        else
+            vec_->randomize();
+    }
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
     void reduce() { vec_->reduce(); }

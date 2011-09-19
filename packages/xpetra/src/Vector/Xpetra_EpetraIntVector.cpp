@@ -21,7 +21,7 @@ namespace Xpetra {
 
   int EpetraIntVector::maxValue() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  void EpetraIntVector::randomize() {   TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
+  void EpetraIntVector::randomize(bool bUseXpetraImplementation) {   TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
 
   void EpetraIntVector::setSeed(unsigned int seed) {
     TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::setSeed(): Functionnality not available in Epetra");

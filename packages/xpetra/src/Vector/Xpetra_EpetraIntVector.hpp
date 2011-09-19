@@ -73,7 +73,7 @@ namespace Xpetra {
     void putScalar(const int &value) {  vec_->PutValue(value); }
 
     //! Set multi-vector values to random numbers.
-    void randomize();
+    void randomize(bool bUseXpetraImplementation = true);
 
     //! Set seed for Random function.
     /** Note: this method does not exist in Tpetra interface. Added for MueLu. */

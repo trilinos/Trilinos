@@ -40,7 +40,25 @@ namespace Xpetra {
     virtual void putScalar(const Scalar &value)= 0;
 
     //! Set multi-vector values to random numbers.
-    virtual void randomize()= 0;
+    virtual void randomize(bool bUseXpetraImplementation = false)= 0;
+
+    //! Set multi-vector values to random numbers. XPetra implementation
+    virtual void Xpetra_randomize()
+    {
+        typedef Teuchos::ScalarTraits<Scalar> SCT;
+
+        const size_t numVectors = getNumVectors();
+        for (size_t i = 0; i < numVectors; i++)
+        {
+            Teuchos::ArrayRCP< Scalar > datai = getDataNonConst(i);
+
+            const size_t myLength = getLocalLength();
+            for(size_t j=0; j<myLength; j++)
+            {
+                datai[j] = SCT::random();
+            }
+        }
+    }
 
     //@}
 

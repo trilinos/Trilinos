@@ -62,7 +62,12 @@ namespace Xpetra {
     void putScalar(const Scalar &value) { vec_->PutScalar(value); }
 
     //! Set multi-vector values to random numbers.
-    void randomize() { vec_->Random(); }
+    void randomize(bool bUseXpetraImplementation = false) {
+        if (bUseXpetraImplementation)
+            Xpetra_randomize();
+        else
+            vec_->Random();
+    }
 
     //@}
 
@@ -176,7 +181,10 @@ namespace Xpetra {
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
 
     //! Set seed for Random function.
-    void setSeed(unsigned int seed) { vec_->SetSeed(seed); }
+    void setSeed(unsigned int seed) {
+        Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
+        vec_->SetSeed(seed);
+    }
  
     //@}
     
