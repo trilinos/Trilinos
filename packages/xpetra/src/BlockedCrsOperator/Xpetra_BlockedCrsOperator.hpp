@@ -549,24 +549,24 @@ public:
 
     //     if (myImageID == 0) out << this->description() << std::endl;
 
-    out << "Xpetra::BlockedCrsOperator: " << Rows() << " x " << Cols() << endl;
+    out << "Xpetra::BlockedCrsOperator: " << Rows() << " x " << Cols() << std::endl;
 
     if(isFillComplete())
     {
-      out << "BlockOperator is filled" << endl;
-      out << "fullRowMap" << endl;
+      out << "BlockOperator is filled" << std::endl;
+      out << "fullRowMap" << std::endl;
       fullrowmap_->describe(out,verbLevel);
-      out << "fullColMap" << endl;
+      out << "fullColMap" << std::endl;
       fullcolmap_->describe(out,verbLevel);
     }
     else
-      out << "BlockOperator is NOT filled" << endl;
+      out << "BlockOperator is NOT filled" << std::endl;
 
     for (size_t r=0; r<Rows(); ++r)
     {
       for(size_t c=0; c<Cols(); ++c)
       {
-        out << "Block(" << r << "," << c << ")" << endl;
+        out << "Block(" << r << "," << c << ")" << std::endl;
         getMatrix(r,c)->describe(out,verbLevel);
       }
     }
