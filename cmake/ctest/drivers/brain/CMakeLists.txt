@@ -2,7 +2,7 @@ TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT
-  ctest_linux_nightly_mpi_opt_brain.cmake
+  ctest_linux_nightly_mpi_opt_gcc-4.6.1_brain.cmake
   CTEST_INSTALLER_TYPE dev
   TIMEOUT_MINUTES 240
 )
