@@ -25,13 +25,13 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
 #ifdef HAVE_AMESOS_KLU
-        AmesosSmoother smoother("Klu");
-        testDirectSolver(smoother, out, success);
+        AmesosSmoother smoother_klu("Klu");
+        testDirectSolver(smoother_klu, out, success);
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
-        AmesosSmoother smoother("Superlu");
-        testDirectSolver(smoother, out, success);
+        AmesosSmoother smoother_superlu("Superlu");
+        testDirectSolver(smoother_superlu, out, success);
 #endif
       }
   }
