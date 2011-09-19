@@ -621,16 +621,10 @@ int main(int argc, char *argv[])
   ** partition 0, process rank 1 will own partition 1, and so on.
   ******************************************************************/
 
-  Zoltan_Memory_Debug(2);
+  Zoltan_Memory_Debug(1);
   Zoltan_Memory_Reset(ZOLTAN_MEM_STAT_MAXIMUM);
 
   gettimeofday(&t1, NULL);
-
-/* KDDKDD
-Zoltan_Set_Param(zz, "final_output", "1");
-Zoltan_Set_Param(zz, "use_timers", "2");
-Zoltan_Set_Param(zz, "phg_output_level", "1");
-*/
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
