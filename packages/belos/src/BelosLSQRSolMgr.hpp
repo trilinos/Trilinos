@@ -458,6 +458,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcpFromRef;
+  using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Teuchos::Exceptions::InvalidParameter;
   using Teuchos::Exceptions::InvalidParameterName;
@@ -489,20 +490,29 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       label_ = newLabel;
     }
 
-    if (timerSolve_.is_null()) {
-      // FIXME (mfh 09 Sep 2011) This creates a new timer.
-      // TimeMonitor still retains a copy of the old timer.  We should
-      // first tell TimeMonitor to forget about the old timer, or
-      // otherwise reset the label.
-      std::string solveLabel = label_ + ": LSQRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
-#endif
+    std::string newSolveLabel = label_ + ": LSQRSolMgr total solve time";
+    if (timerSolve_.is_null()) {
+      // Ask TimeMonitor for a new timer.
+      timerSolve_ = TimeMonitor::getNewCounter (newSolveLabel);
     } else {
-      // FIXME (mfh 18 Sep 2011) We should tell the already existing
-      // timer to change its label.
-      ;
+      // We've already created a timer, but we may have changed its
+      // label.  If we did change its name, then we have to forget
+      // about the old timer and create a new one with a different
+      // name.  This is because Teuchos::Time doesn't give you a way
+      // to change a timer's name, once you've created it.  We assume
+      // that if the user changed the timer's label, then the user
+      // wants to reset the timer's results.
+      const std::string oldSolveLabel = timerSolve_->name ();
+
+      if (oldSolveLabel != newSolveLabel) {
+	// Tell TimeMonitor to forget about the old timer.
+	// TimeMonitor lets you clear timers by name.
+	TimeMonitor::clearTimer (oldSolveLabel);
+	timerSolve_ = TimeMonitor::getNewCounter (newSolveLabel);
+      }
     }
+#endif // BELOS_TEUCHOS_TIME_MONITOR
   }
 
   // Check for a change in verbosity level
@@ -581,8 +591,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // parameter above).
   if (orthoType_ == "DGKS")
     {
-      // TODO use the one-argument version of get.  Need to know the
-      // type of orthoKappa for that.
       orthoKappa_ = params->get<MagnitudeType> ("Orthogonalization Constant");
 
       if (orthoKappa_ > 0 && ! ortho_.is_null()) {
