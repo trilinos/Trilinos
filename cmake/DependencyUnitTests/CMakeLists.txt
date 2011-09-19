@@ -207,7 +207,19 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_Amesos:BOOL=ON -DTrilinos_ENABLE_Zoltan:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled packages:  Teuchos RTOp Epetra Shards Triutils EpetraExt AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos 13"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Shards Triutils EpetraExt Thyra AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos 14"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyraCoreLibs_EnableTests
+  ARGS -DTrilinos_ENABLE_ThyraCoreLibs:BOOL=ON -DTrilinos_ENABLE_TESTS:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Setting Trilinos_ENABLE_Thyra=ON because Trilinos_ENABLE_ThyraCoreLibs=ON"
+    "Setting Thyra_ENABLE_TESTS=ON because ThyraCoreLibs_ENABLE_TESTS=ON"
+    "Setting Thyra_ENABLE_EXAMPLES=ON because ThyraCoreLibs_ENABLE_EXAMPLES=ON"
+    "Final set of enabled packages:  Teuchos RTOp Thyra 3"
+    "Final set of enabled SE packages:  Teuchos RTOp ThyraCoreLibs Thyra 4"    
   )
 
 
@@ -300,8 +312,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly disabled packages on input .+:  Stokhos Ifpack ML 3"
     "Setting Stratimikos_ENABLE_Ifpack=OFF because Stratimikos has an optional library dependence on disabled package Ifpack"
     "Setting Stratimikos_ENABLE_ML=OFF because Stratimikos has an optional library dependence on disabled package ML"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt AztecOO Galeri Amesos Stratimikos 10"
-    "Final set of non-enabled packages:  TrilinosFramework Shards Tpetra Stokhos Sacado Thyra Isorropia Intrepid Ifpack ML Belos RBGen Phalanx 13"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra AztecOO Galeri Amesos Stratimikos 11"
+    "Final set of non-enabled packages:  TrilinosFramework Shards Tpetra Stokhos Sacado Isorropia Intrepid Ifpack ML Belos RBGen Phalanx 12"
   )
 
 
@@ -312,10 +324,10 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly disabled packages on input .+:  Stokhos Ifpack 2"
     "Setting Stratimikos_ENABLE_Ifpack=OFF because Stratimikos has an optional library dependence on disabled package Ifpack"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Isorropia AztecOO Galeri Amesos ML Stratimikos 12"
-    "Final set of enabled SE packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt ThyraCoreLibs ThyraEpetra ThyraEpetraExt Isorropia AztecOO Galeri Amesos ML Stratimikos 15"
-    "Final set of non-enabled packages:  TrilinosFramework Shards Tpetra Stokhos Sacado Thyra Intrepid Ifpack Belos RBGen Phalanx 11"
-    "Final set of non-enabled SE packages:  TrilinosFramework Shards Tpetra Stokhos Sacado ThyraGoodStuff ThyraCrazyStuff ThyraTpetra Thyra Intrepid Ifpack Belos RBGen Phalanx 14"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra Isorropia AztecOO Galeri Amesos ML Stratimikos 13"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt ThyraCoreLibs ThyraEpetra ThyraEpetraExt Thyra Isorropia AztecOO Galeri Amesos ML Stratimikos 16"
+    "Final set of non-enabled packages:  TrilinosFramework Shards Tpetra Stokhos Sacado Intrepid Ifpack Belos RBGen Phalanx 10"
+    "Final set of non-enabled SE packages:  TrilinosFramework Shards Tpetra Stokhos Sacado ThyraGoodStuff ThyraCrazyStuff ThyraTpetra Intrepid Ifpack Belos RBGen Phalanx 13"
   )
 
 
@@ -326,8 +338,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "WARNING: User has set Trilinos_ENABLE_Ifpack=ON but the" 
     "package Ifpack is not supported on this platform type 'BadSystem2'"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos 13"
-    "Final set of enabled SE packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt ThyraCoreLibs ThyraEpetra ThyraEpetraExt Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos 16"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos 14"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt ThyraCoreLibs ThyraEpetra ThyraEpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos 17"
   )
 
 
