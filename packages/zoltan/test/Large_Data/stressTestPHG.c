@@ -626,6 +626,12 @@ int main(int argc, char *argv[])
 
   gettimeofday(&t1, NULL);
 
+/* KDDKDD
+Zoltan_Set_Param(zz, "final_output", "1");
+Zoltan_Set_Param(zz, "use_timers", "2");
+Zoltan_Set_Param(zz, "phg_output_level", "1");
+*/
+
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */

@@ -84,21 +84,21 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
     int exist=1;
 
-    if (!strcasecmp(hgp->redm_str, "no"))
+    if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
+        hgp->matching = pmatching_agg_ipm;
+        hgp->match_array_type = 1;
+    }
+    else if (!strcasecmp(hgp->redm_str, "rcb") || 
+             !strcasecmp(hgp->redm_str, "rib")) {
+        hgp->matching = pmatching_geom;
+	hgp->match_array_type = 1;
+    }
+    else if (!strcasecmp(hgp->redm_str, "no"))
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "none"))
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
-    else if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
-        hgp->matching = pmatching_agg_ipm;
-        hgp->match_array_type = 1;
-    }
-    else if (!strncasecmp(hgp->redm_str, "rcb", 3) || 
-             !strncasecmp(hgp->redm_str, "rib", 3)) {
-        hgp->matching = pmatching_geom;
-	hgp->match_array_type = 1;
-    }
     else if (!strcasecmp(hgp->redm_str, "l-ipm"))
         hgp->matching = pmatching_local_ipm;           
     else if (!strcasecmp(hgp->redm_str, "c-ipm"))
@@ -2356,38 +2356,46 @@ for (i =0; i < hg->nVtx; i++)
 #endif
 
   /* Register new geometric callbacks and parameters */
-  if ((Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) geometric_get_num_obj,
-		    (void *) hg) == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) geometric_get_obj_list,
-		    (void *) hg) == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) geometric_get_num_geom,
-		    (void *) hg) == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) geometric_get_geom_multi,
-		    (void *) hg) == ZOLTAN_FATAL))
+  if ((Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE,
+                     (void (*)()) geometric_get_num_obj,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,
+                     (void (*)()) geometric_get_obj_list,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE,
+                     (void (*)()) geometric_get_num_geom,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE,
+                     (void (*)()) geometric_get_geom_multi,
+		     (void *) hg) == ZOLTAN_FATAL))
   {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                      "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
   }
 
   if ((hgp->geometric_red <= 0) || (hgp->geometric_red > 1)) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value.");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo,
+                       "Invalid hybrid reduction factor. Using default value.");
       hgp->geometric_red = 0.1;
   }
+
   /* Parts are reduced by a factor, result should not be 0 */  
   local_vtx = (int)(hgp->geometric_red * (double) hg->nVtx
                                        / (double) hg->comm->nProc_y);
   sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
 
 
-  if ((Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "REMAP", "0") == ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "CHECK_GEOM", "0")== ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "RETURN_LISTS", "CANDIDATE_LISTS")== ZOLTAN_FATAL) ||
-      (Zoltan_Set_Param(zz2, "LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL))
+  if ((Zoltan_Set_Param(zz2,"NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"DEBUG_LEVEL", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"REMAP", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"CHECK_GEOM", "0")== ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"RETURN_LISTS", "CANDIDATE_LISTS")==ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL))
   {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                       "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
 
@@ -2398,15 +2406,18 @@ for (i =0; i < hg->nVtx; i++)
 		    &num_export, &candidate_ids, &export_local_ids,
 		    &export_procs, &export_to_part);
 
-  if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
+  if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx,
+                                                     sizeof(ZOLTAN_GNO_TYPE))))
     MEMORY_ERROR;
 
   for (i = 0; i < hg->nVtx; i++) match[i] = 0;
 
-  for (i = 0; i < num_import; i++) procmatch[import_local_ids[i]] = candidate_ids[i];
+  for (i = 0; i < num_import; i++)
+    procmatch[import_local_ids[i]] = candidate_ids[i];
 
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
-  MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM, hg->comm->col_comm);
+  MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM,
+                hg->comm->col_comm);
 
 #ifdef KDDKDD_DEBUG
  {/* KDDKDD */

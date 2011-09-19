@@ -213,6 +213,8 @@ int Zoltan_PHG_Partition (
   int vcycle_timing = (hgp->use_timers > 4 && hgp->ProRedL == 0);
   short refine = 0;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
+  int reset_geometric_matching = 0;
+  char reset_geometric_string[4];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -248,6 +250,14 @@ int Zoltan_PHG_Partition (
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
+  }
+
+  /* For geometric coarsening, hgp->matching pointer and string are reset
+   * after geometric_levels of coarsening.  Will need to reset them after
+   * this vcycle is completed.  Capture that fact now!  */
+  if (!strcasecmp(hgp->redm_str, "rcb") || !strcasecmp(hgp->redm_str, "rib")) {
+    reset_geometric_matching = 1;
+    strcpy(reset_geometric_string, hgp->redm_str);
   }
 
   /****** Coarsening ******/    
@@ -694,6 +704,11 @@ End:
     del = vcycle;
     vcycle = vcycle->finer;
     ZOLTAN_FREE(&del);
+  }
+
+  if (reset_geometric_matching) {
+    strcpy(hgp->redm_str, reset_geometric_string);
+    Zoltan_PHG_Set_Matching_Fn(hgp);
   }
 
   if (do_timing)
