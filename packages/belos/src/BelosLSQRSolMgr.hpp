@@ -89,9 +89,12 @@ namespace Belos {
  * This std::exception is thrown from the LSQRSolMgr::solve() method.
  *
  */
-class LSQRSolMgrLinearProblemFailure : public BelosError {public:
-    LSQRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
-  {}};
+class LSQRSolMgrLinearProblemFailure : public BelosError {
+public:
+  LSQRSolMgrLinearProblemFailure(const std::string& what_arg)
+    : BelosError(what_arg)
+  {}
+};
 
 /** \brief LSQRSolMgrOrthoFailure is thrown when the orthogonalization manager is
  * unable to generate orthonormal columns from the initial basis vectors.
@@ -99,9 +102,12 @@ class LSQRSolMgrLinearProblemFailure : public BelosError {public:
  * This std::exception is thrown from the LSQRSolMgr::solve() method.
  *
  */
-class LSQRSolMgrOrthoFailure : public BelosError {public:
-    LSQRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-  {}};
+class LSQRSolMgrOrthoFailure : public BelosError {
+public:
+  LSQRSolMgrOrthoFailure(const std::string& what_arg)
+    : BelosError(what_arg)
+  {}
+};
 
 /** \brief LSQRSolMgrBlockSizeFailure is thrown when the linear problem has
  * more than one RHS.  This is unique to single vector methods.
@@ -109,9 +115,12 @@ class LSQRSolMgrOrthoFailure : public BelosError {public:
  * This std::exception is thrown from the LSQRSolMgr::solve() method.
  *
  */
-class LSQRSolMgrBlockSizeFailure : public BelosError {public:
-    LSQRSolMgrBlockSizeFailure(const std::string& what_arg) : BelosError(what_arg)
-  {}};
+class LSQRSolMgrBlockSizeFailure : public BelosError {
+public:
+  LSQRSolMgrBlockSizeFailure(const std::string& what_arg) 
+  : BelosError(what_arg)
+  {}
+};
 
 template<class ScalarType, class MV, class OP>
 class LSQRSolMgr : public SolverManager<ScalarType,MV,OP> {
@@ -320,6 +329,8 @@ private:
     
   // Current parameter list.
   Teuchos::RCP<Teuchos::ParameterList> params_;
+  // Default parameter list.  Cached per instance for more thread safety.
+  Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   // Current solver input parameters
   MagnitudeType lambda_;
@@ -357,19 +368,22 @@ LSQRSolMgr<ScalarType,MV,OP>::LSQRSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-LSQRSolMgr<ScalarType,MV,OP>::LSQRSolMgr( 
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-  const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+LSQRSolMgr<ScalarType,MV,OP>::
+LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+	    const Teuchos::RCP<Teuchos::ParameterList> &pl) : 
   problem_(problem),
   isSet_(false),
   loaDetected_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-
-  // If the parameter list pointer is null, 
-  // then set the current parameters to the default parameter list.
-  if ( !is_null(pl) ) {
-    setParameters( pl );  
+  // The linear problem to solve is allowed to be null here.  The user
+  // must then set a nonnull linear problem (by calling setProblem())
+  // before calling solve().
+  // 
+  // Similarly, users are allowed to set a null parameter list here,
+  // but they must first set a nonnull parameter list (by calling
+  // setParameters()) before calling solve().
+  if (! is_null (pl)) {
+    setParameters (pl);  
   }
 }
 
@@ -385,10 +399,8 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
   using Teuchos::rcpFromRef;
   typedef Teuchos::ScalarTraits<MagnitudeType> STM;
 
-  static RCP<const ParameterList> validPL;
-  
   // Set all the valid parameters and their default values.
-  if(is_null(validPL)) {
+  if (is_null (validParams_)) {
     const MagnitudeType lambda = STM::zero();
     RCP<std::ostream> outputStream = rcpFromRef (std::cout);
     const MagnitudeType relRhsErr = MagnitudeType(10) * STM::squareroot (STM::eps());
@@ -438,9 +450,10 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "is the string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
     pl->set("Block Size", 1, "Block size parameter (currently, this must always be 1).");
-    validPL = pl;
+
+    validParams_ = pl;
   }
-  return validPL;
+  return validParams_;
 }
 
 
@@ -611,7 +624,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // Create the LSQR convergence test if it doesn't exist yet. 
     // Otherwise, update its parameters.
     if (convTest_.is_null()) {
-      convTest_ = rcp (new LSQRStatusTest<ScalarType,MV,OP> (condMax_, termIterMax_, relRhsErr_, relMatErr_));
+      convTest_ = 
+	rcp (new LSQRStatusTest<ScalarType,MV,OP> (condMax_, termIterMax_, 
+						   relRhsErr_, relMatErr_));
     } else {
       convTest_->setCondLim (condMax_);
       convTest_->setTermIterMax (termIterMax_);
@@ -624,7 +639,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // necessary.  Otherwise, update it with the new maximum iteration
   // count.
   if (maxIterTest_.is_null()) {
-    maxIterTest_ = rcp (new Belos::StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
   } else {
     maxIterTest_->setMaxIters (maxIters_);
   }
@@ -633,13 +648,15 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // maximum number of iterations, and the LSQR convergence test.
   // ("OR combination" means that both tests will always be evaluated,
   // as opposed to a SEQ combination.)
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+  typedef StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   // If sTest_ is not null, then maxIterTest_ and convTest_ were
   // already constructed on entry to this routine, and sTest_ has
   // their pointers.  Thus, maxIterTest_ and convTest_ have gotten any
   // parameter changes, so we don't need to do anything to sTest_.
   if (sTest_.is_null()) {
-    sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
+    sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, 
+					 maxIterTest_, 
+					 convTest_));
   }
   
   if (outputTest_.is_null()) {
@@ -681,6 +698,8 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     setParameters (Teuchos::parameterList (*getValidParameters()));
   }
 
+  TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
+		     "The linear problem to solve is null.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
                      "LSQRSolMgr::solve(): The linear problem is not ready, "
 		     "as its setProblem() method has not been called.");
@@ -706,7 +725,8 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
   // Next the right-hand sides to solve are identified.  Among other things,
   // this enables getCurrLHSVec() to get the current initial guess vector,
   // and getCurrRHSVec() to get the current right-hand side (in Iter).
-  std::vector<int> currRHSIdx(1, 0); problem_->setLSIndex(currRHSIdx);
+  std::vector<int> currRHSIdx(1, 0); 
+  problem_->setLSIndex(currRHSIdx);
 
   // Reset the status test.  
   outputTest_->reset();
