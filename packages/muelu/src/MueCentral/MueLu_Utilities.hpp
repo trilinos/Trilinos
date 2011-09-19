@@ -782,7 +782,7 @@ namespace MueLu {
       (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(Operator const &A, bool scaleByDiag=true,
-                              LO niters=10, Magnitude tolerance=1e-2, bool verbose=false)
+                              LO niters=10, Magnitude tolerance=1e-2, bool verbose=false, unsigned int seed = 123)
     {
       if ( !(A.getRangeMap()->isSameAs(*(A.getDomainMap()))) ) {
         throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
@@ -791,10 +791,9 @@ namespace MueLu {
       RCP<MultiVector> q = MultiVectorFactory::Build(A.getRangeMap(),1);
       RCP<MultiVector> r = MultiVectorFactory::Build(A.getRangeMap(),1);
       RCP<MultiVector> z = MultiVectorFactory::Build(A.getRangeMap(),1);
-      z->randomize();
+      z->setSeed(seed);  // seed random number generator
+      z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
       
-      // typedef Teuchos::ScalarTraits<SC> ST;
-
       Teuchos::Array<Magnitude> norms(1);
   
       //std::vector<Scalar> lambda(1);

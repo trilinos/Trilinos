@@ -170,6 +170,7 @@ namespace MueLu {
         sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate_"+buf.str()));
         sapTimer->start(true);
         Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 10,(Scalar)1e-4);
+        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
