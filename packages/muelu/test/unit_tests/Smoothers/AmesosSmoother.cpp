@@ -24,14 +24,15 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
+        Teuchos::RCP<AmesosSmoother> smoother;
 #ifdef HAVE_AMESOS_KLU
-        AmesosSmoother smoother_klu("Klu");
-        testDirectSolver(smoother_klu, out, success);
+        smoother = rcp(new AmesosSmoother("Klu"));
+        testDirectSolver(*smoother, out, success);
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
-        AmesosSmoother smoother_superlu("Superlu");
-        testDirectSolver(smoother_superlu, out, success);
+        smoother = rcp(new AmesosSmoother("Superlu"));
+        testDirectSolver(*smoother, out, success);
 #endif
       }
   }
