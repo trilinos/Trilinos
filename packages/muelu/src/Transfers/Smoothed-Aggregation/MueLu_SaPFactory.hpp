@@ -47,10 +47,8 @@ namespace MueLu {
         dampingFactor_(4./3), diagonalView_("current") {
       if(initialPFact_ == Teuchos::null)
       {
-        // todo: if no initial PFactory, set it to TentativePFactory
-        //std::string msg = "SaPFactory: no initial P factory defined";
-        //throw(Exceptions::RuntimeError(msg));
-        initialPFact_ = rcp(new TentativePFactory());
+          // use tentative P factory as default
+          initialPFact_ = rcp(new TentativePFactory());
       }
     }
   
@@ -92,10 +90,6 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      /*if(!coarseLevel.IsRequested("P",initialPFact_))
-        initialPFact_->DeclareInput(fineLevel,coarseLevel);
-      if(!fineLevel.IsRequested("A",AFact_))
-        AFact_->DeclareInput(fineLevel);*/
       coarseLevel.Request("P",initialPFact_.get());
       fineLevel.Request("A",AFact_.get());
     };
@@ -110,7 +104,6 @@ namespace MueLu {
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
       //FIXME what does the return code mean (unclear in MueMat)?
-      //FIXME how should nullspace be stored?
       */
     bool Build(Level& fineLevel, Level &coarseLevel) const {
       return BuildP(fineLevel,coarseLevel);
@@ -227,8 +220,6 @@ namespace MueLu {
     //! Factory parameters
     Scalar dampingFactor_;
     std::string diagonalView_;
-
-    // TODO: test ReUse
 
   }; //class SaPFactory
 
