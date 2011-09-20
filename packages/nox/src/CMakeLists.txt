@@ -175,12 +175,14 @@ APPEND_SET(HEADERS
   NOX_Random.H
   NOX_Version.H
   NOX_GlobalData.H
+  NOX_PrePostOperator_Vector.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C
   NOX_Random.C
   NOX_Version.C
   NOX_GlobalData.C
+  NOX_PrePostOperator_Vector.C
   )
 
 # Multivector
