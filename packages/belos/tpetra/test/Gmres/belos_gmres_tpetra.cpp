@@ -660,7 +660,7 @@ main (int argc, char *argv[])
 	cerr << "done." << endl;
       // The matrix A must be square, and have a nonzero number of
       // rows and columns, in order to solve Ax=b with GMRES.
-      TEST_FOR_EXCEPTION(A->getGlobalNumRows() != A->getGlobalNumRows(), 
+      TEST_FOR_EXCEPTION(A->getGlobalNumRows() != A->getGlobalNumCols(), 
 			 std::invalid_argument,
 			 "The sparse matrix A must be square in order to solve "
 			 "Ax=b with GMRES.");
