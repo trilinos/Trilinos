@@ -92,7 +92,7 @@ MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
     )
 
   FOREACH (CONFIG_OPTS_FILE ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
-    MESSAGE("Reading in configuration options from ${CONFIG_OPTS_FILE} ...")
+    MESSAGE("-- " "Reading in configuration options from ${CONFIG_OPTS_FILE} ...")
     INCLUDE(${CONFIG_OPTS_FILE})
   ENDFOREACH()
 

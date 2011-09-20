@@ -55,12 +55,14 @@
 
 INCLUDE(PackageSetupCompilerFlags)
 INCLUDE(PackageWritePackageConfig)
+INCLUDE(PackageGeneralMacros)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalNullSet)
 INCLUDE(AppendGlobalSet)
 INCLUDE(PrintVar)
 INCLUDE(PrependSet)
+INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(AddOptionAndDefine)
 
@@ -69,64 +71,25 @@ INCLUDE(AddOptionAndDefine)
 # Macro that defines the package architecture system varaibles used to link
 # different SE packages together
 #
-#
-# ${PACKAGE_NAME}_INCLUDE_DIRS
-#
-#   Defines a list of include paths needed to find all of the headers needed
-#   to compile client code against this packages sources and it's upstream
-#   packages sources.  This variable is used whenever building dowstream code
-#   including downstream libraries or executables in the same package, or
-#   libraries or executables in downstream packages.
-#
-# ${PACKAGE_NAME}_LIBRARY_DIRS
-#
-#   Defines as list of the link directories needed to find all of the
-#   libraries for this packages and it's upstream packages.  Adding these
-#   library directories to the CMake link line is unnecssary and would cause
-#   link-line too long errors on some systems.  Instead, this list of library
-#   directories is used when creating the ${PACKAGE_NAME}Config.cmake files.
-#
-# ${PACKAGE_NAME}_LIBRARIES
-#
-#   Defines as list of *only* the libraries associated with the given package
-#   and does *not* list libraries in upstream packages.  Linkages to upstream
-#   packages is taken care of with calls to TARGET_LINK_LIBRARIES(...) and the
-#   depenency management system in CMake takes care of adding these to various
-#   link lines as needed (this is what CMake does well).  However, we a
-#   package has no libraries of its own, this list of libraries will need to
-#   contain the libraries to the direct dependent upstream packages in order
-#   to allow the chain of dependencies to be handled correctly in downstream
-#   packages.
-#
-# ${PACKAGE_NAME}_LIB_TARGETS
-#
-#   Lists all of the library targets for this package only that are as part of
-#   this package added by the PACKAGE_ADD_LIBRARY(...) function.  This is used
-#   to define a target called ${PACKAGE_NAME}_libs that is then used in the
-#   testing system.  If a package has not libraries, then the library targets
-#   for all of the immediate direct dependent packages will be added.  This is
-#   needed for the chain of dependencies to work correctly.
-#
-# ${PACKAGE_NAME}_ALL_TARGETS
-#
-#   Lists all of the targets associated with this package.  This includes all
-#   libraries and tests added with PACKAGE_ADD_LIBRARY(...) and
-#   PACKAGE_ADD_EXECUTABLE(...).  If this package has not targets (no
-#   libraries or executables) this this will have the dependency only on
-#   ${PACKAGE_NAME}_libs.
+# See README.DEPENDENCIES for information on what these varaibles mean and how
+# they are used.
 #
 
 MACRO(PACKAGE_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
-
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARIES)
-
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIB_TARGETS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_ALL_TARGETS)
-
 ENDMACRO()
 
+
+#
+# Macro that defines varaibles that create global targets
+#
+
+MACRO(PACKAGE_DEFINE_TARGET_VARS PARENT_PACKAGE_NAME_IN)
+  GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_LIB_TARGETS)
+  GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_ALL_TARGETS)
+ENDMACRO()
 
 #
 # Set up some common varaibles used in the creation of an SE package
@@ -241,6 +204,9 @@ MACRO(PACKAGE_DECL PACKAGE_NAME_IN)
     SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE ON)
   ENDIF()
 
+  # Set up parent package linkage varaibles
+  PACKAGE_DEFINE_TARGET_VARS(${PACKAGE_NAME})
+
 ENDMACRO()
 
 
@@ -269,7 +235,6 @@ MACRO(PACKAGE_DEF)
   PACKAGE_SET_COMMON_VARS(${PACKAGE_NAME})
 
   # Define package linkage varaibles
-
   PACKAGE_DEFINE_LINKAGE_VARS(${PACKAGE_NAME})
 
 ENDMACRO()
@@ -379,17 +344,41 @@ ENDMACRO()
 
 
 #
-# Macro called at the very end of a package's top-level CMakeLists.txt file
+# Function that sets up package linkage linkage variables in case the package
+# has no libraries.
 #
-MACRO(PACKAGE_POSTPROCESS)
 
-  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
-  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
+FUNCTION(PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS)
 
-  # Create the configure file so external projects can find packages with a
-  # call to find_package(<package_name>)
-  # This also creates the Makefile.export.* files.
-  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
+  IF (NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
+
+    # No libraries have been defined for this package so we are going to set
+    # them.
+
+    SET(LINK_LIBS)
+
+    PACKAGE_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      ${PACKAGE_NAME}  LIB  LINK_LIBS) 
+
+    PACKAGE_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      ${PACKAGE_NAME}  LIB  LINK_LIBS)
+
+    GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
+    GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
+
+    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
+    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
+
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
+# Helper macro for [SUB]PACKAGE_POSTPROCESS()
+#
+
+MACRO(PACKAGE_POSTPROCESS_COMMON)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
@@ -397,6 +386,36 @@ MACRO(PACKAGE_POSTPROCESS)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
+
+  SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
+    CACHE INTERNAL "")
+
+ENDMACRO()
+
+
+#
+# Macro called at the very end of a package's top-level CMakeLists.txt file
+#
+
+MACRO(PACKAGE_POSTPROCESS)
+
+  # Only parent packages have the targets (${PACKAGE_NAME}_libs and
+  # (${PACKAGE_NAME}_all
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
+    PRINT_VAR(${PACKAGE_NAME}_LIB_TARGETS)
+    PRINT_VAR(${PACKAGE_NAME}_ALL_TARGETS)
+  ENDIF()
+  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
+  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
+
+  PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS()
+  PACKAGE_POSTPROCESS_COMMON()
+
+  # Create the configure file so external projects can find packages with a
+  # call to find_package(<package_name>)
+  # This also creates the Makefile.export.* files.
+  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
 
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")

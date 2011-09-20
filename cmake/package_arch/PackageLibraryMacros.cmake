@@ -71,13 +71,16 @@ INCLUDE(SetAndIncDirs)
 
 FUNCTION(PACKAGE_ADD_CONFIG_DEFINE DEFINE)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPackage ${PARENT_PACKAGE_NAME}: adding compiler define to config file: ${DEFINE}")
+    MESSAGE("\nPackage ${PARENT_PACKAGE_NAME}: adding compiler"
+      " define to config file: ${DEFINE}")
   ENDIF()
-  GLOBAL_SET(${PARENT_PACKAGE_NAME}_CONFIG_DEFINES "${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}\n#define ${DEFINE}")
+  GLOBAL_SET(${PARENT_PACKAGE_NAME}_CONFIG_DEFINES
+    "${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}\n#define ${DEFINE}")
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("--${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
   ENDIF()
 ENDFUNCTION() 
+
 
 #
 # Macro that configures the package's main config.h file
@@ -166,6 +169,10 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
       ${${PACKAGE_NAME}_LIBRARY_DIRS})
 
+    # Local varaible to hold all of the libraries that will be directly linked
+    # to this library.
+    SET(LINK_LIBS)
+
     # Add dependent libraries passed directly in
 
     IF (PARSE_DEPLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -175,8 +182,6 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       MESSAGE(STATUS "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
     ENDIF()
 
-    SET(LINK_LIBS)
-
     IF (PARSE_DEPLIBS)
       APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
     ENDIF()
@@ -184,18 +189,20 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       APPEND_SET(LINK_LIBS ${PARSE_IMPORTEDLIBS})
     ENDIF()
 
+    #
     # We only want to link to the dependent package and TPL libraries when we need
     # to.  We only need to link to these dependent libraries when this is the first
     # library being created for this package or if this library does not depend
     # on other libraries created for this package.  Otherwise, we don't need to
     # add the include directories or link libraries because a dependent lib
     # specified in PARSE_DEP_LIBS already has everything that we need.
-
+    #
     # We also need to make special considerations for test libraries since
     # things need to be handled a little bit differently (but not much).  In the
     # case of test libaries, we need to also pull the test-only dependencies.
     # In this case, we will always assume that we will add in the test
     # libraries.
+    #
 
     SET(ADD_DEP_PACKAGE_AND_TPL_LIBS TRUE)
 
@@ -203,9 +210,9 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       FOREACH(DEPLIB ${PARSE_DEPLIBS})
         LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${DEPLIB} DEPLIB_IDX)
         IF (NOT DEPLIB_IDX EQUAL -1)
-          # The library being created here is dependent on another of this package's
-          # libraries so there is no need to add in this package's dependent package
-          # and TPL libraries.
+          # The library being created here is dependent on another of this
+          # package's libraries so there is no need to add in this package's
+          # dependent package and TPL libraries.
           SET(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
         ENDIF()
       ENDFOREACH()
@@ -241,11 +248,6 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       PACKAGE_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
         ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS) 
 
-      #PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
-      #   TPLS  ALL_TPLS)
-      #PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-      # "${${PROJECT_NAME}_REVERSE_TPLS}"
-      # "${ALL_TPLS}"  TPL_  LINK_LIBS)
       PACKAGE_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
         ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
 
@@ -272,8 +274,8 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
       LABELS ${PACKAGE_NAME})
 
-    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
-    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
+    PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
+    PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
 
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})
 

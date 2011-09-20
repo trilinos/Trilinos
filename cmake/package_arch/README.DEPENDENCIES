@@ -1,28 +1,26 @@
-Last updated 2008/10/21
+Last updated 2010/09/20
 
-Here we describe how package dependencies are set up and managed in Trilinos
-with the CMake build system.
+Here we describe how package dependencies are set up and managed in this
+package-architecture CMake build system.
 
-
----------------------------------
+--------------------------------------------------------------------------------
 A) Top-level user cache variables
----------------------------------
+--------------------------------------------------------------------------------
 
-Let PACKAGE_NAME be a Trilinos package name such as Teuchos, Epetra, Thyra
-etc.
+Let ${PACKAGE_NAME} be a package of of the project ${PROJECT_NAME}.
 
-The following public cache variables are set by users to define what packages
-and tests/examples get enabled:
+The following public CMkae cache variables are set by users to define what
+packages and tests/examples get enabled:
 
-  Trilinos_ENABLE_${PACKAGE_NAME}:BOOL
+  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}:BOOL
   
     Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, the
-    package will be enabled if Trilinos_ENABLE_ALL_PACKAGES=ON.  If
-    Trilinos_ENABLE_${PACKAGE_NAME} is set to OFF by the user, then all packages
+    package will be enabled if ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON.  If
+    ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} is set to OFF by the user, then all packages
     that have a required dependence on this package and all optional intrapackage
     enables will be disabled. The enable status of a package can also be changed
-    in by Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON and
-    Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON.
+    in by ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON and
+    ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON.
   
   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:BOOL
   
@@ -32,64 +30,64 @@ and tests/examples get enabled:
   ${PACKAGE_NAME}_ENABLE_TESTS:BOOL
   
     Set by the user to 'ON', 'OFF', or left empty.  If left empty, the tests for
-    ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
-    and Trilinos_ENABLE_TESTS=ON.
+    ${PACKAGE_NAME} will be enabled if ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON
+    and ${PROJECT_NAME}_ENABLE_TESTS=ON.
   
   ${PACKAGE_NAME}_ENABLE_EXAMPLES:BOOL
   
     Set by the user to 'ON', 'OFF', or left empty.  If left empty, the examples for
-    ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
-    and Trilinos_ENABLE_EXAMPLES=ON.
+    ${PACKAGE_NAME} will be enabled if ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON
+    and ${PROJECT_NAME}_ENABLE_EXAMPLES=ON.
   
-  Trilinos_ENABLE_ALL_PACKAGES:BOOL
+  ${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL
   
     Enable all packages that are not explicitly disabled.
   
-  Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL
+  ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL
   
     If set to 'ON', then all packages that depend the set of packages enabled by
-    the cache varaibles Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.
+    the cache varaibles ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON will also be enabled.
     This option is used primarily to aid in testing the effects for changes in a
     given packages source code affecting the package's library(s).
   
-  Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL
+  ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL
   
     If set to 'ON', then all packages that are optionally used by the library or
     tests/examples of all of the packages enabled by the options
-    Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.  This option is
-    turned on automatically if Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON.
+    ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON will also be enabled.  This option is
+    turned on automatically if ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON.
     This is done because this is needed to fully test the effects of changing
-    the given set of packages. NOTE: If Trilinos_ENABLE_ALL_PACKAGES=ON then
+    the given set of packages. NOTE: If ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON then
     this option is meaningless because all packages will be enabled anyway.
   
-  Trilinos_ENABLE_TESTS:BOOL
+  ${PROJECT_NAME}_ENABLE_TESTS:BOOL
   
     Enables or disabled all tests in all enabled packages (after all of the
     above logic is applied) that are not explicitly enabled or disabled.  For
     example, if Teuchos_ENABLE_TESTS=ON, then it will stay that way independent
     of what value this variable takes.
   
-  Trilinos_ENABLE_EXAMPLES:BOOL
+  ${PROJECT_NAME}_ENABLE_EXAMPLES:BOOL
   
-    Same as for Trilinos_ENABLE_TESTS except enables and disable examples
-    in all packages.  If Trilinos_ENABLE_TESTS=ON, then this will also be
+    Same as for ${PROJECT_NAME}_ENABLE_TESTS except enables and disable examples
+    in all packages.  If ${PROJECT_NAME}_ENABLE_TESTS=ON, then this will also be
     set to 'ON'.
 
 The way that packages are enabled depending on the above user cache varaibles
 is now described.
 
 1) All packages that have required dependencies on packages that are
-explicitly turned off with Trilinos_ENABLE_${PACKAGE_NANE}=OFF are also set to
+explicitly turned off with ${PROJECT_NAME}_ENABLE_${PACKAGE_NANE}=OFF are also set to
 'OFF'.  In addition, all optional intrapackage dependencies
 ${FORWARD_PACKAGE_NANE}_ENBLE_${PACKAGE_NANE} are also set to 'OFF'.
 
 2) The set of package enables is then adjusted based if
-Tilinos_ENABLE_ALL_PACKAGES=ON.
+${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON.
 
 At this point, the set of packages is the set the user really wants to
 directly work with or has modified and wants to fully test for change.
 
-3) If Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON, then the current
+3) If ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON, then the current
 set of enabled packages is augmented with the list of all packages
 that depend (either required or optional) on these user enabled
 packages.  This set of packages represents all of the packages that
@@ -101,23 +99,23 @@ control repository.
 4) The set of package test/example enables in
 ${PACKAGE_NAME}_ENABLE_TESTS and ${PACKAGE_NAME}_ENABLE_EXAMPLES is
 then modified for the current set of enabled packages and also the
-values of Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES.  The
+values of ${PROJECT_NAME}_ENABLE_TESTS and ${PROJECT_NAME}_ENABLE_EXAMPLES.  The
 reason that test/examples enables/disables are defined at this point
 in the process is that this is the set of tests/examples that need to
 be turned on to throughly test the set of given packages.
 
-5) If Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON, then all of the
+5) If ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON, then all of the
 packages that can be used that are currently enabled packages will be
 turned on.  NOTE: The tests and examples for these packages will not
-be enabled by Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES but
+be enabled by ${PROJECT_NAME}_ENABLE_TESTS and ${PROJECT_NAME}_ENABLE_EXAMPLES but
 only if they are explicitly turned on by the user.  This is because
 these these additionally enabled packages don't need to be tested
 because they are not being changed.
 
 6) Finally, all of the required packages for the current set of
 enabled packages are also enabled.  NOTE: The tests and examples for
-these packages will *not* be enabled by Trilinos_ENABLE_TESTS and
-Trilinos_ENABLE_EXAMPLES but only if they are explicitly turned on by
+these packages will *not* be enabled by ${PROJECT_NAME}_ENABLE_TESTS and
+${PROJECT_NAME}_ENABLE_EXAMPLES but only if they are explicitly turned on by
 the user.
 
 
@@ -127,8 +125,10 @@ B) Top-level internal non-cache variables defining direct package dependencies
 
 The following top-level non-cache variables are defined by each package's
 Dependencies.cmake file and they are used to define the basic dependenices
-that exist between Trilinos packages to support the package enable and disable
-logic described above.
+that exist between ${PROJECT_NAME} packages to support the package enable and
+disable logic described above.  These variables taken together constitute a
+bidirectionally navigatable tree data-structure for package and TPL
+dependencies.
 
   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
   
@@ -159,7 +159,7 @@ logic described above.
     ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES.  These should not include
     indiect dependencies but it is harmless to list these also.
 
-Given the above variables, the following derived variable is then set:
+Given the above variables, the following derived variables are then set:
 
   ${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES
   
@@ -196,23 +196,54 @@ link against a given package's capabilities.
 
   ${PROJECT_NAME}_INCLUDE_DIRS
   
-    Contains the list of directory paths needed to find PACKAGE_NAME's
-    header files.
+    Defines a list of include paths needed to find all of the headers needed
+    to compile client code against this (sub)packages sources and it's upstream
+    packages and TPL sources.  This variable is used whenever building
+    dowstream code including downstream libraries or executables in the same
+    package, or libraries or executables in downstream packages.
   
   ${PROJECT_NAME}_LIBRARY_DIRS
   
-    Contains the list of directory paths needed to find PACKAGE_NAMES's build
-    libraries.
+    Defines as list of the link directories needed to find all of the
+    libraries for this packages and it's upstream packages and TPLs.  Adding
+    these library directories to the CMake link line is unnecssary and would
+    cause link-line too long errors on some systems.  Instead, this list of
+    library directories is used when creating the ${PACKAGE_NAME}Config.cmake
+    files.
   
   ${PROJECT_NAME}_LIBRARIES
   
-    Contains the list of unadorned libraries that are needed to link to.
+    Defines as list of *only* the libraries associated with the given (sub)package
+    and does *not* list libraries in upstream packages.  Linkages to upstream
+    packages is taken care of with calls to TARGET_LINK_LIBRARIES(...) and the
+    depenency management system in CMake takes care of adding these to various
+    link lines as needed (this is what CMake does well).  However, when a
+    package has no libraries of its own, this list of libraries will need to
+    contain the libraries to the direct dependent upstream packages in order
+    to allow the chain of dependencies to be handled correctly in downstream
+    packages and executables in the same package.
+ 
+  ${PARENT_PACKAGE_NAME}_LIB_TARGETS
+ 
+    Lists all of the library targets for this package only that are as part of
+    this package added by the PACKAGE_ADD_LIBRARY(...) function.  This is used
+    to define a target called ${PACKAGE_NAME}_libs that is then used in the
+    testing system.  If a package has not libraries, then the library targets
+    for all of the immediate direct dependent packages will be added.  This is
+    needed for the chain of dependencies to work correctly.
+ 
+  ${PARENT_PACKAGE_NAME}_ALL_TARGETS
+ 
+    Lists all of the targets associated with this package.  This includes all
+    libraries and tests added with PACKAGE_ADD_LIBRARY(...) and
+    PACKAGE_ADD_EXECUTABLE(...).  If this package has no targets (no
+    libraries or executables) this this will have the dependency only on
+    ${PARENT_PACKAGE_NAME}_libs.
 
-The following global internal cache variables are used to store extra
-information about a package's test/example dependenices.
 
-  ${PROJECT_NAME}_TEST_INCLUDE_DIRS
-  
-  ${PROJECT_NAME}_TEST_LIBRARY_DIRS
-  
-  ${PROJECT_NAME}_TEST_LIBRARIES
+--------------------------------------------------------------------------------
+D) Notes on dependency logic
+--------------------------------------------------------------------------------
+
+
+
