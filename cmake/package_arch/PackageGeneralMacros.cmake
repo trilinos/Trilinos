@@ -62,8 +62,8 @@ INCLUDE(AssertDefined)
 # items for a given class of package lists
 #
 
-FUNCTION(PACKAGE_GATHER_ENABLED_ITEMS PACKAGE_NAME LISTTYPE_PREFIX LISTTYPE_POSTFIX
-  GATHERED_ITEMS_LIST
+FUNCTION( PACKAGE_GATHER_ENABLED_ITEMS  PACKAGE_NAME  LISTTYPE_PREFIX 
+  LISTTYPE_POSTFIX  GATHERED_ITEMS_LIST_OUT
   )
 
   SET(GATHERED_ITEMS_LIST_TMP
@@ -79,15 +79,21 @@ FUNCTION(PACKAGE_GATHER_ENABLED_ITEMS PACKAGE_NAME LISTTYPE_PREFIX LISTTYPE_POST
     ENDIF()
   ENDFOREACH()
 
-  SET(${GATHERED_ITEMS_LIST} ${GATHERED_ITEMS_LIST_TMP} PARENT_SCOPE)
+  SET(${GATHERED_ITEMS_LIST_OUT} ${GATHERED_ITEMS_LIST_TMP} PARENT_SCOPE)
 
 ENDFUNCTION()
 
 
 #
-# Function that sorts a list of TPLs
-# into reverse order for link order
-# purposes
+# Function that sorts a list of items according to a master list
+#
+# NOTE: This function has wost-case N^2 complexity as the number of packages N
+# or TPLs increases.  It actually has N * n complexity where N is the total
+# number of packages/TPLs and n is the number of passed-in packages/TPLs.
+# However, since N is not likely to ever be more than a few hundred, this is
+# likely not going to be a big performance problem.  If this does become a
+# performance problem, LIST(SORT ...) could be used but would require some
+# work to build up the datastructures to make this very efficient.
 #
 
 FUNCTION(PACKAGE_SORT_LIST MASTER_LIST LIST_VAR)
@@ -116,14 +122,21 @@ ENDFUNCTION()
 
 
 #
-# Function that appends the TPL paths and libraries
+# Function that appends the Package/TPL include and library paths for given
+# list of enabled Packages/TPLs
+#
+# As a side effect of calling this function, INCLUDE_DIRECTORIES(...) to set
+# all of the include directories for a given set of enabled Packages/TPLs.
+#
+# Note, the Packages/TPLs should be sorted in decending dependency order
+# before calling this function.
 #
 
-FUNCTION(PACKAGE_APPEND_PATHS_LIBS PREFIX LIST EXTRA_DEP_LIBS_ARG)
+FUNCTION( PACKAGE_APPEND_INCLUDE_AND_LINK_DIRS  PREFIX  LIST  EXTRA_DEP_LIBS_INOUT)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE STREQUAL "MAX")
-    MESSAGE("\nPACKAGE_APPEND_PATHS_LIBS: ${PREFIX} ${LIST} ${EXTRA_DEP_LIBS_ARG}")
+    MESSAGE("\nPACKAGE_APPEND_INCLUDE_AND_LINK_DIRS: ${PREFIX} ${LIST} ${EXTRA_DEP_LIBS_INOUT}")
   ENDIF()
-  SET(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_ARG}})
+  SET(EXTRA_DEP_LIBS_INOUT_TMP ${${EXTRA_DEP_LIBS_INOUT}})
   FOREACH(ITEM ${LIST})
     ASSERT_DEFINED(${PREFIX}${ITEM}_LIBRARIES)
     ASSERT_DEFINED(${PREFIX}${ITEM}_INCLUDE_DIRS)
@@ -135,44 +148,91 @@ FUNCTION(PACKAGE_APPEND_PATHS_LIBS PREFIX LIST EXTRA_DEP_LIBS_ARG)
       # We want LINK_DIRECTORIES for TPLs but not packages.
       LINK_DIRECTORIES(${${PREFIX}${ITEM}_LIBRARY_DIRS})
     ENDIF()
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS ${${PREFIX}${ITEM}_LIBRARY_DIRS})
+    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
+      ${${PREFIX}${ITEM}_LIBRARY_DIRS})
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE STREQUAL "MAX")
       PRINT_VAR(${PREFIX}${ITEM}_LIBRARIES)
       PRINT_VAR(${PREFIX}${ITEM}_INCLUDE_DIRS)
       PRINT_VAR(${PREFIX}${ITEM}_LIBRARY_DIRS)
     ENDIF()
   ENDFOREACH()
-  SET(${EXTRA_DEP_LIBS_ARG} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
+  SET(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
 ENDFUNCTION()
 
 
 #
-# Function that sorts and appends all the items in a dependency list
-# for TPLs or packages
+# Function that sorts and appends all the items in a dependency list for
+# packages or TPLs.
 #
 
-FUNCTION(PACKAGE_SORT_AND_APPEND_PATHS_LIBS MASTER_SORT_LIST LIST PREFIX
-  EXTRA_DEP_LIBS_ARG
+FUNCTION( PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS
+  MASTER_SORT_LIST  LIST  PREFIX
+  EXTRA_DEP_LIBS_INOUT
   )
 
-  #MESSAGE("PACKAGE_SORT_AND_APPEND_PATHS_LIBS:")
+  #MESSAGE("PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS:")
   #PRINT_VAR(MASTER_SORT_LIST)
   #PRINT_VAR(LIST)
   #PRINT_VAR(PREFIX)
-  #PRINT_VAR(EXTRA_DEP_LIBS_ARG)
+  #PRINT_VAR(EXTRA_DEP_LIBS_INOUT)
 
   SET(LOCAL_LIST ${LIST})
   #PRINT_VAR(LOCAL_LIST)
 
   IF (LOCAL_LIST)
 
-    PACKAGE_SORT_LIST("${MASTER_SORT_LIST}" LOCAL_LIST)
+    PACKAGE_SORT_LIST("${MASTER_SORT_LIST}"  LOCAL_LIST)
     #PRINT_VAR(LOCAL_LIST)
 
-    SET(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_ARG}})
-    PACKAGE_APPEND_PATHS_LIBS("${PREFIX}" "${LOCAL_LIST}" EXTRA_DEP_LIBS_ARG_TMP)
-    SET(${EXTRA_DEP_LIBS_ARG} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
+    SET(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_INOUT}})
+    PACKAGE_APPEND_INCLUDE_AND_LINK_DIRS("${PREFIX}"
+      "${LOCAL_LIST}" EXTRA_DEP_LIBS_ARG_TMP)
+    SET(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
 
   ENDIF()
+
+ENDFUNCTION()
+
+
+#
+# Fully process the include and link directories and list of libraries for a
+# package's list of dependent packages for use in creating a library or an
+# executable
+#
+
+FUNCTION( PACKAGE_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS
+  PACKAGE_NAME  LIB_OR_TEST_ARG  EXTRA_DEP_LIBS_INOUT
+  )
+
+  PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
+    PACKAGES  ALL_DEP_PACKAGES)
+
+  SET(EXTRA_DEP_LIBS_TMP ${${EXTRA_DEP_LIBS_INOUT}})
+  PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+    "${${PROJECT_NAME}_REVERSE_SE_PACKAGES}"
+    "${ALL_DEP_PACKAGES}"  ""  EXTRA_DEP_LIBS_TMP)
+  SET(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_TMP} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Fully process the include and link directories and list of libraries for a
+# package's list of dependent TPLs for use in creating a library or an
+# executable
+#
+
+FUNCTION( PACKAGE_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS
+  PACKAGE_NAME  LIB_OR_TEST_ARG  EXTRA_DEP_LIBS_INOUT
+  )
+
+  PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
+    TPLS  ALL_TPLS)
+
+  SET(EXTRA_DEP_LIBS_TMP ${${EXTRA_DEP_LIBS_INOUT}})
+  PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+    "${${PROJECT_NAME}_REVERSE_TPLS}"
+    "${ALL_TPLS}"  TPL_  EXTRA_DEP_LIBS_TMP)
+  SET(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_TMP} PARENT_SCOPE)
 
 ENDFUNCTION()

@@ -218,27 +218,36 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
 
       IF (NOT PARSE_TESTONLY)
-        SET(TEST_OR_LIB_ARG LIB)
+        SET(LIB_OR_TEST_ARG LIB)
       ELSE()
-        SET(TEST_OR_LIB_ARG TEST)
+        SET(LIB_OR_TEST_ARG TEST)
       ENDIF()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         MESSAGE(STATUS "\nPulling in header and libraries dependencies"
-          " for ${TEST_OR_LIB_ARG} ...")
+          " for ${LIB_OR_TEST_ARG} ...")
       ENDIF()
 
-      # Add the dependent package libraries (if we have not done so yet for this package)
-      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${TEST_OR_LIB_ARG}
-        PACKAGES  ALL_DEP_PACKAGES)
-      PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_SE_PACKAGES}"
-        "${ALL_DEP_PACKAGES}"  ""  LINK_LIBS)
+      #
+      # Call INCLUDE_DIRECTORIES() and LINK_DIRECTORIES(...) for all upstream
+      # dependent Packages and TPLs and accumulate the libraries to link against.
+      #
+      # NOTE: Adding these directories serves two purposes.  First, so that the includes
+      # get added the the sources that get built for this library.  Second, so
+      # that list full list of include directories can be extracted as a
+      # propery and set on ${PACKAGE_NAME}_INCLUDE_DIRS
+      #
 
-      # Add the TPL libraries (if we have not done so yet for this package)
-      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}
-        ${TEST_OR_LIB_ARG}  TPLS  ALL_TPLS)
-      PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_TPLS}"
-       "${ALL_TPLS}"  TPL_  LINK_LIBS)
+      PACKAGE_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS) 
+
+      #PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
+      #   TPLS  ALL_TPLS)
+      #PACKAGE_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      # "${${PROJECT_NAME}_REVERSE_TPLS}"
+      # "${ALL_TPLS}"  TPL_  LINK_LIBS)
+      PACKAGE_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
 
     ENDIF()
 

@@ -70,7 +70,7 @@ INCLUDE(AddOptionAndDefine)
 # different SE packages together
 #
 #
-# ${PACAKGE_NAME}_INCLUDE_DIRS
+# ${PACKAGE_NAME}_INCLUDE_DIRS
 #
 #   Defines a list of include paths needed to find all of the headers needed
 #   to compile client code against this packages sources and it's upstream
