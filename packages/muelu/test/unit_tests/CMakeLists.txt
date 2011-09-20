@@ -43,6 +43,8 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Ifpack
   ${PACKAGE_NAME}_ENABLE_Ifpack2
+  ${PACKAGE_NAME}_ENABLE_Epetra
+  ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -68,38 +70,46 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS muelu muelu-xpetra
   )
 
-PACKAGE_ADD_TEST(
-  UnitTests
-  NAME "UnitTestsEpetra"
-  ARGS "--linAlgebra=0"
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  )
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
-PACKAGE_ADD_TEST(
-  UnitTests
-  NAME "UnitTestsTpetra"
-  ARGS "--linAlgebra=1"
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  )
+  PACKAGE_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsEpetra"
+    ARGS "--linAlgebra=0"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
 
-PACKAGE_ADD_TEST(
-  UnitTests
-  NAME "UnitTestsEpetra"
-  ARGS "--linAlgebra=0"
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  )
+  PACKAGE_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsEpetra"
+    ARGS "--linAlgebra=0"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
 
-PACKAGE_ADD_TEST(
-  UnitTests
-  NAME "UnitTestsTpetra"
-  ARGS "--linAlgebra=1"
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-  NUM_MPI_PROCS 4
-  COMM mpi
-  )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+
+  PACKAGE_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsTpetra"
+    ARGS "--linAlgebra=1"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_TEST(
+    UnitTests
+    NAME "UnitTestsTpetra"
+    ARGS "--linAlgebra=1"
+    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+ENDIF()
