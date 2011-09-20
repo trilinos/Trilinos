@@ -70,8 +70,8 @@ namespace MueLu {
 
         See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
-    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0) //TODO: empty paramList valid for Ifpack??
-      : type_(type), paramList_(paramList), overlap_(overlap)
+    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) //TODO: empty paramList valid for Ifpack??
+      : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     { }
 
     //! Destructor
@@ -151,7 +151,7 @@ namespace MueLu {
       Monitor m(*this, "Setup Smoother");
       if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
-      A_ = currentLevel.Get< RCP<Operator> >("A", NULL);
+      A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
       if (type_ == "Chebyshev") {
         Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
@@ -256,6 +256,7 @@ namespace MueLu {
              << "-" << endl
              << "RCP<A_>: " << A_ << std::endl
              << "RCP<prec_>: " << prec_ << std::endl;
+        //TODO: add AFact_
       }
     }
 
@@ -278,19 +279,22 @@ namespace MueLu {
     //! Operator. Not used directly, but held inside of prec_. So we have to keep an RCP pointer to it!
     RCP<Operator> A_;
 
+    //! A Factory
+    RCP<FactoryBase> AFact_;
+
   }; // class IfpackSmoother
 
   //! Non-member templated function GetIfpackSmoother() returns a new IfpackSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
   //! This function simplifies the usage of IfpackSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetIfpackSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LocalOrdinal const &overlap=0) { 
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetIfpackSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LocalOrdinal const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) { 
     TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "IfpackSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap) { 
-    return rcp( new IfpackSmoother(type, paramList) );
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap, RCP<FactoryBase> AFact) { 
+    return rcp( new IfpackSmoother(type, paramList, overlap, AFact) );
   }
 
 } // namespace MueLu

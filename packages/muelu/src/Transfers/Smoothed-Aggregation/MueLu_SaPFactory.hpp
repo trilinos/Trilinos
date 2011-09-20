@@ -214,8 +214,8 @@ namespace MueLu {
   private:
 
     //! Input factories
-    RCP<PFactory> initialPFact_; //! Ptentative Factory
-    RCP<SingleLevelFactoryBase> AFact_;     //! A Factory
+    RCP<PFactory> initialPFact_;        //! Ptentative Factory
+    RCP<SingleLevelFactoryBase> AFact_; //! A Factory
     
     //! Factory parameters
     Scalar dampingFactor_;

@@ -69,8 +69,8 @@ namespace MueLu {
 
     See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
     */
-    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0) //TODO: empty paramList valid for Ifpack??
-      : type_(type), paramList_(paramList), overlap_(overlap)
+    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) //TODO: empty paramList valid for Ifpack??
+      : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     { }
 
     //! Destructor
@@ -113,7 +113,7 @@ namespace MueLu {
       Monitor m(*this, "Setup Smoother");
       if (this->IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
-      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", NULL);
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
       if (type_ == "CHEBYSHEV") {
         Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
@@ -247,6 +247,9 @@ namespace MueLu {
 
     //! pointer to Ifpack2 preconditioner object
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
+
+    //! A Factory
+    RCP<FactoryBase> AFact_;
 
   }; // class Ifpack2Smoother
 
