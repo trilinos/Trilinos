@@ -329,8 +329,12 @@ private:
     
   // Current parameter list.
   Teuchos::RCP<Teuchos::ParameterList> params_;
-  // Default parameter list.  Cached per instance for more thread safety.
-  Teuchos::RCP<const Teuchos::ParameterList> validParams_;
+  /// \brief Default parameter list.  
+  ///
+  /// Cached per instance, rather than per class, for more thread
+  /// safety.  It's "mutable" because \c getValidParameters() has to
+  /// create it if it hasn't been created yet.
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   // Current solver input parameters
   MagnitudeType lambda_;
