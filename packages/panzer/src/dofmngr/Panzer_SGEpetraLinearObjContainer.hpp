@@ -25,6 +25,9 @@ public:
 
    virtual void initialize();
 
+   virtual std::size_t size() const
+   { return coeffs_.size(); }
+
    CoeffVector::iterator begin() { return coeffs_.begin(); }
    CoeffVector::iterator end() { return coeffs_.end(); }
 

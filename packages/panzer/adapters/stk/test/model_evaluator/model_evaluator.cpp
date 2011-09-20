@@ -37,6 +37,7 @@ using Teuchos::rcp;
    #include "Stokhos_CompletePolynomialBasis.hpp"
    #include "Stokhos_QuadOrthogPolyExpansion.hpp"
    #include "Stokhos_TensorProductQuadrature.hpp"
+   #include "Stokhos_SGModelEvaluator.hpp"
 #endif
 
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -53,7 +54,6 @@ namespace panzer {
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
-  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order);
 
   TEUCHOS_UNIT_TEST(model_evaluator, basic)
   {
@@ -261,6 +261,12 @@ namespace panzer {
   }
 
 #ifdef HAVE_STOKHOS
+  Teuchos::RCP<Stokhos::SGModelEvaluator> buildStochModel(const Teuchos::RCP<const Epetra_Comm> & Comm,
+                                                          const Teuchos::RCP<EpetraExt::ModelEvaluator> & model,
+                                                          Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion,
+                                                          bool fullExpansion);
+  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order,bool fullExpansion);
+
   TEUCHOS_UNIT_TEST(model_evaluator, sg)
   {
     using Teuchos::RCP;
@@ -281,7 +287,8 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
+    bool fullExpansion = true;
+    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(2,4,fullExpansion);
     RCP<panzer::FieldManagerBuilder<int,int> > fmb = rcp(new panzer::FieldManagerBuilder<int,int>);
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = rcp(new panzer::ResponseLibrary<panzer::Traits>);
 
@@ -362,11 +369,6 @@ namespace panzer {
     fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-    typedef double ScalarT;
-    typedef std::size_t LO;
-    typedef std::size_t GO;
-    typedef Kokkos::DefaultNode::DefaultNodeType NODE;
-    
     // Test a transient me, with basic values (no SG)
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
@@ -465,22 +467,69 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+      RCP<EpetraExt::ModelEvaluator> me = buildStochModel(Comm,pan_me,sgExpansion,fullExpansion);
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
       
-      RCP<Epetra_Map> x_map = me->get_x_map();
-      RCP<Epetra_Map> f_map = me->get_f_map();
+      RCP<const Epetra_Map> x_map = me->get_x_map();
+      RCP<const Epetra_Map> f_map = me->get_f_map();
+
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
       RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me->create_W());
+
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->Update(1.0, *(me->get_x_init()), 0.0);
+      in_args.set_x(x);
+
       TEST_ASSERT(!Teuchos::is_null(J));
+      out_args.set_f(f);
+      out_args.set_W(J);
 
       me->evalModel(in_args, out_args);
     }
 
   }
 
-  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order)
+  Teuchos::RCP<Stokhos::SGModelEvaluator> buildStochModel(const Teuchos::RCP<const Epetra_Comm> & Comm,
+                                                          const Teuchos::RCP<EpetraExt::ModelEvaluator> & model,
+                                                          Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion,
+                                                          bool fullExpansion)
+  {
+     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = expansion->getTripleProduct();
+     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = expansion->getBasis();
+  
+     // build Parallel data
+     Teuchos::ParameterList parallelParams; // empty!
+     Teuchos::RCP<Stokhos::ParallelData> sgParallelData 
+        = Teuchos::rcp(new Stokhos::ParallelData(basis,Cijk,Comm,parallelParams));
+  
+     // build parameter list
+     Teuchos::RCP<Teuchos::ParameterList> sgParams = Teuchos::rcp(new Teuchos::ParameterList);
+     if(!fullExpansion) {
+        sgParams->set("Parameter Expansion Type","Linear");
+        sgParams->set("Jacobian Expansion Type","Linear");
+     }
+     Teuchos::ParameterList & sgOpParams = sgParams->sublist("SG Operator");
+     sgOpParams.set("Operator Method","Fully Assembled");
+  
+     Teuchos::ParameterList & sgPrecParams = sgParams->sublist("SG Preconditioner");
+     sgPrecParams.set("Preconditioner Method","Mean-based");
+     sgPrecParams.set("Mean Preconditioner Type","ML");
+     Teuchos::ParameterList & precParams = sgPrecParams.sublist("Mean Preconditioner Parameters");
+     precParams.set("default values","SA");
+  
+     // build model evaluator
+     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model 
+        = Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
+                                                     expansion, sgParallelData, 
+                                                     sgParams));
+  
+     return sg_model;
+  }
+
+  Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order,bool fullExpansion)
   { 
      Teuchos::Array<Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(numDim);
      for(int i=0;i<numDim;i++)
@@ -489,8 +538,8 @@ namespace panzer {
     
      // build Cijk and "expansion"
      int kExpOrder = basis->size();
-     // if(!fullExpansion)
-     //    kExpOrder = numDim+1;
+     if(!fullExpansion)
+        kExpOrder = numDim+1;
      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
      Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     

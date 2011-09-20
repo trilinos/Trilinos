@@ -14,6 +14,11 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
+#ifdef HAVE_STOKHOS
+   #include "Stokhos_EpetraVectorOrthogPoly.hpp"
+   #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
+#endif
+
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
@@ -226,7 +231,7 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
 }
 
 void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs, 
-					       const OutArgs& outArgs ) const
+ 					             const OutArgs& outArgs ) const
 {
   using Teuchos::rcp_dynamic_cast;
   
@@ -412,6 +417,7 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
 
   TEUCHOS_ASSERT(!Teuchos::is_null(sg_lof_));
   
@@ -421,7 +427,7 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
   // Get the output arguments
   //
   const RCP<Stokhos::EpetraVectorOrthogPoly> f_out = outArgs.get_f_sg();
-  const RCP<Stokhos::EpetraOperatorOrthogPoly > W_out outArgs.get_W_sg();
+  const RCP<Stokhos::EpetraOperatorOrthogPoly > W_out = outArgs.get_W_sg();
   bool requiredResponses = required_sg_g(outArgs);
 
   // see if the user wants us to do anything
@@ -433,17 +439,17 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
 
   // if neccessary build a ghosted container
   if(Teuchos::is_null(sg_ghostedContainer_)) {
-     sg_ghostedContainer_ = rcp_dynamic_cast<EpetraLinearObjContainer>(sg_lof_->buildGhostedLinearObjContainer());
+     sg_ghostedContainer_ = rcp_dynamic_cast<SGEpetraLinearObjContainer>(sg_lof_->buildGhostedLinearObjContainer());
      sg_lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
                                          panzer::EpetraLinearObjContainer::DxDt |
                                          panzer::EpetraLinearObjContainer::F |
-                                         panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+                                         panzer::EpetraLinearObjContainer::Mat, *sg_ghostedContainer_); 
   }
 
   //
   // Get the input arguments
   //
-  const RCP<const Stokhos::EpetraVectorOrthogPoly> f_out = inArgs.get_x_sg();
+  const RCP<const Stokhos::EpetraVectorOrthogPoly> x_in = inArgs.get_x_sg();
   panzer::AssemblyEngineInArgs ae_inargs;
   ae_inargs.container_ = sg_lof_->buildLinearObjContainer(); // we use a new global container
   ae_inargs.ghostedContainer_ = sg_ghostedContainer_;        // we can reuse the ghosted container
@@ -455,7 +461,6 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
   const RCP<panzer::SGEpetraLinearObjContainer> sgGlobalContainer = 
     Teuchos::rcp_dynamic_cast<panzer::SGEpetraLinearObjContainer>(ae_inargs.container_);
 
-
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient thatn
   // zeroing out all objects in the container here.
@@ -464,8 +469,8 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
 
   TEUCHOS_ASSERT(!Teuchos::is_null(sgGlobalContainer));
   TEUCHOS_ASSERT(!Teuchos::is_null(sgGhostedContainer));
+
   
-/*
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.
   // A very subtle (and fragile) point: A non-null pointer in global
@@ -473,45 +478,65 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
   // introduction of the container is forcing us to cast away const on
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
-  epGlobalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x);
+  //
+  // copy sg data structure into linear object container data structure
+  {
+     std::cout << x_in->size() << " " << W_out->size() << std::endl;
+     std::cout << x_in->size() << " " << f_out->size() << std::endl;
+     TEUCHOS_ASSERT(x_in->size()==sgGlobalContainer->size()); 
+     TEUCHOS_ASSERT(x_in->size()==sgGhostedContainer->size()); 
+     if(!Teuchos::is_null(W_out)) { TEUCHOS_ASSERT(x_in->size()==W_out->size()); }
+     if(!Teuchos::is_null(f_out)) { TEUCHOS_ASSERT(x_in->size()==f_out->size()); }
+     
+     // loop over each coefficient, setting up in/out arguments for the lo containers
+     SGEpetraLinearObjContainer::iterator glbItr = sgGlobalContainer->begin();
+     SGEpetraLinearObjContainer::iterator ghsItr = sgGhostedContainer->begin();
+     for(std::size_t coeff_ind=0;coeff_ind<x_in->size();++coeff_ind,++glbItr,++ghsItr) {
+        RCP<EpetraLinearObjContainer> globalContainer = *glbItr;
+        RCP<EpetraLinearObjContainer> ghostedContainer = *ghsItr;
+
+        // this is what roger was warning us about!!!!
+        globalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x_in->getCoeffPtr(coeff_ind));
+
+        if(!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) { // requires residual and jacobian
+           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
+           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+ 
+           ghostedContainer->f->PutScalar(0.0);
+           ghostedContainer->A->PutScalar(0.0);
+        }
+        else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
+           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
+ 
+           // Zero values in ghosted container objects
+           ghostedContainer->f->PutScalar(0.0);
+        }
+        else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
+
+           // this dummy nonsense is needed only for scattering dirichlet conditions
+           if(Teuchos::is_null(dummy_f_))
+              dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
+           globalContainer->f = dummy_f_; 
+           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+
+           // Zero values in ghosted container objects
+           ghostedContainer->A->PutScalar(0.0);
+        }
+     }
+  }
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-
-    // Set the targets
-    epGlobalContainer->f = f_out;
-    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
-
-    // Zero values in ghosted container objects
-    epGhostedContainer->f->PutScalar(0.0);
-    epGhostedContainer->A->PutScalar(0.0);
-
-    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.getAsObject<panzer::Traits::SGJacobian>()->evaluate(ae_inargs);
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
 
-    epGlobalContainer->f = f_out;
+    ae_tm_.getAsObject<panzer::Traits::SGResidual>()->evaluate(ae_inargs);
 
-    // Zero values in ghosted container objects
-    epGhostedContainer->f->PutScalar(0.0);
-
-    ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
-
-    f_out->Update(1.0, *(epGlobalContainer->f), 0.0);
+    // f_out->Update(1.0, *(epGlobalContainer->f), 0.0); // WHAT????
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-
-    // this dummy nonsense is needed only for scattering dirichlet conditions
-    if (Teuchos::is_null(dummy_f_))
-      dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-    epGlobalContainer->f = dummy_f_; 
-    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
-
-    // Zero values in ghosted container objects
-    epGhostedContainer->A->PutScalar(0.0);
-
-    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.getAsObject<panzer::Traits::SGJacobian>()->evaluate(ae_inargs);
   }
-*/
 
   // evaluate responses...uses the stored assembly arguments and containers
   if(requiredResponses)
