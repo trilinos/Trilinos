@@ -66,9 +66,71 @@ INCLUDE(AddOptionAndDefine)
 
 
 #
-# Helpers for PACAKGE_XXX(...) functions
+# Macro that defines the package architecture system varaibles used to link
+# different SE packages together
+#
+#
+# ${PACAKGE_NAME}_INCLUDE_DIRS
+#
+#   Defines a list of include paths needed to find all of the headers needed
+#   to compile client code against this packages sources and it's upstream
+#   packages sources.  This variable is used whenever building dowstream code
+#   including downstream libraries or executables in the same package, or
+#   libraries or executables in downstream packages.
+#
+# ${PACKAGE_NAME}_LIBRARY_DIRS
+#
+#   Defines as list of the link directories needed to find all of the
+#   libraries for this packages and it's upstream packages.  Adding these
+#   library directories to the CMake link line is unnecssary and would cause
+#   link-line too long errors on some systems.  Instead, this list of library
+#   directories is used when creating the ${PACKAGE_NAME}Config.cmake files.
+#
+# ${PACKAGE_NAME}_LIBRARIES
+#
+#   Defines as list of *only* the libraries associated with the given package
+#   and does *not* list libraries in upstream packages.  Linkages to upstream
+#   packages is taken care of with calls to TARGET_LINK_LIBRARIES(...) and the
+#   depenency management system in CMake takes care of adding these to various
+#   link lines as needed (this is what CMake does well).  However, we a
+#   package has no libraries of its own, this list of libraries will need to
+#   contain the libraries to the direct dependent upstream packages in order
+#   to allow the chain of dependencies to be handled correctly in downstream
+#   packages.
+#
+# ${PACKAGE_NAME}_LIB_TARGETS
+#
+#   Lists all of the library targets for this package only that are as part of
+#   this package added by the PACKAGE_ADD_LIBRARY(...) function.  This is used
+#   to define a target called ${PACKAGE_NAME}_libs that is then used in the
+#   testing system.  If a package has not libraries, then the library targets
+#   for all of the immediate direct dependent packages will be added.  This is
+#   needed for the chain of dependencies to work correctly.
+#
+# ${PACKAGE_NAME}_ALL_TARGETS
+#
+#   Lists all of the targets associated with this package.  This includes all
+#   libraries and tests added with PACKAGE_ADD_LIBRARY(...) and
+#   PACKAGE_ADD_EXECUTABLE(...).  If this package has not targets (no
+#   libraries or executables) this this will have the dependency only on
+#   ${PACKAGE_NAME}_libs.
 #
 
+MACRO(PACKAGE_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
+
+  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
+  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
+  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARIES)
+
+  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIB_TARGETS)
+  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_ALL_TARGETS)
+
+ENDMACRO()
+
+
+#
+# Set up some common varaibles used in the creation of an SE package
+#
 
 MACRO(PACKAGE_SET_COMMON_VARS PACKAGE_NAME_IN)
 
@@ -81,22 +143,6 @@ MACRO(PACKAGE_SET_COMMON_VARS PACKAGE_NAME_IN)
   # Get the name of the directory this ${PROJECT_NAME} package is in
   FILE(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR} STANDARD_PACKAGE_SOURCE_DIR)
   STRING(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
-
-ENDMACRO()
-
-
-MACRO(PACKAGE_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
-
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARIES)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_TEST_INCLUDE_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_TEST_LIBRARY_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_TEST_LIBRARIES)
-
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIB_TARGETS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_ALL_TARGETS)
-
 
 ENDMACRO()
 
@@ -361,6 +407,7 @@ ENDMACRO()
 #
 # Macro that processes subpackages for packages that have them
 #
+
 MACRO(PACKAGE_PROCESS_SUBPACKAGES)
 
   #MESSAGE("PACKAGE_PROCESS_SUBPACKAGES: ${PARENT_PACKAGE_NAME}")
