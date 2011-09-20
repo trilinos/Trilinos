@@ -5808,14 +5808,14 @@ namespace Ioex {
       exo_params.num_sset = m_variables[EX_SIDE_SET].size();
       exo_params.num_elset= m_variables[EX_ELEM_SET].size();
     
-      exo_params.edge_var_tab  = &m_truthTable[EX_EDGE_BLOCK][0];
-      exo_params.face_var_tab  = &m_truthTable[EX_FACE_BLOCK][0];
-      exo_params.elem_var_tab  = &m_truthTable[EX_ELEM_BLOCK][0];
-      exo_params.nset_var_tab  = &m_truthTable[EX_NODE_SET][0];
-      exo_params.eset_var_tab  = &m_truthTable[EX_EDGE_SET][0];
-      exo_params.fset_var_tab  = &m_truthTable[EX_FACE_SET][0];
-      exo_params.sset_var_tab  = &m_truthTable[EX_SIDE_SET][0];
-      exo_params.elset_var_tab = &m_truthTable[EX_ELEM_SET][0];
+      exo_params.edge_var_tab  = TOPTR(m_truthTable[EX_EDGE_BLOCK]);
+      exo_params.face_var_tab  = TOPTR(m_truthTable[EX_FACE_BLOCK]);
+      exo_params.elem_var_tab  = TOPTR(m_truthTable[EX_ELEM_BLOCK]);
+      exo_params.nset_var_tab  = TOPTR(m_truthTable[EX_NODE_SET]);
+      exo_params.eset_var_tab  = TOPTR(m_truthTable[EX_EDGE_SET]);
+      exo_params.fset_var_tab  = TOPTR(m_truthTable[EX_FACE_SET]);
+      exo_params.sset_var_tab  = TOPTR(m_truthTable[EX_SIDE_SET]);
+      exo_params.elset_var_tab = TOPTR(m_truthTable[EX_ELEM_SET]);
     
       if (isParallel) {
 	// Check consistency among all processors.  They should all
