@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <iostream>
+#include <complex>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -231,11 +232,12 @@ namespace {
     return celltopo;
   }
 
-  const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
-						 stk::mesh::EntityRank type,
-						 stk::mesh::Part &part,
-						 const Ioss::Field &io_field,
-						 bool use_cartesian_for_scalar)
+  template <typename T>
+  const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &meta,
+							  stk::mesh::EntityRank type,
+							  stk::mesh::Part &part,
+							  const Ioss::Field &io_field,
+							  bool use_cartesian_for_scalar, T /*dummy*/)
   {
     stk::mesh::FieldBase *field_ptr = NULL;
     std::string field_type = io_field.transformed_storage()->name();
@@ -295,6 +297,28 @@ namespace {
     return field_ptr;
   }
 
+  const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
+						 stk::mesh::EntityRank type,
+						 stk::mesh::Part &part,
+						 const Ioss::Field &io_field,
+						 bool use_cartesian_for_scalar)
+  {
+    const stk::mesh::FieldBase *field_ptr = NULL;
+    if (io_field.get_type() == Ioss::Field::INTEGER) {
+      field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (int)1);
+    } else if (io_field.get_type() == Ioss::Field::REAL) {
+      field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (double)1.0);
+    } else if (io_field.get_type() == Ioss::Field::COMPLEX) {
+      field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, std::complex<double>(0.0,0.0));
+    } else {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Unrecognized field type for IO field '"
+	     << io_field.get_name() << "'.";
+      throw std::runtime_error(errmsg.str());
+    }
+    return field_ptr;
+  }
+    
   template <typename T>
   void internal_field_data_from_ioss(const Ioss::Field &io_field,
 				     const stk::mesh::FieldBase *field,
@@ -860,16 +884,16 @@ namespace stk {
       entity->field_describe(role, &names);
 
       for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	/// \todo IMPLEMENT Need a field selection mechanism and a field naming
-	/// (ioss_name -> stk::name)  For now, select all and give the
-	/// stk field the same name as the ioss field.
+	// \todo IMPLEMENT Need a field selection mechanism and a field naming
+	// (ioss_name -> stk::name)  For now, select all and give the
+	// stk field the same name as the ioss field.
 
-	/// Skip the attribute field that is named "attribute"
+	// Skip the attribute field that is named "attribute"
 	if (*I == "attribute" && names.size() > 1)
 	  continue;
 
-	/// \todo IMPLEMENT Need to determine whether these are
-	/// multi-state fields or constant, or interpolated, or ...
+	// \todo IMPLEMENT Need to determine whether these are
+	// multi-state fields or constant, or interpolated, or ...
 	Ioss::Field io_field = entity->get_field(*I);
 	declare_ioss_field(meta, part_type, part, io_field, use_cartesian_for_scalar);
       }
@@ -900,11 +924,17 @@ namespace stk {
       /// Ioss field and stk::mesh::Field; better error messages...
 
       if (field != NULL && io_entity->field_exists(io_fld_name)) {
-	Ioss::Field io_field = io_entity->get_field(io_fld_name);
+	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
 	if (field->type_is<double>()) {
 	  internal_field_data_from_ioss(io_field, field, entities, io_entity,
 					static_cast<double>(1.0));
 	} else if (field->type_is<int>()) {
+	  // Make sure the IO field type matches the STK field type.
+	  // By default, all IO fields are created of type 'double'
+	  if (io_field.get_type() != Ioss::Field::INTEGER) {
+	    Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
+	    tmp.reset_type(Ioss::Field::INTEGER);
+	  }
 	  internal_field_data_from_ioss(io_field, field, entities, io_entity,
 					static_cast<int>(1));
 	}
@@ -921,12 +951,16 @@ namespace stk {
       /// Ioss field and stk::mesh::Field; better error messages...
 
       if (field != NULL && io_entity->field_exists(io_fld_name)) {
-	Ioss::Field io_field = io_entity->get_field(io_fld_name);
+	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
 	if (io_field.get_role() == filter_role) {
 	  if (field->type_is<double>()) {
 	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
 					static_cast<double>(1.0));
 	  } else if (field->type_is<int>()) {
+	    if (io_field.get_type() != Ioss::Field::INTEGER) {
+	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
+	      tmp.reset_type(Ioss::Field::INTEGER);
+	    }
 	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
 					static_cast<int>(1));
 	  }
