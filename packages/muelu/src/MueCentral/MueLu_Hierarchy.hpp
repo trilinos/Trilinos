@@ -6,6 +6,7 @@
 #include "MueLu_DefaultFactoryHandler.hpp"
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
 
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_GenericPRFactory.hpp"
@@ -43,14 +44,9 @@ namespace MueLu {
 
     //! vector of Level objects
     std::vector<RCP<Level> > Levels_;
-    //! print residual history during iteration
-    bool printResidualHistory_;
     bool implicitTranspose_;
 
     RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -58,10 +54,10 @@ namespace MueLu {
     //@{
 
     //! Default constructor.
-    Hierarchy() : printResidualHistory_(false), implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())), out_(this->getOStream()) {}
+    Hierarchy() : implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) {}
 
     //! constructor with special default factory handler
-    Hierarchy(RCP<DefaultFactoryHandlerBase> defHandler) : printResidualHistory_(false), implicitTranspose_(false), defaultFactoryHandler_(defHandler), out_(this->getOStream()) {
+    Hierarchy(RCP<DefaultFactoryHandlerBase> defHandler) : implicitTranspose_(false), defaultFactoryHandler_(defHandler) {
     	if(defHandler == Teuchos::null)
     		defaultFactoryHandler_ = rcp(new DefaultFactoryHandler());
     }
@@ -113,16 +109,6 @@ namespace MueLu {
     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
     bool GetImplicitTranspose() {
       return implicitTranspose_;
-    }
-
-    //! Indicate whether to print residual history to a FancyOStream.
-    void PrintResidualHistory(bool value) {
-      printResidualHistory_ = value;
-    }
-
-    //! If this returns true, the residual history will print to a FancyOStream.
-    bool PrintResidualHistory() {
-      return printResidualHistory_;
     }
 
     //TODO: allow users to change default factory handler.
@@ -219,9 +205,11 @@ namespace MueLu {
                                          TwoLevelFactoryBase const &AcFact,
                                          int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
+      Monitor h(*this, "FillHierarchy");
+      
       // 1) check for fine level input
       // check for fine level matrix A
-  	  TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+      TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A",MueLu::NoFactory::get()), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A",MueLu::NoFactory::get());
       Levels_[startLevel]->Delete("A",MueLu::NoFactory::get());
 
@@ -270,8 +258,8 @@ namespace MueLu {
           Level & fineLevel = *Levels_[i];
 
           if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
-            RCP<Level> coarseLevel = fineLevel.Build(*out_); // new coarse level, using copy constructor
-            this->SetLevel(coarseLevel);                     // add to hierarchy
+            RCP<Level> coarseLevel = fineLevel.Build(); // new coarse level, using copy constructor
+            this->SetLevel(coarseLevel);                // add to hierarchy
           }
 
           Level & coarseLevel = *Levels_[i+1];
@@ -282,9 +270,9 @@ namespace MueLu {
           TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
 
           // 3.2) declare input for levels (recursively)
-          *out_ << "declareInput for P's, R's and RAP" << std::endl;
+          GetOStream(Debug, 0) << "declareInput for P's, R's and RAP" << std::endl;
           PRFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
-          AcFact.DeclareInput(fineLevel, coarseLevel); // TAW: corresponds to SetNeeds
+          AcFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
 
           ++i;
         } //while
@@ -294,17 +282,18 @@ namespace MueLu {
       i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
         {
+          SubMonitor m(*this, "Level " + Teuchos::toString(i));
+
           Level & fineLevel = *Levels_[i];
           Level & coarseLevel = *Levels_[i+1];
 
-          *out_ << "starting build of P's and R's"  << std::endl;
           goodBuild = PRFact.Build(fineLevel, coarseLevel);
+
           if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
           if (!goodBuild) {
             Levels_.resize(i+1); //keep only entries 0..i
             break;
           }
-          *out_ << "starting build of RAP"  << std::endl;
 
           if ( !AcFact.Build(fineLevel, coarseLevel) ) {
             Levels_.resize(i+1); //keep only entries 0..i
@@ -368,6 +357,8 @@ namespace MueLu {
     */
     void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
     {
+      Monitor h(*this, "SetSmoothers");
+
       if (numDesiredLevels == -1)
         numDesiredLevels = GetNumberOfLevels()-startLevel-1;
       LO lastLevel = startLevel + numDesiredLevels - 1;
@@ -381,42 +372,17 @@ namespace MueLu {
 
       if (lastLevel >= GetNumberOfLevels() - 1) {
         lastLevel = GetNumberOfLevels() - 2;
-        MueLu_cout(Teuchos::VERB_HIGH)
-          << "Warning: Coarsest Level will have a direct solve!" << std::endl;
+        GetOStream(Warnings0, 0) << "Warning: coarsest level will have a direct solve!" << std::endl;
       }
 
       for (int i=startLevel; i<=lastLevel; i++) {
-       smooFact.Build(*Levels_[i]);
+        SubMonitor m(*this, "Level " + Teuchos::toString(i));
+        smooFact.Build(*Levels_[i]);
       }
 
     } //SetSmoothers()
 
-    // JG to JHU: Do we need this ??
-    //      /*! @brief Construct smoothers on all levels but the coarsest.
-    //        Defaults to using IfpackSmoother factory that generates Gauss-Seidel smoothers.
-    //      */
-    //      void SetSmoothers()
-    //      {
-    // #ifdef HAVE_MUELU_IFPACK
-    //        Teuchos::ParameterList  ifpackList;
-    // //FIXME #ifdef we're using tpetra
-    // //FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
-    // //FIXME #else we're using epetra
-    //        ifpackList.set("relaxation: type", "Gauss-Seidel");
-    //        ifpackList.set("relaxation: sweeps", (int) 1);
-    //        ifpackList.set("relaxation: damping factor", (double) 1.0);
-    //        ifpackList.set("relaxation: zero starting solution", false);
-    //        RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-    //        SmootherFactory smooFact(smoother);
-    // //FIXME #endif
-    //        SetSmoothers(smooFact);
-    // #endif
-    //      }
-
-    //         typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
-    //FIXME delete this macro
-#define GimmeNorm(someVec,someLabel) {(someVec).norm2(norms);   \
-      *out_ << someLabel << " = " << norms<< std::endl;}
+    // #define GimmeNorm(someVec,someLabel) { (someVec).norm2(norms); GetOStream(Statistics1, 0) << someLabel << " = " << norms << std::endl; }
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -434,22 +400,21 @@ namespace MueLu {
                  bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
     {
       //Teuchos::Array<Magnitude> norms(1);
-      //Teuchos::OSTab tab(*out_);
       bool zeroGuess=InitialGuessIsZero;
 
       for (LO i=0; i<nIts; i++) {
 
         RCP<Level> Fine = Levels_[startLevel];
 
-        if (printResidualHistory_ && startLevel==0) {
-          *out_ << "iter:    "
-                << std::setiosflags(std::ios::left)
-                << std::setprecision(3) << i;
-          *out_ << "           residual = "
-                << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A",NULL)),X,B)
-                << std::endl;
+        if (startLevel == 0 && IsPrint(Statistics1)) {
+          GetOStream(Statistics1, 0) << "iter:    "
+                                     << std::setiosflags(std::ios::left)
+                                     << std::setprecision(3) << i
+                                     << "           residual = "
+                                     << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A", NULL)),X,B)
+                                     << std::endl;
         }
-
+        
         //X.norm2(norms);
         if (Fine->Get< RCP<Operator> >("A",NULL)->getDomainMap()->isCompatible(*(X.getMap())) == false) {
           std::ostringstream buf;
@@ -457,6 +422,7 @@ namespace MueLu {
           std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
           throw(Exceptions::Incompatible(msg));
         }
+
         if (Fine->Get< RCP<Operator> >("A",NULL)->getRangeMap()->isCompatible(*(B.getMap())) == false) {
           std::ostringstream buf;
           buf << startLevel;
@@ -479,7 +445,7 @@ namespace MueLu {
               emptySolve=false;
             }
             if (emptySolve==true)
-              *out_ << "WARNING:  no coarse grid solve!!" << std::endl;
+              GetOStream(Warnings0, 0) << "WARNING:  no coarse grid solver" << std::endl;
           } else {
           //on an intermediate level
           RCP<Level> Coarse = Levels_[startLevel+1];
@@ -531,6 +497,7 @@ namespace MueLu {
     
   }; //class Hierarchy
 
+  //TODO
   template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
     os << "Printing Hierarchy object" << std::endl;

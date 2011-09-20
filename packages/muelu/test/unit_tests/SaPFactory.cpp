@@ -152,7 +152,6 @@ namespace MueLuTests {
             {
               X->putScalar( (SC) 0.0);
 
-              H->PrintResidualHistory(false);
               H->Iterate(*RHS,its,*X);
 
               X->norm2(norms);

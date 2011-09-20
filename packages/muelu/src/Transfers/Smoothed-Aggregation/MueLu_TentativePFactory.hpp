@@ -1,22 +1,19 @@
 #ifndef MUELU_TENTATIVEPFACTORY_HPP
 #define MUELU_TENTATIVEPFACTORY_HPP
 
-#include <iostream>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_LAPACK.hpp>
 
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
-
-#include "Xpetra_Map.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_ImportFactory.hpp"
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp" // TODO: inheritence of TentativePFactory
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -97,6 +94,8 @@ namespace MueLu {
       RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
       RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
       RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+
+      Monitor m(*this, "Tentative prolongator");
 
       // Build
       std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
@@ -491,12 +490,6 @@ namespace MueLu {
 
     } //MakeTentative()
 
-    static void BuildAggregates() {
-      throw(Exceptions::NotImplemented("TentativePFactory: BuildAggregates not implemented"));
-    }
-    static void MakeNoQRTentative() {
-      throw(Exceptions::NotImplemented("TentativePFactory: MakeNoQRTentative not implemented"));
-    }
     //@}
 
   private:
@@ -513,3 +506,5 @@ namespace MueLu {
 #define MUELU_TENTATIVEPFACTORY_SHORT
 
 #endif //ifndef MUELU_TENTATIVEPFACTORY_HPP
+
+//TODO: noQR_

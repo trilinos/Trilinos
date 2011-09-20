@@ -6,6 +6,7 @@
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_Utils.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -41,6 +42,14 @@
 #include "Tpetra_RowMatrixTransposer_decl.hpp"
 #include "Tpetra_RowMatrixTransposer_def.hpp"
 #endif
+
+// MPI helper
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+#define minAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
+#define maxAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 namespace MueLu {
 

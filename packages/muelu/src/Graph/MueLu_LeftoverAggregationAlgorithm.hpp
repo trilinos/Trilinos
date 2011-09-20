@@ -2,16 +2,14 @@
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_HPP
 
 #include <assert.h>
-#include <stdio.h>
 #include <math.h>
 #include <vector>
-
-#include <iostream>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_Monitor.hpp"
 
 #include "MueLu_UCAggregationCommHelper.hpp"
 
@@ -31,13 +29,9 @@ namespace MueLu {
 
     //! Constructor.
     LeftoverAggregationAlgorithm():
-      out_(this->getOStream()),
       phase3AggCreation_(.5),
-      minNodesPerAggregate_(1),
-      graphName_("UC_CleanUp")
-    {
-      
-    }
+      minNodesPerAggregate_(1)
+    { }
 
     //! Destructor.
     virtual ~LeftoverAggregationAlgorithm() {}
@@ -55,13 +49,6 @@ namespace MueLu {
 
     // TODO: Set/GetGraphName
     //@}
-
-
-
-
-
-
-
 
     //! @name Aggregation methods.
     //@{
@@ -249,6 +236,8 @@ namespace MueLu {
     */
     void AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const
     {
+      Monitor m(*this, "Leftovers");
+
       my_size_t nVertices = graph.GetNodeNumVertices();
       int exp_nRows    = aggregates.GetMap()->getNodeNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();
       int myPid        = graph.GetComm()->getRank();
@@ -382,23 +371,18 @@ namespace MueLu {
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
       distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
-      int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+      if (IsPrint(Statistics1)) {
         GO Nphase1_agg = nAggregates;
         GO total_aggs;
 
         sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
-        if (myPid == 0) {
-          *out_ << "Aggregation(" << graphName_ << ") : Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
-          *out_ << "Aggregation(" << graphName_ << ") : Phase 1 - total aggregates = " << total_aggs << std::endl;
-        }
-        GO i = nAggregates - Nphase1_agg;
+        GetOStream(Statistics1, 0) << "Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
+        GetOStream(Statistics1, 0) << "Phase 1 - total aggregates = " << total_aggs << std::endl;
 
+        GO i = nAggregates - Nphase1_agg;
         { GO ii; sumAll(graph.GetComm(),i,ii); i = ii; }
-        if ( myPid == 0 ) {
-          *out_ << "Aggregation(" << graphName_ << ") : Phase 3 - additional aggregates = " << i << std::endl;
-        }
+        GetOStream(Statistics1, 0) << "Phase 3 - additional aggregates = " << i << std::endl;
       }
 
       // Determine vertices that are not shared by setting Temp to all ones
@@ -801,15 +785,12 @@ namespace MueLu {
 
       myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
-      vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+      if (IsPrint(Statistics1)) {
         GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);    
         GO total_Nleftover=0; sumAll(graph.GetComm(), (GO)Nleftover,   total_Nleftover);
-        GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
-        if ( myPid == 0 ) {
-          *out_ << "Aggregation(" << graphName_ << ") : Phase 3 - total aggregates = " << total_aggs << std::endl;
-          *out_ << "Aggregation(" << graphName_ << ") : Phase 6 - leftovers = " <<  total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
-        }
+        // GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
+        // GetOStream(Statistics1, 0) << "Phase 6 - total aggregates = " << total_aggs << std::endl;
+        GetOStream(Statistics1, 0) << "Phase 6 - leftovers = " << total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
       }
 
       aggregates.SetNumAggregates(nAggregates);
@@ -905,15 +886,11 @@ namespace MueLu {
       return 0; //TODO
     } //RemoveSmallAggs
   
-      //@}
-  
-  protected:
-    RCP<Teuchos::FancyOStream> out_; //< output stream
+    //@}
 
   private:
     double phase3AggCreation_;
-    int minNodesPerAggregate_;
-    std::string graphName_;
+    int    minNodesPerAggregate_;
 
     // JG TODO: rename variables:
     //  Adjacent-> adjacent
@@ -929,3 +906,5 @@ namespace MueLu {
 
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 #endif //ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_HPP
+
+//      graphName_("UC_CleanUp")

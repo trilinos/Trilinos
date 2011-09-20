@@ -23,10 +23,10 @@ namespace MueLu {
     //! Constructor.
     FactoryBase()
     : id_(MueLu::generateUniqueFactoryId())
-    { /*std::cout << "Factory id: " << id_ << std::endl;*/ }
+    { }
 
     //! Destructor.
-    virtual ~FactoryBase() { /*std::cout << "Deconstructor factory id: " << id_ << std::endl;*/}
+    virtual ~FactoryBase() { }
     //@}
 
     //@{

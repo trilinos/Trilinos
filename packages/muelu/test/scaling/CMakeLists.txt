@@ -6,11 +6,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ScalingTest
     SOURCES ScalingTest.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu muelu-xpetra muelu-adapters
   )

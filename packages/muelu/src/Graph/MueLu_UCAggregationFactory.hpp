@@ -1,6 +1,8 @@
 #ifndef MUELU_UCAGGREGATIONFACTORY_HPP
 #define MUELU_UCAGGREGATIONFACTORY_HPP
 
+#include <Teuchos_Utils.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -92,11 +94,12 @@ namespace MueLu {
     /*! @brief Build aggregates. */
     bool Build(Level &currentLevel) const
     {
+      Monitor m(*this, "Aggregation");
+
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
       //FIXME there ever be more than one graph?
-      std::ostringstream buf; buf << currentLevel.GetLevelID();
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_"+buf.str()));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_" + Teuchos::toString(currentLevel.GetLevelID())));
       timer->start(true);
 
       // Level Get
@@ -104,7 +107,9 @@ namespace MueLu {
       currentLevel.Release("Graph", graphFact_.get()); // release graph
 
       // Build
-      RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 
+      RCP<Aggregates> aggregates = rcp(new Aggregates(*graph)); 
+      aggregates->setObjectLabel("UC");
+
       algo1_.CoarsenUncoupled(*graph, *aggregates);
       algo2_.AggregateLeftovers(*graph, *aggregates);
 
@@ -115,8 +120,14 @@ namespace MueLu {
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
 
+      if (IsPrint(Statistics0)) {
+        aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
+      }
+
       return true; // ??
     }
+
+    //@}
 
   private:
 

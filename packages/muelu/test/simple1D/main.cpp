@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     Utils::PauseForDebugger();
   }
 
+  if (comm->getRank() == 0)
+    std::cout << "================================================================================" << std::endl;
+
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
@@ -107,6 +110,9 @@ int main(int argc, char *argv[]) {
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
+
+  if (comm->getRank() == 0)
+    std::cout << "================================================================================" << std::endl;
 
   RCP<Hierarchy> H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -179,7 +185,6 @@ int main(int argc, char *argv[]) {
   {
     X->putScalar( (SC) 0.0);
 
-    H->PrintResidualHistory(true);
     H->Iterate(*RHS,its,*X);
 
     X->norm2(norms);

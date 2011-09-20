@@ -15,7 +15,7 @@
 
 #include "MueLu_LinkedList.hpp"
 
-#include "MueLu_Memory.hpp"
+#include "MueLu_Monitor.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -86,21 +86,18 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null):
-      out_(this->getOStream()),
-      ordering_(NATURAL), 
-      minNodesPerAggregate_(1), 
-      maxNeighAlreadySelected_(0)
-    {
-
-    }
+    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null)
+      : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
+    { }
 
     //! Destructor.
     virtual ~LocalAggregationAlgorithm() {}
+
     //@}
 
     //! @name Set/get methods.
     //@{
+
     void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
     void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
@@ -108,6 +105,7 @@ namespace MueLu {
     Ordering GetOrdering()                const { return ordering_;                }
     int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
     int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
+
     //@}
 
     //! @name Aggregation methods.
@@ -116,8 +114,9 @@ namespace MueLu {
     /*! @brief Local aggregation. */
     void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const
     {
+      Monitor m(*this, "Coarsen Uncoupled");
+
       /* Create Aggregation object */
-      const std::string name = "Uncoupled";
       my_size_t nAggregates = 0;
 
       /* ============================================================= */
@@ -210,8 +209,7 @@ namespace MueLu {
                 try {
                   supernode->list = Teuchos::arcp<int>(length+1);
                 } catch (std::bad_alloc&) {
-                  *out_ << "Error: couldn't allocate memory for supernode! " << length << std::endl;
-                  exit(1); //TODO: exception instead
+                  TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::LocalAggregationAlgorithm::CoarsenUncoupled(): Error: couldn't allocate memory for supernode! length=" + Teuchos::toString(length));
                 }
 
                 supernode->maxLength = length;
@@ -321,49 +319,44 @@ namespace MueLu {
       aggregates.SetNumAggregates(nAggregates);
 
       /* Verbose */
-      // TODO: replace AllReduce by Reduce to proc 0
-      int vl = (getVerbLevel() == VERB_DEFAULT) ? VERB_MEDIUM : getVerbLevel();
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME)
       {
         const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
 
-        *out_ << "Aggregation:" << std::endl;
-
-        {
+        if (IsPrint(Warnings0)) {
           GO localReady=0, globalReady;
-            
+          
           // Compute 'localReady'
           for ( my_size_t i = 0; i < nRows; ++i ) 
-            if ( aggStat[i] == READY ) localReady++;
+            if (aggStat[i] == READY) localReady++;
             
           // Compute 'globalReady'
           sumAll(comm, localReady, globalReady);
             
           if(globalReady > 0)
-        	*out_ << "Aggregation(UC) : Phase 1 (WARNING) - " << globalReady << " READY nodes left" << std::endl;
+            GetOStream(Warnings0, 0) << "Warning: " << globalReady << " READY nodes left" << std::endl;
         }
 
-        {
+        if (IsPrint(Statistics1)) {
           // Compute 'localSelected'
           LO localSelected=0;
           for ( my_size_t i = 0; i < nRows; ++i ) 
             if ( aggStat[i] == SELECTED ) localSelected++;
-            
+          
           // Compute 'globalSelected'
           GO globalSelected; sumAll(comm, (GO)localSelected, globalSelected);
-
+          
           // Compute 'globalNRows'
           GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
-            
-          *out_ << "Aggregation(UC) : Phase 1 - nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
+          
+          GetOStream(Statistics1, 0) << "Nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
         }
           
-        {
+        if (IsPrint(Statistics1)) {
           GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
-          *out_ << "Aggregation(UC) : Phase 1 - total aggregates = " << nAggregatesGlobal << std::endl;
+          GetOStream(Statistics1, 0) << "Total aggregates = " << nAggregatesGlobal << std::endl;
         }
 
-      } // if myPid == 0 ...
+      } // verbose
         
       /* ------------------------------------------------------------- */
       /* clean up                                                      */
@@ -377,10 +370,7 @@ namespace MueLu {
           delete supernode;
         }
 
-    } //CoarsenUncoupled
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_; //< output stream
+    } // CoarsenUncoupled
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)

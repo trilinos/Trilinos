@@ -31,22 +31,6 @@ namespace MueLuTests {
     TEST_EQUALITY(PRFact != Teuchos::null, true);
   } //Constructor_TwoArgs
 
-  TEUCHOS_UNIT_TEST(GenericPRFactory, GetSetMethods)
-  {
-
-    out << "version: " << MueLu::Version() << std::endl;
-
-    GenericPRFactory genericPR = GenericPRFactory();
-    genericPR.ReUseAggregates(true);
-    TEST_EQUALITY( genericPR.ReUseAggregates(), true);
-    genericPR.ReUseAggregates(false);
-    TEST_EQUALITY( genericPR.ReUseAggregates(), false);
-    genericPR.ReUseGraph(true);
-    TEST_EQUALITY( genericPR.ReUseGraph(), true);
-    genericPR.ReUseGraph(false);
-    TEST_EQUALITY( genericPR.ReUseGraph(), false);
-  } //GetSetMethods
-
   TEUCHOS_UNIT_TEST(GenericPRFactory, TooCoarse_DoNotBuild)
   {
     bool r;

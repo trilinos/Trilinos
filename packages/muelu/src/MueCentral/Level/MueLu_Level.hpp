@@ -65,9 +65,9 @@ public:
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    RCP<Level> Build(std::ostream &os) { //TODO: why ostream in argument?
+    RCP<Level> Build() {
       // todo copy keep status of variables.
-      RCP<Level> newLevel = rcp( new Level(defaultFactoryHandler_));
+      RCP<Level> newLevel = rcp( new Level(defaultFactoryHandler_) );
 
       // copy keep status of variables
       std::vector<std::string> ekeys = needs_->RequestedKeys();

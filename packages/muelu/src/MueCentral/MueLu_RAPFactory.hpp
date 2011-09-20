@@ -1,8 +1,6 @@
 #ifndef MUELU_RAPFACTORY_HPP
 #define MUELU_RAPFACTORY_HPP
 
-#include <iostream>
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
@@ -49,15 +47,12 @@ class RAPFactory : public TwoLevelFactoryBase {
 
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
-
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
       timer->start(true);
 
       Teuchos::OSTab tab(this->getOStream());
-      //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PRFact_.get());
-
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
 
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
@@ -67,6 +62,8 @@ apTimer->stop();
 MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
       //std::string filename="AP.dat";
       //Utils::Write(filename,AP);
+
+      Monitor m(*this, "Computing Ac = RAP");
 
       RCP<Operator> RAP;
       if (implicitTranspose_) {
@@ -89,7 +86,9 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
-      fineLevel.Release("A",AFact_.get());
+      GetOStream(Statistics0, 0) << "Ac: # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+
+      fineLevel.Release("A", AFact_.get());
       coarseLevel.Release("P",PRFact_.get());
       coarseLevel.Release("R",PRFact_.get());
 

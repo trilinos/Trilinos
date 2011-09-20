@@ -1,8 +1,6 @@
 #ifndef MUELU_GENERICPRFACTORY_HPP
 #define MUELU_GENERICPRFACTORY_HPP
 
-#include <iostream>
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
@@ -45,8 +43,6 @@ class GenericPRFactory : public PRFactory {
     */
     GenericPRFactory(RCP<PFactory> PFact = Teuchos::null, RCP<RFactory> RFact = Teuchos::null)
     {
-      //Teuchos::OSTab tab(this->out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "GenericPRFactory: Instantiating a new factory" << std::endl;
 
       if (PFact != Teuchos::null)
         PFact_ = PFact;
@@ -57,10 +53,6 @@ class GenericPRFactory : public PRFactory {
         RFact_ = RFact;
       else
         RFact_ = rcp(new TransPFactory(PFact_));
-
-      PRFactory::reUseAggregates_ = PFact_->ReUseAggregates();
-      PRFactory::reUseGraph_      = PFact_->ReUseGraph();
-
     }
 
     //! Destructor.
@@ -86,20 +78,16 @@ class GenericPRFactory : public PRFactory {
     //! @name Build methods.
     //@{
 
-    /*!
-      @brief Build method.
-    */
+    //! Build method.
     bool Build(Level &fineLevel, Level &coarseLevel) const {
 
       //FIXME what if map is a block map .... I'm pretty sure maxCoarseSize_ will always be point DOFs
+      GetOStream(Debug, 0) << "FIXME: MueLu::GenericPRFactory::Build(): if map is blocked, this comparison to maxCoarseSize_ is wrong!" << std::endl;
+
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",NULL);
       fineLevel.Release("A",NULL);
-      if (A->getRowMap()->getComm()->getRank() == 0)
-        std::cout << "warning: if map is blocked, this comparison to maxCoarseSize_ will be wrong!" << std::endl;
       if (A->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
         return false;
-
-      //FIXME cache output level here
 
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
       coarseLevel.Set< RCP<Operator> >("P", P, this);  // for the RAP factory
@@ -109,38 +97,10 @@ class GenericPRFactory : public PRFactory {
       coarseLevel.Set< RCP<Operator> >("R", R, this); // for the RAP factory
       coarseLevel.Release("R",RFact_.get());
 
-      //FIXME restore output level here
-
       return true;
     }
-    //@}
 
-    //! @name Set methods.
-    //@{
-
-    void ReUseAggregates(bool const &value) {
-      PRFactory::reUseAggregates_ = value;
-      PFact_->ReUseAggregates(value);
-    }
-
-    void ReUseGraph(bool const &value) {
-      PRFactory::reUseGraph_ = value;
-      PFact_->ReUseGraph(value);
-    }
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    bool ReUseAggregates() const {
-      return PRFactory::reUseAggregates_;
-    }
-
-    bool ReUseGraph() const {
-      return PRFactory::reUseGraph_;
-    }
-
-    //@}
+  //@}
 
 }; //class GenericPRFactory
 

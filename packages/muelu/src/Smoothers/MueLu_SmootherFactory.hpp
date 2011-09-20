@@ -230,36 +230,31 @@ namespace MueLu {
       out << SmootherFactoryBase::description();
       std::string preStr  = (preSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description();
       std::string postStr = (preSmootherPrototype_ == postSmootherPrototype_) ? "pre" : ( (postSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description() );
-      out << "{pre = "  << preStr << ", post = "<< postStr << "} ";
+      out << "{pre = "  << preStr << ", post = "<< postStr << "}";
       return out.str();
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { //TODO: remove Teuchos::Describable::
-      using std::endl;
-      int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-      if (vl == VERB_NONE) return;
-      
-      if (vl == VERB_LOW) { out << description() << endl; } else { out << SmootherFactoryBase::description() << endl; }
+    using MueLu::BaseClass::describe; // overloading, not hiding
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
 
-      Teuchos::OSTab tab1(out);
-        
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        out << "PreSmoother: "; if (preSmootherPrototype_  == Teuchos::null) { out << "null" << endl; } else { Teuchos::OSTab tab2(out); preSmootherPrototype_->describe(out, verbLevel); }
+      if (verbLevel & Parameters0) {
+         out0 << "PreSmoother : "; if (preSmootherPrototype_  == Teuchos::null) { out0 << "null" << endl; } else { Teuchos::OSTab tab2(out); preSmootherPrototype_->describe(out, verbLevel); }
 
-        out << "PostSmoother: ";
-        if      (postSmootherPrototype_ == preSmootherPrototype_) { out << "same as PreSmoother" << endl; } 
-        else if (postSmootherPrototype_ == Teuchos::null)         { out << "null" << endl; }
-        else { 
-          { Teuchos::OSTab tab2(out); postSmootherPrototype_->describe(out, verbLevel); }
-          out << "PostSmoother is different than PreSmoother (not the same object)" << endl;
-        }
+         out0 << "PostSmoother: ";
+         if      (postSmootherPrototype_ == preSmootherPrototype_) { out0 << "same as PreSmoother" << endl; } 
+         else if (postSmootherPrototype_ == Teuchos::null)         { out0 << "null" << endl; }
+         else { 
+           { Teuchos::OSTab tab2(out); postSmootherPrototype_->describe(out, verbLevel); }
+           out0 << "PostSmoother is different than PreSmoother (not the same object)" << endl;
+         }
       }
-
-      if (vl == VERB_EXTREME) {
-        if (preSmootherPrototype_  != Teuchos::null || postSmootherPrototype_ != Teuchos::null) { out << "-" << endl; }
-        if (preSmootherPrototype_  != Teuchos::null) { out << "RCP<preSmootherPrototype_> : " << preSmootherPrototype_  << std::endl; }
-        if (postSmootherPrototype_ != Teuchos::null) { out << "RCP<postSmootherPrototype_>: " << postSmootherPrototype_ << std::endl; }
+      
+      if (verbLevel & Debug) {
+        if (preSmootherPrototype_  != Teuchos::null || postSmootherPrototype_ != Teuchos::null) { out0 << "-" << endl; }
+        if (preSmootherPrototype_  != Teuchos::null) { out0 << "RCP<preSmootherPrototype_> : " << preSmootherPrototype_  << std::endl; }
+        if (postSmootherPrototype_ != Teuchos::null) { out0 << "RCP<postSmootherPrototype_>: " << postSmootherPrototype_ << std::endl; }
       }
     }
 
