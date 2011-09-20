@@ -46,11 +46,16 @@ void init_crsgraph(
   int_mdarray node_elem_offset ,
   int_mdarray node_elem_ids ,
   int_mdarray elem_node_ids ,
+  int_mdarray elem_graph_col ,
   int_multivector & graph_col_offset ,
   int_multivector & graph_col_index )
 {
+  typedef typename int_mdarray::value_type index_type ;
+  const int nelem = elem_node_ids.dimension(0);
   const int nnode = node_elem_offset.dimension(0) - 1 ;
   const int nnode_per_elem = elem_node_ids.dimension(1);
+
+  //----------------------------------
 
   graph_col_offset = Kokkos::create_multivector< int_multivector >(nnode + 1);
 
@@ -86,6 +91,40 @@ void init_crsgraph(
 
   for ( size_t i = 0 ; i < col_ids.size() ; ++i ) {
     graph_col_index(i) = col_ids[i] ;
+  }
+
+  //----------------------------------
+  // Mapping of ( element , row_node , col_node ) -> CRS location
+
+  for ( int elem_id = 0 ; elem_id < nelem ; ++elem_id ) {
+    for ( int i = 0 ; i < nnode_per_elem ; ++i ) {
+      const index_type node_row = elem_node_ids( elem_id , i );
+
+      const int col_end = graph_col_offset( node_row + 1 );
+      const int col_beg = graph_col_offset( node_row );
+
+      for ( int j = 0 ; j < nnode_per_elem ; ++j ) {
+        const index_type node_col = elem_node_ids( elem_id , j );
+
+        int col_search = col_beg ;
+
+        for ( int len = col_end - col_beg ; 0 < len ; ) {
+
+          const int half = len >> 1;
+          const int middle = col_search + half ;
+
+          if ( graph_col_index(middle) < node_col ){
+            col_search = middle + 1 ;
+            len -= half + 1 ;
+          }
+          else {
+            len = half ;
+          }
+        }
+
+        elem_graph_col( elem_id , i , j ) = col_search ;
+      }
+    }
   }
 }
 

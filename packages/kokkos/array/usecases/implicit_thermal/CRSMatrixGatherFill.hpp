@@ -37,6 +37,8 @@
  *************************************************************************
  */
 
+#include <stdexcept>
+
 template<typename Scalar , class DeviceType>
 struct CRSMatrixGatherFill;
 
@@ -57,9 +59,9 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
   index_vector_d   A_col_offset;
   index_vector_d   A_col_index;
 
-  index_array_d  node_elemIDs;
-  index_array_d  elem_nodeIDs;
   index_array_d  elems_per_node;
+  index_array_d  node_elemIDs;
+  index_array_d  elem_graph_col ;
   
   scalar_array_d  element_stiffness;
   scalar_array_d  element_load;
@@ -71,16 +73,16 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
     const index_vector_d    & arg_A_col_index,
     const index_array_d     & arg_elems_per_node,
     const index_array_d     & arg_node_elemIDs,
-    const index_array_d     & arg_elem_nodeIDs,
+    const index_array_d     & arg_elem_graph_col,
     const scalar_array_d    & arg_element_stiffness,
     const scalar_array_d    & arg_element_load)
   : A(arg_A), 
     b(arg_b),
     A_col_offset(arg_A_col_offset),
     A_col_index(arg_A_col_index),
-    node_elemIDs(arg_node_elemIDs),
-    elem_nodeIDs(arg_elem_nodeIDs),
     elems_per_node(arg_elems_per_node),
+    node_elemIDs(arg_node_elemIDs),
+    elem_graph_col( arg_elem_graph_col ),
     element_stiffness(arg_element_stiffness),
     element_load(arg_element_load)
   {}
@@ -89,52 +91,26 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()(index_type irow) const {
 
-    const index_type base_index = A_col_offset(irow);
-    const index_type last_index = A_col_offset(irow + 1);
-
     const index_type node_elem_begin = elems_per_node( irow );
     const index_type node_elem_end   = elems_per_node( irow + 1 );
 
-    //  for each element that a node belongs to
+    //  for each element that a node belongs to 
 
     for(index_type i = node_elem_begin ; i < node_elem_end ; i++){
 
-      //  elems_per_node is a cumulative structure, so 
-      //  elems_per_node(irow) should be the index where
-      //  a particular row's elem_IDs begin
-
-      const index_type nelem          = node_elemIDs( i, 0);
+      const index_type elem_id        = node_elemIDs( i, 0);
       const index_type elem_row_index = node_elemIDs( i, 1);
 
-      b(irow) += element_load(nelem, elem_row_index);
+      b(irow) += element_load(elem_id, elem_row_index);
 
       //  for each node in a particular related element  
       //  gather the contents of the element stiffness
       //  matrix that belong in irow
 
-      for(index_type j = 0; j < 8; j++){
-
-        const index_type node_id = elem_nodeIDs(nelem, j);
-
-        // Find the A matrix index for this node
-
-        index_type column_search = base_index;
-  
-        for ( index_type len = last_index - base_index ; 0 < len ; ) {
-  
-          const index_type half = len >> 1;
-          const index_type middle = column_search + half ;
-
-          if ( A_col_index(middle) < node_id ){
-            column_search = middle + 1 ;
-            len -= half + 1 ;
-          }
-          else {
-            len = half ;
-          }
-        }
-
-        A(column_search) += element_stiffness(nelem, elem_row_index, j);
+      for( index_type j = 0 ; j < 8 ; ++j ){
+        const index_type A_index =
+                        elem_graph_col(    elem_id , elem_row_index , j );
+        A( A_index ) += element_stiffness( elem_id , elem_row_index , j );
       }
     }
   }

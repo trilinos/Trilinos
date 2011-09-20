@@ -275,9 +275,9 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
       J[4] += g1 * x1 ;
       J[5] += g1 * x2 ;
 
-      J[3] += g2 * x0 ;
-      J[4] += g2 * x1 ;
-      J[5] += g2 * x2 ;
+      J[6] += g2 * x0 ;
+      J[7] += g2 * x1 ;
+      J[8] += g2 * x2 ;
     }
   }
 

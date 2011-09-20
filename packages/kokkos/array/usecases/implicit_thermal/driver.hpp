@@ -102,12 +102,14 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   //  Host Data Structures
 
+  index_array_h   elem_graph_col_h ;
   index_vector_h  A_row_h , A_col_h ;
 
   //  Device Data Structures
 
   scalar_array_d  elem_stiffness, elem_load ;
 
+  index_array_d  elem_graph_col_d ;
   index_vector_d A_row_d , A_col_d, dirichlet_flag_d ;
   scalar_vector_d A, b, X , dirichlet_value_d ;
 
@@ -120,10 +122,21 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   mesh.init_dirichlet_z( dirichlet_flag_d , dirichlet_value_d );
 
+  elem_graph_col_d =
+    Kokkos::create_mdarray< index_array_d >(
+      mesh.h_mesh.elem_node_ids.dimension(0) ,
+      mesh.h_mesh.elem_node_ids.dimension(1) ,
+      mesh.h_mesh.elem_node_ids.dimension(1) );
+
+  elem_graph_col_h = mirror_create( elem_graph_col_d );
+
   init_crsgraph( mesh.h_mesh.node_elem_offset ,
                  mesh.h_mesh.node_elem_ids ,
                  mesh.h_mesh.elem_node_ids ,
+                 elem_graph_col_h ,
                  A_row_h , A_col_h );
+
+  mirror_update( elem_graph_col_d , elem_graph_col_h );
 
   // Copy sparse matrix graph to device
 
@@ -171,7 +184,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
     GatherFillFunctor( A, b, A_row_d, A_col_d,
                        mesh.d_mesh.node_elem_offset ,
                        mesh.d_mesh.node_elem_ids,
-                       mesh.d_mesh.elem_node_ids,
+                       elem_graph_col_d,
                        elem_stiffness,
                        elem_load ) );
 
