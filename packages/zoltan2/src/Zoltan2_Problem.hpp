@@ -15,14 +15,14 @@
 #define HELLO cout << "Hello from " << __func__ << endl
 
 #define CONSISTENT_CLASS_TEMPLATE_LINE \
-        template <class Scalar=float, \
-                  class LNO=int, class GNO=int, class LID=LNO, class GID=GNO, \
-                  class Node=Kokkos::DefaultNode::DefaultNodeType>
+        template <typename Scalar=float, \
+                  typename LNO=int, typename GNO=int, typename LID=LNO, typename GID=GNO, \
+                  typename Node=Kokkos::DefaultNode::DefaultNodeType>
 
 #define CONSISTENT_FN_TEMPLATE_LINE \
-        template <class Scalar, \
-                  class LNO, class GNO, class LID, class GID, \
-                  class Node>
+        template <typename Scalar, \
+                  typename LNO, typename GNO, typename LID, typename GID, \
+                  typename Node>
 
 #define CONSISTENT_TEMPLATE_PARAMS \
         Scalar, LNO, GNO, LID, GID, Node
@@ -74,13 +74,13 @@ private:
 //! to XpetraMatrixAdapter.
 CONSISTENT_FN_TEMPLATE_LINE
 Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
-  Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A, 
-  Teuchos::ParameterList &p
+  Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> *A, 
+  Teuchos::ParameterList *p
 ) 
 {
   HELLO;
-  //TODO _inputAdapter = rcp(new XpetraMatrixAdapter(A)); 
-  _params = rcpFromRef(p);
+  //TODO _inputAdapter = rcp(new TpetraMatrixAdapter(rcp(A))); 
+  _params = rcp(p);
 }
 
 }
