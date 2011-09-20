@@ -135,6 +135,11 @@ public:
      */
    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
 
+   //! Accessor primarily for testing purposes
+   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > getLowsFactory() const
+   { return lowsFactory_; }
+
+
    /** Return a string that describes this factory */
    virtual std::string toString() const { return lowsFactory_->description(); }
 

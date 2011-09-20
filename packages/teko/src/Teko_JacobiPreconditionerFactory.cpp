@@ -101,6 +101,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
 
 //! Initialize from a parameter list
 void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+#if 0
 {
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
@@ -110,6 +111,65 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 
    // based on parameter type build a strategy
    invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
+}
+#endif 
+{
+   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeFromParameterList",10);
+   Teko_DEBUG_MSG_BEGIN(9);
+      DEBUG_STREAM << "Parameter list: " << std::endl;
+      pl.print(DEBUG_STREAM);
+   Teko_DEBUG_MSG_END();
+
+   const std::string inverse_type = "Inverse Type";
+   std::vector<RCP<InverseFactory> > inverses;
+
+   RCP<const InverseLibrary> invLib = getInverseLibrary();
+
+   // get string specifying default inverse
+   std::string invStr ="Amesos"; 
+   if(pl.isParameter(inverse_type))
+      invStr = pl.get<std::string>(inverse_type);
+
+   Teko_DEBUG_MSG("JacobiPrecFact: Building default inverse \"" << invStr << "\"",5);
+   RCP<InverseFactory> defaultInverse = invLib->getInverseFactory(invStr);
+
+   // now check individual solvers
+   Teuchos::ParameterList::ConstIterator itr;
+   for(itr=pl.begin();itr!=pl.end();++itr) {
+      std::string fieldName = itr->first;
+      Teko_DEBUG_MSG("JacobiPrecFact: checking fieldName = \"" << fieldName << "\"",9);
+
+      // figure out what the integer is
+      if(fieldName.compare(0,inverse_type.length(),inverse_type)==0 && fieldName!=inverse_type) {
+         int position = -1;
+         std::string inverse,type;
+
+         // figure out position
+         std::stringstream ss(fieldName);
+         ss >> inverse >> type >> position;
+
+         if(position<=0) {
+            Teko_DEBUG_MSG("Jacobi \"Inverse Type\" must be a (strictly) positive integer",1);
+         }
+
+         // inserting inverse factory into vector
+         std::string invStr = pl.get<std::string>(fieldName);
+         Teko_DEBUG_MSG("JacobiPrecFact: Building inverse " << position << " \"" << invStr << "\"",5);
+         if(position>(int) inverses.size()) {
+            inverses.resize(position,defaultInverse);
+            inverses[position-1] = invLib->getInverseFactory(invStr);
+         }
+         else
+            inverses[position-1] = invLib->getInverseFactory(invStr);
+      }
+   }
+
+   // use default inverse
+   if(inverses.size()==0) 
+      inverses.push_back(defaultInverse);
+
+   // based on parameter type build a strategy
+   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(inverses));
 }
 
 } // end namspace Teko

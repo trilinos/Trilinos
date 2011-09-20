@@ -76,6 +76,7 @@ public:
    bool test_result(int verbosity,std::ostream & os);
    bool test_identity(int verbosity,std::ostream & os);
    bool test_diagonal(int verbosity,std::ostream & os);
+   bool test_initializeFromParameterList(int verbosity,std::ostream & os);
 
 protected:
    // some simple matrix subblocks

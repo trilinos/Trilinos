@@ -151,6 +151,10 @@ public:
    virtual void getInvD(const BlockedLinearOp & A, BlockPreconditionerState & state,
                         std::vector<LinearOp> & invDiag) const;
 
+   //! Get factories for testing purposes.
+   const std::vector<Teuchos::RCP<InverseFactory> > & getFactories() const
+   { return invDiagFact_; }
+
 protected:
    // stored inverse operators
    std::vector<Teuchos::RCP<InverseFactory> > invDiagFact_;

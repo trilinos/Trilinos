@@ -54,6 +54,21 @@
 
 namespace Teko {
 
+/** A block diagonal preconditioner.
+  *
+  * The use must specify an iverse for each diagonal. 
+  * If a specific integer is not specified, then the default
+  * "Inverse Type" is used.
+  \code
+       <Parameter name="Type" type="string" value="Block Jacobi"/>
+       <Parameter name="Inverse Type" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Inverse Type 1" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Inverse Type 2" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Inverse Type 3" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Inverse Type 4" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Inverse Type 5" type="string" value="<Some Inverse Factory>"/>
+  \endcode
+  */
 class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
    public:
       //! @name Constructors.
@@ -84,6 +99,10 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
         */
       LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
  
+      //! Get inv diagonal strategy     
+      Teuchos::RCP<const BlockInvDiagonalStrategy> getInvDiagStrategy() const
+      { return invOpsStrategy_; }
+
    protected: 
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;

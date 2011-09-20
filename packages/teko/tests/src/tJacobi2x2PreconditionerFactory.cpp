@@ -48,6 +48,10 @@
 #include "Teko_JacobiPreconditionerFactory.hpp"
 #include "Teko_JacobiPreconditionerFactory.hpp"
 
+#include "Teko_InverseLibrary.hpp"
+#include "Teko_PreconditionerInverseFactory.hpp"
+#include "Teko_SolveInverseFactory.hpp"
+
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
@@ -69,6 +73,9 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MLPreconditionerFactory.hpp"
+#include "Thyra_IfpackPreconditionerFactory.hpp"
+#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
 #include <vector>
 
@@ -208,6 +215,12 @@ int tJacobi2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstr
 
    status = test_result(verbosity,failstrm);
    Teko_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_initializeFromParameterList(verbosity,failstrm);
+   Teko_TEST_MSG(stdstrm,1,"   \"initializeFromParameterList\" ... PASSED","   \"initializeFromParameterList\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -585,6 +598,88 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
       os << "      "; Print(os,"z",z);
    }
    allPassed &= status;
+
+   return allPassed;
+}
+
+template <typename T>
+Teuchos::RCP<const T> getLowsFactory(const RCP<const InverseFactory> & invFact) 
+{
+   return rcp_dynamic_cast<const T>(
+      rcp_dynamic_cast<const SolveInverseFactory>(invFact)->getLowsFactory());
+}
+
+template <typename T>
+Teuchos::RCP<const T> getPrecFactory(const RCP<const InverseFactory> & invFact) 
+{
+   return rcp_dynamic_cast<const T>(
+      rcp_dynamic_cast<const PreconditionerInverseFactory>(invFact)->getPrecFactory());
+}
+
+bool tJacobi2x2PreconditionerFactory::test_initializeFromParameterList(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   RCP<InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+   {
+      Teuchos::ParameterList p;
+      p.set("Inverse Type","ML");
+
+      RCP<PreconditionerFactory> fact = PreconditionerFactory::buildPreconditionerFactory("Block Jacobi",p,invLib);
+      RCP<JacobiPreconditionerFactory> jFact = rcp_dynamic_cast<JacobiPreconditionerFactory>(fact);
+      
+      // check we have the right factory
+      status = (jFact!=Teuchos::null);
+      if(status)
+         os << "Dynnamic cast failed" << std::endl;
+      allPassed &= status;
+
+      RCP<const InvFactoryDiagStrategy> diagStrat = rcp_dynamic_cast<const InvFactoryDiagStrategy>(jFact->getInvDiagStrategy());
+
+      // check we have the right factory
+      status = (diagStrat!=Teuchos::null);
+      if(!status)
+         os << "Dynnamic to InvFactoryDiagStrategy cast failed" << std::endl;
+      allPassed &= status;
+       
+      const std::vector<Teuchos::RCP<InverseFactory> > & facts = diagStrat->getFactories();
+      status = (facts.size()==1);
+      allPassed &= status;
+   }
+
+   {
+      Teuchos::ParameterList p;
+      p.set("Inverse Type","ML");
+      p.set("Inverse Type 1","Amesos");
+      p.set("Inverse Type 3","Ifpack");
+
+      RCP<PreconditionerFactory> fact = PreconditionerFactory::buildPreconditionerFactory("Block Jacobi",p,invLib);
+      RCP<JacobiPreconditionerFactory> jFact = rcp_dynamic_cast<JacobiPreconditionerFactory>(fact);
+      RCP<const InvFactoryDiagStrategy> diagStrat = rcp_dynamic_cast<const InvFactoryDiagStrategy>(jFact->getInvDiagStrategy());
+
+      // check we have the right factory
+      const std::vector<Teuchos::RCP<InverseFactory> > & facts = diagStrat->getFactories();
+      status = (facts.size()==3);
+      if(!status)
+         os << "Incorrect number of factories constructed" << std::endl;
+      allPassed &= status;
+
+      status = (getLowsFactory<Thyra::AmesosLinearOpWithSolveFactory>(facts[0])!=Teuchos::null);
+      if(!status)
+         os << "Checking if Amesos inverse factory was consctructed" << std::endl;
+      allPassed &= status;
+
+      status = (getPrecFactory<Thyra::MLPreconditionerFactory>(facts[1])!=Teuchos::null);
+      if(!status)
+         os << "Checking if ML inverse factory was consctructed" << std::endl;
+      allPassed &= status;
+
+      status = (getPrecFactory<Thyra::IfpackPreconditionerFactory>(facts[2])!=Teuchos::null);
+      if(!status)
+         os << "Checking if ML inverse factory was consctructed" << std::endl;
+      allPassed &= status;
+   }
 
    return allPassed;
 }
