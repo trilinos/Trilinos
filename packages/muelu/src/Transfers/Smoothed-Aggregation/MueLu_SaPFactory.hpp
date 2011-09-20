@@ -90,8 +90,8 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      coarseLevel.Request("P",initialPFact_.get());
-      fineLevel.Request("A",AFact_.get());
+        coarseLevel.Request("P",initialPFact_.get());
+        fineLevel.Request("A",AFact_.get());
     };
 
     //@}
@@ -147,7 +147,8 @@ namespace MueLu {
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+        //RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+        RCP<Operator> AP = Utils::TwoMatrixMultiply(A,restrictionMode_,Ptent,false,doFillComplete,optimizeStorage);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
 
@@ -198,7 +199,17 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.Set("P", finalP, this);
+      if(!restrictionMode_)
+      {
+          // prolongation factory is in prolongation mode
+          coarseLevel.Set("P", finalP, this);
+      }
+      else
+      {
+          // prolongation factory is in restriction mode
+          RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(finalP,true); // use Utils2 -> specialization for double
+          coarseLevel.Set("R", R, this);
+      }
 
       return true;
     } //Build()

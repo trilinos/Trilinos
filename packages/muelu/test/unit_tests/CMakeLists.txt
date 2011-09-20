@@ -30,6 +30,7 @@ APPEND_SET(SOURCES
   Memory.cpp
   #UCAggregationFactory.cpp
   ExtendedHashtable.cpp
+  GenericRFactory.cpp
 
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp

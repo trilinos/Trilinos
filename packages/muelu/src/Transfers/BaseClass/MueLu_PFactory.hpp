@@ -27,13 +27,14 @@ class PFactory : public TwoLevelFactoryBase {
      bool reUseGraph_;
      bool reUseAggregates_;
      RCP<Teuchos::FancyOStream> out_;
+     bool restrictionMode_;  //< true, if PFactory is used for generating the restriction operator
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    PFactory() : reUseGraph_(false), reUseAggregates_(false), out_(this->getOStream())
+    PFactory() : reUseGraph_(false), reUseAggregates_(false), out_(this->getOStream()), restrictionMode_(false)
     {
       //Teuchos::OSTab tab(this->out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "PFactory: Instantiating a new factory" << std::endl;
@@ -74,6 +75,20 @@ class PFactory : public TwoLevelFactoryBase {
     bool ReUseGraph() const {
       return reUseGraph_;
     }
+
+    //@}
+
+    //! @name Restriction mode
+    //@{
+
+    /// switch prolongator factory to restriction mode
+    /// if set to true, the prolongation factory generates a restriciton operator instead of a prolongation operator
+    void setRestrictionMode(bool bRestrictionMode = false)    {
+        restrictionMode_ = bRestrictionMode;
+    }
+
+    /// returns restrictionMode flag
+    bool isRestrictionModeSet() { return restrictionMode_; }
 
     //@}
 
