@@ -209,10 +209,10 @@ struct ShapeFunctionEvaluation {
 //----------------------------------------------------------------------------
 
 template< typename Scalar , typename ScalarCoord , class DeviceType >
-struct assembleFE;
+struct ElementComp ;
 
 template<typename Scalar , typename ScalarCoord >
-struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
+struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
   typedef KOKKOS_MACRO_DEVICE                            device_type;
   typedef Scalar                                         scalar_type ;
@@ -233,12 +233,12 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   Scalar               coeff_K ;
   Scalar               coeff_Q ;
 
-  assembleFE( const index_array  & arg_elem_node_ids ,
-              const coord_array  & arg_node_coords ,
-              const scalar_array & arg_element_stiffness , 
-              const scalar_array & arg_element_vectors ,
-              const Scalar       & arg_coeff_K ,
-              const Scalar       & arg_coeff_Q )
+  ElementComp ( const index_array  & arg_elem_node_ids ,
+                const coord_array  & arg_node_coords ,
+                const scalar_array & arg_element_stiffness , 
+                const scalar_array & arg_element_vectors ,
+                const Scalar       & arg_coeff_K ,
+                const Scalar       & arg_coeff_Q )
   : shape_eval()
   , elem_node_ids( arg_elem_node_ids )
   , node_coords(   arg_node_coords )
@@ -447,5 +447,93 @@ struct assembleFE<Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     }
   }
 
-};// assembleFE
+};// ElementComp
+
+#if 0
+  // Possible experiment
+
+  // Split operator to reduce temporaries
+  // but increase global memory write & read.
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( int ielem )const {
+
+    ScalarCoord x[8], y[8], z[8];
+
+    for ( int i = 0 ; i < 8 ; ++i ) {
+      const int node_index = elem_node_ids( ielem , i );
+      x[i] = node_coords( node_index , 0 );
+      y[i] = node_coords( node_index , 1 );
+      z[i] = node_coords( node_index , 2 );
+    }
+
+    // This loop could be parallelized; however,
+    // it would require additional per-thread temporaries
+    // of 'elem_vec' and 'elem_stiff' which would
+    // consume more local memory and have to be reduced.
+
+    for ( int i = 0 ; i < shape_function_data::PointCount ; ++i ) {
+
+      Scalar J[spatialDim*spatialDim] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
+
+      jacobian( x, y, z, shape_eval.gradient[i] , J );
+
+      // Overwrite J with its inverse to save scratch memory space.
+      jacobian_det(ielem,i) = inverse_and_determinant3x3(J);
+
+      for ( int j = 0 ; j < 9 ; ++j ) {
+        jacobian_inv(ielem,i,j) = J[j] ;
+      }
+    }
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( int ielem )const {
+
+    Scalar elem_vec[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+    Scalar elem_stiff[8][8] =
+      { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } };
+
+    // This loop could be parallelized; however,
+    // it would require additional per-thread temporaries
+    // of 'elem_vec' and 'elem_stiff' which would
+    // consume more local memory and have to be reduced.
+
+    for ( int i = 0 ; i < shape_function_data::PointCount ; ++i ) {
+
+      Scalar J[spatialDim*spatialDim] ;
+
+      for ( int j = 0 ; j < 9 ; ++j ) {
+        J[j] = jacobian_inv(ielem,i,j);
+      }
+
+      // Overwrite J with its inverse to save scratch memory space.
+      const Scalar detJ_w   = shape_eval.weight[i] * jacobian_det(ielem,i);
+      const Scalar k_detJ_w = coeff_K * detJ_w ;
+      const Scalar Q_detJ_w = coeff_Q * detJ_w ;
+
+      contributeDiffusionMatrix( k_detJ_w , shape_eval.gradient[i] , J , elem_stiff );
+
+      contributeSourceVector( Q_detJ_w , shape_eval.value[i] , elem_vec );
+    }
+
+    for(int i=0; i<numNodesPerElem; ++i) {
+      element_vectors(ielem, i) = elem_vec[i] ;
+    }
+
+    for(int i = 0; i < 8; i++){
+      for(int j = 0; j < 8; j++){
+        element_stiffness(ielem, i, j) = elem_stiff[i][j] ;
+      }
+    }
+  }
+
+#endif
 

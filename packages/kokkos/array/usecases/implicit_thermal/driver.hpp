@@ -49,10 +49,36 @@ namespace Test {
 template< typename Scalar , class Device >
 struct MiniImplTherm ;
 
+struct PerformanceData {
+  double mesh_time ;
+  double elem_time ;
+  size_t elem_flop ;
+  double fill_time ;
+  size_t fill_flop ;
+  double solve_mflop_per_sec ;
+
+  PerformanceData()
+  : mesh_time(0)
+  , elem_time(0)
+  , elem_flop(0)
+  , fill_time(0)
+  , fill_flop(0)
+  , solve_mflop_per_sec(0)
+  {}
+
+  void best( const PerformanceData & rhs )
+  {
+    if ( rhs.mesh_time < mesh_time ) mesh_time = rhs.mesh_time ;
+    if ( rhs.elem_time < elem_time ) elem_time = rhs.elem_time ;
+    if ( solve_mflop_per_sec < rhs.solve_mflop_per_sec )
+      solve_mflop_per_sec = rhs.solve_mflop_per_sec ;
+  }
+};
+
 template< typename Scalar >
 struct MiniImplTherm< Scalar , KOKKOS_MACRO_DEVICE > {
 
-static void run(int x, int y, int z, double* perf ) 
+static void run(int x, int y, int z, PerformanceData & perf )
 {
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
@@ -109,7 +135,7 @@ static void run(int x, int y, int z, double* perf )
 
   device_type::wait_functor_completion();
 
-  perf[0] = wall_clock.seconds(); // Mesh and graph allocation and population.
+  perf.mesh_time = wall_clock.seconds(); // Mesh and graph allocation and population.
 
   //------------------------------
   // Allocate device memory for linear system and element contributions.
@@ -123,32 +149,37 @@ static void run(int x, int y, int z, double* perf )
 
   wall_clock.reset();
 
-  typedef assembleFE< Scalar , double , device_type > AssembleFunctor ;
+  typedef ElementComp< Scalar , double , device_type > ElementFunctor ;
+  typedef CRSMatrixGatherFill<Scalar, device_type> GatherFillFunctor ;
 
   Kokkos::parallel_for( mesh.elem_count,
-    AssembleFunctor( mesh.d_mesh.elem_node_ids ,
-                     mesh.d_mesh.node_coords ,
-                     elem_stiffness, elem_load ,
-                     elem_coeff_K , elem_load_Q ) );
-
-  Kokkos::parallel_for( mesh.node_count,
-    CRSMatrixGatherFill<Scalar, device_type>( A, b, A_row_d, A_col_d,
-                                              mesh.d_mesh.node_elem_offset ,
-                                              mesh.d_mesh.node_elem_ids,
-                                              mesh.d_mesh.elem_node_ids,
-                                              elem_stiffness,
-                                              elem_load) );
+    ElementFunctor( mesh.d_mesh.elem_node_ids ,
+                    mesh.d_mesh.node_coords ,
+                    elem_stiffness, elem_load ,
+                    elem_coeff_K , elem_load_Q ) );
 
   device_type::wait_functor_completion();
 
-  const double fill_time = wall_clock.seconds(); // Matrix computation and assembly
+  // Element computation time and flops
+  perf.elem_time = wall_clock.seconds();
+  perf.elem_flop = (size_t) ElementFunctor::FLOPS_operator *
+                   (size_t) mesh.elem_count ;
 
-  const size_t assemble_fill_flops =
-    (size_t) AssembleFunctor::FLOPS_operator * (size_t) mesh.elem_count +
-    (size_t) elem_stiffness.size() + (size_t) elem_load.size();
+  wall_clock.reset();
 
-  perf[1] = ( (double) mesh.elem_count ) / ( fill_time * 1e3 );
-  perf[2] = ( (double) assemble_fill_flops ) / ( fill_time * 1e6 );
+  Kokkos::parallel_for( mesh.node_count,
+    GatherFillFunctor( A, b, A_row_d, A_col_d,
+                       mesh.d_mesh.node_elem_offset ,
+                       mesh.d_mesh.node_elem_ids,
+                       mesh.d_mesh.elem_node_ids,
+                       elem_stiffness,
+                       elem_load ) );
+
+  device_type::wait_functor_completion();
+
+  // Matrix gather-fill time and flops
+  perf.fill_time = wall_clock.seconds();
+  perf.fill_flop = (size_t) elem_stiffness.size() + (size_t) elem_load.size();
 
   //------------------------------
 
@@ -162,7 +193,7 @@ static void run(int x, int y, int z, double* perf )
   //------------------------------
   // Solve linear sytem
 
-  perf[3] = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X );
+  perf.solve_mflop_per_sec = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X );
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 
@@ -195,8 +226,8 @@ static void driver( const char * label , int beg , int end , int runs )
 {
   std::cout << std::endl ;
   std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
-  std::cout << "\"Size\" ,     \"Setup\" ,   \"Fill\" ,      \"Fill\" ,      \"Solve\"" << std::endl
-            << "\"elements\" , \"seconds\" , \"KElem/sec\" , \"MFlop/sec\" , \"MFlop/sec\"" << std::endl ;
+  std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,  \"Solve\"" << std::endl
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ; 
 
   for(int i = beg ; i < end; ++i )
   {
@@ -205,31 +236,27 @@ static void driver( const char * label , int beg , int end , int runs )
     const int iz = iy + 1 ;
     const int n  = ix * iy * iz ;
 
-    // [ setup time , fill time , solve iteration MFlop/sec ]
-    double perf[4], best[4] = { 0 , 0 , 0 , 0 };
+    PerformanceData perf , best ;
 
     for(int j = 0; j < runs; j++){
 
      run(ix,iy,iz,perf);
 
-     if(j == 0) {
-       best[0] = perf[0];
-       best[1] = perf[1];
-       best[2] = perf[2];
-       best[3] = perf[3];
+     if( j == 0 ) {
+       best = perf ;
      }
      else {
-       if ( perf[0] < best[0] ) best[0] = perf[0] ;
-       if ( perf[1] > best[1] ) best[1] = perf[1] ;
-       if ( best[2] > perf[2] ) best[2] = perf[2] ;
-       if ( best[3] > perf[3] ) best[3] = perf[3] ;
+       best.best( perf );
      }
    }
-   std::cout << n << " , "
-             << best[0] << " , "
-             << best[1] << " , "
-             << best[2] << " , "
-             << best[3] << std::endl ;
+   std::cout << std::setw(8) << n << " , "
+             << std::setw(10) << best.mesh_time * 1000 << " , "
+             << std::setw(10) << best.elem_time * 1000 << " , "
+             << std::setw(10) << best.elem_flop << " , "
+             << std::setw(10) << best.fill_time * 1000 << " , "
+             << std::setw(10) << best.fill_flop << " , "
+             << std::setw(10) << best.solve_mflop_per_sec
+             << std::endl ;
   }
 }
 

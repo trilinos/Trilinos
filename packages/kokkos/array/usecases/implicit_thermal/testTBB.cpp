@@ -55,7 +55,7 @@
 #include <Kokkos_DeviceTBB_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceTBB_macros.hpp>
-#include <assemble.hpp>
+#include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
 #include <CG_Solve.hpp>
