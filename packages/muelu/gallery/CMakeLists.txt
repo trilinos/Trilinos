@@ -1,4 +1,3 @@
-
 INCLUDE(PackageLibraryMacros)
 
 SET(HEADERS "")

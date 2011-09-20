@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
   {
     Teuchos::EVerbosityLevel values[6] = {Teuchos::VERB_DEFAULT, Teuchos::VERB_NONE, Teuchos::VERB_LOW, Teuchos::VERB_MEDIUM, Teuchos::VERB_HIGH, Teuchos::VERB_EXTREME};
-    const char* names[6] = {"VERB_DEFAULT", "VERB_NONE", "VERB_LOW", "VERB_MEDIUM", "VERB_HIGH", "VERB_EXTREME"};
+    const char* names[6] = {"DEFAULT", "NONE", "LOW", "MEDIUM", "HIGH", "EXTREME"};
     clp.setOption("verbLevel", &verbLevel, 6, values, names, "Verbose level");
     
   }
