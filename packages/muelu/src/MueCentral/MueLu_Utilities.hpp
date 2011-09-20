@@ -67,9 +67,11 @@ namespace MueLu {
   using Xpetra::EpetraMultiVector;
 #endif
 
+#ifdef HAVE_MUELU_EPETRA
 //defined after Utils class
 template<typename SC,typename LO,typename GO,typename NO, typename LMO>
 RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB);
+#endif
 
 /*!
   @class Utils
@@ -1046,6 +1048,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
   }; // class Utils
 
+#ifdef HAVE_MUELU_EPETRA
 //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
 template<class SC,class LO,class GO,class NO, class LMO>
 RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
@@ -1064,6 +1067,7 @@ inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMa
    RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
    return tmpC3;
 }
+#endif
 
 //RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB) {
 

@@ -60,7 +60,7 @@ namespace Xpetra
         if (maps_[i]!=Teuchos::null)
         {
           Teuchos::RCP<TpetraImportClass> tImport = Teuchos::rcp_dynamic_cast<TpetraImportClass>(Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_,maps_[i]));
-          if (tImport == Teuchos::null) cout << "no TpetraImportFactory?" << endl;
+          if (tImport == Teuchos::null) std::cout << "no TpetraImportFactory?" << std::endl;
           importer_[i] = tImport;
           std::cout << *importer_[i] << std::endl;
         }

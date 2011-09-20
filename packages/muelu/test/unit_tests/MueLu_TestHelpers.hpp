@@ -152,6 +152,7 @@ namespace MueLuTests {
         H.SetLevel(rcpFromRef(coarseLevel)); // rcpFromRef safe here
       }
       
+#ifdef HAVE_MUELU_IFPACK
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", type);
@@ -159,6 +160,7 @@ namespace MueLuTests {
         ifpackList.set("relaxation: damping factor", (SC) 1.0);
         return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
       }
+#endif
 
     }; // class Factory
 
