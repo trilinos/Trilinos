@@ -102,7 +102,8 @@ FUNCTION(PACKAGE_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
       "#endif\n"
       )
   ELSE()
-    SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED")
+    SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+      "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED")
   ENDIF()
 
   CONFIGURE_FILE(
@@ -116,13 +117,16 @@ ENDFUNCTION()
 #
 # Macro used to add a package library
 #
+# ToDo: Add documentation!
+#
 
 FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_ADD_LIBRARY: ${LIBRARY_NAME}")
     IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-      MESSAGE("\n${PACKAGE_NAME}_LIBRARIES In installation testing mode, libraries will be found instead of created.")
+      MESSAGE("\n${PACKAGE_NAME}_LIBRARIES In installation testing mode,"
+        " libraries will be found instead of created.")
     ENDIF()
   ENDIF()
 
@@ -145,7 +149,8 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
     # Add the link directory for this library.
 
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS ${CMAKE_CURRENT_BINARY_DIR})
+    SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
+      ${CMAKE_CURRENT_BINARY_DIR})
 
     # NOTE: Above , this link path not really used here for anything.
     # Instead it is just added to the other set link library directories
@@ -158,8 +163,10 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
     # Add whatever link directories have been added so far
 
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS ${${PACKAGE_NAME}_LIBRARY_DIRS})
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS ${${PACKAGE_NAME}_TEST_LIBRARY_DIRS})
+    SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
+      ${${PACKAGE_NAME}_LIBRARY_DIRS})
+    SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
+      ${${PACKAGE_NAME}_TEST_LIBRARY_DIRS})
 
     # Add dependent libraries passed directly in
 
@@ -186,7 +193,7 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     # add the include directories or link libraries because a dependent lib
     # specified in PARSE_DEP_LIBS already has everything that we need.
 
-    # We also Need to make special considerations for test libraries since
+    # We also need to make special considerations for test libraries since
     # things need to be handled a little bit differently (but not much).  In the
     # case of test libaries, we need to also pull the test-only dependencies.
     # In this case, we will always assume that we will add in the test
@@ -205,9 +212,9 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
         ENDIF()
       ENDFOREACH()
     ELSE()
-      # If there are no dependent libs passed in, then this library can not possiblly
-      # depend on the package's other libraries so we must link to the dependent libraries
-      # in dependent libraries and TPLs.
+      # If there are no dependent libs passed in, then this library can not
+      # possiblly depend on the package's other libraries so we must link to
+      # the dependent libraries in dependent libraries and TPLs.
     ENDIF()
 
     IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
@@ -219,18 +226,21 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       ENDIF()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "\nPulling in header and libraries dependencies for ${TEST_OR_LIB_ARG} ...")
+        MESSAGE(STATUS "\nPulling in header and libraries dependencies"
+          " for ${TEST_OR_LIB_ARG} ...")
       ENDIF()
 
       # Add the dependent package libraries (if we have not done so yet for this package)
-      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} ${TEST_OR_LIB_ARG} PACKAGES ALL_DEP_PACKAGES)
+      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}  ${TEST_OR_LIB_ARG}
+        PACKAGES  ALL_DEP_PACKAGES)
       PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_SE_PACKAGES}"
-        "${ALL_DEP_PACKAGES}" "" LINK_LIBS)
+        "${ALL_DEP_PACKAGES}"  ""  LINK_LIBS)
 
       # Add the TPL libraries (if we have not done so yet for this package)
-      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} ${TEST_OR_LIB_ARG} TPLS ALL_TPLS)
+      PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME}
+        ${TEST_OR_LIB_ARG}  TPLS  ALL_TPLS)
       PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_TPLS}"
-       "${ALL_TPLS}" TPL_ LINK_LIBS)
+       "${ALL_TPLS}"  TPL_  LINK_LIBS)
 
     ENDIF()
 
@@ -285,7 +295,8 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     ELSE()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation hooks for this library because 'TESTONLY' was passed in ...")
+        MESSAGE(STATUS "Skipping installation hooks for this library"
+          " because 'TESTONLY' was passed in ...")
       ENDIF()
 
     ENDIF()
@@ -325,14 +336,20 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   ENDIF() #if not in installation testing mode
 
   IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-    LIST(FIND Trilinos_INSTALLATION_PACKAGE_LIST ${PACKAGE_NAME} ${PACKAGE_NAME}_WAS_INSTALLED)
+
+    LIST(FIND Trilinos_INSTALLATION_PACKAGE_LIST ${PACKAGE_NAME}
+      ${PACKAGE_NAME}_WAS_INSTALLED)
     IF(${${PACKAGE_NAME}_WAS_INSTALLED} EQUAL -1)
       MESSAGE(FATAL_ERROR
-        "The package ${PACKAGE_NAME} was not installed with ${PROJECT_NAME}! Please disable package ${PACKAGE_NAME} or install it.")
+        "The package ${PACKAGE_NAME} was not installed with ${PROJECT_NAME}!"
+        "  Please disable package ${PACKAGE_NAME} or install it.")
     ENDIF()
 
-    INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING BEFORE ${${PACKAGE_NAME}_INSTALLATION_INCLUDE_DIRS} ${${PACKAGE}_INSTALLATION_TPL_INCLUDE_DIRS})
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS ${${PACKAGE_NAME}_INSTALLATION_LIBRARY_DIRS})
+    INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING  BEFORE
+       ${${PACKAGE_NAME}_INSTALLATION_INCLUDE_DIRS}
+       ${${PACKAGE}_INSTALLATION_TPL_INCLUDE_DIRS})
+    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
+      ${${PACKAGE_NAME}_INSTALLATION_LIBRARY_DIRS})
 
     GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
     GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT PACKAGE_LIBRARY_DIRS)
