@@ -67,6 +67,10 @@ namespace MueLu {
   using Xpetra::EpetraMultiVector;
 #endif
 
+//defined after Utils class
+template<typename SC,typename LO,typename GO,typename NO, typename LMO>
+RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB);
+
 /*!
   @class Utils
   @brief MueLu utility class.
@@ -303,9 +307,7 @@ namespace MueLu {
             ML_Comm_Destroy(&comm);
 
             RCP<Epetra_CrsMatrix> epAB(result);
-            RCP<EpetraCrsMatrix> tmpC1 = rcp(new EpetraCrsMatrix(epAB));
-            RCP<CrsMatrix> tmpC2 = rcp_implicit_cast<CrsMatrix>(tmpC1);
-            RCP<CrsOperator> tmpC3 = rcp(new CrsOperator(tmpC2));
+            RCP<CrsOperator> tmpC3 = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<SC,LO,GO,NO,LMO>(epAB);
             C = tmpC3;
             }
             break;
@@ -314,7 +316,6 @@ namespace MueLu {
           case false:
             {
             int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
-
             if (i != 0) {
               std::ostringstream buf;
               buf << i;
@@ -419,7 +420,7 @@ namespace MueLu {
       C->fillComplete();  // call default fillComplete for BlockCrsOperator objects
 
     return C;
-  } // TwoMatrixMultiply
+  } // TwoMatrixMultiplyBlock
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
@@ -1045,6 +1046,27 @@ namespace MueLu {
 
   }; // class Utils
 
+//This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
+template<class SC,class LO,class GO,class NO, class LMO>
+RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
+   TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+   return Teuchos::null;
+}
+
+typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
+typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
+
+//specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+template<>
+inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
+   RCP<EpetraCrsMatrix> tmpC1 = rcp(new EpetraCrsMatrix(epAB));
+   RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
+   RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
+   return tmpC3;
+}
+
+//RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB) {
+
 /*
   Separate class for Utilities that need a specialization for Epetra.
 */
@@ -1112,7 +1134,6 @@ public:
      
    } //Transpose
   }; // class Utils2
-
 
   // specialization Utils2 for SC=double
   template<>
