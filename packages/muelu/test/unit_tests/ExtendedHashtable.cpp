@@ -25,7 +25,7 @@ namespace MueLuTests {
 
     // build Operator
     Teuchos::ParameterList params;
-    const RCP<const Map> map = MapFactory::Build(Xpetra::UseTpetra, 20, 0, comm);
+    const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), 20, 0, comm);
     RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, params);
 
     // an extended hashtable

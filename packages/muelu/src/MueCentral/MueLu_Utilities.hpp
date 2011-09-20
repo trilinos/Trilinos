@@ -922,7 +922,13 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true)
    {
+   //Note: Epetra and Tpetra could be enabled simultaneously.
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      std::string TorE = "epetra";
+#else
+     std::string TorE = "tpetra";
+#endif
+
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epOp;
       try {
@@ -1093,7 +1099,11 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      std::string TorE = "epetra";
+#else
+     std::string TorE = "tpetra";
+#endif
 
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
@@ -1155,7 +1165,11 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      std::string TorE = "epetra";
+#else
+     std::string TorE = "tpetra";
+#endif
 
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
