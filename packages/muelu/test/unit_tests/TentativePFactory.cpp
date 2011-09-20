@@ -243,6 +243,7 @@ namespace MueLuTests {
 
   } //MakeTentative
 
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
   TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_EpetraVsTpetra)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -374,7 +375,8 @@ namespace MueLuTests {
         TEST_EQUALITY(results[0], results[1]); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
-  } //MakeTentative
+  } //TentativePFactory_EpetraVsTpetra
+#endif
 
 
 }//namespace MueLuTests
