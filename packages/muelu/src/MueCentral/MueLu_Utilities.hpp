@@ -270,9 +270,9 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         switch (canUseML) {
 
           case true:
-            {
             //if ML is not enabled, this case falls through to the EpetraExt multiply.
 #           if defined(HAVE_MUELU_ML)
+            {
             //ML matrix multiply wrap that uses ML_Operator_WrapEpetraCrsMatrix
             ML_Comm* comm;
             ML_Comm_Create(&comm);

@@ -99,6 +99,9 @@ namespace Xpetra {
     //! Returns the number of matrix rows owned on the calling node.
     size_t getNodeNumRows() const { return mtx_->getNodeNumRows(); }
 
+    //! Returns the number of matrix columns owned on the calling node.
+    size_t getNodeNumCols() const { return mtx_->getNodeNumCols(); }
+
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const { return mtx_->getGlobalNumEntries(); }
 

@@ -30,8 +30,8 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor
-    TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0)
-      : lib_(lib), type_(type), paramList_(paramList), overlap_(overlap)
+    TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null)
+      : lib_(lib), type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     { 
       TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
@@ -61,13 +61,13 @@ namespace MueLu {
     RCP<SmootherPrototype> Copy() const {
       if (lib_ == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
-        return rcp( new Ifpack2Smoother(type_, paramList_, overlap_) );
+        return rcp( new Ifpack2Smoother(type_, paramList_, overlap_, AFact_) );
 #else
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
-        return GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_);
+        return GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
 #else
         TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif
@@ -161,6 +161,9 @@ namespace MueLu {
 
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
+
+    //! A Factory
+    RCP<FactoryBase> AFact_;
 
   }; // class TrilinosSmoother
 
