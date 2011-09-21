@@ -30,9 +30,9 @@ APPEND_SET(SOURCES
   Memory.cpp
   #UCAggregationFactory.cpp
   ExtendedHashtable.cpp
-
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
+  Utilities
 )
 
 ### Tests that require other Trilinos packages
