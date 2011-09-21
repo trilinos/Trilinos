@@ -132,7 +132,7 @@ void StopTimer(double* t0, double *delta)
 /*   comm      (in) Pointer to an ML communicator.                      */
 /* ******************************************************************** */
 
-void ReportTimer(double t0, char *msgString, ML_Comm *comm)
+void ReportTimer(double t0, const char *msgString, ML_Comm *comm)
 {
 #ifdef ML_TIMING
   double t1;
