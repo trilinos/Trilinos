@@ -11,7 +11,8 @@ namespace Xpetra {
 
   enum UnderlyingLib {
     UseEpetra,
-    UseTpetra
+    UseTpetra,
+    NotSpecified
   };
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>

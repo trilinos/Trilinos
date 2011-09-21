@@ -86,8 +86,11 @@ namespace MueLuTests {
       } // BuildMap()
 
       // Create a matrix as specified by parameter list options
-      static RCP<Operator> BuildMatrix(Teuchos::ParameterList &matrixList) {
+      static RCP<Operator> BuildMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
         RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+        if (lib == Xpetra::NotSpecified)
+          lib = TestHelpers::Parameters::getLib();
 
         int nx,ny,nz; //global_size_t
         nx = ny = nz = 5;
@@ -108,7 +111,7 @@ namespace MueLuTests {
           throw(MueLu::Exceptions::RuntimeError(msg));
         }
 
-        RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, 0, comm);
+        RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
 
         RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList);
         return Op;
@@ -116,24 +119,24 @@ namespace MueLuTests {
 
       // Create a 1D Poisson matrix with the specified number of rows
       // nx: global number of rows
-      static RCP<Operator> Build1DPoisson(int nx) { //global_size_t
+      static RCP<Operator> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         matrixList.set("nx", nx);
         matrixList.set("matrixType","Laplace1D");
-        RCP<Operator> A = BuildMatrix(matrixList);
+        RCP<Operator> A = BuildMatrix(matrixList,lib);
         return A;
       } // Build1DPoisson()
 
       // Create a 2D Poisson matrix with the specified number of rows
       // nx: global number of rows
       // ny: global number of rows
-      static RCP<Operator> Build2DPoisson(int nx, int ny=-1) { //global_size_t
+      static RCP<Operator> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         if (ny==-1) ny=nx;
         matrixList.set("nx", nx);
         matrixList.set("ny", ny);
         matrixList.set("matrixType","Laplace2D");
-        RCP<Operator> A = BuildMatrix(matrixList);
+        RCP<Operator> A = BuildMatrix(matrixList,lib);
         return A;
       } // Build2DPoisson()
  
