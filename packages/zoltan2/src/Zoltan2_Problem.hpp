@@ -3,29 +3,13 @@
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_TemplateMacros.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
-
-////////////////////////////////////////////////////////////////////////
-#define HELLO cout << "Hello from " << __func__ << endl
-
-#define CONSISTENT_CLASS_TEMPLATE_LINE \
-        template <typename Scalar=float, \
-                  typename LNO=int, typename GNO=int, typename LID=LNO, typename GID=GNO, \
-                  typename Node=Kokkos::DefaultNode::DefaultNodeType>
-
-#define CONSISTENT_FN_TEMPLATE_LINE \
-        template <typename Scalar, \
-                  typename LNO, typename GNO, typename LID, typename GID, \
-                  typename Node>
-
-#define CONSISTENT_TEMPLATE_PARAMS \
-        Scalar, LNO, GNO, LID, GID, Node
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Problem.hpp
@@ -54,7 +38,8 @@ public:
   Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
   Problem(InputAdapter &);
 
-  ~Problem() {};
+  // Destructor
+  virtual ~Problem() {};
 
   // Other methods
   virtual void solve() = 0;
@@ -74,13 +59,14 @@ private:
 //! to XpetraMatrixAdapter.
 CONSISTENT_FN_TEMPLATE_LINE
 Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
-  Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> *A, 
-  Teuchos::ParameterList *p
+  Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
+  Teuchos::ParameterList &p
 ) 
 {
   HELLO;
-  //TODO _inputAdapter = rcp(new TpetraMatrixAdapter(rcp(A))); 
-  _params = rcp(p);
+  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>
+                                (rcpFromRef(A)));
+  _params = rcpFromRef(p);
 }
 
 }

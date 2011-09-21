@@ -71,6 +71,11 @@ protected:
 
 public:
 
+#ifndef KDDKDD
+  // SR These virtual functions need to be defined by every implementation.
+  // SR Leaving them out now until we have good use case. Reusing Karen's
+  // macro here.
+
   virtual bool adapterComplete() = 0;
 
   /*! Direct the input adapter to complete processing input data.
@@ -88,6 +93,7 @@ public:
 
   /*! Assignment operator */
   virtual InputAdapter &operator=(const InputAdapter &rhs) = 0;
+#endif
 
   /*! The caller's communicator */
 #ifdef KDDKDD

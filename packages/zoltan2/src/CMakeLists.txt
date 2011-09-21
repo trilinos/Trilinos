@@ -50,6 +50,7 @@ APPEND_SET(HEADERS
   Zoltan2_IdentifierMap_def.hpp
   Zoltan2_Memory.hpp
   Zoltan2_Util.hpp
+  Zoltan2_TemplateMacros.hpp
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)

@@ -24,6 +24,10 @@ protected:
   //TODO RCP<PartitioningSolution> _solution;
 
 public:
+
+  // Destructor
+  virtual ~PartitioningProblem() {}
+
   //! Constructor with Tpetra Matrix interface.
   PartitioningProblem(
     Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,

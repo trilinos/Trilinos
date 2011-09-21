@@ -18,6 +18,7 @@
 #define _ZOLTAN2_MATRIXINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_TemplateMacros.hpp>
 
 namespace Zoltan2 {
 
@@ -30,10 +31,13 @@ namespace Zoltan2 {
 */
 
 CONSISTENT_CLASS_TEMPLATE_LINE
-  class MatrixInput : public InputAdapter{
+class MatrixInput : public InputAdapter{
 private:
 
 public:
+
+  /*! Destructor */
+  virtual ~MatrixInput(){};
 
   /*! Returns the global number of rows in the matrix.
    */
