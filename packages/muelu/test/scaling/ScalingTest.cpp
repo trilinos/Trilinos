@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
   mtime.back()->stop();
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));

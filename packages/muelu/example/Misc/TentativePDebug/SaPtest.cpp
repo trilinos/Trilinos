@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
   //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
   //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";

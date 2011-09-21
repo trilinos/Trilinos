@@ -367,7 +367,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-  H.FullPopulate(PRFact,AcFact,SmooFact,0,2);
+  H.FullPopulate(*PRFact,*AcFact,*SmooFact,0,2);
 #endif
     }
 } //FullPopulate
@@ -428,7 +428,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H.FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
 
@@ -523,7 +523,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H.FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
 

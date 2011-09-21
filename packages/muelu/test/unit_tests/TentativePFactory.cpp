@@ -319,7 +319,7 @@ namespace MueLuTests {
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
             Teuchos::ParameterList status;
-            status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+            status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
 
             SmootherFactory coarseSolveFact(smooProto);
             H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);

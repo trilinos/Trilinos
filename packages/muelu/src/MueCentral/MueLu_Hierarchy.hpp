@@ -132,15 +132,15 @@ namespace MueLu {
 
       Note: Empty factories are simply skipped.
     */
-    Teuchos::ParameterList FullPopulate(RCP<PRFactory> PRFact,
-                                        RCP<TwoLevelFactoryBase> AcFact,
-                                        RCP<SmootherFactory> SmooFact,
+    Teuchos::ParameterList FullPopulate(const PRFactory & PRFact,
+                                        const TwoLevelFactoryBase & AcFact,
+                                        const SmootherFactory & SmooFact,
                                         int const &startLevel=0, int const &numDesiredLevels=10 )
     {
       Teuchos::ParameterList status;
-      status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels);
+      status = FillHierarchy(PRFact,AcFact,startLevel,numDesiredLevels);
 
-      SetSmoothers(*SmooFact,startLevel,numDesiredLevels-1);
+      SetSmoothers(SmooFact,startLevel,numDesiredLevels-1);
       return status;
 
     } //FullPopulate()
@@ -161,7 +161,7 @@ namespace MueLu {
     */
     Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact,
                                          TwoLevelFactoryBase const &AcFact,
-                                         int startLevel=0, int numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
+                                         int const startLevel=0, int const numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
     {
       Monitor h(*this, "FillHierarchy");
       
