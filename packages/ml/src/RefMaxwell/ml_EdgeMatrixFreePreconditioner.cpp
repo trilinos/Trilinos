@@ -10,6 +10,9 @@
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
+#ifdef ML_MPI
+#include "Epetra_MpiComm.h"
+#endif
 using namespace std;
 
 #define ABS(x)((x)>0?(x):-(x))
