@@ -20,6 +20,17 @@ namespace MueLu {
 
   private:
     RCP<const Import> import_;
+    mutable RCP<const Import> winnerImport_; //FIXME get rid of "mutable"
+    mutable RCP<Import> pushWinners_; //FIXME get rid of mutable
+    RCP<Vector> tempVec_;
+    mutable RCP<Vector> perturbWt_;
+    mutable RCP<Vector> postComm_;
+    mutable RCP<Vector> candidateWinners_;
+    mutable ArrayRCP<GO> myWinners_;
+    mutable int numMyWinners_;
+    mutable RCP<Map> winnerMap_;
+    mutable int numCalls_;
+    int myPID_;
 
     //     uniqueMap                A subset of weight.getMap() where each GlobalId 
     //                              has only one unique copy on one processor.
@@ -41,9 +52,13 @@ namespace MueLu {
     UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap)
     {
       import_ = ImportFactory::Build(uniqueMap, nonUniqueMap);
+      tempVec_ = VectorFactory::Build(uniqueMap,false); //zeroed out before use
+      numMyWinners_ = 0;
+      numCalls_ = 0;
+      myPID_ = uniqueMap->getComm()->getRank();
     }
 
-    ~UCAggregationCommHelper() {}
+    ~UCAggregationCommHelper() { if (!myPID_) std::cout << "ArbitrateAndCommunicate has been called " << numCalls_ << " times" << std::endl;}
 
     inline void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const
     {
@@ -112,33 +127,83 @@ namespace MueLu {
     {
       const RCP<const Map> weightMap = weight_.getMap();
       const size_t nodeNumElements = weightMap->getNodeNumElements();
+      const RCP<const Teuchos::Comm<int> > & comm = weightMap->getComm();
+      int MyPid = comm->getRank(); // TODO:remove the getMap() step
+      ++numCalls_;
 
-      int MyPid = weightMap->getComm()->getRank(); // TODO:remove the getMap() step
-
-      if (perturb) {
-        RCP<Vector> perturbWt_ = VectorFactory::Build(weightMap);
-
-        // Note: maxValue() not available for Tpetra
-        //SC largestGlobalWeight = weight_.maxValue();
-        SC largestGlobalWeight = weight_.normInf();
-
-        // Modify seed of the random algorithm used by perturbWt_->randomize()
-        {
-          ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
-          for (int i = 0; i < 10; i++) ST::random();
-          perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
+      //short-circuit if only one process
+      if (comm->getSize() == 1) {
+        ArrayRCP<SC> serialWeight = weight_.getDataNonConst(0);
+        ArrayRCP<LO> serialProcWinner = procWinner_.getDataNonConst(0);
+        for (size_t i=0; i < nodeNumElements; ++i) {
+          if (serialWeight[i] > 0) {
+            serialWeight[i] = 0;
+            serialProcWinner[i] = MyPid;
+          }
         }
-        perturbWt_->randomize(); 
+        //companion doesn't change
+        return;
+      }
+
+#ifdef COMPARE_IN_OUT_VECTORS
+      RCP<Vector> in_weight_ = VectorFactory::Build(weight_.getMap());
+      {
+        ArrayRCP<SC> in_weight = in_weight_->getDataNonConst(0);
+        ArrayRCP<SC> weight = weight_.getDataNonConst(0);
+        for (size_t i=0; i < nodeNumElements; ++i) in_weight[i] = weight[i];
+      }
+      RCP<LOVector> in_procWinner_ = LOVectorFactory::Build(procWinner_.getMap());
+      {
+        ArrayRCP<LO> in_procWinner = in_procWinner_->getDataNonConst(0);
+        ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
+        for (size_t i=0; i < nodeNumElements; ++i) in_procWinner[i] = procWinner[i];
+      }
+      RCP<LOVector> in_companion;
+      {
+        if (companion != NULL) {
+          in_companion = LOVectorFactory::Build(companion->getMap());
+          ArrayRCP<LO> in_comp = in_companion->getDataNonConst(0);
+          ArrayRCP<LO> comp = companion->getDataNonConst(0);
+          for (size_t i=0; i < nodeNumElements; ++i) in_comp[i] = comp[i];
+        }
+      }
+#endif
+
+      if (perturb)
+      {
+        if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
+          perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized
+
+          // Modify seed of the random algorithm used by perturbWt_->randomize()
+          {
+            ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
+            for (int i = 0; i < 10; ++i) ST::random();
+              perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
+          }
+          perturbWt_->randomize(); 
+          ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
+          for (size_t i=0; i < nodeNumElements; ++i)
+            lperturbWt[i] = 1e-7*fabs(lperturbWt[i]); //FIXME this won't work for general SC
+#ifdef COMPARE_IN_OUT_VECTORS
+          ArrayRCP<SC> locperturbWt = perturbWt_->getDataNonConst(0);
+          for (size_t i=0; i < nodeNumElements; ++i)
+            printf("perturbWt[%d] = %15.10e\n",i,locperturbWt[i]);
+#endif
+        } //if (perturbWt_ == Teuchos::null || ...
 
         ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
         ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
 
-        for (size_t i=0; i < nodeNumElements; i++) {
-          if (weight[i] == 0.) perturbWt[i] = 0.;
-          else perturbWt[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
+        // Note: maxValue() not available for Tpetra
+        //SC largestGlobalWeight = weight_.maxValue();
+        SC largestGlobalWeight = weight_.normInf();
+        for (size_t i=0; i < nodeNumElements; ++i) {
+          if (weight[i] != 0.) {
+            weight[i] += largestGlobalWeight*perturbWt[i];
+          }
         }
-        for (size_t i=0; i < nodeNumElements; i++) weight[i] = perturbWt[i]; //TODO: why we return a perturbed weight? Can weight be const on this func?
-      }
+        //TODO is it necessary to return the *perturbed* weights?
+      } //if (perturb)
   
       // Communicate weights and store results in PostComm (which will be copied
       // back into weights later. When multiple processors have different weights
@@ -146,9 +211,10 @@ namespace MueLu {
       // processor should have the same value for PostComm[] even when multiple
       // copies of the same Gid are involved.
 
-      RCP<Vector> postComm_ = VectorFactory::Build(weightMap);
+      if (postComm_ == Teuchos::null || !postComm_->getMap()->isSameAs(*weightMap) )
+        postComm_ = VectorFactory::Build(weightMap);
 
-      postComm_->putScalar(0.0);
+      //note: postComm_ is zeroed either in build above, or in loop below upon last touch.
 
       NonUnique2NonUnique(weight_, *postComm_, Xpetra::ABSMAX);
    
@@ -166,19 +232,20 @@ namespace MueLu {
       //      When all weight's for a GID are zero, the associated procWinner's
       //      are left untouched.
 
-      RCP<Vector> candidateWinners_ = VectorFactory::Build(weightMap);
-      candidateWinners_->putScalar(0.0);
+      if (candidateWinners_ == Teuchos::null || !candidateWinners_->getMap()->isSameAs(*weightMap) )
+        candidateWinners_ = VectorFactory::Build(weightMap,false);
+      //note: candidateWinners_ is initialized below
 
       ArrayRCP<SC> weight = weight_.getDataNonConst(0);
 
       {
         ArrayRCP<SC> candidateWinners = candidateWinners_->getDataNonConst(0);
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < nodeNumElements; i++) {
+        for (size_t i=0; i < nodeNumElements; ++i) {
           if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
+          else                          candidateWinners[i] = 0;
+          weight[i]=postComm[i]; 
         }
-        
-        for (size_t i=0; i < nodeNumElements; i++) weight[i]=postComm[i]; 
       }
       NonUnique2NonUnique(*candidateWinners_, *postComm_, Xpetra::ABSMAX);
 
@@ -187,32 +254,40 @@ namespace MueLu {
       //    weight[i]!=0  ==> on some proc is equal to its ==> postComm[i]!=0
       //                      MyPid+1.
       //          
+      int numMyWinners = 0;
       ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
       {
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < nodeNumElements; i++)  {
+        for (size_t i=0; i < nodeNumElements; ++i)  {
           if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
+          weight[i] = 0.;    //we are done with weight
+          postComm[i] = 0.;  //avoids having to initialize postComm_ on next call to ArbitrateAndCommunicate
+          if (procWinner[i] == MyPid) ++numMyWinners;
         }
       }
 
-      weight = Teuchos::null;
+      weight = Teuchos::null; //TODO why do we do this?
 
       if (companion != NULL) {
         // Now build a new Map, WinnerMap which just consists of procWinners. 
         // This is done by extracting the Gids for Wt, and shoving
         // the subset that correspond to procWinners in MyWinners.
         // WinnerMap is then constructed using MyWinners.
+        //
+        // In order to avoid regenerating winnerMap_, the following are checked:
+        //   1) Do the local number of entries in MyWinners differ?  If so, regenerate/repopulate MyWinners and regenerate winnerMap_.
+        //   2) If the local number of entries in MyWinners are the same, do any entries differ?  If so, repopulate MyWinners and
+        //      regenerate winnerMap_.
    
-        //Teuchos::ArrayRCP<GO>::size_type numMyWinners = 0;
-        int numMyWinners = 0;
-        for (size_t i = 0; i < nodeNumElements; i++) {
-          if (procWinner[i] == MyPid) numMyWinners++;
-        }
-   
-        //    int *myGids    = new int[nodeNumElements+1];
-        //    int *myWinners = new int[numMyWinners+1];
         ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
-        ArrayRCP<GO> myWinners(numMyWinners);
+        bool realloc=false;
+        if (numMyWinners != numMyWinners_) {
+          // The local number of entries in MyWinners_ have changed since the last invocation, so reallocate myWinners_.
+          myWinners_ = ArrayRCP<GO>(numMyWinners);
+          realloc=true;
+          //std::cout << MyPid << ":  numMyWinners has changed : (old) " << numMyWinners_ << ", (new) " << numMyWinners << std::endl;
+          numMyWinners_ = numMyWinners;
+        }
 
 #ifdef JG_DEBUG
         procWinner = Teuchos::null;
@@ -221,30 +296,70 @@ namespace MueLu {
         procWinner = procWinner_.getDataNonConst(0);
 #endif
 
-        numMyWinners = 0;
-        for (size_t i = 0; i < nodeNumElements; i++) {
-          if (procWinner[i] == MyPid)
-            myWinners[numMyWinners++] = myGids[i];
-        }
+        if (realloc==true) {
+          // The local number of entries in MyWinners have changed since the last invocation, so repopulate MyWinners_.
+          numMyWinners = 0;
+          for (size_t i = 0; i < nodeNumElements; ++i) {
+            if (procWinner[i] == MyPid) {
+              myWinners_[numMyWinners++] = myGids[i];
+            }
+          }
+        } else {
+          // The local number of entries in MyWinners are the same as the last invocation, but
+          // we still must check if any entries differ from the last invocation.
+          bool entryMismatch=false;
+          numMyWinners = 0;
+          for (size_t i = 0; i < nodeNumElements; ++i) {
+            if (procWinner[i] == MyPid) {
+              if (myWinners_[numMyWinners++] != myGids[i]) {
+                entryMismatch=true;
+                break;
+              }
+            }
+          }
+
+          if (entryMismatch == true) {
+             // Entries differ from last invocation, so repopulate myWinners_.
+            realloc=true;
+            numMyWinners = 0;
+            for (size_t i = 0; i < nodeNumElements; ++i) {
+              if (procWinner[i] == MyPid) {
+                myWinners_[numMyWinners++] = myGids[i];
+              }
+            }
+          }
+        } //if (realloc==true) ... else
+
         procWinner = Teuchos::null;
 
-        //#define JG_DEBUG
 #ifdef JG_DEBUG
         std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
-        std::cout << MyPid << ": myWinners" << myWinners << std::endl;
+        std::cout << MyPid << ": myWinners_" << myWinners_ << std::endl;
         for(int i=0;i<numMyWinners; i++)
-          std::cout << MyPid << ": myWinners[locId=" << i << "] = " << myWinners[i] << std::endl;
+          std::cout << MyPid << ": myWinners_[locId=" << i << "] = " << myWinners_[i] << std::endl;
 
 #endif
 
-        // Xpetra::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weightMap->getComm());    
-        Xpetra::global_size_t g = -1; //TODO for Tpetra -1 == ??
-        RCP<Map> winnerMap = MapFactory::Build(weightMap->lib(), g, myWinners(), 0, weightMap->getComm());
+#ifdef HAVE_MPI
+        //See whether any process has determined that winnerMap_ must be regenerated.
+        int irealloc,orealloc;
+        if (realloc) irealloc=1;
+        else         irealloc=0;
+        MPI_Allreduce(&irealloc,&orealloc,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);  //FIXME MPI group should come from comm, may not be WORLD
+        if (orealloc == 1) realloc=true;
+        else               realloc=false;
+#endif
+
+        if (realloc) {
+          // Either the number of entries or the value have changed since the last invocation, so reallocation the map.
+          Xpetra::global_size_t g = -1; //TODO for Tpetra -1 == ??
+          winnerMap_ = MapFactory::Build(weightMap->lib(), g, myWinners_(), 0, weightMap->getComm());
+        }
        
         // Pull the Winners out of companion
         //     JustWinners <-- companion[Winners];
    
-        RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap);
+        RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap_);
 
 #ifdef JG_DEBUG
         RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
@@ -252,7 +367,11 @@ namespace MueLu {
         justWinners->describe(*out, Teuchos::VERB_EXTREME);
 #endif
 
-        RCP<const Import> winnerImport = ImportFactory::Build(weightMap, winnerMap);
+        if ( winnerImport_ == Teuchos::null
+             || !winnerImport_->getSourceMap()->isSameAs(*weightMap)
+             || !winnerImport_->getTargetMap()->isSameAs(*winnerMap_)  )
+          winnerImport_ = ImportFactory::Build(weightMap, winnerMap_);
+        RCP<const Import> winnerImport = winnerImport_;
         try
           {
             justWinners->doImport(*companion, *winnerImport, Xpetra::INSERT);
@@ -268,15 +387,35 @@ namespace MueLu {
         // version of the companion.
         //#define JG_DEBUG
 #ifdef JG_DEBUG
-        std::cout << *winnerMap << std::endl;
-        std::cout << *weightMap << std::endl;
+        RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        fos->setOutputToRootOnly(-1);
+        if (!weightMap->getComm()->getRank())
+          std::cout << "------ winnerMap_ ------" << std::endl;
+        winnerMap_->describe(*fos,Teuchos::VERB_EXTREME);
+        if (!weightMap->getComm()->getRank())
+          std::cout << "------ weightMap ------" << std::endl;
+        weightMap->getComm()->barrier();
+        weightMap->describe(*fos,Teuchos::VERB_EXTREME);
+        //std::cout << *winnerMap_ << std::endl;
+        //std::cout << *weightMap << std::endl;
+        sleep(5);
+        exit(1);
+#endif
+#ifdef JG_DEBUG
+#undef JG_DEBUG
 #endif
 
-        RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); // VERSION1
-        //RCP<Export> pushWinners = ExportFactory::Build(winnerMap, weightMap); // VERSION4
+        if ( pushWinners_ == Teuchos::null
+             || !pushWinners_->getSourceMap()->isSameAs(*winnerMap_)
+             || !pushWinners_->getTargetMap()->isSameAs(*weightMap)  )
+          pushWinners_ = ImportFactory::Build(winnerMap_,weightMap);
+        RCP<Import> pushWinners = pushWinners_;
+        //RCP<Import> pushWinners = ImportFactory::Build(winnerMap_, weightMap); // VERSION1
+        //RCP<Export> pushWinners = ExportFactory::Build(winnerMap_, weightMap); // VERSION4
         try
           {
-	    companion->doImport(*justWinners, *pushWinners, Xpetra::INSERT);   // VERSION1 Slow
+            companion->doImport(*justWinners, *pushWinners, Xpetra::INSERT);   // VERSION1 Slow
+            //companion->doExport(*justWinners, *winnerImport_, Xpetra::INSERT);   // JJH this should work... but exception
 //             if (weightMap->lib() == Xpetra::UseEpetra)
 //               justWinners->doExport(*companion, *winnerImport, Xpetra::INSERT);  // VERSION2 Tpetra doc is wrong
 //             else if (weightMap->lib() == Xpetra::UseTpetra)
@@ -303,16 +442,86 @@ namespace MueLu {
             std::cout << MyPid << ": companion(Vector out)=" << std::endl;
             companion->describe(*out, Teuchos::VERB_EXTREME);
 
-            // std::cout << MyPid << ": pushWinners(Import(winnerMap, weight_.Map))=" << *pushWinners << std::endl;
-            std::cout << MyPid << ": winnerMap=" << *winnerMap << std::endl;
+            // std::cout << MyPid << ": pushWinners(Import(winnerMap_, weight_.Map))=" << *pushWinners << std::endl;
+            std::cout << MyPid << ": winnerMap_=" << *winnerMap_ << std::endl;
             std::cout << MyPid << ": weight_.Map=" << *weightMap << std::endl;
 #endif
             //  throw e;
-            //}
             // throw 1;
       }
 
-    }
+#ifdef COMPARE_IN_OUT_VECTORS
+      if (MyPid == 0) {
+        std::cout << "==============" << std::endl;
+        std::cout << "call #" << numCalls << " (1-based)" << std::endl;
+        std::cout << "==============" << std::endl;
+      }
+      /*
+      bool sameWeight=true;
+      bool sameWinner=true;
+      bool sameComp=true;
+      */
+      std::string sameOrDiff;
+      {
+        ArrayRCP<SC> in_weight = in_weight_->getDataNonConst(0);
+        ArrayRCP<SC> weight = weight_.getDataNonConst(0);
+        if (MyPid == 0) std::cout << "==============\nweight\n==============\n" << std::endl;
+        for (size_t i=0; i < weight_.getLocalLength(); ++i) {
+          if (in_weight[i] - weight[i] != 0) sameOrDiff = "  <<<<";
+          else                           sameOrDiff = " ";
+          std::cout << std::setw(3) << i<<": " << in_weight[i] << "   " << weight[i] << sameOrDiff << in_weight[i] - weight[i] << std::endl;
+          /*
+          if (in_weight[i] != weight[i]) {
+            sameWeight=false;
+            std::cout << "\n\nin and out weight DIFFER\n\n" << std::endl;
+            std::cout << "i="<<i<<", in=" << in_weight[i] << " , out=" << weight[i] << std::endl;
+            break;
+          }
+          */
+        }
+      }
+
+      {
+        ArrayRCP<LO> in_procWinner = in_procWinner_->getDataNonConst(0);
+        ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
+        if (MyPid == 0) std::cout << "==============\nprocWinner\n==============\n" << std::endl;
+        for (size_t i=0; i < procWinner_.getLocalLength(); ++i) {
+          if (in_procWinner[i] != procWinner[i]) sameOrDiff = "  <<<<";
+          else                           sameOrDiff = " ";
+          std::cout << std::setw(3) << i<<": " << in_procWinner[i] << "   " << procWinner[i] << sameOrDiff << std::endl;
+          /*
+          if (in_procWinner[i] != procWinner[i]) {
+            sameWinner=false;
+            std::cout << "\n\nin and out procWinner DIFFER\n\n" << std::endl;
+            std::cout << "i="<<i<<", in=" << in_procWinner[i] << ", out=" << procWinner[i] << std::endl;
+            break;
+          }
+          */
+        }
+      }
+
+      {
+        if (companion != NULL) {
+          ArrayRCP<LO> in_comp = in_companion->getDataNonConst(0);
+          ArrayRCP<LO> comp = companion->getDataNonConst(0);
+        if (MyPid == 0) std::cout << "==============\ncompanion\n==============\n" << std::endl;
+          for (size_t i=0; i < companion->getLocalLength(); ++i) {
+            if (in_comp[i] != comp[i]) sameOrDiff = "  <<<<";
+            else                           sameOrDiff = " ";
+            std::cout << std::setw(3) << i<<": " << in_comp[i] << "   " << comp[i] << sameOrDiff << std::endl;
+            /*
+            if (in_comp[i] != comp[i]) {
+              sameComp=false;
+            std::cout << "\n\nin and out companion DIFFER\n\n" << std::endl;
+              std::cout << "i="<<i<<", in=" << in_comp[i] << ", out=" << comp[i] << std::endl;
+              break;
+            }
+            */
+          }
+        }
+      }
+#endif
+    } //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
     // Redistribute data in source to dest where both source and dest might have 
     // multiple copies of the same global id across many processors. The source
@@ -339,16 +548,16 @@ namespace MueLu {
     //
     void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const
     {
-      RCP<Vector> temp = VectorFactory::Build(import_->getSourceMap());
+      tempVec_->putScalar(0.);
      
       try
         {
-          temp->doExport(source, *import_, what);
-          dest.doImport(*temp,   *import_, Xpetra::INSERT);
+          tempVec_->doExport(source, *import_, what);
+          dest.doImport(*tempVec_,   *import_, Xpetra::INSERT);
         }
       catch(std::exception& e)
         {
-          int MyPid = temp->getMap()->getComm()->getRank();
+          int MyPid = tempVec_->getMap()->getComm()->getRank();
           std::cout << MyPid << ": ERR1: An exception occurred." << std::endl;
           throw e;
         }

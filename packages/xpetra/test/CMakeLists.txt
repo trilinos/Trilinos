@@ -21,5 +21,10 @@ ADD_SUBDIRECTORIES(
 
 # Tests specifically written for Xpetra:
   Operator
-  BlockedCrsOperator
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  ADD_SUBDIRECTORIES(
+    BlockedCrsOperator
+  )
+ENDIF()

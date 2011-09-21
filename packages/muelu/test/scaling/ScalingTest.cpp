@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
   for(int i=0;i<ntimers;i++) gTime[i] = lTime[i];
 #endif
 
-  for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
+  for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<std::endl;
 
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
