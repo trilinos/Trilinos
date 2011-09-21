@@ -9,17 +9,9 @@
 #include "MueLu_Monitor.hpp"
 
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_NoFactory.hpp"
-
-// used as default:
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_Ifpack2Smoother.hpp"
 
 namespace MueLu {
   /*!
@@ -54,12 +46,21 @@ namespace MueLu {
     //@{
 
     //! Default constructor.
-    Hierarchy() : implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) {}
+    Hierarchy() 
+      : implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) 
+    { }
+
+    //!
+    Hierarchy(const RCP<Operator> & A) : implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) {
+      RCP<Level> Finest = rcp( new Level() );
+      Finest->Set< RCP<Operator> >("A", A);
+      SetLevel(Finest);
+    }
 
     //! constructor with special default factory handler
     Hierarchy(RCP<DefaultFactoryHandlerBase> defHandler) : implicitTranspose_(false), defaultFactoryHandler_(defHandler) {
-    	if(defHandler == Teuchos::null)
-    		defaultFactoryHandler_ = rcp(new DefaultFactoryHandler());
+      if(defHandler == Teuchos::null)
+        defaultFactoryHandler_ = rcp(new DefaultFactoryHandler());
     }
 
     //! Copy constructor.
@@ -131,61 +132,18 @@ namespace MueLu {
 
       Note: Empty factories are simply skipped.
     */
-    Teuchos::ParameterList FullPopulate(RCP<PRFactory> PRFact=Teuchos::null,
-                                        RCP<TwoLevelFactoryBase> AcFact=Teuchos::null,
-                                        RCP<SmootherFactory> SmooFact=Teuchos::null,
+    Teuchos::ParameterList FullPopulate(RCP<PRFactory> PRFact,
+                                        RCP<TwoLevelFactoryBase> AcFact,
+                                        RCP<SmootherFactory> SmooFact,
                                         int const &startLevel=0, int const &numDesiredLevels=10 )
     {
-      if (PRFact == Teuchos::null) {
-        RCP<SaPFactory> SaPFact = rcp( new SaPFactory() );
-        PRFact = rcp( new GenericPRFactory(SaPFact));
-      }
-      if (AcFact == Teuchos::null) AcFact = rcp( new RAPFactory());
-
       Teuchos::ParameterList status;
-      status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels /*,status*/);
-      if (SmooFact != Teuchos::null) {
-        SetSmoothers(*SmooFact,startLevel,numDesiredLevels-1);
-      }
+      status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels);
+
+      SetSmoothers(*SmooFact,startLevel,numDesiredLevels-1);
       return status;
 
     } //FullPopulate()
-
-
-    //TODO JG to JHU: do we need this ??
-    /*! @brief Populate hierarchy with A's, R's, and P's using default factories.
-
-    The prolongator factory defaults to Smoothed Aggregation, and the coarse matrix factory defaults
-    to the Galerkin product.
-
-    @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
-    matrix, and the sum of nonzeros all matrices (including the fine).
-    */
-    Teuchos::ParameterList FillHierarchy() {
-      RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
-      RCP<SaPFactory> PFact = rcp(new SaPFactory(TentPFact));
-      RCP<TransPFactory> RFact = rcp(new TransPFactory(PFact));
-      RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact,RFact));
-      RCP<RAPFactory> AcFact = rcp(new RAPFactory(PRFact));
-      Teuchos::ParameterList status;
-      status = FillHierarchy(*PRFact,*AcFact);
-      return status;
-    } //FillHierarchy()
-
-    /*! @brief Populate hierarchy with A's, R's, and P's.
-
-    Populate hierarchy with provided PRFactory.  The coarse matrix factory defaults
-    to the Galerkin product.
-
-    @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
-    matrix, and the sum of nonzeros all matrices (including the fine).
-    */
-    Teuchos::ParameterList FillHierarchy(PRFactory const &PRFact) {
-      RAPFactory AcFact;
-      Teuchos::ParameterList status;
-      status = FillHierarchy(PRFact,AcFact);
-      return status;
-    }
 
     //TODO should there be another version of FillHierarchy:
     //TODO   Teuchos::ParameterList FillHierarchy(TwoLevelFactoryBase const &AcFact)

@@ -52,7 +52,7 @@ namespace MueLu {
     //@}
 
   protected:
-    Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_;
+    Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_; //TODO: use std lib hashtable instead (Teuchos::Hashtable is deprecated).
         
   }; // class DefaultFactoryHandlerBase
 

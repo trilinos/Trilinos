@@ -20,6 +20,8 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Hierarchy.hpp"
 
+#include "MueLu_IfpackSmoother.hpp"
+
 // Gallery
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"

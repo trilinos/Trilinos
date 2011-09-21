@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   levelOne->Set("A",A);
 
   out << "Providing no factories to FillHierarchy." << std::endl;
-  H.FillHierarchy();
+  //  H.FillHierarchy(); TODO
 
 } // FillHierarchy_NoFactoriesGiven
 
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 
   Hierarchy H(defHandler);
   H.SetLevel(levelOne);
-  H.FullPopulate();
+  //TODO  H.FullPopulate();
 } //FullPopulate
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
