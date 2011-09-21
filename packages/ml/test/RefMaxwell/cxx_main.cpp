@@ -48,7 +48,7 @@ int MatlabFileToMultiVector(const char *filename, const Epetra_BlockMap & map, i
 int dim=2;
 
 /*******************************************************/
-Teuchos::ParameterList Build_Teuchos_List(int stride,double *coord_ptr,char *str_tag, char* str_val,char *int_tag, int int_val){
+Teuchos::ParameterList Build_Teuchos_List(int stride,double *coord_ptr,const char *str_tag, const char* str_val,const char *int_tag, int int_val){
   Teuchos::ParameterList List_Coarse, RMList;
   
   /* Pass in given options */
@@ -124,7 +124,7 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
 
 /*******************************************************/
 void matrix_read(Epetra_ActiveComm &Comm){
-  Epetra_CrsMatrix *SM,*SMe,*Se,*S,*Ms,*Mse, *D0,*D0e,*M0,*M1, *M1e;
+  Epetra_CrsMatrix *SM,*Se,*S,*Ms,*Mse, *D0,*D0e,*M0,*M1, *M1e;
 
   /* Read Matrices */
   EpetraExt::MatlabFileToCrsMatrix("S.dat" ,Comm,Se);
@@ -214,8 +214,6 @@ void matrix_read(Epetra_ActiveComm &Comm){
 
 /*******************************************************/
 int main(int argc, char* argv[]){
-  char *dir;
-  int rv,slen;
   /* Initialize */
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
