@@ -118,12 +118,10 @@ int main(int argc, char *argv[]) {
   Finest.Set("A",Op,NULL);
 */
 
-
  Level Finest;
- //Finest.SetupPhase(true);
  Hierarchy H;
  H.SetLevel(rcpFromRef(Finest));
- Finest.Set("A",Op,NULL); 
+ Finest.Set("A",Op);
 
 
   UCAggregationFactory UCAggFact;
