@@ -24,6 +24,13 @@ ELSE()
    SET(Teko_ENABLE_ML_SMOOTHERS OFF)
 ENDIF()
 
+# enable development mode
+IF(Trilinos_ENABLE_DEVELOPMENT_MODE)
+   SET(Teko_ENABLE_DEV_MODE ON)
+ELSE()
+   SET(Teko_ENABLE_DEV_MODE OFF)
+ENDIF()
+
 #
 # C) Add the libraries, tests, and examples
 #
