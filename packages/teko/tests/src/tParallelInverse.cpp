@@ -57,6 +57,7 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
+#include "Teko_Config.h"
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
@@ -83,7 +84,7 @@ void tParallelInverse::loadMatrix()
 {
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/nsjac_1.mm",*GetComm(),ptrA));
+   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/lsc_F_2.mm",*GetComm(),ptrA));
    F_ = Thyra::epetraLinearOp(rcp(ptrA));
 }
 
@@ -91,11 +92,11 @@ void tParallelInverse::loadStridedMatrix()
 {
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
+   std::vector<int> vec(2); vec[0] = 1; vec[1] = 2;
    TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/nsjac.mm",*GetComm(),ptrA));
    RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
    // Block the linear system using a strided epetra operator
-   std::vector<int> vec(2); vec[0] = 1; vec[1] = 2; /*@ \label{lned:define-strided} @*/
    Teko::Epetra::StridedEpetraOperator sA(vec,A);
 
    // get 0,0 block
@@ -112,16 +113,18 @@ int tParallelInverse::runTest(int verbosity,std::ostream & stdstrm,std::ostream 
 
 
    status = test_inverse(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"inverse\" ... PASSED","   \"inverse\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
+#ifdef Teko_ENABLE_DEV_MODE // so the file nsjac.mm isn't required for release mode
    status = test_stridedInverse(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"stridedInverse\" ... PASSED","   \"stridedInverse\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+#endif
 
    status = allTests;
    if(verbosity >= 10) {
