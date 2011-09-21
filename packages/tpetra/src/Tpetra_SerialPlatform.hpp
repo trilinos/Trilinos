@@ -72,8 +72,8 @@ namespace Tpetra {
     /// \param node [in/out] The Kokkos Node instance.
     ///
     explicit SerialPlatform (const RCP<Node> &node) :
-      node_ (node),
-      comm_ (rcp (new Teuchos::SerialComm<int>()))
+      comm_ (rcp (new Teuchos::SerialComm<int>())),
+      node_ (node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -146,8 +146,8 @@ namespace Tpetra {
     /// Node instance using Kokkos::DefaultNode::getDefaultNode().
     ///
     SerialPlatform() : 
-      node_ (Kokkos::DefaultNode::getDefaultNode ()),
-      comm_ (rcp (new Teuchos::SerialComm<int> ()))
+      comm_ (rcp (new Teuchos::SerialComm<int> ())),
+      node_ (Kokkos::DefaultNode::getDefaultNode ())
     {}
 
     /// \brief Constructor that accepts a Kokkos Node.
@@ -165,8 +165,8 @@ namespace Tpetra {
     /// \param node [in/out] The Kokkos Node instance.
     ///
     explicit SerialPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node) :
-      node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node),
-      comm_ (rcp (new Teuchos::SerialComm<int> ()))
+      comm_ (rcp (new Teuchos::SerialComm<int> ())),
+      node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
