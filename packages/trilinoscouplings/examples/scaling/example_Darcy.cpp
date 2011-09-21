@@ -1353,6 +1353,8 @@ int main(int argc, char *argv[]) {
 	    
          }
       }
+
+    
 // ******************************* Build right hand side ************************************
 
 
@@ -1428,7 +1430,84 @@ int main(int argc, char *argv[]) {
    jointVector.GlobalAssemble();   
    jointVectorGIDs.GlobalAssemble(); 
    
+
+   /**********************************************************************************/
+   /*************************BUILD INCIDENCE MATRIX***********************************/
+   /**********************************************************************************/
+   Epetra_FECrsMatrix DCurl(Copy, globalMapD, 4);
+   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);   
+
+   // Edge to node incidence matrix  
+   double vals[2];
+   vals[0]=-1.0; vals[1]=1.0;
+   for (int j=0; j<numEdges; j++){
+     if (edgeIsOwned[j]){
+       int rowNum = globalEdgeIds[j];
+       int colNum[2];
+       colNum[0] = globalNodeIds[edgeToNode(j,0)];
+       colNum[1] = globalNodeIds[edgeToNode(j,1)];
+       DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
+     }
+   }
+
+   DGrad.GlobalAssemble(false); 
+   DGrad.FillComplete(globalMapG,globalMapC); 
    
+   // Edge to face incidence matrix
+   FieldContainer<bool> faceDone2(numFaces);
+   for (int i=0; i<numElems; i++){
+      for (int k=0; k<numFacesPerElem; k++){
+         int iface=elemToFace(i,k);
+         if (faceIsOwned[iface] && !faceDone2(iface)){
+             double vals[4];
+             int rowNum = globalFaceIds[iface];
+             int colNum[4];
+
+            for (int m=0; m<numEdgesPerFace; m++){
+              colNum[m] = globalEdgeIds[faceToEdge(iface,m)];
+              int indm = m+1;
+              if (indm >= numEdgesPerFace) indm=0;
+              if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
+                 edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
+                 vals[m]=1.0;}
+              else vals[m]=-1.0;
+
+            // This is a convoluted way to account for edge orientations that 
+            // may be incorrect on the local processor because the edge is
+            // not owned by the local processor.
+             int edgeIndex = -1;
+             if (!edgeIsOwned[faceToEdge(iface,m)]){
+                 for (int l=0; l<numEdgesPerElem; l++){
+                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
+                       edgeIndex=l;
+                }
+             }
+               if (edgeIndex != -1 && edgeIndex < 8){
+                 if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
+                   vals[m]=-1.0*vals[m];                 
+                 }
+                 else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
+                   vals[m]=-1.0*vals[m];
+                 }
+               }
+            } // end loop over face edges
+
+           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+           faceDone2(iface)=1;
+
+       } // end if face is owned and face not done
+    } // end loop over element faces
+  } // end loop over elements
+
+   DCurl.GlobalAssemble(false);
+   DCurl.FillComplete(globalMapC,globalMapD);
+
+
+   if(MyPID==0) {std::cout << "Building incidence matrices                 "
+			   << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+   
+
+
    
   // Adjust matrices and rhs due to boundary conditions
   //for this, we need number of structures on boundary
@@ -1518,6 +1597,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
   // Dump matrices without boundary condition corrections to disk
+   EpetraExt::RowMatrixToMatlabFile("d1.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("massDp.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("stiffDp.dat",StiffD);   EpetraExt::RowMatrixToMatlabFile("stiffGp.dat",StiffG);
    EpetraExt::RowMatrixToMatlabFile("stiffDGp.dat",StiffDG);
@@ -1554,7 +1634,6 @@ int main(int argc, char *argv[]) {
   xx.PutScalar(0.0);
   
   Epetra_LinearProblem Problem(&jointMatrix,&xx,&jointVector); 
-  Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_Time Time2(jointMatrix.Comm());
   
   AztecOO solver(Problem);  
@@ -1959,7 +2038,7 @@ void evaluateMaterialTensorInv(ArrayOut &        matTensorValues,
 template<typename Scalar>
 Scalar evalKappa(const Scalar& x, const Scalar& y, const Scalar& z){
 
-  Scalar kappa;
+  Scalar kappa=1;
   
   /*
   if((y>=0)&&(y<=.2)) kappa=1;
