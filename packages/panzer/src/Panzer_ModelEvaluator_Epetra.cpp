@@ -24,13 +24,15 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
-		      bool build_transient_support) : 
-  fmb_(fmb),
-  responseLibrary_(rLibrary),
-  p_names_(p_names),
-  build_transient_support_(build_transient_support),
-  lof_(lof),
-  sg_lof_(Teuchos::null)
+		      bool build_transient_support)
+  : fmb_(fmb)
+  , responseLibrary_(rLibrary)
+  , p_names_(p_names)
+  , build_transient_support_(build_transient_support)
+  , lof_(lof)
+  #ifdef HAVE_STOKHOS
+  , sg_lof_(Teuchos::null)
+  #endif
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -42,6 +44,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   initializeEpetraObjs();
 }
 
+#ifdef HAVE_STOKHOS
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
@@ -64,6 +67,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
 }
+#endif
 
 void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
 {

@@ -16,7 +16,9 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
-  template<typename, typename>  class SGEpetraLinearObjFactory;
+  #ifdef HAVE_STOKHOS
+     template<typename, typename>  class SGEpetraLinearObjFactory;
+  #endif
   template<typename>  class ResponseLibrary;
   class EpetraLinearObjContainer;
   class SGEpetraLinearObjContainer;
@@ -30,11 +32,13 @@ namespace panzer {
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 			  bool build_transient_support);
 
-    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
-                          const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-			  const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
-			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
-			  bool build_transient_support);
+    #ifdef HAVE_STOKHOS
+       ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                             const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+   			     const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
+   			     const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			     bool build_transient_support);
+    #endif
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -133,9 +137,11 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
     mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_;
 
-    // sg specific linear object objects
-    Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
-    mutable Teuchos::RCP<SGEpetraLinearObjContainer> sg_ghostedContainer_;
+    #ifdef HAVE_STOKHOS
+       // sg specific linear object objects
+       Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
+       mutable Teuchos::RCP<SGEpetraLinearObjContainer> sg_ghostedContainer_;
+    #endif
   };
   
 }
