@@ -27,7 +27,7 @@
 namespace Zoltan2 {
 
 Environment::Environment( Teuchos::ParameterList &problemParams,
-  Teuchos::RCP<Teuchos::Comm<int> > &comm):
+  Teuchos::RCP<const Teuchos::Comm<int> > &comm):
   _params(problemParams), _validParams(), 
   _myRank(0), _numProcs(0),
   _printDebugMessages(false), _printProfilingMessages(false),
@@ -82,7 +82,7 @@ Environment &Environment::operator=(const Environment &env)
   return *this;
 }
 
-void Environment::setCommunicator(Teuchos::RCP<Teuchos::Comm<int> > &comm)
+void Environment::setCommunicator(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
     "parameters are already committed",
@@ -132,7 +132,7 @@ void Environment::commitParameters()
 
   _errorCheckLevel = _params.get<int>(std::string("error_check_level"));
   _debugDepthLevel = _params.get<int>(std::string("debug_level"));
-  _profilingIndicator = _params.get<int>(std::string("timing_level"));
+  _profilingIndicator = _params.get<int>(std::string("profiling_level"));
 
   std::string &fname = _params.get<std::string>(std::string("debug_output_file"));
   std::ofstream dbgFile;

@@ -433,7 +433,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     tableSize =  (tableSize < 1) ? 1 : tableSize;
 
     id2index_array_hash_t *gidIndices = NULL;
-    Z2_ASYNC_MEMORY_ALLOC(*_comm, *_env, id2index_array_hash_t, gidIndices, tableSize);
+    Z2_ASYNC_MEMORY_ALLOC(*_comm, *_env, id2index_array_hash_t, 
+      gidIndices, tableSize);
 
     for (LNO i=0; i < len; i++){
 

@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     myParams.validateParametersAndSetDefaults(validParameters);
   }
   catch(std::exception &e){
-    std::cerr << "Valid parameters generated an error:" << std::endl;
+    std::cerr << "Validate parameters generated an error:" << std::endl;
     std::cerr << e.what() << std::endl;
     std::cerr << "FAIL" << std::endl;
     return 1;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
   else
     std::cout << "Write profiling output to " << profilingOstream << std::endl;
 
-  // Now let's entry a bad value for a parameter and make sure
+  // Now let's enter a bad value for a parameter and make sure
   // we get an error.
 
   Teuchos::ParameterList faultyParams("badParameterList");

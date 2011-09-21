@@ -1,13 +1,18 @@
 INCLUDE(PackageAddExecutableAndTest)
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  IdentifierMap
-#  SOURCES IdentifierMap.cpp
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+# TODO
+# We want to emit "NOTRUN" when a test is skipped
+# for some reason. How do we tell cmake?
+#
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  IdentifierMap
+  SOURCES IdentifierMap.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   IdentifierTraits
@@ -18,20 +23,20 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  AlltoAll
-#  SOURCES AlltoAll.cpp
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  AlltoAll
+  SOURCES AlltoAll.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  comm
-#  SOURCES comm.cpp
+#  CommTest
+#  SOURCES CommTest.cpp
 #  NUM_MPI_PROCS 4
-#  COMM mpi
+#  COMM mpi serial
 #  PASS_REGULAR_EXPRESSION "PASS"
 #  FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
@@ -47,8 +52,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  InputAdapter
-#  SOURCES InputAdapter.cpp
+#  GraphInputAdapter
+#  SOURCES GraphInputAdapter.cpp
 #  NUM_MPI_PROCS 4
 #  COMM mpi
 #  PASS_REGULAR_EXPRESSION "PASS"

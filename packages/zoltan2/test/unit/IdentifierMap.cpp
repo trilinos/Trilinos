@@ -5,8 +5,6 @@
 //
 //                Copyright message goes here.   TODO
 //
-// Questions? Contact Lee Ann Riesen (lriesen@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 //
@@ -37,7 +35,9 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Zoltan2_Partitioner.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_Environment.hpp>
+#include <Zoltan2_IdentifierMap.hpp>
 
 using namespace std;
 
@@ -67,16 +67,14 @@ int main(int argc, char *argv[])
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::ParameterList problemParams; 
-  problemParams.set(std::string("ERROR_CHECK_LEVEL"), 1);
-
-  Teuchos::ParameterList libConfig;
-  libConfig.set(std::string("DEBUG_OSTREAM"), &std::cout);
-  libConfig.set(std::string("ERROR_OSTREAM"), &std::cerr);
-  libConfig.set(std::string("DEBUG_LEVEL"), 0);
+  Teuchos::ParameterList params; 
+  params.set(std::string("ERROR_CHECK_LEVEL"), 1);
+  params.set(std::string("DEBUG_OSTREAM"), "std::cout");
+  params.set(std::string("ERROR_OSTREAM"), "std::cerr");
+  params.set(std::string("DEBUG_LEVEL"), 0);
     
   Teuchos::RCP<Zoltan2::Environment> envPtr = 
-    Teuchos::rcp(new Zoltan2::Environment(problemParams, libConfig));
+    Teuchos::rcp(new Zoltan2::Environment(params, comm));
 
   if (!errcode) {
 
@@ -111,6 +109,7 @@ int main(int argc, char *argv[])
 
     if (idmap.gnosAreGids() != true){
       std::cerr << problem << " gnosAreGids" << std::endl;
+      std::cout << "FAIL" << std::endl;
       return 1;
     }
 
@@ -124,6 +123,7 @@ int main(int argc, char *argv[])
     }
     catch (std::exception &e){
       std::cerr << rank << ") gidTranslate error: " << e.what();
+      std::cout << "FAIL" << std::endl;
       return 1;
     }
 
@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 
   if (errcode){
     std::cerr << rank << ") gno array is wrong" << std::endl;
+    std::cout << "FAIL" << std::endl;
   }
   else{
     std::cout << rank << ") PASS" << std::endl;

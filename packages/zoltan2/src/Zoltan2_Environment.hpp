@@ -79,7 +79,8 @@ public:
       Because parameter lists are small, we save a
       copy of them instead of requiring an RCP.
    */
-  Environment(Teuchos::ParameterList &prob, Teuchos::RCP<Teuchos::Comm<int> > &comm);
+  Environment(Teuchos::ParameterList &prob, 
+    Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /*! Constructor
    */
@@ -95,7 +96,7 @@ public:
   Environment &operator=(const Environment &env);
 
   /*! Set communicator */
-  void setCommunicator(Teuchos::RCP<Teuchos::Comm<int> > &comm);
+  void setCommunicator(Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /*! Set or reset the problem parameters*/
   void setParameters(Teuchos::ParameterList &Params);

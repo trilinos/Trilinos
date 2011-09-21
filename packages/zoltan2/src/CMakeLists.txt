@@ -37,20 +37,31 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  Zoltan2_AlltoAll.hpp
-  Zoltan2_Exceptions.hpp
-  Zoltan2_IdentifierMap.hpp
-  Zoltan2_Parameters.hpp
-  Zoltan2_DebugManager.hpp
-  Zoltan2_IdentifierMap_decl.hpp
-  Zoltan2_IdentifierTraits.hpp
-  Zoltan2_Problem.hpp
-  Zoltan2_PartitioningProblem.hpp
-  Zoltan2_Environment.hpp
-  Zoltan2_IdentifierMap_def.hpp
-  Zoltan2_Memory.hpp
-  Zoltan2_Util.hpp
-  Zoltan2_TemplateMacros.hpp
+      Zoltan2_AlltoAll.hpp
+      Zoltan2_DebugManager.hpp
+      Zoltan2_Environment.cpp
+      Zoltan2_Environment.hpp
+      Zoltan2_EpetraCrsGraphInput.hpp
+      Zoltan2_Exceptions.hpp
+      Zoltan2_GraphInput.hpp
+      Zoltan2_IdentifierMap_decl.hpp
+      Zoltan2_IdentifierMap_def.hpp
+      Zoltan2_IdentifierMap.hpp
+      Zoltan2_IdentifierTraits.hpp
+      Zoltan2_MatrixInput.hpp
+      Zoltan2_Memory.hpp
+      Zoltan2_Parameters.cpp
+      Zoltan2_Parameters_decl.hpp
+      Zoltan2_Parameters_def.hpp
+      Zoltan2_Parameters.hpp
+      Zoltan2_PartitioningProblem.hpp
+      Zoltan2_Problem.hpp
+      Zoltan2_TemplateMacros.hpp
+      Zoltan2_TpetraCrsGraphInput.hpp
+      Zoltan2_TpetraCrsMatrixInput.hpp
+      Zoltan2_Util.cpp
+      Zoltan2_Util.hpp
+      Zoltan2_Version.cpp
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
@@ -75,11 +86,10 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/preCopyrightTrilinos/zoltan2/src)
 # Set sources
 
 APPEND_SET(SOURCES
-  Zoltan2_Version.cpp
-  Zoltan2_Util.cpp
   Zoltan2_Environment.cpp
-  Zoltan2_DebugManager.cpp
   Zoltan2_Parameters.cpp
+  Zoltan2_Util.cpp
+  Zoltan2_Version.cpp
   )
 
 PACKAGE_ADD_LIBRARY(

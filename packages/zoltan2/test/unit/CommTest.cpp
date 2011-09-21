@@ -5,8 +5,6 @@
 //
 //                Copyright message goes here.   TODO
 //
-// Questions? Contact Lee Ann Riesen (lriesen@sandia.gov)
-//
 // ***********************************************************************
 // @HEADER
 
@@ -23,22 +21,20 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
 {
-  // The zoltan2 library will work with a copy of the caller's communicator.
+  // We're mimicing the zoltan2 library here, and it will
+  // work with a copy of the caller's communicator.
   MPI_Comm comm;
   MPI_Comm_dup(callerComm,&comm);
   MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
   Zoltan2::Environment env;
 
-  // env not really implemented yet - just set it up
-  env._errorOStream = &std::cerr;
-  env._errorCheckLevel = 0;
+  // Just take whatever the default environment is.
+  env.commitParameters();
 
   // Get the Teuchos communicator that Zoltan will use.
 
-  Teuchos::RCP<Teuchos::MpiComm<int> > tcomm = Zoltan2::getTeuchosMpiComm<int>(comm);
-
-std::cout << tcomm.strong_count() << " " << tcomm.weak_count() << std::endl;
-std::cout << tcomm.is_valid_ptr() << std::endl;
+  Teuchos::RCP<Teuchos::MpiComm<int> > tcomm = 
+    Zoltan2::getTeuchosMpiComm<int>(comm);
 
   if ( (tcomm->getRank() != rank) ||
        (tcomm->getSize() != size) ){
@@ -68,6 +64,8 @@ std::cout << tcomm.is_valid_ptr() << std::endl;
 
   std::cout << "Proc " << rank << " of " << size << std::endl;
 
+  // TODO test that it's correct!
+
   return 0;
 }
 #endif
@@ -85,9 +83,14 @@ int main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   fail = call_zoltan2(MPI_COMM_WORLD, rank, size);
+
+  if (!fail)
+    std::cout << "PASS" << std::endl; 
+  else
+    std::cout << "FAIL" << std::endl; 
   
 #else
-  std::cout << "PASS" << std::endl; 
+  std::cout << "NOTRUN" << std::endl; 
 #endif
   return fail;
 }

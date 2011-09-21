@@ -19,13 +19,14 @@
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <Zoltan2_Partitioner.hpp>
 #include <Teuchos_GlobalMPISession.hpp>   
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
 #include <Teuchos_Comm.hpp>   
 #include <Teuchos_ParameterList.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
+#include <Zoltan2_Environment.hpp>   
+#include <Zoltan2_AlltoAll.hpp>   
 
 using namespace std;
 
@@ -40,16 +41,12 @@ int main(int argc, char *argv[])
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::ParameterList problemParams;
-  problemParams.set(std::string("ERROR_CHECK_LEVEL"), 1);
-
-  Teuchos::ParameterList libConfig;
-  libConfig.set(std::string("DEBUG_OSTREAM"), &std::cout);
-  libConfig.set(std::string("ERROR_OSTREAM"), &std::cerr);
-  libConfig.set(std::string("DEBUG_LEVEL"), 0);
+  Teuchos::ParameterList params;
+  params.set(std::string("ERROR_CHECK_LEVEL"), 1);
+  params.set(std::string("DEBUG_LEVEL"), 0);
         
   Teuchos::RCP<Zoltan2::Environment> envPtr = 
-    Teuchos::rcp(new Zoltan2::Environment(problemParams, libConfig));
+    Teuchos::rcp(new Zoltan2::Environment(params, comm));
 
   // In this test, our local IDs are ints and our global IDs are longs.
 

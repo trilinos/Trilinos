@@ -59,18 +59,40 @@ class DebugManager
 
     inline int getDebugLevel() const { return debugLevel_; };
 
-    inline void print(int debugLevel, const std::string &output);
+    inline void print(int debugLevel, const std::string &output){
+//#ifdef ZOLTAN2_DEBUG
+      if (debugLevel <= debugLevel_ && iPrint_)
+        *myOS_ << output;
+//#endif
+    }
 
-    inline void printInAllTasks(int debugLevel, const std::string &output);
+    inline void printInAllTasks(int debugLevel, const std::string &output){
+//#ifdef ZOLTAN2_DEBUG
+      if (debugLevel <= debugLevel_)
+        *myOS_ << output;
+//#endif
+    }
 
     // The const char * versions of print functions are needed to avoid the
     // expensive conversion in code like
     //          print(5, "I am here");
-    inline void print(int debugLevel, const char *output);
+    inline void print(int debugLevel, const char *output){
+//#ifdef ZOLTAN2_DEBUG
+        if (debugLevel <= debugLevel_ && iPrint_)
+            *myOS_ << output;
+//#endif
+    }
 
-    inline void printInAllTasks(int debugLevel, const char *output);
+    inline void printInAllTasks(int debugLevel, const char *output) {
+//#ifdef ZOLTAN2_DEBUG
+    if (debugLevel <= debugLevel_)
+        *myOS_ << "PID =" << myPID_ << " " << output;
+//#endif
+    }
 
-    inline void error(const std::string &output);
+    inline void error(const std::string &output) {
+      *myOS_ << "PID =" << myPID_ << " " << output;
+    }
 
     private:
 
@@ -83,4 +105,4 @@ class DebugManager
 
 } //namespace Zoltan2
 
-#endif // _ZOLTAN2_DEBUG_MANAGER_HPP_
+#endif
