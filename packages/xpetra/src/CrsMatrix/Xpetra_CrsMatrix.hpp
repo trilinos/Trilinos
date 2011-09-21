@@ -70,6 +70,9 @@ namespace Xpetra {
     //! Returns the number of matrix rows owned on the calling node.
     virtual size_t getNodeNumRows() const = 0;
 
+    //! Returns the number of matrix columns owned on the calling node.
+    virtual size_t getNodeNumCols() const = 0;
+
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const = 0;
 
