@@ -1597,7 +1597,8 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
   // Dump matrices without boundary condition corrections to disk
-   EpetraExt::RowMatrixToMatlabFile("d1.dat",DGrad);
+   EpetraExt::RowMatrixToMatlabFile("d1.dat",DCurl);
+   EpetraExt::RowMatrixToMatlabFile("d0.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("massDp.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("stiffDp.dat",StiffD);   EpetraExt::RowMatrixToMatlabFile("stiffGp.dat",StiffG);
    EpetraExt::RowMatrixToMatlabFile("stiffDGp.dat",StiffDG);
