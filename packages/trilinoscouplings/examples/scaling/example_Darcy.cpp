@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
   // Command line for xml file, otherwise use default
     std::string   xmlInFileName;
     if(argc>=2) xmlInFileName=string(argv[1]);
-    else xmlInFileName="DivLSFEMin.xml";
+    else xmlInFileName="Darcy.xml";
 
   // Read xml file into parameter list
     Teuchos::ParameterList inputList;
@@ -1507,8 +1507,15 @@ int main(int argc, char *argv[]) {
 			   << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
    
 
+   // Build Face-Node Incidence Matrix
+   Epetra_CrsMatrix DGrad1(DGrad);
+   Epetra_CrsMatrix DCurl1(DCurl);
+   Epetra_CrsMatrix FaceNode(Copy,globalMapD,0);
+   DGrad1.PutScalar(1.0);
+   DCurl1.PutScalar(1.0);
+   EpetraExt::MatrixMatrix::Multiply(DCurl1,false,DGrad1,false,FaceNode);
+   FaceNode.PutScalar(1.0);
 
-   
   // Adjust matrices and rhs due to boundary conditions
   //for this, we need number of structures on boundary
 
@@ -1597,6 +1604,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
   // Dump matrices without boundary condition corrections to disk
+   EpetraExt::RowMatrixToMatlabFile("facenode.dat",FaceNode);
    EpetraExt::RowMatrixToMatlabFile("d1.dat",DCurl);
    EpetraExt::RowMatrixToMatlabFile("d0.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("massDp.dat",MassD);
