@@ -154,6 +154,7 @@ APPEND_SET(HEADERS
   NOX_StatusTest_NormWRMS.H
   NOX_StatusTest_Stagnation.H
   NOX_StatusTest_Divergence.H 
+  NOX_StatusTest_RelativeNormF.H
   )
 APPEND_SET(SOURCES
   NOX_StatusTest_Generic.C
@@ -166,6 +167,7 @@ APPEND_SET(SOURCES
   NOX_StatusTest_NormWRMS.C
   NOX_StatusTest_Stagnation.C
   NOX_StatusTest_Divergence.C 
+  NOX_StatusTest_RelativeNormF.C
   )
 
 # Utils

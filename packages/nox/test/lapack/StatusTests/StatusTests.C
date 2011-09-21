@@ -587,6 +587,69 @@ int main(int argc, char *argv[])
 
   }
 
+  // New RelativeNormF tolerance
+  {
+    
+    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "Testing NOX::StatusTest::RelativeNormF Test" << endl;
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+
+    Teuchos::ParameterList p;
+
+    p.set("Test Type", "Combo");
+    p.set("Combo Type", "OR");
+    p.set("Number of Tests", 2);
+
+    Teuchos::ParameterList& normF_rel = p.sublist("Test 0");
+    normF_rel.set("Test Type", "RelativeNormF");
+    normF_rel.set("Tolerance", 1.0e-4);
+    
+    Teuchos::ParameterList& max_iters = p.sublist("Test 1");
+    max_iters.set("Test Type", "MaxIters");
+    max_iters.set("Maximum Iterations", 15);
+
+    Broyden interface(100,0.99);
+    RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
+    Teuchos::RCP<NOX::Abstract::Group> ig = group;
+
+    std::map< std::string, Teuchos::RCP<NOX::StatusTest::Generic> > tag_map;
+    statusTestsCombo = NOX::StatusTest::buildStatusTests(p, utils, &tag_map);
+    
+    RCP<Teuchos::ParameterList> sp = rcp(new Teuchos::ParameterList);
+    sp->set("Nonlinear Solver", "Line Search Based");
+    sp->sublist("Printing") = printParams;
+    sp->sublist("Solver Options").set("Status Test Check Type", "Complete");
+
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(ig, statusTestsCombo, sp);
+
+    NOX::StatusTest::StatusType status = solver->solve();
+    
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 11) {
+      final_status_value += 0;
+      cout << "\nRelativeNormF test 1/2 passed!\n" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "\nRelavtiveNormF test 1/2 failed!\n" << endl;
+    }
+
+    solver->reset(solver->getSolutionGroup().getX());
+    status = solver->solve();
+    
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 1) {
+      final_status_value += 0;
+      cout << "\nRelativeNormF test 2/2 passed!\n" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "\nRelativeNormF test 2/2 failed!\n" << endl;
+    }
+
+  }
+
   // **********************
   // Individual status test options - for failure tests
   // **********************

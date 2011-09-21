@@ -61,6 +61,7 @@
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_StatusTest_Divergence.H"
 #include "NOX_StatusTest_Stagnation.H"
+#include "NOX_StatusTest_RelativeNormF.H"
 
 using namespace Teuchos;
 
@@ -88,7 +89,7 @@ buildStatusTests(const std::string& file_name , const NOX::Utils& u,
   Teuchos::updateParametersFromXmlFile("input.xml", &param_list);
   status_tests = this->buildStatusTests(param_list, u, tagged_tests);
 #else
-  std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with --enable-teuchos-extended in teh configure script.";
+  std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with exteded support enabled.";
   TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 #endif
 
@@ -129,6 +130,8 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
     status_test = this->buildDivergenceTest(p, u);
   else if (test_type == "Stagnation")
     status_test = this->buildStagnationTest(p, u);
+  else if (test_type == "RelativeNormF")
+    status_test = this->buildRelativeNormFTest(p, u);
   else if (test_type == "User Defined")
     status_test = this->buildUserDefinedTest(p, u);
   else {
@@ -403,6 +406,20 @@ buildMaxItersTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
   
   RCP<NOX::StatusTest::MaxIters> status_test = 
     rcp(new NOX::StatusTest::MaxIters(max_iters, &u));
+  
+  return status_test;
+}
+
+// ************************************************************************
+// ************************************************************************
+Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
+buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+{
+  double tolerance = p.get("Tolerance", 1.0e-8);
+
+  RCP<NOX::StatusTest::RelativeNormF> status_test;
+
+  status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance, &u));
   
   return status_test;
 }

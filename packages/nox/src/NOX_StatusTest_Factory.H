@@ -80,6 +80,7 @@ namespace StatusTest {
 	 <li> "FiniteValue" - NOX::StatusTest::FiniteValue
 	 <li> "Divergence" - NOX::StatusTest::Divergence
 	 <li> "Stagnation" - NOX::StatusTest::Stagnation
+	 <li> "RelativeNormF" - NOX::StatusTest::RelativeNormF
 	 <li> "User Defined" - A user constructed test, derived from NOX::StatusTest::Generic.  
        </ul>
 
@@ -180,6 +181,12 @@ namespace StatusTest {
      <ul> 
        <li> "Tolerance" <double> (default = 1.0e+12)
        <li> "Consecutive Iterations" <int> (default = 1)
+     </ul>
+
+     Additional parameters valid for a RelativeNormF test
+     (NOX::StatusTest::RelativeNormF): 
+     <ul> 
+       <li> "Tolerance" <double> required tolerance for the test to return a converged status. (default = 1.0e-8)
      </ul>
 
      Additional parameters valid for a "User Defined" test: 
@@ -304,6 +311,10 @@ private:
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildStagnationTest(Teuchos::ParameterList& p, 
 		      const NOX::Utils& utils) const;
+
+  Teuchos::RCP<NOX::StatusTest::Generic> 
+  buildRelativeNormFTest(Teuchos::ParameterList& p, 
+			 const NOX::Utils& utils) const;
 
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildUserDefinedTest(Teuchos::ParameterList& p, 

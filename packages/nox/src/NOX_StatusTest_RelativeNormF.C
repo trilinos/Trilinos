@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -36,28 +39,64 @@
 // ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
+#include "NOX_Common.H"
+#include "NOX_StatusTest_RelativeNormF.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_MeritFunction_Generic.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Factory.H"
-#include "Teuchos_ParameterList.hpp"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Factory.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_StatusTest_RelativeNormF.H"
 #include "NOX_Utils.H"
-#include "NOX_Version.H"
-#include "NOX_LineSearch_UserDefinedFactory.H"
-#include "NOX_LineSearch_UserDefinedFactoryT.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-#include "NOX_Direction_UserDefinedFactoryT.H"
+#include "Teuchos_Assert.hpp"
+
+NOX::StatusTest::RelativeNormF::
+RelativeNormF(double in_tolerance, const NOX::Utils* u) :
+  tolerance(in_tolerance),
+  normF_0(0.0),
+  normF(0.0)
+{
+  if (u != NULL)
+    utils = *u;
+}
+
+NOX::StatusTest::StatusType NOX::StatusTest::RelativeNormF::
+checkStatus(const NOX::Solver::Generic& problem,
+	    NOX::StatusTest::CheckType checkType)
+{ 
+
+  // On initial iteration, compute initial norm F
+  if (problem.getNumIterations() == 0) {
+    normF_0 = problem.getSolutionGroup().getNormF();
+  }
+
+  if (checkType == NOX::StatusTest::None)
+  {
+    normF = -1.0;
+    status = Unevaluated;
+  }
+  else
+  {
+    normF = problem.getSolutionGroup().getNormF();
+    status = (normF < tolerance * normF_0) ? Converged : Unconverged;
+  }
+
+  return status;
+}
+
+NOX::StatusTest::StatusType NOX::StatusTest::RelativeNormF::getStatus() const
+{
+  return status;
+}
+
+ostream& NOX::StatusTest::RelativeNormF::print(ostream& stream, int indent) const
+{
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << status;
+  stream << "F-Norm = " << Utils::sciformat(normF,3);
+  stream << " < " << Utils::sciformat(tolerance * normF_0, 3);
+  stream << " ( " << Utils::sciformat(tolerance, 3);
+  stream << " * " << Utils::sciformat(normF_0, 3);
+  stream << ")" << endl;
+
+  return stream;
+}
+

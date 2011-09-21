@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -36,28 +39,68 @@
 // ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_MeritFunction_Generic.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Factory.H"
-#include "Teuchos_ParameterList.hpp"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Factory.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_StatusTest_RelativeNormF.H"
-#include "NOX_Utils.H"
-#include "NOX_Version.H"
-#include "NOX_LineSearch_UserDefinedFactory.H"
-#include "NOX_LineSearch_UserDefinedFactoryT.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-#include "NOX_Direction_UserDefinedFactoryT.H"
+#ifndef NOX_STATUSTEST_RELATIVENORMF_H
+#define NOX_STATUSTEST_RELATIVENORMF_H
+
+#include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_Abstract_Vector.H"        // for NormType
+#include "NOX_Utils.H"                  // for cerr
+
+// Forward declaration
+namespace NOX {
+namespace Abstract {
+class Group;
+}
+}
+
+namespace NOX {
+
+namespace StatusTest {
+
+/** \brief Requires reduction in residual norm compared to initial norm.
+
+    At iteration zero, this computes \f$||F_0||\f$ and is unconverged.
+
+    Returns a converged status if \f$||F_k|| < ||F_0|| *
+    \mbox{tolerance}\f$, where \f$k\f$ is the nonlinear iteration number.
+
+*/
+class RelativeNormF : public Generic {
+
+public:
+
+  RelativeNormF(double tolerance,
+		const NOX::Utils* u = NULL);
+
+  // derived
+  virtual NOX::StatusTest::StatusType 
+  checkStatus(const NOX::Solver::Generic& problem,
+	      NOX::StatusTest::CheckType checkType);
+
+  // derived
+  virtual NOX::StatusTest::StatusType getStatus() const;
+
+  virtual ostream& print(ostream& stream, int indent = 0) const;
+
+private:
+
+  NOX::StatusTest::StatusType status;
+
+  //! Tolerance required for convergence
+  double tolerance;
+
+  //! Initial Norm of F
+  double normF_0;
+
+  //! Current Norm of F
+  double normF;
+
+  //! Ostream used to print errors
+  NOX::Utils utils;
+
+};
+
+} // namespace Status
+} // namespace NOX
+
+#endif
