@@ -22,6 +22,7 @@
 
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Teuchos_RCP.hpp>
 
 using Teuchos::RCP;
@@ -62,6 +63,14 @@ public:
   //TODO i/p param should be RCP<const Xpetra::TpetraCrsMatrix... >
   XpetraCrsMatrixInput(RCP<Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
                             matrix)
+  {
+      HELLO;
+      _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
+                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+  }
+
+  //TODO i/p param should be RCP<const Xpetra::TpetraCrsMatrix... >
+  XpetraCrsMatrixInput(RCP<Xpetra::EpetraCrsMatrix> matrix)
   {
       HELLO;
       _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
