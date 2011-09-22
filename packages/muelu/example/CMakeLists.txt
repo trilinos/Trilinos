@@ -14,4 +14,4 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack)
   ADD_SUBDIRECTORY(Misc/Verbose)
 ENDIF()
 
-#ADD_SUBDIRECTORY(transpose_test)
+ADD_SUBDIRECTORY(transpose_test)
