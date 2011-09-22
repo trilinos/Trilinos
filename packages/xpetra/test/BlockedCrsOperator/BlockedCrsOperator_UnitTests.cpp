@@ -12,9 +12,11 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include "Epetra_MpiComm.h"
-#include "mpi.h"
-#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#  include "mpi.h"
+#endif
+#  include "Epetra_SerialComm.h"
 
 // EpetraExt
 #include "EpetraExt_CrsMatrixIn.h"
@@ -39,6 +41,7 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Exceptions.hpp>
 
 #include <MueLu_Utilities.hpp>
 
@@ -570,7 +573,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, 
 
 	RCP<Epetra_Comm> Comm;
 	if(testMpi)
+#ifdef HAVE_MPI
 		Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+		throw(Xpetra::Exceptions::RuntimeError("This example has not been compiled with MPI enabled."));
+#endif
 	else
 		Comm = Teuchos::rcp(new Epetra_SerialComm);
 
@@ -683,7 +690,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, S
 
 	RCP<Epetra_Comm> Comm;
 	if(testMpi)
+#ifdef HAVE_MPI
 		Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+		throw(Xpetra::Exceptions::RuntimeError("This example has not been compiled with MPI enabled."));
+#endif
 	else
 		Comm = Teuchos::rcp(new Epetra_SerialComm);
 
