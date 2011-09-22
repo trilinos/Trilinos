@@ -15,7 +15,7 @@
 #define _ZOLTAN2_TPETRACRSGRAPHINPUT_HPP_
 
 #include <Xpetra_TpetraCrsGraph.hpp>
-#include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_XpetraCrsGraphInput.hpp>
 #include <Teuchos_RCP.hpp>
 
 namespace Zoltan2 {
@@ -46,21 +46,22 @@ public:
 
   /*! Default constructor 
    */
-  TpetraCrsGraphInput():XpetraCrsGraphInput() {}
+  TpetraCrsGraphInput(): XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>() {}
 
   /*! Constructor with graph only
    */
   TpetraCrsGraphInput(
-    Teuchos::RCP<Tpetra::CrsGraph<CONSISTENT_TEMPLATE_PARAMS> > graph):
-      XpetraCrsGraphInput(graph) {}
+    Teuchos::RCP<Tpetra::CrsGraph<LNO, GNO, Node> > graph):
+      XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>(graph) {}
 
   /*! Constructor with weights
    */
   TpetraCrsGraphInput(
-    Teuchos::RCP<Tpetra::CrsGraph<CONSISTENT_TEMPLATE_PARAMS> > graph,
+    Teuchos::RCP<Tpetra::CrsGraph<LNO, GNO, Node> > graph,
     Teuchos::ArrayRCP<Scalar> vertexWeights,
     Teuchos::ArrayRCP<Scalar> edgeWeights):
-      XpetraCrsGraphInput(graph, vertexWeights, edgeWeights) {}
+      XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>(
+        graph, vertexWeights, edgeWeights) {}
 };
 
 } // namespace

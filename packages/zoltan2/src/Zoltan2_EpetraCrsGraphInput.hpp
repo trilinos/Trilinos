@@ -33,7 +33,7 @@ namespace Zoltan2 {
 */
 
 template <typename Scalar>
-class EpetraCrsGraphInput : public GraphInput<Scalar, int, int>{
+class EpetraCrsGraphInput : public XpetraCrsGraphInput<Scalar, int, int>{
 private:
 
   int _vtxWeightDim;
@@ -51,13 +51,13 @@ public:
 
   /*! Default constructor
    */
-  EpetraCrsGraphInput(): XpetraCrsGraphInput() {}
+  EpetraCrsGraphInput(): XpetraCrsGraphInput<Scalar, int, int> () {}
 
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */
   EpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph):
-    XpetraCrsGraphInput(graph) {}
+    XpetraCrsGraphInput<Scalar, int, int> (graph) {}
 
   /*! Constructor with weights
       \param graph  the graph represented by this input adapter
@@ -69,7 +69,7 @@ public:
   EpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph,
                       Teuchos::ArrayRCP<Scalar> vertexWeights,
                       Teuchos::ArrayRCP<Scalar> edgeWeights):
-    XpetraCrsGraphInput(graph, vertexWeights, edgeWeights) {}
+    XpetraCrsGraphInput<Scalar, int, int> (graph, vertexWeights, edgeWeights) {}
 };
 
 } //namespace Zoltan2

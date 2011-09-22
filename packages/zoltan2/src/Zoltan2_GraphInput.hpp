@@ -16,6 +16,7 @@
 #define _ZOLTAN2_GRAPHINPUT_HPP_
 
 #include <string>
+#include <Zoltan2_InputAdapter.hpp>
 
 namespace Zoltan2 {
 
@@ -39,7 +40,7 @@ namespace Zoltan2 {
 
 template<typename Scalar, typename AppLID, typename AppGID,
   typename LNO=int, typename GNO=AppGID>
-  class GraphInput : public InputAdapter{
+  class GraphInput : public InputAdapter {
 private:
 
 public:

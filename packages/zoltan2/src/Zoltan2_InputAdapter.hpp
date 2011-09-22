@@ -15,7 +15,7 @@
 #ifndef _ZOLTAN2_INPUTADAPTER_HPP_
 #define _ZOLTAN2_INPUTADAPTER_HPP_
 
-#include <string>
+#include <Zoltan2_TemplateMacros.hpp>
 
 namespace Zoltan2 {
 

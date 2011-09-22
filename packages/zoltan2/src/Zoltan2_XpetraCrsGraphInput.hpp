@@ -37,8 +37,8 @@ private:
 #endif
 
   bool _valid;
-  Teuchos::RCP<Xpetra::CrsGraph> _graph;
-  Teuchos::RCP<const Xpetra::Map<int, int> > _rowMap;
+  Teuchos::RCP<Xpetra::CrsGraph<LNO, GNO, Node> > _graph;
+  Teuchos::RCP<const Xpetra::Map<LNO, GNO, Node> > _rowMap;
   std::vector<int> _edgeOffsets; 
 
   int _vtxWeightDim;
@@ -62,7 +62,7 @@ public:
   /*! Constructor with an Xpetra::CrsGraph
    */
   XpetraCrsGraphInput(
-    Teuchos::RCP<Xpetra::CrsGraph<CONSISTENT_TEMPLATE_PARAMS> > graph):
+    Teuchos::RCP<Xpetra::CrsGraph<LNO, GNO, Node> > graph):
     _valid(false), _graph(graph) 
   {
     _rowMap = _graph->getRowMap();
@@ -77,13 +77,13 @@ public:
   /*! Constructor with a Tpetra::CrsGraph
    */
   XpetraCrsGraphInput(
-    Teuchos::RCP<Tpetra::CrsGraph<CONSISTENT_TEMPLATE_PARAMS> > graph):
+    Teuchos::RCP<Tpetra::CrsGraph<LNO, GNO, Node> > graph):
     _valid(false)
   {
-     Xpetra::TpetraCrsGraph<CONSISTENT_TEMPLATE_PARAMS> *xgraph =
-       new Xpetra::TpetraCrsGraph<CONSISTENT_TEMPLATE_PARAMS>(graph);
+     Xpetra::TpetraCrsGraph<LNO, GNO, Node> *xgraph =
+       new Xpetra::TpetraCrsGraph<LNO, GNO, Node>(graph);
 
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<CONSISTENT_TEMPLATE_PARAMS> >(Teuchos::rcp(xgraph));
+    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LNO, GNO, Node> >(Teuchos::rcp(xgraph));
 
     _rowMap = _graph->getRowMap();
     int numV = _rowMap->getNodeNumElements();
@@ -101,7 +101,8 @@ public:
   {
      Xpetra::EpetraCrsGraph *xgraph = new Xpetra::EpetraCrsGraph(graph);
 
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph>(Teuchos::rcp(xgraph));
+    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LNO, GNO, Node> >(
+      Teuchos::rcp(xgraph));
 
     _rowMap = _graph->getRowMap();
     int numV = _rowMap->getNodeNumElements();
@@ -117,7 +118,7 @@ public:
    *  \param xyz The coordinates(s) associated with the corresponding vertex
    *    local id.  They should be ordered by vertex by coordinate axis.
    */
-  void setVertexCoordinates(std::vector<AppLID> &lid, std::vector<Scalar> &xyz)
+  void setVertexCoordinates(std::vector<LID> &lid, std::vector<Scalar> &xyz)
   {
     if (!_valid)
       throw std::runtime_error("improperly constructed adapter");
@@ -131,7 +132,7 @@ public:
       throw std::runtime_error("invalid number of coordinates");
 
     if (_coordinateDim){
-      if (dim != _coordinateDIm))
+      if (dim != _coordinateDim)
         throw std::runtime_error("inconsistent number of coordinates");
     }
     else{
@@ -162,7 +163,7 @@ public:
    *  \param wgts The weight(s) associated with the corresponding vertex
    *    local id.  Weights should be ordered by vertex by weight coordinate.
    */
-  void setVertexWeights(std::vector<AppLID> &lid, std::vector<Scalar> &wgts)
+  void setVertexWeights(std::vector<LID> &lid, std::vector<Scalar> &wgts)
   {
     if (!_valid)
       throw std::runtime_error("improperly constructed adapter");
@@ -176,7 +177,7 @@ public:
       throw std::runtime_error("invalid number of weights");
 
     if (_vtxWeightDim){
-      if (dim != _vtxWeightDIm))
+      if (dim != _vtxWeightDim)
         throw std::runtime_error("inconsistent number of weights");
     }
     else{
@@ -207,9 +208,9 @@ public:
    *  \param wgts The weight(s) associated with the corresponding edge.
    *    Weights should be ordered by edge by weight coordinate.
    */
-  void setEdgeWeights(std::vector<AppLID> &vertexLid, 
+  void setEdgeWeights(std::vector<LID> &vertexLid, 
     std::vector<LNO> &numNbors,
-    std::vector<AppGID> &nborGid, std::vertex<Scalar> &wgts )
+    std::vector<GID> &nborGid, std::vector<Scalar> &wgts )
   {
     if (!_valid)
       throw std::runtime_error("improperly constructed adapter");
@@ -284,7 +285,7 @@ public:
 
     if (nweights){
       Scalar *wTo = &wgt[0];
-      Scalar *wFrom = _vtxWgt.getRawPtr();
+      Scalar *wFrom = _vertexWgt.getRawPtr();
       memcpy(wTo, wFrom, sizeof(Scalar) * nweights);
     }
 
@@ -307,7 +308,7 @@ public:
     int nvtx = this->getLocalNumVertices();
     ids = _rowMap->getNodeElementList().getRawPtr();
     xyz = NULL;
-    wgts = _vtxWgt.getRawPtr();
+    wgts = _vertexWgt.getRawPtr();
     localIDs.resize(nvtx);
     for (int i=0; i < nvtx; i++)
       localIDs[i] = i;
