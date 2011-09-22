@@ -352,8 +352,8 @@ namespace MueLu {
 
         if (realloc) {
           // Either the number of entries or the value have changed since the last invocation, so reallocation the map.
-          Xpetra::global_size_t g = -1; //TODO for Tpetra -1 == ??
-          winnerMap_ = MapFactory::Build(weightMap->lib(), g, myWinners_(), 0, weightMap->getComm());
+          const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+          winnerMap_ = MapFactory::Build(weightMap->lib(), GSTI, myWinners_(), 0, weightMap->getComm());
         }
        
         // Pull the Winners out of companion
