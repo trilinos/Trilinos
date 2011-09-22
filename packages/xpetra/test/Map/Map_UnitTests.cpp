@@ -154,7 +154,7 @@ namespace {
 
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_MPI)
   ////
-  TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, RogersUnsignedGOBugVerification, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
