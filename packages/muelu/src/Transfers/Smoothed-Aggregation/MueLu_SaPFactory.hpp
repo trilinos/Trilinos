@@ -118,6 +118,9 @@ namespace MueLu {
       RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
       RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
 
+      if(restrictionMode_)
+          A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
+
       fineLevel.Release("A", AFact_.get());
       coarseLevel.Release("P", initialPFact_.get());
 
@@ -148,8 +151,7 @@ namespace MueLu {
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        //RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
-        RCP<Operator> AP = Utils::TwoMatrixMultiply(A,restrictionMode_,Ptent,false,doFillComplete,optimizeStorage);
+        RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
 
