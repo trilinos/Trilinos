@@ -93,7 +93,7 @@ ostream& NOX::StatusTest::RelativeNormF::print(ostream& stream, int indent) cons
   stream << status;
   stream << "F-Norm = " << Utils::sciformat(normF,3);
   stream << " < " << Utils::sciformat(tolerance * normF_0, 3);
-  stream << " ( " << Utils::sciformat(tolerance, 3);
+  stream << " (" << Utils::sciformat(tolerance, 3);
   stream << " * " << Utils::sciformat(normF_0, 3);
   stream << ")" << endl;
 
