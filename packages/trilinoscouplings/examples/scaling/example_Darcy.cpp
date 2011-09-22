@@ -133,9 +133,18 @@
 
 // ML Includes
 #include "ml_epetra_utils.h"
-#include "ml_RefMaxwell_11_Operator.h"
-#include "ml_FaceMatrixFreePreconditioner.h"
-#include "ml_RefMaxwell.h"
+#include "ml_GradDiv.h"
+#include "ml_MultiLevelPreconditioner.h"
+
+// Teko includes
+#include "Teko_CloneFactory.hpp"
+#include "Teko_BlockedEpetraOperator.hpp"
+#include "Teko_JacobiPreconditionerFactory.hpp"
+#include "Teko_EpetraBlockPreconditioner.hpp"
+
+// Thyra includes
+#include "Thyra_EpetraLinearOp.hpp"
+
 
 #define ABS(x) ((x)>0?(x):-(x))
 
@@ -143,6 +152,10 @@
 
 using namespace std;
 using namespace Intrepid;
+using namespace Teuchos;
+using namespace Thyra;
+using namespace Teko;
+using namespace ML_Epetra;
 
 struct fecomp{
   bool operator () ( topo_entity* x,  topo_entity*  y )const
@@ -973,8 +986,8 @@ int main(int argc, char *argv[]) {
    // Containers for element HDIV stiffness matrix
     FieldContainer<double> massMatrixG(numCells, numFieldsG, numFieldsG);
     
-    FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
-    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
+    FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
+    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
     
     FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
     FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
@@ -1627,8 +1640,63 @@ int main(int argc, char *argv[]) {
    }   
 #endif
 
-  // Run the solver......
+
+   // Build GID lists and BlockedEpetraOperator for Teko
+   std::vector<std::vector<int> > tvec;
+   tvec.resize(2);
+   tvec[0].resize(globalMapD.NumMyElements());
+   tvec[1].resize(globalMapG.NumMyElements());
+   for(int i=0;i<globalMapD.NumMyElements();i++)
+     tvec[0][i]=globalMapD.GID(i);
+   for(int i=0;i<globalMapG.NumMyElements();i++)
+     tvec[1][i]=globalMapG.GID(i);
+   RCP<Teko::Epetra::BlockedEpetraOperator> BlockOp=rcp(new Teko::Epetra::BlockedEpetraOperator(tvec,rcp(&jointMatrix,false)));   
+   
+   // Grab diagonal blocks
+   RCP<const Epetra_CrsMatrix> A00=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(0,0));
+   RCP<const Epetra_CrsMatrix> A11=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(1,1));
+
+   // Make H(Div)  preconditioner A00
+   Teuchos::ParameterList ListHdiv, List_Coarse;
+   List_Coarse.set("PDE equations",3);
+   List_Coarse.set("x-coordinates",Nx.Values());
+   List_Coarse.set("y-coordinates",Ny.Values());
+   List_Coarse.set("z-coordinates",Nz.Values());
+   List_Coarse.set("ML output",10);
   
+   Teuchos::ParameterList List11,List11c,List22,List22c;
+   ML_Epetra::UpdateList(List_Coarse,List11,true); 
+   ML_Epetra::UpdateList(List_Coarse,List22,true); 
+   ML_Epetra::UpdateList(List_Coarse,List11c,true); 
+   ML_Epetra::UpdateList(List_Coarse,List22c,true); 
+   List11.set("face matrix free: coarse",List11c);
+   List22.set("edge matrix free: coarse",List22c);
+   ListHdiv.setName("graddiv list");
+   ListHdiv.set("graddiv: 11list",List11);
+   ListHdiv.set("graddiv: 22list",List22);
+
+   SetDefaultsGradDiv(ListHdiv,false);
+   RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,*A11,ListHdiv));
+
+   // Make H(Grad) preconditioner A11 
+   Teuchos::ParameterList ListHgrad;
+   ML_Epetra::SetDefaults("SA",ListHgrad);
+   RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));					       
+
+   // Build the linear ops with the Apply/ApplyInverse switcheroo
+   RCP<const EpetraLinearOp> invD0=epetraLinearOp(Prec0, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
+   RCP<const EpetraLinearOp> invD1=epetraLinearOp(Prec1, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
+		  
+
+   // Build the full preconditioner
+   JacobiPreconditionerFactory precFact(rcp(new Teko::StaticInvDiagStrategy(invD0,invD1)));
+   Teko::Epetra::EpetraBlockPreconditioner FullPrec(rcpFromRef(precFact)); 
+   FullPrec.buildPreconditioner(BlockOp); 
+
+
+
+
+#ifdef OLD_CODE  
   //set up some parameters
   Teuchos::ParameterList MLList;
 
@@ -1637,7 +1705,9 @@ int main(int argc, char *argv[]) {
   // Turn ML into a direct solver
   MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",1);
-  
+  ML_Epetra::MultiLevelPreconditioner *FullPrec = new ML_Epetra::MultiLevelPreconditioner(jointMatrix, MLList, true);
+#endif 
+
   //set up linear system
   Epetra_FEVector xx(globalMapJoint);
   xx.PutScalar(0.0);
@@ -1646,10 +1716,9 @@ int main(int argc, char *argv[]) {
   Epetra_Time Time2(jointMatrix.Comm());
   
   AztecOO solver(Problem);  
-  ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(jointMatrix, MLList, true);
   
   // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
+  solver.SetPrecOperator(FullPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 10);
 
