@@ -9,6 +9,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
       //std::cout << *gx << std::endl;
 
       // number of responses, minus the solution vector
-      TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==outArgs.Ng()-1);
+      TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(outArgs.Ng()-1));
       
       // get responses if there are any
       //////////////////////////////////////////////
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
          Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
          Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
 
-         TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==respOutArgs.Ng());
+         TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(respOutArgs.Ng()));
    
          respInArgs.set_x(gx);
    
