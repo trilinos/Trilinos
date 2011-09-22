@@ -32,11 +32,12 @@ void getOutputStreamFromParameterList(
 #ifdef HAVE_MPI
 template <typename Ordinal>
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
-    getTeuchosMpiComm(const MPI_Comm comm)
+    getTeuchosMpiComm(const MPI_Comm &comm)
 {
   Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = Teuchos::opaqueWrapper<MPI_Comm>(comm);
   Teuchos::MpiComm<Ordinal> tcomm(handle);
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> > tcommPtr(&tcomm);
+
   return tcommPtr;
 }
 

@@ -10,7 +10,7 @@
 // This test requires MPI.
 //
 // Testing graph input adapters.
-//
+//  TODO
 //  Find a few small mtx files for graphs.
 //  for each graph:
 //     Read it in with EpetraExt
@@ -26,7 +26,7 @@
 #include <vector>
 #include <iostream>
 #include <Zoltan2_Util.hpp>
-//#include <Zoltan2_TpetraCrsGraphInput.hpp>
+#include <Zoltan2_TpetraCrsGraphInput.hpp>
 #include <Zoltan2_EpetraCrsGraphInput.hpp>
 #include <EpetraExt_CrsMatrixIn.h>
 #include <Epetra_CrsMatrix.h>

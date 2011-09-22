@@ -39,7 +39,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
       Zoltan2_AlltoAll.hpp
       Zoltan2_DebugManager.hpp
-      Zoltan2_Environment.cpp
       Zoltan2_Environment.hpp
       Zoltan2_EpetraCrsGraphInput.hpp
       Zoltan2_Exceptions.hpp
@@ -48,9 +47,9 @@ APPEND_SET(HEADERS
       Zoltan2_IdentifierMap_def.hpp
       Zoltan2_IdentifierMap.hpp
       Zoltan2_IdentifierTraits.hpp
+      Zoltan2_InputAdapter.hpp
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
-      Zoltan2_Parameters.cpp
       Zoltan2_Parameters_decl.hpp
       Zoltan2_Parameters_def.hpp
       Zoltan2_Parameters.hpp
@@ -59,9 +58,9 @@ APPEND_SET(HEADERS
       Zoltan2_TemplateMacros.hpp
       Zoltan2_TpetraCrsGraphInput.hpp
       Zoltan2_TpetraCrsMatrixInput.hpp
-      Zoltan2_Util.cpp
       Zoltan2_Util.hpp
-      Zoltan2_Version.cpp
+      Zoltan2_XpetraCrsGraphInput.hpp
+      Zoltan2_XpetraCrsMatrixInput.hpp
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)

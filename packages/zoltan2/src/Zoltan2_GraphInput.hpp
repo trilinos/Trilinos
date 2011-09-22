@@ -39,7 +39,7 @@ namespace Zoltan2 {
 
 template<typename Scalar, typename AppLID, typename AppGID,
   typename LNO=int, typename GNO=AppGID>
-  class GraphInput {
+  class GraphInput : public InputAdapter{
 private:
 
 public:

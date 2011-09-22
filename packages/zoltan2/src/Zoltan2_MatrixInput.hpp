@@ -30,7 +30,7 @@ namespace Zoltan2 {
 */
 
 CONSISTENT_CLASS_TEMPLATE_LINE
-class MatrixInput {
+class MatrixInput : public InputAdapter{
 private:
 
 public:
