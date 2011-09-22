@@ -101,11 +101,6 @@ namespace MueLuTests {
     SmootherFactory coarseSolveFact(smooProto);
     H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
-    H->GetLevel(1)->print(std::cout);
-    H->GetLevel(2)->print(std::cout);
-    H->GetLevel(3)->print(std::cout);
-
-    // test some basic multgrid data
     RCP<Level> coarseLevel = H->GetLevel(2);
     RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P",NULL);
     RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R",NULL);
@@ -113,14 +108,54 @@ namespace MueLuTests {
     RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P",NULL);
     RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R",NULL);
 
+    TEST_EQUALITY(Finest->IsAvailable("PreSmoother"), true);
+    TEST_EQUALITY(Finest->IsAvailable("PostSmoother"), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother"), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother"), true);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother"), true);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother"), false);
+
+    // test some basic multgrid data
+    TEST_EQUALITY(P1->getGlobalNumEntries(), R1->getGlobalNumEntries());
+    TEST_EQUALITY(P1->getGlobalNumRows(), R1->getGlobalNumCols());
+    TEST_EQUALITY(P1->getGlobalNumCols(), R1->getGlobalNumRows());
+    TEST_EQUALITY(P2->getGlobalNumEntries(), R2->getGlobalNumEntries());
+    TEST_EQUALITY(P2->getGlobalNumRows(), R2->getGlobalNumCols());
+    TEST_EQUALITY(P2->getGlobalNumCols(), R2->getGlobalNumRows());
+
+
+    //RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+
+    // since A is chosen symmetric, it is P^T = R
+    // check P^T * P = R * P
+    // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
+    //       (for multiplication of a square matrix with a rectangular matrix)
+    //       however it seems to work for two rectangular matrices
     Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
+    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
 
-    RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
-    RP->describe(*fos,Teuchos::VERB_EXTREME);
+    RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
+    RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
+    RCP<Vector> bPtP = VectorFactory::Build(PtP->getRangeMap());
 
-    //Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
-    //PtP->describe(*fos,Teuchos::VERB_EXTREME);
+    x->randomize();
+    RP->apply(*x,*bRP);
+    PtP->apply(*x,*bPtP);
 
+    TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
+
+    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R2,false,P2,false);
+    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P2,true,P2,false);
+
+    x = VectorFactory::Build(RP2->getDomainMap());
+    bRP  = VectorFactory::Build(RP2->getRangeMap());
+    bPtP = VectorFactory::Build(PtP2->getRangeMap());
+
+    x->randomize();
+    RP2->apply(*x,*bRP);
+    PtP2->apply(*x,*bPtP);
+
+    TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
 
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
@@ -137,30 +172,7 @@ namespace MueLuTests {
     //P1->describe(*fos,Teuchos::VERB_EXTREME);
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
 
-    // todo test me
-    /*RCP<Operator> R1T = MueLu::Utils2<SC,LO,GO>::Transpose(P1,true);
-    RCP<Operator> R2T = MueLu::Utils2<SC,LO,GO>::Transpose(P2,true);*/
 
-    /*RCP<Vector> X1 = VectorFactory::Build(P1->getDomainMap());
-    RCP<Vector> X2 = VectorFactory::Build(R1->getRangeMap());
-    RCP<Vector> Y1 = VectorFactory::Build(P1->getRangeMap());
-    RCP<Vector> Y2 = VectorFactory::Build(R1->getDomainMap());
-
-    X1->putScalar(1.0);
-    X2->putScalar(1.0);
-
-    P1->apply(*X1,*Y1);
-    R1T->apply(*X2,*Y2);
-    std::cout << Y1->norm1() << std::endl;
-    std::cout << Y2->norm1() << std::endl;
-
-    std::cout << X1->norm1() << std::endl;
-    std::cout << X2->norm1() << std::endl;*/
-
-    //Y1->update(-1.0, *Y2, 1.0);
-    //std::cout << Y1->norm1() << std::endl;
-    //std::cout << Y1->norm2() << std::endl;
-    //TEST_EQUALITY(Y1->norm1() < 1e-6, true);
 
   }
 
