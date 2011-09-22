@@ -1681,6 +1681,9 @@ int main(int argc, char *argv[]) {
    // Make H(Grad) preconditioner A11 
    Teuchos::ParameterList ListHgrad;
    ML_Epetra::SetDefaults("SA",ListHgrad);
+   ListHgrad.set("smoother: sweeps",2);
+   ListHgrad.set("coarse: type","Amesos-KLU");
+   ListHgrad.set("ML output",10);
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));					       
 
    // Build the linear ops with the Apply/ApplyInverse switcheroo
@@ -1705,7 +1708,7 @@ int main(int argc, char *argv[]) {
   // Turn ML into a direct solver
   MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",1);
-  ML_Epetra::MultiLevelPreconditioner *FullPrec = new ML_Epetra::MultiLevelPreconditioner(jointMatrix, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner FullPrec(jointMatrix, MLList, true));
 #endif 
 
   //set up linear system
@@ -1718,14 +1721,12 @@ int main(int argc, char *argv[]) {
   AztecOO solver(Problem);  
   
   // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(FullPrec);
+  solver.SetPrecOperator(&FullPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 10);
 
   //solve linear system
   solver.Iterate(1000, 1e-10);
-  
-  delete MLPrec;
   
   Epetra_FEVector globalSoln(globalMapJoint);
   globalSoln = xx;
