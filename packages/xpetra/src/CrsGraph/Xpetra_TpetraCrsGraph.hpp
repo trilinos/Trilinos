@@ -9,6 +9,8 @@
 
 #include "Tpetra_CrsGraph.hpp"
 
+#include "Xpetra_Utils.hpp"
+
 namespace Xpetra {
  
   // TODO: move that elsewhere
