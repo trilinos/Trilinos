@@ -309,6 +309,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
             ML_Comm_Destroy(&comm);
 
             RCP<Epetra_CrsMatrix> epAB(result);
+
             RCP<CrsOperator> tmpC3 = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<SC,LO,GO,NO,LMO>(epAB);
             C = tmpC3;
             }
@@ -355,6 +356,134 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
       return C;
     } //TwoMatrixMultiply()
+
+#if 0 // Michael Gee's MLMultiply
+   static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
+            RCP<Epetra_CrsMatrix> epB,
+            bool doFillComplete=true,
+            bool doOptimizeStorage=true)
+    {
+        ML_Comm* comm;
+        ML_Comm_Create(&comm);
+        if (comm->ML_mypid == 0)
+          std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
+#           ifdef HAVE_MPI
+        // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
+        const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
+        if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
+#           endif
+        //in order to use ML, there must be no indices missing from the matrix column maps.
+        EpetraExt::CrsMatrix_SolverMap Atransform;
+        EpetraExt::CrsMatrix_SolverMap Btransform;
+        const Epetra_CrsMatrix& A = Atransform(*epA);
+        const Epetra_CrsMatrix& B = Btransform(*epB);
+
+        if (!A.Filled())    throw(Exceptions::RuntimeError("A has to be FillCompeleted"));
+        if (!B.Filled())    throw(Exceptions::RuntimeError("B has to be FillCompeleted"));
+
+        // create ML operators from EpetraCrsMatrix
+        ML_Operator* ml_As = ML_Operator_Create(comm);
+        ML_Operator* ml_Bs = ML_Operator_Create(comm);
+        ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),ml_As);
+        ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&B),ml_Bs);
+        ML_Operator* ml_AtimesB = ML_Operator_Create(comm);
+        ML_2matmult(ml_As,ml_Bs,ml_AtimesB,ML_CSR_MATRIX); // do NOT use ML_EpetraCRS_MATRIX!!!
+        ML_Operator_Destroy(&ml_As);
+        ML_Operator_Destroy(&ml_Bs);
+
+        // For ml_AtimesB we have to reconstruct the column map in global indexing,
+        // The following is going down to the salt-mines of ML ...
+        // note: we use integers, since ML only works for Epetra...
+        int N_local = ml_AtimesB->invec_leng;
+        ML_CommInfoOP* getrow_comm = ml_AtimesB->getrow->pre_comm;
+        if (!getrow_comm)   throw(Exceptions::RuntimeError("ML_Operator does not have a CommInfo"));
+        ML_Comm* comm_AB = ml_AtimesB->comm;   // get comm object
+        if (N_local != B.DomainMap().NumMyElements())
+            throw(Exceptions::RuntimeError("Mismatch in local row dimension between ML and Epetra"));
+        int N_rcvd = 0;
+        int N_send = 0;
+        int flag   = 0;
+        for (int i=0; i<getrow_comm->N_neighbors; i++)
+        {
+            N_rcvd += (getrow_comm->neighbors)[i].N_rcv;
+            N_send += (getrow_comm->neighbors)[i].N_send;
+            if ( ((getrow_comm->neighbors)[i].N_rcv !=0) &&
+                 ((getrow_comm->neighbors)[i].rcv_list != NULL) ) flag = 1;
+        }
+        // For some unknown reason, ML likes to have stuff one larger than
+        // neccessary...
+        std::vector<double> dtemp(N_local + N_rcvd + 1); // "double" vector for comm function
+        std::vector<int>    cmap (N_local + N_rcvd + 1); // vector for gids
+        for (int i=0; i<N_local; ++i)
+        {
+            cmap[i] = B.DomainMap().GID(i);
+            dtemp[i] = (double) cmap[i];
+        }
+        ML_cheap_exchange_bdry(&dtemp[0],getrow_comm,N_local,N_send,comm_AB); // do communication
+        if (flag) // process received data
+        {
+            int count = N_local;
+            const int neighbors = getrow_comm->N_neighbors;
+            for (int i=0; i< neighbors; i++)
+            {
+                const int nrcv = getrow_comm->neighbors[i].N_rcv;
+                for (int j=0; j<nrcv; j++)
+                    cmap[getrow_comm->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
+            }
+        }
+        else
+            for (int i=0; i<N_local+N_rcvd; ++i) cmap[i] = (int)dtemp[i];
+        dtemp.clear();  // free double array
+
+        // we can now determine a matching column map for the result
+        Epetra_Map gcmap(-1,N_local+N_rcvd,&cmap[0],0,A.Comm());
+
+        int allocated=0;
+        int rowlength;
+        double* val=NULL;
+        int* bindx=NULL;
+        const int myrowlength = A.RowMap().NumMyElements();
+        const Epetra_Map& rowmap = A.RowMap();
+
+        // determine the maximum bandwith for the result matrix.
+        // replaces the old, very(!) memory-consuming guess:
+        // int guessnpr = A.MaxNumEntries()*B.MaxNumEntries();
+        int educatedguess = 0;
+        for (int i=0; i<myrowlength; ++i)
+        {
+          // get local row
+          ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+          if (rowlength>educatedguess) educatedguess = rowlength;
+        }
+
+        // allocate our result matrix and fill it
+        RCP<Epetra_CrsMatrix> result
+          = rcp(new Epetra_CrsMatrix(::Copy,A.RangeMap(),gcmap,educatedguess,false));
+
+        std::vector<int> gcid(educatedguess);
+        for (int i=0; i<myrowlength; ++i)
+        {
+          const int grid = rowmap.GID(i);
+          // get local row
+          ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+          if (!rowlength) continue;
+          if ((int)gcid.size() < rowlength) gcid.resize(rowlength);
+          for (int j=0; j<rowlength; ++j)
+          {
+            gcid[j] = gcmap.GID(bindx[j]);
+            if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
+          }
+          int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
+          if (err!=0 && err!=1) throw(Exceptions::RuntimeError("Epetra_CrsMatrix::InsertGlobalValues returned err="+err));
+        }
+        // free memory
+        if (bindx) ML_free(bindx);
+        if (val) ML_free(val);
+        ML_Operator_Destroy(&ml_AtimesB);
+
+        return result;
+    }
+#endif
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
@@ -842,17 +971,22 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         A->ExtractMyRowView(i,nnz,vals,indices);
         for(int j=0;j<nnz;++j){
           int gcid=colMap.GID(indices[j]);
-          int rv = AT->InsertGlobalValues(gcid,1,vals+j,&grid);
-          if (rv != 0) {
-            std::ostringstream buf;
-            buf << rv;
-            std::string msg = "Utils::simple_EpetraTranspose: Epetra_CrsMatrix::InsertGlobalValues() returned value of " + buf.str();
-            throw(Exceptions::RuntimeError(msg));
-          }
+
+          //if(AT->RowMap().MyGID(gcid)) // no communication between procs!
+          //{
+              int rv = AT->InsertGlobalValues(gcid,1,vals+j,&grid);
+              if (rv < 0) { // throw on errors, not on warnings...
+                std::ostringstream buf;
+                buf << rv;
+                std::string msg = "Utils::simple_EpetraTranspose: Epetra_CrsMatrix::InsertGlobalValues() returned value of " + buf.str();
+                throw(Exceptions::RuntimeError(msg));
+              }
+          //}
         }
       }
      
       return AT;
+
     } //simple_Transpose
 #endif
 
@@ -1226,8 +1360,6 @@ public:
        RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
        AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
        return AAAA;
-//       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
-//       return Teuchos::null;
 #else
        throw(Exceptions::RuntimeError("Epetra (Err. 2)"));
 #endif
