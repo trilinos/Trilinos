@@ -77,8 +77,6 @@ namespace MueLu {
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("GenericRFactory::BuildR_"+buf.str()));
       timer->start(true);
 
-      //Teuchos::OSTab tab(this->out_);
-
       // BuildR
       bool rmode = PFact_->isRestrictionModeSet();
       PFact_->setRestrictionMode(true);     // switch prolongator factory to restriction mode
