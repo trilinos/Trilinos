@@ -64,7 +64,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_AMESOS2
         return rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos2");
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
         //#if defined(HAVE_MUELU_AMESOS2)
@@ -97,7 +97,7 @@ namespace MueLu {
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    using MueLu::BaseClass::describe; // overloading, not hiding
+    using MueLu::Describable::describe; // overloading, not hiding
     void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
       MUELU_DESCRIBE;
 
