@@ -22,17 +22,6 @@ extern void IVOUT(const Epetra_IntVector & A, const char * of);
 #include "EpetraExt_VectorOut.h"
 
 // ================================================ ====== ==== ==== == =
-/* This function does a "view" getrow in an ML_Operator.  This is intended to be
-used in a ML_CSR_Matrix to Epetra_CrsMatrix (view) translator.  Inlined for
-speed. */
-inline void CSR_getrow_view(ML_Operator *M, int row, int *ncols,int **cols, double**vals){
-  struct ML_CSR_MSRdata* M_= (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(M);
-  *ncols=M_->rowptr[row+1]-M_->rowptr[row];
-  *cols=&M_->columns[M_->rowptr[row]];
-  *vals=&M_->values[M_->rowptr[row]];  
-}/*end CSR_getrow_view*/
-
-
 static int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -72,17 +61,25 @@ inline void cross_product(const double *a,const double *b,double *c){
 
 
 // ================================================ ====== ==== ==== == = 
-ML_Epetra::FaceMatrixFreePreconditioner::FaceMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
-			      const Epetra_CrsMatrix & D1_Matrix,const Epetra_CrsMatrix & FaceNode_Matrix,
-			      const Epetra_CrsMatrix &TMT_Matrix,
-			      const int* BCfaces, const int numBCfaces,
-			      const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D1_Matrix_(&D1_Matrix),FaceNode_Matrix_(&FaceNode_Matrix),TMT_Matrix_(&TMT_Matrix),BCfaces_(BCfaces),numBCfaces_(numBCfaces),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
+ML_Epetra::FaceMatrixFreePreconditioner::FaceMatrixFreePreconditioner(Teuchos::RCP<const Epetra_Operator> Operator, 
+								      Teuchos::RCP<const Epetra_Vector> Diagonal,
+								      Teuchos::RCP<const Epetra_CrsMatrix> FaceNode_Matrix,
+								      Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix,
+								      Teuchos::ArrayRCP<int> BCfaces,
+								      const Teuchos::ParameterList &List,const bool ComputePrec):
+  ML_Preconditioner(),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
 #ifdef HAVE_ML_IFPACK
 Smoother_(0),
 #endif
 verbose_(false),very_verbose_(false),print_hierarchy(false)
 {
+
+  Operator_=Operator;
+  Diagonal_=Diagonal;
+  FaceNode_Matrix_=FaceNode_Matrix;
+  TMT_Matrix_=TMT_Matrix;
+  BCfaces_=BCfaces;
+  
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
 
@@ -93,8 +90,17 @@ verbose_(false),very_verbose_(false),print_hierarchy(false)
   
   List_=List;
   Label_=new char[80];
-  strcpy(Label_,"ML face matrix-free preconditioner");
-  InvDiagonal_ = new Epetra_Vector(Diagonal);  
+  strcpy(Label_,"ML face matrix-free preconditioner");  
+
+  // Pull diagonal if needed
+  const Epetra_CrsMatrix *Op11crs = dynamic_cast<const Epetra_CrsMatrix*>(&*Operator_);
+  if(Diagonal==Teuchos::null && Op11crs){    
+    InvDiagonal_ = new Epetra_Vector(Op11crs->RowMap());  
+    Op11crs->ExtractDiagonalCopy(*InvDiagonal_);
+  }	
+  else    
+    InvDiagonal_ = new Epetra_Vector(*Diagonal);  
+
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
 
@@ -218,7 +224,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::SetupSmoother()
   // to false.
   
   /* Build the Smoother */
-  Smoother_ = new Ifpack_Chebyshev(Operator_);
+  Smoother_ = new Ifpack_Chebyshev(&*Operator_);
   if (Smoother_ == 0) ML_CHK_ERR(-1); 
   ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
   ML_CHK_ERR(Smoother_->Initialize());
@@ -228,7 +234,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::SetupSmoother()
     printf("FMFP: Building Chebyshev smoother %d sweeps (lmin=%6.4e lmax=%6.4e)\n",PolynomialDegree,lambda_min,boost*lambda_max);
 #else
   if(!Comm_->MyPID())
-    printf("ERROR: RefMaxwell must be compiled with --enable-ml-ifpack for this mode to work\n");
+    printf("ERROR: FaceMNatrixFreePreconditioner must be compiled with --enable-ml-ifpack for this mode to work\n");
 #endif
   return 0;
 }/*end SetupSmoother */
@@ -357,7 +363,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::PBuildSparsity(ML_Operator *P, Epet
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
   ML_Operator* AbsFN_ML = ML_Operator_Create(ml_comm_);
-  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)FaceNode_Matrix_,AbsFN_ML,verbose_));    
+  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&*FaceNode_Matrix_),AbsFN_ML,verbose_));    
   ML_Operator_Set_Getrow(AbsFN_ML,AbsFN_ML->outvec_leng,CSR_getrow_ones);
   
   /* Form abs(T) * P_n */
@@ -368,7 +374,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::PBuildSparsity(ML_Operator *P, Epet
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsFNP,*Comm_,*FaceRangeMap_,&Psparse,Copy,0);
   
   /* Nuke the rows in Psparse */
-  Apply_BCsToMatrixRows(BCfaces_,numBCfaces_,*Psparse);
+  Apply_BCsToMatrixRows(BCfaces_.get(),BCfaces_.size(),*Psparse);
 
   // Cleanup
   ML_Operator_Destroy(&AbsFN_ML);
@@ -384,7 +390,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
 
   /* Wrap TMT_Matrix in a ML_Operator */
   ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
-  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)TMT_Matrix_,TMT_ML);
+  ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&*TMT_Matrix_),TMT_ML);
 
   /* Nodal Aggregation */
   ML_Aggregate_Struct *MLAggr=0;
@@ -452,10 +458,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
 
 #endif
 
-
-
   /* EXPERIMENTAL: Normalize Prolongator Columns */
-  bool normalize_prolongator=List_.get("refmaxwell: normalize prolongator",false);
+  bool normalize_prolongator=List_.get("face matrix free: normalize prolongator",false);
   if(normalize_prolongator){
     Epetra_Vector n_vector(*CoarseMap_,false);
     Prolongator_->InvColSums(n_vector);
@@ -501,20 +505,25 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
   ML_Operator_Transpose_byrow(P, R);
   
   /* OPTION: Disable the addon */
-  bool disable_addon=List_.get("refmaxwell: disable addon",false);
-  const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
-  if(disable_addon && Op11){
+  const Epetra_CrsMatrix *Op11crs = dynamic_cast<const Epetra_CrsMatrix*>(&*Operator_);
+  const Epetra_Operator_With_MatMat *Op11mm = dynamic_cast<const Epetra_Operator_With_MatMat*>(&*Operator_);
+
+  /* Do the A*P  with or without addon*/
+  if(Op11crs){
     if(verbose_ && !Comm_->MyPID()) printf("FMFP: Running *without* addon\n");
     ML_Operator *SM_ML = ML_Operator_Create(ml_comm_);
     Temp_ML = ML_Operator_Create(ml_comm_);
-    ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&(((ML_RefMaxwell_11_Operator *)Op11)->SM_Matrix()),SM_ML,verbose_);
+    ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Op11crs,SM_ML,verbose_);
     ML_2matmult(SM_ML,P,Temp_ML,ML_CSR_MATRIX);
     ML_Operator_Destroy(&SM_ML);
   }
-  else{
-    /* Do the A*P */
+  else if(Op11mm){
     if(verbose_ && !Comm_->MyPID()) printf("FMFP: Running with addon\n");
-    ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
+    ML_CHK_ERR(Op11mm->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
+  }
+  else{
+    if(!Comm_->MyPID()) printf("ERROR: FMFP Illegal Operator\n");
+    ML_CHK_ERR(-1);
   }
 
   /* Do R * AP */
@@ -522,7 +531,6 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
   
   /* Wrap to Epetra-land */
-  //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
   int nnz=100;
   double time;
   ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
@@ -532,7 +540,6 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&R);
   ML_Operator_Destroy(&Temp_ML);
-
   ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;//HAX  
   return 0;
 }/*end FormCoarseMatrix*/
@@ -541,8 +548,6 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
 // Print the individual operators in the multigrid hierarchy.
 void ML_Epetra::FaceMatrixFreePreconditioner::Print(int whichHierarchy)
 {
-  /*ofstream ofs("Pmat.edge.m");
-    if(Prolongator_) Prolongator_->Print(ofs);*/
   if(CoarsePC) CoarsePC->Print();
 }/*end Print*/
  

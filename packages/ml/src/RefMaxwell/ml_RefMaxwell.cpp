@@ -12,9 +12,12 @@
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_ValidateParameters.h"
+#include "Teuchos_ArrayRCP.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 using namespace std;
+using Teuchos::rcp;
+using Teuchos::ArrayRCP;
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack.h"
@@ -313,8 +316,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   StopTimer(&t_time_curr,&(t_diff[2]));
 #endif
   
-  /* Build the (1,1) Block Operator */
-  Operator11_ = new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_);
+  /* Build the (1,1) Block Operator, if needed */
+  if(List_.get("refmaxwell: disable addon",true))
+    Operator11_=rcp((Epetra_CrsMatrix*)SM_Matrix_,false);
+  else
+    Operator11_=rcp(new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_));
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[3]));
@@ -328,13 +334,17 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   StopTimer(&t_time_curr,&(t_diff[4]));
 #endif
 
+  // BC edges
+  ArrayRCP<int> BCedges_arcp(BCrows,0,numBCrows,false);
   
   /* Build the (1,1) Block Preconditioner */ 
   string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   if (List11.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
   if(solver11=="edge matrix free")
-    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
+    //    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
+    EdgePC=new EdgeMatrixFreePreconditioner(Operator11_,rcp(Diagonal_,false),rcp(D0_Matrix_,false),rcp(D0_Clean_Matrix_,false),rcp(TMT_Agg_Matrix_,false),BCedges_arcp,List11,true);
+
   else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
@@ -407,7 +417,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 // ================================================ ====== ==== ==== == = 
 // Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
 int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
-  if(Operator11_) {delete Operator11_;Operator11_=0;}
+  Operator11_=Teuchos::null;
   if(Diagonal_)  {delete Diagonal_;Diagonal_=0;}
 
   int printl=ML_Get_PrintLevel();

@@ -24,7 +24,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "ml_Preconditioner.h"
-#include "Epetra_Operator_With_MatMat.h"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Chebyshev.h"
@@ -50,10 +51,12 @@ namespace ML_Epetra
   public:
     //@{ \name Constructor
     //! Constructs an EdgeMatrixFreePreconditioner.
-    EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
-                                 const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,
-                                 const Epetra_CrsMatrix &TMT_Matrix,
-                                 const int* BCedges, const int numBCedges,
+    EdgeMatrixFreePreconditioner(Teuchos::RCP<const Epetra_Operator> Operator, 
+				 Teuchos::RCP<const Epetra_Vector> Diagonal,
+                                 Teuchos::RCP<const Epetra_CrsMatrix> D0_Matrix,
+				 Teuchos::RCP<const Epetra_CrsMatrix> D0_Clean_Matrix,
+                                 Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix,
+                                 Teuchos::ArrayRCP<int> BCedges,
                                  const Teuchos::ParameterList &List,const bool ComputePrec = true);
     //@}
     
@@ -156,20 +159,19 @@ namespace ML_Epetra
     ML_Comm* ml_comm_;
     
     //! Fine-level operator
-    const Epetra_Operator_With_MatMat * Operator_;
+    Teuchos::RCP<const Epetra_Operator> Operator_;
 
     //! D0 or T matrix w/ dirichlet nodes and edges zero'd.  Used to generate prolongator.
-    const Epetra_CrsMatrix * D0_Matrix_;
+    Teuchos::RCP<const Epetra_CrsMatrix> D0_Matrix_;
 
     //! D0 or T matrix w/ nothing zero'd.  Needed to generate the nullspace
-    const Epetra_CrsMatrix * D0_Clean_Matrix_;
+    Teuchos::RCP<const Epetra_CrsMatrix> D0_Clean_Matrix_;
 
     //! TMT_Matrix.  Needed for nodal maps
-    const Epetra_CrsMatrix * TMT_Matrix_;    
+    Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix_;    
 
     //! Dirichlet edges
-    const int* BCedges_;
-    const int numBCedges_;
+    Teuchos::ArrayRCP<int> BCedges_;
     
     //! Prolongator
     Epetra_CrsMatrix * Prolongator_;

@@ -25,17 +25,6 @@ extern void IVOUT(const Epetra_IntVector & A, const char * of);
 #include "EpetraExt_MultiVectorOut.h"
 
 // ================================================ ====== ==== ==== == =
-/* This function does a "view" getrow in an ML_Operator.  This is intended to be
-used in a ML_CSR_Matrix to Epetra_CrsMatrix (view) translator.  Inlined for
-speed. */
-inline void CSR_getrow_view(ML_Operator *M, int row, int *ncols,int **cols, double**vals){
-  struct ML_CSR_MSRdata* M_= (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(M);
-  *ncols=M_->rowptr[row+1]-M_->rowptr[row];
-  *cols=&M_->columns[M_->rowptr[row]];
-  *vals=&M_->values[M_->rowptr[row]];  
-}/*end CSR_getrow_view*/
-
-
 int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -69,13 +58,26 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 
 
 // ================================================ ====== ==== ==== == = 
-ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
+ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(Teuchos::RCP<const Epetra_Operator> Operator, 
+								      Teuchos::RCP<const Epetra_Vector> Diagonal,
+								      Teuchos::RCP<const Epetra_CrsMatrix> D0_Matrix,
+								      Teuchos::RCP<const Epetra_CrsMatrix> D0_Clean_Matrix,
+								      Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix,
+								      Teuchos::ArrayRCP<int> BCedges,
+								      const Teuchos::ParameterList &List,const bool ComputePrec):
+  ML_Preconditioner(),
+Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
 #ifdef HAVE_ML_IFPACK
 Smoother_(0),
 #endif
 verbose_(false),very_verbose_(false),print_hierarchy(false)
 {
+  Operator_=Operator;
+  D0_Matrix_=D0_Matrix;
+  D0_Clean_Matrix_=D0_Clean_Matrix;
+  TMT_Matrix_=TMT_Matrix;
+  BCedges_=BCedges;
+
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
 
@@ -87,7 +89,17 @@ verbose_(false),very_verbose_(false),print_hierarchy(false)
   List_=List;
   Label_=new char[80];
   strcpy(Label_,"ML edge matrix-free preconditioner");
-  InvDiagonal_ = new Epetra_Vector(Diagonal);  
+
+
+  // Pull diagonal if needed
+  const Epetra_CrsMatrix *Op11crs = dynamic_cast<const Epetra_CrsMatrix*>(&*Operator_);
+  if(Diagonal==Teuchos::null && Op11crs){    
+    InvDiagonal_ = new Epetra_Vector(Op11crs->RowMap());  
+    Op11crs->ExtractDiagonalCopy(*InvDiagonal_);
+  }	
+  else    
+    InvDiagonal_ = new Epetra_Vector(*Diagonal);  
+
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
 
@@ -222,7 +234,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   // to false.
   
   /* Build the Smoother */
-  Smoother_ = new Ifpack_Chebyshev(Operator_);
+  Smoother_ = new Ifpack_Chebyshev(&*Operator_);
   if (Smoother_ == 0) ML_CHK_ERR(-1); 
   ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
   ML_CHK_ERR(Smoother_->Initialize());
@@ -271,8 +283,8 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 
     /* Sanity Checks */
     if(dim == 0 || (!xcoord && (ycoord || zcoord) || (xcoord && !ycoord && zcoord))){
-      cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner.\n";
-      return 0;
+      cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n";
+      exit(-1);
     }/*end if*/
     
     /* Normalize */
@@ -299,7 +311,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     
   /* Nuke the BC edges */
   for(int j=0;j<dim;j++)
-    for(int i=0;i<numBCedges_;i++)
+    for(int i=0;i<BCedges_.size();i++)
       (*nullspace)[j][BCedges_[i]]=0;
   
   /* Cleanup */
@@ -317,7 +329,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
 
   /* Wrap TMT_Matrix in a ML_Operator */
-  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)TMT_Matrix_,TMT_ML);
+  ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&*TMT_Matrix_),TMT_ML);
       
 
   /* Pull Teuchos Options */
@@ -348,7 +360,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
   }/*end if*/
   else {
-    if(!Comm_->MyPID()) printf("RefMaxwell: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",CoarsenType.c_str());
+    if(!Comm_->MyPID()) printf("EMFP: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",CoarsenType.c_str());
     ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
   }
 
@@ -373,7 +385,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
   ML_Operator* AbsD0_ML = ML_Operator_Create(ml_comm_);
-  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML,verbose_));    
+  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&*D0_Matrix_),AbsD0_ML,verbose_));    
   ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng,CSR_getrow_ones);
   
   /* Form abs(T) * P_n */
@@ -385,7 +397,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
   
   /* Nuke the rows in Psparse */
-  Apply_BCsToMatrixRows(BCedges_,numBCedges_,*Psparse);
+  Apply_BCsToMatrixRows(BCedges_.get(),BCedges_.size(),*Psparse);
     
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
@@ -423,7 +435,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Prolongator_->OptimizeStorage();
 
   /* EXPERIMENTAL: Normalize Prolongator Columns */
-  bool normalize_prolongator=List_.get("refmaxwell: normalize prolongator",false);
+  bool normalize_prolongator=List_.get("edge matrix free: normalize prolongator",false);
   if(normalize_prolongator){
     Epetra_Vector n_vector(*CoarseMap_,false);
     Prolongator_->InvColSums(n_vector);
@@ -474,25 +486,29 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 #endif
   
   /* OPTION: Disable the addon */
-  bool disable_addon=List_.get("refmaxwell: disable addon",false);
-  const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
+  const Epetra_CrsMatrix *Op11crs = dynamic_cast<const Epetra_CrsMatrix*>(&*Operator_);
+  const Epetra_Operator_With_MatMat *Op11mm = dynamic_cast<const Epetra_Operator_With_MatMat*>(&*Operator_);
 #ifndef ENABLE_FAST_PTAP
-  if(disable_addon && Op11){
+  if(Op11crs){
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running *without* addon\n");
     ML_Operator *SM_ML = ML_Operator_Create(ml_comm_);
     Temp_ML = ML_Operator_Create(ml_comm_);
-    ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&(((ML_RefMaxwell_11_Operator *)Op11)->SM_Matrix()),SM_ML,verbose_);
+    ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Op11crs,SM_ML,verbose_);
     ML_2matmult(SM_ML,P,Temp_ML,ML_CSR_MATRIX);
     ML_Operator_Destroy(&SM_ML);
   }
-  else{
+  else if(Op11mm){
 #endif
 #ifdef ENABLE_FAST_PTAP
-    Op11->PtAP(*Prolongator_,ml_comm_,&CoarseMat_ML);
+    Op11mm->PtAP(*Prolongator_,ml_comm_,&CoarseMat_ML);
 #else
     /* Do the A*P */
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running with addon\n");
-    ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
+    ML_CHK_ERR(Op11mm->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
+  }
+  else{
+    if(!Comm_->MyPID()) printf("EMFP: Error Invalid Operator\n");
+    ML_CHK_ERR(-1);
   }
 #endif
 
@@ -557,7 +573,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
   /* Sanity Checks */
   int NumVectors=B_.NumVectors();
   if (!B_.Map().SameAs(*EdgeDomainMap_)) ML_CHK_ERR(-1);
-  if (NumVectors != X.NumVectors()) ML_CHK_ERR(-1);
+  if (NumVectors != X.NumVectors()) ML_CHK_ERR(-2);
 
   Epetra_MultiVector r_edge(*EdgeDomainMap_,NumVectors,false);
   Epetra_MultiVector e_edge(*EdgeDomainMap_,NumVectors,false);

@@ -208,6 +208,7 @@ APPEND_SET(HEADERS
   RefMaxwell/ml_FaceMatrixFreePreconditioner.h
   RefMaxwell/ml_RefMaxwell_11_Operator.h
   RefMaxwell/ml_RefMaxwell.h
+  RefMaxwell/ml_GradDiv.h
   MatrixFree/ml_MatrixFreePreconditioner.h
   MatrixFree/ml_ElementByElement_SingleElement.h
   MLAPI/MLAPI.h
@@ -286,6 +287,7 @@ APPEND_SET(SOURCES
   RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
   RefMaxwell/ml_RefMaxwell_11_Operator.cpp
   RefMaxwell/ml_RefMaxwell.cpp
+  RefMaxwell/ml_GradDiv.cpp
   MatrixFree/ml_MatrixFreePreconditioner.cpp
   MLAPI/MLAPI_Defaults.cpp
   MLAPI/MLAPI_Gallery.cpp

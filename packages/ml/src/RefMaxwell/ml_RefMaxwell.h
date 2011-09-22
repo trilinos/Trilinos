@@ -30,6 +30,7 @@
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_SolverMap_CrsMatrix.h"
@@ -230,7 +231,7 @@ namespace ML_Epetra
     //! Vector: Diagonal of reformulated operator
     Epetra_Vector* Diagonal_;
     //! (1,1) Block Operator
-    ML_RefMaxwell_11_Operator* Operator11_;
+    Teuchos::RCP<Epetra_Operator> Operator11_;
     
     //! (1,1) Block Preconditioner
     ML_Preconditioner * EdgePC;

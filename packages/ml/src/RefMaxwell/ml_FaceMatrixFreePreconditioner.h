@@ -3,7 +3,7 @@
  *
  * \class FaceMatrixFreePreconditioner
  *
- * \brief Matrix-Free preconditioning class for edge Maxwell Problems. 
+ * \brief Matrix-Free preconditioning class for face problems.
  *
  * \date Last update to Doxygen: 2-Feb-10
  *
@@ -23,8 +23,9 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "ml_Preconditioner.h"
-#include "Epetra_Operator_With_MatMat.h"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Chebyshev.h"
@@ -54,11 +55,13 @@ namespace ML_Epetra
   public:
     //@{ \name Constructor
     //! Constructs an FaceMatrixFreePreconditioner.
-    FaceMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
-                                 const Epetra_CrsMatrix & D1_Matrix,const Epetra_CrsMatrix & FaceNode_Matrix,
-                                 const Epetra_CrsMatrix &TMT_Matrix,
-                                 const int* BCfaces, const int numBCfaces,
-                                 const Teuchos::ParameterList &List,const bool ComputePrec = true);
+    FaceMatrixFreePreconditioner(Teuchos::RCP<const Epetra_Operator> Operator, 
+				 Teuchos::RCP<const Epetra_Vector> Diagonal,
+				 Teuchos::RCP<const Epetra_CrsMatrix> FaceNode_Matrix,
+                                 Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix,
+                                 Teuchos::ArrayRCP<int> BCfaces,
+                                 const Teuchos::ParameterList &List,
+				 const bool ComputePrec = true);
     //@}
     
     
@@ -162,22 +165,21 @@ namespace ML_Epetra
     
     //! ML Communicator
     ML_Comm* ml_comm_;
-    
-    //! Fine-level operator
-    const Epetra_Operator_With_MatMat * Operator_;
 
-    //! D1 matrix w/ dirichlet faces and edges zero'd.  Used for addon term
-    const Epetra_CrsMatrix * D1_Matrix_;
+    //! Fine-level operator
+    Teuchos::RCP<const Epetra_Operator> Operator_;
+
+    //! Matrix diagonal
+    Teuchos::RCP<const Epetra_Vector> Diagonal_;
 
     //! Face-node indicence matrix.  Needed for aggregation
-    const Epetra_CrsMatrix * FaceNode_Matrix_;
+    Teuchos::RCP<const Epetra_CrsMatrix> FaceNode_Matrix_;
 
     //! TMT_Matrix.  Needed for nodal maps
-    const Epetra_CrsMatrix * TMT_Matrix_;    
+    Teuchos::RCP<const Epetra_CrsMatrix> TMT_Matrix_;    
 
     //! Dirichlet edges
-    const int* BCfaces_;
-    const int numBCfaces_;
+    Teuchos::ArrayRCP<int> BCfaces_;
     
     //! Prolongator
     Epetra_CrsMatrix * Prolongator_;
