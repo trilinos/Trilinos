@@ -9,7 +9,7 @@ ADD_SUBDIRECTORIES(
 # Directory
 # ImportExport
 # ImportExport2
-  MultiVector
+#  MultiVector   ##### temporarily disabling this test
 # BasicPerfTest
 # Utils
 # CrsGraph
