@@ -809,8 +809,8 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
       for(LO i=0;i<N;i++){
         GO grid= rowMap->getGlobalElement(i);
-        Teuchos::ArrayRCP<const LO> indices;
-        Teuchos::ArrayRCP<const SC> vals;
+        Teuchos::ArrayView<const LO> indices;
+        Teuchos::ArrayView<const SC> vals;
         A->getLocalRowView(i,indices,vals);
         for(LO j=0;j<indices.size();j++){
           GO gcid=colMap->getGlobalElement(indices[j]);
