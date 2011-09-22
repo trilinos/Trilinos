@@ -64,7 +64,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_AMESOS2
         return rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos2");
+        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
         //#if defined(HAVE_MUELU_AMESOS2)

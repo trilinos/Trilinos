@@ -60,7 +60,34 @@ namespace Xpetra {
     //@{
 
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { return getTpetra_Vector()->dot(toTpetra(a)); }
+    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { 
+
+      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & aa = toTpetra(a);
+
+      std::cout << " " << *a.getMap()     << std::endl;
+      std::cout << " " << *aa.getMap()    << std::endl;
+
+
+//       std::cout << "MueLu:" << std::endl;
+//       std::cout << " " << *this->getMap() << std::endl;
+//       std::cout << " " << *a.getMap()     << std::endl;
+//       std::cout << " " << this->getLocalLength() << " " << a.getLocalLength() << std::endl;
+
+
+
+// #ifdef HAVE_TPETRA_DEBUG
+//       TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
+//                           "Xpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
+//                           << "this->getMap(): " << std::endl << *this->getMap() 
+//                           << "a.getMap(): " << std::endl << *a.getMap() << std::endl);
+// #else
+//       TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
+//                           "Xpetra::Vector::dots(): Vectors do not have the same local length.");
+// #endif
+      
+//        return getTpetra_Vector()->Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(toTpetra(a)); 
+        return 0;
+    }
 
     //! Return 1-norm of this Vector.
     typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const { return getTpetra_Vector()->norm1(); }
@@ -106,6 +133,8 @@ namespace Xpetra {
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Tpetra::Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
+    std::cout << "ICI" << std::endl;
+    
     typedef TpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraVectorClass;
     XPETRA_DYNAMIC_CAST(      TpetraVectorClass, x, tX, "toTpetra");
     return *tX.getTpetra_Vector();
@@ -113,6 +142,8 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
+    std::cout << "LA" << std::endl;
+
     typedef TpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraVectorClass;
     XPETRA_DYNAMIC_CAST(const TpetraVectorClass, x, tX, "toTpetra");
     return *tX.getTpetra_Vector();
