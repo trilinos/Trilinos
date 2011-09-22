@@ -13,6 +13,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     ADD_DIR_TO_NAME
     )
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_Darcy
+    SOURCES example_Darcy.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml ifpack teko
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
     DEPLIBS epetra epetraext pamgen aztecoo amesos ml
@@ -36,9 +43,11 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES Poisson.xml
                ADR.xml
+  	       Darcy.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
                DivLSFEMin.xml
+	      
                ML_nonsym.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
