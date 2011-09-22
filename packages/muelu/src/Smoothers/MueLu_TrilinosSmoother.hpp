@@ -124,8 +124,9 @@ namespace MueLu {
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    using MueLu::Describable::describe; // overloading, not hiding
-    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+    //using MueLu::Describable::describe; // overloading, not hiding
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
       MUELU_DESCRIBE;
 
       if (verbLevel & Parameters0) {
