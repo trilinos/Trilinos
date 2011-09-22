@@ -188,8 +188,9 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
     if(!Comm_->MyPID()) cout<<*IfSmoother<<endl;
   }
 #endif
+#ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[2]));
-
+#endif
   /* Build the (1,1) Block Preconditioner */ 
   Teuchos::ParameterList & List11=List_.sublist("graddiv: 11list");
   if (List11.name() == "ANONYMOUS") List11.setName("graddiv: 11list");
@@ -201,19 +202,10 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   Teuchos::ParameterList & List22=List_.sublist("graddiv: 22list");
   if (List22.name() == "ANONYMOUS") List11.setName("graddiv: 22list");
   EdgePC=new EdgeMatrixFreePreconditioner(K1_Matrix_,Teuchos::null,D0_Matrix_,rcp(D0_Clean_Matrix_,false),rcp(TMT_Matrix_,false),BCedges_,List22,true);
-  StopTimer(&t_time_curr,&(t_diff[4]));
-  //  if(print_hierarchy) EdgePC->Print();
-
-  /*  Teuchos::ParameterList test;
-  test.set("ML output",10);
-  test.set("coarse: type","Amesos-KLU");
-  test.set("max levels",1);
-  test.set("ML label","whole edge block");
-  EdgePC=new MultiLevelPreconditioner(*K1_Matrix_,test);*/
-
-
+  if(print_hierarchy) EdgePC->Print();
 
 #ifdef ML_TIMING
+  StopTimer(&t_time_curr,&(t_diff[4]));
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);

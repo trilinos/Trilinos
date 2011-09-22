@@ -174,7 +174,7 @@ namespace ML_Epetra
 
     //! (2,2) Block Preconditioner
     //    ML_Preconditioner * EdgePC;
-    Epetra_Operator * EdgePC;
+    ML_Preconditioner * EdgePC;
 
 #ifdef HAVE_ML_IFPACK
     // Outer Smoother
