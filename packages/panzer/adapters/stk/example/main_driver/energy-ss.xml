@@ -277,8 +277,8 @@
       <Parameter name="Number of Tests" type="int" value="2"/>
       <ParameterList name="Test 0">
         <Parameter name="Test Type" type="string" value="Combo"/>
-      <Parameter name="Combo Type" type="string" value="AND"/>
-      <Parameter name="Number of Tests" type="int" value="2"/>
+        <Parameter name="Combo Type" type="string" value="AND"/>
+        <Parameter name="Number of Tests" type="int" value="2"/>
         <ParameterList name="Test 0">
           <Parameter name="Test Type" type="string" value="NormF"/>
           <Parameter name="Tolerance" type="double" value="1.0e-8"/>
