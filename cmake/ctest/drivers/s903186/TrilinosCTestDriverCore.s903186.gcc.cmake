@@ -107,9 +107,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.6.1/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/gfortran"
       )
   
   ENDIF()
