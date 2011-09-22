@@ -147,7 +147,7 @@
 
 using namespace std;
 using namespace Intrepid;
-
+using namespace Teuchos;
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -2253,6 +2253,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
   int numBCfaces;  
   int* BCfaces=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(GradDiv,numBCfaces);  
   ML_Epetra::Apply_OAZToMatrix(BCfaces,numBCfaces,M2);
+  ArrayRCP<int> BCfaces_arcp(BCfaces,0,numBCfaces,false);
 
   if(!GradDiv.Comm().MyPID())
     cout<<"Total number of rows = "<<GradDiv.NumGlobalRows()<<endl;
@@ -2297,9 +2298,8 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
    EpetraExt::RowMatrixToMatlabFile("mag_tmt_matrix.dat",*TMT_Agg_Matrix);
 #endif
 
-
   /* Build the EMFP Preconditioner */  
-  ML_Epetra::FaceMatrixFreePreconditioner FMFP(Operator11,Diagonal,D1,FaceNode,*TMT_Agg_Matrix,BCfaces,numBCfaces,MLList);
+  ML_Epetra::FaceMatrixFreePreconditioner FMFP(rcp(&Operator11,false),rcp(&Diagonal,false),rcp(&FaceNode,false),rcp(TMT_Agg_Matrix,false),BCfaces_arcp,MLList);
 
   /* Solve! */
   AztecOO solver(Problem);  

@@ -121,10 +121,12 @@
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -152,6 +154,9 @@
 
 
 #define ABS(x) ((x)>0?(x):-(x))
+
+using Teuchos::rcp;
+using Teuchos::ArrayRCP;
 
 
 /*** Uncomment if you would like output data for plotting ***/
@@ -2102,6 +2107,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);  
   //  printf("# BC edges = %d\n",numBCedges);
   ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
+  ArrayRCP<int> BCedges_arcp(BCedges,0,numBCedges,false);
 
   if(!CurlCurl.Comm().MyPID())
     cout<<"Total number of rows = "<<CurlCurl.NumGlobalRows()<<endl;
@@ -2121,8 +2127,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     
   /* Build the aggregation guide matrix */
   Epetra_CrsMatrix *TMT_Agg_Matrix;
-  ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
-  
+  ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);  
 
   /* Approximate the diagonal for EMFP: 2a^2 b guy */
   Epetra_Vector Diagonal(CurlCurl.DomainMap());
@@ -2142,7 +2147,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   }
 
   /* Build the EMFP Preconditioner */  
-  ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
+  ML_Epetra::EdgeMatrixFreePreconditioner EMFP(rcp(&Operator11,false),rcp(&Diagonal,false),rcp(&D0,false),rcp(&D0clean,false),rcp(TMT_Agg_Matrix,false),BCedges_arcp,MLList);
 
   /* Solve! */
   AztecOO solver(Problem);  
