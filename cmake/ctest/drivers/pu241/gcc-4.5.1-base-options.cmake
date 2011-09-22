@@ -57,6 +57,8 @@ INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
 
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
 
+SET(Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
+
 SET(PVMLibraries_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/pvm3/lib/LINUX64                    CACHE FILEPATH "")
 SET(PVMHeaders_INCLUDE_DIRS /opt/gcc-4.5.1/tpls/pvm3/include                        CACHE FILEPATH "")
 SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;hdf5_cpp"                               CACHE STRING   "")
