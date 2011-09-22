@@ -1,0 +1,25 @@
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
+
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Ifpack AND Trilinos_ENABLE_AztecOO)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    GradDiv
+    SOURCES cxx_main.cpp
+    DEPLIBS epetra epetraext ifpack aztecoo ml
+    NUM_MPI_PROCS 1
+    )
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(GradDiv_copy
+  SOURCE_FILES d1.dat
+               d0.dat
+               facenode.dat
+               k2.dat
+               k0.dat
+               coordx.dat
+               coordy.dat
+               coordz.dat
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+
+  ) 
+ENDIF()
