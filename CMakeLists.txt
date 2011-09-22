@@ -108,32 +108,13 @@ SET( CMAKE_MODULE_PATH
 #any overrides that we have for CMake functions
 INCLUDE(CMakeOverrides)
 
-#Pull in Trilinos version information and create the version header file.
-INCLUDE(TrilinosVersion)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-  Trilinos_version.h)
-
-#Automatically update the version file for sierra too.
-IF (NOT WIN32)
-  # Only configure on non-windows system because of the dreaded ^M
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
-ENDIF()
-
-#Since the version header file is now configured the root build
-#dir needs to be on the include path
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 INCLUDE(PackageArchGlobalMacros)
 INCLUDE(TrilinosGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
+INCLUDE(TimingUtils)
 
 PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE()
-
-OPTION(Trilinos_VERBOSE_CONFIGURE
-  "Make the Trilinos configure process verbose." OFF)
-
 #
 # A.1) Run misc unit tests that don't need anything else
 #
@@ -163,6 +144,27 @@ MESSAGE("Setting up major user options ...")
 MESSAGE("")
 
 PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
+
+IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+  # Start the global timer
+  TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
+ENDIF()
+
+#Pull in Trilinos version information and create the version header file.
+INCLUDE(TrilinosVersion)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+  Trilinos_version.h)
+
+#Automatically update the version file for sierra too.
+IF (NOT WIN32)
+  # Only configure on non-windows system because of the dreaded ^M
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
+ENDIF()
+
+#Since the version header file is now configured the root build
+#dir needs to be on the include path
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 ADVANCED_SET(Trilinos_DATA_DIR
   "NOTFOUND"
@@ -296,6 +298,9 @@ TRILINOS_DEFINE_PACKAGING()
 # L) Install-related commands
 #
 IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+
+  INCLUDE(PackageWritePackageConfig)
+
   PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
   # TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
@@ -316,3 +321,16 @@ MESSAGE("")
 MESSAGE("Exporting library dependencies ...")
 MESSAGE("")
 EXPORT_LIBRARY_DEPENDENCIES( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake )
+
+#
+# P) Show final timing and end
+#
+
+MESSAGE("")
+MESSAGE("Finished configuring Trilinos!")
+MESSAGE("")
+IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+  TIMER_GET_RAW_SECONDS(GLOBAL_TIME_STOP_SECONDS)
+  TIMER_PRINT_REL_TIME(${GLOBAL_TIME_START_SECONDS}  ${GLOBAL_TIME_STOP_SECONDS}
+    "Total time to configure Trilinos")
+ENDIF()
