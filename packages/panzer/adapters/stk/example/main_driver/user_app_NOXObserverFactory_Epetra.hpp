@@ -2,8 +2,10 @@
 #define USER_APP_NOX_OBSERVER_FACTORY_HPP
 
 #include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
+#include "NOX_PrePostOperator_Vector.H"
 
-#include "user_app_NOXObserver_Epetra.hpp"
+// Individual Observers
+#include "user_app_NOXObserver_EpetraToExodus.hpp"
 
 namespace user_app {
   
@@ -16,8 +18,15 @@ namespace user_app {
 		     const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 		     const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) const
     {
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> observer = 
-	Teuchos::rcp(new user_app::NOXObserver_Epetra(mesh,dof_manager,lof));
+      Teuchos::RCP<NOX::PrePostOperatorVector> observer = 
+	Teuchos::rcp(new NOX::PrePostOperatorVector);
+
+      // Always register the exodus writer to output solution
+      {
+	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer = 
+	  Teuchos::rcp(new user_app::NOXObserver_EpetraToExodus(mesh,dof_manager,lof));
+	observer->pushBack(solution_writer);
+      }
 
       return observer;
     }

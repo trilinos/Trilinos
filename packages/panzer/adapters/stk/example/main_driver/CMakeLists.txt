@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/adapters/stk/test/bcstrategy)
 SET(main_driver_SOURCES
   main_driver.cpp
   user_app_NOXObserverFactory_Epetra.hpp
-  user_app_NOXObserver_Epetra.hpp
+  user_app_NOXObserver_EpetraToExodus.hpp
   user_app_RythmosObserverFactory_Epetra.hpp
   user_app_RythmosObserver_Epetra.hpp
   Panzer_STK_ModelEvaluatorFactory_Epetra.hpp

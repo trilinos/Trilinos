@@ -1,5 +1,5 @@
-#ifndef USER_APP_NOX_OBSERVER_EPETRA_HPP
-#define USER_APP_NOX_OBSERVER_EPETRA_HPP
+#ifndef USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
+#define USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
 
 #include "NOX_Abstract_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
@@ -13,13 +13,13 @@
 
 namespace user_app {
   
-  class NOXObserver_Epetra : public NOX::Abstract::PrePostOperator {
+  class NOXObserver_EpetraToExodus : public NOX::Abstract::PrePostOperator {
     
   public:
     
-    NOXObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-		       const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
-		       const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
+    NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+			       const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			       const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof)
