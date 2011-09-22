@@ -42,6 +42,10 @@ typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
 #endif
 
+#ifdef MUELU_FACTORYBASE_SHORT
+typedef MueLu::FactoryBase FactoryBase;
+#endif
+
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory PRFactory;
 #endif

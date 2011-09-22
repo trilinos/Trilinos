@@ -10,7 +10,7 @@ APPEND_SET(HEADERS
   belos/BelosMueLuAdapterMultiVector.hpp
   )
 
-#APPEND_SET(SOURCES mac.cpp)
+APPEND_SET(SOURCES mac.cpp)
 
 PACKAGE_ADD_LIBRARY(
   muelu-adapters

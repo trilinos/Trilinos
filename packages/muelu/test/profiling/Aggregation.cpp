@@ -117,16 +117,18 @@ int main(int argc, char *argv[]) {
   H.SetLevel(rcpFromRef(Finest));
   Finest.Set("A",Op,NULL);
 */
-
+ RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+ defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+ defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
 
  Level Finest;
- //Finest.SetupPhase(true);
- Hierarchy H;
+ Hierarchy H(defHandler);
  H.SetLevel(rcpFromRef(Finest));
- Finest.Set("A",Op,NULL); 
+ Finest.Set("A",Op);
 
 
   UCAggregationFactory UCAggFact;
+  UCAggFact.DeclareInput(Finest);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;

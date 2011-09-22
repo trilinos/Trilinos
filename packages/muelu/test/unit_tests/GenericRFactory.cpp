@@ -18,6 +18,9 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
+#include "EpetraExt_RowMatrixOut.h"
+#include "Xpetra_EpetraCrsMatrix.hpp"
+
 namespace MueLuTests {
 
 
@@ -106,23 +109,39 @@ namespace MueLuTests {
     RCP<Level> coarseLevel = H->GetLevel(2);
     RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P",NULL);
     RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R",NULL);
-    /*TEST_EQUALITY(P1->getGlobalNumRows(), 63);
-    TEST_EQUALITY(P1->getGlobalNumCols(), 21);
-    TEST_EQUALITY(R1->getGlobalNumRows(), 21);
-    TEST_EQUALITY(R1->getGlobalNumCols(), 63);*/
     RCP<Level> coarseLevel2 = H->GetLevel(3);
     RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P",NULL);
     RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R",NULL);
-    /*TEST_EQUALITY(P2->getGlobalNumRows(), 21);
-    TEST_EQUALITY(P2->getGlobalNumCols(), 7);
-    TEST_EQUALITY(R2->getGlobalNumRows(), 7);
-    TEST_EQUALITY(R2->getGlobalNumCols(), 21);*/
+
+    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
+
+    RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+    RP->describe(*fos,Teuchos::VERB_EXTREME);
+
+    //Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+    //PtP->describe(*fos,Teuchos::VERB_EXTREME);
+
+
+
+    //R1->describe(*fos,Teuchos::VERB_EXTREME);
+
+    /*RCP<CrsOperator> crsP1 = rcp_dynamic_cast<CrsOperator>(P1);
+    RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
+    RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
+    RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
+    EpetraExt::RowMatrixToMatrixMarketFile( "Test.mat", *epMat);*/
+
+    //P1->describe(*fos,Teuchos::VERB_EXTREME);
+
+    //R1->getRangeMap()->describe(*fos,Teuchos::VERB_EXTREME);
+    //P1->describe(*fos,Teuchos::VERB_EXTREME);
+    //R1->describe(*fos,Teuchos::VERB_EXTREME);
 
     // todo test me
     /*RCP<Operator> R1T = MueLu::Utils2<SC,LO,GO>::Transpose(P1,true);
-    RCP<Operator> R2T = MueLu::Utils2<SC,LO,GO>::Transpose(P2,true);
+    RCP<Operator> R2T = MueLu::Utils2<SC,LO,GO>::Transpose(P2,true);*/
 
-    RCP<Vector> X1 = VectorFactory::Build(P1->getDomainMap());
+    /*RCP<Vector> X1 = VectorFactory::Build(P1->getDomainMap());
     RCP<Vector> X2 = VectorFactory::Build(R1->getRangeMap());
     RCP<Vector> Y1 = VectorFactory::Build(P1->getRangeMap());
     RCP<Vector> Y2 = VectorFactory::Build(R1->getDomainMap());
