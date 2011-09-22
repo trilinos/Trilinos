@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 PACKAGE_ADD_EXECUTABLE(
   MatrixVectorCheckerExample
   SOURCES MatrixVectorCheckerExample.cpp
-  COMM serial mpi
+  COMM serial
   DEPLIBS muelu muelu-xpetra
   )
 
