@@ -13,3 +13,5 @@ ADD_SUBDIRECTORY(Misc/TentativePDebug)
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)
   ADD_SUBDIRECTORY(Misc/Verbose)
 ENDIF()
+
+#ADD_SUBDIRECTORY(transpose_test)
