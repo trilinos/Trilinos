@@ -2320,6 +2320,55 @@ namespace Tpetra {
       /// \brief Tpetra::Map specialization associated with SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
+      /// \brief Print the sparse matrix in Matrix Market format, with comments.
+      ///
+      /// Write the given Tpetra::CrsMatrix sparse matrix to the given
+      /// file, using the Matrix Market "coordinate" format.  MPI Proc
+      /// 0 is the only MPI process that opens or writes to the file.
+      /// Include the matrix name and description in the comments
+      /// section of the file (after the initial banner line, but
+      /// before the matrix metadata and data).
+      ///
+      /// \param filename [in] Name of the file to which to write the
+      ///   given sparse matrix.  The matrix is distributed, but only
+      ///   Proc 0 opens the file and writes to it.
+      ///
+      /// \param pMatrix [in] The sparse matrix to write to the file.
+      ///
+      /// \param matrixName [in] Name of the matrix, to print in the 
+      ///   comments section of the output file.  If empty, we don't 
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output file.  If empty, we
+      ///   don't print anything (not even an empty line).
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Proc 0.
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
+      static void
+      writeSparseFile (const std::string& filename,
+                       const RCP<const sparse_matrix_type>& pMatrix,
+		       const std::string& matrixName,
+		       const std::string& matrixDescription,
+                       const bool debug=false)
+      {
+        const int myRank = Teuchos::rank (*(pMatrix->getComm()));
+        std::ofstream out;        
+
+        // Only open the file on Rank 0.
+        if (myRank == 0) out.open (filename.c_str());
+        writeSparse (out, pMatrix, matrixName, matrixDescription, debug);
+        // We can rely on the destructor of the output stream to close
+        // the file on scope exit, even if writeSparse() throws an
+        // exception.
+      }
+
       /// \brief Print the sparse matrix in Matrix Market format.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to the given
@@ -2345,18 +2394,12 @@ namespace Tpetra {
                        const RCP<const sparse_matrix_type>& pMatrix,
                        const bool debug=false)
       {
-        const int myRank = Teuchos::rank (*(pMatrix->getComm()));
-        std::ofstream out;        
-
-        // Only open the file on Rank 0.
-        if (myRank == 0) out.open (filename.c_str());
-        writeSparse (out, pMatrix, debug);
-        // We can rely on the destructor of the output stream to close
-        // the file on scope exit, even if writeSparse() throws an
-        // exception.
+	writeSparseFile (filename, pMatrix, "", "", debug);
       }
 
-      /// \brief Print the sparse matrix in Matrix Market format.
+    public:
+
+      /// \brief Print the sparse matrix in Matrix Market format, with comments.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to an output
       /// stream, using the Matrix Market "coordinate" format.  MPI
@@ -2370,6 +2413,14 @@ namespace Tpetra {
       /// \param pMatrix [in] The sparse matrix to write to the given
       ///   output stream.
       ///
+      /// \param matrixName [in] Name of the matrix, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output stream.  If empty,
+      ///   we don't print anything (not even an empty line).
+      ///
       /// \param debug [in] Whether to print possibly copious
       ///   debugging output to stderr on Proc 0.
       ///
@@ -2381,6 +2432,8 @@ namespace Tpetra {
       static void
       writeSparse (std::ostream& out,
                    const RCP<const sparse_matrix_type>& pMatrix,
+		   const std::string& matrixName,
+		   const std::string& matrixDescription,
                    const bool debug=false)
       {
         using std::cerr;
@@ -2501,6 +2554,12 @@ namespace Tpetra {
           out << "%%MatrixMarket matrix coordinate " 
               << (STS::isComplex ? "complex" : "real") 
               << " general" << endl;
+
+	  // Print comments (the matrix name and / or description).
+	  if (matrixName != "")
+	    printAsComment (out, matrixName);
+	  if (matrixDescription != "")
+	    printAsComment (out, matrixDescription);
       
           // Print the Matrix Market header (# rows, # columns, #
           // nonzeros).  Use the range resp. domain map for the
@@ -2610,12 +2669,92 @@ namespace Tpetra {
         }
       }
 
+      /// \brief Print the sparse matrix in Matrix Market format.
+      ///
+      /// Write the given Tpetra::CrsMatrix sparse matrix to an output
+      /// stream, using the Matrix Market "coordinate" format.  MPI
+      /// Proc 0 is the only MPI process that writes to the output
+      /// stream.
+      ///
+      /// \param out [out] Name of the output stream to which to write
+      ///   the given sparse matrix.  The matrix is distributed, but
+      ///   only Proc 0 writes to the output stream.
+      ///
+      /// \param pMatrix [in] The sparse matrix to write to the given
+      ///   output stream.
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Proc 0.
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
+      static void
+      writeSparse (std::ostream& out,
+                   const RCP<const sparse_matrix_type>& pMatrix,
+                   const bool debug=false)
+      {
+	writeSparse (out, pMatrix, "", "", debug);
+      }
+
+      /// \brief Print the multivector in Matrix Market format, with comments.
+      ///
+      /// Write the given Tpetra::MultiVector matrix to the given
+      /// file, using the Matrix Market "array" format for dense
+      /// matrices.  MPI Proc 0 is the only MPI process that opens or
+      /// writes to the file.
+      ///
+      /// \param filename [in] Name of the output file to create (on
+      ///   MPI Proc 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output file.
+      ///
+      /// \param matrixName [in] Name of the matrix, to print in the
+      ///   comments section of the output file.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output file.  If empty, we
+      ///   don't print anything (not even an empty line).
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
+      static void
+      writeDenseFile (const std::string& filename,
+                      const RCP<const multivector_type>& X,
+		      const std::string& matrixName,
+		      const std::string& matrixDescription)
+      {
+        const int myRank = Teuchos::rank (*(X->getComm()));
+        std::ofstream out;        
+
+        if (myRank == 0) // Only open the file on Rank 0.
+	  out.open (filename.c_str());
+
+        writeDense (out, X, matrixName, matrixDescription);
+        // We can rely on the destructor of the output stream to close
+        // the file on scope exit, even if writeDense() throws an
+        // exception.
+      }
+
       /// \brief Print the multivector in Matrix Market format.
       ///
       /// Write the given Tpetra::MultiVector matrix to the given
       /// file, using the Matrix Market "array" format for dense
       /// matrices.  MPI Proc 0 is the only MPI process that opens or
       /// writes to the file.
+      ///
+      /// \param filename [in] Name of the output file to create (on
+      ///   MPI Proc 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output file.
       ///
       /// \warning The current implementation gathers the whole matrix
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
@@ -2626,14 +2765,7 @@ namespace Tpetra {
       writeDenseFile (const std::string& filename,
                       const RCP<const multivector_type>& X)
       {
-        const int myRank = Teuchos::rank (*(X->getComm()));
-        std::ofstream out;        
-        // Only open the file on Rank 0.
-        if (myRank == 0) out.open (filename.c_str());
-        writeDense (out, X);
-        // We can rely on the destructor of the output stream to close
-        // the file on scope exit, even if writeDense() throws an
-        // exception.
+	writeDenseFile (filename, X, "", "");
       }
 
       /// \brief Print the multivector in Matrix Market format.
@@ -2643,6 +2775,20 @@ namespace Tpetra {
       /// matrices.  MPI Proc 0 is the only MPI process that writes to
       /// the output stream.
       ///
+      /// \param out [out] The output stream to which to write (on MPI
+      ///   Proc 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output stream.
+      ///
+      /// \param matrixName [in] Name of the matrix, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output stream.  If empty,
+      ///   we don't print anything (not even an empty line).
+      ///
       /// \warning The current implementation gathers the whole matrix
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
@@ -2650,7 +2796,9 @@ namespace Tpetra {
       ///
       static void
       writeDense (std::ostream& out,
-                  const RCP<const multivector_type>& X)
+                  const RCP<const multivector_type>& X,
+		  const std::string& matrixName,
+		  const std::string& matrixDescription)
       {
         using std::endl;
 
@@ -2707,6 +2855,12 @@ namespace Tpetra {
 		<< (STS::isComplex ? "complex" : "real") 
 		<< " general" << endl;
 
+	    // Print comments (the matrix name and / or description).
+	    if (matrixName != "")
+	      printAsComment (out, matrixName);
+	    if (matrixDescription != "")
+	      printAsComment (out, matrixDescription);
+
 	    // Print the Matrix Market dimensions header for dense matrices.
 	    out << numRows << " " << numCols << endl;
 
@@ -2744,6 +2898,75 @@ namespace Tpetra {
 	  } // if (myRank == 0)
       }
 
+      /// \brief Print the multivector in Matrix Market format.
+      ///
+      /// Write the given Tpetra::MultiVector matrix to an output
+      /// stream, using the Matrix Market "array" format for dense
+      /// matrices.  MPI Proc 0 is the only MPI process that writes to
+      /// the output stream.
+      ///
+      /// \param out [out] The output stream to which to write (on MPI
+      ///   Proc 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output stream.
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
+      static void
+      writeDense (std::ostream& out,
+                  const RCP<const multivector_type>& X)
+      {
+	writeDense (out, X, "", "");
+      }
+
+    private:
+      /// \brief Print the given possibly multiline string as a comment.
+      ///
+      /// If the string is empty, don't print anything (not even an
+      /// empty line).  Otherwise, print each line of the string (one
+      /// or more lines) as a comment in the comments section of a
+      /// Matrix Market file (the part of the file after the initial
+      /// banner line, but before the matrix's size metadata and
+      /// data).
+      ///
+      /// \param out [out] The output string to which to print.  This
+      ///   function is <i>not</i> a collective operation; whichever
+      ///   MPI process calls it will print to the given output
+      ///   stream.
+      ///
+      /// \param str [in] The string to print.  It consists of zero or
+      ///   more lines.  If empty, nothing is printed, not even an
+      ///   empty line.
+      ///
+      /// \note Printing comments is tricky only because the string
+      ///   might contain newlines.  We have to ensure that all the
+      ///   lines start with a comment character.  If they already do,
+      ///   we print each line as is; otherwise, we append a comment
+      ///   character and a space to each line.
+      static void 
+      printAsComment (std::ostream& out, const std::string& str)
+      {
+	using std::endl;
+	std::istringstream istream (str);
+	std::string line;
+
+	while (getline (istream, line))
+	  {
+	    if (! line.empty())
+	      {
+		// Note that getline() doesn't store '\n', so we have
+		// to append the endline ourselves.
+		if (line[0] == '%') // Line starts with a comment character.
+		  out << line << endl; 
+		else // Line doesn't start with a comment character.
+		  out << "%% " << line << endl;
+	      }
+	  }
+      }
     }; // class Writer
     
   } // namespace MatrixMarket
