@@ -41,7 +41,7 @@ namespace MueLu {
     //! @name Access factory properties
 
     /// return unique factory id
-    const int getID() const { return id_; };
+    int getID() const { return id_; };
 
     //@}
 
