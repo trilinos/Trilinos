@@ -822,7 +822,7 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       TIMER_GET_RAW_SECONDS(SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS)
       TIMER_PRINT_REL_TIME(${SET_UP_EXTRA_DEPENDENCIES_TIME_START_SECONDS}
         ${SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS}
-        "\nTotal time read in and process all (core and extra) package dependencies")
+        "\nTotal time to read in and process all (core and extra) package dependencies")
     ENDIF()
 
   ENDIF()
@@ -1286,7 +1286,7 @@ MACRO(PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES)
     TIMER_GET_RAW_SECONDS(CONFIGURE_PACKAGES_TIME_STOP_SECONDS)
     TIMER_PRINT_REL_TIME(${CONFIGURE_PACKAGES_TIME_START_SECONDS}
       ${CONFIGURE_PACKAGES_TIME_STOP_SECONDS}
-      "\nTotal time to process enabled packages")
+      "\nTotal time to configure enabled packages")
   ENDIF()
 
 ENDMACRO()
