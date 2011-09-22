@@ -21,7 +21,7 @@ IF (Xpetra_ENABLE_Epetra)
     #NAME "MatrixVectorChecker Epetra"
     NAME "MatrixVectorChecker"
     ARGS "--linAlgebra=0"
-    COMM serial mpi
+    COMM serial
     # NUM_MPI_PROCS 2
     # PASS_REGULAR_EXPRESSION "Example Passed!"
     )
@@ -33,7 +33,7 @@ IF (Xpetra_ENABLE_Tpetra)
     #NAME "MatrixVectorChecker Epetra"
     NAME "MatrixVectorChecker"
     ARGS "--linAlgebra=1"
-    COMM serial mpi
+    COMM serial
     # NUM_MPI_PROCS 2
     # PASS_REGULAR_EXPRESSION "Example Passed!"
     )
