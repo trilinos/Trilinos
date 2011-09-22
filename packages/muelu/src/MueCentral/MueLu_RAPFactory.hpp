@@ -70,6 +70,12 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,true,A,false);
         //filename = "PtA.dat";
         //Utils::Write(filename,AP);
+
+        // avoid implicitTranspose for Epetra, since EpetraExt matrix-matrix multiplication
+        // with implicit transpose flags has bugs. This will hopefully be fixed, soon.
+        if(RAP->getRangeMap()->lib() == Xpetra::UseEpetra)
+          GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
+
         RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
       } else {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", PRFact_.get());
