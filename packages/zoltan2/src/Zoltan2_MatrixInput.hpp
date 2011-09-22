@@ -48,11 +48,11 @@ public:
 
   /*! Returns the number rows on this process.
    */
-  virtual LNO getNodeNumRows() const = 0;
+  virtual LNO getLocalNumRows() const = 0;
 
   /*! Returns the number edges on this process.
    */
-  virtual LNO getNodeNumCols() const = 0;
+  virtual LNO getLocalNumCols() const = 0;
 
   //TODO: Add just the required functions.
 

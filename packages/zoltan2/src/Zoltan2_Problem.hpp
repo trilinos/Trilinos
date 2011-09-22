@@ -2,7 +2,8 @@
 #define _ZOLTAN2_PROBLEM_HPP_
 
 #include <Zoltan2_config.h>
-#include <Zoltan2_InputAdapter.hpp>
+// TODO: SR We should have an input adapter, not sure why it was removed
+//#include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_TpetraCrsMatrixInput.hpp>
 #include <Zoltan2_TemplateMacros.hpp>
 
@@ -36,7 +37,8 @@ public:
   // correctly before calling a common problem construction function.
   Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
   Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  Problem(InputAdapter &);
+  // TODO: SR We should have an input adapter, not sure why it was removed
+  //Problem(InputAdapter &);
 
   // Destructor
   virtual ~Problem() {};
@@ -45,7 +47,11 @@ public:
   virtual void solve() = 0;
 
 protected:
-  RCP<InputAdapter> _inputAdapter;
+  // TODO: SR We should have an input adapter, not sure why it was removed
+  //RCP<InputAdapter> _inputAdapter;
+  RCP<TpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _inputAdapter;
+
+
   //TODO RCP<Model> _model;
   RCP<Teuchos::ParameterList> _params;
 
@@ -64,7 +70,7 @@ Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
 ) 
 {
   HELLO;
-  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>
+  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
                                 (rcpFromRef(A)));
   _params = rcpFromRef(p);
 }
