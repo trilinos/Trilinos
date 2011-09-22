@@ -877,33 +877,33 @@ namespace {
     // create a Map
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,1,comm,node),
-                                                  map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
-//     {
-//       MV mv12(map1,1),
-//          mv21(map2,1),
-//          mv22(map2,2);
-//       Array<Scalar> dots(2);
-//       // incompatible maps
-//       TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
-//       // incompatible numvecs
-//       TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
-//       // too small output array
-// #ifdef TEUCHOS_DEBUG
-//       TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
-// #endif
-//     }
+                                          map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    {
+      MV mv12(map1,1),
+         mv21(map2,1),
+         mv22(map2,2);
+      Array<Scalar> dots(2);
+      // incompatible maps
+      TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
+      // incompatible numvecs
+      TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
+      // too small output array
+#ifdef TEUCHOS_DEBUG
+      TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
+#endif
+    }
     {
       V v1(map1),
         v2(map2);
       // incompatible maps
       TEST_THROW(v1.dot(v2),std::runtime_error);
-//       TEST_THROW(v2.dot(v1),std::runtime_error);
-//       // wrong size output array through MultiVector interface
-//       Array<Scalar> dots(2);
-// #ifdef TEUCHOS_DEBUG
-//       TEST_THROW(v1.dot(v2,dots()),std::runtime_error);
-//       TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
-// #endif
+      TEST_THROW(v2.dot(v1),std::runtime_error);
+      // wrong size output array through MultiVector interface
+      Array<Scalar> dots(2);
+#ifdef TEUCHOS_DEBUG
+      TEST_THROW(v1.dot(v2,dots()),std::runtime_error);
+      TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
+#endif
     }
 #endif // HAVE_XPETRA_TPETRA
   }
