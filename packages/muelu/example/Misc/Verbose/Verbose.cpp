@@ -118,7 +118,8 @@ int main(int argc, char *argv[]) {
   ifpackSmoo.Setup(l);
   cout << endl << endl;
   
-  ifpackSmoo.describe(*fos, verbLevel);
+  //ifpackSmoo.describe(*fos, verbLevel);
+  ifpackSmoo.print(*fos, verbLevel);
 
   //
   //
