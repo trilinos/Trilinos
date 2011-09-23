@@ -35,7 +35,7 @@ template <typename Ordinal>
     getTeuchosMpiComm(const MPI_Comm &comm)
 {
   Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = 
-    Teuchos::opaqueWrapper<MPI_Comm>(comm);
+    Teuchos::opaqueWrapper<MPI_Comm>(comm); 
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> > tcommPtr(
     new Teuchos::MpiComm<Ordinal>(handle));
 
@@ -80,7 +80,10 @@ template <typename Ordinal>
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 
-  return getTeuchosMpiComm<Ordinal>(subComm);
+  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > newComm = 
+    getTeuchosMpiComm<Ordinal>(subComm);
+
+  return newComm;
 }
 
 
@@ -104,7 +107,10 @@ template <typename Ordinal>
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 
-  return getTeuchosMpiComm<Ordinal>(subComm);
+  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > newComm = 
+    getTeuchosMpiComm<Ordinal>(subComm);
+
+  return newComm;
 }
 
 #endif
