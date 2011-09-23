@@ -66,6 +66,10 @@ Amesos2
 
   - Supports 64-bit and complex data types.
 
+EpetraExt
+  - The EpetraExt interface to Zoltan is deprecated in Trilinos v10.8 and will
+    be removed in Trilinos v11.  Users of this interface should switch to the
+    Isorropia package or use Zoltan directly.
 
 Isorropia
   - New class Isorropia::Epetra::Matcher solves the
@@ -108,6 +112,67 @@ PyTrilinos
     example scripts to follow PyTrilinos coding standards.  Put all C++
     code within the PyTrilinos namespace.  Changed C++ file names to have
     PyTrilinos_ prefix.
+
+SEACAS
+
+  - New in Trilinos 10.8 the SEACAS package includes the following libraries
+    and applications:
+
+  - Libraries:
+     - Exodus:     database used to store and retrieve data for finite element
+                   analyses
+     - Nemesis:    add-on to exodus providing data for parallel finite element
+                   analyses
+     - Ioss:       C++ front-end to exodus library; provides a higher-level IO
+                   support for finite element applications
+     - Aprepro:    Can be used to embed aprepro functionality into an
+                   application
+     - chaco:      graph partitioning library used by nem_slice application
+     - supes:      memory management, parsing, and system routines used by
+                   seacas fortran applications
+     - suplib:     common fortran routines used by the seacas fortran
+                   applications
+
+  - Applications:
+     - algebra:    manipulate data in exodus databases using equations and
+                   functions.
+     - aprepro:    algebraic preprocessor; reads a file containing both
+                   general text and algebraic, string, or conditional
+                   expressions.  It interprets the expressions and outputs
+                   them to the output along with the general text.
+     - conjoin:    joins two or more Exodus databases into a single database.
+                   The input databases should represent the same model
+                   geometry with similar variables.
+     - ejoin:      used to join two or more Exodus databases into a single
+                   Exodus database. The input databases must have disjoint
+                   meta and bulk data.     
+     - epu:        Combines multiple Exodus databases produced by a parallel
+                   application into a single Exodus database. Replaces
+                   nem_join.
+     - exo2mat:    translates exodus data into Matlab mat-file format.
+                   Requires matlab libraries.
+     - exodiff:    compares results data from 2 exodus databases.
+     - exomatlab:  translates exodus global data into a matlab-readable file.
+     - exotxt:     convert exodus database to text format
+     - gjoin:      join 2 or more exodus databases into a single database.
+                   Will combine nodes, blocks, nodesets, sidesets
+     - grope:      query an exodus database.
+     - mapvar:     transfer solution results from one database to another.
+     - mapvar-kd:  same as mapvar with a kd-based internal search; minor other
+                   differences.
+     - mat2exo:    convert a Matlab mat-file into an exodus database. Requires
+                   Matlab libraries.
+     - nem_slice:  generate a decomposition of a finite element mesh for use
+                   in parallel analyses
+     - nem_spread: use the nem_slice output to spread a finite element mesh
+                   into multiple files; one per processor for use in parallel
+                   analyses.
+     - txtexo:     convert a exotxt-formatted text file into an exodus
+                   database.
+
+   - Scripts:
+     - decomp:     drives nem_slice and nem_spread to decompose a mesh for use
+                   in parallel analyses.
 
 Teuchos
   - Added automatic stack tracing info for exception messages, segfaults, and
