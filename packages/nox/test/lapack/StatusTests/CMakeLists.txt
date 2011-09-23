@@ -14,6 +14,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK)
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
+    XHOSTTYPE Windows Windows_NT
     )
   
 ENDIF()
