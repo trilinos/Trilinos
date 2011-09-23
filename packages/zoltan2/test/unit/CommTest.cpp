@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <vector>
+#include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_Environment.hpp>
 
@@ -21,6 +22,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
 {
+  int fail=0, myFail=0;
   // We're mimicing the zoltan2 library here, and it will
   // work with a copy of the caller's communicator.
   MPI_Comm comm;
@@ -33,40 +35,84 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
 
   // Get the Teuchos communicator that Zoltan will use.
 
-  Teuchos::RCP<Teuchos::MpiComm<int> > tcomm = 
-    Zoltan2::getTeuchosMpiComm<int>(comm);
+  Teuchos::RCP<Teuchos::MpiComm<int> > tcomm; 
 
-  if ( (tcomm->getRank() != rank) ||
-       (tcomm->getSize() != size) ){
-    std::cerr << "Bad tcomm" << std::endl;
-    return 1;
+  try {
+    tcomm = Zoltan2::getTeuchosMpiComm<int>(comm);
+  }
+  catch (std::exception &e){
+    myFail = 1;
   }
 
-  tcomm->barrier();
+  if ( !myFail && ((tcomm->getRank()!=rank) || (tcomm->getSize()!=size))){
+    myFail = 1;
+  }
 
-  int origRank = rank;
+  MPI_Allreduce(&myFail, &fail, 1, MPI_INT, MPI_MAX, callerComm);
+  if (fail){
+    if (!rank)
+      std::cerr << "Failure in Zoltan2::getTeuchosMpiComm" << std::endl;
+    return fail;
+  }
 
-  std::cout << "Proc " << origRank << " of " << size << std::endl;
-
-  int subGroup = rank%2;
+  // Create a sub communicator by giving a member list
+  int numSubGroups = 2;
+  int subGroup = rank%numSubGroups;
+  int newRank = 0;
+  int newSize = 0;
   std::vector<int> ranks;
-  for (int i=subGroup; i < size; i+=2){
+
+  for (int i=subGroup; i < size; i+=numSubGroups, newSize++){
+    if (i == rank) newRank = newSize;
     ranks.push_back(i);
   }
 
-  Teuchos::RCP<Teuchos::MpiComm<int> > subComm = 
-    Zoltan2::getTeuchosMpiSubComm(tcomm, ranks, env);
+  Teuchos::RCP<Teuchos::MpiComm<int> > subComm;
 
-  subComm->barrier();
+  try{
+    subComm = Zoltan2::getTeuchosMpiSubComm(tcomm, ranks, env);
+  }
+  catch (std::exception &e){
+    myFail = 1;
+  }
 
-  rank = subComm->getRank();
-  size = subComm->getSize();
+  if (!myFail && 
+     ((subComm->getRank()!=newRank) || (subComm->getSize()!=newSize))){
+    myFail = 1;
+  }
 
-  std::cout << "Proc " << rank << " of " << size << std::endl;
+  Teuchos::reduceAll<int, int>(*tcomm, Teuchos::REDUCE_MAX, 1, &myFail, &fail);
+  if (fail){
+    if (!rank){
+      std::cerr << "Failure in Zoltan2::getTeuchosMpiSubComm with list";
+      std::cerr << std::endl;
+    }
+    return fail;
+  }
 
-  // TODO test that it's correct!
+  // Create a sub communicator by giving a color
 
-  MPI_Comm_free(&comm);
+  try{
+    subComm = Zoltan2::getTeuchosMpiSubComm(tcomm, subGroup, env);
+  }
+  catch (std::exception &e){
+    myFail = 1;
+  }
+
+  if (!myFail && 
+     ((subComm->getRank()!=newRank) || (subComm->getSize()!=newSize))){
+    myFail = 1;
+  }
+
+  Teuchos::reduceAll<int, int>(*tcomm, Teuchos::REDUCE_MAX, 1, &myFail, &fail);
+  if (fail){
+    if (!rank){
+      std::cerr << "Failure in Zoltan2::getTeuchosMpiSubComm with color";
+      std::cerr << std::endl;
+    }
+    return fail;
+  }
+
   return 0;
 }
 #endif
@@ -86,10 +132,12 @@ int main(int argc, char *argv[])
 
   fail = call_zoltan2(MPI_COMM_WORLD, rank, size);
 
-  if (!fail)
-    std::cout << "PASS" << std::endl; 
-  else
-    std::cout << "FAIL" << std::endl; 
+  if (!rank){
+    if (!fail)
+      std::cout << "PASS" << std::endl; 
+    else
+      std::cout << "FAIL" << std::endl; 
+  }
 
   MPI_Finalize();
   
