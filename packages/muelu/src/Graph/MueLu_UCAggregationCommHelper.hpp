@@ -281,7 +281,7 @@ namespace MueLu {
    
         ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
         bool realloc=false;
-        if (numMyWinners != numMyWinners_) {
+        if (numMyWinners != numMyWinners_ || winnerMap_ == Teuchos::null) {
           // The local number of entries in MyWinners_ have changed since the last invocation, so reallocate myWinners_.
           myWinners_ = ArrayRCP<GO>(numMyWinners);
           realloc=true;
