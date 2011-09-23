@@ -77,7 +77,7 @@ double errorTolSlack = 1e+1;
 // EPETRA helper functions
 Teuchos::RCP<Epetra_Map> SplitMap(const Epetra_Map& Amap,
 		const Epetra_Map& Agiven)
-		{
+{
 	const Epetra_Comm& Comm = Amap.Comm();
 	const Epetra_Map&  Ag = Agiven;
 
@@ -96,10 +96,10 @@ Teuchos::RCP<Epetra_Map> SplitMap(const Epetra_Map& Amap,
 	Teuchos::RCP<Epetra_Map> Aunknown = Teuchos::rcp(new Epetra_Map(gcount,count,&myaugids[0],0,Comm));
 
 	return Aunknown;
-		}
+}
 
 Teuchos::RCP<Epetra_Map> CreateMap(const std::set<int>& gids, const Epetra_Comm& comm)
-		  {
+{
 	std::vector<int> mapvec;
 	mapvec.reserve(gids.size());
 	mapvec.assign(gids.begin(), gids.end());
@@ -111,10 +111,10 @@ Teuchos::RCP<Epetra_Map> CreateMap(const std::set<int>& gids, const Epetra_Comm&
 					comm));
 	mapvec.clear();
 	return map;
-		  }
+}
 
 Teuchos::RCP<Epetra_Map> MergeMaps(const std::vector<Teuchos::RCP<const Epetra_Map> >& maps)
-		  {
+{
 	if (maps.size()==0)
 		cout << "no maps to merge" << endl;
 	for (unsigned i=0; i<maps.size(); ++i)
@@ -133,7 +133,7 @@ Teuchos::RCP<Epetra_Map> MergeMaps(const std::vector<Teuchos::RCP<const Epetra_M
 				std::inserter(mapentries,mapentries.begin()));
 	}
 	return CreateMap(mapentries, maps[0]->Comm());
-		  }
+}
 
 
 bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
@@ -539,12 +539,12 @@ bool SplitMatrix2x1(Teuchos::RCP<const Epetra_CrsMatrix> A,
 }
 
 RCP<const Comm<int> > getDefaultComm()
-		  {
+{
 	if (testMpi) {
 		return DefaultPlatform::getDefaultPlatform().getComm();
 	}
 	return rcp(new Teuchos::SerialComm<int>());
-		  }
+}
 
 /////////////////////////////////////////////////////
 
@@ -570,6 +570,8 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, GO, Node )
 {
 #ifdef HAVE_XPETRA_EPETRA
+
+#ifdef HAVE_MPI
 
 	RCP<Epetra_Comm> Comm;
 	if(testMpi)
@@ -676,13 +678,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, 
 	//cout << "norm of difference " << result2->norm2() << endl;
 
 	TEUCHOS_TEST_COMPARE(result2->norm2(), <, 1e-16, out, success);
+#endif // MPI
 
-
-#endif
+#endif // XPETRA_EPETRA
 
 }
 
-#if 0 // temporarely deactivate them
 /// simple test for matrix-matrix multiplication for two 2x2 blocked matrices
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
 {
@@ -967,15 +968,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult2x1
 #endif
 }
 
-#endif // deactivate matrix-matrix multiplication tests
+
 
 //
 // INSTANTIATIONS
 //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
-		TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraApply, SC, LO, GO, Node ) // \
-		//TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult, SC, LO, GO, Node ) \
+		TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraApply, SC, LO, GO, Node )  \
+		TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult, SC, LO, GO, Node ) \
 		TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsOperator, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
 typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
