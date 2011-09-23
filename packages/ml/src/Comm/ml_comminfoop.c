@@ -1568,6 +1568,7 @@ int ML_CommInfoOP_Deficient_GhostBlk_Check(ML_CommInfoOP *c_info, int BlkSize,
    int CurrentBlk = -1, CurrentIndex = -1;
    int NextBlk = -1, NextIndex = -1;
    int i, j;
+   int *ibuf, MaxNSend = 1;
 
    CurrentIndex = BlkSize-1;
    if ( c_info == NULL) return  0;
@@ -1575,29 +1576,38 @@ int ML_CommInfoOP_Deficient_GhostBlk_Check(ML_CommInfoOP *c_info, int BlkSize,
    if (BlkSize <=    0) return -2;
 
    for (i = 0; i < c_info->N_neighbors; i++) {
+      if ( c_info->neighbors[i].N_send > MaxNSend ) MaxNSend=c_info->neighbors[i].N_send;
+   }
+   ibuf = (int *) ML_allocate( MaxNSend*sizeof(int));
+   for (i = 0; i < c_info->N_neighbors; i++) {
+      CurrentIndex = BlkSize-1;
+      CurrentBlk = -1;
+      for (j = 0; j < c_info->neighbors[i].N_send; j++) ibuf[j] = c_info->neighbors[i].send_list[j];
+      ML_sort(c_info->neighbors[i].N_send, ibuf);
       for (j = 0; j < c_info->neighbors[i].N_send; j++) {
-         NextBlk = c_info->neighbors[i].send_list[j]/BlkSize;
-         NextIndex = c_info->neighbors[i].send_list[j] - NextBlk*BlkSize;
+         NextBlk = ibuf[j]/BlkSize;
+         NextIndex = ibuf[j] - NextBlk*BlkSize;
          if (NextBlk != CurrentBlk) {
             if ((NextIndex != 0) && (PrintFromNode != -1))
                 printf("%d: Deficient_GhostBlk: v[%d],%d (but not v[%d]) sent to Proc %d though they are in the same block of size %d\n",
-                       PrintFromNode, c_info->neighbors[i].send_list[j],j,
+                       PrintFromNode, ibuf[j],j,
                        NextBlk*BlkSize, c_info->neighbors[i].ML_id, BlkSize);
-            if (NextIndex != 0) return -1;
+            if (NextIndex != 0) { ML_free(ibuf); return -1;}
             CurrentBlk = NextBlk;
             CurrentIndex = NextIndex;
          }
          else {
             if ((NextIndex != CurrentIndex+1) && (PrintFromNode != -1))
                 printf("%d: Deficient_GhostBlk: v[%d],%d (and not v[%d]) sent to Proc %d but they are in the same block of size %d\n",
-                       PrintFromNode, c_info->neighbors[i].send_list[j],j,
-                       c_info->neighbors[i].send_list[j]-1,
+                       PrintFromNode, ibuf[j],j,
+                       ibuf[j]-1,
                        c_info->neighbors[i].ML_id, BlkSize);
-            if (NextIndex != CurrentIndex+1) return -1;
+            if (NextIndex != CurrentIndex+1) { ML_free(ibuf); return -1;}
             CurrentIndex = NextIndex;
          }
       }
    }
+   ML_free(ibuf);
    return 0;
 }
 /********************************************************************
