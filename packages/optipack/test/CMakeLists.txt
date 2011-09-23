@@ -11,7 +11,4 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# ToDo: Remove this all together
-#ADD_SUBDIRECTORY(models)
-
 ADD_SUBDIRECTORY(NonlinearCG)
