@@ -34,9 +34,10 @@ template <typename Ordinal>
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm &comm)
 {
-  Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = Teuchos::opaqueWrapper<MPI_Comm>(comm);
-  Teuchos::MpiComm<Ordinal> tcomm(handle);
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > tcommPtr(&tcomm);
+  Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = 
+    Teuchos::opaqueWrapper<MPI_Comm>(comm);
+  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > tcommPtr(
+    new Teuchos::MpiComm<Ordinal>(handle));
 
   return tcommPtr;
 }
@@ -52,17 +53,18 @@ template <typename Ordinal>
 
 template <typename Ordinal>
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
-    getTeuchosMpiSubComm(const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > comm, 
-                          const std::vector<Ordinal> members,
-                          const Environment &env)
+    getTeuchosMpiSubComm(
+      const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > &comm, 
+      const std::vector<Ordinal> &members, const Environment &env)
 {
   // TODO test this only once during the library execution
   Z2_GLOBAL_BUG_ASSERTION(*comm, env, "size of Ordinal assumption", 
-    sizeof(Ordinal) != sizeof(int), BASIC_ASSERTION);
+    sizeof(Ordinal) == sizeof(int), BASIC_ASSERTION);
 
-  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = comm->getRawMpiComm();
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = 
+    comm->getRawMpiComm();
   MPI_Group mainGroup, subGroup;
-  MPI_Comm  mainComm, subComm;
+  MPI_Comm  subComm;
 
   int rc = MPI_Comm_group(*superComm, &mainGroup);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "obtaining group", 
@@ -72,7 +74,7 @@ template <typename Ordinal>
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating subgroup", 
     rc == MPI_SUCCESS, BASIC_ASSERTION);
 
-  rc = MPI_Comm_create(mainComm, subGroup, &subComm);
+  rc = MPI_Comm_create(*superComm, subGroup, &subComm);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating sub communicator", 
     rc == MPI_SUCCESS, BASIC_ASSERTION);
 
@@ -89,8 +91,9 @@ template <typename Ordinal>
  */
 template <typename Ordinal>
   Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
-    getTeuchosMpiSubComm(const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > comm, 
-                          const Ordinal color, const Environment &env)
+    getTeuchosMpiSubComm(
+      const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > &comm, 
+      const Ordinal color, const Environment &env)
 {
   MPI_Comm subComm;
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = comm->getRawMpiComm();
