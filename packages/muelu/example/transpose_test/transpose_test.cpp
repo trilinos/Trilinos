@@ -6,8 +6,10 @@
  */
 
 
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
 
   cout << Epetra_Version() << endl << endl;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm (MPI_COMM_WORLD);
 #else
@@ -258,7 +260,7 @@ int main(int argc, char *argv[])
        std::cout << "Xpetra: ||A^T_impl Pop x||_1 = " << normx << std::endl;
 
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
