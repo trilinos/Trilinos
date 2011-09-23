@@ -608,13 +608,14 @@ namespace MueLu {
 
       {
       int ncalls=0;
+
+      ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+      ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
+      ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+
       for (int kk = 0; kk < 10; kk += 2) {
         bestScoreCutoff = thresholds[kk];
         for (int i = 0; i < exp_nRows; i++) {
-
-           ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
-           ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
-           ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
 
           if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
