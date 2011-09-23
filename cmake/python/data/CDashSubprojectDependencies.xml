@@ -515,6 +515,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -526,6 +527,7 @@
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="FEI" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Teko" type="TO"/>
     <Dependency name="Intrepid" type="TO"/>
     <Dependency name="STK" type="LO"/>
     <Dependency name="NOX" type="LO"/>
