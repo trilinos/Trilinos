@@ -1,13 +1,13 @@
 #!/bin/sh
 # Laplace1D or Laplace2D
-MATRIX=Laplace2D
+MATRIX=Laplace1D
 
 # glory, hopper or redsky
 MACHINE=hopper
 
 ###################################
 if [ $MATRIX == "Laplace1D" ]; then
-  MULTX="1 2 3 4 5 6 7 8 9 10"
+  MULTX="1 5 10 20 40 80 100"
 elif [ $MATRIX == "Laplace2D" ]; then
   MULTX="1 2 4 6 8 10"
 fi
@@ -141,7 +141,7 @@ ocoee_analyze(){
      TIME[$M]=`grep "$T" screen.out.* | cut -f2 -d':' | awk '{printf "%11.1f", $1 }'`
    done
 
-   NORM=`grep Problem screen.out.* | cut -f2 -d':' | awk '{printf "%6.4e", $1}'`
+   NORM=`grep 'Problem 0' screen.out.* | cut -f2 -d':' | awk '{printf "%6.4e", $1}'`
 
    if [ $NODES == 1 ] ; then 
      for ((M=0;M<${#TIMELINES[@]};M++)); do

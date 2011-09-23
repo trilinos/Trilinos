@@ -9,7 +9,7 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #endif
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 {
   int ierr = 0, i;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
   std::cout << myRank << ": " << "Memory after FillComplete(): " << PrintMemoryUsage() << std::endl;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
