@@ -270,6 +270,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         switch (canUseML) {
 
           case true:
+#if 0 // Jonathan's ML-MULTIPLY
             //if ML is not enabled, this case falls through to the EpetraExt multiply.
 #           if defined(HAVE_MUELU_ML)
             {
@@ -309,7 +310,14 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
             ML_Comm_Destroy(&comm);
 
             RCP<Epetra_CrsMatrix> epAB(result);
+#else // Michael's MLMULTIPLY
+            if (comm->ML_mypid == 0)
+              std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM)******" << std::endl;
 
+            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(
+                        RCP<Epetra_CrsMatrix> epA,
+                        RCP<Epetra_CrsMatrix> epB);
+#endif
             RCP<CrsOperator> tmpC3 = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<SC,LO,GO,NO,LMO>(epAB);
             C = tmpC3;
             }
@@ -357,12 +365,11 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       return C;
     } //TwoMatrixMultiply()
 
-#if 0 // Michael Gee's MLMultiply
+   // Michael Gee's MLMultiply
    static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
-            RCP<Epetra_CrsMatrix> epB,
-            bool doFillComplete=true,
-            bool doOptimizeStorage=true)
+            RCP<Epetra_CrsMatrix> epB)
     {
+#if defined(HAVE_MUELU_ML)
         ML_Comm* comm;
         ML_Comm_Create(&comm);
         if (comm->ML_mypid == 0)
@@ -482,8 +489,12 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         ML_Operator_Destroy(&ml_AtimesB);
 
         return result;
-    }
+#else // no MUELU_ML
+        TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+                         "HAVE_MUELU_ML compiler flag not set. no ML multiply available." );
+        return Teuchos::null;
 #endif
+    }
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
