@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -44,24 +44,37 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Applies left or right sclaing to the linear operator.
  *
- * This interface represents a linear operator <tt>M</tt> that explicitly applies left or right scaling by a diagonal (vector) operator <tt>d</tt>.  Left scaling:
+ * This interface represents a linear operator <tt>M</tt> that explicitly
+ * applies left or right scaling by a diagonal (vector) operator <tt>d</tt>.
+ #
+ * Left scaling:
  * 
-\verbatim
+ \verbatim
  M = dM
  \endverbatim
  *
  * or Right scaling:
  *
-\verbatim
+ \verbatim
  M = Md
  \endverbatim
  *
- * where <tt>M</tt> is the  <tt>LinearOp</tt> object,
- *       <tt>d</tt> is the <tt>VectorBase</tt> object representing the diagonal scaling operator.
+ * where:
+ *
+ * <ul>
+ *
+ * <li> <tt>M</tt> is the <tt>LinearOp</tt> object,
+ *
+ * <li> <tt>d</tt> is the <tt>VectorBase</tt> object representing the diagonal
+ * scaling operator.
+ *
+ * </ul>
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
@@ -69,27 +82,38 @@ template<class Scalar>
 class ScaledLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
-  virtual ~ScaledLinearOpBase() {};
-
-  /** \brief Set the underlying linear operator.
-   *
-   */
-  virtual void setOp(const Teuchos::RCP<LinearOpBase<Scalar> >& M)
+  /** @name Non-virtual public interface functions. */
+  //@{
 
   /** \brief Left scales operator with diagonal scaling operator <tt>d</tt>.
-   *
    */
-  virtual void scaleLeft(const Teuchos::RCP<const VectorBase<Scalar> >& d) = 0;
+  void scaleLeft(const VectorBase<Scalar> &row_scaling)
+    { scaleLeftImpl(row_scaling); }
 
   /** \brief Right scales operator with diagonal scaling operator <tt>d</tt>.
-   *
    */
-  virtual void scaleRight(const Teuchos::RCP<const VectorBase<Scalar> >& d) = 0;
+  void scaleRight(const VectorBase<Scalar> &col_scaling)
+    { scaleRightImpl(col_scaling); }
+
+  //@}
+
+protected:
+
+  /** \name Protected virtual functions to be overridden by subclasses. */
+  //@{
+
+  /** \brief . */
+  virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling) = 0;
+
+  /** \brief . */
+  virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling) = 0;
 
   //@}
 
 };
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_SCALED_LINEAR_OP_BASE_HPP
