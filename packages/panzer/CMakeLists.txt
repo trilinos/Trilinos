@@ -25,7 +25,7 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 # optional package specific configurations
 ############################################################
 
-IF(${PACKAGE_NAME}_ENABLE_SEACAS)
+IF(${PACKAGE_NAME}_ENABLE_SEACASIoss)
    GLOBAL_SET(HAVE_IOSS ON)
 ELSE()
    GLOBAL_SET(HAVE_IOSS OFF)
@@ -49,6 +49,13 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
   DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_Stratimikos ${PACKAGE_NAME}_ENABLE_Piro ${PACKAGE_NAME}_ENABLE_NOX ${PACKAGE_NAME}_ENABLE_Rythmos
   DOCSTR "Enables support for the solver drivers for the tests/examples."
     " Defaults to ON if Stratimikos, Piro, NOX, and Rythmos are"
+    " enabled, otherwise defaults to OFF."
+  )
+
+COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STK_AND_SEACAS_SUPPORT
+  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_STK ${PACKAGE_NAME}_ENABLE_SEACASIoss ${PACKAGE_NAME}_ENABLE_SEACASExodus
+  DOCSTR "Enables support for the STK mesh database and SEACAS I/O Layers."
+    " Defaults to ON if STK, SEACASIoss, SEACASExodus are"
     " enabled, otherwise defaults to OFF."
   )
 

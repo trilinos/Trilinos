@@ -1,5 +1,5 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos Phalanx Intrepid FEI Thyra ThyraTpetraAdapters Tpetra Epetra EpetraExt)
-SET(LIB_OPTIONAL_DEP_PACKAGES STK SEACAS SEACASIoss Teko Stokhos)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos Phalanx Intrepid FEI ThyraCore ThyraTpetraAdapters Tpetra Epetra EpetraExt)
+SET(LIB_OPTIONAL_DEP_PACKAGES STK SEACASIoss SEACASExodus Teko Stokhos)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Stratimikos Piro NOX Rythmos)
 SET(LIB_REQUIRED_DEP_TPLS MPI)
