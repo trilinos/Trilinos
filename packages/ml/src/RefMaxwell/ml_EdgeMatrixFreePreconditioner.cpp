@@ -397,7 +397,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
   
   /* Nuke the rows in Psparse */
-  Apply_BCsToMatrixRows(BCedges_.get(),BCedges_.size(),*Psparse);
+  if(BCedges_.size()>0) Apply_BCsToMatrixRows(BCedges_.get(),BCedges_.size(),*Psparse);
     
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
