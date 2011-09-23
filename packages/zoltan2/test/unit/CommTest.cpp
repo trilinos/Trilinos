@@ -31,15 +31,10 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
   // Just take whatever the default environment is.
   env.commitParameters();
 
-#if 0
   // Get the Teuchos communicator that Zoltan will use.
 
   Teuchos::RCP<Teuchos::MpiComm<int> > tcomm = 
     Zoltan2::getTeuchosMpiComm<int>(comm);
-
-  std::cout << "strong count " << tcomm.strong_count() << std::endl;
-
-  tcomm->getRank();
 
   if ( (tcomm->getRank() != rank) ||
        (tcomm->getSize() != size) ){
@@ -54,9 +49,9 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
   std::cout << "Proc " << origRank << " of " << size << std::endl;
 
   int subGroup = rank%2;
-  std::vector<int> ranks(size);
-  for (int i=subGroup, j=0; i < size; i+=2){
-    ranks[j++] = i;
+  std::vector<int> ranks;
+  for (int i=subGroup; i < size; i+=2){
+    ranks.push_back(i);
   }
 
   Teuchos::RCP<Teuchos::MpiComm<int> > subComm = 
@@ -68,7 +63,6 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
   size = subComm->getSize();
 
   std::cout << "Proc " << rank << " of " << size << std::endl;
-#endif
 
   // TODO test that it's correct!
 
@@ -82,6 +76,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   int fail=0;
+
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   int rank, size;
@@ -101,6 +96,7 @@ int main(int argc, char *argv[])
 #else
   std::cout << "NOTRUN" << std::endl; 
 #endif
+
   return fail;
 }
 
