@@ -32,7 +32,7 @@ class DebugManager
     DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, int debugLevel){
       myPID_ = rank;
       iPrint_ = doPrinting;
-      myOS_ = Teuchos::rcp(&debugOs);
+      myOS_ = &debugOs;
       debugLevel_ = debugLevel;
     }
 
@@ -50,12 +50,12 @@ class DebugManager
 
     inline void setOStream(std::ostream &os)
     {
-      myOS_ = Teuchos::rcp(&os);
+      myOS_ = &os;
     };
 
     inline void setDebugLevel(int debugLevel) { debugLevel_ = debugLevel; };
 
-    inline Teuchos::RCP<std::ostream> getOStream() const { return myOS_; };
+    inline std::ostream *getOStream() const { return myOS_; };
 
     inline int getDebugLevel() const { return debugLevel_; };
 
@@ -98,7 +98,7 @@ class DebugManager
 
     int myPID_;
     int debugLevel_;
-    Teuchos::RCP<std::ostream> myOS_;
+    std::ostream *myOS_;
     Teuchos::oblackholestream myBHS_;
     bool iPrint_;
 };

@@ -32,7 +32,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   _myRank(0), _numProcs(0),
   _printDebugMessages(false), _printProfilingMessages(false),
   _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
-  _committed(false), _comm(comm)
+  _committed(false), _comm(comm), _dbg()
 {
   _myRank = comm->getRank();
   _numProcs = comm->getSize();
@@ -43,7 +43,7 @@ Environment::Environment():
   _myRank(0), _numProcs(0),
   _printDebugMessages(false), _printProfilingMessages(false),
   _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
-  _committed(false)
+  _committed(false), _dbg()
 {
   _comm = Teuchos::DefaultComm<int>::getComm();
   _myRank = _comm->getRank();
