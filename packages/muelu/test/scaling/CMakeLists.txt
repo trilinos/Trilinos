@@ -8,10 +8,18 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+
+# first ensure that these cmake boolean variables are defined
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos2
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ScalingTest
     SOURCES ScalingTest.cpp
     ARGS ""
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
   )
+ENDIF()
