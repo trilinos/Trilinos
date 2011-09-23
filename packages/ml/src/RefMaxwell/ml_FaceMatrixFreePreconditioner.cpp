@@ -374,7 +374,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::PBuildSparsity(ML_Operator *P, Epet
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsFNP,*Comm_,*FaceRangeMap_,&Psparse,Copy,0);
   
   /* Nuke the rows in Psparse */
-  Apply_BCsToMatrixRows(BCfaces_.get(),BCfaces_.size(),*Psparse);
+  if(BCfaces_.size()>0) Apply_BCsToMatrixRows(BCfaces_.get(),BCfaces_.size(),*Psparse);
 
   // Cleanup
   ML_Operator_Destroy(&AbsFN_ML);
