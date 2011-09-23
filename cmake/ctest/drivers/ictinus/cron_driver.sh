@@ -26,6 +26,8 @@ export TDD_PARALLEL_LEVEL=1
 
 #export PYTHONPATH=/Users/jmwille/install/lib/python2.5/site-packages
 
+export PATH=/Users/jmwille/install/git/bin:/Users/jmwille/install/cmake-2.8.4/bin:/Users/jmwille/install/gcc-4.4.6/openmpi-1.4.3/bin:/Users/jmwille/install/gcc-4.4.6/bin:$PATH
+
 # Machine independent cron_driver:
 #
 
