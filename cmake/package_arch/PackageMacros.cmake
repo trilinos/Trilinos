@@ -415,6 +415,11 @@ MACRO(PACKAGE_POSTPROCESS_COMMON)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
 
+  # Create the configure file so external projects can find packages with a
+  # call to find_package(<package_name>)
+  # This also creates the Makefile.export.* files.
+  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
+
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")
 
@@ -439,14 +444,6 @@ MACRO(PACKAGE_POSTPROCESS)
 
   PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS()
   PACKAGE_POSTPROCESS_COMMON()
-
-  # Create the configure file so external projects can find packages with a
-  # call to find_package(<package_name>)
-  # This also creates the Makefile.export.* files.
-  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
-
-  SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
-    CACHE INTERNAL "")
 
 ENDMACRO()
 
