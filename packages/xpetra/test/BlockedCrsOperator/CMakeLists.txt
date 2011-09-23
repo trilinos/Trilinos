@@ -6,7 +6,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     BlockedCrsOperator_UnitTests
     ${PACKAGE_SOURCE_DIR}/../../packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  COMM serial mpi
+  COMM mpi
   STANDARD_PASS_OUTPUT
   )
   
