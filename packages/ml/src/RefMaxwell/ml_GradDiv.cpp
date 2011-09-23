@@ -195,7 +195,9 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   Teuchos::ParameterList & List11=List_.sublist("graddiv: 11list");
   if (List11.name() == "ANONYMOUS") List11.setName("graddiv: 11list");
   FacePC=new FaceMatrixFreePreconditioner(rcp(K2_Matrix_,false),Teuchos::null,rcp(FaceNode_Matrix_,false),rcp(TMT_Matrix_,false),BCfaces_,List11,true);
+#ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[3]));
+#endif
   if(print_hierarchy) FacePC->Print();
 
   /* Build the (2,2) Block Preconditioner */ 
