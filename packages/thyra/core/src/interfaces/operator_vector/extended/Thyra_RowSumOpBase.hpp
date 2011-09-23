@@ -44,34 +44,69 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
+
 namespace Thyra {
 
-/** \brief Extracts row sums as a <tt>VectorBase</tt> from <tt>LinearOp</tt>.
- *
- * This interface allows users to extract a the row sums as a vector from the underlying linear operator.
+
+/** \brief Interface for exxtracting row statistics as a <tt>VectorBase</tt>
+ * from a supporting <tt>LinearOp</tt> object.
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
-class RowSumLinearOpBase : virtual public LinearOpBase<Scalar> {
+class RowStatLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
-  virtual ~RowSumLinearOpBase() {};
+  /** @name Public types. */
+  //@{
 
-  /** \brief Set the underlying linear operator.
-   *
-   */
-  virtual void setLinearOp(const Teuchos::RCP<const LinearOpBase<Scalar> >& M)
+  /** \brief . */
+  enum ERowStat {
+    /** \brief . */
+    ROW_STAT_SUM
+  };
 
-  /** \brief Right scales operator with diagonal scaling operator <tt>d</tt>.
+  //@}
+
+  /** @name Non-virtual public interface functions. */
+  //@{
+
+  /** \brief Determine if a given row stat is supported. */
+  bool rowStatIsSupported(const ERowStat rowStat) const
+    { return rowStatIsSupporedImpl(rowStat); }
+
+  /** \brief Get some statistics about a supported row.
    *
+   * \precondition <tt>this->rowStatIsSupported(rowStat)==true</tt>
    */
-  virtual void getInvRowSum(const Teuchos::RCP<LinearOpBase<Scalar> >) const = 0;
+  void getRowStats(const ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatsVec
+    ) const
+    {
+      TEUCHOS_ASSERT(rowStatIsSupported(rowStat));
+      getRowStats(rowStat, rowStatsVec);
+    }
+
+  //@}
+
+protected:
+
+  /** \name Protected virtual functions to be overridden by subclasses. */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupported(const ERowStat rowStat) const = 0;
+
+  /** \brief . */
+  virtual void getRowStatsImpl(const ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatsVec) const = 0;
 
   //@}
 
 };
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_SCALED_LINEAR_OP_BASE_HPP
