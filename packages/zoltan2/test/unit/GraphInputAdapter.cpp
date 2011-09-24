@@ -25,6 +25,7 @@
 //   We don't support changing the graph in an adapter once
 //   it is set up.
 //
+#
 #include <Zoltan2_config.h>
 #include <string>
 #include <vector>
@@ -35,7 +36,9 @@
 #include <EpetraExt_CrsMatrixIn.h>
 
 // For Epetra tests
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#endif
 #include <Epetra_SerialComm.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
@@ -49,14 +52,14 @@ using namespace Teuchos;
 int z2_rank;
 int z2_globalToken;
 
-#define TEST_FAIL_AND_RETURN(comm, f, s){ \
+#define TEST_FAIL_AND_EXIT(comm, f, s){ \
   comm.SumAll(&f, &z2_globalToken, 1); \
   if (z2_globalToken){ \
     if (z2_rank == 0) { \
      std::cerr << s << std::endl; \
      std::cout << "FAIL" << std::endl; \
     } \
-    return 1; \
+    exit(1); \
   } \
 }
 
@@ -69,6 +72,7 @@ int z2_globalToken;
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
   MPI_Comm c = MPI_COMM_WORLD;
   RCP<MpiComm<int> > comm = Zoltan2::getTeuchosMpiComm<int>(c);
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
@@ -89,10 +93,13 @@ int main(int argc, char *argv[])
 
     Epetra_CrsMatrix *M=NULL;
 
+    // TODO - can we get weights from the mtx files?
+    //    the non-zeros in the matrix?
+
     int fail = EpetraExt::MatrixMarketFileToCrsMatrix(
       mtxFiles[fileNum].c_str(), ecomm, M, 0, 0);
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "reading mtx file");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "reading mtx file");
 
     const Epetra_CrsGraph &g = M->Graph();
     const Epetra_BlockMap &map = g.RowMap();
@@ -100,6 +107,8 @@ int main(int argc, char *argv[])
     int lidMax = map.MaxLID();
     int numVtx = g.NumMyRows();
     int numNZ = g.NumMyEntries();
+
+std::cout << numNZ << std::endl;
 
     // Xpetra does not support const input, because it is also
     // used to change Epetra and Tpetra objects.  TODO - ask for const support
@@ -111,17 +120,23 @@ int main(int argc, char *argv[])
       adapter.setGraph(graph);
     }
     CATCH_EXCEPTION("adapter constructor");
-   
+
+    int lidBase;
+    bool consecLids = adapter.haveConsecutiveLocalIds(lidBase);
+    if (!consecLids || (lidBase != lidMin))
+      fail = 1;
+    
+    TEST_FAIL_AND_EXIT(ecomm, fail, "lid base vs lid min");
 
     if (adapter.inputAdapterName() != std::string("EpetraCrsGraph"))
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "inputAdapterName");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "inputAdapterName");
 
     if (adapter.getLocalNumVertices() != numVtx)
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getLocalNumVertices");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumVertices");
 
     // create some vertex weights and coordinates
     std::vector<int> lidList(numVtx);
@@ -139,19 +154,19 @@ int main(int argc, char *argv[])
     }
     CATCH_EXCEPTION("setting vertex weights");
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "setVertexWeights");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexWeights");
 
     try{
       adapter.setVertexCoordinates(lidList, xyzList);
     }
     CATCH_EXCEPTION("setting vertex coords");
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "setVertexCoordinates");
-     
-    if (adapter.getLocalNumEdges() != numNZ);
+    TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexCoordinates");
+
+    if (adapter.getLocalNumEdges() != numNZ)
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getLocalNumEdges");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumEdges");
 
     // create some edge weights
     std::vector<int> numNbors(numVtx);
@@ -160,7 +175,7 @@ int main(int argc, char *argv[])
     for (int i=lidMin,j=0, k=0; i <= lidMax;  i++){
       int numIndices;
       int *nzList;
-      fail = g.ExtractGlobalRowView(map.GID(i), numIndices, nzList);
+      fail = g.ExtractMyRowView(i, numIndices, nzList);
       if (fail)
         break;
 
@@ -169,31 +184,35 @@ int main(int argc, char *argv[])
         nborGID[k++] = nzList[n];
     }
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "g.ExtractGlobalRowView");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "g.ExtractGlobalRowView");
 
+#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
     try{
       adapter.setEdgeWeights(lidList, numNbors, nborGID, ewgtList);
     }
     CATCH_EXCEPTION("setting edge weights");
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "setEdgeWeights");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "setEdgeWeights");
+#endif
 
     // Test that get methods are correct
 
     if (adapter.getVertexWeightDim() != 1)
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexWeightDim");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexWeightDim");
 
+#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
     if (adapter.getEdgeWeightDim() != 1)
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getEdgeWeightDim");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getEdgeWeightDim");
+#endif
 
     if (adapter.getCoordinateDim() != 3)
       fail = 1;
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getCoordinateDim");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getCoordinateDim");
 
     std::vector<int> adapterGids;
     std::vector<int> adapterLids;
@@ -206,21 +225,16 @@ int main(int argc, char *argv[])
     }
     CATCH_EXCEPTION("getting vertex copy");
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexListCopy");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListCopy");
 
     if ((adapterGids.size() != numVtx) ||
-        (adapterLids.size() != numVtx) ||
         (adapterCoords.size() != numVtx*3) ||
         (adapterVwgts.size() != numVtx) ){
       fail = 1;
     }
     else{
       for (int i=0, k=0; i < numVtx; i++, k+=3){
-        int lid = adapterLids[i];
-        if ((lid < lidMin) || (lid > lidMax)){
-          fail = 1;
-          break;
-        }
+        int lid = i + lidBase;
         if ((adapterGids[i] != map.GID(lid)) ||
             (adapterCoords[k] != lid) ||
             (adapterCoords[k+1] != 2*lid) ||
@@ -232,7 +246,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexListCopy results");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListCopy results");
 
     const int *gidView=NULL, *lidView=NULL;
     const float *wgtView=NULL, *coordView=NULL;
@@ -243,17 +257,13 @@ int main(int argc, char *argv[])
     }
     CATCH_EXCEPTION("getting vertex view");
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexListView");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListView");
 
     if (nv != numVtx) 
       fail=1;
     else{
       for (int i=0, k=0; i < numVtx; i++, k+=3){
-        int lid = lidView[i];
-        if ((lid < lidMin) || (lid > lidMax)){
-          fail = 1;
-          break;
-        }
+        int lid = i + lidBase;
         if ((gidView[i] != map.GID(lid)) ||
             (coordView[k] != lid) ||
             (coordView[k+1] != 2*lid) ||
@@ -265,8 +275,9 @@ int main(int argc, char *argv[])
       }
     }
 
-    TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexListView results");
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListView results");
 
+#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
     for (int lid=lidMin, i=0, k=0; lid <= lidMax; lid++, i++){
       int num=-1;
       unsigned nnbors = numNbors[i];
@@ -278,14 +289,14 @@ int main(int argc, char *argv[])
       }
       CATCH_EXCEPTION("getting edge copy");
 
-      TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexEdgeCopy");
+      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeCopy");
 
       try{
         num = adapter.getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
       }
       CATCH_EXCEPTION("getting edge view");
 
-      TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexEdgeView");
+      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeView");
 
       if ((id.size() != nnbors) || (num != nnbors) || (wgt.size() != nnbors))
         fail=1;
@@ -300,12 +311,14 @@ int main(int argc, char *argv[])
           }
         }
       }
-      TEST_FAIL_AND_RETURN(ecomm, fail, "getVertexEdgeCopy/View results");
+      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeCopy/View results");
     }
+#endif
   }  // Next graph
 
   if (!z2_rank)
     std::cout << "PASS" << std::endl;
 
+  MPI_Finalize();
   return 0;
 }

@@ -68,13 +68,17 @@ public:
 
   /*! Default constructor - can't build a valid object this way
    */
-  XpetraCrsGraphInput():_valid(false), _graph(), _rowMap(), _edgeOffsets() {}
+  XpetraCrsGraphInput(): _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
+    _edgeWgt(), _vertexWgt(), _xyz() {}
 
   /*! Constructor with an Xpetra::CrsGraph
    */
   XpetraCrsGraphInput(
     Teuchos::RCP<Xpetra::CrsGraph<LID, GID, Node> > graph):
-    _valid(false), _graph(graph) 
+    _valid(false), _graph(graph), _rowMap(), _edgeOffsets(),
+    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
+    _edgeWgt(), _vertexWgt(), _xyz()
   {
     makeOffsets();
     _valid=true;
@@ -84,7 +88,9 @@ public:
    */
   XpetraCrsGraphInput(
     Teuchos::RCP<Tpetra::CrsGraph<LID, GID, Node> > graph):
-    _valid(false)
+    _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
+    _edgeWgt(), _vertexWgt(), _xyz()
   {
      Xpetra::TpetraCrsGraph<LID, GID, Node> *xgraph =
        new Xpetra::TpetraCrsGraph<LID, GID, Node>(graph);
@@ -98,7 +104,9 @@ public:
   /*! Constructor with an Epetra_CrsGraph
    */
   XpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph):
-    _valid(false)
+    _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
+    _edgeWgt(), _vertexWgt(), _xyz()
   {
      Xpetra::EpetraCrsGraph *xgraph = new Xpetra::EpetraCrsGraph(graph);
 
@@ -305,7 +313,7 @@ public:
     if (!_valid)
       throw std::runtime_error("invalid input object");
  
-    return 0;
+    return _coordinateDim;
   }
 
   /*! Get the list of vertex IDs and their weights.
