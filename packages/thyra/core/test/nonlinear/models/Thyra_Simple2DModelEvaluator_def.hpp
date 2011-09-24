@@ -199,10 +199,12 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
     RCP<MultiVectorBase<Scalar> > W_mv = W->getNonconstMultiVector();
 
     Thyra::DetachedMultiVectorView<Scalar> W_dmvv(W_mv);
+
+    const Scalar one = 1.0, two = 2.0;
     
-    W_dmvv(0, 0) = 1.0;
-    W_dmvv(0, 1) = 2.0 * x[1];
-    W_dmvv(1, 0) = d_ * 2.0 * x[0];
+    W_dmvv(0, 0) = one;
+    W_dmvv(0, 1) = two * x[1];
+    W_dmvv(1, 0) = d_ * two * x[0];
     W_dmvv(1, 1) = -d_;
 
   }

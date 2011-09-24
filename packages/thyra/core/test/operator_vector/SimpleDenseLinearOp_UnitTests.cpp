@@ -127,6 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleLeft,
   using Teuchos::rcp_dynamic_cast;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef ScalarTraits<ScalarMag> SMT;
 
   // Set up the op as all 1's
 
@@ -156,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleLeft,
 
   const RCP<VectorBase<Scalar> > lhs_vec = createMember<Scalar>(mv->range());
 
-  apply(*op, NOTRANS, *rhs_vec, lhs_vec.ptr());
+  apply<Scalar>(*op, NOTRANS, *rhs_vec, lhs_vec.ptr());
 
   if (g_dumpAll) {
     out << "op = " << *op;
@@ -165,10 +166,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleLeft,
     out << "lhs_vec = " << *lhs_vec;
   }
 
+
   TEST_FLOATING_EQUALITY(
     sum<Scalar>(*lhs_vec),
-    as<Scalar>(sum<Scalar>(*row_scaling) * colDim * two),
-    as<ScalarMag>(10.0 * ST::eps())
+    as<Scalar>(sum<Scalar>(*row_scaling) * as<Scalar>(colDim) * two),
+    as<ScalarMag>(10.0 * SMT::eps())
     );
 
 }
@@ -184,6 +186,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
   using Teuchos::rcp_dynamic_cast;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef ScalarTraits<ScalarMag> SMT;
 
   // Set up the op as all 1's
 
@@ -213,7 +216,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
 
   const RCP<VectorBase<Scalar> > lhs_vec = createMember<Scalar>(mv->range());
 
-  apply(*op, NOTRANS, *rhs_vec, lhs_vec.ptr());
+  apply<Scalar>(*op, NOTRANS, *rhs_vec, lhs_vec.ptr());
 
   if (g_dumpAll) {
     out << "op = " << *op;
@@ -224,8 +227,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
 
   TEST_FLOATING_EQUALITY(
     sum<Scalar>(*lhs_vec),
-    as<Scalar>((sum<Scalar>(*col_scaling) * two) * rowDim),
-    as<ScalarMag>(10.0 * ST::eps())
+    as<Scalar>((sum<Scalar>(*col_scaling) * two) * as<Scalar>(rowDim)),
+    as<ScalarMag>(10.0 * SMT::eps())
     );
 
 }
