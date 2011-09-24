@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 // 
@@ -38,71 +39,19 @@
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
-#ifndef THYRA_SCALED_RESIDUAL_MODEL_EVALUATOR_HPP
-#define THYRA_SCALED_RESIDUAL_MODEL_EVALUATOR_HPP
+#include "Thyra_ScaledModelEvaluator_decl.hpp"
 
-#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
+
+#include "Thyra_ScaledModelEvaluator_def.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
 namespace Thyra {
 
-
-/** \brief This class decorates a ModelEvaluator and returns scaled
- * residual and Jacobian values.
- *
- * Given a scaling vector <tt>s</tt>, this object is treated as a diagonal
- * scaling matrix and applied to <tt>x -> Sf(x)</tt> and <tt>x -> sW</tt>.
- *
- * \ingroup Thyra_Nonlin_ME_support_grp
- */
-template<class Scalar>
-class ScaledResidualModelEvaluator : 
-    virtual public ModelEvaluatorDelegatorBase<Scalar>
-{
-public:
-  
-  /** \brief Constructs to uninitialized */
-  ScaledResidualModelEvaluator();
-  
-  /** \brief . */
-  std::string description() const;
-
-  /** \brief . */
-  void set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling);
-
-private:
-
-  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
-  //@{
-
-  /** \brief . */
-  void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
-
-  //@}
-  
-private:
-
-  //* Diagonal scaling vector */
-  RCP<const Thyra::VectorBase<Scalar> > f_scaling_;
-
-};
-
-
-/** \brief Nonmember constructor. */
-template<class Scalar>
-RCP<ScaledResidualModelEvaluator<Scalar> >
-createNonconstScaledResidualModelEvaluator(const RCP<ModelEvaluator<Scalar > > &model)
-{
-  RCP<ScaledResidualModelEvaluator<Scalar> > srme(new ScaledResidualModelEvaluator<Scalar>);
-  srme->initialize(model);
-  return srme;
-}
-
+TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(ScaledModelEvaluator)
 
 } // namespace Thyra
 
-
-#endif // THYRA_SCALED_RESIDUAL_MODEL_EVALUATOR_HPP
+#endif // HAVE_THYRA_EXPLICIT_INSTANTIATION

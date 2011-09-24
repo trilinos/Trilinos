@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "Thyra_ScaledResidualModelEvaluator.hpp"
+#include "Thyra_ScaledModelEvaluator.hpp"
 #include "Thyra_Simple2DModelEvaluator.hpp"
 #include "Thyra_SimpleDenseLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
@@ -71,8 +71,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
   RCP<ModelEvaluator<Scalar> > model = 
     simple2DModelEvaluator<Scalar>();
   
-  RCP<ScaledResidualModelEvaluator<Scalar> > scaled_model =
-    createNonconstScaledResidualModelEvaluator<Scalar>(model);
+  RCP<ScaledModelEvaluator<Scalar> > scaled_model =
+    createNonconstScaledModelEvaluator<Scalar>(model);
 
   ModelEvaluatorBase::InArgs<Scalar> in_args = model->getNominalValues();
 

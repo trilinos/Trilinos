@@ -54,7 +54,7 @@ namespace Thyra {
 
 
 template<class Scalar>
-ScaledResidualModelEvaluator<Scalar>::ScaledResidualModelEvaluator()
+ScaledModelEvaluator<Scalar>::ScaledModelEvaluator()
 {}
 
 
@@ -62,12 +62,12 @@ ScaledResidualModelEvaluator<Scalar>::ScaledResidualModelEvaluator()
 
 
 template<class Scalar>
-std::string ScaledResidualModelEvaluator<Scalar>::description() const
+std::string ScaledModelEvaluator<Scalar>::description() const
 {
   const RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
-  oss << "Thyra::ScaledResidualModelEvaluator{";
+  oss << "Thyra::ScaledModelEvaluator{";
   oss << "thyraModel=";
   if(thyraModel.get())
     oss << "\'"<<thyraModel->description()<<"\'";
@@ -79,7 +79,7 @@ std::string ScaledResidualModelEvaluator<Scalar>::description() const
 
 
 template<class Scalar>
-void ScaledResidualModelEvaluator<Scalar>::
+void ScaledModelEvaluator<Scalar>::
 set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling)
 {
   f_scaling_ = f_scaling;
@@ -90,7 +90,7 @@ set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling)
 
 
 template<class Scalar>
-void ScaledResidualModelEvaluator<Scalar>::evalModelImpl(
+void ScaledModelEvaluator<Scalar>::evalModelImpl(
   const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
@@ -103,7 +103,7 @@ void ScaledResidualModelEvaluator<Scalar>::evalModelImpl(
   typedef ModelEvaluatorBase MEB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
-    "Thyra::ScaledResidualModelEvaluator",inArgs,outArgs
+    "Thyra::ScaledModelEvaluator",inArgs,outArgs
     );
 
   thyraModel->evalModel(inArgs, outArgs);
