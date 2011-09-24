@@ -6,6 +6,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include <Zoltan2_config.h>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_OpaqueWrapper.hpp>
 #include <Teuchos_RCP.hpp>
