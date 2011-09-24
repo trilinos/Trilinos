@@ -46,7 +46,6 @@
 
 #include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
-#include "Teuchos_Handleable.hpp"
 
 
 namespace Thyra {
@@ -68,12 +67,9 @@ namespace Thyra {
  */
 template<class Scalar>
 class DefaultSpmdVectorSpace
-  : public SpmdVectorSpaceDefaultBase<Scalar>,
-    public Teuchos::Handleable<VectorSpaceBase<Scalar> >
+  : public SpmdVectorSpaceDefaultBase<Scalar>
 {
 public:
-  /* handleable interface */
-  TEUCHOS_GET_RCP(VectorSpaceBase<Scalar>);
 
   /** @name Constructors and initializers */
   //@{
@@ -88,9 +84,7 @@ public:
    *
    * Equivalent to calling <tt>this->initialize(Teuchos::null,dim,dim)</tt>
    */
-  void initialize(
-    const Ordinal dim
-    );
+  void initialize(const Ordinal dim);
 
   /** \brief Initialize an SPMD space.
    *
@@ -235,11 +229,13 @@ public:
   //@{
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultSpmdVectorSpace(
     const Ordinal dim
     );
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultSpmdVectorSpace(
     const RCP<const Teuchos::Comm<Ordinal> > &comm,
     const Ordinal localSubDim, const Ordinal globalDim

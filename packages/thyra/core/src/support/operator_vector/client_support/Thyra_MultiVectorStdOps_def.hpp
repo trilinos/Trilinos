@@ -69,7 +69,7 @@ void Thyra::norms( const MultiVectorBase<Scalar>& V,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const int m = V.domain()->dim();
   Array<Scalar> prods(m);
-  V.range()->scalarProds(V,V,&prods[0]);
+  V.range()->scalarProds(V, V, prods());
   for ( int j = 0; j < m; ++j )
     norms[j] = ST::magnitude(ST::squareroot(prods[j]));
 }

@@ -296,7 +296,7 @@ void DefaultInverseLinearOp<Scalar>::applyImpl(
       ? fwdSolveCriteria_.ptr()
       : adjSolveCriteria_.ptr()
       );
-  assign(T.get(), ST::zero()); // Have to initialize before solve!
+  assign(T.ptr(), ST::zero()); // Have to initialize before solve!
   SolveStatus<Scalar> solveStatus =
     Thyra::solve<Scalar>(*lows_.getConstObj(), M_trans, X, T.ptr(), solveCriteria);
 

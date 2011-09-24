@@ -46,7 +46,9 @@
 
 namespace Thyra {
 
-/** \brief Base interface for a strategy object for randomizing a multi-vector.
+
+/** \brief Base interface for a strategy object for randomizing a
+ * multi-vector.
  *
  * This object is *not* stateless in its use!  Every time it generates a new
  * random multi-vector its behavior changes.
@@ -77,10 +79,22 @@ public:
    * <li><tt>this->isCompatible(*mv->range()) == true</tt>
    * </ul>
    */
-  virtual void randomize( MultiVectorBase<Scalar> *mv ) = 0;
+  void randomize(const Ptr<MultiVectorBase<Scalar> > &mv)
+    { randomizeImpl(mv); }
+
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED void randomize(MultiVectorBase<Scalar> *mv)
+    { randomizeImpl(Teuchos::outArg(mv)); }
+
+private:
+
+  /** \brief . */
+  virtual void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv) = 0;
   
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_MULTI_VECTOR_RANDOMIZER_BASE_HPP

@@ -195,11 +195,13 @@ bool LinearOpWithSolveTester<Scalar>::check(
 {
 
   using std::endl;
+  using Teuchos::as;
   using Teuchos::optInArg;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<Scalar> > VOTS;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
   bool success = true, result;
   const int l_num_rhs = this->num_rhs();
   Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
@@ -268,7 +270,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,l_num_rhs);
-        Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
+        Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), v1.ptr() );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
@@ -281,7 +283,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,l_num_rhs);
-        assign(&*v3, ST::zero());
+        assign(v3.ptr(), ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
@@ -297,47 +299,51 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,l_num_rhs);
-        V_VmV( &*v4, *v3, *v1 );
+        V_VmV( v4.ptr(), *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,l_num_rhs);
-        assign( &*v5, *v2 );
+        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(range, l_num_rhs);
+        assign( v5.ptr(), *v2 );
         timer.start(true);
-        Thyra::apply(op, NOTRANS, *v3, v5.ptr(), Scalar(1.0) ,Scalar(-1.0));
+        Thyra::apply(op, NOTRANS, *v3, v5.ptr(), as<Scalar>(1.0) ,as<Scalar>(-1.0));
         timer.stop();
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
-        norms(*v1,&norms_v1[0]);
-        norms(*v4,&norms_v4[0]);
+        Array<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
+        norms(*v1, norms_v1());
+        norms(*v4, norms_v4());
         std::transform(
-          norms_v4.begin(),norms_v4.end(),norms_v1.begin(),norms_v4_norms_v1.begin()
+          norms_v4.begin(), norms_v4.end(), norms_v1.begin(), norms_v4_norms_v1.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
-          ,"forward_default_solution_error_error_tol()", forward_default_solution_error_error_tol()
-          ,"forward_default_solution_error_warning_tol()", forward_default_solution_error_warning_tol()
-          ,&*oss
+        result = testMaxErrors<Scalar>(
+          "norm(v4)/norm(v1)", norms_v4_norms_v1(),
+          "forward_default_solution_error_error_tol()",
+          forward_default_solution_error_error_tol(),
+          "forward_default_solution_error_warning_tol()",
+          forward_default_solution_error_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
 
-        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
-        norms(*v2,&norms_v2[0]);
-        norms(*v5,&norms_v5[0]);
+        Array<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
+        norms(*v2, norms_v2());
+        norms(*v5, norms_v5());
         std::transform(
-          norms_v5.begin(),norms_v5.end(),norms_v2.begin(),norms_v5_norms_v2.begin()
+          norms_v5.begin(), norms_v5.end(), norms_v2.begin(), norms_v5_norms_v2.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
-          ,"forward_default_residual_error_tol()", forward_default_residual_error_tol()
-          ,"forward_default_residual_warning_tol()", forward_default_residual_warning_tol()
-          ,&*oss
+        result = testMaxErrors<Scalar>(
+          "norm(v5)/norm(v2)", norms_v5_norms_v2(),
+          "forward_default_residual_error_tol()",
+          forward_default_residual_error_tol(),
+          "forward_default_residual_warning_tol()",
+          forward_default_residual_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
         
@@ -390,7 +396,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,l_num_rhs);
-        Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
+        Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), v1.ptr() );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
@@ -407,7 +413,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,forward_residual_solve_tol()
           );
-        assign(&*v3, ST::zero());
+        assign(v3.ptr(), ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
@@ -429,26 +435,28 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,l_num_rhs);
-        assign( &*v4, *v2 );
+        assign( v4.ptr(), *v2 );
         timer.start(true);
-        Thyra::apply(op, NOTRANS, *v3, v4.ptr(), Scalar(1.0), Scalar(-1.0));
+        Thyra::apply(op, NOTRANS, *v3, v4.ptr(), as<Scalar>(1.0), as<Scalar>(-1.0));
         timer.stop();
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
-        norms(*v2,&norms_v2[0]);
-        norms(*v4,&norms_v4[0]);
+        Array<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
+        norms(*v2, norms_v2());
+        norms(*v4, norms_v4());
         std::transform(
           norms_v4.begin(),norms_v4.end(),norms_v2.begin(),norms_v4_norms_v2.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
-          ,"forward_residual_solve_tol()+forward_residual_slack_error_tol()", ScalarMag(forward_residual_solve_tol()+forward_residual_slack_error_tol())
-          ,"forward_residual_solve_tol()_slack_warning_tol()", ScalarMag(forward_residual_solve_tol()+forward_residual_slack_warning_tol())
-          ,&*oss
+        result = testMaxErrors<Scalar>(
+          "norm(v4)/norm(v2)", norms_v4_norms_v2(),
+          "forward_residual_solve_tol()+forward_residual_slack_error_tol()",
+          as<ScalarMag>(forward_residual_solve_tol()+forward_residual_slack_error_tol()),
+          "forward_residual_solve_tol()_slack_warning_tol()",
+          as<ScalarMag>(forward_residual_solve_tol()+forward_residual_slack_warning_tol()),
+          oss.ptr()
           );
         if(!result) these_results = false;
 
@@ -505,7 +513,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,l_num_rhs);
-        Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
+        Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), v1.ptr() );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
@@ -518,7 +526,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,l_num_rhs);
-        assign(&*v3, ST::zero());
+        assign(v3.ptr(), ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
@@ -534,47 +542,51 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,l_num_rhs);
-        V_VmV( &*v4, *v3, *v1 );
+        V_VmV( v4.ptr(), *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op'*v3 - v2 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,l_num_rhs);
-        assign( &*v5, *v2 );
+        assign( v5.ptr(), *v2 );
         timer.start(true);
-        Thyra::apply(op, CONJTRANS, *v3, v5.ptr(), Scalar(1.0), Scalar(-1.0));
+        Thyra::apply(op, CONJTRANS, *v3, v5.ptr(), as<Scalar>(1.0), as<Scalar>(-1.0));
         timer.stop();
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
-        norms(*v1,&norms_v1[0]);
-        norms(*v4,&norms_v4[0]);
+        Array<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
+        norms(*v1, norms_v1());
+        norms(*v4, norms_v4());
         std::transform(
           norms_v4.begin(),norms_v4.end(),norms_v1.begin(),norms_v4_norms_v1.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
-          ,"adjoint_default_solution_error_error_tol()", adjoint_default_solution_error_error_tol()
-          ,"adjoint_default_solution_error_warning_tol()", adjoint_default_solution_error_warning_tol()
-          ,&*oss
+        result = testMaxErrors<Scalar>(
+          "norm(v4)/norm(v1)", norms_v4_norms_v1(),
+          "adjoint_default_solution_error_error_tol()",
+          adjoint_default_solution_error_error_tol(),
+          "adjoint_default_solution_error_warning_tol()",
+          adjoint_default_solution_error_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
 
-        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
-        norms(*v2,&norms_v2[0]);
-        norms(*v5,&norms_v5[0]);
+        Array<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
+        norms(*v2, norms_v2());
+        norms(*v5, norms_v5());
         std::transform(
-          norms_v5.begin(),norms_v5.end(),norms_v2.begin(),norms_v5_norms_v2.begin()
+          norms_v5.begin(), norms_v5.end(), norms_v2.begin(), norms_v5_norms_v2.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
-          ,"adjoint_default_residual_error_tol()", adjoint_default_residual_error_tol()
-          ,"adjoint_default_residual_warning_tol()", adjoint_default_residual_warning_tol()
-          ,&*oss
+        result = testMaxErrors<Scalar>(
+          "norm(v5)/norm(v2)", norms_v5_norms_v2(),
+          "adjoint_default_residual_error_tol()",
+          adjoint_default_residual_error_tol(),
+          "adjoint_default_residual_warning_tol()",
+          adjoint_default_residual_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
 
@@ -627,7 +639,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,l_num_rhs);
-        Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
+        Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), v1.ptr() );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
@@ -644,7 +656,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,adjoint_residual_solve_tol()
           );
-        assign(&*v3, ST::zero());
+        assign(v3.ptr(), ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
@@ -667,28 +679,28 @@ bool LinearOpWithSolveTester<Scalar>::check(
       
         *oss <<endl<< "v4 = Op'*v3 - v2 ...\n" ;
         Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,l_num_rhs);
-        assign( &*v4, *v2 );
+        assign( v4.ptr(), *v2 );
         timer.start(true);
-        Thyra::apply(op, CONJTRANS, *v3, v4.ptr(), Scalar(1.0), Scalar(-1.0));
+        Thyra::apply(op, CONJTRANS, *v3, v4.ptr(), as<Scalar>(1.0), as<Scalar>(-1.0));
         timer.stop();
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
-        norms(*v2,&norms_v2[0]);
-        norms(*v4,&norms_v4[0]);
+        Array<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
+        norms(*v2, norms_v2());
+        norms(*v4, norms_v4());
         std::transform(
           norms_v4.begin(),norms_v4.end(),norms_v2.begin(),norms_v4_norms_v2.begin()
           ,std::divides<ScalarMag>()
           );
 
-        result = testMaxErrors(
-          l_num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0],
+        result = testMaxErrors<Scalar>(
+          "norm(v4)/norm(v2)", norms_v4_norms_v2(),
           "adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()",
-          ScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()),
+          as<ScalarMag>(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()),
           "adjoint_residual_solve_tol()_slack_warning_tol()",
-          ScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol()),
-          &*oss
+          as<ScalarMag>(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol()),
+          oss.ptr()
           );
         if(!result) these_results = false;
 

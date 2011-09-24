@@ -42,15 +42,15 @@
 #include "Thyra_TestingTools.hpp"
 
 bool Thyra::testBoolExpr(
-  const std::string    &boolExprName
-  ,const bool          &boolExpr
-  ,const bool          &boolExpected
-  ,std::ostream        *out
-  ,const std::string   &li
+  const std::string &boolExprName,
+  const bool &boolExpr,
+  const bool &boolExpected,
+  const Ptr<std::ostream> &out,
+  const std::string &li
   )
 {
   const bool success = ( boolExpr == boolExpected );
-  if(out) {
+  if (nonnull(out)) {
     *out
       << std::endl
       << li << "Check: " << boolExprName << " = " << boolExpr << " == " << boolExpected

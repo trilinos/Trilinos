@@ -61,7 +61,7 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   static void checkSymmetry(
     const LinearOpBase<Scalar> &op,
-    MultiVectorRandomizerBase<Scalar> *dRand,
+    const Ptr<MultiVectorRandomizerBase<Scalar> > &dRand,
     Teuchos::FancyOStream &oss,
     const int num_rhs,
     const int num_random_vectors,
@@ -105,12 +105,12 @@ public:
 
           if(dump_all) oss << endl << "v1 = randomize(-1,+1); ...\n" ;
           RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,num_rhs);
-          dRand->randomize(&*v1);
+          dRand->randomize(v1.ptr());
           if(dump_all) oss << endl << "v1 =\n" << describe(*v1,verbLevel);
           
           if(dump_all) oss << endl << "v2 = randomize(-1,+1); ...\n" ;
           RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,num_rhs);
-          dRand->randomize(&*v2);
+          dRand->randomize(v2.ptr());
           if(dump_all) oss << endl << "v2 =\n" << describe(*v2,verbLevel);
           
           if(dump_all) oss << endl << "v3 = 0.5*op*v1 ...\n" ;
@@ -123,17 +123,16 @@ public:
           apply( op, NOTRANS, *v2, v4.ptr(), half );
           if(dump_all) oss << endl << "v4 =\n" << describe(*v4,verbLevel);
 
-          std::vector<Scalar> prod1(num_rhs), prod2(num_rhs);
-          domain->scalarProds(*v4,*v1,&prod1[0]);
-          domain->scalarProds(*v2,*v3,&prod2[0]);
+          Array<Scalar> prod1(num_rhs), prod2(num_rhs);
+          domain->scalarProds(*v4, *v1, prod1());
+          domain->scalarProds(*v2, *v3, prod2());
           
-          result = testRelErrors(
-            num_rhs
-            ,"<v4,v1>", &prod1[0]
-            ,"<v2,v3>", &prod2[0]
-            ,"symmetry_error_tol()", symmetry_error_tol
-            ,"symmetry_warning_tol()", symmetry_warning_tol
-            ,&oss
+          result = testRelErrors<Scalar, Scalar, ScalarMag>(
+            "<v4,v1>", prod1(),
+            "<v2,v3>", prod2(),
+            "symmetry_error_tol()", symmetry_error_tol,
+            "symmetry_warning_tol()", symmetry_warning_tol,
+            inOutArg(oss)
             );
           if(!result) *these_results = false;
         
@@ -216,12 +215,12 @@ bool LinearOpTester<Scalar>::check(
   using Teuchos::fancyOStream;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar>  RST;
-  typedef Teuchos::ScalarTraits<Scalar> DST;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
   bool success = true, result;
   const int loc_num_rhs = this->num_rhs();
-  const Scalar r_one  = RST::one();
-  const Scalar d_one  = DST::one();
+  const Scalar r_one  = ST::one();
+  const Scalar d_one  = ST::one();
   const Scalar r_half = as<Scalar>(0.5)*r_one;
   const Scalar d_half = as<Scalar>(0.5)*d_one;
 
@@ -239,7 +238,7 @@ bool LinearOpTester<Scalar>::check(
   // ToDo 04/28/2005:
   // * Test the MultiVectorBase apply() function and output to the VectorBase apply() function!
 
-  *out << endl << "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(op,...) ...\n";
+  *out << endl << "*** Entering LinearOpTester<"<<ST::name()<<","<<ST::name()<<">::check(op,...) ...\n";
   if(show_all_tests()) {
     *out << endl << "describe op:\n" << Teuchos::describe(op,verbLevel);
 /*
@@ -323,17 +322,17 @@ bool LinearOpTester<Scalar>::check(
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
-        dRand->randomize(&*v1);
+        dRand->randomize(v1.ptr());
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,loc_num_rhs);
-        dRand->randomize(&*v2);
+        dRand->randomize(v2.ptr());
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,loc_num_rhs);
-        V_VpV(&*v3,*v1,*v2);
+        V_VpV(v3.ptr(),*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
@@ -350,17 +349,16 @@ bool LinearOpTester<Scalar>::check(
         apply( op, NOTRANS, *v2, v5.ptr(), r_half, r_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
-        sums(*v4,&sum_v4[0]);
-        sums(*v5,&sum_v5[0]);
+        Array<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
+        sums(*v4, sum_v4());
+        sums(*v5, sum_v5());
         
-        result = testRelErrors(
-          loc_num_rhs
-          ,"sum(v4)", &sum_v4[0]
-          ,"sum(v5)", &sum_v5[0]
-          ,"linear_properties_error_tol()", linear_properties_error_tol()
-          ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-          ,&*oss
+        result = testRelErrors<Scalar, Scalar, ScalarMag>(
+          "sum(v4)", sum_v4(),
+          "sum(v5)", sum_v5(),
+          "linear_properties_error_tol()", linear_properties_error_tol(),
+          "linear_properties_warning_tol()", linear_properties_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
         
@@ -410,17 +408,17 @@ bool LinearOpTester<Scalar>::check(
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,loc_num_rhs);
-        rRand->randomize(&*v1);
+        rRand->randomize(v1.ptr());
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
-        rRand->randomize(&*v2);
+        rRand->randomize(v2.ptr());
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
-        V_VpV(&*v3,*v1,*v2);
+        V_VpV(v3.ptr(),*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
@@ -438,17 +436,16 @@ bool LinearOpTester<Scalar>::check(
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
 
-        std::vector<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
-        sums(*v4,&sum_v4[0]);
-        sums(*v5,&sum_v5[0]);
+        Array<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
+        sums(*v4, sum_v4());
+        sums(*v5, sum_v5());
         
-        result = testRelErrors(
-          loc_num_rhs
-          ,"sum(v4)", &sum_v4[0]
-          ,"sum(v5)", &sum_v5[0]
-          ,"linear_properties_error_tol()", linear_properties_error_tol()
-          ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-          ,&*oss
+        result = testRelErrors<Scalar, Scalar, ScalarMag>(
+          "sum(v4)", sum_v4(),
+          "sum(v5)", sum_v5(),
+          "linear_properties_error_tol()", linear_properties_error_tol(),
+          "linear_properties_warning_tol()", linear_properties_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
         
@@ -496,12 +493,12 @@ bool LinearOpTester<Scalar>::check(
       
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
-        dRand->randomize(&*v1);
+        dRand->randomize(v1.ptr());
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
       
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
-        rRand->randomize(&*v2);
+        rRand->randomize(v2.ptr());
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
       
         *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
@@ -514,18 +511,17 @@ bool LinearOpTester<Scalar>::check(
         apply( op, CONJTRANS, *v2, v4.ptr(), d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<Scalar> prod_v4_v1(loc_num_rhs);
-        domain->scalarProds(*v4,*v1,&prod_v4_v1[0]);
-        std::vector<Scalar> prod_v2_v3(loc_num_rhs);
-        range->scalarProds(*v2,*v3,&prod_v2_v3[0]);
+        Array<Scalar> prod_v4_v1(loc_num_rhs);
+        domain->scalarProds(*v4, *v1, prod_v4_v1());
+        Array<Scalar> prod_v2_v3(loc_num_rhs);
+        range->scalarProds(*v2, *v3, prod_v2_v3());
         
-        result = testRelErrors(
-          loc_num_rhs
-          ,"<v4,v1>", &prod_v4_v1[0]
-          ,"<v2,v3>", &prod_v2_v3[0]
-          ,"adjoint_error_tol()", adjoint_error_tol()
-          ,"adjoint_warning_tol()", adjoint_warning_tol()
-          ,&*oss
+        result = testRelErrors<Scalar, Scalar, ScalarMag>(
+          "<v4,v1>", prod_v4_v1(),
+          "<v2,v3>", prod_v2_v3(),
+          "adjoint_error_tol()", adjoint_error_tol(),
+          "adjoint_warning_tol()", adjoint_warning_tol(),
+          oss.ptr()
           );
         if(!result) these_results = false;
         
@@ -555,7 +551,7 @@ bool LinearOpTester<Scalar>::check(
     bool these_results = true;
     
     SymmetricLinearOpTester<Scalar>::checkSymmetry(
-      op,&*dRand, *oss, loc_num_rhs,num_random_vectors(), verbLevel,dump_all(),
+      op, dRand.ptr(), *oss, loc_num_rhs,num_random_vectors(), verbLevel,dump_all(),
       symmetry_error_tol(), symmetry_warning_tol(),
       outArg(these_results)
       );
@@ -571,7 +567,7 @@ bool LinearOpTester<Scalar>::check(
     *out << endl <<"Congratulations, this LinearOpBase object seems to check out!\n";
   else
     *out << endl <<"Oh no, at least one of the tests performed with this LinearOpBase object failed (see above failures)!\n";
-  *out << endl << "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(...)\n";
+  *out << endl << "*** Leaving LinearOpTester<"<<ST::name()<<","<<ST::name()<<">::check(...)\n";
 
   return success;
 
@@ -602,11 +598,10 @@ bool LinearOpTester<Scalar>::compare(
   using Teuchos::rcpFromPtr;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar>  RST;
-  typedef Teuchos::ScalarTraits<Scalar> DST;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   bool success = true, result;
   const int loc_num_rhs = this->num_rhs();
-  const Scalar  r_half = Scalar(0.5)*RST::one();
+  const Scalar  r_half = Scalar(0.5)*ST::one();
   const RCP<FancyOStream> out = rcpFromPtr(out_arg);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
@@ -614,7 +609,7 @@ bool LinearOpTester<Scalar>::compare(
 
   if(out.get()) {
     *out
-      << endl << "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(op1,op2,...) ...\n";
+      << endl << "*** Entering LinearOpTester<"<<ST::name()<<","<<ST::name()<<">::compare(op1,op2,...) ...\n";
     if(show_all_tests())
       *out << endl << "describe op1:\n" << Teuchos::describe(op1,verbLevel);
     else
@@ -687,7 +682,7 @@ bool LinearOpTester<Scalar>::compare(
       
       if(dump_all()) *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
       RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
-      dRand->randomize(&*v1);
+      dRand->randomize(v1.ptr());
       if(dump_all()) *oss << endl << "v1 =\n" << *v1;
       
       if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
@@ -706,15 +701,15 @@ bool LinearOpTester<Scalar>::compare(
          ss << ".col[" << col_id << "]";
 
          result = Thyra::testRelNormDiffErr(
-            "v2"+ss.str(),*v2->col(col_id)
-           ,"v3"+ss.str(),*v3->col(col_id)
-           ,"linear_properties_error_tol()", linear_properties_error_tol()
-           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-           ,&*oss);
+           "v2"+ss.str(),*v2->col(col_id),
+           "v3"+ss.str(),*v3->col(col_id),
+           "linear_properties_error_tol()", linear_properties_error_tol(),
+           "linear_properties_warning_tol()", linear_properties_warning_tol(),
+           &*oss);
          if(!result) these_results = false;
       }
       /*
-      std::vector<Scalar> sum_v2(loc_num_rhs), sum_v3(loc_num_rhs);
+      Array<Scalar> sum_v2(loc_num_rhs), sum_v3(loc_num_rhs);
       sums(*v2,&sum_v2[0]);
       sums(*v3,&sum_v3[0]);
       
@@ -724,7 +719,7 @@ bool LinearOpTester<Scalar>::compare(
         ,"sum(v3)", &sum_v3[0]
         ,"linear_properties_error_tol()", linear_properties_error_tol()
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-        ,&*oss
+        ,inOutArg(oss)
         );
       */
       if(!result) these_results = false;
@@ -741,7 +736,7 @@ bool LinearOpTester<Scalar>::compare(
       *out << endl <<"Congratulations, these two LinearOpBase objects seem to be the same!\n";
     else
       *out << endl <<"Oh no, these two LinearOpBase objects seem to be different (see above failures)!\n";
-    *out << endl << "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(...)\n";
+    *out << endl << "*** Leaving LinearOpTester<"<<ST::name()<<","<<ST::name()<<">::compare(...)\n";
   }
 
   return success;

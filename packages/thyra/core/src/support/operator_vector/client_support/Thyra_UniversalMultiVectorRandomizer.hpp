@@ -67,8 +67,16 @@ public:
 
   /** \brief . */
   bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
+
+  //@}
+
+private:
+
+  /** \name Overridded private functions */
+  //@{
+
   /** \brief . */
-  void randomize( MultiVectorBase<Scalar> *mv );
+  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
 
   //@}
   
@@ -98,11 +106,16 @@ bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase
 }
 
 
+// Overridded private functions
+
+
 template<class Scalar>
-void UniversalMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv )
+void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
+  const Ptr<MultiVectorBase<Scalar> > &mv )
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::randomize(Scalar(-ST::one()),Scalar(+ST::one()),mv);
+  Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
 }
 
 

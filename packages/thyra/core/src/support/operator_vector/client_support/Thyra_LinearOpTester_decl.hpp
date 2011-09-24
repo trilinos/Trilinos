@@ -250,13 +250,13 @@ public:
     const LinearOpBase<Scalar> &op,
     const Ptr<MultiVectorRandomizerBase<Scalar> > &rangeRandomizer,
     const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
-    const Ptr<Teuchos::FancyOStream> &out
+    const Ptr<FancyOStream> &out
     ) const;
 
   /** \brief Calls <tt>this->check(op,null,null,out,leadingIndent,indentSpacer)</tt> */
   bool check(
     const LinearOpBase<Scalar> &op,
-    const Ptr<Teuchos::FancyOStream> &out
+    const Ptr<FancyOStream> &out
     ) const;
 
   /** \brief Check if two linear operators are the same or not.
@@ -301,7 +301,7 @@ public:
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
     const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
-    const Ptr<Teuchos::FancyOStream> &out_arg
+    const Ptr<FancyOStream> &out_arg
     ) const;
  
   /** \brief Calls
@@ -310,18 +310,18 @@ public:
   bool compare(
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
-    const Ptr<Teuchos::FancyOStream> &out_arg
+    const Ptr<FancyOStream> &out_arg
     ) const;
 
   /** \brief Deprecated. */
   //@{
 
   /** \brief Deprecated. */
-  bool check(
+  THYRA_DEPRECATED bool check(
     const LinearOpBase<Scalar> &op,
     MultiVectorRandomizerBase<Scalar> *rangeRandomizer,
     MultiVectorRandomizerBase<Scalar> *domainRandomizer,
-    Teuchos::FancyOStream *out
+    FancyOStream *out
     ) const
     {
       using Teuchos::ptr;
@@ -329,20 +329,20 @@ public:
     }
 
   /** \brief Deprecated. */
-  bool check(
+  THYRA_DEPRECATED bool check(
     const LinearOpBase<Scalar> &op,
-    Teuchos::FancyOStream *out
+    FancyOStream *out
     ) const
     {
       return check(op, Teuchos::ptr(out));
     }
 
   /** \brief Deprecated. */
-  bool compare(
+  THYRA_DEPRECATED bool compare(
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
     MultiVectorRandomizerBase<Scalar> *domainRandomizer,
-    Teuchos::FancyOStream *out_arg
+    FancyOStream *out_arg
     ) const
     {
       using Teuchos::ptr;
@@ -350,10 +350,10 @@ public:
     }
  
   /** \brief Deprecated. */
-  bool compare(
+  THYRA_DEPRECATED bool compare(
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
-    Teuchos::FancyOStream *out_arg
+    FancyOStream *out_arg
     ) const
     {
       return compare(op1, op2, Teuchos::ptr(out_arg));

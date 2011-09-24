@@ -346,7 +346,7 @@ DefaultMultiVectorProductVector<Scalar>::getDefaultProductVector() const
 
   return Thyra::defaultProductVector<Scalar>(
     productSpace_->getDefaultProductVectorSpace(),
-    &vecArray[0]
+    vecArray()
     );
 
 }

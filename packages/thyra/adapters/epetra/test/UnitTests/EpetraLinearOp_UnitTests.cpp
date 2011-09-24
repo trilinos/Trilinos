@@ -11,7 +11,7 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+1//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //
@@ -51,7 +51,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 //
@@ -61,23 +61,22 @@ namespace {
 
 TEUCHOS_UNIT_TEST( EpetraLinearOp, rectangular )
 {
+  using Teuchos::null;
+  using Teuchos::inOutArg;
+  using Teuchos::updateSuccess;
+
   const RCP<const Epetra_Comm> comm = getEpetraComm();
 
   const int numLocalRows = g_localDim;
   const int numRows = numLocalRows * comm->NumProc();
   const int numCols = numLocalRows / 2;
 
-  RCP<Epetra_CrsMatrix> epetraCrsM = getEpetraMatrix(numRows,numCols);
+  RCP<Epetra_CrsMatrix> epetraCrsM = getEpetraMatrix(numRows, numCols);
 
-  const RCP<const Thyra::LinearOpBase<double> > epetraOp =
-    Thyra::epetraLinearOp(epetraCrsM);
+  const RCP<const LinearOpBase<double> > epetraOp = epetraLinearOp(epetraCrsM);
 
-  Thyra::LinearOpTester<double> linearOpTester;
-
-  const bool result = linearOpTester.check(*epetraOp, &out);
-
-  if (!result)
-    success = false;
+  LinearOpTester<double> linearOpTester;
+  updateSuccess(linearOpTester.check(*epetraOp, inOutArg(out)), success);
    
 }
 
@@ -86,23 +85,26 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
 {
 
   using Teuchos::describe;
-  using Thyra::block2x2;
-  using Thyra::block2x1;
-  using Thyra::block1x2;
-  using Thyra::LinearOpBase;
-  using Thyra::MultiVectorBase;
-  using Thyra::createMembers;
   
   // build sub operators
-  RCP<const Thyra::LinearOpBase<double> > A00 = Thyra::epetraLinearOp(getEpetraMatrix(4,4,0));
-  RCP<const Thyra::LinearOpBase<double> > A01 = Thyra::epetraLinearOp(getEpetraMatrix(4,3,1));
-  RCP<const Thyra::LinearOpBase<double> > A02 = Thyra::epetraLinearOp(getEpetraMatrix(4,2,2));
-  RCP<const Thyra::LinearOpBase<double> > A10 = Thyra::epetraLinearOp(getEpetraMatrix(3,4,3));
-  RCP<const Thyra::LinearOpBase<double> > A11 = Thyra::epetraLinearOp(getEpetraMatrix(3,3,4));
-  RCP<const Thyra::LinearOpBase<double> > A12 = Thyra::epetraLinearOp(getEpetraMatrix(3,2,5));
-  RCP<const Thyra::LinearOpBase<double> > A20 = Thyra::epetraLinearOp(getEpetraMatrix(2,4,6));
-  RCP<const Thyra::LinearOpBase<double> > A21 = Thyra::epetraLinearOp(getEpetraMatrix(2,3,8));
-  RCP<const Thyra::LinearOpBase<double> > A22 = Thyra::epetraLinearOp(getEpetraMatrix(2,2,8));
+  RCP<const LinearOpBase<double> > A00 =
+    epetraLinearOp(getEpetraMatrix(4,4,0));
+  RCP<const LinearOpBase<double> > A01 =
+    epetraLinearOp(getEpetraMatrix(4,3,1));
+  RCP<const LinearOpBase<double> > A02 =
+    epetraLinearOp(getEpetraMatrix(4,2,2));
+  RCP<const LinearOpBase<double> > A10 =
+    epetraLinearOp(getEpetraMatrix(3,4,3));
+  RCP<const LinearOpBase<double> > A11 =
+    epetraLinearOp(getEpetraMatrix(3,3,4));
+  RCP<const LinearOpBase<double> > A12 =
+    epetraLinearOp(getEpetraMatrix(3,2,5));
+  RCP<const LinearOpBase<double> > A20 =
+    epetraLinearOp(getEpetraMatrix(2,4,6));
+  RCP<const LinearOpBase<double> > A21 =
+    epetraLinearOp(getEpetraMatrix(2,3,8));
+  RCP<const LinearOpBase<double> > A22 =
+    epetraLinearOp(getEpetraMatrix(2,2,8));
   
   out << "Sub operators built" << std::endl;
 
@@ -119,22 +121,23 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
      
-     Thyra::randomize(-1.0, 1.0, x.ptr());
+     randomize(-1.0, 1.0, x.ptr());
    
      out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
      out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
      out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
      
      // perform a matrix vector multiply
-     Thyra::apply(*A, Thyra::NOTRANS, *x, y.ptr());
+     apply(*A, NOTRANS, *x, y.ptr());
 
      out << "First composite operator completed" << std::endl;
   }
 
   {
      RCP<const LinearOpBase<double> > A = block2x2<double>(
-       A11, block1x2<double>(A10,A12),block2x1<double>(A01,A21),
-       block2x2<double>(A00,A02,A20,A22));
+       A11,                          block1x2<double>(A10, A12),
+       block2x1<double>(A01, A21),   block2x2<double>(A00, A02, A20, A22)
+       );
      
      out << "Second composite operator built" << std::endl;
      
@@ -142,14 +145,14 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
      
-     Thyra::randomize(-1.0, 1.0, x.ptr());
+     randomize(-1.0, 1.0, x.ptr());
    
      out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
      out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
      out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
      
      // perform a matrix vector multiply
-     Thyra::apply(*A, Thyra::NOTRANS, *x, y.ptr());
+     apply(*A, NOTRANS, *x, y.ptr());
 
      out << "Second composite operator completed" << std::endl;
   }
@@ -159,4 +162,4 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
 }
 
 
-} // namespace
+} // namespace Thyra

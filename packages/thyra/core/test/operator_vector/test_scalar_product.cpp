@@ -62,17 +62,17 @@
  */
 template <class Scalar>
 bool run_scalar_product_tests(
-  const int                                                     n
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &tol
-  ,const bool                                                   dumpAll
-  ,Teuchos::FancyOStream                                        *out_arg
+  const int n,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &tol,
+  const bool dumpAll,
+  Teuchos::FancyOStream *out_arg
   )
 {
 
   using Thyra::relErr;
   using Thyra::testBoolExpr;
-  typedef Teuchos::ScalarTraits<Scalar>    ST;
-  typedef typename ST::magnitudeType       ScalarMag;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   using Teuchos::Ptr;
   using Teuchos::RCP;
@@ -84,7 +84,7 @@ bool run_scalar_product_tests(
   RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
-  if(out.get()) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
+  if (nonnull(out)) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
 
   bool success = true, result;
 
@@ -111,7 +111,7 @@ bool run_scalar_product_tests(
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize<Scalar>( as<Scalar>(-ST::one()), ST::one(),
     Ptr<Thyra::MultiVectorBase<Scalar> >(op_coeff.ptr()) );
-  if(out.get() && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
+  if (nonnull(out) && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
   RCP<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
     vecSpcConverterFromMag = rcp(new Thyra::DefaultSerialVectorSpaceConverter<ScalarMag,Scalar>());
   RCP<const Thyra::VectorSpaceBase<ScalarMag> >
@@ -140,72 +140,88 @@ bool run_scalar_product_tests(
   linearOpTester.show_all_tests(true);
   linearOpTester.dump_all(dumpAll);
 
-  if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
+  if (nonnull(out)) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
   {
     OSTab tab(out);
-    Thyra::assign( &*op, *op_coeff );
-    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
-    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out.get());
+    Thyra::assign<Scalar>( op.ptr(), *op_coeff );
+    if (nonnull(out) && dumpAll) *out << "\nop =\n" << *op;
+    if (nonnull(out) && dumpAll) *out
+      << "\nop' =\n"
+      << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",
+      op->domain()->isEuclidean(), true, out.ptr());
     if(!result) success = false;
-    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out.get());
+    result = testBoolExpr("op->range()->isEuclidean()",
+      op->range()->isEuclidean(), true, out.ptr());
     if(!result) success = false;
-    result = linearOpTester.check(*op,out.get());
+    result = linearOpTester.check(*op, out.ptr());
     if(!result) success = false;
   }
  
-  if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
+  if (nonnull(out)) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
   {
     OSTab tab(out);
     range->setScalarProd(euclideanScalarProd);
     domain->setScalarProd(domainScalarProd);
     op->initialize(range,domain);
-    Thyra::assign( &*op, *op_coeff );
-    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
-    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out.get());
+    Thyra::assign<Scalar>( op.ptr(), *op_coeff );
+    if (nonnull(out) && dumpAll) *out << "\nop =\n" << *op;
+    if (nonnull(out) && dumpAll) *out
+      << "\nop' =\n"
+      << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",
+      op->domain()->isEuclidean(), false, out.ptr());
     if(!result) success = false;
-    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out.get());
+    result = testBoolExpr("op->range()->isEuclidean()",
+      op->range()->isEuclidean(), true, out.ptr());
     if(!result) success = false;
-    result = linearOpTester.check(*op,out.get());
+    result = linearOpTester.check(*op,out.ptr());
     if(!result) success = false;
   }
     
-  if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
+  if (nonnull(out)) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
   {
     OSTab tab(out);
     range->setScalarProd(rangeScalarProd);
     domain->setScalarProd(euclideanScalarProd);
     op->initialize(range,domain);
-    Thyra::assign( &*op, *op_coeff );
-    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
-    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out.get());
+    Thyra::assign<Scalar>( op.ptr(), *op_coeff );
+    if (nonnull(out) && dumpAll) *out << "\nop =\n" << *op;
+    if (nonnull(out) && dumpAll) *out
+      << "\nop' =\n"
+      << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",
+      op->domain()->isEuclidean(), true, out.ptr());
     if(!result) success = false;
-    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out.get());
+    result = testBoolExpr("op->range()->isEuclidean()",
+      op->range()->isEuclidean(), false, out.ptr());
     if(!result) success = false;
-    result = linearOpTester.check(*op,out.get());
+    result = linearOpTester.check(*op,out.ptr());
     if(!result) success = false;
   }
     
-  if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
+  if (nonnull(out)) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
   {
     OSTab tab(out);
     range->setScalarProd(rangeScalarProd);
     domain->setScalarProd(domainScalarProd);
     op->initialize(range,domain);
-    Thyra::assign( &*op, *op_coeff );
-    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
-    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out.get());
+    Thyra::assign<Scalar>( op.ptr(), *op_coeff );
+    if (nonnull(out) && dumpAll) *out << "\nop =\n" << *op;
+    if (nonnull(out) && dumpAll) *out
+      << "\nop' =\n"
+      << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",
+      op->domain()->isEuclidean(), false, out.ptr());
     if(!result) success = false;
-    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out.get());
+    result = testBoolExpr("op->range()->isEuclidean()",
+      op->range()->isEuclidean(), false, out.ptr());
     if(!result) success = false;
-    result = linearOpTester.check(*op,out.get());
+    result = linearOpTester.check(*op,out.ptr());
     if(!result) success = false;
   }
     
-  if(out.get()) *out << "\n*** Leaving run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
+  if (nonnull(out)) *out << "\n*** Leaving run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
 

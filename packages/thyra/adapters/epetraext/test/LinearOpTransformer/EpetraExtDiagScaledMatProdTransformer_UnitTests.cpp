@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_BDB )
      LinearOpTester<double> M_explicit_tester;
      M_explicit_tester.show_all_tests(true);;
 
-     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inoutArg(out) );
      if (!result) success = false;
   }
 
@@ -322,7 +322,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_BDG_GDB)
      LinearOpTester<double> M_explicit_tester;
      M_explicit_tester.show_all_tests(true);;
 
-     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inoutArg(out) );
      if (!result) success = false;
   }
 
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_GDG )
      LinearOpTester<double> M_explicit_tester;
      M_explicit_tester.show_all_tests(true);;
 
-     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inoutArg(out) );
      if (!result) success = false;
   }
 
@@ -452,7 +452,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_BG_GB_GG)
      LinearOpTester<double> M_explicit_tester;
      M_explicit_tester.show_all_tests(true);;
 
-     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, Teuchos::inoutArg(out) );
      if (!result) success = false;
   }
 

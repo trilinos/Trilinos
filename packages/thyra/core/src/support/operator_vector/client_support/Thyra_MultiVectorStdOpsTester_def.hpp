@@ -84,12 +84,12 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
     V3 = createMembers(vecSpc,num_mv_cols()),
     Z  = createMembers(vecSpc,num_mv_cols());
 
-  if(out) *out << "\nassign(&*V1,-2.0);\n";
-  assign(&*V1,Scalar(-2.0));
-  if(out) *out << "\nassign(&*V2,-3.0);\n";
-  assign(&*V2,Scalar(-3.0));
-  if(out) *out << "\nassign(&*V3,-4.0);\n";
-  assign(&*V3,Scalar(-4.0));
+  if(out) *out << "\nassign(V1.ptr(),-2.0);\n";
+  assign(V1.ptr(),Scalar(-2.0));
+  if(out) *out << "\nassign(V2.ptr(),-3.0);\n";
+  assign(V2.ptr(),Scalar(-3.0));
+  if(out) *out << "\nassign(V3.ptr(),-4.0);\n";
+  assign(V3.ptr(),Scalar(-4.0));
 
   // ToDo: Fill in the tests!
 

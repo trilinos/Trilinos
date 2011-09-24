@@ -255,7 +255,7 @@ DefaultProductMultiVector<Scalar>::colImpl(Ordinal j) const
   Array<RCP<const VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getConstObj()->col(j));
-  return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
+  return defaultProductVector<Scalar>(productSpace_, cols_());
 }
 
 
@@ -267,7 +267,7 @@ DefaultProductMultiVector<Scalar>::nonconstColImpl(Ordinal j)
   Array<RCP<VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getNonconstObj()->col(j));
-  return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
+  return defaultProductVector<Scalar>(productSpace_, cols_());
 }
 
 

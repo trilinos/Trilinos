@@ -171,8 +171,8 @@ Scalar DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProd(
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
   ) const
 {
-  Scalar scalarProds_out[1];
-  this->scalarProds(x, y, &scalarProds_out[0]);
+  Teuchos::Tuple<Scalar,1> scalarProds_out;
+  this->scalarProds(x, y, scalarProds_out());
   return scalarProds_out[0];
 }
 
