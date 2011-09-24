@@ -48,29 +48,27 @@ namespace Thyra {
 
 
 /** \brief This class decorates a ModelEvaluator and returns scaled
- * residual and Jacobian values.  Given a scaling vector <tt>s</tt>, this
- * object is treated as a diagonal scaling matrix and applied to <tt>x
- * -> Sf(x)</tt> and <tt>x -> sW</tt>.
+ * residual and Jacobian values.
+ *
+ * Given a scaling vector <tt>s</tt>, this object is treated as a diagonal
+ * scaling matrix and applied to <tt>x -> Sf(x)</tt> and <tt>x -> sW</tt>.
  *
  * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class ScaledResidualModelEvaluator : 
-    virtual public ModelEvaluatorDelegatorBase<Scalar> {
+    virtual public ModelEvaluatorDelegatorBase<Scalar>
+{
 public:
   
-  //* Constructs to uninitialized */
+  /** \brief Constructs to uninitialized */
   ScaledResidualModelEvaluator();
-
-  //* Calls initialize() from ModelEvaluatorDelegatorBase. */
-  ScaledResidualModelEvaluator(const RCP< ModelEvaluator< Scalar > > &model);
-
-  //* Calls initialize() from ModelEvaluatorDelegatorBase. */
-  ScaledResidualModelEvaluator(const RCP< const ModelEvaluator< Scalar > > &model);
   
+  /** \brief . */
   std::string description() const;
 
-  void set_f_scaling(const RCP<Thyra::VectorBase<Scalar> >& f_scaling);
+  /** \brief . */
+  void set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling);
 
 private:
 
@@ -86,10 +84,23 @@ private:
   //@}
   
 private:
+
   //* Diagonal scaling vector */
-  RCP<Thyra::VectorBase<Scalar> > f_scaling_;
+  RCP<const Thyra::VectorBase<Scalar> > f_scaling_;
 
 };
+
+
+/** \brief Nonmember constructor. */
+template<class Scalar>
+RCP<ScaledResidualModelEvaluator<Scalar> >
+createNonconstScaledResidualModelEvaluator(const RCP<ModelEvaluator<Scalar > > &model)
+{
+  RCP<ScaledResidualModelEvaluator<Scalar> > srme(new ScaledResidualModelEvaluator<Scalar>);
+  srme->initialize(model);
+  return srme;
+}
+
 
 } // namespace Thyra
 

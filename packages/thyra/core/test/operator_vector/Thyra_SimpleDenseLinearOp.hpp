@@ -66,9 +66,11 @@ public:
   /** Initialize given a fully formed MultiVectorBase object.
    */
   void initialize(const RCP<MultiVectorBase<Scalar> > &mv)
-    {
-      mv_ = mv;
-    }
+    { mv_ = mv; }
+
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> > getNonconstMultiVector()
+    { return mv_; }
 
 protected:
 

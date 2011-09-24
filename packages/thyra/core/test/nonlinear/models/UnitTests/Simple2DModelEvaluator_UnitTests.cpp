@@ -43,18 +43,17 @@
 
 
 #include "Thyra_Simple2DModelEvaluator.hpp"
+#include "Thyra_SimpleDenseLinearOp.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 using Teuchos::null;
 using Teuchos::RCP;
-typedef Thyra::ModelEvaluatorBase MEB;
-using Thyra::Simple2DModelEvaluator;
-using Thyra::simple2DModelEvaluator;
+typedef ModelEvaluatorBase MEB;
 
 
 //
@@ -87,39 +86,45 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DModelEvaluator, eval, Scalar )
 {
   using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
 
   RCP<Simple2DModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> in_args = model->getNominalValues();
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> out_args = model->createOutArgs();
+  ModelEvaluatorBase::InArgs<Scalar> in_args = model->getNominalValues();
+  ModelEvaluatorBase::OutArgs<Scalar> out_args = model->createOutArgs();
 
-  RCP<const Thyra::VectorSpaceBase<Scalar> > f_space = model->get_f_space();
-  RCP<Thyra::VectorBase<Scalar> > f = createMember(f_space);
-  RCP<Thyra::LinearOpBase<Scalar> > W_op = model->create_W_op();
+  const RCP<const VectorSpaceBase<Scalar> > f_space = model->get_f_space();
+  const RCP<VectorBase<Scalar> > f = createMember(f_space);
+  const RCP<LinearOpBase<Scalar> > W_op = model->create_W_op();
 
-  Thyra::V_S(f.ptr(),Teuchos::ScalarTraits<Scalar>::zero());
+  V_S(f.ptr(), ST::zero());
 
-  RCP<Thyra::MultiVectorBase<Scalar> > M = 
-    Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_op);
-  TEUCHOS_ASSERT(Teuchos::nonnull(M));
-  Thyra::DetachedMultiVectorView<Scalar> M_dv(*M);
+  const RCP<SimpleDenseLinearOp<Scalar> > W_sdlo = 
+    Teuchos::rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_op, true);
 
-  Thyra::assign(M.ptr(),Teuchos::ScalarTraits<Scalar>::zero());
+  const RCP<MultiVectorBase<Scalar> > W_mv =  W_sdlo->getNonconstMultiVector();
 
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  ScalarMag tol = 
-    Teuchos::as<ScalarMag>(10.0) * Teuchos::ScalarTraits<Scalar>::eps();
+  assign(W_mv.ptr(), ST::zero());
 
-  const Scalar zero = Teuchos::as<Scalar>(0.0);
+  const ScalarMag tol = as<ScalarMag>(10.0) * ST::eps();
+
+  const Scalar zero = ST::zero();
 
   // Make sure all entries zeroed out
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), zero, tol);
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), zero, tol);  
+  {
+    const ConstDetachedVectorView<Scalar> f_dv(f);
+    TEST_FLOATING_EQUALITY(f_dv[0], zero, tol);
+    TEST_FLOATING_EQUALITY(f_dv[1], zero, tol);  
+  }
 
-  TEST_FLOATING_EQUALITY(M_dv(0,0), zero, tol);
-  TEST_FLOATING_EQUALITY(M_dv(0,1), zero, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,0), zero, tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,1), zero, tol);
+  {
+    const ConstDetachedMultiVectorView<Scalar> W_dv(*W_mv);
+    TEST_FLOATING_EQUALITY(W_dv(0,0), zero, tol);
+    TEST_FLOATING_EQUALITY(W_dv(0,1), zero, tol);
+    TEST_FLOATING_EQUALITY(W_dv(1,0), zero, tol);
+    TEST_FLOATING_EQUALITY(W_dv(1,1), zero, tol);
+  }
 
   out_args.set_f(f);
   out_args.set_W_op(W_op);
@@ -127,18 +132,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DModelEvaluator, eval, Scalar )
   model->evalModel(in_args, out_args);
 
   // Based on nominalValue settings x0=1, x1=1, p0=2, p1=0, d=10
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,0), as<Scalar>(1.0+1.0*1.0-2.0), tol);
-  TEST_FLOATING_EQUALITY(Thyra::get_ele(*f,1), as<Scalar>(10.0*(1.0*1.0-1.0-0.0)), tol);
-
-  TEST_FLOATING_EQUALITY(M_dv(0,0), as<Scalar>(1.0), tol);
-  TEST_FLOATING_EQUALITY(M_dv(0,1), as<Scalar>(2.0), tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,0), as<Scalar>(10.0 * 2.0 * 1.0), tol);
-  TEST_FLOATING_EQUALITY(M_dv(1,1), as<Scalar>(-10.0), tol);
-  
+  {
+    const ConstDetachedVectorView<Scalar> f_dv(f);
+    TEST_FLOATING_EQUALITY(f_dv[0], as<Scalar>(1.0+1.0*1.0-2.0), tol);
+    TEST_FLOATING_EQUALITY(f_dv[0], as<Scalar>(10.0*(1.0*1.0-1.0-0.0)), tol);
+  }
+    
+  {
+    const ConstDetachedMultiVectorView<Scalar> W_dv(*W_mv);
+    TEST_FLOATING_EQUALITY(W_dv(0,0), as<Scalar>(1.0), tol);
+    TEST_FLOATING_EQUALITY(W_dv(0,1), as<Scalar>(2.0), tol);
+    TEST_FLOATING_EQUALITY(W_dv(1,0), as<Scalar>(10.0 * 2.0 * 1.0), tol);
+    TEST_FLOATING_EQUALITY(W_dv(1,1), as<Scalar>(-10.0), tol);
+  }
+    
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
   Simple2DModelEvaluator, eval )
 
 
-} // namespace
+} // namespace Thyra

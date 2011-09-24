@@ -47,6 +47,7 @@
 
 
 #include "Thyra_Simple2DModelEvaluator_decl.hpp"
+#include "Thyra_SimpleDenseLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
@@ -138,7 +139,9 @@ template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Simple2DModelEvaluator<Scalar>::create_W_op() const
 {
-  return Thyra::createMembers(f_space_, x_space_->dim());
+  return createNonconstSimpleDenseLinearOp<Scalar>(
+    createMembers<Scalar>(f_space_, x_space_->dim())
+    );
 }
 
 
@@ -175,35 +178,33 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  RCP< const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
-  RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
-  RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
+  using Teuchos::rcp_dynamic_cast;
 
-  if (f_out.get()) {
-    Scalar x0 = Thyra::get_ele(*x,0);
-    Scalar x1 = Thyra::get_ele(*x,1);
+  const ConstDetachedVectorView<Scalar> x(inArgs.get_x());
 
-    Scalar f0 = x0 + x1 * x1 - p_[0];
-    Scalar f1 = d_ * (x0 * x0 - x1 - p_[1]);
+  const RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
 
-    Thyra::set_ele(0, f0 , f_out.ptr());
-    Thyra::set_ele(1, f1, f_out.ptr());
+  if (nonnull(f_out)) {
+    const DetachedVectorView<Scalar> f(f_out);
+    f[0] = x[0] + x[1] * x[1] - p_[0];
+    f[1] = d_ * (x[0] * x[0] - x[1] - p_[1]);
   }
 
-  if (W_out.get()) {
-    Scalar x0 = Thyra::get_ele(*x,0);
-    Scalar x1 = Thyra::get_ele(*x,1);
+  if (nonnull(W_out)) {
     
-    RCP<MultiVectorBase<Scalar> > M = Teuchos::rcp_dynamic_cast<MultiVectorBase<Scalar> >(W_out);
-      
-    TEUCHOS_ASSERT(Teuchos::nonnull(M));
+    const RCP<SimpleDenseLinearOp<Scalar> > W =
+      rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_out, true);
+    
+    RCP<MultiVectorBase<Scalar> > W_mv = W->getNonconstMultiVector();
 
-    Thyra::DetachedMultiVectorView<Scalar> M_dv(*M);
+    Thyra::DetachedMultiVectorView<Scalar> W_dmvv(W_mv);
     
-    M_dv(0,0) = 1.0;
-    M_dv(0,1) = 2.0 * x1;
-    M_dv(1,0) = d_ * 2.0 * x0;;
-    M_dv(1,1) = -d_;
+    W_dmvv(0, 0) = 1.0;
+    W_dmvv(0, 1) = 2.0 * x[1];
+    W_dmvv(1, 0) = d_ * 2.0 * x[0];
+    W_dmvv(1, 1) = -d_;
+
   }
   
 }

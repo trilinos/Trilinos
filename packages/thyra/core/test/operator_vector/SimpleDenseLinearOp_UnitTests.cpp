@@ -95,6 +95,8 @@ createSerialMultiVector(const Ordinal rowDim, const Ordinal colDim,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, basic,
   Scalar )
 {
+
+  using Teuchos::rcp_dynamic_cast;
   typedef ScalarTraits<Scalar> ST;
 
   const RCP<MultiVectorBase<Scalar> > mv =
@@ -102,9 +104,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, basic,
   const RCP<LinearOpBase<Scalar> > op =
     createNonconstSimpleDenseLinearOp<Scalar>(mv);
 
+  TEST_EQUALITY(
+    mv,
+    rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(op)->getNonconstMultiVector()
+    );
+
   Thyra::LinearOpTester<Scalar> linearOpTester;
   linearOpTester.dump_all(g_dumpAll);
   TEST_ASSERT(linearOpTester.check(*op, ptrFromRef(out)));
+
 }
 
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SimpleDenseLinearOp,
@@ -114,9 +122,11 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SimpleDenseLinearOp,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleLeft,
   Scalar )
 {
+
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
   typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
 
   // Set up the op as all 1's
 
@@ -158,7 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleLeft,
   TEST_FLOATING_EQUALITY(
     sum<Scalar>(*lhs_vec),
     as<Scalar>(sum<Scalar>(*row_scaling) * colDim * two),
-    as<Scalar>(10.0 * ST::eps())
+    as<ScalarMag>(10.0 * ST::eps())
     );
 
 }
@@ -173,6 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
   typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
 
   // Set up the op as all 1's
 
@@ -191,7 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
     col_scaling_dvv(i) = as<Scalar>(i+1);
   }
 
-  rcp_dynamic_cast<ScaledLinearOpBase<Scalar> >(op)->scaleRight(*col_scaling);
+  rcp_dynamic_cast<ScaledLinearOpBase<Scalar> >(op, true)->scaleRight(*col_scaling);
 
   // Test that resulting right scaling
 
@@ -214,7 +225,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleDenseLinearOp, scaleRight,
   TEST_FLOATING_EQUALITY(
     sum<Scalar>(*lhs_vec),
     as<Scalar>((sum<Scalar>(*col_scaling) * two) * rowDim),
-    as<Scalar>(10.0 * ST::eps())
+    as<ScalarMag>(10.0 * ST::eps())
     );
 
 }

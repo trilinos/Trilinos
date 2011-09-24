@@ -43,6 +43,7 @@
 #define THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DEF_HPP
 
 #include "Thyra_DefaultFiniteDifferenceModelEvaluator_decl.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
@@ -54,21 +55,8 @@ namespace Thyra {
 
 template<class Scalar>
 ScaledResidualModelEvaluator<Scalar>::ScaledResidualModelEvaluator()
-{ }
+{}
 
-template<class Scalar>
-ScaledResidualModelEvaluator<Scalar>::
-ScaledResidualModelEvaluator(const RCP< ModelEvaluator< Scalar > > &model)
-{
-  this->initialize(model);
-}
-
-template<class Scalar>
-ScaledResidualModelEvaluator<Scalar>::
-ScaledResidualModelEvaluator(const RCP< const ModelEvaluator< Scalar > > &model)
-{
-  this->initialize(model);
-}
 
 // Public functions overridden from Teuchos::Describable
 
@@ -89,9 +77,10 @@ std::string ScaledResidualModelEvaluator<Scalar>::description() const
   return oss.str();
 }
 
+
 template<class Scalar>
 void ScaledResidualModelEvaluator<Scalar>::
-set_f_scaling(const RCP<Thyra::VectorBase<Scalar> >& f_scaling)
+set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling)
 {
   f_scaling_ = f_scaling;
 }
@@ -110,27 +99,28 @@ void ScaledResidualModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  //typedef typename ST::magnitudeType ScalarMag;
+  typedef ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
-
-  typedef RCP<VectorBase<Scalar> > V_ptr;
-  typedef RCP<const VectorBase<Scalar> > CV_ptr;
-  typedef RCP<MultiVectorBase<Scalar> > MV_ptr;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
     "Thyra::ScaledResidualModelEvaluator",inArgs,outArgs
     );
 
-  thyraModel->evalModel(inArgs,outArgs);
+  thyraModel->evalModel(inArgs, outArgs);
 
   if (nonnull(f_scaling_)) {
+
     const RCP<VectorBase<Scalar> > f = outArgs.get_f();
     if (nonnull(f)) {
-      ele_wise_scale( *f_scaling_, f.ptr() );
+      ele_wise_scale(*f_scaling_, f.ptr());
     }
     
-    // ToDo: Scale W!
+    const RCP<LinearOpBase<Scalar> > W_op = outArgs.get_W_op();
+    if (nonnull(W_op)) {
+      const RCP<ScaledLinearOpBase<Scalar> > W_scaled =
+        rcp_dynamic_cast<ScaledLinearOpBase<Scalar> >(W_op, true);
+      W_scaled->scaleLeft(*f_scaling_);
+    }
 
   }
 
