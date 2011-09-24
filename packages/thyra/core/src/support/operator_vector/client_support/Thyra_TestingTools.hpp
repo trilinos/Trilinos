@@ -238,7 +238,7 @@ bool Thyra::testMaxErr(
 template<class Scalar>
 bool Thyra::testMaxErrors(
   const std::string &error_name,
-  const ArrayView<const Scalar> &errors,
+  const ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &errors,
   const std::string &max_error_name,
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
   const std::string &max_warning_name,

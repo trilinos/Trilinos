@@ -90,7 +90,9 @@ public:
     const bool &dumpAll
     )
     {
-      if(out) *out << "\nThis scalar type does not support comparable operations so we can not test min(), max() and other such functions.\n";
+      if (nonnull(out)) *out
+        << "\nThis scalar type does not support comparable operations so"
+        << " we can not test min(), max() and other such functions.\n";
       return true;
     }
 };

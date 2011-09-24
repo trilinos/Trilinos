@@ -151,7 +151,7 @@ bool testRelErrors(
   )
 {
   using Teuchos::arrayView;
-  testRelErrors(
+  return testRelErrors(
     v1_name, arrayView(v1, num_scalars),
     v2_name, arrayView(v2, num_scalars),
     maxRelErr_error_name, maxRelErr_error,
@@ -218,7 +218,7 @@ bool testMaxErr(
 template<class Scalar>
 bool testMaxErrors(
   const std::string &error_name,
-  const ArrayView<const Scalar> &errors,
+  const ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &errors,
   const std::string &max_error_name,
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
   const std::string &max_warning_name,
