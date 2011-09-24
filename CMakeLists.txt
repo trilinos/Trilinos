@@ -136,6 +136,29 @@ TRILINOS_FIND_PYTHON()
 MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
 #
+# A.3) Set up version file that also sets other options as well
+#
+# NOTE: TrilinosVersion.cmake must be ready *before* the global options are
+# read!
+#
+
+# Pull in Trilinos version information and create the version header file.
+INCLUDE(TrilinosVersion)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+  Trilinos_version.h)
+
+# Automatically update the version file for sierra too.
+IF (NOT WIN32)
+  # Only configure on non-windows system because of the dreaded ^M
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
+ENDIF()
+
+# Since the version header file is now configured the root build
+# dir needs to be on the include path
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+#
 # B) Set up user options and global variables that will be used throughout
 #
 
@@ -149,22 +172,6 @@ IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
   # Start the global timer
   TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
 ENDIF()
-
-#Pull in Trilinos version information and create the version header file.
-INCLUDE(TrilinosVersion)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-  Trilinos_version.h)
-
-#Automatically update the version file for sierra too.
-IF (NOT WIN32)
-  # Only configure on non-windows system because of the dreaded ^M
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
-ENDIF()
-
-#Since the version header file is now configured the root build
-#dir needs to be on the include path
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 ADVANCED_SET(Trilinos_DATA_DIR
   "NOTFOUND"
