@@ -146,9 +146,9 @@ public:
       if (nonnull(out)) *out << "\nmin(*z,&minEle,&minIndex);\n";
       minEle = ST::zero(); minIndex = 0;
       min(*z, outArg(minEle), outArg(minIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "minEle",minEle,"scalarSmall",scalarSmall
-           ,"error_tol",error_tol,"warning_tol",warning_tol,out
+           ,"error_tol",error_tol,"warning_tol",warning_tol, out
            )
         ) success=false;
       result = minIndex == 0;
@@ -158,7 +158,7 @@ public:
       if (nonnull(out)) *out << "\nminGreaterThanBound(*z,"<<scalarMedium<<",&minEle,&minIndex);\n";
       minEle = ST::zero(); minIndex = 0;
       minGreaterThanBound(*z, scalarMedium, outArg(minEle), outArg(minIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "minEle",minEle,"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out
            )
@@ -174,7 +174,7 @@ public:
       if (nonnull(out)) *out << "\nminIndex = " << minIndex << " < 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
     
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "max(*z)",max(*z),"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
@@ -182,7 +182,7 @@ public:
       if (nonnull(out)) *out << "\nmax(*z,&maxEle,&maxIndex);\n";
       maxEle = ST::zero(); maxIndex = 0;
       max(*z, outArg(maxEle), outArg(maxIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "maxEle",maxEle,"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
@@ -193,7 +193,7 @@ public:
       if (nonnull(out)) *out << "\nmaxLessThanBound(*z,"<<scalarMedium<<",&maxEle,&maxIndex);\n";
       maxEle = ST::zero(); maxIndex = 0;
       maxLessThanBound(*z, scalarMedium, outArg(maxEle), outArg(maxIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "maxEle",maxEle,"scalarSmall",scalarSmall
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
