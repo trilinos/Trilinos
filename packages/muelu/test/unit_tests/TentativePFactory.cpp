@@ -63,7 +63,7 @@ namespace MueLuTests {
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace (false, since no PR factory available)
-      TentativePFact->DeclareInput(fineLevel,coarseLevel);
+      coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
@@ -127,7 +127,7 @@ namespace MueLuTests {
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace (false, since no PRFactory available)
-      TentativePFact->DeclareInput(fineLevel,coarseLevel);
+      coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent;
@@ -189,7 +189,7 @@ namespace MueLuTests {
 
     coarseLevel.Request("P",tentativePFact.get());  // request Ptent
     coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace
-    tentativePFact->DeclareInput(fineLevel,coarseLevel);
+    coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 

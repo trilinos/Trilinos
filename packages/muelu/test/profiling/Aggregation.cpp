@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
 
   UCAggregationFactory UCAggFact;
-  UCAggFact.DeclareInput(Finest);
+  Finest.Request(UCAggFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;

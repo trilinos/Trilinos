@@ -2,6 +2,9 @@
 
 namespace MueLu {
 
+  Level::RequestMode Level::requestMode_ = UNDEF;
+
+
   //Print function.  Not a friend b/c it uses only public interfaces for data access.
   std::ostream& operator<<(std::ostream& os, Level const &level) {
   

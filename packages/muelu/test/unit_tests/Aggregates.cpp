@@ -33,7 +33,7 @@ namespace MueLuTests {
 
     level.Request("Aggregates", &aggFact);
 
-    aggFact.DeclareInput(level);
+    level.Request(aggFact);
     aggFact.Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",&aggFact); // fix me
     level.Release("Aggregates", &aggFact);

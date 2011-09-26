@@ -45,13 +45,13 @@ namespace MueLuTests {
     coarseLevel.Request("P",&sapFactory);
     coarseLevel.Request("R",&transPFactory);
 
-    sapFactory.DeclareInput(fineLevel,coarseLevel);
-    transPFactory.DeclareInput(fineLevel,coarseLevel);
+    coarseLevel.Request(sapFactory);
+    coarseLevel.Request(transPFactory);
     sapFactory.Build(fineLevel,coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
 
     RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
-    rap.DeclareInput(fineLevel,coarseLevel);
+    coarseLevel.Request(rap);
 
     coarseLevel.Request("A",&rap);
     rap.Build(fineLevel,coarseLevel);
@@ -123,16 +123,16 @@ namespace MueLuTests {
     coarseLevel.Request("P", &sapFactory);
     coarseLevel.Request("R", &transPFactory);
 
-    sapFactory.DeclareInput(fineLevel,coarseLevel);
-    transPFactory.DeclareInput(fineLevel,coarseLevel);
-    sapFactory.Build(fineLevel,coarseLevel);
+    coarseLevel.Request(sapFactory);
+    coarseLevel.Request(transPFactory);
+    sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
     RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
 
     coarseLevel.Request("A", &rap);
 
     rap.SetImplicitTranspose(true);
-    rap.DeclareInput(fineLevel,coarseLevel);
+    coarseLevel.Request(rap);
     rap.Build(fineLevel,coarseLevel);
 
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");

@@ -44,8 +44,9 @@ namespace MueLuTests {
 
     SaPFactory sapFactory;
     TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
-    sapFactory.DeclareInput(fineLevel,coarseLevel);
-    transPFact.DeclareInput(fineLevel,coarseLevel);
+    
+    coarseLevel.Request(sapFactory);
+    coarseLevel.Request(transPFact);
 
     coarseLevel.Request("P", &sapFactory);
     coarseLevel.Request("R", &transPFact);

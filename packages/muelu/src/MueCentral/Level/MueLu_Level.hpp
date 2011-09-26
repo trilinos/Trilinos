@@ -42,12 +42,12 @@ public:
     //@{
 
     //! @name Constructors / Destructors
-    Level() : levelID_(-1), requestMode_(UNDEF) {
+    Level() : levelID_(-1) {
     	needs_ = rcp(new Needs());
     }
 
     //! Constructor
-    Level(RCP<DefaultFactoryHandlerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler), requestMode_(UNDEF) {
+    Level(RCP<DefaultFactoryHandlerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler) {
     	needs_ = rcp(new Needs());
     }
 
@@ -57,7 +57,6 @@ public:
         defaultFactoryHandler_ = source.defaultFactoryHandler_;
         previousLevel_ = source.previousLevel_;
         needs_ = source.needs_; // TODO: deep copy
-        requestMode_ = source.requestMode_;
         // TODO factorize with Build()
     }
 
@@ -280,16 +279,18 @@ public:
     
     //! Increment the storage counter for all the inputs of a factory
     void Request(const FactoryBase& factory) {
+      RequestMode prev = requestMode_;
       requestMode_ = REQUEST;
       factory.callDeclareInput(*this);
-      requestMode_ = UNDEF;
+      requestMode_ = prev;
     }
 
     //! Decrement the storage counter for all the inputs of a factory
     void Release(const FactoryBase& factory) {
+      RequestMode prev = requestMode_;
       requestMode_ = RELEASE;
       factory.callDeclareInput(*this);
-      requestMode_ = UNDEF;
+      requestMode_ = prev;
     }
 
     //! Callback from FactoryBase::callDeclareInput() and FactoryBase::DeclareInput()
@@ -495,7 +496,7 @@ private:
     }
 
   enum RequestMode { REQUEST, RELEASE, UNDEF };
-  RequestMode requestMode_;
+  static RequestMode requestMode_;
 
 }; //class Level
 
