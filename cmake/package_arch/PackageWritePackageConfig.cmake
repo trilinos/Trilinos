@@ -141,7 +141,33 @@ FUNCTION(CHECK_IS_DEPENDENCY PACKAGE_NAME DEPENDENT_PACKAGE IS_DEPENDENCY)
   SET(${IS_DEPENDENCY} ${_IS_DEPENDENCY} PARENT_SCOPE)
 ENDFUNCTION()
 
+#
+# CMAKE_CURRENT_LIST_DIR is not defined in CMake versions < 2.8.3, but the
+# Trilinos writes paths that use the value of that variable to this file.
+# Make sure it is available at *find_package* time. Note that all variable
+# references in the code snippet are escaped. This is to keep them from
+# being evaluated until they are actually in the install tree. This is
+# done to handle movable install trees.
+#
+# This function defines the variable 
+# DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_CODE_SNIPPET in the caller's scope
+# as a string that can be referenced from CONFIGURE_FILE input files
+# to ensure that the CMAKE_CURRENT_LIST_DIR will be defined on the installation
+# target machine, even if it has an older version of cmake.
+#
+FUNCTION(SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET)
+  SET(DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET "
+IF (NOT DEFINED CMAKE_CURRENT_LIST_DIR)
+  GET_FILENAME_COMPONENT(_THIS_SCRIPT_PATH \${CMAKE_CURRENT_LIST_FILE} PATH)
+  SET(CMAKE_CURRENT_LIST_DIR \${_THIS_SCRIPT_PATH})
+ENDIF()
+"
+  PARENT_SCOPE )
+ENDFUNCTION()
+
 FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
+  
+  SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET()
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("For package ${PACKAGE_NAME} creating ${PACKAGE_NAME}Config.cmake")
@@ -377,6 +403,8 @@ ENDIF()
 ENDFUNCTION()
 
 FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
+
+  SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET()
 
   # Reversing the package list so that libraries will be produced in order of
   # most dependent to least dependent.
