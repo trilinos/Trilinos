@@ -40,12 +40,21 @@ namespace MueLu {
     //@}
 
     bool Build(Level &currentLevel) const {
-      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+      RCP<MultiVector> nullspace;
+      
+      if (currentLevel.IsAvailable("Nullspace")) {
+        // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
+        nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace");
 
-      //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
+      } else {
+        
+        RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
-      RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
-      nullspace->putScalar(1.0);
+        //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
+
+        nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
+        nullspace->putScalar(1.0);
+      }
 
       currentLevel.Set("Nullspace", nullspace, this);
 
@@ -54,6 +63,7 @@ namespace MueLu {
     } // Build
 
   private:
+
     //! A Factory
     RCP<const FactoryBase> AFact_;
 

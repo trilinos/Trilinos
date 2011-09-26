@@ -177,28 +177,8 @@ namespace MueLu {
     {
       Monitor h(*this, "FillHierarchy");
       
-      // 1) check for fine level matrix A
+      // Check for fine level matrix A
       TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
-
-      // 2) prepare multigrid hierarchy
-      // 2.1) transfer fine level nullspace information
-      // check for fine level nullspace
-      if(Levels_[startLevel]->IsAvailable("Nullspace"))
-      {
-          // user-defined nullspace -> default nullspace
-          RCP<MultiVector> nsp = Levels_[startLevel]->Get<RCP<MultiVector> >("Nullspace");
-          Levels_[startLevel]->Delete("Nullspace");
-          RCP<NullspaceFactory> nspfac = rcp(new NullspaceFactory());
-          defaultFactoryHandler_->SetDefaultFactory("Nullspace",nspfac);
-          Levels_[startLevel]->Keep("Nullspace", nspfac.get());
-          Levels_[startLevel]->Set<RCP<MultiVector> >("Nullspace",nsp,nspfac.get());
-      }
-      else
-      {
-          // create nullspace factory
-          RCP<NullspaceFactory> nspfac = rcp(new NullspaceFactory());
-          defaultFactoryHandler_->SetDefaultFactory("Nullspace",nspfac);
-      }
 
       Xpetra::global_size_t fineNnz = -1;
       {
@@ -207,7 +187,7 @@ namespace MueLu {
       }
       Xpetra::global_size_t totalNnz = fineNnz;
 
-      // 3) setup level structure
+      // Setup level structure
       int i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
         {
@@ -235,7 +215,7 @@ namespace MueLu {
           ++i;
         } //while
 
-      // 4) build levels
+      // Build levels
       i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
         {
@@ -299,7 +279,7 @@ namespace MueLu {
       //  }
       ////////////////////////////////////////////////////////////
 
-      // 5) gather statistics
+      // Gather statistics
       Teuchos::ParameterList status;
       status.set("fine nnz",fineNnz);
       status.set("total nnz",totalNnz);
