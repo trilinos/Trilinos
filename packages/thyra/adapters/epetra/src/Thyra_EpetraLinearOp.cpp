@@ -556,7 +556,6 @@ bool EpetraLinearOp::supportsScaleLeftImpl() const
 }
 
 
-
 bool EpetraLinearOp::supportsScaleRightImpl() const
 {
   return nonnull(rowMatrix_);
@@ -578,6 +577,43 @@ void EpetraLinearOp::scaleRightImpl(const VectorBase<double> &col_scaling_in)
   const RCP<const Epetra_Vector> col_scaling =
     get_Epetra_Vector(getDomainMap(), rcpFromRef(col_scaling_in));
   rowMatrix_->RightScale(*col_scaling);
+}
+
+
+// Protected member functions overridden from RowStatLinearOpBase
+
+
+bool EpetraLinearOp::rowStatIsSupportedImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat) const
+{
+  if (is_null(rowMatrix_)) {
+    return false;
+  }
+  switch (rowStat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      return true;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return false; // Will never be called!
+}
+
+
+void EpetraLinearOp::getRowStatImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat,
+  const Ptr<VectorBase<double> > &rowStatVec_in
+  ) const
+{
+  using Teuchos::rcpFromPtr;
+  const RCP<Epetra_Vector> rowStatVec =
+    get_Epetra_Vector(getRangeMap(), rcpFromPtr(rowStatVec_in));
+  switch (rowStat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      rowMatrix_->InvRowSums(*rowStatVec);
+      break;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
 }
 
 

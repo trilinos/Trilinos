@@ -45,6 +45,7 @@
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #include "Epetra_RowMatrix.h"
@@ -77,6 +78,7 @@ namespace Thyra {
 class EpetraLinearOp
   : virtual public LinearOpBase<double>,
     virtual public ScaledLinearOpBase<double>,
+    virtual public RowStatLinearOpBase<double>,
     virtual public EpetraLinearOpBase
 {
 public:
@@ -343,6 +345,20 @@ protected:
   /** \brief . */
   virtual void scaleRightImpl(const VectorBase<double> &col_scaling);
   
+  //@}
+
+  /** \name Protected member functions overridden from RowStatLinearOpBase. */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+
+  /** \brief . */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<double> > &rowStatVec) const;
+
   //@}
 
   /** \name Allocators for domain and range spaces */

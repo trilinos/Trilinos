@@ -48,8 +48,21 @@
 namespace Thyra {
 
 
+namespace RowStatLinearOpBaseUtils {
+
+
+/** \brief Rows statistic requested. */
+enum ERowStat {
+  /** \brief Inverse row sums. */
+  ROW_STAT_INV_ROW_SUM
+};
+
+
+} // namespace RowStatLinearOpBaseUtils
+
+
 /** \brief Interface for exxtracting row statistics as a <tt>VectorBase</tt>
- * from a supporting <tt>LinearOp</tt> object.
+ * from a supporting <tt>LinearOpBase</tt> object.
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
@@ -57,34 +70,26 @@ template<class Scalar>
 class RowStatLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
-  /** @name Public types. */
-  //@{
-
-  /** \brief . */
-  enum ERowStat {
-    /** \brief . */
-    ROW_STAT_SUM
-  };
-
-  //@}
-
   /** @name Non-virtual public interface functions. */
   //@{
 
   /** \brief Determine if a given row stat is supported. */
-  bool rowStatIsSupported(const ERowStat rowStat) const
-    { return rowStatIsSupporedImpl(rowStat); }
+  bool rowStatIsSupported(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat
+    ) const
+    { return rowStatIsSupportedImpl(rowStat); }
 
   /** \brief Get some statistics about a supported row.
    *
    * \precondition <tt>this->rowStatIsSupported(rowStat)==true</tt>
    */
-  void getRowStats(const ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatsVec
+  void getRowStat(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec
     ) const
     {
       TEUCHOS_ASSERT(rowStatIsSupported(rowStat));
-      getRowStats(rowStat, rowStatsVec);
+      getRowStatImpl(rowStat, rowStatVec);
     }
 
   //@}
@@ -95,11 +100,13 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool rowStatIsSupported(const ERowStat rowStat) const = 0;
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const = 0;
 
   /** \brief . */
-  virtual void getRowStatsImpl(const ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatsVec) const = 0;
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec) const = 0;
 
   //@}
 

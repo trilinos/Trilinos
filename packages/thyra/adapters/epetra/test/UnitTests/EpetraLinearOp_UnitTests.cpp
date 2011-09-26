@@ -43,6 +43,7 @@
 
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_MultiVectorBase.hpp"
@@ -102,10 +103,12 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   const double two = 2.0;
 
-  const RCP<VectorBase<double> > rhs_vec = createMember<double>(epetraOp->domain());
+  const RCP<VectorBase<double> > rhs_vec =
+    createMember<double>(epetraOp->domain());
   assign<double>(rhs_vec.ptr(), two);
 
-  const RCP<VectorBase<double> > lhs_orig_vec = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > lhs_orig_vec =
+    createMember<double>(epetraOp->range());
 
   apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_orig_vec.ptr());
 
@@ -119,7 +122,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   const double three = 3.0;
 
-  const RCP<VectorBase<double> > row_scaling = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > row_scaling =
+    createMember<double>(epetraOp->range());
   assign<double>(row_scaling.ptr(), three);
 
   scaledOp->scaleLeft(*row_scaling);
@@ -131,7 +135,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   // Test that resulting left scaling
 
-  const RCP<VectorBase<double> > lhs_left_scaled_vec = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > lhs_left_scaled_vec =
+    createMember<double>(epetraOp->range());
 
   apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_left_scaled_vec.ptr());
 
@@ -147,7 +152,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   // Left scale the matrix back
 
-  const RCP<VectorBase<double> > inv_row_scaling = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > inv_row_scaling =
+    createMember<double>(epetraOp->range());
   reciprocal<double>(*row_scaling, inv_row_scaling.ptr());
 
   scaledOp->scaleLeft(*inv_row_scaling);
@@ -157,7 +163,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
     out << "epetraOp left scaled back to orig = " << *epetraOp;
   }
 
-  const RCP<VectorBase<double> > lhs_orig2_vec = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > lhs_orig2_vec =
+    createMember<double>(epetraOp->range());
 
   apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_orig2_vec.ptr());
 
@@ -177,7 +184,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   const double four = 4.0;
 
-  const RCP<VectorBase<double> > col_scaling = createMember<double>(epetraOp->domain());
+  const RCP<VectorBase<double> > col_scaling =
+    createMember<double>(epetraOp->domain());
   assign<double>(col_scaling.ptr(), four);
 
   scaledOp->scaleRight(*col_scaling);
@@ -189,7 +197,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   // Test that resulting right scaling
 
-  const RCP<VectorBase<double> > lhs_right_scaled_vec = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > lhs_right_scaled_vec =
+    createMember<double>(epetraOp->range());
 
   apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_right_scaled_vec.ptr());
 
@@ -205,7 +214,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
 
   // Right scale the matrix back
 
-  const RCP<VectorBase<double> > inv_col_scaling = createMember<double>(epetraOp->domain());
+  const RCP<VectorBase<double> > inv_col_scaling =
+    createMember<double>(epetraOp->domain());
   reciprocal<double>(*col_scaling, inv_col_scaling.ptr());
 
   scaledOp->scaleRight(*inv_col_scaling);
@@ -215,7 +225,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
     out << "epetraOp right scaled back to orig = " << *epetraOp;
   }
 
-  const RCP<VectorBase<double> > lhs_orig3_vec = createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > lhs_orig3_vec =
+    createMember<double>(epetraOp->range());
 
   apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_orig3_vec.ptr());
 
@@ -231,6 +242,53 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
   // NOTE: Above, it would ask for exact binary match except if one uses
   // threading it will not match exactly!
   
+}
+
+
+TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
+{
+  using Teuchos::null;
+  using Teuchos::inOutArg;
+  using Teuchos::updateSuccess;
+  using Teuchos::rcp_dynamic_cast;
+  typedef ScalarTraits<double> ST;
+
+  // Set up the EpetraLinearOp
+
+  const RCP<const Epetra_Comm> comm = getEpetraComm();
+  const int numLocalRows = g_localDim;
+  const int numRows = numLocalRows * comm->NumProc();
+  const int numCols = numLocalRows / 2;
+  const RCP<Epetra_CrsMatrix> epetraCrsM = getEpetraMatrix(numRows, numCols);
+  const double two = 2.0;
+  epetraCrsM->PutScalar(two);
+  const RCP<LinearOpBase<double> > epetraOp = nonconstEpetraLinearOp(epetraCrsM);
+
+  const RCP<RowStatLinearOpBase<double> > rowStatOp =
+    rcp_dynamic_cast<RowStatLinearOpBase<double> >(epetraOp, true);
+
+  if (g_dumpAll) {
+    out << "epetraOp = " << *epetraOp;
+  }
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<double> > inv_row_sums =
+    createMember<double>(epetraOp->range());
+
+  rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+
+  if (g_dumpAll) {
+    out << "inv_row_sums = " << *inv_row_sums;
+  }
+
+  TEST_FLOATING_EQUALITY(
+    sum<double>(*inv_row_sums),
+    as<double>((1.0 / (two * numCols)) * numRows),
+    as<double>(10.0 * ST::eps())
+    );
+
 }
 
 
