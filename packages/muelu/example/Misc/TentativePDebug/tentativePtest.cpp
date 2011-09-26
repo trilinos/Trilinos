@@ -21,7 +21,6 @@
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
@@ -141,7 +140,6 @@ int main(int argc, char *argv[]) {
   //Pfact->SetDampingFactor(0.);
   RCP<TentativePFactory> Pfact = rcp( new TentativePFactory(UCAggFact) );
   RCP<RFactory>          Rfact = rcp( new TransPFactory() );
-  RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;
@@ -175,7 +173,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
   //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
   //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";

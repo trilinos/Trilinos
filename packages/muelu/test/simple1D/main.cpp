@@ -25,7 +25,6 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
@@ -141,7 +140,6 @@ int main(int argc, char *argv[]) {
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);
   RCP<RFactory>         Rfact = rcp( new TransPFactory() );
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   Teuchos::ParameterList smootherParamList;
@@ -153,7 +151,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+  status = H->FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
   //RCP<Level> coarseLevel = H.GetLevel(1);
   //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";

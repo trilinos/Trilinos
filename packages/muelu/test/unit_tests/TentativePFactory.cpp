@@ -41,14 +41,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
-    // build test-specific default factory handler
-    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
+    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.Request("A",NULL);
@@ -109,14 +103,8 @@ namespace MueLuTests {
       out << "version: " << MueLu::Version() << std::endl;
       out << "Test QR with user-supplied nullspace" << std::endl;
 
-      // build test-specific default factory handler
-      RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-      defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-      defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-      defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
       Level fineLevel, coarseLevel;
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
+      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
       RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
       fineLevel.Request("A",NULL);
@@ -185,13 +173,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    // build test-specific default factory handler
-    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
+    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
     fineLevel.Request("A",NULL);
@@ -287,12 +269,8 @@ namespace MueLuTests {
             Finest->Set("A",Op);                      // set fine level matrix
             Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
-            // prepare default factory handler for graph
-            RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-            defHandler->SetDefaultFactory("Graph",rcp(new CoalesceDropFactory()));
-
             // fill hierarchy
-            RCP<Hierarchy> H = rcp( new Hierarchy(defHandler) );
+            RCP<Hierarchy> H = rcp( new Hierarchy() );
             H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
             H->SetLevel(Finest); // first associate level with hierarchy (for defaultFactoryHandler!)
 
@@ -305,9 +283,8 @@ namespace MueLuTests {
 
             RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
             RCP<RFactory>          Rfact = rcp( new TransPFactory() );
-            RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
             RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
-            PRfact->SetMaxCoarseSize(1);
+            H->SetMaxCoarseSize(1);
 
             // setup smoothers
             Teuchos::ParameterList smootherParamList;
@@ -319,7 +296,7 @@ namespace MueLuTests {
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
             Teuchos::ParameterList status;
-            status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+            status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
 
             SmootherFactory coarseSolveFact(smooProto);
             H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);

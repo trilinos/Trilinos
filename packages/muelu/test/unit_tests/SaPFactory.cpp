@@ -51,7 +51,7 @@ namespace MueLuTests {
         Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 
         // run Epetra and Tpetra test
-        for (int run = 0; run < 2; run++)
+        for (int run = 0; run < 2; run++) //TODO: create a subfunction instead or Tuple of UnderlyingLib
         {
             if (run == 0) lib = Xpetra::UseEpetra;
             else lib = Xpetra::UseTpetra;
@@ -79,12 +79,8 @@ namespace MueLuTests {
             Finest->Set("A",Op);                      // set fine level matrix
             Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
-            // prepare default factory handler for graph
-            RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-            defHandler->SetDefaultFactory("Graph",rcp(new CoalesceDropFactory()));
-
             // fill hierarchy
-            RCP<Hierarchy> H = rcp( new Hierarchy(defHandler) );
+            RCP<Hierarchy> H = rcp( new Hierarchy() );
             H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
             H->SetLevel(Finest); // first associate level with hierarchy (for defaultFactoryHandler!)
 
@@ -98,9 +94,8 @@ namespace MueLuTests {
             RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
             RCP<SaPFactory>         Pfact = rcp( new SaPFactory(Ptentfact));
             RCP<RFactory>           Rfact = rcp( new TransPFactory() );
-            RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
             RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
-            PRfact->SetMaxCoarseSize(1);
+            H->SetMaxCoarseSize(1);
 
             // setup smoothers
             Teuchos::ParameterList smootherParamList;
@@ -112,12 +107,12 @@ namespace MueLuTests {
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
             Teuchos::ParameterList status;
-            status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+            status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
 
             SmootherFactory coarseSolveFact(smooProto);
             H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
-            // test some basic multgrid data
+            // test some basic multigrid data
             RCP<Level> coarseLevel = H->GetLevel(2);
             RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P",NULL);
             RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R",NULL);

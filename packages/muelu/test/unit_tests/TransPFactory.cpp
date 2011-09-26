@@ -28,19 +28,8 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    // build test-specific default factory handler
-    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
-
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
-
-    // overwrite default factory handler...
-    //fineLevel.SetDefaultFactoryHandler(defHandler);
-    //coarseLevel.SetDefaultFactoryHandler(defHandler);
+    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // Test of createTwoLevelHierarchy: to be moved...
     TEST_EQUALITY(fineLevel.GetLevelID(), 1);
