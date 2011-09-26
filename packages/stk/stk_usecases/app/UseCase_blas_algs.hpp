@@ -12,6 +12,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -225,11 +227,15 @@ dot( const stk::AlgorithmRunnerInterface & alg_runner ,
   stk::mesh::PartVector empty_union_vector;
   alg_runner.run( select_owned , empty_union_vector, all_entity_buckets , alg_dot , & local_dot );
 
+#ifdef STK_HAS_MPI
   // Global sum
 
   MPI_Comm comm = bulk.parallel();
 
   MPI_Allreduce(& local_dot , & global_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  global_dot = local_dot;
+#endif
 
   return global_dot ;
 }
@@ -303,11 +309,15 @@ norm2( const stk::AlgorithmRunnerInterface & alg_runner ,
   stk::mesh::PartVector empty_union_vector;
   alg_runner.run( select_owned , empty_union_vector, all_entity_buckets , alg_norm2 , & local_dot );
 
+#ifdef STK_HAS_MPI
   // Global sum
 
   MPI_Comm comm = bulk.parallel();
 
   MPI_Allreduce(& local_dot , & global_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  global_dot = local_dot;
+#endif
 
   return std::sqrt( global_dot ) ;
 }
