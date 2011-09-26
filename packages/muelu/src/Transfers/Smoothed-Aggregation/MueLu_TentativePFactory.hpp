@@ -241,8 +241,6 @@ namespace MueLu {
 
       coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
 
-      int mypid = fineA.getRowMap()->getComm()->getRank();
-
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
       for (size_t i=0; i<NSDim; ++i)
         if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
