@@ -330,21 +330,21 @@ int main( int argc, char* argv[] )
     const std::string s1_n = "fabs(scalar)*global_dim";
     const Scalar s1 = fabs(scalar)*global_dim;
     
-    if(!testRelErr("Thyra::norm_1(ev1)",ev1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ev1)",ev1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nev1 =\n" << *ev1;
-    if(!testRelErr("Thyra::norm_1(ev2)",ev2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ev2)",ev2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nev2 =\n" << *ev2;
-    if(!testRelErr("Thyra::norm_1(nev1)",nev1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(nev1)",nev1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nnev2 =\n" << *ev1;
-    if(!testRelErr("Thyra::norm_1(nev2)",nev2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(nev2)",nev2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nnev2 =\n" << *nev2;
-    if(!testRelErr("Thyra::norm_1(eV1)",eV1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV1)",eV1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV1 =\n" << *eV1;
-    if(!testRelErr("Thyra::norm_1(eV2)",eV2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV2)",eV2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV2 =\n" << *eV2;
-    if(!testRelErr("Thyra::norm_1(neV1)",neV1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV1)",neV1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV1 =\n" << *neV1;
-    if(!testRelErr("Thyra::norm_1(neV2)",neV2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV2)",neV2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV2 =\n" << *neV2;
 
     if(verbose) *out << "\n*** (B.2) Test RTOps with two or more arguments\n";
@@ -354,7 +354,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( ev1.ptr(), *ev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nev1 =\n" << *ev1;
 
     if(verbose) *out << "\nPerforming eV1 = eV2 ...\n";
@@ -362,7 +362,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( eV1.ptr(), *eV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV1 =\n" << *eV1;
 
     if(verbose) *out << "\nPerforming ev1 = nev2 ...\n";
@@ -370,7 +370,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( ev1.ptr(), *nev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nev1 =\n" << *ev1;
 
     if(verbose) *out << "\nPerforming nev1 = ev2 ...\n";
@@ -378,7 +378,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( nev1.ptr(), *ev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nnev1 =\n" << *nev1;
 
     if(verbose) *out << "\nPerforming nev1 = nev2 ...\n";
@@ -386,7 +386,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( nev1.ptr(), *nev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nnev1 =\n" << *nev1;
 
     if(verbose) *out << "\nPerforming eV1 = neV2 ...\n";
@@ -394,7 +394,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( eV1.ptr(), *neV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV1 =\n" << *eV1;
 
     if(verbose) *out << "\nPerforming neV1 = eV2 ...\n";
@@ -402,7 +402,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( neV1.ptr(), *eV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV1 =\n" << *neV1;
 
     if(verbose) *out << "\nPerforming neV1 = neV2 ...\n";
@@ -410,7 +410,7 @@ int main( int argc, char* argv[] )
      Thyra::assign( neV1.ptr(), *neV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV1 =\n" << *neV1;
 
     Thyra::LinearOpTester<Scalar> linearOpTester;
@@ -428,22 +428,22 @@ int main( int argc, char* argv[] )
     if(verbose) *out << "\n*** (B.3) Test Vector linear operator interface\n";
 
     if(verbose) *out << "\nChecking *out linear operator interface of ev1 ...\n";
-    result = linearOpTester.check(*ev1,verbose?&*out:NULL);
+    result = linearOpTester.check(*ev1,out.ptr());
     if(!result) success = false;
 
     if(verbose) *out << "\nChecking *out linear operator interface of nev1 ...\n";
-    result = linearOpTester.check(*nev1,verbose?&*out:NULL);
+    result = linearOpTester.check(*nev1,out.ptr());
     if(!result) success = false;
 
 
     if(verbose) *out << "\n*** (B.4) Test MultiVector linear operator interface\n";
 
     if(verbose) *out << "\nChecking *out linear operator interface of eV1 ...\n";
-    result = linearOpTester.check(*eV1,verbose?&*out:NULL);
+    result = linearOpTester.check(*eV1,out.ptr());
     if(!result) success = false;
 
     if(verbose) *out << "\nChecking *out linear operator interface of neV1 ...\n";
-    result = linearOpTester.check(*neV1,verbose?&*out:NULL);
+    result = linearOpTester.check(*neV1,out.ptr());
     if(!result) success = false;
 
     const std::string s2_n = "scalar^2*global_dim*num_mv_cols";
@@ -460,7 +460,7 @@ int main( int argc, char* argv[] )
     apply( *eV1, TRANS, *eV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV1'*eV2 =\n" << *T;
 
     if(verbose) *out << "\nPerforming neV1'*eV2 ...\n";
@@ -468,7 +468,7 @@ int main( int argc, char* argv[] )
     apply( *neV1, TRANS, *eV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV1'*eV2 =\n" << *T;
 
     if(verbose) *out << "\nPerforming eV1'*neV2 ...\n";
@@ -476,7 +476,7 @@ int main( int argc, char* argv[] )
     apply( *eV1, TRANS, *neV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\neV1'*neV2 =\n" << *T;
 
     if(verbose) *out << "\nPerforming neV1'*neV2 ...\n";
@@ -484,7 +484,7 @@ int main( int argc, char* argv[] )
     apply( *neV1, TRANS, *neV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nneV1'*neV2 =\n" << *T;
 
 
@@ -561,7 +561,7 @@ int main( int argc, char* argv[] )
     if(verbose) *out << "\n*** (B.7) Test EpetraLinearOp linear operator interface\n";
 
     if(verbose) *out << "\nChecking *out linear operator interface of Op ...\n";
-    result = linearOpTester.check(*Op,verbose?&*out:NULL);
+    result = linearOpTester.check(*Op,out.ptr());
     if(!result) success = false;
 
     RCP<Thyra::VectorBase<Scalar> >
@@ -584,63 +584,63 @@ int main( int argc, char* argv[] )
     apply( *Op, NOTRANS, *ev1, ey.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming eY = 2*Op*eV1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *eV1, eY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*ev1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *ev1, ney.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming neY = 2*Op*eV1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *eV1, neY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming ey = 2*Op*nev1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *nev1, ey.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming eY = 2*Op*neV1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *neV1, eY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*nev1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *nev1, ney.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*nev1 through MultiVector interface ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, static_cast<const Thyra::MultiVectorBase<Scalar>&>(*nev1), Ptr<Thyra::MultiVectorBase<Scalar> >(ney.ptr()), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming neY = 2*Op*neV1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *neV1, neY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
 
     if(verbose) *out << "\n*** (B.9) Testing Multi-vector views with Epetra operator\n";
@@ -667,7 +667,7 @@ int main( int argc, char* argv[] )
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v1=\n" << *eY->subView(col_rng);
-    if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
@@ -675,7 +675,7 @@ int main( int argc, char* argv[] )
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
-    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming neY_v1 = 2*Op*eV1_v1 ...\n";
     timer.start(true);
@@ -683,14 +683,14 @@ int main( int argc, char* argv[] )
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v1=\n" << *eY->subView(col_rng);
-    if(!testRelErr("Thyra::norm_1(neY_v1)",Thyra::norm_1(*neY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neY_v1)",Thyra::norm_1(*neY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming eY_v1 = 2*Op*neV1_v1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *neV1_v1, eY->subView(col_rng).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming neY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
@@ -698,7 +698,7 @@ int main( int argc, char* argv[] )
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
-    if(!testRelErr("Thyra::norm_1(neY_v2)",Thyra::norm_1(*neY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(neY_v2)",Thyra::norm_1(*neY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*neV1_v2 ...\n";
     timer.start(true);
@@ -706,7 +706,7 @@ int main( int argc, char* argv[] )
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
-    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
 
 
     if(verbose) *out << "\n*** (B.10) Testing Vector and MultiVector view creation functions\n";
@@ -724,7 +724,7 @@ int main( int argc, char* argv[] )
       Thyra::assign( createMemberView(T->range(),t_raw).ptr(), scalar );
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       Scalar t_nrm = Thyra::norm_1(*t_view);
-      if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+      if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
 
 /*
@@ -733,7 +733,7 @@ int main( int argc, char* argv[] )
       Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
       t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       t_nrm = Thyra::norm_1(*t_view);
-      if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+      if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
 #endif
 */
@@ -747,7 +747,7 @@ int main( int argc, char* argv[] )
       Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
         T_view = createMembersView(T->range(),static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       Scalar T_nrm = Thyra::norm_1(*T_view);
-      if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+      if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nT_view =\n" << *T_view;
 
 /*
@@ -756,7 +756,7 @@ int main( int argc, char* argv[] )
       Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
       T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       T_nrm = Thyra::norm_1(*T_view);
-      if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+      if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nT_view =\n" << *T_view;
 #endif
 */
@@ -787,14 +787,14 @@ int main( int argc, char* argv[] )
       assign( t1.ptr(), *ev1 );
       if(!testRelErr(
            "sum(t1)",Thyra::sum(*t1),"sum(ev1)",sum(*ev1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(verbose) *out << "\nPerforming T1 = eV1 ...\n";
       assign( T1.ptr(), *eV1 );
       if(!testRelErr(
            "norm_1(T1)",Thyra::norm_1(*T1),"norm_1(eV1)",norm_1(*eV1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(verbose) *out << "\nChecking that t1 and T1 yield the same objects as et1 and eT2 ...\n";
@@ -819,12 +819,12 @@ int main( int argc, char* argv[] )
 
       if(!testRelErr(
            "sum(ct1)",Thyra::sum(*ct1),"sum(ev1)",sum(*ev1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(!testRelErr(
            "norm_1(cT1)",Thyra::norm_1(*cT1),"norm_1(eV1)",norm_1(*eV1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(verbose) *out << "\nChecking that ct1 and cT1 yield the same objects as et1 and eT2 ...\n";
@@ -851,12 +851,12 @@ int main( int argc, char* argv[] )
 
       if(!testRelErr(
            "sum(ett1)",sum(*ett1),"sum(et1)",sum(*et1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(!testRelErr(
            "sum(etT1)",sum(*etT1),"sum(eT1)",sum(*eT1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(verbose) *out << "\nCreating const Epetra_Vector cett1 and Epetra_MultiVector cetT1 objects from clones of t1 and T2 ...\n";
@@ -869,12 +869,12 @@ int main( int argc, char* argv[] )
 
       if(!testRelErr(
            "sum(cett1)",sum(*cett1),"sum(et1)",sum(*et1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
       if(!testRelErr(
            "sum(cetT1)",sum(*cetT1),"sum(eT1)",sum(*eT1)
-           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
+           ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())
         ) success=false;
 
     }
@@ -893,12 +893,12 @@ int main( int argc, char* argv[] )
 
       if(verbose) *out << "\nTesting LinearOpBase interface of diagLOWS ...\n";
 
-      result = linearOpTester.check(*diagLOWS,verbose?&*out:0);
+      result = linearOpTester.check(*diagLOWS, out.ptr());
       if(!result) success = false;
 
       if(verbose) *out << "\nTesting LinearOpWithSolveBase interface of diagLOWS ...\n";
 
-      result = linearOpWithSolveTester.check(*diagLOWS,verbose?&*out:0);
+      result = linearOpWithSolveTester.check(*diagLOWS, &*out);
       if(!result) success = false;
     
     }

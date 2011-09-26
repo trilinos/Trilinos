@@ -223,6 +223,7 @@ void eval_g(
 
 /** \brief Deprecated . */
 template<class Scalar>
+THYRA_DEPRECATED
 void eval_g(
   const ModelEvaluator<Scalar> &model,
   const int l,

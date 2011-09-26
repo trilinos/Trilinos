@@ -112,6 +112,7 @@ void EpetraLinearOp::initialize(
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = true;
   op_ = op;
+  rowMatrix_ = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(op_);
   opTrans_ = opTrans;
   applyAs_ = applyAs;
   adjointSupport_ = adjointSupport;
@@ -153,6 +154,7 @@ void EpetraLinearOp::partiallyInitialize(
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = false;
   op_ = op;
+  rowMatrix_ = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(op_);
   opTrans_ = opTrans;
   applyAs_ = applyAs;
   adjointSupport_ = adjointSupport;
@@ -188,6 +190,7 @@ void EpetraLinearOp::uninitialize(
 
   isFullyInitialized_ = false;
   op_ = Teuchos::null;
+  rowMatrix_ = Teuchos::null;
   opTrans_ = NOTRANS;
   applyAs_ = EPETRA_OP_APPLY_APPLY;
   adjointSupport_ = EPETRA_OP_ADJOINT_SUPPORTED;
@@ -380,7 +383,7 @@ void EpetraLinearOp::applyImpl(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!isFullyInitialized_);
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "EpetraLinearOp::euclideanApply(...)", *this, M_trans, X_in, &*Y_inout
+    "EpetraLinearOp::euclideanApply(...)", *this, M_trans, X_in, Y_inout
     );
   TEST_FOR_EXCEPTION(
     real_M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED,
@@ -541,6 +544,76 @@ void EpetraLinearOp::applyImpl(
   // 2009/04/14: ToDo: This will not reset the transpose flag correctly if an
   // exception is thrown!
 
+}
+
+
+// Protected member functions overridden from ScaledLinearOpBase
+
+
+bool EpetraLinearOp::supportsScaleLeftImpl() const
+{
+  return nonnull(rowMatrix_);
+}
+
+
+bool EpetraLinearOp::supportsScaleRightImpl() const
+{
+  return nonnull(rowMatrix_);
+}
+
+
+void EpetraLinearOp::scaleLeftImpl(const VectorBase<double> &row_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+  const RCP<const Epetra_Vector> row_scaling =
+    get_Epetra_Vector(getRangeMap(), rcpFromRef(row_scaling_in));
+  rowMatrix_->LeftScale(*row_scaling);
+}
+
+
+void EpetraLinearOp::scaleRightImpl(const VectorBase<double> &col_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+  const RCP<const Epetra_Vector> col_scaling =
+    get_Epetra_Vector(getDomainMap(), rcpFromRef(col_scaling_in));
+  rowMatrix_->RightScale(*col_scaling);
+}
+
+
+// Protected member functions overridden from RowStatLinearOpBase
+
+
+bool EpetraLinearOp::rowStatIsSupportedImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat) const
+{
+  if (is_null(rowMatrix_)) {
+    return false;
+  }
+  switch (rowStat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      return true;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return false; // Will never be called!
+}
+
+
+void EpetraLinearOp::getRowStatImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat,
+  const Ptr<VectorBase<double> > &rowStatVec_in
+  ) const
+{
+  using Teuchos::rcpFromPtr;
+  const RCP<Epetra_Vector> rowStatVec =
+    get_Epetra_Vector(getRangeMap(), rcpFromPtr(rowStatVec_in));
+  switch (rowStat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      rowMatrix_->InvRowSums(*rowStatVec);
+      break;
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
 }
 
 

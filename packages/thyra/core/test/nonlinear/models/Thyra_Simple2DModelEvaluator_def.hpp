@@ -47,8 +47,10 @@
 
 
 #include "Thyra_Simple2DModelEvaluator_decl.hpp"
+#include "Thyra_SimpleDenseLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -137,7 +139,9 @@ template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Simple2DModelEvaluator<Scalar>::create_W_op() const
 {
-  return Thyra::createMembers(f_space_, x_space_->dim());
+  return createNonconstSimpleDenseLinearOp<Scalar>(
+    createMembers<Scalar>(f_space_, x_space_->dim())
+    );
 }
 
 
@@ -174,7 +178,37 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::rcp_dynamic_cast;
+
+  const ConstDetachedVectorView<Scalar> x(inArgs.get_x());
+
+  const RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
+
+  if (nonnull(f_out)) {
+    const DetachedVectorView<Scalar> f(f_out);
+    f[0] = x[0] + x[1] * x[1] - p_[0];
+    f[1] = d_ * (x[0] * x[0] - x[1] - p_[1]);
+  }
+
+  if (nonnull(W_out)) {
+    
+    const RCP<SimpleDenseLinearOp<Scalar> > W =
+      rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_out, true);
+    
+    RCP<MultiVectorBase<Scalar> > W_mv = W->getNonconstMultiVector();
+
+    Thyra::DetachedMultiVectorView<Scalar> W_dmvv(W_mv);
+
+    const Scalar one = 1.0, two = 2.0;
+    
+    W_dmvv(0, 0) = one;
+    W_dmvv(0, 1) = two * x[1];
+    W_dmvv(1, 0) = d_ * two * x[0];
+    W_dmvv(1, 1) = -d_;
+
+  }
+  
 }
 
 
@@ -205,6 +239,7 @@ Simple2DModelEvaluator<Scalar>::Simple2DModelEvaluator()
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
+  outArgs.setSupports(MEB::OUT_ARG_W_op);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;

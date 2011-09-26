@@ -118,6 +118,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  SimpleDenseLinearOpUnitTests
+  SOURCES SimpleDenseLinearOp_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  )
+
+
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  DefaultSpmdVectorSpace_ParallelUnitTest
 #  SOURCES

@@ -39,87 +39,81 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
-#define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#ifndef THYRA_ROW_SUM_LINEAR_OP_BASE_HPP
+#define THYRA_ROW_SUM_LINEAR_OP_BASE_HPP
 
-
-#include "Thyra_MultiVectorRandomizerBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 
 namespace Thyra {
 
 
-/** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
- * compatible with all <tt>MultiVectorBase</tt> objects.
- *
- * This class simply uses <tt>randomize(-1,+1,mv)</tt> which is based on RTOp
- * and simply creates random coefficients between -1 and +1.
- *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
- */
-template<class Scalar>
-class UniversalMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
-public:
+namespace RowStatLinearOpBaseUtils {
 
-  /** \name Overridden from MultiVectorRandomizerBase */
-  //@{
 
-  /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
-
-  //@}
-
-private:
-
-  /** \name Overridded private functions */
-  //@{
-
-  /** \brief . */
-  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
-
-  //@}
-  
+/** \brief Rows statistic requested. */
+enum ERowStat {
+  /** \brief Inverse row sums. */
+  ROW_STAT_INV_ROW_SUM
 };
 
 
-/** \brief Nonmember constructor.
+} // namespace RowStatLinearOpBaseUtils
+
+
+/** \brief Interface for exxtracting row statistics as a <tt>VectorBase</tt>
+ * from a supporting <tt>LinearOpBase</tt> object.
  *
- * \relates UniversalMultiVectorRandomizer
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
-RCP<UniversalMultiVectorRandomizer<Scalar> >
-universalMultiVectorRandomizer()
-{
-  return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
-}
+class RowStatLinearOpBase : virtual public LinearOpBase<Scalar> {
+public:
+
+  /** @name Non-virtual public interface functions. */
+  //@{
+
+  /** \brief Determine if a given row stat is supported. */
+  bool rowStatIsSupported(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat
+    ) const
+    { return rowStatIsSupportedImpl(rowStat); }
+
+  /** \brief Get some statistics about a supported row.
+   *
+   * \precondition <tt>this->rowStatIsSupported(rowStat)==true</tt>
+   */
+  void getRowStat(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec
+    ) const
+    {
+      TEUCHOS_ASSERT(rowStatIsSupported(rowStat));
+      getRowStatImpl(rowStat, rowStatVec);
+    }
+
+  //@}
+
+protected:
+
+  /** \name Protected virtual functions to be overridden by subclasses. */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const = 0;
+
+  /** \brief . */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec) const = 0;
+
+  //@}
+
+};
 
 
-// //////////////////////////////
-// Definitions
+}	// end namespace Thyra
 
 
-template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
-{
-  return true;
-}
-
-
-// Overridded private functions
-
-
-template<class Scalar>
-void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv )
-{
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
-}
-
-
-} // namespace Thyra
-
-
-#endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#endif	// THYRA_SCALED_LINEAR_OP_BASE_HPP

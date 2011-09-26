@@ -45,7 +45,9 @@
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief <tt>MultiVectorRandomizerBase</tt> subclass that returns a revolving
  * list of preset <tt>MultiVectorBase</tt> objects.
@@ -77,23 +79,31 @@ public:
 
   /** \brief . */
   bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
+
+  //@}
+
+private:
+
+  /** \name Overridded private functions */
+  //@{
+
   /** \brief . */
-  void randomize( MultiVectorBase<Scalar> *mv );
+  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
 
   //@}
 
 private:
 
   typedef std::vector<Teuchos::RCP<const MultiVectorBase<Scalar> > > multiVecs_t;
-  
   multiVecs_t  multiVecs_;
-
   int          curr_mv_i_;
   
 };
 
+
 // //////////////////////////////
 // Definitions
+
 
 template<class Scalar>
 ListedMultiVectorRandomizer<Scalar>::ListedMultiVectorRandomizer(
@@ -103,6 +113,7 @@ ListedMultiVectorRandomizer<Scalar>::ListedMultiVectorRandomizer(
 {
   initialize(multiVecs,numMultiVecs);
 }
+
 
 template<class Scalar>
 void ListedMultiVectorRandomizer<Scalar>::initialize(
@@ -115,7 +126,9 @@ void ListedMultiVectorRandomizer<Scalar>::initialize(
   curr_mv_i_ = 0;
 }
 
+
 // Overridden from MultiVectorRandomizerBase
+
 
 template<class Scalar>
 bool ListedMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
@@ -123,11 +136,15 @@ bool ListedMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Sc
   return multiVecs_[curr_mv_i_]->range()->isCompatible(space);
 }
 
+
+// Overridded private functions
+
+
 template<class Scalar>
-void ListedMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv )
+void ListedMultiVectorRandomizer<Scalar>::randomizeImpl(
+  const Ptr<MultiVectorBase<Scalar> > &mv)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( mv==NULL );
   TEST_FOR_EXCEPT( multiVecs_.size()==0 );
 #endif
   const Teuchos::RCP<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
@@ -142,6 +159,8 @@ void ListedMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv
     ++curr_mv_i_;
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_LISTED_MULTI_VECTOR_RANDOMIZER_HPP

@@ -231,6 +231,7 @@ public:
   //@{
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const int numMembers
@@ -239,6 +240,7 @@ public:
     { initialize(productSpace_in, numMembers); }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
@@ -247,6 +249,7 @@ public:
     { initialize(productSpace_in, multiVecs); }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs

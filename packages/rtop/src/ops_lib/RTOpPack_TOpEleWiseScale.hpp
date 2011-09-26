@@ -1,8 +1,9 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
+// RTOp: Interfaces and Support Software for Vector Reduction Transformation
+//       Operations
+//                Copyright (2006) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,27 +35,50 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
 // 
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_TestingTools.hpp"
+#ifndef RTOPPACK_TOP_ELE_WISE_SCALE_HPP
+#define RTOPPACK_TOP_ELE_WISE_SCALE_HPP
 
-bool Thyra::testBoolExpr(
-  const std::string &boolExprName,
-  const bool &boolExpr,
-  const bool &boolExpected,
-  const Ptr<std::ostream> &out,
-  const std::string &li
-  )
+#include "RTOpPack_RTOpTHelpers.hpp"
+
+
+namespace RTOpPack {
+
+
+/** \brief Element-wise vector scaling op for TOpEleWiseScaling. */
+template<class Scalar>
+class TOpEleWiseScaleEleWiseTransformation
 {
-  const bool success = ( boolExpr == boolExpected );
-  if (nonnull(out)) {
-    *out
-      << std::endl
-      << li << "Check: " << boolExprName << " = " << boolExpr << " == " << boolExpected
-      << " : " << passfail(success) << std::endl;
-  }
-  return success;
-}
+public:
+  void operator()( const Scalar &v0, Scalar &z0 ) const
+    {
+      z0 *= v0;
+    }
+private:
+  Scalar alpha_;
+};
+
+
+/** \brief Element-wise vector scaling: <tt>z0[i] *= v0[i], i=0...n-1</tt>.
+ */
+template<class Scalar>
+class TOpEleWiseScale
+  : public TOp_1_1_Base<Scalar, TOpEleWiseScaleEleWiseTransformation<Scalar> >
+{
+public:
+  /** \brief . */
+  TOpEleWiseScale()
+    {
+      this->setOpNameBase("TOpEleWiseScale");
+    }
+};
+
+
+} // namespace RTOpPack
+
+
+#endif // RTOPPACK_TOP_ELE_WISE_SCALE_HPP

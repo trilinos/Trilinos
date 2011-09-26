@@ -104,34 +104,12 @@ PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
 # "experimental."  See the comments above on "experimental" code.
 #
 SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
-APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
-  BelosAkxFactory.hpp
-  BelosAkx.hpp
-  BelosBlockGCRODRIter.hpp
-  BelosBlockGCRODRSolMgr.hpp
-  BelosCaGmres.hpp
-  BelosGmresBaseFactory.hpp
-  BelosGmresBase.hpp
-  BelosGmresBaseIteration.hpp
-  BelosGmresInnerSolver.hpp
-  BelosGmresSolMgr.hpp
-  BelosInnerSolveResult.hpp
-  BelosInnerSolver.hpp
-  BelosMonomialOpAkx.hpp
-  BelosNewtonBasis.hpp
-  BelosNewtonOpAkx.hpp
-  BelosOpAkx.hpp
-  BelosStandardGmres.hpp
-)
 
 #
 # List of all source files in belos/src that are marked
 # "experimental."
 #
 SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
-APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
-  BelosInnerSolveResult.cpp
-)
 
 #
 # Exclude experimental header and source files, along with test

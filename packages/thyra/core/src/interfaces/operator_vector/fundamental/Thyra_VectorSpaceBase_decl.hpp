@@ -727,7 +727,7 @@ public:
   //@{
 
   /** \brief Deprecated . */
-  void scalarProds(
+  THYRA_DEPRECATED void scalarProds(
     const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
     Scalar scalarProds[]
     ) const;

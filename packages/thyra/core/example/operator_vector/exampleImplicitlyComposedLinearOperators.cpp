@@ -290,7 +290,7 @@ int exampleImplicitlyComposedLinearOperators(
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME))
     linearOpTester.dump_all(true);
 
-  const bool result = linearOpTester.check(*M,&out);
+  const bool result = linearOpTester.check(*M, Teuchos::inOutArg(out));
 
   return result;
 

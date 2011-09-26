@@ -367,6 +367,7 @@ void V_StVpV( const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void norms( const MultiVectorBase<Scalar>& V,
   typename ScalarTraits<Scalar>::magnitudeType norms_out[] )
 { norms(V, Teuchos::arrayView(norms_out, V.domain()->dim())); }
@@ -374,6 +375,7 @@ void norms( const MultiVectorBase<Scalar>& V,
 
 /** \brief Deprecated. */
 template<class Scalar, class NormOp>
+THYRA_DEPRECATED
 void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
   typename ScalarTraits<Scalar>::magnitudeType norms_out[] )
 { reductions(V, op, Teuchos::arrayView(norms_out, V.domain()->dim())); }
@@ -381,6 +383,7 @@ void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void norms_1( const MultiVectorBase<Scalar>& V,
   typename ScalarTraits<Scalar>::magnitudeType norms_out[] )
 { norms_1(V, Teuchos::arrayView(norms_out, V.domain()->dim())); }
@@ -388,6 +391,7 @@ void norms_1( const MultiVectorBase<Scalar>& V,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void norms_2( const MultiVectorBase<Scalar>& V,
   typename ScalarTraits<Scalar>::magnitudeType norms_out[] )
 { norms_2(V, Teuchos::arrayView(norms_out, V.domain()->dim())); }
@@ -395,6 +399,7 @@ void norms_2( const MultiVectorBase<Scalar>& V,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void norms_inf( const MultiVectorBase<Scalar>& V,
   typename ScalarTraits<Scalar>::magnitudeType norms_out[] )
 { norms_inf<Scalar>(V, Teuchos::arrayView(norms_out, V.domain()->dim())); }
@@ -402,6 +407,7 @@ void norms_inf( const MultiVectorBase<Scalar>& V,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
   Scalar dots_out[] )
 { dots<Scalar>(V1, V2, Teuchos::arrayView(dots_out, V1.domain()->dim())); }
@@ -409,18 +415,21 @@ void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void sums( const MultiVectorBase<Scalar>& V, Scalar sums_out[] )
 { sums<Scalar>(V, Teuchos::arrayView(sums_out, V.domain()->dim())); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void scale( Scalar alpha, MultiVectorBase<Scalar>* V )
 { scale(alpha, Teuchos::ptr(V)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U,
   MultiVectorBase<Scalar>* V )
 { scaleUpdate(a, U, Teuchos::ptr(V)); }
@@ -428,24 +437,28 @@ void scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void assign( MultiVectorBase<Scalar>* V, Scalar alpha )
 { assign(Teuchos::ptr(V), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void assign( MultiVectorBase<Scalar>* V, const MultiVectorBase<Scalar>& U )
 { assign(Teuchos::ptr(V), U); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
 { update(alpha, U, Teuchos::ptr(V)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void update( const Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U,
   MultiVectorBase<Scalar>* V )
 { update(Teuchos::arrayView(alpha, U.domain()->dim()), beta, U, Teuchos::ptr(V)); }
@@ -453,6 +466,7 @@ void update( const Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta,
   MultiVectorBase<Scalar>* V )
 { update(U, Teuchos::arrayView(alpha, U.domain()->dim()), beta, Teuchos::ptr(V)); }
@@ -460,6 +474,7 @@ void update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void linear_combination(
   const int m
   ,const Scalar alpha[]
@@ -478,30 +493,35 @@ void linear_combination(
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
 { randomize(l, u, Teuchos::ptr(V)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vt_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
 { Vt_S(Teuchos::ptr(Z), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vp_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
 { Vp_S(Teuchos::ptr(Z), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vp_V( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X )
 { Vp_V(Teuchos::ptr(Z), X); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X,
   const MultiVectorBase<Scalar>& Y )
 { V_VpV(Teuchos::ptr(Z), X, Y); }
@@ -509,12 +529,14 @@ void V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_VmV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
 { V_VmV(Teuchos::ptr(Z), X, Y); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_StVpV(
   MultiVectorBase<Scalar>* Z, const Scalar &alpha,
   const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 

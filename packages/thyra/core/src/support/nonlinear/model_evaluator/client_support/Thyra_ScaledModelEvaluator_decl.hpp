@@ -39,87 +39,70 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
-#define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#ifndef THYRA_SCALED_MODEL_EVALUATOR_HPP
+#define THYRA_SCALED_MODEL_EVALUATOR_HPP
 
-
-#include "Thyra_MultiVectorRandomizerBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
 namespace Thyra {
 
 
-/** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
- * compatible with all <tt>MultiVectorBase</tt> objects.
+/** \brief This class decorates a ModelEvaluator and returns scaled
+ * residual and Jacobian values.
  *
- * This class simply uses <tt>randomize(-1,+1,mv)</tt> which is based on RTOp
- * and simply creates random coefficients between -1 and +1.
+ * Given a scaling vector <tt>s</tt>, this object is treated as a diagonal
+ * scaling matrix and applied to <tt>x -> Sf(x)</tt> and <tt>x -> sW</tt>.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
-class UniversalMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
+class ScaledModelEvaluator : 
+    virtual public ModelEvaluatorDelegatorBase<Scalar>
+{
 public:
-
-  /** \name Overridden from MultiVectorRandomizerBase */
-  //@{
+  
+  /** \brief Constructs to uninitialized */
+  ScaledModelEvaluator();
+  
+  /** \brief . */
+  std::string description() const;
 
   /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
-
-  //@}
+  void set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling);
 
 private:
 
-  /** \name Overridded private functions */
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
   /** \brief . */
-  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
+  void evalModelImpl(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
 
   //@}
   
+private:
+
+  //* Diagonal scaling vector */
+  RCP<const Thyra::VectorBase<Scalar> > f_scaling_;
+
 };
 
 
-/** \brief Nonmember constructor.
- *
- * \relates UniversalMultiVectorRandomizer
- */
+/** \brief Nonmember constructor. */
 template<class Scalar>
-RCP<UniversalMultiVectorRandomizer<Scalar> >
-universalMultiVectorRandomizer()
+RCP<ScaledModelEvaluator<Scalar> >
+createNonconstScaledModelEvaluator(const RCP<ModelEvaluator<Scalar > > &model)
 {
-  return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
-}
-
-
-// //////////////////////////////
-// Definitions
-
-
-template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
-{
-  return true;
-}
-
-
-// Overridded private functions
-
-
-template<class Scalar>
-void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv )
-{
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
+  RCP<ScaledModelEvaluator<Scalar> > srme(new ScaledModelEvaluator<Scalar>);
+  srme->initialize(model);
+  return srme;
 }
 
 
 } // namespace Thyra
 
 
-#endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#endif // THYRA_SCALED_MODEL_EVALUATOR_HPP

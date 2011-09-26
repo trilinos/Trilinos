@@ -66,19 +66,6 @@ The documentation for %Thyra is broken up into a number of different doxygen
 collections as described in the next section.
 
 
-\section thyra_software_sec Thyra Software Package Documentation Collections
-
-The Doxygen-generated documentation is broken up into a number of different
-doxygen collections in an attempt to make each individual collection more
-manageable to browse and comprehend.  To access each separate collection, just
-click on the [doxygen collection] next to each header below.
-
-The thrya package is broadly divided into interoperability interfaces and
-support software and the directory structure and the doxygen documentation is
-also divided in this way.  This organization mirrors the <a
-href="../../browser/doc/html/dirs.html">directory structure of thyra</a>.
-
-
 \subsection thyra_interfaces_sec Thyra interoperability interfaces
 
 Module: \ref Thyra_interfaces_grp

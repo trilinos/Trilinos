@@ -39,87 +39,101 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
-#define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#ifndef THYRA_SCALED_LINEAR_OP_BASE_HPP
+#define THYRA_SCALED_LINEAR_OP_BASE_HPP
 
-
-#include "Thyra_MultiVectorRandomizerBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 
 namespace Thyra {
 
 
-/** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
- * compatible with all <tt>MultiVectorBase</tt> objects.
+/** \brief Applies left or right sclaing to the linear operator.
  *
- * This class simply uses <tt>randomize(-1,+1,mv)</tt> which is based on RTOp
- * and simply creates random coefficients between -1 and +1.
+ * This interface represents a linear operator <tt>M</tt> that explicitly
+ * applies left or right scaling by a diagonal (vector) operator <tt>d</tt>.
+ #
+ * Left scaling:
+ * 
+ \verbatim
+ M = dM
+ \endverbatim
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ * or Right scaling:
+ *
+ \verbatim
+ M = Md
+ \endverbatim
+ *
+ * where:
+ *
+ * <ul>
+ *
+ * <li> <tt>M</tt> is the <tt>LinearOp</tt> object,
+ *
+ * <li> <tt>d</tt> is the <tt>VectorBase</tt> object representing the diagonal
+ * scaling operator.
+ *
+ * </ul>
+ *
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
-class UniversalMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
+class ScaledLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
-  /** \name Overridden from MultiVectorRandomizerBase */
+  /** @name Non-virtual public interface functions. */
   //@{
 
-  /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
+  /** \brief Determines if this objects supports left scaling.
+   */
+  bool supportsScaleLeft() const
+    { return supportsScaleLeftImpl(); }
+
+  /** \brief Determines if this objects supports right scaling.
+   */
+  bool supportsScaleRight() const
+    { return supportsScaleRightImpl(); }
+
+  /** \brief Left scales operator with diagonal scaling operator.
+   *
+   * \precondtion <tt>supportsScaleLeft()==true</tt>
+   */
+  void scaleLeft(const VectorBase<Scalar> &row_scaling)
+    { scaleLeftImpl(row_scaling); }
+
+  /** \brief Right scales operator with diagonal scaling operator.
+   *
+   * \precondtion <tt>supportsScaleRight()==true</tt>
+   */
+  void scaleRight(const VectorBase<Scalar> &col_scaling)
+    { scaleRightImpl(col_scaling); }
 
   //@}
 
-private:
+protected:
 
-  /** \name Overridded private functions */
+  /** \name Protected virtual functions to be overridden by subclasses. */
   //@{
 
   /** \brief . */
-  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
+  virtual bool supportsScaleLeftImpl() const = 0;
+
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const = 0;
+
+  /** \brief . */
+  virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling) = 0;
+
+  /** \brief . */
+  virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling) = 0;
 
   //@}
-  
+
 };
 
 
-/** \brief Nonmember constructor.
- *
- * \relates UniversalMultiVectorRandomizer
- */
-template<class Scalar>
-RCP<UniversalMultiVectorRandomizer<Scalar> >
-universalMultiVectorRandomizer()
-{
-  return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
-}
+}	// end namespace Thyra
 
 
-// //////////////////////////////
-// Definitions
-
-
-template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
-{
-  return true;
-}
-
-
-// Overridded private functions
-
-
-template<class Scalar>
-void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv )
-{
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
-}
-
-
-} // namespace Thyra
-
-
-#endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#endif	// THYRA_SCALED_LINEAR_OP_BASE_HPP

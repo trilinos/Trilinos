@@ -93,6 +93,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
 {
 
   using Teuchos::tuple;
+  using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
@@ -136,8 +137,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
     rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(
       ConverterT::getTpetraOperator(W_op));
 
-  ArrayRCP<const int> row_indices;
-  ArrayRCP<const Scalar> row_values;
+  ArrayView<const int> row_indices;
+  ArrayView<const Scalar> row_values;
 
   W_tpetra->getLocalRowView(0, row_indices, row_values);
   TEST_EQUALITY( row_indices[0], 0 );

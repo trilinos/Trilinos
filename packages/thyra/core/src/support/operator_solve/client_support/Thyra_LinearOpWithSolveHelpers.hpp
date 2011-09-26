@@ -73,7 +73,7 @@ void assertSolveSupports(
  * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
-void assertSupportsSolveMeasureType(
+THYRA_DEPRECATED void assertSupportsSolveMeasureType(
   const LinearOpWithSolveBase<Scalar> &lows,
   const EOpTransp M_trans,
   const SolveMeasureType &solveMeasureType

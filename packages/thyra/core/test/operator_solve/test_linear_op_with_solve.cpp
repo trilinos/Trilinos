@@ -79,6 +79,7 @@ bool run_linear_op_with_solve_tests(
 
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::inOutArg;
   using Teuchos::OSTab;
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
@@ -121,7 +122,7 @@ bool run_linear_op_with_solve_tests(
   linearOpTester.dump_all(dumpAll);
   {
     OSTab tab(out);
-    const bool result = linearOpTester.check(*M_lows, &out);
+    const bool result = linearOpTester.check(*M_lows, inOutArg(out));
     if(!result) success = false;
   }
 
@@ -146,7 +147,7 @@ bool run_linear_op_with_solve_tests(
   RCP<const Thyra::LinearOpBase<Scalar> > invM = inverse(M_lows);
   {
     OSTab tab(out);
-    const bool result = linearOpTester.check(*invM, &out);
+    const bool result = linearOpTester.check(*invM, inOutArg(out));
     if(!result) success = false;
   }
 
@@ -171,7 +172,7 @@ bool run_linear_op_with_solve_tests(
       out << "\nG.1.b) Testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
         OSTab tab3(out);
-        const bool result = linearOpTester.check(*M_lows_adj, &out);
+        const bool result = linearOpTester.check(*M_lows_adj, inOutArg(out));
         if(!result) success = false;
       }
       
@@ -186,7 +187,7 @@ bool run_linear_op_with_solve_tests(
       const RCP<const LinearOpBase<Scalar> > M_adj = Thyra::adjoint<Scalar>(M);
       {
         OSTab tab3(out);
-        const bool result = linearOpTester.compare(*M_lows_adj, *M_adj, &out);
+        const bool result = linearOpTester.compare(*M_lows_adj, *M_adj, inOutArg(out));
         if(!result) success = false;
       }
 
@@ -211,7 +212,7 @@ bool run_linear_op_with_solve_tests(
       out << "\nG.2.b) Only testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj_nonconst ...\n";
       {
         OSTab tab4(out);
-        const bool result = linearOpTester.check(*M_lows_adj_nonconst, &out);
+        const bool result = linearOpTester.check(*M_lows_adj_nonconst, inOutArg(out));
         if(!result) success = false;
       }
     }

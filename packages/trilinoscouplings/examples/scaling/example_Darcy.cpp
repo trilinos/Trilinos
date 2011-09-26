@@ -373,6 +373,7 @@ int main(int argc, char *argv[]) {
                          &numSideSetsGlobal);
 
 
+
     long long * block_ids = new long long [numElemBlk];
     error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
@@ -1656,6 +1657,17 @@ int main(int argc, char *argv[]) {
    RCP<const Epetra_CrsMatrix> A00=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(0,0));
    RCP<const Epetra_CrsMatrix> A11=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(1,1));
 
+#define USE_AMESOS_FOR_BLOCKS
+
+#ifdef USE_AMESOS_FOR_BLOCKS
+   // Do Amesos precond for both blocks
+   Teuchos::ParameterList ListA;
+   ListA.set("max levels",1);
+   ListA.set("coarse: type","Amesos-KLU");
+   ListA.set("ML output",10);
+   RCP<MultiLevelPreconditioner> Prec0=rcp(new MultiLevelPreconditioner(*A00,ListA));
+   RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListA));
+#else
    // Make H(Div)  preconditioner A00
    Teuchos::ParameterList ListHdiv, List_Coarse;
    List_Coarse.set("PDE equations",3);
@@ -1674,6 +1686,7 @@ int main(int argc, char *argv[]) {
    ListHdiv.setName("graddiv list");
    ListHdiv.set("graddiv: 11list",List11);
    ListHdiv.set("graddiv: 22list",List22);
+   ListHdiv.set("smoother: sweeps",4);
 
    SetDefaultsGradDiv(ListHdiv,false);
    RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,*A11,ListHdiv));
@@ -1681,10 +1694,11 @@ int main(int argc, char *argv[]) {
    // Make H(Grad) preconditioner A11 
    Teuchos::ParameterList ListHgrad;
    ML_Epetra::SetDefaults("SA",ListHgrad);
-   ListHgrad.set("smoother: sweeps",2);
+   ListHgrad.set("smoother: sweeps",4);
    ListHgrad.set("coarse: type","Amesos-KLU");
    ListHgrad.set("ML output",10);
-   RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));					       
+   RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));
+#endif
 
    // Build the linear ops with the Apply/ApplyInverse switcheroo
    RCP<const EpetraLinearOp> invD0=epetraLinearOp(Prec0, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
@@ -1726,7 +1740,7 @@ int main(int argc, char *argv[]) {
   solver.SetAztecOption(AZ_output, 10);
 
   //solve linear system
-  solver.Iterate(1000, 1e-10);
+  solver.Iterate(1000, 1e-8);
   
   Epetra_FEVector globalSoln(globalMapJoint);
   globalSoln = xx;

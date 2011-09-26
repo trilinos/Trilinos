@@ -260,26 +260,28 @@ public:
   /** \name Deprecated. */
   //@{
 
-
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultMultipliedLinearOp(
     const int numOps_in,
     const RCP<LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(numOps_in, Ops);
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultMultipliedLinearOp(
     const int numOps_in,
     const RCP<const LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(numOps_in, Ops);
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   void initialize(
     const int numOps_in,
     const RCP<LinearOpBase<Scalar> > Ops[]
@@ -289,6 +291,7 @@ public:
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   void initialize(
     const int numOps_in,
     const RCP<const LinearOpBase<Scalar> > Ops[]

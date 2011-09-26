@@ -68,9 +68,10 @@ int main(int argc, char** argv)
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
   if (mesh.empty()) {
-    std::cerr << "\nERROR: The --mesh option is required\n";
-    std::cerr << "\nApplication " << desc << "\n";
-    std::exit(EXIT_FAILURE);
+    std::cout << "\nERROR: The --mesh option is required\n";
+    std::cout << "\nApplication " << desc << "\n";
+    std::cout << "STKUNIT_ALL_PASS" << std::endl;
+    return 0;
   }
 
   type = "exodusii";
@@ -112,5 +113,6 @@ namespace {
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
     stk::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
+    std::cout << "STKUNIT_ALL_PASS" << std::endl;
   }
 }

@@ -126,6 +126,29 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 # in the build or install unless the Belos_ENABLE_Experimental CMake
 # option was set at configure time.
 #
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+  BelosAkxFactory.hpp
+  BelosAkx.hpp
+  BelosBlockGCRODRIter.hpp
+  BelosBlockGCRODRSolMgr.hpp
+  BelosCaGmres.hpp
+  BelosGmresBaseFactory.hpp
+  BelosGmresBase.hpp
+  BelosGmresBaseIteration.hpp
+  BelosGmresInnerSolver.hpp
+  BelosGmresSolMgr.hpp
+  BelosInnerSolveResult.hpp
+  BelosInnerSolver.hpp
+  BelosMonomialOpAkx.hpp
+  BelosNewtonBasis.hpp
+  BelosNewtonOpAkx.hpp
+  BelosOpAkx.hpp
+  BelosStandardGmres.hpp
+)
+
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
+  BelosInnerSolveResult.cpp
+)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 IF(${PACKAGE_NAME}_ENABLE_Experimental)

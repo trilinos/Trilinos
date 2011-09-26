@@ -104,7 +104,7 @@ bool run_product_space_tests(
   if(out.get()) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
   RCP<Thyra::DefaultProductVectorSpace<Scalar> > ps =
-    rcp(new Thyra::DefaultProductVectorSpace<Scalar>(numBlocks,&vecSpaces[0]));
+    Thyra::productVectorSpace<Scalar>(vecSpaces());
 
   if(out.get()) *out << "\nps->numBlocks()=";
   result = ps->numBlocks() == numBlocks;
@@ -136,7 +136,7 @@ bool run_product_space_tests(
     blockVecSpaces[i] = ps;
 
   RCP<Thyra::DefaultProductVectorSpace<Scalar> > pps =
-    rcp(new Thyra::DefaultProductVectorSpace<Scalar> (numBlocks,&blockVecSpaces[0]));
+    Thyra::productVectorSpace<Scalar>(blockVecSpaces());
   
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of pps ...\n";
   TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*pps, out.get()), *out, success);

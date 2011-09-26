@@ -65,12 +65,12 @@ template <bool isComparable, class Scalar>
 class VectorStdOpsTesterComparable {
 public:
   static bool checkComparableStdOps(
-    const VectorSpaceBase<Scalar>                                 &vecSpc
-    ,const Ptr<VectorBase<Scalar> >                               &z
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &error_tol
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &warning_tol
-    ,std::ostream                                                 *out
-    ,const bool                                                   &dumpAll
+    const VectorSpaceBase<Scalar> &vecSpc,
+    const Ptr<VectorBase<Scalar> > &z,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &error_tol,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &warning_tol,
+    const Ptr<std::ostream> &out,
+    const bool &dumpAll
     )
     {
       return Teuchos::ScalarTraits<Scalar>::ThisShouldNotCompile();
@@ -82,15 +82,17 @@ template <class Scalar>
 class VectorStdOpsTesterComparable<false,Scalar> {
 public:
   static bool checkComparableStdOps(
-    const VectorSpaceBase<Scalar>                                 &vecSpc
-    ,const Ptr<VectorBase<Scalar> >                               &z
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &error_tol
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &warning_tol
-    ,std::ostream                                                 *out
-    ,const bool                                                   &dumpAll
+    const VectorSpaceBase<Scalar> &vecSpc,
+    const Ptr<VectorBase<Scalar> > &z,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &error_tol,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &warning_tol,
+    const Ptr<std::ostream> &out,
+    const bool &dumpAll
     )
     {
-      if(out) *out << "\nThis scalar type does not support comparable operations so we can not test min(), max() and other such functions.\n";
+      if (nonnull(out)) *out
+        << "\nThis scalar type does not support comparable operations so"
+        << " we can not test min(), max() and other such functions.\n";
       return true;
     }
 };
@@ -100,12 +102,12 @@ template <class Scalar>
 class VectorStdOpsTesterComparable<true,Scalar> {
 public:
   static bool checkComparableStdOps(
-    const VectorSpaceBase<Scalar>                                 &vecSpc
-    ,const Ptr<VectorBase<Scalar> >                               &z
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &error_tol
-    ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &warning_tol
-    ,std::ostream                                                 *out
-    ,const bool                                                   &dumpAll
+    const VectorSpaceBase<Scalar> &vecSpc,
+    const Ptr<VectorBase<Scalar> > &z,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &error_tol,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &warning_tol,
+    const Ptr<std::ostream> &out,
+    const bool &dumpAll
     )
     {
       typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -113,97 +115,97 @@ public:
 
       bool success = true, result;
       
-      if(out) *out << "\nTesting comparable operations ...\n";
+      if (nonnull(out)) *out << "\nTesting comparable operations ...\n";
       
       const Scalar scalarSmall(1e-5), scalarMedium(2.0), scalarLarge(100.0);
-      if(out) *out << "\nassign(z.ptr(),"<<scalarMedium<<");\n";
+      if (nonnull(out)) *out << "\nassign(z.ptr(),"<<scalarMedium<<");\n";
       assign(z.ptr(),Scalar(scalarMedium));
-      if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(0,"<<scalarSmall<<",z.ptr());\n";
+      if(nonnull(out) && dumpAll) *out << "\nz =\n" << *z;
+      if (nonnull(out)) *out << "\nset_ele(0,"<<scalarSmall<<",z.ptr());\n";
       set_ele(0,scalarSmall,z.ptr());
-      if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(1,"<<scalarLarge<<",z.ptr());\n";
+      if(nonnull(out) && dumpAll) *out << "\nz =\n" << *z;
+      if (nonnull(out)) *out << "\nset_ele(1,"<<scalarLarge<<",z.ptr());\n";
       set_ele(1,scalarLarge,z.ptr());
-      if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(vecSpc.dim()-2,"<<scalarSmall<<",z.ptr());\n";
+      if(nonnull(out) && dumpAll) *out << "\nz =\n" << *z;
+      if (nonnull(out)) *out << "\nset_ele(vecSpc.dim()-2,"<<scalarSmall<<",z.ptr());\n";
       set_ele(vecSpc.dim()-2,scalarSmall,z.ptr());
-      if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(vecSpc.dim()-1,"<<scalarLarge<<",z.ptr());\n";
+      if(nonnull(out) && dumpAll) *out << "\nz =\n" << *z;
+      if (nonnull(out)) *out << "\nset_ele(vecSpc.dim()-1,"<<scalarLarge<<",z.ptr());\n";
       set_ele(vecSpc.dim()-1,scalarLarge,z.ptr());
-      if(out && dumpAll) *out << "\nz =\n" << *z;
+      if(nonnull(out) && dumpAll) *out << "\nz =\n" << *z;
 
       Scalar minEle; Ordinal minIndex;
       Scalar maxEle; Ordinal maxIndex;
 
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "min(*z)",min(*z),"scalarSmall",scalarSmall
            ,"error_tol",error_tol,"warning_tol",warning_tol,out
            )
         ) success=false;
 
-      if(out) *out << "\nmin(*z,&minEle,&minIndex);\n";
+      if (nonnull(out)) *out << "\nmin(*z,&minEle,&minIndex);\n";
       minEle = ST::zero(); minIndex = 0;
       min(*z, outArg(minEle), outArg(minIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "minEle",minEle,"scalarSmall",scalarSmall
-           ,"error_tol",error_tol,"warning_tol",warning_tol,out
+           ,"error_tol",error_tol,"warning_tol",warning_tol, out
            )
         ) success=false;
       result = minIndex == 0;
-      if(out) *out << "\nminIndex = " << minIndex << " == 0 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nminIndex = " << minIndex << " == 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
-      if(out) *out << "\nminGreaterThanBound(*z,"<<scalarMedium<<",&minEle,&minIndex);\n";
+      if (nonnull(out)) *out << "\nminGreaterThanBound(*z,"<<scalarMedium<<",&minEle,&minIndex);\n";
       minEle = ST::zero(); minIndex = 0;
       minGreaterThanBound(*z, scalarMedium, outArg(minEle), outArg(minIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "minEle",minEle,"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out
            )
         ) success=false;
       result = minIndex == 1;
-      if(out) *out << "\nminIndex = " << minIndex << " == 1 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nminIndex = " << minIndex << " == 1 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
-      if(out) *out << "\nminGreaterThanBound(*z,"<<scalarLarge<<",&minEle,&minIndex);\n";
+      if (nonnull(out)) *out << "\nminGreaterThanBound(*z,"<<scalarLarge<<",&minEle,&minIndex);\n";
       minEle = ST::zero(); minIndex = 0;
       minGreaterThanBound(*z,scalarLarge, outArg(minEle), outArg(minIndex));
       result = minIndex < 0;
-      if(out) *out << "\nminIndex = " << minIndex << " < 0 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nminIndex = " << minIndex << " < 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
     
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "max(*z)",max(*z),"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
 
-      if(out) *out << "\nmax(*z,&maxEle,&maxIndex);\n";
+      if (nonnull(out)) *out << "\nmax(*z,&maxEle,&maxIndex);\n";
       maxEle = ST::zero(); maxIndex = 0;
       max(*z, outArg(maxEle), outArg(maxIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "maxEle",maxEle,"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
       result = maxIndex == 1;
-      if(out) *out << "\nmaxIndex = " << maxIndex << " == 1 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nmaxIndex = " << maxIndex << " == 1 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
-      if(out) *out << "\nmaxLessThanBound(*z,"<<scalarMedium<<",&maxEle,&maxIndex);\n";
+      if (nonnull(out)) *out << "\nmaxLessThanBound(*z,"<<scalarMedium<<",&maxEle,&maxIndex);\n";
       maxEle = ST::zero(); maxIndex = 0;
       maxLessThanBound(*z, scalarMedium, outArg(maxEle), outArg(maxIndex));
-      if(!testRelErr<Scalar>(
+      if(!Teuchos::testRelErr<Scalar>(
            "maxEle",maxEle,"scalarSmall",scalarSmall
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
       result = maxIndex == 0;
-      if(out) *out << "\nmaxIndex = " << maxIndex << " == 0 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nmaxIndex = " << maxIndex << " == 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
-      if(out) *out << "\nmaxLessThanBound(*z,"<<scalarSmall<<",&maxEle,&maxIndex);\n";
+      if (nonnull(out)) *out << "\nmaxLessThanBound(*z,"<<scalarSmall<<",&maxEle,&maxIndex);\n";
       maxEle = ST::zero(); maxIndex = 0;
       maxLessThanBound(*z, scalarSmall, outArg(maxEle), outArg(maxIndex));
       result = ( maxIndex < 0 );
-      if(out) *out << "\nmaxIndex = " << maxIndex << " < 0 ? " << passfail(result) << std::endl;
+      if (nonnull(out)) *out << "\nmaxIndex = " << maxIndex << " < 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
       
       return success;
@@ -256,6 +258,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   using Teuchos::tuple;
   using Teuchos::null;
   using Teuchos::outArg;
+  using Teuchos::inOutArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEUCHOS_ASSERT(out_out);
@@ -309,50 +312,50 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\n"<<tc<<") sum(*y);\n";
   ++tc;
   TEUCHOS_TEST_ASSERT(
-    testRelErr<Scalar>(
+    Teuchos::testRelErr<Scalar>(
       "sum(*y)", sum(*y),
       "0.5*(n+1)*n", as<Scalar>(0.5*(n+1)*n),
-      "error_tol", error_tol(), "warning_tol", warning_tol(), &out),
+      "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out)),
     out, success);
 
   // norm_inf
   out << "\n"<<tc<<") nom_inf(*v1);\n";
   ++tc;
   TEUCHOS_TEST_ASSERT(
-    testRelErr<Scalar>(
+    Teuchos::testRelErr<Scalar>(
       "norm_inf(*v1)", norm_inf(*v1),
       "2.0", two,
-      "error_tol", error_tol(), "warning_tol", warning_tol(), &out),
+      "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out)),
     out, success);
 
   // norm_2
   out << "\n"<<tc<<") norm_2(*v1);\n";
   ++tc;
   TEUCHOS_TEST_ASSERT(
-    testRelErr<Scalar>(
+    Teuchos::testRelErr<Scalar>(
       "norm_2(*v1)", norm_2(*v1),
       "2.0*sqrt(vecSpc.dim())", as<Scalar>(2.0)*ST::squareroot(vecSpc.dim()),
-      "error_tol", error_tol(), "warning_tol",warning_tol(), &out),
+      "error_tol", error_tol(), "warning_tol",warning_tol(), inOutArg(out)),
     out, success);
 
   // norm_1
   out << "\n"<<tc<<") norm_1(*v1);\n";
   ++tc;
   TEUCHOS_TEST_ASSERT(
-    testRelErr<Scalar>(
+    Teuchos::testRelErr<Scalar>(
       "norm_1(*v1)" ,norm_1(*v1),
       "2.0*vecSpc.dim()", as<Scalar>(2.0)*as<Scalar>(vecSpc.dim()),
-      "error_tol", error_tol(), "warning_tol", warning_tol(), &out),
+      "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out)),
     out, success);
   
   // abs
   out << "\n"<<tc<<") abs(z.ptr(),*v1);\n";
   ++tc;
   {
-    abs(z.ptr(), *v1);
-    if(!testRelErr<Scalar>(
-         "sum(*z)",sum(*z),"2.0*vecSpc.dim()",as<Scalar>(2.0)*as<Scalar>(vecSpc.dim())
-         ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out)
+    abs<Scalar>(*v1, z.ptr());
+    if(!Teuchos::testRelErr<Scalar>(
+         "sum(*z)", sum(*z), "2.0*vecSpc.dim()", as<Scalar>(2.0)*as<Scalar>(vecSpc.dim()),
+         "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out))
       ) success=false;
   }
 
@@ -426,10 +429,10 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\n"<<tc<<") reciprocal(z.ptr(),*v1);\n";
   ++tc;
   {
-    reciprocal(z.ptr(), *v1);
-    if(!testRelErr<Scalar>(
+    reciprocal(*v1, z.ptr());
+    if(!Teuchos::testRelErr<Scalar>(
          "sum(*z)",sum(*z),"-0.5*vecSpc.dim()",as<Scalar>(-0.5)*as<Scalar>(vecSpc.dim())
-         ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out)
+         ,"error_tol",error_tol(),"warning_tol",warning_tol(),inOutArg(out))
       ) success=false;
   }
     
@@ -444,10 +447,10 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
       ST::zero(),
       z.ptr());
     TEUCHOS_TEST_ASSERT(
-      testRelErr<Scalar>(
+      Teuchos::testRelErr<Scalar>(
         "sum(*z)", sum(*z),
         "(-0.5*2.0-0.25*3.0)*vecSpc.dim()", as<Scalar>((-0.5 * 2.0 - 0.25 * 3.0) *vecSpc.dim()),
-        "error_tol", error_tol(), "warning_tol", warning_tol(), &out),
+        "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out)),
       out, success);
   }
 
@@ -463,11 +466,11 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
       tuple<Ptr<const VectorBase<Scalar> > >(v1.ptr(), v2.ptr(),  v3.ptr())(),
       as<Scalar>(0.5),
       z.ptr());
-    if(!testRelErr<Scalar>(
+    if(!Teuchos::testRelErr<Scalar>(
          "sum(*z)", sum(*z),
          "(0.5*2.0-0.5*2.0-0.25*3.0-0.125*4.0)*vecSpc.dim()",
          as<Scalar>(0.5*2.0-0.5*2.0-0.25*3.0-0.125*4.0)*as<Scalar>(vecSpc.dim()),
-         "error_tol", error_tol(), "warning_tol", warning_tol(), &out
+         "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out)
         )
       ) success=false;
   }
@@ -477,15 +480,15 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   ++tc;
   {
     assign(z.ptr(),as<Scalar>(2.0));
-    if(!testRelErr<Scalar>(
+    if(!Teuchos::testRelErr<Scalar>(
          "norm_2(*z,*v2)",norm_2(*z,*v2)
          ,"sqrt(2.0*3.0*3.0*vecSpc.dim())",ST::magnitude(ST::squareroot(as<Scalar>(2.0*3.0*3.0)*as<Scalar>(vecSpc.dim())))
-         ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out
+         ,"error_tol",error_tol(),"warning_tol",warning_tol(),inOutArg(out)
         )
       ) success=false;
 
     if(!VectorStdOpsTesterComparable<ST::isComparable,Scalar>::checkComparableStdOps(
-         vecSpc,z.ptr(),error_tol(),warning_tol(),&out,dumpAll)
+         vecSpc,z.ptr(),error_tol(),warning_tol(),inOutArg(out),dumpAll)
       ) success=false;
   }
 
@@ -590,6 +593,25 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     if(!testMaxErr<Scalar>(
          "norm_2(*v2)",norm_2(*v2)
          ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out
+        )
+      ) success=false;
+  }
+  
+  // Test ele_wise_scale
+  out << "\n"<<tc<<") Testing ele_wise_scale(*v1, z.ptr()) ...\n";
+  ++tc;
+  {
+    v1  = createMember(vecSpc);
+    z   = createMember(vecSpc);
+    V_S(v1.ptr(), as<Scalar>(2.0));
+    V_S(z.ptr(), as<Scalar>(3.0));
+    ele_wise_scale( *v1, z.ptr() );
+    if (!Teuchos::testRelErr<Scalar>(
+        "norm_2(*z)", norm_2(*z),
+        "ST::squareroot(n*sqr(3.0*2.0))", ST::squareroot(n*36.0),
+        "error_tol", error_tol(),
+        "warning_tol", warning_tol(),
+        inOutArg(out)
         )
       ) success=false;
   }

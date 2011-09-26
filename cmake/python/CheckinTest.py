@@ -1746,6 +1746,7 @@ def checkinTest(inOptions):
     print "*** 3) Update the Trilinos sources ..."
     print "***"
 
+    repoIsClean = True
     pullPassed = True
 
     doingAtLeastOnePull = inOptions.doPull
@@ -1777,8 +1778,6 @@ def checkinTest(inOptions):
           "\n--------------------------------------------------------------\n"
 
         # See if the repo is clean
-  
-        repoIsClean = True
   
         if isSubstrInMultiLineString(egStatusOutput, "Changed but not updated"):
           print "\nERROR: There are changed unstaged uncommitted files => cannot continue!"
@@ -1926,7 +1925,7 @@ def checkinTest(inOptions):
         " was specified!\n"
       runBuildCases = False
     elif doingAtLeastOnePull:
-      if not pulledSomeChanges and inOptions.abortGracefullyIfNoUpdates:
+      if repoIsClean and not pulledSomeChanges and inOptions.abortGracefullyIfNoUpdates:
         abortGracefullyDueToNoUpdates = True
         print "\nNot perfoming any build cases because pull did not give any changes" \
           " and --abort-gracefully-if-no-updates!\n"

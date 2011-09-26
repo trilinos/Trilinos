@@ -39,87 +39,97 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
-#define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#ifndef THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DEF_HPP
+#define THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DEF_HPP
 
-
-#include "Thyra_MultiVectorRandomizerBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_DefaultFiniteDifferenceModelEvaluator_decl.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Thyra {
 
 
-/** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
- * compatible with all <tt>MultiVectorBase</tt> objects.
- *
- * This class simply uses <tt>randomize(-1,+1,mv)</tt> which is based on RTOp
- * and simply creates random coefficients between -1 and +1.
- *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
- */
+// Constructors/initializers/accessors/utilities
+
+
 template<class Scalar>
-class UniversalMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
-public:
-
-  /** \name Overridden from MultiVectorRandomizerBase */
-  //@{
-
-  /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
-
-  //@}
-
-private:
-
-  /** \name Overridded private functions */
-  //@{
-
-  /** \brief . */
-  void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
-
-  //@}
-  
-};
+ScaledModelEvaluator<Scalar>::ScaledModelEvaluator()
+{}
 
 
-/** \brief Nonmember constructor.
- *
- * \relates UniversalMultiVectorRandomizer
- */
+// Public functions overridden from Teuchos::Describable
+
+
 template<class Scalar>
-RCP<UniversalMultiVectorRandomizer<Scalar> >
-universalMultiVectorRandomizer()
+std::string ScaledModelEvaluator<Scalar>::description() const
 {
-  return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::ScaledModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
 }
 
 
-// //////////////////////////////
-// Definitions
-
-
 template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
+void ScaledModelEvaluator<Scalar>::
+set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling)
 {
-  return true;
+  f_scaling_ = f_scaling;
 }
 
 
-// Overridded private functions
+// Private functions overridden from ModelEvaulatorDefaultBase
 
 
 template<class Scalar>
-void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv )
+void ScaledModelEvaluator<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  ) const
 {
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::OSTab;
+  typedef ScalarTraits<Scalar> ST;
+  typedef ModelEvaluatorBase MEB;
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::ScaledModelEvaluator",inArgs,outArgs
+    );
+
+  thyraModel->evalModel(inArgs, outArgs);
+
+  if (nonnull(f_scaling_)) {
+
+    const RCP<VectorBase<Scalar> > f = outArgs.get_f();
+    if (nonnull(f)) {
+      ele_wise_scale(*f_scaling_, f.ptr());
+    }
+    
+    const RCP<LinearOpBase<Scalar> > W_op = outArgs.get_W_op();
+    if (nonnull(W_op)) {
+      const RCP<ScaledLinearOpBase<Scalar> > W_scaled =
+        rcp_dynamic_cast<ScaledLinearOpBase<Scalar> >(W_op, true);
+      W_scaled->scaleLeft(*f_scaling_);
+    }
+
+  }
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+ 
 }
 
 
 } // namespace Thyra
 
 
-#endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#endif // THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DEF_HPP
