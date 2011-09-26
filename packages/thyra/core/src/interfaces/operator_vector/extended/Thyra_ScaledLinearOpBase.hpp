@@ -85,12 +85,26 @@ public:
   /** @name Non-virtual public interface functions. */
   //@{
 
-  /** \brief Left scales operator with diagonal scaling operator <tt>d</tt>.
+  /** \brief Determines if this objects supports left scaling.
+   */
+  bool supportsScaleLeft() const
+    { return supportsScaleLeftImpl(); }
+
+  /** \brief Determines if this objects supports right scaling.
+   */
+  bool supportsScaleRight() const
+    { return supportsScaleRightImpl(); }
+
+  /** \brief Left scales operator with diagonal scaling operator.
+   *
+   * \precondtion <tt>supportsScaleLeft()==true</tt>
    */
   void scaleLeft(const VectorBase<Scalar> &row_scaling)
     { scaleLeftImpl(row_scaling); }
 
-  /** \brief Right scales operator with diagonal scaling operator <tt>d</tt>.
+  /** \brief Right scales operator with diagonal scaling operator.
+   *
+   * \precondtion <tt>supportsScaleRight()==true</tt>
    */
   void scaleRight(const VectorBase<Scalar> &col_scaling)
     { scaleRightImpl(col_scaling); }
@@ -101,6 +115,12 @@ protected:
 
   /** \name Protected virtual functions to be overridden by subclasses. */
   //@{
+
+  /** \brief . */
+  virtual bool supportsScaleLeftImpl() const = 0;
+
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const = 0;
 
   /** \brief . */
   virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling) = 0;

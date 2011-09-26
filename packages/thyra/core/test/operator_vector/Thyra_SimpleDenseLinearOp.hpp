@@ -103,6 +103,14 @@ protected:
   // Overridden from ScaledLinearOpBase
 
   /** \brief . */
+  virtual bool supportsScaleLeftImpl() const
+    { return true; }
+  
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const
+    { return true; }
+
+  /** \brief . */
   virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling)
     {
       DetachedMultiVectorView<Scalar> mv_dmvv(mv_); // ToDo Change to RCP!
