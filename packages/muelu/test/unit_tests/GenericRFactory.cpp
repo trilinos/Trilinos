@@ -42,7 +42,6 @@ namespace MueLuTests {
 
     // generate problem
     LO maxLevels = 3;
-    LO its=10;
     LO nEle = 63;
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), nEle, 0, comm);
     Teuchos::ParameterList matrixParameters;
