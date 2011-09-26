@@ -19,6 +19,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
   
+  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos TriKota Optika)
+  
   # Set up the compiler environment.
   SET(brain_GCC_ROOT "$ENV{HOME}/compilers/gcc/4.6.1")
   SET(ENV{LD_LIBRARY_PATH} "${brain_GCC_ROOT}/lib64:$ENV{LD_LIBRARY_PATH}")
@@ -30,6 +33,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_C_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/gcc"
     "-DCMAKE_CXX_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/g++"
     "-DCMAKE_Fortran_COMPILER:FILEPATH=${brain_GCC_ROOT}/bin/gfortran"
+    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DTPL_ENABLE_MATLAB=OFF"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
