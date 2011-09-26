@@ -41,7 +41,7 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@}
 
     //@{ Build methods.
-    bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+    void Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
       timer->start(true);
@@ -93,7 +93,6 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       coarseLevel.Release("P",PFact_.get());
       coarseLevel.Release("R",RFact_.get());
 
-      return true;
     }
     //@}
 

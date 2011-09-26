@@ -32,7 +32,7 @@ class RFactory : public TwoLevelFactoryBase {
     /*!
       @brief Abstract Build method.
     */
-    virtual bool BuildR(Level &fineLevel, Level &coarseLevel) const = 0;
+    virtual void BuildR(Level &fineLevel, Level &coarseLevel) const = 0;
     //@}
 
 }; //class RFactory

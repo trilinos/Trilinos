@@ -39,7 +39,7 @@ namespace MueLu {
 
     //@}
 
-    bool Build(Level &currentLevel) const {
+    void Build(Level &currentLevel) const {
       RCP<MultiVector> nullspace;
       
       if (currentLevel.IsAvailable("Nullspace")) {
@@ -57,8 +57,6 @@ namespace MueLu {
       }
 
       currentLevel.Set("Nullspace", nullspace, this);
-
-      return true; //??
 
     } // Build
 

@@ -85,11 +85,11 @@ namespace MueLu {
     //! @name Build methods.
     //@{
 
-    bool Build(Level & fineLevel, Level & coarseLevel) const { //TODO
+    void Build(Level & fineLevel, Level & coarseLevel) const { //TODO
       return BuildP(fineLevel, coarseLevel);
     }
 
-    bool BuildP(Level & fineLevel, Level & coarseLevel) const {
+    void BuildP(Level & fineLevel, Level & coarseLevel) const {
       // get data from fine level
       RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
       RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
@@ -117,7 +117,6 @@ namespace MueLu {
       fineLevel.Release("Aggregates", aggregatesFact_.get());
       fineLevel.Release("Nullspace", nullspaceFact_.get());
 
-      return true;
     }
 
     //@}

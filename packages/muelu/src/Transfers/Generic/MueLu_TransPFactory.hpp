@@ -56,7 +56,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 /*
    FIXME this uses the Tpetra RowMatrixTransposer.  This has revealed a bug somewhere.
    FIXME so disabling it right now.
-    bool BuildR(Level & fineLevel, Level & coarseLevel) {
+    void BuildR(Level & fineLevel, Level & coarseLevel) {
 
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::BuildR"));
       timer->start(true);
@@ -72,11 +72,11 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     } //BuildR
 */
 
-    bool Build(Level & fineLevel, Level & coarseLevel) const {
+    void Build(Level & fineLevel, Level & coarseLevel) const {
       return BuildR(fineLevel,coarseLevel);
     }
 
-    bool BuildR(Level & fineLevel, Level & coarseLevel) const {
+    void BuildR(Level & fineLevel, Level & coarseLevel) const {
 
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
@@ -99,7 +99,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
-      return true;
     } //BuildR
 
     //@}

@@ -36,17 +36,17 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    virtual bool Build(Level & fineLevel, Level & coarseLevel) const = 0;
+    virtual void Build(Level & fineLevel, Level & coarseLevel) const = 0;
 
     //!
-    virtual bool NewBuild(Level & requestedLevel) const {
-      return Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
+    virtual void NewBuild(Level & requestedLevel) const {
+      Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //!
     virtual void callDeclareInput(Level & requestedLevel) const {
-    	if(requestedLevel.GetPreviousLevel() != Teuchos::null)
-    		DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+      if(requestedLevel.GetPreviousLevel() != Teuchos::null)
+        DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //@}
