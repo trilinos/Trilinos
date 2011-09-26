@@ -3,7 +3,6 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
