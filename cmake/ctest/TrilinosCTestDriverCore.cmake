@@ -116,6 +116,7 @@ INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(PackageArchGlobalMacros)
+INCLUDE(PackageArchConstants)
 
 INCLUDE(TrilinosFindPythonInterp)
 TRILINOS_FIND_PYTHON()
@@ -142,14 +143,6 @@ ENDIF()
 
 # Find git
 
-IF(WIN32)
-  #Apparently FIND_PROGRAM looks for an exact match of the file name.
-  #So even though "git clone ..." is valid to use on windows we need to give the
-  #full name of the command we want to run.
-  SET(GIT_NAME git.cmd)
-ELSE()
-  SET(GIT_NAME git)
-ENDIF()
 FIND_PROGRAM(GIT_EXE NAMES ${GIT_NAME})
 MESSAGE("GIT_EXE=${GIT_EXE}")
 
