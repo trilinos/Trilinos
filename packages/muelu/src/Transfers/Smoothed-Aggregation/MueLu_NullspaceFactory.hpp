@@ -34,7 +34,7 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      currentLevel.DeclareInput("A", AFact_.get());
+      currentLevel.Request("A", AFact_.get());
     }
 
     //@}

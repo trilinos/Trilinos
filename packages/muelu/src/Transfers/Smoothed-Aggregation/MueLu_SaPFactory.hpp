@@ -90,9 +90,9 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-        fineLevel.DeclareInput("A",AFact_.get());
-        coarseLevel.DeclareInput("P",initialPFact_.get());
-    }
+        coarseLevel.Request("P",initialPFact_.get());
+        fineLevel.Request("A",AFact_.get());
+    };
 
     //@}
 
@@ -120,6 +120,9 @@ namespace MueLu {
 
       if(restrictionMode_)
           A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
+
+      fineLevel.Release("A", AFact_.get());
+      coarseLevel.Release("P", initialPFact_.get());
 
       //Build final prolongator
       RCP<Operator> finalP; // output

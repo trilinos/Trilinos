@@ -50,9 +50,25 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-      fineLevel.DeclareInput("A", AFact_.get());
-      fineLevel.DeclareInput("Aggregates", aggregatesFact_.get());
-      fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
+      // todo: check for reusable P -> do not call DeclareInput
+
+      // request aggregates (only if not already requested or available)
+      /*if (!fineLevel.IsRequested("Aggregates", aggregatesFact_) &&
+          !fineLevel.IsAvailable("Aggregates", aggregatesFact_))
+      {
+        if(aggregatesFact_ == Teuchos::null)
+        {
+          // TODO: move me to Level class?
+          const FactoryBase* defaultFactory = fineLevel.GetDefaultFactoryPtr("Aggregates");
+          if( defaultFactory == NULL) std::cout << "TentativePFactory::DeclareInput: Error: default factory == NULL" << std::endl;
+          defaultFactory->callDeclareInput(fineLevel);
+        }
+        else
+          aggregatesFact_->callDeclareInput(fineLevel);
+      }*/
+      fineLevel.Request("Aggregates", aggregatesFact_.get());
+      fineLevel.Request("A", AFact_.get());
+      fineLevel.Request("Nullspace",  nullspaceFact_.get());
     }
 
     //@}
@@ -95,6 +111,12 @@ namespace MueLu {
       // Level Set
       coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get());
       coarseLevel.Set("P", Ptentative, this); //TODO: should be P when 'extended needs' implemented
+
+      // release data from fine level
+      fineLevel.Release("A", AFact_.get());
+      fineLevel.Release("Aggregates", aggregatesFact_.get());
+      fineLevel.Release("Nullspace", nullspaceFact_.get());
+
     }
 
     //@}
