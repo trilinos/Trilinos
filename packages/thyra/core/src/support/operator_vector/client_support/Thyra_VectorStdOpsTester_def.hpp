@@ -352,10 +352,10 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\n"<<tc<<") abs(z.ptr(),*v1);\n";
   ++tc;
   {
-    abs(z.ptr(), *v1);
+    abs<Scalar>(*v1, z.ptr());
     if(!Teuchos::testRelErr<Scalar>(
-         "sum(*z)",sum(*z),"2.0*vecSpc.dim()",as<Scalar>(2.0)*as<Scalar>(vecSpc.dim())
-         ,"error_tol",error_tol(),"warning_tol",warning_tol(),inOutArg(out))
+         "sum(*z)", sum(*z), "2.0*vecSpc.dim()", as<Scalar>(2.0)*as<Scalar>(vecSpc.dim()),
+         "error_tol", error_tol(), "warning_tol", warning_tol(), inOutArg(out))
       ) success=false;
   }
 
@@ -429,7 +429,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\n"<<tc<<") reciprocal(z.ptr(),*v1);\n";
   ++tc;
   {
-    reciprocal(z.ptr(), *v1);
+    reciprocal(*v1, z.ptr());
     if(!Teuchos::testRelErr<Scalar>(
          "sum(*z)",sum(*z),"-0.5*vecSpc.dim()",as<Scalar>(-0.5)*as<Scalar>(vecSpc.dim())
          ,"error_tol",error_tol(),"warning_tol",warning_tol(),inOutArg(out))

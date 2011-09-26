@@ -198,7 +198,7 @@ void scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &y );
  * \relates VectorBase
  */
 template<class Scalar>
-void abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x );
+void abs( const VectorBase<Scalar> &x, const Ptr<VectorBase<Scalar> > &y );
 
 
 /** \brief Element-wise reciprocal:
@@ -207,7 +207,7 @@ void abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x );
  * \relates VectorBase
  */
 template<class Scalar>
-void reciprocal( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x );
+void reciprocal( const VectorBase<Scalar> &x, const Ptr<VectorBase<Scalar> > &y );
 
 
 /** \brief Element-wise product update:
@@ -644,10 +644,28 @@ void abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 
 
 /** \brief Deprecated. */
+template<class Scalar>
+THYRA_DEPRECATED
+void abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar> &x )
+{
+  abs<Scalar>( x, y );
+}
+
+
+/** \brief Deprecated. */
 template<class Scalar> inline
 THYRA_DEPRECATED
 void reciprocal( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 { reciprocal(Teuchos::ptr(y),x); }
+
+
+/** \brief Deprecated. */
+template<class Scalar>
+THYRA_DEPRECATED
+void reciprocal( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar> &x )
+{
+  reciprocal<Scalar>( x, y );
+}
 
 
 /** \brief Deprecated. */

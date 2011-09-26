@@ -257,7 +257,7 @@ void Thyra::scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_lhs )
 
 
 template<class Scalar>
-void Thyra::abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x )
+void Thyra::abs( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAbs<Scalar> abs_op;
@@ -266,7 +266,7 @@ void Thyra::abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x 
 
 
 template<class Scalar>
-void Thyra::reciprocal( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x )
+void Thyra::reciprocal( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpReciprocal<Scalar> recip_op;
