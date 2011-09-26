@@ -332,6 +332,9 @@ g_cmndinterceptsCurrentBranch = \
 g_cmndinterceptsStatusPasses = \
   "IT: eg status; 0; '(on master branch)'\n"
 
+g_cmndinterceptsStatusChangedButNotUpdatedPasses = \
+  "IT: eg status; 0; 'Changed but not updated'\n"
+
 g_cmndinterceptsPullOnlyPasses = \
   "IT: eg pull; 0; 'pulled changes passes'\n"
 
@@ -1596,6 +1599,33 @@ class test_checkin_test(unittest.TestCase):
       ,
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_abort_gracefully_if_no_updates_status_fails(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "abort_gracefully_if_no_updates_status_fails",
+      \
+      "--abort-gracefully-if-no-updates --do-all --pull" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusChangedButNotUpdatedPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "ERROR: There are changed unstaged uncommitted files => cannot continue!\n" \
+      +"No changes were pulled!\n" \
+      +"Skipping getting list of modified files because pull failed!\n" \
+      +"Not running any build/test cases because the update (pull) failed!\n" \
+      +"  => A PUSH IS .NOT. READY TO BE PERFORMED!\n" \
+      +"INITIAL PULL FAILED\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
       )
 
     
