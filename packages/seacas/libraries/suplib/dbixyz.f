@@ -73,7 +73,10 @@ C   --upon exit at end of coordinates.
       CHARACTER*80 ERRMSG
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'C') .GT. 0)) THEN
-         IF (NDIM .EQ. 2) THEN
+         IF (NDIM .EQ. 1) THEN
+            READ (NDB, END=100, ERR=100, IOSTAT=IERR)
+     &         (XN(INP), INP=1,NUMNP)
+         ELSE IF (NDIM .EQ. 2) THEN
             READ (NDB, END=100, ERR=100, IOSTAT=IERR)
      &         (XN(INP), INP=1,NUMNP), (YN(INP), INP=1,NUMNP)
          ELSE IF (NDIM .EQ. 3) THEN

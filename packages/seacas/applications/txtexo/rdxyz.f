@@ -69,7 +69,9 @@ C   --upon exit at end of coordinates.
 
       READ (NTXT, *, END=120, ERR=120)
       DO 100 INP = 1, NUMNP
-         IF (NDIM .EQ. 2) THEN
+         IF (NDIM .EQ. 1) THEN
+            READ (NTXT, *, END=120, ERR=120) XN(INP)
+         ELSE IF (NDIM .EQ. 2) THEN
             READ (NTXT, *, END=120, ERR=120) XN(INP), YN(INP)
          ELSE IF (NDIM .EQ. 3) THEN
             READ (NTXT, *, END=120, ERR=120) XN(INP), YN(INP), ZN(INP)

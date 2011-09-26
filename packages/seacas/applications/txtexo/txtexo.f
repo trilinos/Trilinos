@@ -136,7 +136,7 @@ C     --Read the initial variables
 C     --Read the coordinates
 
       CALL MDRSRV ('XN', KXN, NUMNP)
-      CALL MDRSRV ('YN', KYN, NUMNP)
+      IF (NDIM .GE. 2) CALL MDRSRV ('YN', KYN, NUMNP)
       IF (NDIM .GE. 3) CALL MDRSRV ('ZN', KZN, NUMNP)
 
       CALL MCRSRV ('NAMECO', KNACOR, NAMLEN*NDIM)
@@ -148,7 +148,7 @@ C     --Read the coordinates
      *  C(KNACOR), NAMLEN, *140)
       
       CALL MDDEL ('XN')
-      CALL MDDEL ('YN')
+      IF (NDIM .GE. 2) CALL MDDEL ('YN')
       IF (NDIM .GE. 3) CALL MDDEL ('ZN')
       CALL MCDEL ('NAMECO')
 

@@ -66,7 +66,9 @@ C   --upon exit at end of coordinates.
       REAL XN(*), YN(*), ZN(*)
 
       IF ((NUMNP .GT. 0) .AND. (NDIM .GT. 0)) THEN
-         IF (NDIM .EQ. 2) THEN
+         IF (NDIM .EQ. 1) THEN
+            WRITE (NDB) (XN(INP), INP=1,NUMNP)
+         ELSE IF (NDIM .EQ. 2) THEN
             WRITE (NDB) (XN(INP), INP=1,NUMNP), (YN(INP), INP=1,NUMNP)
          ELSE IF (NDIM .GE. 3) THEN
             WRITE (NDB) (XN(INP), INP=1,NUMNP), (YN(INP), INP=1,NUMNP),

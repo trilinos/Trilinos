@@ -172,7 +172,7 @@ C     Request length of the side set distribution factors list
 C   --Read the coordinates
 
       CALL MDRSRV ('XN', KXN, NUMNP)
-      CALL MDRSRV ('YN', KYN, NUMNP)
+      IF (NNDIM .GE. 2) CALL MDRSRV ('YN', KYN, NUMNP)
       IF (NNDIM .GE. 3) CALL MDRSRV ('ZN', KZN, NUMNP)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) THEN
@@ -188,7 +188,7 @@ C     Reserve memory for coordinate array names
      *  C(knacor), namlen)
 
       CALL MDDEL ('XN')
-      CALL MDDEL ('YN')
+      IF (NNDIM .GE. 2) CALL MDDEL ('YN')
       IF (NNDIM .GE. 3) CALL MDDEL ('ZN')
       CALL MCDEL ('NAMECO')
 
