@@ -1650,7 +1650,7 @@ int main(int argc, char *argv[]) {
    for(int i=0;i<globalMapD.NumMyElements();i++)
      tvec[0][i]=globalMapD.GID(i);
    for(int i=0;i<globalMapG.NumMyElements();i++)
-     tvec[1][i]=globalMapG.GID(i);
+     tvec[1][i]=globalMapG.GID(i)+numFacesGlobal;
    RCP<Teko::Epetra::BlockedEpetraOperator> BlockOp=rcp(new Teko::Epetra::BlockedEpetraOperator(tvec,rcp(&jointMatrix,false)));   
    
    // Grab diagonal blocks
