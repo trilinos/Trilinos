@@ -149,8 +149,8 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
  */
 #define THYRA_ASSERT_LHS_ARG(FUNC_NAME,LHS_ARG) \
   TEST_FOR_EXCEPTION( \
-    (LHS_ARG) == NULL, std::invalid_argument \
-    ,FUNC_NAME << " : Error!" \
+    (&*LHS_ARG) == NULL, std::invalid_argument, \
+    FUNC_NAME << " : Error!" \
     );
 
 
@@ -230,7 +230,6 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
       << #M << ( (M_T) == Thyra::NOTRANS ? "" : "^T" ) << " * " \
       << #X << " and " << #Y; \
     const std::string &header = headeross.str(); \
-    THYRA_ASSERT_LHS_ARG(header,Y); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_RANGE,*(Y)->space()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_DOMAIN,*(X).space()); \
   }
@@ -257,7 +256,6 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
       << #M << ( (M_T) == Thyra::NOTRANS ? "" : "^T" ) << " * " \
       << #X << " and " << #Y << ":\n\n"; \
     const std::string &header = headeross.str(); \
-    THYRA_ASSERT_LHS_ARG(header,Y); \
     THYRA_ASSERT_VEC_SPACES(header,*(X).domain(),*(Y)->domain()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_RANGE,*(Y)->range()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_DOMAIN,*(X).range()); \
