@@ -33,9 +33,9 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      fineLevel.Request("A", AFact_.get());   // AFact per default Teuchos::null -> default factory for this
-      coarseLevel.Request("P",PFact_.get());  // transfer operators (from PRFactory, not from PFactory and RFactory!)
-      coarseLevel.Request("R",RFact_.get()); //TODO: must be request according to (implicitTranspose flag!!!!!
+      fineLevel.DeclareInput("A", AFact_.get());   // AFact per default Teuchos::null -> default factory for this
+      coarseLevel.DeclareInput("P",PFact_.get());  // transfer operators (from PRFactory, not from PFactory and RFactory!)
+      coarseLevel.DeclareInput("R",RFact_.get()); //TODO: must be request according to (implicitTranspose flag!!!!!
     }
 
     //@}
@@ -88,11 +88,6 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
       GetOStream(Statistics0, 0) << "Ac: # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
-
-      fineLevel.Release("A", AFact_.get());
-      coarseLevel.Release("P",PFact_.get());
-      coarseLevel.Release("R",RFact_.get());
-
     }
     //@}
 

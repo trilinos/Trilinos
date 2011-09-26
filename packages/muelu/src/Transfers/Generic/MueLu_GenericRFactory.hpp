@@ -52,13 +52,11 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      //coarseLevel.Request("P",PFact_.get());
-        // todo: declare input
         bool rmode = PFact_->isRestrictionModeSet();
         PFact_->setRestrictionMode(true);             // set restriction mode
-        //PFact_->DeclareInput(fineLevel, coarseLevel); // call DeclareInput explicitely
-        coarseLevel.Request("R", PFact_.get());       // we expect the prolongation operator factory to produce "R" as output
-                                                      // call declareInput is called within Request call
+
+        coarseLevel.DeclareInput("R", PFact_.get());  // we expect the prolongation operator factory to produce "R" as output
+                                                      // call declareInput is called within DeclareInput call
         PFact_->setRestrictionMode(rmode);            // reset restriciton mode flag
     }
 
@@ -84,7 +82,6 @@ namespace MueLu {
       //PFact_->Build(fineLevel, coarseLevel);  // call PFactory::Build explicitely
 
       RCP<Operator> R = coarseLevel.Get<RCP<Operator> >("R",PFact_.get());
-      coarseLevel.Release("R",PFact_.get());
 
       PFact_->setRestrictionMode(rmode);    // reset restriction mode flag
 
