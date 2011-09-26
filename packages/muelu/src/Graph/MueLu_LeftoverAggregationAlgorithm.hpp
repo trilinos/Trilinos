@@ -609,12 +609,13 @@ namespace MueLu {
       {
       int ncalls=0;
 
-      ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
-      ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
-      ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
-
       for (int kk = 0; kk < 10; kk += 2) {
         bestScoreCutoff = thresholds[kk];
+
+        ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
+        ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
+        ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+
         for (int i = 0; i < exp_nRows; i++) {
 
           if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
@@ -714,6 +715,10 @@ namespace MueLu {
 
           // views on distributed vectors are freed here.
         }
+
+        vertex2AggId = Teuchos::null;
+        procWinner   = Teuchos::null;
+        weights      = Teuchos::null;
 
         ++ncalls;
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
