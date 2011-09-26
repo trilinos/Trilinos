@@ -65,7 +65,8 @@ C   --upon exit at end of coordinates.
       READ (NTXT, *, END=110, ERR=110)
       READ (ntxt, '(A)', END=110, ERR=110) scratch
       idcont = 0
-      call ffistr (scratch, 3, idcont, nfield, kval, nameco, ival, rval)
+      call ffistr (scratch, ndim, idcont, nfield, kval, nameco,
+     *  ival, rval)
 
       READ (NTXT, *, END=120, ERR=120)
       DO 100 INP = 1, NUMNP

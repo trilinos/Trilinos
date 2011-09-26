@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C     $Id: txtexo.f,v 1.11 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       PROGRAM TXTEXO
 C=======================================================================
@@ -65,8 +64,8 @@ C     --A - the dynamic memory base array
 C     Program Information
 C.
       QAINFO(1) = 'txtexo2                         '
-      QAINFO(2) = '2011/06/29                      '
-      QAINFO(3) = ' 1.12                           '
+      QAINFO(2) = '2011/09/26                      '
+      QAINFO(3) = ' 1.13                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
