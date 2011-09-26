@@ -18,6 +18,7 @@
 #define _ZOLTAN2_MATRIXINPUT_HPP_
 
 #include <Zoltan2_TemplateMacros.hpp>
+#include <Zoltan2_InputAdapter.hpp>
 
 namespace Zoltan2 {
 
