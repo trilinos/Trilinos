@@ -42,27 +42,21 @@ public:
 };
 
 CONSISTENT_FN_TEMPLATE_LINE
-void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::createPartitioningProblem()
-{
-  HELLO;
-}
-
-CONSISTENT_FN_TEMPLATE_LINE
 void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::solve()
 {
   HELLO;
 }
 
-}
-
 //! createPartitioningProblem 
 CONSISTENT_FN_TEMPLATE_LINE
-void createPartitioningProblem()
+void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::createPartitioningProblem()
 {
-  enum InputAdapterType adapterType = _inputAdapter->adapterType();
+  HELLO;
+  //KDDZoltan2::InputAdapterType adapterType = _inputAdapter->inputAdapterType();
 
   // Select Model based on parameters and InputAdapter type
 
 }
 
+}
 #endif

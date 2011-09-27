@@ -39,7 +39,7 @@ public:
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
   // User should not rewrite this function.
-  enum InputAdapterType adapterType() {return MatrixAdapterType;}
+  enum InputAdapterType inputAdapterType() {return MatrixAdapterType;}
 
   /*! Destructor TODO don't know what to do about destructor */
   virtual ~MatrixInput(){};
@@ -131,11 +131,11 @@ public:
 
   /*! Return true of matrix is globally lower triangular.
    */
-  virtual bool isLowerTriangular() const;
+//TODO Not supported by Xpetra KDDKDD  virtual bool isLowerTriangular() const;
 
   /*! Return true of matrix is globally upper triangular.
    */
-  virtual bool isUpperTriangular() const;
+//TODO Not supported by Xpetra KDDKDD   virtual bool isUpperTriangular() const;
 
   /*! Return true of matrix globally has any diagonal entries.
    */

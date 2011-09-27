@@ -2,10 +2,9 @@
 #define _ZOLTAN2_PROBLEM_HPP_
 
 #include <Zoltan2_config.h>
-// TODO: SR We should have an input adapter, not sure why it was removed
-//#include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_TpetraCrsMatrixInput.hpp>
 #include <Zoltan2_TemplateMacros.hpp>
+#include <Zoltan2_InputAdapter.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -60,12 +59,12 @@ private:
 //! to XpetraMatrixAdapter.
 CONSISTENT_FN_TEMPLATE_LINE
 Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
-  Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
+  Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> &A,
   Teuchos::ParameterList &p
 ) 
 {
   HELLO;
-  _inputAdapter = rcp(new XpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
+  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>
                                 (rcpFromRef(A)));
   _params = rcpFromRef(p);
 }

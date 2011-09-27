@@ -54,15 +54,10 @@ public:
   // adapterType == GraphAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
   // User should not rewrite this function.
-  enum InputAdapterType adapterType() {return GraphAdapterType;}
+  enum InputAdapterType inputAdapterType() {return GraphAdapterType;}
 
   // TODO - what to do with destructor
   //virtual ~GraphInput();
-
-  /*! return a name that identifies the concrete adapter
-   */
-
-  virtual std::string inputAdapterName() const = 0;
 
   /*! Returns the number vertices on this process.
    */

@@ -53,7 +53,18 @@ enum InputAdapterType {
 class InputAdapter {
 private:
 public:
-  virtual enum InputAdapterType adapterType() = 0;
+  // Return enumerated InputAdapterType for the input adapter.
+  // This function is implemented in the MatrixAdapter, GraphAdapter,
+  // MeshAdapter, CoordAdapter and IdAdapter subclasses.
+  // Users do not have to implement this function for their adapters
+  // as long as they inherit from one of the subclasses (which they must).
+  virtual enum InputAdapterType inputAdapterType() = 0;
+
+  /*! Return a name that identifies the concrete adapter.
+   *  Useful for debugging.
+   */
+  virtual std::string inputAdapterName() const = 0;
+
 protected:
 };
   

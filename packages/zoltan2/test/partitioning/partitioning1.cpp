@@ -86,7 +86,7 @@ int main(int narg, char** arg)
   params.set("GRAPH_PACKAGE", "PTSCOTCH");
 
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<Scalar,LocalOrdinal,GlobalOrdinal>
+  Zoltan2::PartitioningProblem<Scalar,LocalOrdinal,GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
                                problem(*origMatrix, params);
   problem.solve();
 
