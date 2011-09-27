@@ -13,7 +13,8 @@
     \author Siva Rajamanickam
 */
 
-// TODO:  Should LID and GID be used at all in this class?  KDDKDD
+// TODO:  Should LID and GID be used anywhere except the interface 
+// TODO:  in this class?  KDDKDD
 
 #ifndef _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
