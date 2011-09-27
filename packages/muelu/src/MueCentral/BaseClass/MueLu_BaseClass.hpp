@@ -30,7 +30,7 @@ namespace MueLu {
   using std::endl;                                                      \
   Teuchos::FancyOStream& out0 = (VerboseObject::GetProcRankVerbose() == 0) ? out : VerboseObject::GetBlackHole(); \
                                                                         \
-  if ((verbLevel & Runtime1) && (!verbLevel & Parameters0))             \
+  if ((verbLevel & Runtime1) && (!(verbLevel & Parameters0)))           \
     out << description() << endl;                                       \
   else if (verbLevel & Runtime0)                                        \
     out << BaseClass::description() << endl;                            \
