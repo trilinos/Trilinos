@@ -48,7 +48,7 @@ static inline T notDefined() { return T::Identifier_Type_Needs_To_Be_Added(); }
 
 /*! \struct IdentifierTraits
     \brief The functions to be defined for each valid id type.
-    \tparam  T the identifier data type
+    \param  T the identifier data type
 */
 
 template<typename T>
@@ -104,7 +104,7 @@ struct IdentifierTraits {
 
   /*! 
       \brief Determine whether the data type can be used in Teuchos communication.
-      \tparam T the data type 
+      \param T the data type 
       \result true if it can be a Teuchos Packet type
 
       Packet data types used in Teuchos_CommHelpers.hpp must have a definition in 

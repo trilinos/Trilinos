@@ -42,19 +42,13 @@ public:
 
   /*! Default constructor
    */
-  EpetraCrsMatrixInput()
-  {
-  }
+  EpetraCrsMatrixInput() { }
 
   /*! Constructor
    */
-  //TODO EpetraCrsMatrixInput(RCP<const Epetra_CrsMatrix >
-  EpetraCrsMatrixInput(RCP<Epetra_CrsMatrix matrix) :
-      XpetraCrsMatrixInput<double, int, int>(rcp(new Xpetra::EpetraCrsMatrix
-                                                     (matrix)))
-  {
-      HELLO;
-  }
+
+  EpetraCrsMatrixInput(RCP<Epetra_CrsMatrix> matrix) :
+      XpetraCrsMatrixInput<double, int, int>(matrix){}
 
 };
   

@@ -20,13 +20,9 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_TemplateMacros.hpp>
 
-#include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Teuchos_RCP.hpp>
-
-using Teuchos::RCP;
-using Teuchos::rcp;
 
 namespace Zoltan2 {
 
@@ -40,82 +36,214 @@ class XpetraCrsMatrixInput : public
              MatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
 {
 private:
-      Teuchos::RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _xmatrix;
+  bool _valid;
+  Teuchos::RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _xmatrix;
+  Teuchos::RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
+  LNO _base;
 
 public:
 
   /*! Default constructor
    */
-  XpetraCrsMatrixInput()
-  {
-  }
+  XpetraCrsMatrixInput(): _valid(false), _xmatrix(), _rowMap(), _base() { }
 
-  /*! Constructor
+  /*! Constructor with an Xpetra::CrsMatrix
    */
-  //TODO i/p param should be RCP<const Xpetra::CrsMatrix... >
   XpetraCrsMatrixInput(RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-                            matrix) :
-                            _xmatrix(matrix)
+                            matrix) : _valid(false), _xmatrix(matrix), _rowMap(), _base()
   {
-      HELLO;
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
   }
 
-  //TODO i/p param should be RCP<const Xpetra::TpetraCrsMatrix... >
+  /*! Constructor with an Xpetra::TpetraCrsMatrix
+   */
   XpetraCrsMatrixInput(RCP<Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
+                            matrix) : _valid(false), _xmatrix(), _rowMap(), _base()
+  {
+    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
+                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
+  }
+
+  /*! Constructor with an Xpetra::EpetraCrsMatrix
+   */
+  XpetraCrsMatrixInput(RCP<Xpetra::EpetraCrsMatrix> matrix) : 
+    _valid(false), _xmatrix(), _rowMap(), _base()
+  {
+    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
+                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
+  }
+
+  ~XpetraCrsMatrixInput() {}
+
+  /*! Post construction setting of the underlying matrix.
+   */
+  void setMatrix(RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
                             matrix)
   {
-      HELLO;
-      _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
-                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+    if (_valid)
+      throw std::runtime_error("Can not change the matrix in the adapter");
+    _xmatrix = matrix;
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
   }
 
-  //TODO i/p param should be RCP<const Xpetra::TpetraCrsMatrix... >
-  XpetraCrsMatrixInput(RCP<Xpetra::EpetraCrsMatrix> matrix)
+  /*! Post construction setting of the underlying matrix.
+   */
+  void setMatrix(RCP<Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
+                            matrix)
   {
-      HELLO;
-      _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
+    if (_valid)
+      throw std::runtime_error("Can not change the matrix in the adapter");
+    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
                              <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
   }
 
-  /*! Returns the global number of rows in the matrix.
+  /*! Post construction setting of the underlying matrix.
    */
-  GNO getGlobalNumRows() const{
-      return(_xmatrix->getGlobalNumRows());
+  void setMatrix(RCP<Xpetra::EpetraCrsMatrix> matrix)
+  {
+    if (_valid)
+      throw std::runtime_error("Can not change the matrix in the adapter");
+    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
+                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
+    _rowMap = _xmatrix->getRowMap();
+    _base = _rowMap->getIndexBase();
+    _valid = true;
   }
 
-  /*! Returns the global number columns in the matrix.
-   */
-  GNO getGlobalNumCols() const{
-      return(_xmatrix->getGlobalNumCols());
-  }
+  ///////////////////////////////////////////////////////
+  // The MatrixInput adapter interface
+  ///////////////////////////////////////////////////////
 
   /*! Returns the number rows on this process.
    */
-  LNO getLocalNumRows() const{
-      return(_xmatrix->getNodeNumRows());
+  LNO getLocalNumRows() const
+  {
+    return _matrix->GetNodeNumRows();
   }
 
-  /*! Returns the number edges on this process.
+  /*! Returns true if input adapter uses local Ids.
    */
-  LNO getLocalNumCols() const{
-      return (_xmatrix->getNodeNumCols());
+  bool haveLocalIds() const { return true; }
+
+  /*! Return true if local Ids are consecutive integral
+   *   values and supply the base.  Providing this information
+   *   can save memory, making local Id lists unneccesary.
+   */
+  bool haveConsecutiveLocalIds(LID &base) const{
+    base = _base;
+    return true;
   }
 
-  const Teuchos::Comm<int> &getTeuchosComm(){
-      //TODO: Need Xpetra support for getComm
-      //return(*(_xmatrix->getComm()));
+  /*! Returns the number columns used by rows on this process
+   */
+  LNO getLocalNumColumns() const
+  {
+    return _matrix->GetNodeNumCols();
   }
 
-  const MPI_Comm &getMpiComm(){
-#ifdef HAVE_MPI
-      //TODO: Need Xpetra support for getComm
-      //return (*((_xmatrix->getComm()).getRawMpiComm()));
-#else
-      // TODO: What is the valid value here ?
-      return 0;
-#endif
+  /*! Return the total number of non-zero entries on this process.
+  */
+  LNO getLocalNumNonZeros() const
+  {
+    return _matrix->getNodeNumEntries();
   }
-  //TODO: Add just the required functions.
+
+  /*! Return the maximum number of non-zero entries in any local row.
+  */
+  LNO getLocalMaxRowNumNonZeros() const
+  {
+    return _matrix->getNodeMaxNumRowEntries();
+  }
+
+  /*! Return the local row information
+      \param Ids will on return hold a list of the global Ids for
+        each row on this process.
+      \param localIds can, optionally, on return hold a list of locally
+        relevant values that the process will use to refer to the objects
+        listed in the first list.  If localIds are omitted and
+        haveConsecutiveLocalIds is true, it is assumed that the
+        global Ids are in local Id order.
+      \param nnz will on return hold the number of non zeros in the
+         cooresponding row.
+  */
+  void getRowListCopy(std::vector<GID> &Ids,
+    std::vector<LID> &localIds, std::vector<LNO> &nnz)
+  {
+    LNO numRows = this->getLocalNumRows();
+    Ids.resize(numRows,0);
+    localIds.clear();   // don't need it
+    nnz.resize(numRows,0);
+    LNO end = _base + numRows;
+
+    for (LNO i= _base, j=0; i < end; i++, j++){
+      Ids[j] = _rowMap->getGlobalElement(i);
+      nnz[j] = _xmatrix->getNumEntriesInLocalRow(i);
+    }
+  }
+
+  /*!  This optional method is not implemented because we don't have list of nnz.
+   */
+  // LNO getRowListView(GID *&Ids, LID *&localIds, LNO *nnz)
+
+  /*! Return the column Ids of the non-zeros for the given row.
+      \param Id  global Id for a row on this process
+      \param localId  app's local Id, if any, associated with this row
+      \param columnId on return will contain the list of global column Ids
+   */
+  void getRowNonZeroCopy(GID Id, LID localId, std::vector<GID> &columnId)
+  {
+    LNO nCols = _xmatrix->getNumEntriesInLocalRow(i);
+    columnId.resize(nCols);
+    Teuchos::Array<std::vector<GID>::iterator > cols(columnId.begin(), columnId.end());
+    Teuchos::Array<Scalar> values(nCols);
+
+    _xmatrix->getGlobalRowCopy(Id, cols, values);
+  }
+
+  /*! Obtain a read-only view, if possible, of the column Ids of the
+      input row.
+      \param Id  global Id for a row on this process
+      \param localId  if input adapter supplied local Ids, this
+         is that localId
+      \param columnId on return will point a list of global column global Ids.
+      \return The number of ids in the columnId list.
+   */
+  LNO getRowNonZeroView(GID Id, LID localId, GID *&columnId) const
+  {
+    LNO nCols = _xmatrix->getNumEntriesInLocalRow(i);
+
+    Teuchos::ArrayView<GID> cols;
+    Teuchos::ArrayView<GID> values;
+
+    _xmatrix->getGlobalRowView(Id, cols, values);
+    columnId = cols->getRawPtr();
+    return 0;
+  }
+
+  /*! Return true of matrix is globally lower triangular.
+   */
+  bool isLowerTriangular() const { return _xmatrix->isLowerTriangular(); }
+
+  /*! Return true of matrix is globally upper triangular.
+   */
+  bool isUpperTriangular() const { return _xmatrix->isUpperTriangular(); }
+
+  /*! Return true of matrix globally has any diagonal entries.
+   */
+  bool hasDiagonalEntries() const { return (_xmatrix->GetGlobalNumDiags() > 0);}
 };
   
   
