@@ -136,17 +136,25 @@ public:
         optimizeStorage=false;
         Utils::MyOldScaleMatrix(DinvADinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-        // generate allreduced column-based array vector for local damping factors
-        Teuchos::Array<GlobalOrdinal> localreplicatedcolgids;
-        reduceAllXpetraMap(localreplicatedcolgids,*(DinvAP0->getDomainMap()));
+        RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAP0);
 
-        std::cout << localreplicatedcolgids.toString() << std::endl;
+        if(colbasedomegamap->isDistributed() == true) throw("colbasedomegamap is distributed globally?");
+        if(colbasedomegamap->getMinAllGlobalIndex() != DinvAP0->getDomainMap()->getMinAllGlobalIndex()) throw("MinAllGID does not match");
+        if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAP0->getDomainMap()->getMaxAllGlobalIndex()) throw("MaxAllGID does not match");
+        if(colbasedomegamap->getGlobalNumElements() != DinvAP0->getDomainMap()->getGlobalNumElements()) throw("NumGlobalElements do not match");
 
-        Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
+        RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Numerator =
+                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
+        RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Denominator =
+                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
+        RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ColBasedOmegas =
+                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
+
+        //Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
         //RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > map =
         //    Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, DinvADinvAP0->getDomainMap()-<getMaxGlobalIndex(), comm);
 
-        Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+        //Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
         //map->describe(*fos,Teuchos::VERB_EXTREME);
 
         //RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > locVec =
@@ -156,14 +164,14 @@ public:
 
 ///////////////////
 
-        RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rcolVec =
+        /*RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rcolVec =
                 Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getColMap());
         RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rdomVec =
                 Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getDomainMap());
 
         RCP<const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > coldomImport =
                 Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(DinvADinvAP0->getDomainMap(),DinvADinvAP0->getColMap());
-
+        */
 
 
         /*Teuchos::ArrayView< const GlobalOrdinal > row_globlist = DinvADinvAP0->getRowMap()->getNodeElementList();
@@ -188,16 +196,16 @@ public:
 
 ////////////////////
 
-        Test(DinvAP0);
+        //Test(DinvAP0);
         //rcolVec->putScalar(Teuchos::as<const Scalar>(2.0));
         //localomegaVec->doImport(rcolVec,omegaImport);
         //localomegaVec->describe(*fos,Teuchos::VERB_EXTREME);
 /////////////////////
 
-        Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+        /*Teuchos::ArrayView<const LocalOrdinal> lindices_right;
         Teuchos::ArrayView<const Scalar> lvals_right;
 
-        DinvADinvAP0->getLocalRowView(49, lindices_right, lvals_right);
+        DinvADinvAP0->getLocalRowView(49, lindices_right, lvals_right);*/
         //std::cout << "localindices for row l 49 on proc " << comm->getRank() << " " <<  lindices_right << std::endl;
         //for(size_t i = 0; i< lindices_right.size(); i++)
         //    std::cout << "PROC " << comm->getRank() << " LID: " << loclist[lindices_right[i]] << " GID: " << DinvADinvAP0->getColMap()->getGlobalElement(loclist[lindices_right[i]]) << std::endl;
@@ -223,6 +231,39 @@ public:
     }
 
     //@}
+
+    Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0) const
+    {
+        Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvAP0->getRangeMap()->getComm();
+
+        // generate allreduced column-based array vector for local damping factors
+        Teuchos::Array<GlobalOrdinal> localreplicatedcolgids;
+        reduceAllXpetraMap(localreplicatedcolgids,*(DinvAP0->getDomainMap()));
+
+        // Epetra-specific code
+        if (DinvAP0->getRowMap()->lib() == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+            Teuchos::RCP<Epetra_Map> epetra_locreplicatedomegagids = Teuchos::rcp(new Epetra_Map(localreplicatedcolgids.size(),localreplicatedcolgids.size(),&localreplicatedcolgids[0],0,*Xpetra::toEpetra(comm)));
+            const RCP< const Xpetra::EpetraMap> xpetra_locreplicatedomegagids = Teuchos::rcp(new Xpetra::EpetraMap(epetra_locreplicatedomegagids));
+            return xpetra_locreplicatedomegagids;
+#else
+            throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and EpetraExt enabled.")
+#endif
+        }
+        // Tpetra-specific code
+        else if(DinvAP0->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+            Teuchos::RCP<Teuchos::ArrayView<const GlobalOrdinal> > arView = Teuchos::rcp(new Teuchos::ArrayView<const GlobalOrdinal>(&localreplicatedcolgids[0],localreplicatedcolgids.size()));
+            Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetra_locreplicatedomegagids = Tpetra::createNonContigMap<GlobalOrdinal,LocalOrdinal>(*arView, comm);
+            const RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > xpetra_locreplicatedomegagids = Xpetra::toXpetra(tpetra_locreplicatedomegagids);
+            return xpetra_locreplicatedomegagids;
+#else
+            throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.")
+#endif
+        }
+
+        return Teuchos::null;
+    }
 
     void Test(RCP<Operator> AP0) const {
         Teuchos::RCP< const Teuchos::Comm< int > > comm = AP0->getRangeMap()->getComm();
@@ -260,7 +301,7 @@ public:
             Teuchos::ArrayView<const LocalOrdinal> lindices_right;
             Teuchos::ArrayView<const Scalar> lvals_right;
 
-            AP0->describe(*fos,Teuchos::VERB_EXTREME);
+            //AP0->describe(*fos,Teuchos::VERB_EXTREME);
 
             LocalOrdinal locOrd = AP0->getRowMap()->getLocalElement(52);
             std::cout << "PROC: " << comm->getRank() << " globalElement: " << 52 << " localElement: " << locOrd << std::endl;
@@ -279,9 +320,18 @@ public:
             //localomegaVec->doImport(*distrVec,*omegaImport,Xpetra::ADD);
             localomegaVec->reduce();
 
-            localomegaVec->describe(*fos,Teuchos::VERB_EXTREME);
+            //localomegaVec->describe(*fos,Teuchos::VERB_EXTREME);
 
             //distrVec->describe(*fos,Teuchos::VERB_EXTREME);
+
+            std::vector<GlobalOrdinal> gids;
+            gids.push_back(25*(comm->getRank()+1));
+            gids.push_back(30*(comm->getRank()+1));
+            gids.push_back(35*(comm->getRank()+1));
+            gids.push_back(40*(comm->getRank()+1));
+            RCP<Teuchos::ArrayView<const GlobalOrdinal> > arView = rcp(new Teuchos::ArrayView<const GlobalOrdinal>(&gids[0],gids.size()));
+            Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tmap = Tpetra::createNonContigMap<GlobalOrdinal,LocalOrdinal>(*arView, comm);
+            tmap->describe(*fos,Teuchos::VERB_EXTREME);
 
     #else
             throw(Exceptions::RuntimeError("Error."));
