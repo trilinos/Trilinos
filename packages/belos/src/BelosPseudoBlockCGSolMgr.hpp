@@ -232,23 +232,6 @@ namespace Belos {
     
   private:
 
-    // Method to convert std::string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( const std::string& scaleType ) {
-      if (scaleType == "Norm of Initial Residual") {
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        // This algorithm only provides true residuals, not preconditioned residuals, 
-        // so the residuals should only be scaled by the unpreconditioned initial residual.
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of RHS") {
-        return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-        return Belos::None;
-      } else 
-        TEST_FOR_EXCEPTION( true ,std::logic_error,
-			    "Belos::PseudoBlockCGSolMgr(): Invalid residual scaling type.");
-    }
-
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     

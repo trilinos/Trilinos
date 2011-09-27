@@ -293,24 +293,6 @@ public:
     
 private:
 
-
-
-  // Method to convert std::string to enumerated type for residual.
-  Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
-    if (scaleType == "Norm of Initial Residual") {
-      return Belos::NormOfInitRes;
-    } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-      return Belos::NormOfPrecInitRes;
-    } else if (scaleType == "Norm of RHS") {
-      return Belos::NormOfRHS;
-    } else if (scaleType == "None") {
-      return Belos::None;
-    } else
-      TEST_FOR_EXCEPTION( true ,std::logic_error,
-        "Belos::LSQRSolMgr(): Invalid residual scaling type.");
-  }
-
-
   // Linear problem.
   Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
   

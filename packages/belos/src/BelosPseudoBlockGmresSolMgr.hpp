@@ -304,21 +304,6 @@ namespace Belos {
     
   private:
 
-    //! Convert the string to its corresponding enumerated type for residual scaling.
-    Belos::ScaleType convertStringToScaleType (const std::string& scaleType) {
-      if (scaleType == "Norm of Initial Residual") {
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        return Belos::NormOfPrecInitRes;
-      } else if (scaleType == "Norm of RHS") {
-        return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-        return Belos::None;
-      } else 
-        TEST_FOR_EXCEPTION( true ,std::logic_error,
-            "Belos::PseudoBlockGmresSolMgr(): Invalid residual scaling type.");
-    }
-
     /// \brief Check current status tests against current linear problem.
     ///
     /// (Re)create all the status tests, based on the current solve

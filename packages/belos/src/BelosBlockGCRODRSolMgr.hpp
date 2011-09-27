@@ -507,21 +507,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 
     /************************* PRIVATE FUNCTION DEFINITIONS *******************************/
 
-    // Method to convert std::string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
-      if (scaleType == "Norm of Initial Residual") {
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        return Belos::NormOfPrecInitRes;
-      } else if (scaleType == "Norm of RHS") {
-         return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-        return Belos::None;
-      } else 
-        TEST_FOR_EXCEPTION( true ,std::logic_error,
-          "Belos::BlockGCRODRSolMgr(): Invalid residual scaling type.");
-    }
-    
     // Empty Constructor
     template<class ScalarType, class MV, class OP>
     BlockGCRODRSolMgr<ScalarType,MV,OP>::BlockGCRODRSolMgr() {
