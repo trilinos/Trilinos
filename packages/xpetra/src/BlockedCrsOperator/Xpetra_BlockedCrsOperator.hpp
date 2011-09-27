@@ -677,7 +677,7 @@ private:
         //A->getGlobalRowCopy(Row, Indices, Values, NumEntries);
         A->getLocalRowCopy(i, Indices, Values, NumEntries);
 
-        if(scalarA != 1.0)
+        if(scalarA != ScalarTraits< Scalar >::one())
           for (size_t j=0; j<NumEntries; ++j)
             Values[j] *= scalarA;
 
