@@ -43,7 +43,8 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationFactory()
+    UCAggregationFactory(RCP<FactoryBase> graphFact = Teuchos::null)
+      : graphFact_(graphFact)
     {
       TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
     }
@@ -123,7 +124,7 @@ namespace MueLu {
   private:
 
     //! Graph Factory
-    RCP<SingleLevelFactoryBase> graphFact_;
+    RCP<FactoryBase> graphFact_;
  
     //! Algorithms
     LocalAggregationAlgorithm algo1_;
