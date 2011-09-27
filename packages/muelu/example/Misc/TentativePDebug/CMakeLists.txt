@@ -18,3 +18,10 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   DEPLIBS muelu muelu-xpetra muelu-adapters
   )
+  
+PACKAGE_ADD_EXECUTABLE(
+  PgPtest
+  SOURCES PgPtest.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-xpetra muelu-adapters
+  )

@@ -3,6 +3,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_PgPFactory.hpp" // to make sure it is compiled
 #include "MueLu_TrilinosSmoother.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"

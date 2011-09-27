@@ -10,6 +10,10 @@ typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Hie
 typedef MueLu::SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SaPFactory;
 #endif
 
+#ifdef MUELU_PGPFACTORY_SHORT
+typedef MueLu::PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> PgPFactory;
+#endif
+
 #ifdef MUELU_GENERICPRFACTORY_SHORT
 typedef MueLu::GenericPRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> GenericPRFactory;
 #endif
