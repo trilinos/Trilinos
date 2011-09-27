@@ -13,6 +13,7 @@
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_TpetraVector.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
@@ -95,7 +96,7 @@ public:
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
       */
-    bool Build(Level& fineLevel, Level &coarseLevel) const {
+    void Build(Level& fineLevel, Level &coarseLevel) const {
 
         std::ostringstream buf; buf << coarseLevel.GetLevelID();
         RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
@@ -142,14 +143,14 @@ public:
         std::cout << localreplicatedcolgids.toString() << std::endl;
 
         Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
-        RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > map =
-            Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, 20, comm);
+        //RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > map =
+        //    Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, DinvADinvAP0->getDomainMap()-<getMaxGlobalIndex(), comm);
 
         Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
         //map->describe(*fos,Teuchos::VERB_EXTREME);
 
-        RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > locVec =
-                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(map);
+        //RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > locVec =
+        //        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(map);
         //locVec->describe(*fos,Teuchos::VERB_EXTREME);
 
 
@@ -163,7 +164,9 @@ public:
         RCP<const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > coldomImport =
                 Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(DinvADinvAP0->getDomainMap(),DinvADinvAP0->getColMap());
 
-        Teuchos::ArrayView< const GlobalOrdinal > row_globlist = DinvADinvAP0->getRowMap()->getNodeElementList();
+
+
+        /*Teuchos::ArrayView< const GlobalOrdinal > row_globlist = DinvADinvAP0->getRowMap()->getNodeElementList();
         std::vector<LocalOrdinal> row_nodvec(row_globlist.size(),0);
         std::vector<LocalOrdinal> row_locvec(row_globlist.size(),0);
         Teuchos::ArrayView< LocalOrdinal > row_nodlist(row_nodvec);
@@ -181,18 +184,24 @@ public:
         DinvADinvAP0->getColMap()->getRemoteIndexList(globlist,nodlist,loclist);
         std::cout << "colgloblist " <<  globlist << std::endl;
         std::cout << "colnodlist " <<  nodlist << std::endl;
-        std::cout << "colloclist " <<  loclist << std::endl;
+        std::cout << "colloclist " <<  loclist << std::endl;*/
 
 ////////////////////
+
+        Test(DinvAP0);
+        //rcolVec->putScalar(Teuchos::as<const Scalar>(2.0));
+        //localomegaVec->doImport(rcolVec,omegaImport);
+        //localomegaVec->describe(*fos,Teuchos::VERB_EXTREME);
+/////////////////////
 
         Teuchos::ArrayView<const LocalOrdinal> lindices_right;
         Teuchos::ArrayView<const Scalar> lvals_right;
 
         DinvADinvAP0->getLocalRowView(49, lindices_right, lvals_right);
-        std::cout << "localindices for row l 49 on proc " << comm->getRank() << " " <<  lindices_right << std::endl;
-        for(size_t i = 0; i< lindices_right.size(); i++)
-            std::cout << "PROC " << comm->getRank() << " LID: " << loclist[lindices_right[i]] << " GID: " << DinvADinvAP0->getColMap()->getGlobalElement(loclist[lindices_right[i]]) << std::endl;
-        std::cout << "localvals for row l 49 on proc " << comm->getRank() << " " <<  lvals_right << std::endl;
+        //std::cout << "localindices for row l 49 on proc " << comm->getRank() << " " <<  lindices_right << std::endl;
+        //for(size_t i = 0; i< lindices_right.size(); i++)
+        //    std::cout << "PROC " << comm->getRank() << " LID: " << loclist[lindices_right[i]] << " GID: " << DinvADinvAP0->getColMap()->getGlobalElement(loclist[lindices_right[i]]) << std::endl;
+        //std::cout << "localvals for row l 49 on proc " << comm->getRank() << " " <<  lvals_right << std::endl;
 
         ///////////////// minimize with respect to the (D^{-1} A)' D^{-1} A norm.
         //
@@ -203,19 +212,82 @@ public:
         //MultiplyAll(DinvAP0,DinvADinvAP0,Numerator);  // -> DinvAP0_subset
 
         //std::cout << Numerator << std::endl;
-        // smooth P
+        // smooth Pgi
 
         // do wiggle-cols handling?
 
-        return true;
     }
 
-    bool BuildP(Level &fineLevel, Level &coarseLevel) const {
+    void BuildP(Level &fineLevel, Level &coarseLevel) const {
         std::cout << "TODO: remove me" << std::endl;
     }
 
     //@}
 
+    void Test(RCP<Operator> AP0) const {
+        Teuchos::RCP< const Teuchos::Comm< int > > comm = AP0->getRangeMap()->getComm();
+        Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+
+        if (AP0->getRowMap()->lib() == Xpetra::UseEpetra) {
+    #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+            RCP<const Epetra_CrsMatrix> epA = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(AP0);
+            std::cout << "todo" << std::endl;
+    #else
+            throw(Exceptions::RuntimeError("Error."));
+    #endif
+        } else if(AP0->getRowMap()->lib() == Xpetra::UseTpetra) {
+    #ifdef HAVE_MUELU_TPETRA
+            RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(AP0);
+
+
+            RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > localomegamap =
+                Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, AP0->getColMap()->getMaxAllGlobalIndex(), comm);
+
+            RCP<Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > localomegaVec =
+                    //Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(localomegamap);
+                    rcp(new Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(localomegamap,true));
+
+            RCP<const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > omegaImport =
+                     Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(AP0->getColMap(),localomegamap);
+
+            RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > distrVec =
+                    Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(AP0->getColMap());
+
+            distrVec->putScalar(comm->getRank()+13);
+            localomegaVec->putScalar(0.0);
+
+
+            Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+            Teuchos::ArrayView<const Scalar> lvals_right;
+
+            AP0->describe(*fos,Teuchos::VERB_EXTREME);
+
+            LocalOrdinal locOrd = AP0->getRowMap()->getLocalElement(52);
+            std::cout << "PROC: " << comm->getRank() << " globalElement: " << 52 << " localElement: " << locOrd << std::endl;
+
+            if(locOrd!=Teuchos::OrdinalTraits<LocalOrdinal>::invalid())
+            {
+                AP0->getLocalRowView(locOrd, lindices_right, lvals_right);
+                for (LocalOrdinal i=0; i<lindices_right.size(); i++)
+                {
+                    localomegaVec->replaceLocalValue(AP0->getColMap()->getGlobalElement(lindices_right[i]),0,lvals_right[i]);
+                    std::cout << lindices_right << " GIDS: " << AP0->getColMap()->getGlobalElement(lindices_right[i]) << std::endl;
+                    std::cout << lvals_right << std::endl;
+                }
+            }
+
+            //localomegaVec->doImport(*distrVec,*omegaImport,Xpetra::ADD);
+            localomegaVec->reduce();
+
+            localomegaVec->describe(*fos,Teuchos::VERB_EXTREME);
+
+            //distrVec->describe(*fos,Teuchos::VERB_EXTREME);
+
+    #else
+            throw(Exceptions::RuntimeError("Error."));
+    #endif
+        }
+    }
 private:
 
     //! @name helper function for allreducing a Xpetra::Map
