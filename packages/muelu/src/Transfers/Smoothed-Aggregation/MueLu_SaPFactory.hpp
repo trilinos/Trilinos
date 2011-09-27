@@ -105,11 +105,11 @@ namespace MueLu {
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
       //FIXME what does the return code mean (unclear in MueMat)?
       */
-    bool Build(Level& fineLevel, Level &coarseLevel) const {
+    void Build(Level& fineLevel, Level &coarseLevel) const {
       return BuildP(fineLevel,coarseLevel);
     }
 
-    bool BuildP(Level &fineLevel, Level &coarseLevel) const {
+    void BuildP(Level &fineLevel, Level &coarseLevel) const {
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
       timer->start(true);
@@ -213,8 +213,8 @@ namespace MueLu {
           coarseLevel.Set("R", R, this);
       }
 
-      return true;
     } //Build()
+
     //@}
 
     /*

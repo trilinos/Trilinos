@@ -43,7 +43,7 @@ class PFactory : public TwoLevelFactoryBase {
     /*!
       @brief Abstract Build method.
     */
-    virtual bool BuildP(Level &fineLevel, Level &coarseLevel) const = 0;
+    virtual void BuildP(Level &fineLevel, Level &coarseLevel) const = 0;
     //@}
 
 

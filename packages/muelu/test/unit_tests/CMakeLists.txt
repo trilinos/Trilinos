@@ -23,7 +23,6 @@ APPEND_SET(SOURCES
   SaPFactory.cpp
   TransPFactory.cpp
   Needs.cpp
-  GenericPRFactory.cpp
   TentativePFactory.cpp
   Aggregates.cpp
   CoalesceDropFactory.cpp

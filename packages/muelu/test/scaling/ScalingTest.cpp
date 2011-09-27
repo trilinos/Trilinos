@@ -27,7 +27,6 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -201,18 +200,13 @@ int main(int argc, char *argv[]) {
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   Pfact->SetDampingFactor(SADampingFactor);
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
-  RCP<RFactory>         Rfact;
-  RCP<GenericPRFactory> PRfact;
-  if (useExplicitR) {
-    Rfact = rcp( new TransPFactory() );
-    PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
-  } else {
-    PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RFactory>         Rfact = rcp( new TransPFactory());
+  if (!useExplicitR) {
     H->SetImplicitTranspose(true);
     Acfact->SetImplicitTranspose(true);
     if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
   }
-  PRfact->SetMaxCoarseSize((GO) maxCoarseSize);
+  H->SetMaxCoarseSize((GO) maxCoarseSize);
 
   RCP<SmootherPrototype> smooProto;
   std::string ifpackType;
@@ -238,7 +232,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
   mtime.back()->stop();
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));

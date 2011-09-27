@@ -17,19 +17,14 @@ class RAPFactory : public TwoLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 
-
-  //JG to JJH: use Teuchos::Describable instead ?
-  template<class AA, class BB, class CC, class DD, class EE>
-  inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD,EE> &factory);
-
   public:
     //@{ Constructors/Destructors.
   /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
     : PFact_(PFact), RFact_(RFact),
       implicitTranspose_(false) {}*/
 
-    RAPFactory(RCP<FactoryBase> PRFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
-    : PRFact_(PRFact), AFact_(AFact), implicitTranspose_(false) {}
+    RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
+    : PFact_(PFact), RFact_(RFact), AFact_(AFact), implicitTranspose_(false) {}
 
     virtual ~RAPFactory() {}
     //@}
@@ -38,21 +33,21 @@ class RAPFactory : public TwoLevelFactoryBase {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      fineLevel.Request("A", AFact_.get());     // AFact per default Teuchos::null -> default factory for this
-      coarseLevel.Request("P",PRFact_.get());   // transfer operators (from PRFactory, not from PFactory and RFactory!)
-      coarseLevel.Request("R",PRFact_.get());
+      fineLevel.Request("A", AFact_.get());   // AFact per default Teuchos::null -> default factory for this
+      coarseLevel.Request("P",PFact_.get());  // transfer operators (from PRFactory, not from PFactory and RFactory!)
+      coarseLevel.Request("R",RFact_.get()); //TODO: must be request according to (implicitTranspose flag!!!!!
     }
 
     //@}
 
     //@{ Build methods.
-    bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+    void Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
       timer->start(true);
 
       Teuchos::OSTab tab(this->getOStream());
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PRFact_.get());
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
       RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
 
 RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
@@ -78,7 +73,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
 
         RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
       } else {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", PRFact_.get());
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
 RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
 rapTimer->start(true);
         RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
@@ -87,7 +82,7 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
 
       }
       
-      coarseLevel.Set("A", RAP, AFact_.get());
+      coarseLevel.Set("A", RAP, this);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
@@ -95,10 +90,9 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       GetOStream(Statistics0, 0) << "Ac: # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
 
       fineLevel.Release("A", AFact_.get());
-      coarseLevel.Release("P",PRFact_.get());
-      coarseLevel.Release("R",PRFact_.get());
+      coarseLevel.Release("P",PFact_.get());
+      coarseLevel.Release("R",RFact_.get());
 
-      return true;
     }
     //@}
 
@@ -106,19 +100,12 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       implicitTranspose_ = implicit;
     }
 
-    void SetPRFact(RCP<FactoryBase> PRFact) {
-      PRFact_ = PRFact;
-    }
-
 private:
   //! P Factory
-  //RCP<FactoryBase> PFact_;
+  RCP<FactoryBase> PFact_;
 
   //! R Factory
-  //RCP<FactoryBase> RFact_;
-
-  //! PR Factory
-  RCP<FactoryBase> PRFact_;
+  RCP<FactoryBase> RFact_;
   
   //! A Factory
   RCP<FactoryBase> AFact_;
@@ -126,13 +113,6 @@ private:
   bool implicitTranspose_;
 
 }; //class RAPFactory
-
-//! Friend print method.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &factory) {
-  os << "Printing RAPFactory object" << std::endl;
-  return os;
-}
 
 } //namespace MueLu
 

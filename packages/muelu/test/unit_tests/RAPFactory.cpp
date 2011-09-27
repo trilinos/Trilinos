@@ -24,7 +24,7 @@ namespace MueLuTests {
     TEST_EQUALITY(rapFactory != Teuchos::null, true);
 
     out << *rapFactory << std::endl;
-  } //Constructor test
+  } // Constructor test
 
   TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
   {
@@ -32,18 +32,7 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    // build test-specific default factory handler
-    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
-
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel, defHandler);
-
-    // overwrite default factory handler...
-//    fineLevel.SetDefaultFactoryHandler(defHandler);
-//    coarseLevel.SetDefaultFactoryHandler(defHandler);
+    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Request("A",NULL,false); // don't call DeclareInput for default factory of "A"
@@ -55,18 +44,20 @@ namespace MueLuTests {
 
     coarseLevel.Request("P",&sapFactory);
     coarseLevel.Request("R",&transPFactory);
-    coarseLevel.Request("A",NULL,false); // don't call DeclareInput for default factory of "A"
 
-    RCP<GenericPRFactory> PRFac = rcp(new GenericPRFactory(rcpFromRef(sapFactory),rcpFromRef(transPFactory)));
-    PRFac->SetMaxCoarseSize(1);
-    PRFac->DeclareInput(fineLevel,coarseLevel);
-    PRFac->Build(fineLevel,coarseLevel);
-    RAPFactory rap(PRFac);
+    sapFactory.DeclareInput(fineLevel,coarseLevel);
+    transPFactory.DeclareInput(fineLevel,coarseLevel);
+    sapFactory.Build(fineLevel,coarseLevel);
+    transPFactory.Build(fineLevel,coarseLevel);
+
+    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
     rap.DeclareInput(fineLevel,coarseLevel);
+
+    coarseLevel.Request("A",&rap);
     rap.Build(fineLevel,coarseLevel);
 
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
     RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",NULL);
     RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
@@ -80,7 +71,7 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A",NULL);
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -95,7 +86,7 @@ namespace MueLuTests {
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
 
-  } //Correctness test
+  } // Correctness test
 
   TEUCHOS_UNIT_TEST(RAPFactory, ImplicitTranspose)
   {
@@ -123,8 +114,7 @@ namespace MueLuTests {
     coarseLevel.SetDefaultFactoryHandler(defHandler);
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
-    fineLevel.Request("A",NULL,false);
-    fineLevel.Set("A",Op,NULL);
+    fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory(rcpFromRef(tentpFactory));
@@ -132,26 +122,21 @@ namespace MueLuTests {
 
     coarseLevel.Request("P", &sapFactory);
     coarseLevel.Request("R", &transPFactory);
-    coarseLevel.Request("A",NULL,false);
-    fineLevel.Request("A",NULL);
 
-    RCP<GenericPRFactory> PRFac = rcp(new GenericPRFactory(rcpFromRef(sapFactory),rcpFromRef(transPFactory)));
-    PRFac->SetMaxCoarseSize(1);
-    PRFac->DeclareInput(fineLevel,coarseLevel);
-    PRFac->Build(fineLevel,coarseLevel);
-    RAPFactory rap(PRFac);
+    sapFactory.DeclareInput(fineLevel,coarseLevel);
+    transPFactory.DeclareInput(fineLevel,coarseLevel);
+    sapFactory.Build(fineLevel,coarseLevel);
+    transPFactory.Build(fineLevel,coarseLevel);
+    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
+
+    coarseLevel.Request("A", &rap);
+
     rap.SetImplicitTranspose(true);
     rap.DeclareInput(fineLevel,coarseLevel);
     rap.Build(fineLevel,coarseLevel);
 
-//    sapFactory.DeclareInput(fineLevel,coarseLevel);
-//    transPFactory.DeclareInput(fineLevel,coarseLevel);
-//
-//    sapFactory.BuildP(fineLevel,coarseLevel);
-//    transPFactory.BuildR(fineLevel,coarseLevel);
-
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
     RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",NULL);
     RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
 
     //std::string filename = "A.dat";
@@ -173,9 +158,7 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
 
-
-
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A",NULL);
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
@@ -189,7 +172,8 @@ namespace MueLuTests {
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
-  } //Correctness test
 
-}//namespace MueLuTests
+  } // Correctness test
+
+} // namespace MueLuTests
 

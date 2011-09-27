@@ -7,7 +7,6 @@
 #include "MueLu_DefaultFactoryHandlerBase.hpp"
 
 // Headers for factories used by default:
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 //#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -41,22 +40,21 @@ namespace MueLu {
     virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
       if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
 
-        if (varName == "A")            return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
+        if (varName == "A")            return *NoFactory::get();
+        if (varName == "P")            return *NoFactory::get();
+        if (varName == "R")            return *NoFactory::get();
+
+        // if (varName == "A")            return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory));
     	if (varName == "Nullspace")    return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
-        if (varName == "PreSmoother")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null))); //TODO: change default
-        if (varName == "PostSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
+//         if (varName == "PreSmoother")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null))); //TODO: change default
+//         if (varName == "PostSmoother") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null)));
 
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "DefaultFactoryHandler::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }
 
       return DefaultFactoryHandlerBase::GetDefaultFactory(varName);
-    }
-
-    virtual RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string & varName) {
-    	GetDefaultFactory(varName);	// call GetDefaultFactory, that generates default factories if necessary
-    	return DefaultFactoryHandlerBase::GetDefaultFactoryRCP(varName);
     }
 
     //TODO GetDefaultObject, for Smoothers

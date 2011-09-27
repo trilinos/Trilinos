@@ -47,14 +47,13 @@ namespace MueLu
         //! @name Build methods.
 
         //! Build. The NoFactory has no support for a Build routine. throw error
-        bool Build(Level & currentLevel) const
+        void Build(Level & currentLevel) const
         {
-            TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "NoFactory::Build(): You cannot call the Build method for NoFactory!");
-            return false;
+            TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "NoFactory::Build(): the Build method of NoFactory cannot be called.");
         }
 
         //!
-        bool NewBuild(Level & requestedLevel) const {
+        void NewBuild(Level & requestedLevel) const {
           return Build(requestedLevel);
         }
 

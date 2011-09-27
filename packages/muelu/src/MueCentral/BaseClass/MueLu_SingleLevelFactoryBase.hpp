@@ -34,11 +34,11 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    virtual bool Build(Level & currentLevel) const = 0;
+    virtual void Build(Level & currentLevel) const = 0;
 
     //!
-    virtual bool NewBuild(Level & requestedLevel) const {
-      return Build(requestedLevel);
+    virtual void NewBuild(Level & requestedLevel) const {
+      Build(requestedLevel);
     }
 
     //!

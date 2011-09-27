@@ -150,11 +150,11 @@ namespace MueLu {
     the Setup() phase is also done only once when parameters
     don't change the result of the setup computation.
     */
-    bool Build(Level& currentLevel) const {
+    void Build(Level& currentLevel) const {
       return BuildSmoother(currentLevel, BOTH);
     }
     
-    bool BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const {
+    void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const {
       RCP<SmootherPrototype> preSmoother;
       RCP<SmootherPrototype> postSmoother;
       
@@ -213,8 +213,6 @@ namespace MueLu {
             currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
             currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother);
           }
-        
-        return true; //?
         
     } // Build()
     

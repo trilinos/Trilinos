@@ -32,7 +32,7 @@ namespace MueLu {
     //@{
     //! @name Build methods.
 
-    virtual bool NewBuild(Level & requestedLevel) const = 0;
+    virtual void NewBuild(Level & requestedLevel) const = 0;
 
     virtual void callDeclareInput(Level & requestedLevel) const = 0;
     //@}

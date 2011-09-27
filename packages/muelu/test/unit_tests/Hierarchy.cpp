@@ -3,10 +3,8 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_PRFactory.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -67,12 +65,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
   RCP<Level> levelOne = rcp(new Level() );
   levelOne->SetLevelID(1);
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));  // dummy factory for Aggregates
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));        // real graph factory for Ptent
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
 
   levelOne->Request("A");
@@ -125,12 +118,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));  // dummy factory for Aggregates
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));        // real graph factory for Ptent
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
 
   levelOne->Request("A");
@@ -138,11 +126,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
   RCP<TransPFactory>  RFact = rcp(new TransPFactory(PFact));
-  GenericPRFactory PRFact(PFact,RFact);
-  RAPFactory    AcFact(rcpFromRef(PRFact));
+  RAPFactory    AcFact(PFact, RFact);
 
   out << "Providing both factories to FillHierarchy." << std::endl;
-  H.FillHierarchy(PRFact,AcFact);
+  H.FillHierarchy(*PFact,*RFact, AcFact);
 } //FillHierarchy_BothFactories
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
@@ -159,11 +146,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
 
@@ -202,11 +185,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
 
   levelOne->Request("A",NULL);
@@ -248,11 +227,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
   levelOne->Request("A",NULL);
   levelOne->Set("A",A,NULL);
@@ -290,11 +265,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   RCP<Level> levelOne = rcp(new Level());
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
   levelOne->Request("A",NULL);
   levelOne->Set("A",A,NULL);
@@ -327,12 +298,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   levelOne->Request("A");
   levelOne->Set("A",A);
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
   //TODO  H.FullPopulate();
 } //FullPopulate
@@ -352,22 +318,17 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   levelOne->Request("A");
   levelOne->Set("A",A);
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-  defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
-
-  Hierarchy H(defHandler);
+  Hierarchy H;
   H.SetLevel(levelOne);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  RCP<GenericPRFactory> PRFact = rcp(new GenericPRFactory(PFact));
+  RCP<RFactory> RFact = rcp(new TransPFactory());
   RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
 
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-  H.FullPopulate(*PRFact,*AcFact,*SmooFact,0,2);
+  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
 #endif
     }
 } //FullPopulate
@@ -398,11 +359,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   Finest->Set("NullSpace",nullSpace);
   Finest->Set("A",Op);
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H(defHandler);
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H.SetLevel(Finest);
 
@@ -416,8 +373,9 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RFactory>           Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+  
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
@@ -428,7 +386,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+  status = H.FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
 
@@ -492,11 +450,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
-  // build test-specific default factory handler
-  RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-  defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H(defHandler);
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
   H.SetImplicitTranspose(true);
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H.SetLevel(Finest);
@@ -510,7 +464,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RFactory>           Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Acfact->SetImplicitTranspose(true);
 
@@ -523,7 +477,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(*PRfact,*Acfact,*SmooFact,0,maxLevels);
+  status = H.FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
 

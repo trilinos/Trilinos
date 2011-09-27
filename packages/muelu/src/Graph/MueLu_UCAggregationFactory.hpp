@@ -92,7 +92,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Build aggregates. */
-    bool Build(Level &currentLevel) const
+    void Build(Level &currentLevel) const
     {
       Monitor m(*this, "Aggregation");
 
@@ -124,7 +124,6 @@ namespace MueLu {
         aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
       }
 
-      return true; // ??
     }
 
     //@}

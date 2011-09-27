@@ -67,11 +67,11 @@ namespace MueLu {
     //! @name Build methods.
     //@{
 
-    bool Build(Level & fineLevel, Level & coarseLevel) const {
+    void Build(Level & fineLevel, Level & coarseLevel) const {
       return BuildR(fineLevel,coarseLevel);
     }
 
-    bool BuildR(Level & fineLevel, Level & coarseLevel) const {
+    void BuildR(Level & fineLevel, Level & coarseLevel) const {
 
       std::ostringstream buf; buf << coarseLevel.GetLevelID();
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("GenericRFactory::BuildR_"+buf.str()));
@@ -93,7 +93,6 @@ namespace MueLu {
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(R->getRowMap()->getComm()));
 
-      return true;
     } //BuildR
 
     //@}
