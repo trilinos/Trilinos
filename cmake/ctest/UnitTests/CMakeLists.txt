@@ -304,6 +304,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
       "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
@@ -352,6 +353,7 @@ IF (PYTHON_EXECUTABLE)
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
       "Directly modified or failing non-disabled packages that need to be tested:  Thyra 1"
@@ -378,6 +380,7 @@ IF (PYTHON_EXECUTABLE)
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
       "Directly modified or failing non-disabled packages that need to be tested:  ThyraCoreLibs 1"
@@ -404,6 +407,7 @@ IF (PYTHON_EXECUTABLE)
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
       "Directly modified or failing non-disabled packages that need to be tested:  Teko 1"
@@ -430,6 +434,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=2
     PASS_REGULAR_EXPRESSION_ALL
       "MODIFIED_PACKAGES_LIST='Teuchos.Teko'"
@@ -456,6 +461,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.none.txt failedPackages.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
       "MODIFIED_PACKAGES_LIST='Stokhos.Stalix'"
@@ -479,6 +485,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
       "MODIFIED_PACKAGES_LIST='Teko'"
@@ -510,6 +517,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
       "CTEST_UPDATE.+ returned '0'"
@@ -530,6 +538,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Stokhos.Stalix.txt failedPackages.txt
     ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
       "CTEST_UPDATE.+ returned '0'"
