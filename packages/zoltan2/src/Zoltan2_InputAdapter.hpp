@@ -22,9 +22,20 @@ namespace Zoltan2 {
 /*! InputAdapter defines methods required by all InputAdapters
  */
 
+enum InputAdapterType {
+  InvalidAdapterType = 0,
+  MatrixAdapterType,
+  MeshAdapterType,
+  GraphAdapterType,
+  CoordAdapterType,
+  IdAdapterType
+};
+
 class InputAdapter {
 private:
 public:
+  virtual enum InputAdapterType adapterType() = 0;
+protected:
 };
   
   

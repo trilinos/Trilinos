@@ -37,8 +37,7 @@ public:
   // correctly before calling a common problem construction function.
   Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
   Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  // TODO: SR We should have an input adapter, not sure why it was removed
-  //Problem(InputAdapter &);
+  Problem(InputAdapter &);
 
   // Destructor
   virtual ~Problem() {};
@@ -47,11 +46,7 @@ public:
   virtual void solve() = 0;
 
 protected:
-  // TODO: SR We should have an input adapter, not sure why it was removed
-  //RCP<InputAdapter> _inputAdapter;
-  RCP<TpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _inputAdapter;
-
-
+  RCP<InputAdapter> _inputAdapter;
   //TODO RCP<Model> _model;
   RCP<Teuchos::ParameterList> _params;
 
@@ -70,7 +65,7 @@ Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
 ) 
 {
   HELLO;
-  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
+  _inputAdapter = rcp(new XpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
                                 (rcpFromRef(A)));
   _params = rcpFromRef(p);
 }

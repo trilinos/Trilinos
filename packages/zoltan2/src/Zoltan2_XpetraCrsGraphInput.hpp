@@ -14,7 +14,7 @@
 #ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 
-#include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_GraphInput.hpp>
 #include <Xpetra_EpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Teuchos_RCP.hpp>
@@ -26,11 +26,11 @@ namespace Zoltan2 {
     \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
     The template parameter is the weight type.  Xpetra local and global IDs 
-    are ints.
+    are ints. 
 */
 
 CONSISTENT_CLASS_TEMPLATE_LINE
-class XpetraCrsGraphInput : public InputAdapter {
+class XpetraCrsGraphInput : public GraphInput {
 private:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

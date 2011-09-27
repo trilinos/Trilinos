@@ -40,10 +40,15 @@ namespace Zoltan2 {
 
 template<typename Scalar, typename AppLID, typename AppGID,
   typename LNO=int, typename GNO=AppGID>
-  class GraphInput : public InputAdapter {
+class GraphInput : public InputAdapter {
 private:
 
 public:
+
+  // adapterType == GraphAdapterType
+  // Function must return one of Zoltan2's enumerated types in InputAdapter
+  // User should not rewrite this function.
+  enum InputAdapterType adapterType() {return GraphAdapterType;}
 
   // TODO - what to do with destructor
   //virtual ~GraphInput();

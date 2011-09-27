@@ -55,4 +55,14 @@ void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::solve()
 
 }
 
+//! createPartitioningProblem 
+CONSISTENT_FN_TEMPLATE_LINE
+void createPartitioningProblem()
+{
+  enum InputAdapterType adapterType = _inputAdapter->adapterType();
+
+  // Select Model based on parameters and InputAdapter type
+
+}
+
 #endif

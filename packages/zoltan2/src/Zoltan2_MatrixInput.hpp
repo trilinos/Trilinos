@@ -35,6 +35,11 @@ private:
 
 public:
 
+  // adapterType == MatrixAdapterType
+  // Function must return one of Zoltan2's enumerated types in InputAdapter
+  // User should not rewrite this function.
+  enum InputAdapterType adapterType() {return MatrixAdapterType;}
+
   /*! Destructor */
   virtual ~MatrixInput(){};
 
