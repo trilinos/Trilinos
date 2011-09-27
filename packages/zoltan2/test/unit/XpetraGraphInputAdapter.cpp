@@ -15,7 +15,7 @@
 //     Create an Epetra::CrsGraph
 //     Instaniate a Zoltan2::GraphInputAdapter
 //     Test all queries, and verify.
-//     Test copy and assignment.
+//     Test copy and assignment.         TODO
 //     Test support of vertex and edge weights.
 //     Test support of vertex coordinates.
 //     Local IDs should be optional (TODO). Test without providing local IDs.
@@ -24,6 +24,12 @@
 //
 //   We don't support changing the graph in an adapter once
 //   it is set up.
+//
+// Xpetra does not support const input, TODO - ask for const support
+//
+//  TODO this is a pretty boring test.  All the vertex and
+//    and edge weights are 1.  We should get weights from
+//    the mtx file and check against them.
 //
 #
 #include <Zoltan2_config.h>
@@ -34,6 +40,7 @@
 #include <Zoltan2_EpetraCrsGraphInput.hpp>
 #include <Zoltan2_Util.hpp>
 #include <EpetraExt_CrsMatrixIn.h>
+#include <Teuchos_ArrayRCP.hpp>
 
 // For Epetra tests
 #ifdef HAVE_MPI
@@ -45,6 +52,8 @@
 
 // For Tpetra tests
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsGraph.hpp>
 
 using namespace std;
 using namespace Teuchos;
@@ -89,12 +98,11 @@ int main(int argc, char *argv[])
   mtxFiles.push_back("../data/cage10.mtx");
   mtxFiles.push_back("../data/diag500_4.mtx");
 
+  // Tests of EpetraCrsGraphInput, TpetraCrsGraphInput adapter.
+
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
 
     Epetra_CrsMatrix *M=NULL;
-
-    // TODO - can we get weights from the mtx files?
-    //    the non-zeros in the matrix?
 
     int fail = EpetraExt::MatrixMarketFileToCrsMatrix(
       mtxFiles[fileNum].c_str(), ecomm, M, 0, 0);
@@ -107,33 +115,73 @@ int main(int argc, char *argv[])
     int lidMax = map.MaxLID();
     int numVtx = g.NumMyRows();
     int numNZ = g.NumMyEntries();
-
-std::cout << numNZ << std::endl;
-
-    // Xpetra does not support const input, because it is also
-    // used to change Epetra and Tpetra objects.  TODO - ask for const support
+    int base = map.IndexBase();
+ 
+    //////////////////////////////////////////////
+    // Create an EpetraCrsGraphInput adapter.
+    //////////////////////////////////////////////
 
     RCP<Epetra_CrsGraph> graph = rcp(const_cast<Epetra_CrsGraph *>(&g));
-    Zoltan2::EpetraCrsGraphInput<float> adapter;
+    graph.release();  // we're not responsible for deleting graph
+
+    Zoltan2::EpetraCrsGraphInput<float> adapterE;
 
     try {
-      adapter.setGraph(graph);
+      adapterE.setGraph(graph);
     }
-    CATCH_EXCEPTION("adapter constructor");
+    CATCH_EXCEPTION("adapterE constructor");
+
+    //////////////////////////////////////////////
+    // Create a TpetraCrsGraphInput adapter 
+    // representing the same graph.
+    //////////////////////////////////////////////
+
+    RCP<Tpetra::Map<int, int> > tmap = rcp(
+      new Tpetra::Map<int, int>(map.NumGlobalElements(), numVtx, base, comm));
+
+    ArrayRCP<size_t> entriesPerRow(numVtx);
+    for (int i=0; i < numVtx; i++){
+      entriesPerRow[i] = g.NumMyIndices(i + base);
+    }
+
+    ArrayRCP<int> nonZeroIds(g.MaxNumIndices());
+
+    RCP<Tpetra::CrsGraph<int, int> > tpetraVersion =
+      rcp(new Tpetra::CrsGraph<int, int>(tmap, entriesPerRow));
+
+    const Epetra_BlockMap &colMap = g.ColMap();
+    for (int i=0; i < numVtx; i++){
+      int numEdges;
+      int *edgeIds;
+      g.ExtractMyRowView(i+base, numEdges, edgeIds);
+      for (int j=0; j < numEdges; j++){
+        nonZeroIds[j] = colMap.GID(edgeIds[j]);
+      }
+      tpetraVersion->insertGlobalIndices(map.GID(i+base), 
+        nonZeroIds.view(0, numEdges));
+    }
+
+    tpetraVersion->fillComplete();
+
+    //Zoltan2::TpetraCrsGraphInput<float, int, int> adapterT(tpetraVersion);
+
+    //////////////////////////////////////////////
+    // Now test both adapters 
+    //////////////////////////////////////////////
 
     int lidBase;
-    bool consecLids = adapter.haveConsecutiveLocalIds(lidBase);
+    bool consecLids = adapterE.haveConsecutiveLocalIds(lidBase);
     if (!consecLids || (lidBase != lidMin))
       fail = 1;
     
     TEST_FAIL_AND_EXIT(ecomm, fail, "lid base vs lid min");
 
-    if (adapter.inputAdapterName() != std::string("EpetraCrsGraph"))
+    if (adapterE.inputAdapterName() != std::string("EpetraCrsGraph"))
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "inputAdapterName");
 
-    if (adapter.getLocalNumVertices() != numVtx)
+    if (adapterE.getLocalNumVertices() != numVtx)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumVertices");
@@ -150,20 +198,20 @@ std::cout << numNZ << std::endl;
     }
 
     try{
-      adapter.setVertexWeights(lidList, vwgtList);
+      adapterE.setVertexWeights(lidList, vwgtList);
     }
     CATCH_EXCEPTION("setting vertex weights");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexWeights");
 
     try{
-      adapter.setVertexCoordinates(lidList, xyzList);
+      adapterE.setVertexCoordinates(lidList, xyzList);
     }
     CATCH_EXCEPTION("setting vertex coords");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexCoordinates");
 
-    if (adapter.getLocalNumEdges() != numNZ)
+    if (adapterE.getLocalNumEdges() != numNZ)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumEdges");
@@ -186,60 +234,56 @@ std::cout << numNZ << std::endl;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "g.ExtractGlobalRowView");
 
-#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
     try{
-      adapter.setEdgeWeights(lidList, numNbors, nborGID, ewgtList);
+      adapterE.setEdgeWeights(lidList, numNbors, nborGID, ewgtList);
     }
     CATCH_EXCEPTION("setting edge weights");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "setEdgeWeights");
-#endif
 
     // Test that get methods are correct
 
-    if (adapter.getVertexWeightDim() != 1)
+    if (adapterE.getVertexWeightDim() != 1)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexWeightDim");
 
-#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
-    if (adapter.getEdgeWeightDim() != 1)
+    if (adapterE.getEdgeWeightDim() != 1)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getEdgeWeightDim");
-#endif
 
-    if (adapter.getCoordinateDim() != 3)
+    if (adapterE.getCoordinateDim() != 3)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getCoordinateDim");
 
-    std::vector<int> adapterGids;
-    std::vector<int> adapterLids;
-    std::vector<float> adapterCoords;
-    std::vector<float> adapterVwgts;
+    std::vector<int> adapterEGids;
+    std::vector<int> adapterELids;
+    std::vector<float> adapterECoords;
+    std::vector<float> adapterEVwgts;
 
     try{
-      adapter.getVertexListCopy(adapterGids, adapterLids,
-        adapterCoords, adapterVwgts);
+      adapterE.getVertexListCopy(adapterEGids, adapterELids,
+        adapterECoords, adapterEVwgts);
     }
     CATCH_EXCEPTION("getting vertex copy");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListCopy");
 
-    if ((adapterGids.size() != numVtx) ||
-        (adapterCoords.size() != numVtx*3) ||
-        (adapterVwgts.size() != numVtx) ){
+    if ((adapterEGids.size() != numVtx) ||
+        (adapterECoords.size() != numVtx*3) ||
+        (adapterEVwgts.size() != numVtx) ){
       fail = 1;
     }
     else{
       for (int i=0, k=0; i < numVtx; i++, k+=3){
         int lid = i + lidBase;
-        if ((adapterGids[i] != map.GID(lid)) ||
-            (adapterCoords[k] != lid) ||
-            (adapterCoords[k+1] != 2*lid) ||
-            (adapterCoords[k+2] != 3*lid) ||
-            (adapterVwgts[i] != 1.0) ){
+        if ((adapterEGids[i] != map.GID(lid)) ||
+            (adapterECoords[k] != lid) ||
+            (adapterECoords[k+1] != 2*lid) ||
+            (adapterECoords[k+2] != 3*lid) ||
+            (adapterEVwgts[i] != 1.0) ){
           fail=1;
           break;
         }
@@ -253,7 +297,7 @@ std::cout << numNZ << std::endl;
     int nv=0;
 
     try{
-      nv = adapter.getVertexListView(gidView, lidView, wgtView, coordView);
+      nv = adapterE.getVertexListView(gidView, lidView, coordView, wgtView);
     }
     CATCH_EXCEPTION("getting vertex view");
 
@@ -277,7 +321,6 @@ std::cout << numNZ << std::endl;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListView results");
 
-#ifdef EDGE_WEIGHT_FUNCTIONS_ARE_DONE
     for (int lid=lidMin, i=0, k=0; lid <= lidMax; lid++, i++){
       int num=-1;
       unsigned nnbors = numNbors[i];
@@ -285,18 +328,21 @@ std::cout << numNZ << std::endl;
       std::vector<float> wgt;
 
       try{
-        adapter.getVertexEdgeCopy(map.GID(lid), lid, id, wgt);
+        adapterE.getVertexEdgeCopy(map.GID(lid), lid, id, wgt);
       }
       CATCH_EXCEPTION("getting edge copy");
 
-      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeCopy");
+      if (fail)
+        break;
+     
 
       try{
-        num = adapter.getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
+        num = adapterE.getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
       }
       CATCH_EXCEPTION("getting edge view");
 
-      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeView");
+      if (fail)
+        break;
 
       if ((id.size() != nnbors) || (num != nnbors) || (wgt.size() != nnbors))
         fail=1;
@@ -311,9 +357,9 @@ std::cout << numNZ << std::endl;
           }
         }
       }
-      TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeCopy/View results");
     }
-#endif
+
+    TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexEdgeCopy/View results");
   }  // Next graph
 
   if (!z2_rank)

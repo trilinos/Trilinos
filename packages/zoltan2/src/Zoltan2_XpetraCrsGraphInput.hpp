@@ -35,6 +35,7 @@ class XpetraCrsGraphInput : public GraphInput<CONSISTENT_TEMPLATE_PARAMS> {
 private:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+// local typedefs should go here
 #endif
 
   bool _valid;
@@ -45,6 +46,7 @@ private:
   int _vtxWeightDim;
   int _edgeWeightDim;
   int _coordinateDim;
+  int _base;
   std::vector<Scalar> _edgeWgt;
   std::vector<Scalar> _vertexWgt;
   std::vector<Scalar> _xyz;
@@ -52,6 +54,7 @@ private:
   void makeOffsets()
   {
     _rowMap = _graph->getRowMap();
+    _base = _rowMap->getMinLocalIndex();
     int numV = _rowMap->getNodeNumElements();
     _edgeOffsets.resize(numV+1, 0);
     for (int i=0; i < numV; i++){
@@ -246,8 +249,63 @@ public:
     if (!_valid)
       throw std::runtime_error("improperly constructed adapter");
 
-    // TODO write this
+    LNO nvtx = vertexLid.size();
 
+    if ((nvtx==0) || (nborGid.size()==0) || (wgts.size()==0))
+      return;
+
+    if (_edgeWeightDim == 0){
+      _edgeWeightDim = wgts.size() / nborGid.size();
+      if (_edgeWeightDim * nborGid.size() != wgts.size())
+        throw std::runtime_error("Invalid number of edge weights");
+      _edgeWgt.resize(_edgeWeightDim * getLocalNumEdges(), Scalar(1));
+    }
+    else if ((nborGid.size() * _edgeWeightDim) != wgts.size()){
+      throw std::runtime_error("Invalid number of edge weights");
+    }
+
+    int nextNbor=0, nextWgt=0;
+
+    for (LNO v=0; v < nvtx; v++){
+      int nnbors = numNbors[v];
+
+      if (nnbors < 1)
+        continue;
+
+      LID lid = vertexLid[v];
+      GID gid = _rowMap->getGlobalElement(lid);
+      std::vector<GID> edges;
+      std::vector<Scalar> ewgts;
+      getVertexEdgeCopy(gid, lid, edges, ewgts); 
+
+      if (nnbors > edges.size())
+        throw std::runtime_error("invalid number of neighbors");
+
+      std::vector<GID> nbors(nnbors);
+      std::vector<GID> idx(nnbors);
+      for (int i=0; i < nnbors; i++){
+        nbors[i] = nborGid[nextNbor++];
+        idx[i] = i;
+      }
+
+      if (edges != nbors){
+        // TODO make it more efficient to match up edge IDs with their index
+        for (int i=0; i < nnbors; i++){
+          typename std::vector<GID>::iterator loc = std::find(edges.begin(), edges.end(),nbors[i]);
+          if (loc == edges.end())
+            throw std::runtime_error("Invalid edge global id");
+          idx[i] = loc - edges.begin();
+        }
+      }
+
+      for (int i=0; i < nnbors; i++){
+        int toOffset = (_edgeOffsets[lid-_base] + idx[i]) * _edgeWeightDim;
+        int fromOffset = nextWgt + (i * _edgeWeightDim);
+        for (int j=0; j < _edgeWeightDim; j++)
+          _edgeWgt[toOffset+j] = wgts[fromOffset+j];
+      }
+      nextWgt += nnbors * _edgeWeightDim;
+    }
   }
 
   // TODO: should this be part of InputAdapter interface?
@@ -277,7 +335,7 @@ public:
   {
     if (!_valid)
       throw std::runtime_error("invalid input object");
-    base = _rowMap->getMinLocalIndex();
+    base = _base;
     return true;
   }
 
@@ -364,6 +422,8 @@ public:
     if (!_valid)
       throw std::runtime_error("invalid input object");
     
+    // TODO we need to verify that gids are actually stored
+    //   in lid order
     int nvtx = this->getLocalNumVertices();
     ids = _rowMap->getNodeElementList().getRawPtr();
     localIDs = NULL;   // because haveConsecutiveLocalIds() == true
@@ -382,7 +442,7 @@ public:
     
     int nvtx = this->getLocalNumVertices();
 
-    if (localId < 0 || localId >= nvtx)
+    if (localId < _base || localId >= _base+nvtx)
       throw std::runtime_error("invalid local vertex ID");
 
     edgeId.clear();
@@ -399,11 +459,11 @@ public:
       memcpy(toId, fromId, sizeof(int) * nedges);
 
       if (_edgeWeightDim > 0){
-        int offset = _edgeOffsets[localId] * _edgeWeightDim;
+        int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
         const Scalar *fromWgt = &_edgeWgt[offset];
-        wgts.resize(_edgeWeightDim);
+        wgts.resize(_edgeWeightDim * nedges);
         Scalar *toWgt = &wgts[0];
-        memcpy(toWgt, fromWgt, sizeof(Scalar) * _edgeWeightDim);
+        memcpy(toWgt, fromWgt, sizeof(Scalar) * _edgeWeightDim * nedges);
       }
       else{
         wgts.clear();
@@ -422,7 +482,7 @@ public:
     
     int nvtx = this->getLocalNumVertices();
 
-    if (localId < 0 || localId >= nvtx)
+    if (localId < _base || localId >= _base+nvtx)
       throw std::runtime_error("invalid local vertex ID");
 
     edgeId = NULL;
@@ -434,7 +494,7 @@ public:
     edgeId = &nbors[0];
 
     if ((nedges > 0) && (_edgeWeightDim > 0)){
-      int offset = _edgeOffsets[localId] * _edgeWeightDim;
+      int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
       wgts = &_edgeWgt[offset];
     }
     return nedges;

@@ -44,21 +44,14 @@ public:
 
   /*! Default constructor
    */
-  TpetraCrsMatrixInput()
-  {
-  }
+  TpetraCrsMatrixInput() { }
 
   /*! Constructor
    */
-  //TODO TpetraCrsMatrixInput(RCP<const Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> >
   TpetraCrsMatrixInput(RCP<Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-        matrix): XpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>(
-        rcp(new Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>
-         (matrix)))
+        matrix): XpetraCrsMatrixInput<CONSISTENT_TRILINOS_TEMPLATE_PARAMS>(matrix)
   {
-      HELLO;
   }
-
 };
   
   
