@@ -63,7 +63,11 @@ SET(INTEL_COMPILER_BASE   /opt/intel/Compiler/composerxe-2011.4.191)
 # add rpath for gnu and intel compiler libraries
 SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
 
+# Turn on configure timing
 SET(Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
+
+# Don't create *Config.cmake files since they are massively expensive to create
+SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL "")
 
 # Point to basic CASL-related TPLs
 SET(PVMLibraries_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/pvm3/lib/LINUX64 CACHE FILEPATH "")
