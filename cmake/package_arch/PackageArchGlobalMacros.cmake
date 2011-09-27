@@ -215,6 +215,12 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE BOOL
     "Determines if export makefiles will be create and installed."
     )
+  
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+    ON
+    CACHE BOOL
+    "Determines if *Config.cmake files are created or not."
+    )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )

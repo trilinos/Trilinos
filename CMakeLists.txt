@@ -304,7 +304,9 @@ TRILINOS_DEFINE_PACKAGING()
 #
 # L) Install-related commands
 #
-IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+IF(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+  AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
+  )
 
   INCLUDE(PackageWritePackageConfig)
 
@@ -317,17 +319,21 @@ IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     DESTINATION "${Trilinos_INSTALL_INCLUDE_DIR}"
     RENAME TrilinosConfig.cmake
     )
+
 ENDIF()
+
 
 #
 # M) Export the library dependencies. This will let client projects
 # refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
 #
 
-MESSAGE("")
-MESSAGE("Exporting library dependencies ...")
-MESSAGE("")
-EXPORT_LIBRARY_DEPENDENCIES( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake )
+IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+  MESSAGE("")
+  MESSAGE("Exporting library dependencies ...")
+  MESSAGE("")
+  EXPORT_LIBRARY_DEPENDENCIES( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake )
+ENDIF()
 
 #
 # P) Show final timing and end
