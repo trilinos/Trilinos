@@ -1,13 +1,9 @@
 #ifndef _ZOLTAN2_PROBLEM_HPP_
 #define _ZOLTAN2_PROBLEM_HPP_
 
-#include <Zoltan2_config.h>
+#include <Zoltan2_Standards.hpp>
 #include <Zoltan2_TpetraCrsMatrixInput.hpp>
-#include <Zoltan2_TemplateMacros.hpp>
 #include <Zoltan2_InputAdapter.hpp>
-
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_RCP.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
 
@@ -16,8 +12,6 @@
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
 
-using Teuchos::RCP;
-using Teuchos::rcp;
 using std::cout;
 using std::endl;
 

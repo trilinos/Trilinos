@@ -10,8 +10,6 @@
   the Problem class.
 */
 
-using Teuchos::RCP;
-
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
@@ -31,7 +29,7 @@ public:
   //! Constructor with Tpetra Matrix interface.
   PartitioningProblem(
     Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
-    Teuchos::ParameterList &p
+    ParameterList &p
   ) : Problem<CONSISTENT_TEMPLATE_PARAMS>(A, p) 
   {
     HELLO;

@@ -6,39 +6,25 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Zoltan2_config.h>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_OpaqueWrapper.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Zoltan2_Environment.hpp>
-#include <Zoltan2_Exceptions.hpp>
-#include <mpi.h>
-#include <sstream>
-#include <fstream>
-#include <ostream>
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2{
 
 // Using C-language MPI rather than C++ because it seems to be more portable.
 
-// TODO move ostreams to environment methods rather than parameterList entries
-void getOutputStreamFromParameterList(
-  Teuchos::ParameterList &pl, std::string key, std::ostream *&os,
-  std::ostream &defaultValue);
-
-/*! Convert an MPI communicator to a Teuchos::MpiComm object.
+/*! Convert an MPI communicator to a MpiComm object.
  */
 
 #ifdef HAVE_MPI
 template <typename Ordinal>
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
+  RCP<MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm &comm)
 {
-  Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = 
-    Teuchos::opaqueWrapper<MPI_Comm>(comm); 
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > tcommPtr(
-    new Teuchos::MpiComm<Ordinal>(handle));
+  RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = Teuchos::opaqueWrapper<MPI_Comm>(comm); 
+  RCP<MpiComm<Ordinal> > tcommPtr(new MpiComm<Ordinal>(handle));
 
   return tcommPtr;
 }
@@ -53,16 +39,16 @@ template <typename Ordinal>
  */
 
 template <typename Ordinal>
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
+  RCP<MpiComm<Ordinal> >
     getTeuchosMpiSubComm(
-      const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > &comm, 
+      const RCP<MpiComm<Ordinal> > &comm, 
       const std::vector<Ordinal> &members, const Environment &env)
 {
   // TODO test this only once during the library execution
   Z2_GLOBAL_BUG_ASSERTION(*comm, env, "size of Ordinal assumption", 
     sizeof(Ordinal) == sizeof(int), BASIC_ASSERTION);
 
-  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = 
+  RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = 
     comm->getRawMpiComm();
   MPI_Group mainGroup, subGroup;
   MPI_Comm  subComm;
@@ -81,12 +67,11 @@ template <typename Ordinal>
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > newComm = 
+  RCP<MpiComm<Ordinal> > newComm = 
     getTeuchosMpiComm<Ordinal>(subComm);
 
   return newComm;
 }
-
 
 /*! Create a sub communicator.
     \param comm  The original communicator
@@ -94,13 +79,13 @@ template <typename Ordinal>
     \return A communicator containing only the members of the original communicator that supplied the same color in the call.
  */
 template <typename Ordinal>
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
+  RCP<MpiComm<Ordinal> >
     getTeuchosMpiSubComm(
-      const Teuchos::RCP<Teuchos::MpiComm<Ordinal> > &comm, 
+      const RCP<MpiComm<Ordinal> > &comm, 
       const Ordinal color, const Environment &env)
 {
   MPI_Comm subComm;
-  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = comm->getRawMpiComm();
+  RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > superComm = comm->getRawMpiComm();
 
   int rc = MPI_Comm_split(*superComm, color, 0, &subComm);
   Z2_LOCAL_INPUT_ASSERTION(*comm, env, "creating sub communicator", 
@@ -108,7 +93,7 @@ template <typename Ordinal>
 
   MPI_Comm_set_errhandler(subComm, MPI_ERRORS_RETURN);
 
-  Teuchos::RCP<Teuchos::MpiComm<Ordinal> > newComm = 
+  RCP<MpiComm<Ordinal> > newComm = 
     getTeuchosMpiComm<Ordinal>(subComm);
 
   return newComm;

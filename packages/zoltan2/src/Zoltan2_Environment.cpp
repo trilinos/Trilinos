@@ -19,15 +19,12 @@
 
 */
 
-#include <ostream>
 #include <Zoltan2_Environment.hpp>
-#include <Zoltan2_Exceptions.hpp>
-#include <Teuchos_RCP.hpp>
 
 namespace Zoltan2 {
 
-Environment::Environment( Teuchos::ParameterList &problemParams,
-  Teuchos::RCP<const Teuchos::Comm<int> > &comm):
+Environment::Environment( ParameterList &problemParams,
+  RCP<const Comm<int> > &comm):
   _params(problemParams), _validParams(), 
   _myRank(0), _numProcs(0),
   _printDebugMessages(false), _printProfilingMessages(false),
@@ -45,7 +42,7 @@ Environment::Environment():
   _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
   _committed(false), _dbg()
 {
-  _comm = Teuchos::DefaultComm<int>::getComm();
+  _comm = DefaultComm<int>::getComm();
   _myRank = _comm->getRank();
   _numProcs = _comm->getSize();
 }
@@ -82,7 +79,7 @@ Environment &Environment::operator=(const Environment &env)
   return *this;
 }
 
-void Environment::setCommunicator(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+void Environment::setCommunicator(RCP<const Comm<int> > &comm)
 {
   Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
     "parameters are already committed",
@@ -93,7 +90,7 @@ void Environment::setCommunicator(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   _numProcs = _comm->getSize();
 }
 
-void Environment::setParameters(Teuchos::ParameterList &params)
+void Environment::setParameters(ParameterList &params)
 {
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
     "parameters are already committed",
@@ -102,7 +99,7 @@ void Environment::setParameters(Teuchos::ParameterList &params)
   _params = params;
 }
 
-void Environment::addParameters(Teuchos::ParameterList &params)
+void Environment::addParameters(ParameterList &params)
 {
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
     "parameters are already committed",
@@ -120,13 +117,13 @@ void Environment::commitParameters()
   createValidParameterList(_validParams);
   _params.validateParametersAndSetDefaults(_validParams);
 
-  Teuchos::Array<int> reporters = 
-    _params.get<Teuchos::Array<int> >(std::string("debug_procs"));
+  Array<int> reporters = 
+    _params.get<Array<int> >(std::string("debug_procs"));
 
   _printDebugMessages = IsInRangeList(_myRank, reporters);
 
   reporters = 
-    _params.get<Teuchos::Array<int> >(std::string("profiling_procs")); 
+    _params.get<Array<int> >(std::string("profiling_procs")); 
 
   _printProfilingMessages = IsInRangeList(_myRank, reporters);
 
@@ -144,16 +141,16 @@ void Environment::commitParameters()
       // TODO
     }
     // TODO DebugManager destructor should close dbgFile if necessary
-    _dbg = Teuchos::rcp(new DebugManager(
+    _dbg = rcp(new DebugManager(
       _myRank, _printDebugMessages,  dbgFile, _debugDepthLevel));
   }
   else{
     std::string &osname = _params.get<std::string>(std::string("debug_output_stream"));
     if (osname == std::string("std::cout"))
-      _dbg = Teuchos::rcp(new DebugManager(
+      _dbg = rcp(new DebugManager(
         _myRank, _printDebugMessages,  std::cout, _debugDepthLevel));
     else if (osname == std::string("std::cerr"))
-      _dbg = Teuchos::rcp(new DebugManager(
+      _dbg = rcp(new DebugManager(
         _myRank, _printDebugMessages,  std::cerr, _debugDepthLevel));
   }
 

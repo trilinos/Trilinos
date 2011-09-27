@@ -16,7 +16,6 @@
 
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 #include <Epetra_CrsGraph.h>
-#include <Teuchos_RCP.hpp>
 
 namespace Zoltan2 {
 
@@ -56,7 +55,7 @@ public:
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */
-  EpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph):
+  EpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph):
     XpetraCrsGraphInput<Scalar, int, int> (graph) {}
 
   /*! Constructor with weights
@@ -66,9 +65,9 @@ public:
                certain order.  The edgeWeights follow this order, omitting
                any self edges.
    */
-  EpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph,
-                      Teuchos::ArrayRCP<Scalar> vertexWeights,
-                      Teuchos::ArrayRCP<Scalar> edgeWeights):
+  EpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph,
+                      ArrayRCP<Scalar> vertexWeights,
+                      ArrayRCP<Scalar> edgeWeights):
     XpetraCrsGraphInput<Scalar, int, int> (graph, vertexWeights, edgeWeights) {}
 };
 

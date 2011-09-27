@@ -17,15 +17,7 @@
 #define _ZOLTAN2_TPETRACRSMATRIXINPUT_HPP_
 
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_Environment.hpp>
-#include <Zoltan2_TemplateMacros.hpp>
-
-#include <Tpetra_CrsMatrix.hpp>
-#include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Teuchos_RCP.hpp>
-
-using Teuchos::RCP;
-using Teuchos::rcp;
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 

@@ -14,9 +14,9 @@
 // loop.
 //#define ZOLTAN2_DEBUG
 
+#include <string>
+#include <iostream>
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_DefaultComm.hpp"
 
 namespace Zoltan2
 {

@@ -4,14 +4,14 @@ INCLUDE(PackageAddExecutableAndTest)
 # We want to emit "NOTRUN" when a test is skipped
 # for some reason. How do we tell cmake?
 #
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-# test 
-#  SOURCES test
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+ test 
+  SOURCES test
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   IdentifierMap
@@ -59,11 +59,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#  XpetraGraphInputAdapter
-#  SOURCES XpetraGraphInputAdapter.cpp
-#  NUM_MPI_PROCS 4
-#  COMM mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  XpetraGraphInputAdapter
+  SOURCES XpetraGraphInputAdapter.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )

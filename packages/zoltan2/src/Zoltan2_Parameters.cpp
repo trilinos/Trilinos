@@ -13,10 +13,6 @@
 */
 
 #include <Zoltan2_Parameters.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterEntry.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 
 // TODO the docString for each parameter.  
@@ -28,17 +24,13 @@
 
 namespace Zoltan2 {
 
-void createValidParameterList(Teuchos::ParameterList &pl)
+void createValidParameterList(ParameterList &pl)
 {
   using Teuchos::EnhancedNumberValidator;
   using Teuchos::StringValidator;
   using Teuchos::StringToIntegralParameterEntryValidator;
   using Teuchos::AnyNumberParameterEntryValidator;
   using Teuchos::FileNameValidator;
-  using Teuchos::ParameterEntry;
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::Array;
 
   bool isDefault=true, isNotDefault=false;
   bool isList=true, isNotList=false;

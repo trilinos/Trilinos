@@ -18,6 +18,8 @@
   it is passed.
 */
 
+#include <Teuchos_CommHelpers.hpp>
+
 
 namespace Zoltan2{
 

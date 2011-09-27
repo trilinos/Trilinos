@@ -21,11 +21,9 @@
 
 */
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Kokkos_DefaultNode.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 
@@ -42,12 +40,12 @@ class Environment{
 private:
   /*! The user's parameters
    */
-  Teuchos::ParameterList _params;
+  ParameterList _params;
 
   /*! The parameters, their defaults, their validators,
    *  and their documentation
    */
-  Teuchos::ParameterList _validParams;
+  ParameterList _validParams;
 
 public:
   /*! Values needed for quick access
@@ -61,7 +59,7 @@ public:
   int  _profilingIndicator;    // how much profiling (should really be
                            // "what are we profiling", not a level)
   bool _committed;
-  Teuchos::RCP<const Teuchos::Comm<int> > _comm;
+  RCP<const Comm<int> > _comm;
 
 #if 0
   /*! The node description is not yet implemented.
@@ -72,15 +70,15 @@ public:
   /*! The machine model is not yet implemented.  It will
       not necessarily be implemented as a ParameterList.
    */
-  Teuchos::ParameterList _machine;
+  ParameterList _machine;
 #endif
 
   /*! Constructor 
       Because parameter lists are small, we save a
       copy of them instead of requiring an RCP.
    */
-  Environment(Teuchos::ParameterList &prob, 
-    Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+  Environment(ParameterList &prob, 
+    RCP<const Comm<int> > &comm);
 
   /*! Constructor
    */
@@ -96,13 +94,13 @@ public:
   Environment &operator=(const Environment &env);
 
   /*! Set communicator */
-  void setCommunicator(Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+  void setCommunicator(RCP<const Comm<int> > &comm);
 
   /*! Set or reset the problem parameters*/
-  void setParameters(Teuchos::ParameterList &Params);
+  void setParameters(ParameterList &Params);
 
   /*! Add and to or replace the existing parameters with these */
-  void addParameters(Teuchos::ParameterList &Params);
+  void addParameters(ParameterList &Params);
 
   /*! Parameter setting is done, process parameters for use.
       This should be done in the Problem.
@@ -110,10 +108,10 @@ public:
   void commitParameters();
 
   /*! Get a reference to a read-only copy of the parameters. */
-  const Teuchos::ParameterList &getParameters() const;
+  const ParameterList &getParameters() const;
 
   /*! The debug manager, used by debug statements */
-  Teuchos::RCP<Zoltan2::DebugManager> _dbg;
+  RCP<Zoltan2::DebugManager> _dbg;
 
   // TODO: some kind of a manager for profiling, with
   //   labels, hierarchy, and so on.

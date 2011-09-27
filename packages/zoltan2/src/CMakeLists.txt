@@ -41,20 +41,18 @@ APPEND_SET(HEADERS
       Zoltan2_DebugManager.hpp
       Zoltan2_Environment.hpp
       Zoltan2_EpetraCrsGraphInput.hpp
+      Zoltan2_EpetraCrsMatrixInput.hpp
       Zoltan2_Exceptions.hpp
       Zoltan2_GraphInput.hpp
-      Zoltan2_IdentifierMap_decl.hpp
-      Zoltan2_IdentifierMap_def.hpp
       Zoltan2_IdentifierMap.hpp
       Zoltan2_IdentifierTraits.hpp
       Zoltan2_InputAdapter.hpp
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
-      Zoltan2_Parameters_decl.hpp
-      Zoltan2_Parameters_def.hpp
       Zoltan2_Parameters.hpp
       Zoltan2_PartitioningProblem.hpp
       Zoltan2_Problem.hpp
+      Zoltan2_Standards.hpp
       Zoltan2_TemplateMacros.hpp
       Zoltan2_TpetraCrsGraphInput.hpp
       Zoltan2_TpetraCrsMatrixInput.hpp
@@ -87,7 +85,6 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/preCopyrightTrilinos/zoltan2/src)
 APPEND_SET(SOURCES
   Zoltan2_Environment.cpp
   Zoltan2_Parameters.cpp
-  Zoltan2_Util.cpp
   Zoltan2_Version.cpp
   )
 

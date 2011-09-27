@@ -19,16 +19,10 @@
 #ifndef _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 
-#include <Zoltan2_MatrixInput.hpp>
-#include <Zoltan2_Environment.hpp>
-#include <Zoltan2_TemplateMacros.hpp>
-
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraCrsMatrix.hpp>
-
-#include <Teuchos_RCP.hpp>
-
-using Teuchos::RCP;
+#include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 
@@ -44,8 +38,8 @@ class XpetraCrsMatrixInput : public MatrixInput<CONSISTENT_TEMPLATE_PARAMS>
 {
 private:
   bool _valid;
-  Teuchos::RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _xmatrix;
-  Teuchos::RCP<const Xpetra::Map<LNO, GNO, Node> > _rowMap;
+  RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _xmatrix;
+  RCP<const Xpetra::Map<LNO, GNO, Node> > _rowMap;
   LNO _base;
 
 public:
@@ -240,8 +234,8 @@ public:
     size_t nCols = _xmatrix->getNumEntriesInLocalRow(localId);  // TODO:  Is localID the correct argument here??  Previously, argument was "i", which didn't compile. KDDKDD   
     columnId.resize(nCols);
 
-    // TODO:  This line will not compile for me; compiler complains about the template argument to Teuchos::Array.  KDDKDD  Teuchos::Array<std::vector<GID>::iterator> cols(columnId.begin(), columnId.end());
-    Teuchos::Array<Scalar> values(nCols);
+    // TODO:  This line will not compile for me; compiler complains about the template argument to Array.  KDDKDD  Array<std::vector<GID>::iterator> cols(columnId.begin(), columnId.end());
+    Array<Scalar> values(nCols);
 
     // TODO:  I don't see this method in the Xpetra CrsMatrix class.  KDDKDD _xmatrix->getGlobalRowCopy(Id, cols, values);
   }
@@ -257,8 +251,8 @@ public:
    */
   LNO getRowNonZeroView(GID Id, LID localId, GID *&columnId) const
   {
-    Teuchos::ArrayView<GID> cols;
-    Teuchos::ArrayView<GID> values;
+    ArrayView<GID> cols;
+    ArrayView<GID> values;
 
     _xmatrix->getGlobalRowView(Id, cols, values);
     columnId = cols->getRawPtr();

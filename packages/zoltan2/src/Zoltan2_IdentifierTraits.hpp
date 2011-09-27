@@ -11,10 +11,10 @@
 #include <utility>
 #include <iostream>
 #include <stdint.h>
-#include <Zoltan2_config.h>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_SerializationTraits.hpp>
 #include <Teuchos_HashUtils.hpp>
+#include <Zoltan2_Standards.hpp>
 
 /*! \file Zoltan2_IdentifierTraits.hpp
   \brief Defines basic traits for application supplied local and global IDs.

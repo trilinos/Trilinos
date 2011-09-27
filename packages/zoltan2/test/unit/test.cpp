@@ -10,6 +10,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
+  MPI_Init(&argc, &argv);
   Teuchos::RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle =
     Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD);
   Teuchos::RCP<Teuchos::MpiComm<int> > comm(new Teuchos::MpiComm<int>(handle));

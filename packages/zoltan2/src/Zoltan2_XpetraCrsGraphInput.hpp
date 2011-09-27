@@ -14,11 +14,9 @@
 #ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 
-#include <Zoltan2_GraphInput.hpp>
 #include <Xpetra_EpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
-#include <Teuchos_RCP.hpp>
-
+#include <Zoltan2_GraphInput.hpp>
 
 namespace Zoltan2 {
 
@@ -39,8 +37,8 @@ private:
 #endif
 
   bool _valid;
-  Teuchos::RCP<Xpetra::CrsGraph<LID, GID, Node> > _graph;
-  Teuchos::RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
+  RCP<Xpetra::CrsGraph<LID, GID, Node> > _graph;
+  RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
   std::vector<int> _edgeOffsets; 
 
   int _vtxWeightDim;
@@ -78,7 +76,7 @@ public:
   /*! Constructor with an Xpetra::CrsGraph
    */
   XpetraCrsGraphInput(
-    Teuchos::RCP<Xpetra::CrsGraph<LID, GID, Node> > graph):
+    RCP<Xpetra::CrsGraph<LID, GID, Node> > graph):
     _valid(false), _graph(graph), _rowMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
@@ -90,7 +88,7 @@ public:
   /*! Constructor with a Tpetra::CrsGraph
    */
   XpetraCrsGraphInput(
-    Teuchos::RCP<Tpetra::CrsGraph<LID, GID, Node> > graph):
+    RCP<Tpetra::CrsGraph<LID, GID, Node> > graph):
     _valid(false), _graph(), _rowMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
@@ -106,7 +104,7 @@ public:
 
   /*! Constructor with an Epetra_CrsGraph
    */
-  XpetraCrsGraphInput(Teuchos::RCP<Epetra_CrsGraph> graph):
+  XpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph):
     _valid(false), _graph(), _rowMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
@@ -119,7 +117,7 @@ public:
     _valid=true;
   }
 
-  void setGraph(Teuchos::RCP<Tpetra::CrsGraph<LID, GID, Node> > graph)
+  void setGraph(RCP<Tpetra::CrsGraph<LID, GID, Node> > graph)
   {
     if (_valid){ // TODO do we want to ensure they don't reset weights, etc.
       throw std::runtime_error("resetting of graph is not permitted");
@@ -134,7 +132,7 @@ public:
     _valid=true;
   }
 
-  void setGraph(Teuchos::RCP<Epetra_CrsGraph> graph)
+  void setGraph(RCP<Epetra_CrsGraph> graph)
   {
     if (_valid){ // TODO do we want to ensure they don't reset weights, etc.
       throw std::runtime_error("resetting of graph is not permitted");
@@ -448,7 +446,7 @@ public:
     edgeId.clear();
     wgts.clear();
 
-    Teuchos::ArrayView<const int> nbors;
+    ArrayView<const int> nbors;
     _graph->getLocalRowView(localId, nbors);
     size_t nedges = nbors.size();
 
@@ -488,7 +486,7 @@ public:
     edgeId = NULL;
     wgts = NULL;
 
-    Teuchos::ArrayView<const int> nbors;
+    ArrayView<const int> nbors;
     _graph->getLocalRowView(localId, nbors);
     size_t nedges = nbors.size();
     edgeId = &nbors[0];
