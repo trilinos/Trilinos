@@ -42,33 +42,38 @@ ADD_OPTION_AND_DEFINE(
 #
 # It's up to Belos developers to define what headers and source files
 # are experimental, and what tests depend on experimental code.  They
-# should disable building and running tests that have a required
-# dependency on experimental code.  Some tests may have an optional
-# dependency on experimental code; test implementers can test for this
-# via "#ifdef HAVE_BELOS_EXPERIMENTAL".
+# must use ${PACKAGE_NAME}_ENABLE_Experimental to conditionally
+# disable tests or examples that have a required dependency on
+# experimental code.  (${PACKAGE_NAME} evaluates to Belos, but we
+# write it out so you know what to look for in the file.)  Code that
+# _optionally_ depends on experimental code must be protected by
+# #ifdef HAVE_BELOS_EXPERIMENTAL ... #endif.
 #
-# Belos developers must maintain the list of experimental header and
-# source files in this file, in Belos_EXPERIMENTAL_HEADERS
-# resp. Belos_EXPERIMENTAL_SOURCES.  (This is a bit awkward because
-# those files live in belos/src and should really be governed by
-# belos/src/CMakeLists.txt.  However, this file needs to know about
-# them so that it can exclude them from the release tarball.
-# belos/src/CMakeLists.txt will reference those variables in order to
-# exclude experimental code when building Belos' library/ies.)
+# Belos developers must maintain the lists of experimental header
+# resp. source files in belos/src/CMakeLists.txt, as
+# ${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
+# resp. ${PACKAGE_NAME}_EXPERIMENTAL_SOURCES.
 #
-# Belos developers must also exclude directories containing
-# experimental tests (i.e., tests with required dependencies on
-# experimental code) from both the release tarball (in the
-# PACKAGE_ARCH_EXCLUDE_FILES section below) and the build (in the
-# CMakeLists.txt files in the parent directory of the tests in
-# question).  For the latter, look at tpetra/test/CMakeLists.txt for
-# an example.
+# Note that some experimental files may be excluded from the release
+# tarball.  Belos uses the PACKAGE_ARCH_EXCLUDE_FILES macro later in
+# this file to list the files and directories to exclude from the
+# release tarball.  That macro must NOT include conditional
+# expressions; it must evaluate to the same list, no matter how
+# Trilinos is configured.  We ensure this in Belos by listing
+# explicitly the files and directories to exclude from the release
+# tarball, rather than using variables or conditional CMake
+# expressions.
 #
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_BELOS_EXPERIMENTAL
-  "Enables experimental features of Belos, such as new solvers which are not quite ready for release to a general audience."
+  "Enable building and installation of experimental Belos features."
   NO )
+
+# See above discussion of "experimental" Belos headers and source
+# files.  belos/src/CMakeLists.txt may append to these lists.
+SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
+SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
 
 
 ######################################################################
@@ -100,27 +105,27 @@ ENDIF()
 PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
 
 #
-# List of all header files in belos/src that are marked
-# "experimental."  See the comments above on "experimental" code.
-#
-SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
-
-#
-# List of all source files in belos/src that are marked
-# "experimental."
-#
-SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
-
-#
-# Exclude experimental header and source files, along with test
-# directories for experimental code (i.e., tests with required
-# dependencies on experimental code), from the release tarball.
+# Files and directories to exclude from the release tarball.
 #
 PACKAGE_ARCH_EXCLUDE_FILES(
-  ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS}
-  ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES}
+  src/BelosAkxFactory.hpp
+  src/BelosAkx.hpp
+  src/BelosCaGmres.hpp
+  src/BelosGmresBaseFactory.hpp
+  src/BelosGmresBase.hpp
+  src/BelosGmresBaseIteration.hpp
+  src/BelosGmresInnerSolver.hpp
+  src/BelosGmresSolMgr.hpp
+  src/BelosInnerSolveResult.hpp
+  src/BelosInnerSolver.hpp
+  src/BelosMonomialOpAkx.hpp
+  src/BelosNewtonBasis.hpp
+  src/BelosNewtonOpAkx.hpp
+  src/BelosOpAkx.hpp
+  src/BelosStandardGmres.hpp
+  src/BelosInnerSolveResult.cpp
   tpetra/test/Gmres
-  )
+)
 
 ######################################################################
 ## Do standard postprocessing
