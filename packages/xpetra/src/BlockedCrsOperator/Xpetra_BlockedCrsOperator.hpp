@@ -459,7 +459,7 @@ public:
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = domainmaps_->ExtractVector(tX,cblock);
           Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy);
-          rowresult->update(1.0,*rowy,1.0);
+          rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
         rangemaps_->InsertVector(rowresult,rblock,tY);
       }
@@ -476,7 +476,7 @@ public:
           Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = rangemaps_->ExtractVector(tX,rblock);
           Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy,Teuchos::TRANS);
-          rowresult->update(1.0,*rowy,1.0);
+          rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
         domainmaps_->InsertVector(rowresult,cblock,tY);
       }
@@ -627,7 +627,7 @@ public:
     for (size_t i=0; i<blocks_.size(); ++i)
     {
       Teuchos::RCP<CrsMatrixClass> block = Teuchos::rcp_dynamic_cast<CrsMatrixClass>(blocks_[i]);
-      this->Add(block,1.0,sparse,1.0);
+      this->Add(block,ScalarTraits< Scalar >::one(),sparse,ScalarTraits< Scalar >::one());
     }
     sparse->fillComplete(getDomainMap(),getRangeMap());
     return sparse;
