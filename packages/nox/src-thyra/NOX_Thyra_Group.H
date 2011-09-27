@@ -266,6 +266,7 @@ namespace NOX {
       Teuchos::RCP< 
         NOX::SharedObject<
           ::Thyra::LinearOpWithSolveBase<double>,
+          //::Thyra::LinearOpBase<double>,
           NOX::Thyra::Group
           >
         > shared_jacobian_;

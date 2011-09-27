@@ -40,10 +40,12 @@
 //@HEADER
 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "NOX_Common.H"
 #include "NOX_Thyra_Group.H"	// class definition
 #include "NOX_Abstract_MultiVector.H"
@@ -295,7 +297,7 @@ NOX::Thyra::Group::applyJacobian(const Vector& input, Vector& result) const
   }
   
   ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
-		 input.getThyraVector(), &result.getThyraVector());
+		 input.getThyraVector(), result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -319,7 +321,7 @@ NOX::Thyra::Group::applyJacobianMultiVector(
   ::Thyra::apply(*shared_jacobian_->getObject(), 
 		 ::Thyra::NOTRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -345,7 +347,7 @@ NOX::Thyra::Group::applyJacobianTranspose(const NOX::Thyra::Vector& input,
 
   if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
     ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::TRANS,
-		   input.getThyraVector(), &result.getThyraVector());
+		   input.getThyraVector(), result.getThyraRCPVector().ptr());
     return NOX::Abstract::Group::Ok;
   }
   return NOX::Abstract::Group::Failed;
@@ -373,7 +375,7 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
   ::Thyra::apply(*shared_jacobian_->getObject(), 
 		 ::Thyra::TRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -508,13 +510,14 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 			      getThyraNormType(denom_measure));
 
   // Initialize result to zero to remove possible NaNs
-  ::Thyra::assign(&result, 0.0);
+  ::Thyra::assign(Teuchos::ptrFromRef(result), 0.0);
 
   const ::Thyra::SolveStatus<double> solve_status = 
     ::Thyra::solve(*shared_jacobian_->getObject(), 
-		   ::Thyra::NOTRANS, input, &result, 
-		   &solveCriteria);
-  
+		   ::Thyra::NOTRANS, input, 
+		   Teuchos::ptrFromRef(result), 
+		   Teuchos::constPtr(solveCriteria));
+
   // ToDo: Get the output statistics and achieved tolerance to pass
   // back ...
   
