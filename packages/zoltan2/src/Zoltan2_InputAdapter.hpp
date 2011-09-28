@@ -65,6 +65,16 @@ public:
    */
   virtual std::string inputAdapterName() const = 0;
 
+  /*! Returns true if input adapter uses local Ids for objects.
+   */
+  virtual bool haveLocalIds() const = 0;
+
+  /*! Return true if local Ids are consecutive integral
+   *   values and supply the base.  Providing this information
+   *   can save memory, making local ID lists unneccesary.
+   */
+  virtual bool haveConsecutiveLocalIds(size_t &base) const = 0;
+
 protected:
 };
   

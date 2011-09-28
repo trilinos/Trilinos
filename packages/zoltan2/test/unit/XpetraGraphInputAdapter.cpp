@@ -124,10 +124,11 @@ int main(int argc, char *argv[])
     RCP<Epetra_CrsGraph> graph = rcp(const_cast<Epetra_CrsGraph *>(&g));
     graph.release();  // we're not responsible for deleting graph
 
-    Zoltan2::EpetraCrsGraphInput<float> adapterE;
+    Zoltan2::EpetraCrsGraphInput<float> obj(graph);
+    Zoltan2::EpetraCrsGraphInput<float> *adapterE = NULL;
 
     try {
-      adapterE.setGraph(graph);
+      adapterE = new Zoltan2::EpetraCrsGraphInput<float>(graph);
     }
     CATCH_EXCEPTION("adapterE constructor");
 
@@ -169,19 +170,19 @@ int main(int argc, char *argv[])
     // Now test both adapters 
     //////////////////////////////////////////////
 
-    int lidBase;
-    bool consecLids = adapterE.haveConsecutiveLocalIds(lidBase);
+    size_t lidBase;
+    bool consecLids = adapterE->haveConsecutiveLocalIds(lidBase);
     if (!consecLids || (lidBase != lidMin))
       fail = 1;
     
     TEST_FAIL_AND_EXIT(ecomm, fail, "lid base vs lid min");
 
-    if (adapterE.inputAdapterName() != std::string("EpetraCrsGraph"))
+    if (adapterE->inputAdapterName() != std::string("EpetraCrsGraph"))
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "inputAdapterName");
 
-    if (adapterE.getLocalNumVertices() != numVtx)
+    if (adapterE->getLocalNumVertices() != numVtx)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumVertices");
@@ -198,20 +199,20 @@ int main(int argc, char *argv[])
     }
 
     try{
-      adapterE.setVertexWeights(lidList, vwgtList);
+      adapterE->setVertexWeights(lidList, vwgtList);
     }
     CATCH_EXCEPTION("setting vertex weights");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexWeights");
 
     try{
-      adapterE.setVertexCoordinates(lidList, xyzList);
+      adapterE->setVertexCoordinates(lidList, xyzList);
     }
     CATCH_EXCEPTION("setting vertex coords");
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "setVertexCoordinates");
 
-    if (adapterE.getLocalNumEdges() != numNZ)
+    if (adapterE->getLocalNumEdges() != numNZ)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getLocalNumEdges");
@@ -235,7 +236,7 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_EXIT(ecomm, fail, "g.ExtractGlobalRowView");
 
     try{
-      adapterE.setEdgeWeights(lidList, numNbors, nborGID, ewgtList);
+      adapterE->setEdgeWeights(lidList, numNbors, nborGID, ewgtList);
     }
     CATCH_EXCEPTION("setting edge weights");
 
@@ -243,17 +244,17 @@ int main(int argc, char *argv[])
 
     // Test that get methods are correct
 
-    if (adapterE.getVertexWeightDim() != 1)
+    if (adapterE->getVertexWeightDim() != 1)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexWeightDim");
 
-    if (adapterE.getEdgeWeightDim() != 1)
+    if (adapterE->getEdgeWeightDim() != 1)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getEdgeWeightDim");
 
-    if (adapterE.getCoordinateDim() != 3)
+    if (adapterE->getCoordinateDim() != 3)
       fail = 1;
 
     TEST_FAIL_AND_EXIT(ecomm, fail, "getCoordinateDim");
@@ -264,7 +265,7 @@ int main(int argc, char *argv[])
     std::vector<float> adapterEVwgts;
 
     try{
-      adapterE.getVertexListCopy(adapterEGids, adapterELids,
+      adapterE->getVertexListCopy(adapterEGids, adapterELids,
         adapterECoords, adapterEVwgts);
     }
     CATCH_EXCEPTION("getting vertex copy");
@@ -297,7 +298,7 @@ int main(int argc, char *argv[])
     int nv=0;
 
     try{
-      nv = adapterE.getVertexListView(gidView, lidView, coordView, wgtView);
+      nv = adapterE->getVertexListView(gidView, lidView, coordView, wgtView);
     }
     CATCH_EXCEPTION("getting vertex view");
 
@@ -328,7 +329,7 @@ int main(int argc, char *argv[])
       std::vector<float> wgt;
 
       try{
-        adapterE.getVertexEdgeCopy(map.GID(lid), lid, id, wgt);
+        adapterE->getVertexEdgeCopy(map.GID(lid), lid, id, wgt);
       }
       CATCH_EXCEPTION("getting edge copy");
 
@@ -337,7 +338,7 @@ int main(int argc, char *argv[])
      
 
       try{
-        num = adapterE.getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
+        num = adapterE->getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
       }
       CATCH_EXCEPTION("getting edge view");
 

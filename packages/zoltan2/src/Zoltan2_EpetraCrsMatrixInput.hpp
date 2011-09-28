@@ -18,7 +18,7 @@
 
 
 #include <Epetra_CrsMatrix.hpp>
-#include <Zoltan2_XpetraCrsMatrix.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 
 namespace Zoltan2 {
 
@@ -33,7 +33,7 @@ private:
 
 public:
 
-  /*! Default constructor
+  /*! Default constructor   TODO - remove?
    */
   EpetraCrsMatrixInput() { }
 

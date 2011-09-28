@@ -48,10 +48,6 @@ public:
 
   //~EpetraCrsGraphInput() { }
 
-  /*! Default constructor
-   */
-  EpetraCrsGraphInput(): XpetraCrsGraphInput<Scalar, int, int> () {}
-
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */

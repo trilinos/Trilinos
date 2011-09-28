@@ -36,9 +36,9 @@ private:
 // local typedefs should go here
 #endif
 
-  bool _valid;
   RCP<Xpetra::CrsGraph<LID, GID, Node> > _graph;
   RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
+  RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
   std::vector<int> _edgeOffsets; 
 
   int _vtxWeightDim;
@@ -52,6 +52,7 @@ private:
   void makeOffsets()
   {
     _rowMap = _graph->getRowMap();
+    _colMap = _graph->getColMap();
     _base = _rowMap->getMinLocalIndex();
     int numV = _rowMap->getNodeNumElements();
     _edgeOffsets.resize(numV+1, 0);
@@ -68,8 +69,9 @@ public:
   ~XpetraCrsGraphInput() { }
 
   /*! Default constructor - can't build a valid object this way
+   *    TODO - remove?
    */
-  XpetraCrsGraphInput(): _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+  XpetraCrsGraphInput(): _graph(), _rowMap(), _colMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz() {}
 
@@ -77,19 +79,18 @@ public:
    */
   XpetraCrsGraphInput(
     RCP<Xpetra::CrsGraph<LID, GID, Node> > graph):
-    _valid(false), _graph(graph), _rowMap(), _edgeOffsets(),
+    _graph(graph), _rowMap(), _colMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
   {
     makeOffsets();
-    _valid=true;
   }
 
   /*! Constructor with a Tpetra::CrsGraph
    */
   XpetraCrsGraphInput(
     RCP<Tpetra::CrsGraph<LID, GID, Node> > graph):
-    _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+    _graph(), _rowMap(), _colMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
   {
@@ -99,13 +100,12 @@ public:
     _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
       Teuchos::rcp(xgraph));
     makeOffsets();
-    _valid=true;
   }
 
   /*! Constructor with an Epetra_CrsGraph
    */
   XpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph):
-    _valid(false), _graph(), _rowMap(), _edgeOffsets(),
+    _graph(), _rowMap(), _colMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
   {
@@ -114,35 +114,6 @@ public:
     _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
       Teuchos::rcp(xgraph));
     makeOffsets();
-    _valid=true;
-  }
-
-  void setGraph(RCP<Tpetra::CrsGraph<LID, GID, Node> > graph)
-  {
-    if (_valid){ // TODO do we want to ensure they don't reset weights, etc.
-      throw std::runtime_error("resetting of graph is not permitted");
-    }
-
-    Xpetra::TpetraCrsGraph<LID, GID, Node> *xgraph =
-      new Xpetra::TpetraCrsGraph<LID, GID, Node>(graph);
-
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
-      Teuchos::rcp(xgraph));
-    makeOffsets();
-    _valid=true;
-  }
-
-  void setGraph(RCP<Epetra_CrsGraph> graph)
-  {
-    if (_valid){ // TODO do we want to ensure they don't reset weights, etc.
-      throw std::runtime_error("resetting of graph is not permitted");
-    }
-     Xpetra::EpetraCrsGraph *xgraph = new Xpetra::EpetraCrsGraph(graph);
-
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
-      Teuchos::rcp(xgraph));
-    makeOffsets();
-    _valid=true;
   }
 
   /* Provide optional vertex coordinates.
@@ -152,9 +123,6 @@ public:
    */
   void setVertexCoordinates(std::vector<LID> &lid, std::vector<Scalar> &xyz)
   {
-    if (!_valid)
-      throw std::runtime_error("improperly constructed adapter");
-
     size_t veclen = xyz.size();
     if (veclen == 0) return;
     
@@ -197,9 +165,6 @@ public:
    */
   void setVertexWeights(std::vector<LID> &lid, std::vector<Scalar> &wgts)
   {
-    if (!_valid)
-      throw std::runtime_error("improperly constructed adapter");
-
     size_t veclen = wgts.size();
     if (veclen == 0) return;
     
@@ -244,9 +209,6 @@ public:
     std::vector<LID> &numNbors,
     std::vector<GID> &nborGid, std::vector<Scalar> &wgts )
   {
-    if (!_valid)
-      throw std::runtime_error("improperly constructed adapter");
-
     LNO nvtx = vertexLid.size();
 
     if ((nvtx==0) || (nborGid.size()==0) || (wgts.size()==0))
@@ -306,19 +268,20 @@ public:
     }
   }
 
-  // TODO: should this be part of InputAdapter interface?
-  bool validInput() { return _valid;}
-
   ////////////////////////////////////////////////////
   // The GraphInput interface.
   ////////////////////////////////////////////////////
 
   /*! Returns the number vertices on this process.
    */
-  LID getLocalNumVertices() const { 
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
+  size_t getLocalNumVertices() const { 
     return _rowMap->getNodeNumElements(); 
+  }
+
+  /*! Returns the number vertices in the entire graph.
+   */
+  global_size_t getGlobalNumVertices() const { 
+    return _rowMap->getGlobalNumElements(); 
   }
 
   /*! Return whether input adapter wants to use local IDs.
@@ -329,46 +292,40 @@ public:
   /*! Return whether local ids are consecutive and if so the base.
    */
 
-  bool haveConsecutiveLocalIds (LID &base) const
+  bool haveConsecutiveLocalIds (size_t &base) const
   {
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-    base = _base;
+    base = static_cast<size_t>(_base);
     return true;
   }
 
   /*! Returns the number edges on this process.
    */
-  LID getLocalNumEdges() const { 
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
+  size_t getLocalNumEdges() const { 
     return _graph->getNodeNumEntries();
+  }
+
+  /*! Returns the number edges on this entire graph.
+   *    what about directional edges, count twice?
+   */
+  global_size_t getGlobalNumEdges() const { 
+    return _graph->getGlobalNumEntries();
   }
 
   /*! Returns the number weights supplied for each vertex.
    */
   int getVertexWeightDim() const { 
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-    
     return _vtxWeightDim;
   }
 
   /*! Returns the number weights supplied for each edge.
    */
   int getEdgeWeightDim() const { 
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-  
     return _edgeWeightDim;
   }
 
   /*! Returns the number of coordinates per vertex
    */
   int getCoordinateDim() const { 
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
- 
     return _coordinateDim;
   }
 
@@ -378,16 +335,13 @@ public:
     std::vector<LID> &localIDs, std::vector<Scalar> &xyz,
     std::vector<Scalar> &wgt) const
   {
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-
-    // Global IDs are in local ID order, so we omit this
+    // Global IDs are in local ID order, so we omit localIDs
     // TODO: For Tpetra and Epetra maps, are the GIDs always
     //    in local ID order?  From looking at the source it
     //    seems to be true.  But not positive.
     localIDs.clear();
 
-    int numVtx = this->getLocalNumVertices();
+    size_t numVtx = this->getLocalNumVertices();
     int nweights = _vtxWeightDim * numVtx;
     wgt.resize(nweights); 
 
@@ -417,9 +371,6 @@ public:
   LID getVertexListView(const GID *&ids, const LID *& localIDs,
       const Scalar *& xyz, const Scalar *&wgts)
   {
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-    
     // TODO we need to verify that gids are actually stored
     //   in lid order
     int nvtx = this->getLocalNumVertices();
@@ -435,10 +386,7 @@ public:
   void getVertexEdgeCopy(GID vtxId, LID localId, 
     std::vector<GID> &edgeId, std::vector<Scalar> &wgts) const
   {
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-    
-    int nvtx = this->getLocalNumVertices();
+    size_t nvtx = this->getLocalNumVertices();
 
     if (localId < _base || localId >= _base+nvtx)
       throw std::runtime_error("invalid local vertex ID");
@@ -446,15 +394,15 @@ public:
     edgeId.clear();
     wgts.clear();
 
-    ArrayView<const int> nbors;
+    ArrayView<const LNO> nbors;
     _graph->getLocalRowView(localId, nbors);
     size_t nedges = nbors.size();
 
     if (nedges > 0){
-      const int *fromId = nbors.getRawPtr();
       edgeId.resize(nedges);
-      int *toId = &edgeId[0];
-      memcpy(toId, fromId, sizeof(int) * nedges);
+      for (unsigned i=0; i < nedges; i++){
+        edgeId[i] = _colMap.GID(nbors[i]);
+      }
 
       if (_edgeWeightDim > 0){
         int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
@@ -470,33 +418,11 @@ public:
   }
 
   /*! Return pointers to the edge IDs and edge weights for a vertex.
-   *  TODO localID should be optional.  
+   *      The edges are available as local IDs only at this point
+   *      so this is not defined.  TODO explain better.
    */
-  int getVertexEdgeView(GID vtxId, LID localId, 
-    const GID *&edgeId, const Scalar *&wgts) const
-  {
-    if (!_valid)
-      throw std::runtime_error("invalid input object");
-    
-    int nvtx = this->getLocalNumVertices();
-
-    if (localId < _base || localId >= _base+nvtx)
-      throw std::runtime_error("invalid local vertex ID");
-
-    edgeId = NULL;
-    wgts = NULL;
-
-    ArrayView<const int> nbors;
-    _graph->getLocalRowView(localId, nbors);
-    size_t nedges = nbors.size();
-    edgeId = &nbors[0];
-
-    if ((nedges > 0) && (_edgeWeightDim > 0)){
-      int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
-      wgts = &_edgeWgt[offset];
-    }
-    return nedges;
-  }
+  //int getVertexEdgeView(GID vtxId, LID localId, 
+  //  const GID *&edgeId, const Scalar *&wgts) const{}
 };
   
 }  //namespace Zoltan2

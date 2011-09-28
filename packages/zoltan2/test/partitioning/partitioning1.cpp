@@ -21,14 +21,14 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
-// Eventually want to use Teuchos unit tests to vary LocalOrdinal and
-// GlobalOrdinal.  For now, we set them at compile time.
-typedef int LocalOrdinal;
-typedef long GlobalOrdinal;
+// Eventually want to use Teuchos unit tests to vary z2TestLO and
+// GO.  For now, we set them at compile time.
+typedef int z2TestLO;
+typedef long z2TestGO;
 typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> SparseMatrix;
-typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> Vector;
+typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
+typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
@@ -73,9 +73,9 @@ int main(int narg, char** arg)
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
-  origProd   = Tpetra::createVector<Scalar,LocalOrdinal,GlobalOrdinal>(
+  origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
-  origVector = Tpetra::createVector<Scalar,LocalOrdinal,GlobalOrdinal>(
+  origVector = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector->randomize();
 
@@ -86,7 +86,7 @@ int main(int narg, char** arg)
   params.set("GRAPH_PACKAGE", "PTSCOTCH");
 
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<Scalar,LocalOrdinal,GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
+  Zoltan2::PartitioningProblem<Scalar,z2TestLO,z2TestGO,z2TestLO,z2TestGO,Node>
                                problem(*origMatrix, params);
   problem.solve();
 

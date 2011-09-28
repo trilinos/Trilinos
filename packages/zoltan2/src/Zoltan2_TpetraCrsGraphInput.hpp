@@ -14,6 +14,7 @@
 #ifndef _ZOLTAN2_TPETRACRSGRAPHINPUT_HPP_
 #define _ZOLTAN2_TPETRACRSGRAPHINPUT_HPP_
 
+#include <Tpetra_CrsGraph.hpp>
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 #include <Zoltan2_Standards.hpp>
 
@@ -43,7 +44,7 @@ public:
 
   //~TpetraCrsGraphInput() { }
 
-  /*! Default constructor 
+  /*! Default constructor   TODO - remove?
    */
   TpetraCrsGraphInput(): XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>() {}
 

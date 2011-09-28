@@ -61,21 +61,19 @@ public:
 
   /*! Returns the number vertices on this process.
    */
-  virtual LNO getLocalNumVertices() const = 0;
+  virtual size_t getLocalNumVertices() const = 0;
 
-  /*! Returns true if input adapter uses local Ids.
+  /*! Returns the global number vertices.
    */
-  virtual bool haveLocalIds() const = 0;
-
-  /*! Return true if local Ids are consecutive integral
-   *   values and supply the base.  Providing this information
-   *   can save memory, making local ID lists unneccesary.
-   */
-  virtual bool haveConsecutiveLocalIds(LID &base) const = 0;
+  virtual global_size_t getGlobalNumVertices() const = 0;
 
   /*! Returns the number edges on this process.
    */
-  virtual LNO getLocalNumEdges() const = 0;
+  virtual size_t getLocalNumEdges() const = 0;
+
+  /*! Returns the global number edges.
+   */
+  virtual global_size_t getGlobalNumEdges() const = 0;
 
   /*! Returns the dimension (0 or greater) of vertex weights.
    */

@@ -9,8 +9,6 @@
 /*! \file Zoltan2_MatrixInput.hpp
 
     \brief The abstract interface for a matrix input adapter.
-
-    \author Siva Rajamanickam
 */
 
 
@@ -41,33 +39,31 @@ public:
   enum InputAdapterType inputAdapterType() {return MatrixAdapterType;}
 
   /*! Destructor TODO don't know what to do about destructor */
-  virtual ~MatrixInput(){};
+  //virtual ~MatrixInput(){};
 
   /*! Returns the number rows on this process.
    */
-  virtual LNO getLocalNumRows() const = 0;
+  virtual size_t getLocalNumRows() const = 0;
 
-  /*! Returns true if input adapter uses local Ids.
+  /*! Returns the global number of rows in the matrix.
    */
-  virtual bool haveLocalIds() const = 0;
+  virtual global_size_t getGlobalNumRows() const = 0;
 
-  /*! Return true if local Ids are consecutive integral
-   *   values and supply the base.  Providing this information
-   *   can save memory, making local Id lists unneccesary.
+  /*! Returns the number columns used by rows on this process.
    */
-  virtual bool haveConsecutiveLocalIds(LID &base) const = 0;
+  virtual size_t getLocalNumColumns() const = 0;
 
-  /*! Returns the number columns used by rows on this process
+  /*! Returns the global number columns in the matrix.
    */
-  virtual LNO getLocalNumColumns() const = 0;
+  virtual global_size_t getGlobalNumColumns() const = 0;
 
   /*! Return the total number of non-zero entries on this process.
   */
-  virtual LNO getLocalNumNonZeros() const = 0;
+  virtual size_t getLocalNumNonZeros() const = 0;
 
   /*! Return the maximum number of non-zero entries in any local row.
   */
-  virtual LNO getLocalMaxNumNonZeros() const = 0;
+  virtual size_t getLocalMaxNumNonZeros() const = 0;
 
   /*! Return the local row information
       \param Ids will on return hold a list of the global Ids for
@@ -81,7 +77,7 @@ public:
          cooresponding row.
   */
   virtual void getRowListCopy(std::vector<GID> &Ids,
-    std::vector<LID> &localIds, std::vector<LNO> &nnz);
+    std::vector<LID> &localIds, std::vector<size_t> &nnz) const = 0;
 
   /*! Sets pointers to this process' row Ids and non-zero count.
       If this optional call is defined in the adapter, it can save a memory
@@ -98,7 +94,7 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  LNO getRowListView(GID *&Ids, LID *&localIds, LNO *nnz)
+  LNO getRowListView(GID *&Ids, LID *&localIds, size_t *nnz)
   {
     Ids = NULL;
     localIds = NULL;
@@ -112,7 +108,7 @@ public:
       \param columnId on return will contain the list of global column Ids
    */
   virtual void getRowNonZeroCopy(GID Id, LID localId,
-    std::vector<GID> &columnId);
+    std::vector<GID> &columnId) const = 0;
 
   /*! Obtain a read-only view, if possible, of the column Ids of the
       input row.
@@ -130,15 +126,15 @@ public:
 
   /*! Return true of matrix is globally lower triangular.
    */
-//TODO Not supported by Xpetra KDDKDD  virtual bool isLowerTriangular() const;
+  virtual bool isLowerTriangular() const = 0;
 
   /*! Return true of matrix is globally upper triangular.
    */
-//TODO Not supported by Xpetra KDDKDD   virtual bool isUpperTriangular() const;
+  virtual bool isUpperTriangular() const = 0;
 
   /*! Return true of matrix globally has any diagonal entries.
    */
-  virtual bool hasDiagonalEntries() const;
+  virtual bool hasDiagonalEntries() const = 0;
 };
   
   

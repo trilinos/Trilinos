@@ -37,53 +37,53 @@ CONSISTENT_CLASS_TEMPLATE_LINE
 class XpetraCrsMatrixInput : public MatrixInput<CONSISTENT_TEMPLATE_PARAMS>
 {
 private:
-  bool _valid;
   RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > _xmatrix;
   RCP<const Xpetra::Map<LNO, GNO, Node> > _rowMap;
+  RCP<const Xpetra::Map<LNO, GNO, Node> > _colMap;
   LNO _base;
 
 public:
 
   ///////////////////////////////////////////////////////////////////////////
-  /*! Default constructor
+  /*! Default constructor  TODO - get rid of this?
    */
-  XpetraCrsMatrixInput(): _valid(false), _xmatrix(), _rowMap(), _base() { }
+  XpetraCrsMatrixInput(): _xmatrix(), _rowMap(),_colMap(),  _base() { }
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Constructor with an Xpetra::CrsMatrix
    */
   XpetraCrsMatrixInput(RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-                            matrix) : _valid(false), _xmatrix(matrix), _rowMap(), _base()
+                            matrix) : _xmatrix(matrix), _rowMap(),_colMap(),  _base()
   {
     _rowMap = _xmatrix->getRowMap();
+    _colMap = _xmatrix->getColMap();
     _base = _rowMap->getIndexBase();
-    _valid = true;
   }
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Constructor with an Xpetra::TpetraCrsMatrix
    */
   XpetraCrsMatrixInput(RCP<Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-                            matrix) : _valid(false), _xmatrix(), _rowMap(), _base()
+                            matrix) : _xmatrix(), _rowMap(), _colMap(), _base()
   {
     _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
                              <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
     _rowMap = _xmatrix->getRowMap();
+    _colMap = _xmatrix->getColMap();
     _base = _rowMap->getIndexBase();
-    _valid = true;
   }
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Constructor with an Xpetra::EpetraCrsMatrix
    */
   XpetraCrsMatrixInput(RCP<Xpetra::EpetraCrsMatrix> matrix) : 
-    _valid(false), _xmatrix(), _rowMap(), _base()
+    _xmatrix(), _rowMap(), _colMap(), _base()
   {
     _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
                              <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
     _rowMap = _xmatrix->getRowMap();
+    _colMap = _xmatrix->getColMap();
     _base = _rowMap->getIndexBase();
-    _valid = true;
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -96,49 +96,6 @@ public:
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  /*! Post construction setting of the underlying matrix.
-   */
-  void setMatrix(RCP<Xpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-                            matrix)
-  {
-    if (_valid)
-      throw std::runtime_error("Can not change the matrix in the adapter");
-    _xmatrix = matrix;
-    _rowMap = _xmatrix->getRowMap();
-    _base = _rowMap->getIndexBase();
-    _valid = true;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  /*! Post construction setting of the underlying matrix.
-   */
-  void setMatrix(RCP<Xpetra::TpetraCrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> >
-                            matrix)
-  {
-    if (_valid)
-      throw std::runtime_error("Can not change the matrix in the adapter");
-    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
-                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
-    _rowMap = _xmatrix->getRowMap();
-    _base = _rowMap->getIndexBase();
-    _valid = true;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  /*! Post construction setting of the underlying matrix.
-   */
-  void setMatrix(RCP<Xpetra::EpetraCrsMatrix> matrix)
-  {
-    if (_valid)
-      throw std::runtime_error("Can not change the matrix in the adapter");
-    _xmatrix = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix
-                             <CONSISTENT_TRILINOS_TEMPLATE_PARAMS> > (matrix);
-    _rowMap = _xmatrix->getRowMap();
-    _base = _rowMap->getIndexBase();
-    _valid = true;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
   // The MatrixInput adapter interface
   ///////////////////////////////////////////////////////////////////////////
@@ -147,9 +104,16 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   /*! Returns the number rows on this process.
    */
-  LNO getLocalNumRows() const
+  size_t getLocalNumRows() const
   {
     return _xmatrix->getNodeNumRows();
+  }
+
+  /*! Returns the number rows in the entire matrix.
+   */
+  global_size_t getGlobalNumRows() const
+  {
+    return _xmatrix->getGlobalNumRows();
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -162,23 +126,30 @@ public:
    *   values and supply the base.  Providing this information
    *   can save memory, making local Id lists unneccesary.
    */
-  bool haveConsecutiveLocalIds(LID &base) const{
-    base = _base; 
+  bool haveConsecutiveLocalIds(size_t &base) const{
+    base = static_cast<size_t>(_base); 
     return true;
   }
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Returns the number columns used by rows on this process
    */
-  LNO getLocalNumColumns() const
+  size_t getLocalNumColumns() const
   {
     return _xmatrix->getNodeNumCols();
+  }
+
+  /*! Returns the number columns in the entire matrix.
+   */
+  global_size_t getGlobalNumColumns() const
+  {
+    return _xmatrix->getGlobalNumCols();
   }
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Return the total number of non-zero entries on this process.
   */
-  LNO getLocalNumNonZeros() const
+  size_t getLocalNumNonZeros() const
   {
     return _xmatrix->getNodeNumEntries();
   }
@@ -186,7 +157,7 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   /*! Return the maximum number of non-zero entries in any local row.
   */
-  LNO getLocalMaxRowNumNonZeros() const
+  size_t getLocalMaxNumNonZeros() const
   {
     return _xmatrix->getNodeMaxNumRowEntries();
   }
@@ -204,9 +175,9 @@ public:
          cooresponding row.
   */
   void getRowListCopy(std::vector<GID> &Ids,
-    std::vector<LID> &localIds, std::vector<LNO> &nnz)
+    std::vector<LID> &localIds, std::vector<size_t> &nnz)
   {
-    LNO numRows = this->getLocalNumRows();
+    size_t numRows = this->getLocalNumRows();
     Ids.resize(numRows,0);
     localIds.clear();   // don't need it
     nnz.resize(numRows,0);
@@ -220,60 +191,47 @@ public:
 
   /*!  This optional method is not implemented because we don't have list of nnz.
    */
-  // LNO getRowListView(GID *&Ids, LID *&localIds, LNO *nnz)
+  // getRowListView(GID *&Ids, LID *&localIds, size_t *nnz)
 
   ///////////////////////////////////////////////////////////////////////////
   /*! Return the column Ids of the non-zeros for the given row.
       \param Id  global Id for a row on this process
       \param localId  app's local Id, if any, associated with this row
       \param columnId on return will contain the list of global column Ids
+   
+       TODO will model ever want the non zero values?
    */
 
   void getRowNonZeroCopy(GID Id, LID localId, std::vector<GID> &columnId)
   {
-    size_t nCols = _xmatrix->getNumEntriesInLocalRow(localId);  // TODO:  Is localID the correct argument here??  Previously, argument was "i", which didn't compile. KDDKDD   
+    size_t nCols = _xmatrix->getNumEntriesInLocalRow(localId);
     columnId.resize(nCols);
 
-    // TODO:  This line will not compile for me; compiler complains about the template argument to Array.  KDDKDD  Array<std::vector<GID>::iterator> cols(columnId.begin(), columnId.end());
-    Array<Scalar> values(nCols);
+    Array<LNO> columnLid(nCols);
+    Array<Scalar> temp(nCols);
+    _xmatrix->getLocalRowView(localId, columnLid, temp);
 
-    // TODO:  I don't see this method in the Xpetra CrsMatrix class.  KDDKDD _xmatrix->getGlobalRowCopy(Id, cols, values);
+    for (int i=0; i < nCols; i++){
+       columnId[i] = _colMap.GID(columnLid[i]);
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  /*! Obtain a read-only view, if possible, of the column Ids of the
-      input row.
-      \param Id  global Id for a row on this process
-      \param localId  if input adapter supplied local Ids, this
-         is that localId
-      \param columnId on return will point a list of global column global Ids.
-      \return The number of ids in the columnId list.
+  /*! Not defined because underlying xpetra object has local IDs now.
+      TODO explain better.
    */
-  LNO getRowNonZeroView(GID Id, LID localId, GID *&columnId) const
-  {
-    ArrayView<GID> cols;
-    ArrayView<GID> values;
-
-    _xmatrix->getGlobalRowView(Id, cols, values);
-    columnId = cols->getRawPtr();
-    return 0;
-  }
+  //size_t getRowNonZeroView(GID Id, LID localId, GID *&columnId) const
 
   ///////////////////////////////////////////////////////////////////////////
-  /*! Return maximum number of nonzeros across all local rows.
+  /*! Return true of matrix is globally lower triangular.   TODO
    */
-  LNO getLocalMaxNumNonZeros() const { 
-   return -1; //TODO Placeholder to allow compilation
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  /*! Return true of matrix is globally lower triangular.
-   */
+  bool isLowerTriagular() const { return false; }
 //TODO Not supported by Xpetra KDDKDD  bool isLowerTriangular() const { return _xmatrix->isLowerTriangular(); }
 
   ///////////////////////////////////////////////////////////////////////////
-  /*! Return true of matrix is globally upper triangular.
+  /*! Return true of matrix is globally upper triangular.   TODO
    */
+  bool isUpperTriangular() const { return false; }
 //TODO Not supported by Xpetra KDDKDD  bool isUpperTriangular() const { return _xmatrix->isUpperTriangular(); }
 
   ///////////////////////////////////////////////////////////////////////////
