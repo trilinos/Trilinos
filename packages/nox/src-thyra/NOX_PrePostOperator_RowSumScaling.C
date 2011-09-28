@@ -107,6 +107,6 @@ computeScaling(const NOX::Solver::Generic& solver)
     inv_row_sum_vec_ = ::Thyra::createMember(jac->range());
 
   row_stat_jac->getRowStat( ::Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
-			   inv_row_sum_vec_);
+			    inv_row_sum_vec_.ptr());
 
 }
