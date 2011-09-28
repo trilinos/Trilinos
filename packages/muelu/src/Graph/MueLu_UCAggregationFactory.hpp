@@ -43,7 +43,8 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationFactory()
+    UCAggregationFactory(RCP<FactoryBase> graphFact = Teuchos::null)
+      : graphFact_(graphFact)
     {
       TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
     }
@@ -74,16 +75,9 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      if(currentLevel.IsAvailable("Aggregates",this)) return;
-      /*if(graphFact_!=Teuchos::null) graphFact_->DeclareInput(currentLevel);
-      else
-      {
-        // TODO: move me to Level class?
-        const FactoryBase* defaultFactory = currentLevel.GetDefaultFactoryPtr("Graph");
-        if( defaultFactory == NULL) std::cout << "UCAggregationFactory::DeclareInput: Error: default factory == NULL" << std::endl;
-        defaultFactory->callDeclareInput(currentLevel);
-      }*/
-      currentLevel.Request("Graph", graphFact_.get()); // we should request data...
+      if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
+
+      currentLevel.DeclareInput("Graph", graphFact_.get()); // we should request data...
     }
 
     //@}
@@ -104,7 +98,6 @@ namespace MueLu {
 
       // Level Get
       RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
-      currentLevel.Release("Graph", graphFact_.get()); // release graph
 
       // Build
       RCP<Aggregates> aggregates = rcp(new Aggregates(*graph)); 
@@ -131,7 +124,7 @@ namespace MueLu {
   private:
 
     //! Graph Factory
-    RCP<SingleLevelFactoryBase> graphFact_;
+    RCP<FactoryBase> graphFact_;
  
     //! Algorithms
     LocalAggregationAlgorithm algo1_;

@@ -208,9 +208,9 @@ namespace MueLu {
 
           // 3.2) declare input for levels (recursively)
           GetOStream(Debug, 0) << "declareInput for P's, R's and RAP" << std::endl;
-          PFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
-          RFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
-          AcFact.DeclareInput(fineLevel, coarseLevel);  // TAW: corresponds to SetNeeds
+          coarseLevel.Request(PFact);  // TAW: corresponds to SetNeeds
+          coarseLevel.Request(RFact);  // TAW: corresponds to SetNeeds
+          coarseLevel.Request(AcFact);  // TAW: corresponds to SetNeeds
 
           ++i;
         } //while
