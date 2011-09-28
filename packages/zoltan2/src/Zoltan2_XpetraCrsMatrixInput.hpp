@@ -212,7 +212,7 @@ public:
     _xmatrix->getLocalRowView(localId, columnLid, temp);
 
     for (int i=0; i < nCols; i++){
-       columnId[i] = _colMap.GID(columnLid[i]);
+       columnId[i] = _colMap->getGlobalElement(columnLid[i]);
     }
   }
 

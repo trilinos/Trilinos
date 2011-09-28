@@ -17,7 +17,7 @@
 #define _ZOLTAN2_EPETRACRSMATRIXINPUT_HPP_
 
 
-#include <Epetra_CrsMatrix.hpp>
+#include <Epetra_CrsMatrix.h>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 
 namespace Zoltan2 {
@@ -41,7 +41,9 @@ public:
    */
 
   EpetraCrsMatrixInput(RCP<Epetra_CrsMatrix> matrix) :
-      XpetraCrsMatrixInput<double, int, int>(matrix){}
+    XpetraCrsMatrixInput<double, int, int>(
+        rcp(new Xpetra::EpetraCrsMatrix(matrix))) {}
+
 };
   
   

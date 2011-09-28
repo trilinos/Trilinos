@@ -401,7 +401,7 @@ public:
     if (nedges > 0){
       edgeId.resize(nedges);
       for (unsigned i=0; i < nedges; i++){
-        edgeId[i] = _colMap.GID(nbors[i]);
+        edgeId[i] = _colMap->getGlobalElement(nbors[i]);
       }
 
       if (_edgeWeightDim > 0){

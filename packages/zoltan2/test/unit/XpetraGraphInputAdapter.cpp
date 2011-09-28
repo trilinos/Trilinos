@@ -42,6 +42,9 @@
 #include <EpetraExt_CrsMatrixIn.h>
 #include <Teuchos_ArrayRCP.hpp>
 
+// temporarily
+#include <Zoltan2_EpetraCrsMatrixInput.hpp>
+
 // For Epetra tests
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -124,13 +127,20 @@ int main(int argc, char *argv[])
     RCP<Epetra_CrsGraph> graph = rcp(const_cast<Epetra_CrsGraph *>(&g));
     graph.release();  // we're not responsible for deleting graph
 
-    Zoltan2::EpetraCrsGraphInput<float> obj(graph);
     Zoltan2::EpetraCrsGraphInput<float> *adapterE = NULL;
 
     try {
       adapterE = new Zoltan2::EpetraCrsGraphInput<float>(graph);
     }
     CATCH_EXCEPTION("adapterE constructor");
+
+    // Just want to see if this will compile
+
+    Zoltan2::EpetraCrsMatrixInput *adapterM = NULL;
+    try {
+      adapterM = new Zoltan2::EpetraCrsMatrixInput(Tpetra::rcp<Epetra_CrsMatrix>(M));
+    }
+    CATCH_EXCEPTION("adapterM constructor");
 
     //////////////////////////////////////////////
     // Create a TpetraCrsGraphInput adapter 
@@ -323,7 +333,6 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_EXIT(ecomm, fail, "getVertexListView results");
 
     for (int lid=lidMin, i=0, k=0; lid <= lidMax; lid++, i++){
-      int num=-1;
       unsigned nnbors = numNbors[i];
       std::vector<int> id;
       std::vector<float> wgt;
@@ -337,22 +346,12 @@ int main(int argc, char *argv[])
         break;
      
 
-      try{
-        num = adapterE->getVertexEdgeView(map.GID(lid), lid, gidView, wgtView);
-      }
-      CATCH_EXCEPTION("getting edge view");
-
-      if (fail)
-        break;
-
-      if ((id.size() != nnbors) || (num != nnbors) || (wgt.size() != nnbors))
+      if ((id.size() != nnbors) || (wgt.size() != nnbors))
         fail=1;
       else{
         for (int j=0; j < nnbors; j++, k++){
           if ((id[j] != nborGID[k]) || 
-              (wgt[j] != 1.0) ||
-              (gidView[j] != nborGID[k]) ||
-              (wgtView[j] != 1.0) ){
+              (wgt[j] != 1.0) ){
             fail = 1;
             break;
           }
