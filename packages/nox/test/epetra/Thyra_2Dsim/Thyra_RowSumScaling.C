@@ -58,6 +58,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -185,6 +186,15 @@ int main(int argc, char *argv[])
   ::Thyra::SolveStatus<double> solve_status;
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria);
+
+  // Test total num iterations
+  {
+    // Problem converges in 7 nonlinear iterations with NO scaling
+    // Problem converges in 5 nonlinear iterations with RS scaling
+    Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
+      Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
+    TEUCHOS_ASSERT(thyra_nox_solver->getNOXSolver()->getNumIterations() == 5);
+  }
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
