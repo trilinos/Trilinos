@@ -1,0 +1,81 @@
+
+/* ************************************************ 
+ * Network configuration
+ * ************************************************ */
+
+/* Network Transports */
+#cmakedefine HAVE_TRIOS_CRAYPORTALS 1
+#cmakedefine HAVE_TRIOS_PORTALS 1
+#cmakedefine HAVE_TRIOS_INFINIBAND 1
+#cmakedefine HAVE_TRIOS_MTA 1
+#cmakedefine HAVE_TRIOS_LUC 1
+#cmakedefine HAVE_TRIOS_GEMINI 1
+#cmakedefine HAVE_TRIOS_MPI 1
+
+/* Special Portals config */
+#cmakedefine HAVE_TRIOS_PTLERRORSTR 1
+#cmakedefine HAVE_TRIOS_PTLNIFAILSTR 1
+#cmakedefine HAVE_TRIOS_PTLEVENTKINDSTR 1
+#cmakedefine HAVE_TRIOS_PTLGITJID 1
+#cmakedefine HAVE_TRIOS_PTLACENTRY 1
+#cmakedefine HAVE_TRIOS_PTL_NOACK_REQ 1
+#cmakedefine HAVE_TRIOS_PTL_NO_ACK_REQ 1
+#cmakedefine HAVE_TRIOS_P3RT_P3RT_H 1
+#cmakedefine HAVE_TRIOS_P3NAL_UTCP_H 1
+#cmakedefine HAVE_TRIOS_PTL_TIME_T 
+#cmakedefine HAVE_TRIOS_PTL_EQ_HANDLER_T 
+ 
+/* Headers */
+#cmakedefine HAVE_TRIOS_MALLOC_H 1
+#cmakedefine HAVE_TRIOS_SYS_TYPES_H 1
+#cmakedefine HAVE_TRIOS_SYS_PARAM_H 1
+#cmakedefine HAVE_TRIOS_SYS_IOCTL_H 1
+#cmakedefine HAVE_TRIOS_SYS_SOCKET_H 1
+#cmakedefine HAVE_TRIOS_SYS_SOCKIO_H 1
+#cmakedefine HAVE_TRIOS_NETDB_H 1
+#cmakedefine HAVE_TRIOS_NET_IF_H 1
+#cmakedefine HAVE_TRIOS_NET_IF_DL_H 1
+#cmakedefine HAVE_TRIOS_NET_IF_ARP_H 1
+#cmakedefine HAVE_TRIOS_NETINET_IN_H 1
+#cmakedefine HAVE_TRIOS_ARPA_INET_H 1
+#cmakedefine HAVE_TRIOS_IFADDRS_H 1
+#cmakedefine HAVE_TRIOS_STRUCT_SOCKADDR_IN 1
+
+/* ************************************************ 
+ * I/O Libraries
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_NETCDF 1
+#cmakedefine HAVE_TRIOS_PNETCDF 1
+
+/* ************************************************ 
+ * Misc Config 
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_XDR_SIZEOF 1
+#cmakedefine TRIOS_HAVE_GETIFADDRS 1
+
+
+/* ************************************************ 
+ * Thread configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_PTHREAD 1
+#cmakedefine HAVE_TRIOS_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP 1
+
+
+/* ************************************************ 
+ * Timer configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_SYS_TIME_H 1
+#cmakedefine HAVE_TRIOS_CLOCK_GETTIME 1
+#cmakedefine HAVE_TRIOS_TIME_H 1
+#cmakedefine HAVE_TRIOS_GETTIMEOFDAY 1
+#cmakedefine HAVE_TRIOS_PAPI_H 1
+#cmakedefine HAVE_TRIOS_PAPI 1
+#cmakedefine HAVE_TRIOS_MACH_TIME_H 1
+#cmakedefine HAVE_TRIOS_MACH_ABSOLUTE_TIME 1
+
+/* ************************************************ 
+ * Tracing configuration
+ * ************************************************ */
+#cmakedefine TRIOS_ENABLE_TRACING 1
+#cmakedefine HAVE_TRIOS_PABLO 1
+

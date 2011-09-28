@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Load the appropriate bash environment
+. /opt/modules/default/init/bash
+
+# Unload GNU modules for catamount
+module load PrgEnv-pgi
+module load xt-papi
+module load fftw
+
+# There are problems with pgi > 11.0
+module swap pgi/10.9.0
+
+rm -f CMakeCache.txt
+
+TARGET_COMPILER=pgi
+TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
+TOOLCHAIN=${TRILINOS_SRCDIR}/preCopyrightTrilinos/trios/sampleScripts/crosscompile/cielo/toolchain-cnl-${TARGET_COMPILER}.cmake
+
+INSTALL_PATH=/home/thkorde/projects/nessie/install/$TARGET_COMPILER
+#COMMSPLITTER_PATH=/home/thkorde/projects/nessie/install/$TARGET_COMPILER/lib
+INSTALL_PATH=/home/raoldfi/research/support/cnos
+COMMSPLITTER_PATH=/home/raoldfi/research/workspace/comm.splitter
+
+cmake \
+    -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+    -D CMAKE_TOOLCHAIN_FILE=${TOOLCHAIN} \
+\
+    -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+    -D Trilinos_ENABLE_TESTS:BOOL=ON \
+\
+    -D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
+    -D Trilinos_ENABLE_Trios:BOOL=ON \
+\
+    -D TPL_ENABLE_Gemini:BOOL=ON \
+    -D Gemini_INCLUDE_DIRS:FILEPATH="/opt/cray/gni-headers/default/include" \
+\
+    -D TPL_ENABLE_BLAS:STRING=ON \
+    -D BLAS_LIBRARY_DIRS:FILEPATH="/opt/pgi/default/linux86-64/default/lib" \
+    -D BLAS_LIBRARY_NAMES:STRING="acml" \
+    -D TPL_ENABLE_LAPACK:STRING=ON \
+    -D LAPACK_LIBRARY_DIRS:FILEPATH="/opt/pgi/default/linux86-64/default/lib" \
+    -D LAPACK_LIBRARY_NAMES:STRING="acml" \
+    -D HAVE_TEUCHOS_BLASFLOAT:BOOL=TRUE \
+    -D CXX_COMPLEX_BLAS_WORKS:BOOL=TRUE \
+\
+    "$@" \
+    ${TRILINOS_SRCDIR}
+
+
+#    -D NSSI_EXTRA_LIB_DIRS="$COMMSPLITTER_PATH" \
