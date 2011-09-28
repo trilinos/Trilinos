@@ -137,7 +137,7 @@ for example as:
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Running the above will clone Trilinos into MOCK_MPI_OPT/Trilinos and
 will create the build directory in MOCK_MPI_OPT/BUILD.  After the
@@ -149,6 +149,26 @@ everything working.  All of the info needed to debug problems should
 be present in the output from 'ctest -VV -S' (which you should pipe to
 a file and then examine).
 
+If you want to test the exact state of the local changes in ${TRILINOS_SRC},
+you can avoid pulling commits by creating a symbolic link and running as:
+
+  $ mkdir MOCK_MPI_OPT
+  $ cd MOCK_MPI_OPT
+  $ ln -s  ${TRILINOS_SRC} Trilinos
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental \
+     Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     CTEST_DO_UPDATES=OFF  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it
+will not try to reset your repos and wipe out your changes or have merge
+conflicts for extra repos.  Also, it is crticial that you make sure that the
+version of Trilinos in ${TRILINOS_SRC} has all of the extra repos cloned that
+would be cloned if CTEST_DO_UPDATES=ON or the script will fail with a
+configure failure.
+
 After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
@@ -157,7 +177,7 @@ submit works, you can run a final trial build with:
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
 in good shape for the nightly test.  If you can't find you
