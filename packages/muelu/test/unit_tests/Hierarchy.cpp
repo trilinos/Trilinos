@@ -179,9 +179,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
 
-  std::cout << "ICI" << std::endl;
   SmootherFactory SmooFactory(smoother);
-  std::cout << "LA" << std::endl;
 
   RCP<Level> levelOne = rcp(new Level());
 
@@ -194,9 +192,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
-  std::cout << "ICI2" << std::endl;
   H.SetCoarsestSolver(SmooFactory);
-  std::cout << "LA2" << std::endl;
 
   RCP<SmootherBase>  preSmoo,postSmoo;
   preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
