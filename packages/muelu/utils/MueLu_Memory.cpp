@@ -5,7 +5,9 @@
 #include <iostream> // TODO: remove
 #include <unistd.h>
 #include <time.h>
+#ifdef MUELU_USE_MALLINFO
 #include <malloc.h>
+#endif
 
 //#define MUELU_USE_MALLINFO
 
