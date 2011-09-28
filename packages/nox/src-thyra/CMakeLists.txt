@@ -13,6 +13,7 @@ APPEND_SET(HEADERS
   NOX_Thyra_MultiVector.H
   NOX_Thyra_Group.H
   Thyra_NonlinearSolver_NOX.hpp
+  NOX_PrePostOperator_RowSumScaling.H
   )
 
 APPEND_SET(SOURCES
@@ -20,6 +21,7 @@ APPEND_SET(SOURCES
   NOX_Thyra_MultiVector.C
   NOX_Thyra_Group.C
   Thyra_NonlinearSolver_NOX.cpp
+  NOX_PrePostOperator_RowSumScaling.C
   )
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)

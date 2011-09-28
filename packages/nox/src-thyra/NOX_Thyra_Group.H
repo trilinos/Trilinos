@@ -57,9 +57,14 @@ namespace NOX {
 }
 
 namespace Thyra {
-  template <class T> class ModelEvaluator;
-  template <class T> class MultiVectorBase;
+  template <class Scalar> class ModelEvaluator;
+  template <class Scalar> class MultiVectorBase;
+  template <class Scalar> class LinearOpBase;
   template <class Scalar> class LinearOpWithSolveBase;
+  template <class Scalar> class LinearOpWithSolveFactoryBase;
+  template <class Scalar> class DefaultLinearOpSource;
+  template <class Scalar> class PreconditionerFactoryBase;
+  template <class Scalar> class PreconditionerBase;
 }
 
 namespace NOX {
@@ -83,18 +88,21 @@ namespace NOX {
 
       NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
 
-      //! See above.
       NOX::Abstract::Group& operator=(const NOX::Thyra::Group& source);
 
-      /** \brief . */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > get_current_x() const;
 
-      /** \brief . */
+      Teuchos::RCP< ::Thyra::LinearOpBase<double> >
+      getNonconstJacobianOperator();
+
+      Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
+      getJacobianOperator() const;
+
       Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
       getNonconstJacobian();
 
-      /** \brief . */
-      Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> > getJacobian() const;
+      Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> > 
+      getJacobian() const;
 
       /** @name "Compute" functions. */
       //@{
@@ -234,6 +242,8 @@ namespace NOX {
       ::Thyra::ESolveMeasureNormType 
       getThyraNormType(const string& name) const;
 
+      void createPreconditionerAndUpateLOWS() const;
+
     protected:
 
       //! Problem interface
@@ -248,6 +258,7 @@ namespace NOX {
       bool is_valid_jacobian_;
       bool is_valid_newton_dir_;
       bool is_valid_gradient_dir_;
+      bool is_valid_prec_;
       //@}
       
       //! Solution vector
@@ -266,11 +277,25 @@ namespace NOX {
       Teuchos::RCP< 
         NOX::SharedObject<
           ::Thyra::LinearOpWithSolveBase<double>,
-          //::Thyra::LinearOpBase<double>,
           NOX::Thyra::Group
           >
         > shared_jacobian_;
     
+      //! Thyra LOWS factory for building Jacobians
+      Teuchos::RCP< const ::Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory_;
+
+      //! Jacobian operator with linear solver
+      Teuchos::RCP< ::Thyra::LinearOpBase<double> > lop_;
+
+      //! Source base needed to create preconditioner
+      Teuchos::RCP< const ::Thyra::DefaultLinearOpSource<double> > losb_;
+
+      //! Preconditioner factory
+      Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory_;
+
+      //! Preconditioner for Jacobian
+      Teuchos::RCP< ::Thyra::PreconditionerBase<double> > prec_;
+
       //! Residual InArgs
       ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;
       
