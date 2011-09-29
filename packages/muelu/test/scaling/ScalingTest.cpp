@@ -161,14 +161,9 @@ int main(int argc, char *argv[]) {
   mtime.back()->start();
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+
+  RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-
-  H->SetLevel(Finest);
-
-//  Finest->Request("A");
-//  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                //FIXME is implemented
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 

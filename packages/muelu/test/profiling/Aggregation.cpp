@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
 
   //  return EXIT_SUCCESS;
   /**********************************************************************************/
@@ -112,12 +112,9 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   Level Finest;
-  Hierarchy H;
-  H.SetLevel(rcpFromRef(Finest));
-  Finest.Set("A",Op);
+  Finest.Set("A", A);
   
-  RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
-  Finest.SetDefaultFactoryHandler(factoryHandler);
+  Finest.SetDefaultFactoryHandler( rcp( new DefaultFactoryHandler() ));
 
   UCAggregationFactory UCAggFact;
   Finest.Request(UCAggFact);

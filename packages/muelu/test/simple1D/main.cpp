@@ -115,19 +115,11 @@ int main(int argc, char *argv[]) {
 
   RCP<Hierarchy> H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<Level> Finest = rcp( new Level() );
+  RCP<Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-
-  H->SetLevel(Finest); // first associate level with hierarchy (for defaultFactoryHandler!)
-
-  //Finest->Request("A");
-  //Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                //FIXME is implemented
-
+  
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
-
-
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
