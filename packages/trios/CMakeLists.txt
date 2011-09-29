@@ -41,6 +41,20 @@ ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_TRACING
   OFF
 )
 
+# Check for an RDMA transport (needed for Nessie)
+IF (${PACKAGE_NAME}_ENABLE_Portals OR
+    ${PACKAGE_NAME}_ENABLE_CrayPortals OR
+    ${PACKAGE_NAME}_ENABLE_InfiniBand OR
+    ${PACKAGE_NAME}_ENABLE_Gemini OR 
+    ${PACKAGE_NAME}_ENABLE_LUC)
+
+  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)        
+ELSE()
+  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 0)
+ENDIF()
+
+
+
 # Create the Trios_config.h file in ${CMAKE_BINARY_DIR}
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

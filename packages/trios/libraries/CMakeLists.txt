@@ -8,18 +8,16 @@ ADD_SUBDIRECTORY(support)
 # was enabled. There might be a way to do this in the Dependencies.cmake file, 
 # but I couldn't figure it out. 
 
-IF (${PACKAGE_NAME}_ENABLE_Portals OR
-    ${PACKAGE_NAME}_ENABLE_CrayPortals OR
-    ${PACKAGE_NAME}_ENABLE_InfiniBand OR
-    ${PACKAGE_NAME}_ENABLE_Gemini OR 
-    ${PACKAGE_NAME}_ENABLE_LUC)
-        
-    ADD_SUBDIRECTORY(nessie)
-    
-    # If Gemini is the transport, we need the commsplitter lib as well
-    IF (${PACKAGE_NAME}_ENABLE_Gemini)
-      ADD_SUBDIRECTORY(commsplitter)
-    ENDIF()
+IF (${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT)
+
+  # Nessie needs an RDMA transport to work
+  ADD_SUBDIRECTORY(nessie)
+  
+  # If Gemini is the transport, we need the commsplitter lib so we 
+  # can run services in MPMD mode
+  IF (${PACKAGE_NAME}_ENABLE_Gemini)
+    ADD_SUBDIRECTORY(commsplitter)
+  ENDIF()
     
 ELSE ()
     MESSAGE(WARNING "Did not find a supported network protocol. "
