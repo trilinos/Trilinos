@@ -150,6 +150,8 @@ public:
         RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ColBasedOmegas =
                 Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
 
+        MultiplyAll(DinvAP0, DinvADinvAP0, colbasedomegamap);
+
         //Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
         //RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > map =
         //    Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, DinvADinvAP0->getDomainMap()-<getMaxGlobalIndex(), comm);
@@ -231,6 +233,64 @@ public:
     }
 
     //@}
+
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
+    {
+        Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+
+        if(!left->getDomainMap()->isSameAs(*right->getDomainMap()))
+            std::cout << "domain maps of left and right do not match" << std::endl;
+        if(!left->getRowMap()->isSameAs(*right->getRowMap()))
+            std::cout << "row maps of left and right do not match" << std::endl;
+
+        // Tpetra specific!
+        RCP<Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > InnerProd_local =
+                //Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(InnerProdMap, true);
+                rcp(new Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(InnerProdMap,true));
+
+        RCP<Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > leftrow_local =
+                rcp(new Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(InnerProdMap,true));
+        RCP<Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rightrow_local =
+                rcp(new Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(InnerProdMap,true));
+
+
+        for(size_t n=0; n<left->getNodeNumRows(); n++)
+        {
+            Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+            Teuchos::ArrayView<const Scalar> lvals_left;
+
+            left->getLocalRowView(n, lindices_left, lvals_left);
+
+                for (LocalOrdinal i=0; i<lindices_left.size(); i++)
+                {
+                    leftrow_local->replaceLocalValue(left->getColMap()->getGlobalElement(lindices_left[i]),0,lvals_left[i]);
+                }
+                leftrow_local->reduce();
+
+
+
+            Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+            Teuchos::ArrayView<const Scalar> lvals_right;
+
+            right->getLocalRowView(n, lindices_right, lvals_right);
+
+                for (LocalOrdinal i=0; i<lindices_right.size(); i++)
+                {
+                 rightrow_local->replaceLocalValue(right->getColMap()->getGlobalElement(lindices_right[i]),0,lvals_right[i]);
+                }
+                rightrow_local->reduce();
+
+                Scalar dotn = leftrow_local->dot(*rightrow_local);
+                std::cout << "n: " << n << " dotn: " << dotn << std::endl;
+                //InnerProd_local->sumIntoGlobalValue(InnerProdMap->getGlobalElement(lindices_left[n]), 0, dotn);
+        }
+
+        //InnerProd_local->reduce();
+
+        //InnerProd_local->describe(*fos,Teuchos::VERB_EXTREME);
+
+        return InnerProd_local; // todo fix me
+    }
 
     Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0) const
     {
