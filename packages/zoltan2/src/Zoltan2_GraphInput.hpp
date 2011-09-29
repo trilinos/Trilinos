@@ -18,10 +18,6 @@
 #include <string>
 #include <Zoltan2_InputAdapter.hpp>
 
-//TODO Be consistent: is it ID or Id?
-//    *Id for variable names and method names
-//    *ID for template parameters
-
 namespace Zoltan2 {
 
 /*! Zoltan2::GraphInput
@@ -31,8 +27,6 @@ namespace Zoltan2 {
     The Graph accessor methods defined here mimic those of 
     Tpetra::CrsGraph and Tpetra::Map.
 
-    TODO: It may be necessary to put a migration interface at this level.
-
     Scalar: This data type is used for weights and coordinates.
     LID: the type for the application's local Ids
     GID: the type for the application's global Ids
@@ -40,9 +34,6 @@ namespace Zoltan2 {
     GNO: the integral type that Zoltan2 will use for the global 
       counts and identifiers.  It needs to be large enough for the
       problem's number of objects.
-
-   TODO:  What data type should Zoltan2 for size-type methods.
-     (Teuchos size_t and global_size_t semantics)
 */
 
 CONSISTENT_CLASS_TEMPLATE_LINE
@@ -162,9 +153,6 @@ public:
     edgeID = NULL;
     return 0;
   }
-
-  // TODO - do we want the application to specify properties of the
-  //  graph?  isDirected(), isBipartite(), ...
 };
   
   

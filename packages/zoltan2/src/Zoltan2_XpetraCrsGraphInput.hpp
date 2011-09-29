@@ -25,16 +25,14 @@ namespace Zoltan2 {
 
     The template parameter is the weight type.  Xpetra local and global IDs 
     are ints.
+    TODO -test for memory alloc failure when we resize a vector
+    TODO: we assume FillComplete has been called.  We should support
+                objects that are not FillCompleted.
 */
-    // TODO -test for memory alloc failure when we resize a vector
 
 CONSISTENT_CLASS_TEMPLATE_LINE
 class XpetraCrsGraphInput : public GraphInput<CONSISTENT_TEMPLATE_PARAMS> {
 private:
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// local typedefs should go here
-#endif
 
   RCP<Xpetra::CrsGraph<LID, GID, Node> > _graph;
   RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
