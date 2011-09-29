@@ -1300,9 +1300,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
    
           IF (CTEST_DO_MEMORY_TESTING)
             MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
-            CTEST_MEMCHECK(BUILD "${CTEST_BINARY_DIRECTORY}")
+            CTEST_MEMCHECK(
+              BUILD "${CTEST_BINARY_DIRECTORY}"
+              PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+              INCLUDE_LABEL "^${PACKAGE}$")
             IF (CTEST_DO_SUBMIT)
-              CTEST_SUBMIT( PARTS Memcheck )
+              CTEST_SUBMIT( PARTS MemCheck )
             ENDIF()
           ENDIF()
   

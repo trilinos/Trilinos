@@ -58,6 +58,22 @@ SET(BLAS_INCLUDE_DIRS ${MKLROOT}/include/intel64/lp64 CACHE PATH "Path to MKL BL
 SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-disable-excluded-trilinos-packages.cmake)
 
+# Turn on configure timing
+SET(Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
+
+# Don't create *Config.cmake files since they are massively expensive to create
+SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL "")
+
+# Turn off float and complex testing because CASL does not need them
+SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "")
+SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "")
+
+# Turn off STK tests since they are constantly failing.  NOTE: Since CASL is
+# not developing on STK, only using it, this should not represent a big risk
+# for STK or CASL.
+SET(STK_ENABLE_TESTS OFF CACHE BOOL "")
+SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "")
+
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/boost-1.46.1-options.cmake)
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
 
