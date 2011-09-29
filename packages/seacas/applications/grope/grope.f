@@ -103,7 +103,7 @@ C   --   "User's Manual for GROPE"
       INCLUDE 'dbase.blk'
       INCLUDE 'dbtitl.blk'
       INCLUDE 'dbnums.blk'
-      INCLUDE 'f2kcli.inc'
+      INCLUDE 'argparse.inc'
 
 C      --A - the dynamic numeric memory base array
       DIMENSION A(1)
@@ -148,7 +148,7 @@ C   --Open the database
       DBNAME  = ' '
 
 C .. Get filename from command line.  If not specified, emit error message
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .eq. 0) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('FATAL', 'Syntax is: "grope filename"')
@@ -159,7 +159,7 @@ C .. Get filename from command line.  If not specified, emit error message
         GOTO 120
       end if
 
-      CALL GET_COMMAND_ARGUMENT(1,DBNAME, LNAM, ISTATUS)
+      CALL get_argument(1,DBNAME, LNAM)
       NDB = exopen(dbname(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//DBNAME(:LNAM)//'" does not exist.'

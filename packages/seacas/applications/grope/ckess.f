@@ -119,11 +119,7 @@ C   --Check all element faces in element side sets are within range
 C ... Since we don't know (or don't want to expend the effort...) the
 C     the number of faces for each element, we assume that the maximum
 C     number of faces is 4 for 2D and 6 for 3D      
-      if (ndim .eq. 2) then
-        CALL CHKRNG (LTSESS, LESSEL, 4, NZERO, NERR)
-      else if (ndim .eq. 3) then
-        CALL CHKRNG (LTSESS, LESSEL, 6, NZERO, NERR)
-      end if
+      CALL CHKRNG (LTSESS, LESSEL, 2*NDIM, NZERO, NERR)
       
 C ... Check for duplicate element/sides in a sideset. This causes
 C     problems with some analysis codes

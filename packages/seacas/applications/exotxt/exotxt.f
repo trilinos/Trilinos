@@ -46,7 +46,7 @@ C   --
 C   --Expects the input database on unit 9, the output text file on unit 20.
 
       include 'exodusII.inc'
-      INCLUDE 'f2kcli.inc'
+      INCLUDE 'argparse.inc'
 
 
 C     Input/Output File Arguments
@@ -112,7 +112,7 @@ C   --Open the input and output files
       NTXT = 20
 
 C .. Get filename from command line.  If not specified, emit error message
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('FATAL', 'Syntax is: "exotxt db_file text_file"')
@@ -124,7 +124,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C     Open the input database; Exit on error
-      CALL GET_COMMAND_ARGUMENT(1,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(1,FILNAM, LFIL)
       CPUWS = 0
       IOWS  = 0
       NDB = EXOPEN(FILNAM(:LFIL), EXREAD, CPUWS, IOWS,
@@ -135,7 +135,7 @@ C     Open the input database; Exit on error
         GOTO 140
       END IF
 
-      CALL GET_COMMAND_ARGUMENT(2,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(2,FILNAM, LFIL)
       open(unit=ntxt, file=filnam(:lfil), iostat=ierr)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Could not create "'//FILNAM(:LFIL)//'"'
@@ -172,7 +172,7 @@ C     Request length of the side set distribution factors list
 C   --Read the coordinates
 
       CALL MDRSRV ('XN', KXN, NUMNP)
-      CALL MDRSRV ('YN', KYN, NUMNP)
+      IF (NNDIM .GE. 2) CALL MDRSRV ('YN', KYN, NUMNP)
       IF (NNDIM .GE. 3) CALL MDRSRV ('ZN', KZN, NUMNP)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) THEN
@@ -188,7 +188,7 @@ C     Reserve memory for coordinate array names
      *  C(knacor), namlen)
 
       CALL MDDEL ('XN')
-      CALL MDDEL ('YN')
+      IF (NNDIM .GE. 2) CALL MDDEL ('YN')
       IF (NNDIM .GE. 3) CALL MDDEL ('ZN')
       CALL MCDEL ('NAMECO')
 

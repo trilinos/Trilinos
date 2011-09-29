@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C     $Id: txtexo.f,v 1.11 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
       PROGRAM TXTEXO
 C=======================================================================
@@ -44,7 +43,7 @@ C     --
 C     --Expects the input text file on unit 20, the output database on unit 11.
 
       include 'exodusII.inc'
-      INCLUDE 'f2kcli.inc'
+      INCLUDE 'argparse.inc'
       CHARACTER*(MXSTLN) QAINFO(6)
 
       CHARACTER*80 TITLE
@@ -65,8 +64,8 @@ C     --A - the dynamic memory base array
 C     Program Information
 C.
       QAINFO(1) = 'txtexo2                         '
-      QAINFO(2) = '2011/06/29                      '
-      QAINFO(3) = ' 1.12                           '
+      QAINFO(2) = '2011/09/26                      '
+      QAINFO(3) = ' 1.13                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -83,7 +82,7 @@ C.
       IF (NERR .GT. 0) GOTO 130
 
 C     --Open the database and write the initial variables
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('FATAL', 'Syntax is: "txtexo text_file db_file"')
@@ -97,7 +96,7 @@ C     --Open the database and write the initial variables
       NTXT = 20
       NDB = 12
 
-      CALL GET_COMMAND_ARGUMENT(1,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(1,FILNAM, LFIL)
       open(unit=ntxt, file=filnam(:lfil), status='old', iostat=ierr)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Text file "'//FILNAM(:LFIL)//'" does not exist.'
@@ -106,7 +105,7 @@ C     --Open the database and write the initial variables
       END IF
       EXODUS = .FALSE.
 
-      CALL GET_COMMAND_ARGUMENT(2,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(2,FILNAM, LFIL)
       CMPSIZ = 0
       IOWS   = iowdsz()
       ndb = excre(filnam(:lfil), EXCLOB, CMPSIZ, IOWS, IERR)
@@ -136,7 +135,7 @@ C     --Read the initial variables
 C     --Read the coordinates
 
       CALL MDRSRV ('XN', KXN, NUMNP)
-      CALL MDRSRV ('YN', KYN, NUMNP)
+      IF (NDIM .GE. 2) CALL MDRSRV ('YN', KYN, NUMNP)
       IF (NDIM .GE. 3) CALL MDRSRV ('ZN', KZN, NUMNP)
 
       CALL MCRSRV ('NAMECO', KNACOR, NAMLEN*NDIM)
@@ -148,7 +147,7 @@ C     --Read the coordinates
      *  C(KNACOR), NAMLEN, *140)
       
       CALL MDDEL ('XN')
-      CALL MDDEL ('YN')
+      IF (NDIM .GE. 2) CALL MDDEL ('YN')
       IF (NDIM .GE. 3) CALL MDDEL ('ZN')
       CALL MCDEL ('NAMECO')
 
