@@ -45,19 +45,19 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy() 
-      : maxCoarseSize_(50), implicitTranspose_(false) 
+      : maxCoarseSize_(50), implicitTranspose_(false)
     { 
-      SetLevel(rcp( new Level() ));
+      AddLevel(rcp( new Level() ));
     }
     
     //!
     Hierarchy(const RCP<Operator> & A) 
-      :  maxCoarseSize_(50), implicitTranspose_(false) 
+      :  maxCoarseSize_(50), implicitTranspose_(false)
     {
       RCP<Level> Finest = rcp( new Level() );
-      SetLevel(Finest);
+      AddLevel(Finest);
     
-      Finest->Set< RCP<Operator> >("A", A);
+      Finest->Set("A", A);
     }
 
     //! Destructor.
@@ -77,7 +77,7 @@ namespace MueLu {
     //               Right now, we change the LevelID of the input level and push it at the end of hierarchy.
     //               Certainly better to take the LevelID of the input level into account
 
-    void SetLevel(const RCP<Level> & level) {
+    void AddLevel(const RCP<Level> & level) {
       Levels_.push_back(level);
       level->SetLevelID(Levels_.size());
 
@@ -88,24 +88,18 @@ namespace MueLu {
     }
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level> & GetLevel(const int levelID = 1) /* const */ {
+    RCP<Level> & GetLevel(const int levelID = 1) {
       TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value");
       return Levels_[levelID-1];
     }
 
-    LO GetNumLevels() {
-      return Levels_.size();
-    }
+    LO GetNumLevels() { return Levels_.size(); }
 
     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
-    void SetImplicitTranspose(bool const &implicit) {
-      implicitTranspose_ = implicit;
-    }
+    void SetImplicitTranspose(bool const &implicit) { implicitTranspose_ = implicit; }
 
     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
-    bool GetImplicitTranspose() {
-      return implicitTranspose_;
-    }
+    bool GetImplicitTranspose() { return implicitTranspose_; }
 
     //@}
 
@@ -177,7 +171,7 @@ namespace MueLu {
 
           if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
             RCP<Level> coarseLevel = fineLevel.Build(); // new coarse level, using copy constructor
-            this->SetLevel(coarseLevel);                // add to hierarchy
+            this->AddLevel(coarseLevel);                // add to hierarchy
           }
 
           Level & coarseLevel = *Levels_[i+1];
@@ -190,9 +184,9 @@ namespace MueLu {
 
           // 3.2) declare input for levels (recursively)
           GetOStream(Debug, 0) << "declareInput for P's, R's and RAP" << std::endl;
-          coarseLevel.Request(PFact);  // TAW: corresponds to SetNeeds
-          coarseLevel.Request(RFact);  // TAW: corresponds to SetNeeds
-          coarseLevel.Request(AcFact);  // TAW: corresponds to SetNeeds
+          coarseLevel.Request(PFact);
+          coarseLevel.Request(RFact);
+          coarseLevel.Request(AcFact);
 
           ++i;
         } //while

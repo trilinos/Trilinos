@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   Hierarchy H(A);
 
   RCP<Level> levelTwo = rcp(new Level());
-  H.SetLevel(levelTwo);
+  H.AddLevel(levelTwo);
 
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
