@@ -45,14 +45,13 @@ namespace MueLuTests {
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-    fineLevel.Request("A",NULL);
-    fineLevel.Set("A",A,NULL);
+    fineLevel.Request("A");
+    fineLevel.Set("A",A);
 
       LO NSdim = 2;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
-      fineLevel.Request("Nullspace",NULL);
-      fineLevel.Set("Nullspace",nullSpace,NULL);
+      fineLevel.Set("Nullspace",nullSpace);
       RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
@@ -61,8 +60,8 @@ namespace MueLuTests {
 
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
-      coarseLevel.Request("P",TentativePFact.get());  // request Ptent
-      coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace (false, since no PR factory available)
+      coarseLevel.Request("P",TentativePFact.get());         // request Ptent
+      coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace (false, since no PR factory available)
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
@@ -70,7 +69,7 @@ namespace MueLuTests {
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace; 
-      coarseLevel.Get("Nullspace",coarseNullSpace,NULL);
+      coarseLevel.Get("Nullspace",coarseNullSpace, TentativePFact.get());
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -80,7 +79,7 @@ namespace MueLuTests {
       diff->putScalar(0.0);
 
       coarseLevel.Release("P",TentativePFact.get()); // release Ptent
-      coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
+      coarseLevel.Release("Nullspace",TentativePFact.get());   // release coarse nullspace
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
@@ -107,15 +106,14 @@ namespace MueLuTests {
       TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
       RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-      fineLevel.Request("A",NULL);
-      fineLevel.Set("A",A,NULL);
+      fineLevel.Request("A");
+      fineLevel.Set("A",A);
 
       // only one NS vector -> exercises manual orthogonalization
       LO NSdim = 1;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
-      fineLevel.Request("Nullspace",NULL);
-      fineLevel.Set("Nullspace",nullSpace,NULL);
+      fineLevel.Set("Nullspace",nullSpace);
       RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
@@ -126,7 +124,7 @@ namespace MueLuTests {
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
-      coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace (false, since no PRFactory available)
+      coarseLevel.Request("Nullspace",TentativePFact.get());    // request coarse nullspace (false, since no PRFactory available)
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
@@ -134,7 +132,7 @@ namespace MueLuTests {
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace;
-      coarseLevel.Get("Nullspace",coarseNullSpace,NULL);
+      coarseLevel.Get("Nullspace", coarseNullSpace, TentativePFact.get());
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -144,7 +142,7 @@ namespace MueLuTests {
       diff->putScalar(0.0);
 
       coarseLevel.Release("P",TentativePFact.get()); // release Ptent
-      coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
+      coarseLevel.Release("Nullspace", TentativePFact.get());   // release coarse nullspace
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
@@ -176,8 +174,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
-    fineLevel.Request("A",NULL);
-    fineLevel.Set("A",A,NULL);
+    fineLevel.Set("A",A);
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     UCAggFact->SetMinNodesPerAggregate(3);
@@ -188,7 +185,7 @@ namespace MueLuTests {
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
 
     coarseLevel.Request("P",tentativePFact.get());  // request Ptent
-    coarseLevel.Request("Nullspace",NULL,false);    // request coarse nullspace
+    coarseLevel.Request("Nullspace", tentativePFact.get());  // request coarse nullspace
     coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
@@ -196,10 +193,10 @@ namespace MueLuTests {
     coarseLevel.Get("P",Ptent,tentativePFact.get());
 
     RCP<MultiVector> coarseNullSpace; 
-    coarseLevel.Get("Nullspace",coarseNullSpace,NULL);
+    coarseLevel.Get("Nullspace",coarseNullSpace, tentativePFact.get());
 
     coarseLevel.Release("P",tentativePFact.get()); // release Ptent
-    coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
+    coarseLevel.Release("Nullspace", tentativePFact.get());   // release coarse nullspace
 
     //grab default fine level nullspace (vector of all ones)
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -303,15 +300,15 @@ namespace MueLuTests {
 
             // test some basic multgrid data
             RCP<Level> coarseLevel = H->GetLevel(2);
-            RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P",NULL);
-            RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R",NULL);
+            RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
+            RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P1->getGlobalNumRows(), 63);
             TEST_EQUALITY(P1->getGlobalNumCols(), 21);
             TEST_EQUALITY(R1->getGlobalNumRows(), 21);
             TEST_EQUALITY(R1->getGlobalNumCols(), 63);
             RCP<Level> coarseLevel2 = H->GetLevel(3);
-            RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P",NULL);
-            RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R",NULL);
+            RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
+            RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P2->getGlobalNumRows(), 21);
             TEST_EQUALITY(P2->getGlobalNumCols(), 7);
             TEST_EQUALITY(R2->getGlobalNumRows(), 7);
@@ -352,8 +349,8 @@ namespace MueLuTests {
         TEST_EQUALITY(results[0], results[1]); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
-  } //TentativePFactory_EpetraVsTpetra
+  } // TentativePFactory_EpetraVsTpetra
 #endif
 
 
-}//namespace MueLuTests
+} // namespace MueLuTests

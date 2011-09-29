@@ -38,8 +38,6 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
 
-    RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
-
   public:
 
     //! @name Constructors/Destructors
@@ -47,20 +45,14 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy() 
-      : maxCoarseSize_(50), implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) 
+      : maxCoarseSize_(50), implicitTranspose_(false)
     { }
 
     //!
-    Hierarchy(const RCP<Operator> & A) :  maxCoarseSize_(50), implicitTranspose_(false), defaultFactoryHandler_(rcp(new DefaultFactoryHandler())) {
+    Hierarchy(const RCP<Operator> & A) :  maxCoarseSize_(50), implicitTranspose_(false) {
       RCP<Level> Finest = rcp( new Level() );
       Finest->Set< RCP<Operator> >("A", A);
       SetLevel(Finest);
-    }
-
-    //! constructor with special default factory handler
-    Hierarchy(RCP<DefaultFactoryHandlerBase> defHandler) : maxCoarseSize_(50), implicitTranspose_(false), defaultFactoryHandler_(defHandler) {
-      if(defHandler == Teuchos::null)
-        defaultFactoryHandler_ = rcp(new DefaultFactoryHandler());
     }
 
     //! Copy constructor.
@@ -99,8 +91,6 @@ namespace MueLu {
       Levels_.push_back(level);
       level->SetLevelID(Levels_.size());
 
-      level->SetDefaultFactoryHandler(defaultFactoryHandler_);
-
       if (Levels_.size() < 2)
         level->SetPreviousLevel(Teuchos::null);
       else
@@ -126,11 +116,6 @@ namespace MueLu {
     bool GetImplicitTranspose() {
       return implicitTranspose_;
     }
-
-    //TODO: allow users to change default factory handler.
-    // void SetDefaultFactory(const std::string&, RCP<Factory>&) {
-    //   defaultFactoryHandler_->SetDefaultFactory(...)
-    // }
 
     //@}
 
@@ -187,6 +172,12 @@ namespace MueLu {
       }
       Xpetra::global_size_t totalNnz = fineNnz;
 
+      RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+      {
+        Level & fineLevel = *Levels_[startLevel];
+        fineLevel.SetDefaultFactoryHandler(factoryHandler);
+      }
+
       // Setup level structure
       int i = startLevel;
       while (i < startLevel + numDesiredLevels - 1)
@@ -200,6 +191,7 @@ namespace MueLu {
           }
 
           Level & coarseLevel = *Levels_[i+1];
+          coarseLevel.SetDefaultFactoryHandler(factoryHandler);
 
           // Warning: shift of 1 between i and LevelID. Weird...
           TEST_FOR_EXCEPTION(fineLevel.GetLevelID()   != i+1, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): FineLevel have a wrong level ID");
@@ -264,6 +256,10 @@ namespace MueLu {
           ++i;
         } // while
 
+      for(size_t j = startLevel; j < Levels_.size(); j++) {
+        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
+      }
+
       ////////////////////////////////////////////////////////////
       //i = startLevel;
       //while (i < startLevel + Levels_.size() - 1)
@@ -299,8 +295,16 @@ namespace MueLu {
     however.
     */
     void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
+      
       LO clevel = GetNumberOfLevels()-1;
+      
+      RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+      Levels_[clevel]->SetDefaultFactoryHandler(factoryHandler);
+
       smooFact.BuildSmoother(*Levels_[clevel], pop);
+
+      Levels_[clevel]->SetDefaultFactoryHandler(Teuchos::null);
+      //TODO: setdefaultfactoryhandler
     }
 
     /*! @brief Construct smoothers on all levels but the coarsest.
@@ -334,9 +338,24 @@ namespace MueLu {
         GetOStream(Warnings0, 0) << "Warning: coarsest level will have a direct solve!" << std::endl;
       }
 
+      for(int j = startLevel; j<=lastLevel; j++) {
+        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
+      }
+
+      {
+        RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+        for(int j = startLevel; j<=lastLevel; j++) {
+          Levels_[j]->SetDefaultFactoryHandler(factoryHandler);
+        }
+      }
+
       for (int i=startLevel; i<=lastLevel; i++) {
         SubMonitor m(*this, "Level " + Teuchos::toString(i));
         smooFact.Build(*Levels_[i]);
+      }
+
+      for(int j = startLevel; j<=lastLevel; j++) {
+        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
       }
 
     } //SetSmoothers()

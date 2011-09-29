@@ -143,18 +143,25 @@ namespace MueLuTests {
       } // Build2DPoisson()
  
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
-      // This method initializes LevelID and DefaultFactoryHandlers
-      static void createSingleLevelHierarchy(Level& currentLevel, RCP<DefaultFactoryHandlerBase> defHandler = Teuchos::null) {
-        Hierarchy H(defHandler);
-        H.SetLevel(rcpFromRef(currentLevel)); // rcpFromRef safe here
+      // This method initializes LevelID and linked list of level
+      static void createSingleLevelHierarchy(Level& currentLevel) {
+        RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+        currentLevel.SetDefaultFactoryHandler(factoryHandler);
+
+        currentLevel.SetLevelID(1);
       }
       
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
-      // This method initializes LevelIDs, DefaultFactoryHandlers and references to previous level
+      // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
-        Hierarchy H;
-        H.SetLevel(rcpFromRef(fineLevel));   // rcpFromRef safe here
-        H.SetLevel(rcpFromRef(coarseLevel)); // rcpFromRef safe here
+        RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+        fineLevel.SetDefaultFactoryHandler(factoryHandler);
+        coarseLevel.SetDefaultFactoryHandler(factoryHandler);
+
+        coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+
+        fineLevel.SetLevelID(1);
+        coarseLevel.SetLevelID(2);
       }
       
 #ifdef HAVE_MUELU_IFPACK

@@ -150,8 +150,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.SetLevel(levelOne);
   H.SetLevel(levelTwo);
 
-  levelOne->Request("A",NULL);
-  levelOne->Set("A",A,NULL);
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
@@ -186,8 +186,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  levelOne->Request("A",NULL);
-  levelOne->Set("A",A,NULL);
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
@@ -225,8 +225,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-  levelOne->Request("A",NULL);
-  levelOne->Set("A",A,NULL);
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
@@ -263,8 +263,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   Hierarchy H;
   H.SetLevel(levelOne);
-  levelOne->Request("A",NULL);
-  levelOne->Set("A",A,NULL);
+  levelOne->Request("A");
+  levelOne->Set("A",A);
 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);

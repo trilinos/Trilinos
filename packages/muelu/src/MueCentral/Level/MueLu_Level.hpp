@@ -391,7 +391,7 @@ public:
     //@{
     //! Set default factories (used internally by Hierarchy::SetLevel()).
     // Users should not use this method.
-    void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase>& defaultFactoryHandler) {
+    void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase> defaultFactoryHandler) {
         defaultFactoryHandler_ = defaultFactoryHandler;
     }
 
@@ -484,7 +484,7 @@ private:
 
     //! Get ptr to default factory.
     const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) const
-    {
+    {      
   		TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
    		return &(defaultFactoryHandler_->GetDefaultFactory(varname));
     }
