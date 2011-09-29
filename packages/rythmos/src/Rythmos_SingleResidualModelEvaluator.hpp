@@ -307,6 +307,7 @@ SingleResidualModelEvaluator<Scalar>::createOutArgsImpl() const
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W);
+  outArgs.setSupports(MEB::OUT_ARG_W_op);
   return outArgs;
 }
 
@@ -396,6 +397,7 @@ void SingleResidualModelEvaluator<Scalar>::evalModelImpl(
   MEB::OutArgs<Scalar> daeOutArgs = daeModel->createOutArgs();
   daeOutArgs.set_f(outArgs_bar.get_f()); // can be null
   daeOutArgs.set_W(outArgs_bar.get_W()); // can be null
+  daeOutArgs.set_W_op(outArgs_bar.get_W_op()); // can be null
   daeModel->evalModel(daeInArgs,daeOutArgs);
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
