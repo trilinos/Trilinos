@@ -117,7 +117,7 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
     is_valid_jacobian_ = source.is_valid_jacobian_;
     is_valid_newton_dir_ = source.is_valid_newton_dir_;
     is_valid_gradient_dir_ = source.is_valid_gradient_dir_;
-    is_valid_prec_ = source.is_valid_prec_;
+    is_valid_lows_ = source.is_valid_lows_;
 
     // New copy takes ownership of the shared Jacobian for DeepCopy
     if (this->isJacobian())
@@ -143,7 +143,7 @@ void NOX::Thyra::Group::resetIsValidFlags()
   is_valid_jacobian_ = false;
   is_valid_newton_dir_ = false;
   is_valid_gradient_dir_ = false;
-  is_valid_prec_ = false;
+  is_valid_lows_ = false;
 }
 
 Teuchos::RCP<NOX::Abstract::Group> NOX::Thyra::Group::
@@ -169,7 +169,7 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   is_valid_jacobian_ = source.is_valid_jacobian_;
   is_valid_newton_dir_ = source.is_valid_newton_dir_;
   is_valid_gradient_dir_ = source.is_valid_gradient_dir_;
-  is_valid_prec_ = source.is_valid_prec_;
+  is_valid_lows_ = source.is_valid_lows_;
 
   if (this->isF())
     *f_vec_ = *(source.f_vec_);
@@ -223,6 +223,7 @@ NOX::Thyra::Group::getJacobianOperator() const
 Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
 NOX::Thyra::Group::getNonconstJacobian()
 {
+  this->updateLOWS();
   return shared_jacobian_->getObject(this);
 }
 
@@ -230,6 +231,7 @@ NOX::Thyra::Group::getNonconstJacobian()
 Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> >
 NOX::Thyra::Group::getJacobian() const
 {
+  this->updateLOWS();
   return shared_jacobian_->getObject();
 }
 
@@ -550,8 +552,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 				const ::Thyra::MultiVectorBase<double>& input, 
 				::Thyra::MultiVectorBase<double>& result) const
 {
-  if (!is_valid_prec_)
-    createPreconditionerAndUpateLOWS();
+  this->updateLOWS();
 
   // Create solve criteria
   ::Thyra::SolveCriteria<double> solveCriteria;
@@ -605,9 +606,11 @@ NOX::Thyra::Group::getThyraNormType(const string& name) const
   }
 }
 
-void NOX::Thyra::Group::createPreconditionerAndUpateLOWS() const
+void NOX::Thyra::Group::updateLOWS() const
 { 
-  // Compute the Preconditioner
+  if (is_valid_lows_)
+    return;
+
   if (Teuchos::nonnull(prec_factory_)) {
     prec_factory_->initializePrec(losb_, prec_.get());
     
@@ -622,4 +625,6 @@ void NOX::Thyra::Group::createPreconditionerAndUpateLOWS() const
 				  shared_jacobian_->getObject(this).ptr());
 
   }
+
+  is_valid_lows_ = true;
 }

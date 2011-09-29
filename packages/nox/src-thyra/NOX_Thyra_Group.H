@@ -242,7 +242,8 @@ namespace NOX {
       ::Thyra::ESolveMeasureNormType 
       getThyraNormType(const string& name) const;
 
-      void createPreconditionerAndUpateLOWS() const;
+      //! Finalizes LOWS to be a valid solver for the Jacobian
+      void updateLOWS() const;
 
     protected:
 
@@ -258,7 +259,7 @@ namespace NOX {
       bool is_valid_jacobian_;
       bool is_valid_newton_dir_;
       bool is_valid_gradient_dir_;
-      bool is_valid_prec_;
+      mutable bool is_valid_lows_;
       //@}
       
       //! Solution vector
@@ -273,7 +274,7 @@ namespace NOX {
       //! Gradient direction vector
       Teuchos::RCP<NOX::Thyra::Vector> gradient_vec_;
       
-      //! Shared Jacobian operator
+      //! Shared Jacobian operator with solve
       Teuchos::RCP< 
         NOX::SharedObject<
           ::Thyra::LinearOpWithSolveBase<double>,
@@ -284,7 +285,7 @@ namespace NOX {
       //! Thyra LOWS factory for building Jacobians
       Teuchos::RCP< const ::Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory_;
 
-      //! Jacobian operator with linear solver
+      //! Jacobian operator 
       Teuchos::RCP< ::Thyra::LinearOpBase<double> > lop_;
 
       //! Source base needed to create preconditioner
