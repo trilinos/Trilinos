@@ -39,8 +39,7 @@ namespace MueLuTests {
     // --
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    fineLevel.Request("A",NULL);
-    fineLevel.Set("A",Op,NULL);
+    fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
     TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
