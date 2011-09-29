@@ -8,13 +8,12 @@
 
 #include "MueLu_NoFactory.hpp"
 
-    // static variables
+// static variables
 namespace MueLu
 {
-    bool NoFactory::instanceFlag_ = false;
-    NoFactory* NoFactory::UserDefined = NULL;
+RCP<NoFactory> NoFactory::UserDefined = Teuchos::null;
 
-    NoFactory::ptrGetInstance UserDefinedVariable = NoFactory::get;
+NoFactory::ptrGetInstance UserDefinedVariable = NoFactory::get;
 }
 
 //MueLu::NoFactory::~NoFactory()
