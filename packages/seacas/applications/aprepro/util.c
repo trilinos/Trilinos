@@ -39,8 +39,6 @@
    PURPOSE
      Utility routines for Aprepro
    NOTES
-     do_pathopen - from GAWK source code.  GNU license applies.
-        Copyright (C) 1986, 1988, 1989, 1991 the Free Software Foundation, Inc.
 
    HISTORY
      gdsjaar - Nov 14, 1991: Created.
@@ -64,85 +62,11 @@
 #include <my_aprepro.h>
 extern aprepro_options ap_options;
 
-char *pathopen (char *file);
 void  conv_string(char *string);
 FILE *open_file(char *file, char *mode);
 FILE *check_open_file(char *file, char *mode);
 
 static char trypath[BUFSIZ];
-
-char *pathopen (char *file)
-{
-  static char *savepath;
-  static int first = 1;
-  char *matspath, *accesspath, *cp, *mats = "/mats";
-  FILE *fd;
-
-  if (first)
-    {
-      first = 0;
-      /* get environment variable */
-      if ((accesspath = (char *) getenv("ACCESS")) == NULL )
-        {
-          printf ("Your ACCESS environment variable is not set\n");
-          fprintf (stderr, "%s\n", "Please set your ACCESS environment variable and try again");
-          exit(1);
-        }
-      matspath = (char *)malloc (sizeof(char)*(strlen(accesspath)+strlen(mats)+1));
-      strcpy(matspath, accesspath);
-      strcat(matspath, mats);
-      savepath = matspath;	/* used for restarting */
-    }
-  matspath = savepath;
-
-  do
-    {
-      trypath[0] = '\0';
-      /* this should take into account limits on size of trypath */
-      for (cp = trypath; *matspath && *matspath != ENVSEP;)
-	*cp++ = *matspath++;
-
-      if (cp != trypath)
-	{			/* nun-null element in path */
-	  /* add directory punctuation only if needed */
-	  if (*(cp - 1) != '/')
-	    *cp++ = '/';
-	  /* append filename */
-	  strcpy (cp, file);
-	}
-      else
-	strcpy (trypath, file);
-#ifdef DEBUG
-      fprintf (stderr, "Path Tried: %s\n", trypath);
-#endif
-      if ((fd = fopen (trypath, "r")))
-	{
-	  fclose (fd);
-	  return (trypath);
-	}
-
-      /* no luck, keep going */
-      if (*matspath == ENVSEP && matspath[1] != '\0')
-	matspath++;		/* skip colon */
-    }
-  while (*matspath);
-  /*
-	 * You might have one of the mats
-	 * paths defined, WITHOUT the current working directory in it.
-	 * Therefore try to open the file in the current directory.
-	 */
-#ifdef DEBUG
-  fprintf (stderr, "Path Tried: %s\n", file);
-#endif
-
-  if ((fd = fopen (file, "r")))
-    {
-      fclose (fd);
-      return (file);
-    }
-  else
-    return ('\0');
-}
 
 /* Convert string to all lower-case and replace all spaces with '_' */
 void conv_string (char *string)

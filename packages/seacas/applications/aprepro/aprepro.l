@@ -60,7 +60,6 @@ char  *temp_f, *tmpstr;
 
 /* Routines used by material database routines */
 extern char *get_temp_filename(void);
-extern char *pathopen(char *file);
 extern void  conv_string(char *string);
 extern FILE *open_file(char *file, char *mode);
 extern FILE *check_open_file(char *file, char *mode);
