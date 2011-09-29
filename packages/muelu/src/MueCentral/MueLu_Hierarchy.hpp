@@ -33,7 +33,7 @@ namespace MueLu {
   private:
 
     //! vector of Level objects
-    std::vector<RCP<Level> > Levels_;
+    Array<RCP<Level> > Levels_;
 
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
@@ -256,7 +256,7 @@ namespace MueLu {
           ++i;
         } // while
 
-      for(size_t j = startLevel; j < Levels_.size(); j++) {
+      for(int j = startLevel; j < Levels_.size(); j++) {
         Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
       }
 
