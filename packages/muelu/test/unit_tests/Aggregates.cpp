@@ -14,17 +14,12 @@ namespace MueLuTests {
   // Little utility to generate aggregates.
   RCP<Aggregates> gimmeAggregates(RCP<Operator> const &A)
   {
-	// build test-specific default factory handler
-	RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
-	defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-	defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
     Level level;
-	TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level,defHandler);
+    TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
     level.Request("A",NULL);	// use default factory handler for finelevel A
     level.Set("A",A,NULL);
 
-	// setup aggregation factory (use default factory for graph)
+    // setup aggregation factory (use default factory for graph)
     UCAggregationFactory aggFact;
     aggFact.SetMinNodesPerAggregate(3);
     aggFact.SetMaxNeighAlreadySelected(0);

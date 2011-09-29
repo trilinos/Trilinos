@@ -58,6 +58,7 @@ namespace MueLuTests {
 
     // setup finest level
     RCP<Level> Finest = rcp( new Level() );
+
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",Op);                      // set fine level matrix
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
@@ -96,11 +97,11 @@ namespace MueLuTests {
     H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
     RCP<Level> coarseLevel = H->GetLevel(2);
-    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P",NULL);
-    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R",NULL);
+    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
+    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
     RCP<Level> coarseLevel2 = H->GetLevel(3);
-    RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P",NULL);
-    RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R",NULL);
+    RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
+    RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
 
     TEST_EQUALITY(Finest->IsAvailable("PreSmoother"), true);
     TEST_EQUALITY(Finest->IsAvailable("PostSmoother"), true);

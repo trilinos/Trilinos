@@ -111,21 +111,13 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
 
-/*
   Level Finest;
   Hierarchy H;
   H.SetLevel(rcpFromRef(Finest));
-  Finest.Set("A",Op,NULL);
-*/
- RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
- defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
- defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-
- Level Finest;
- Hierarchy H(defHandler);
- H.SetLevel(rcpFromRef(Finest));
- Finest.Set("A",Op);
-
+  Finest.Set("A",Op);
+  
+  RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
+  Finest.SetDefaultFactoryHandler(factoryHandler);
 
   UCAggregationFactory UCAggFact;
   Finest.Request(UCAggFact);
