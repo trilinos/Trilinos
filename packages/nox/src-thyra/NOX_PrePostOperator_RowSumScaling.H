@@ -69,7 +69,7 @@ namespace NOX {
 
     /** <tt>sv</tt> is the scaling vector */
     RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& sv,
-		  NOX_WhenToScale s = NOX_RowSumScaleAtBeginningOfIteration);
+		  NOX_WhenToScale s);
 
     void runPreIterate(const NOX::Solver::Generic& solver);
     

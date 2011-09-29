@@ -155,29 +155,15 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Line Search Based");
 
-  // Create RowSum scaling pre/post operator
-  Teuchos::RCP< ::Thyra::VectorBase<double> > scale_vec = 
-    ::Thyra::createMember(thyraModel->get_f_space());
-  Thyra::V_S(scale_vec.ptr(),1.0);
-
-  Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = 
-    Teuchos::rcp(new NOX::RowSumScaling(scale_vec));
-
-  nl_params->sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-
-  // Create thyra scaled model evaluator
-  Teuchos::RCP< ::Thyra::ScaledModelEvaluator<double> > scaled_me = 
-    Teuchos::rcp(new ::Thyra::ScaledModelEvaluator<double>);
-  scaled_me->initialize(thyraModel);
-  scaled_me->set_f_scaling(scale_vec);
-
+  // Enable row sum scaling
+  nl_params->sublist("Solver Options").set("Use Row Sum Scaling", true);
+  
   // Create a Thyra nonlinear solver
   Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver = 
     Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
   
   solver->setParameterList(nl_params);
-  //solver->setModel(thyraModel);
-  solver->setModel(scaled_me);
+  solver->setModel(thyraModel);
 
   Teuchos::RCP< ::Thyra::VectorBase<double> >
     initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
