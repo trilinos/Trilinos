@@ -7,6 +7,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
+  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.common.cmake").
+
   # Set up the compiler environment.
   SET(brain_GCC_ROOT "$ENV{HOME}/compilers/gcc/4.6.1")
   SET(ENV{LD_LIBRARY_PATH} "${brain_GCC_ROOT}/lib64:$ENV{LD_LIBRARY_PATH}")
