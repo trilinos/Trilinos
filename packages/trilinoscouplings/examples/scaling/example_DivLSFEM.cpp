@@ -418,10 +418,10 @@ int main(int argc, char *argv[]) {
         refFaceToEdge(1,2)=5; refFaceToEdge(1,3)=9;
         refFaceToEdge(2,0)=2; refFaceToEdge(2,1)=11;
         refFaceToEdge(2,2)=6; refFaceToEdge(2,3)=10;
-        refFaceToEdge(3,0)=3; refFaceToEdge(3,1)=8;
-        refFaceToEdge(3,2)=7; refFaceToEdge(3,3)=11;
-        refFaceToEdge(4,0)=0; refFaceToEdge(4,1)=1;
-        refFaceToEdge(4,2)=2; refFaceToEdge(4,3)=3;
+        refFaceToEdge(3,0)=8; refFaceToEdge(3,1)=7;
+        refFaceToEdge(3,2)=11; refFaceToEdge(3,3)=3;
+        refFaceToEdge(4,0)=3; refFaceToEdge(4,1)=2;
+        refFaceToEdge(4,2)=1; refFaceToEdge(4,3)=0;
         refFaceToEdge(5,0)=4; refFaceToEdge(5,1)=5;
         refFaceToEdge(5,2)=6; refFaceToEdge(5,3)=7;
 
@@ -972,7 +972,7 @@ int main(int argc, char *argv[]) {
      for (int iface=0; iface<numFaces; iface++) {
        if (faceIsOwned[iface]) {
          for (int iedge=0; iedge<numEdgesPerFace; iedge++) {
-           face2edge[iedge][ownedFace]=globalNodeIds[faceToEdge(iface,iedge)];
+           face2edge[iedge][ownedFace]=globalEdgeIds[faceToEdge(iface,iedge)];
          }
          ownedFace++;
         }
