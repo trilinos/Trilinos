@@ -1,39 +1,41 @@
 #!/bin/bash
 
+# Need Help?  Go to http://trilinos.sandia.gov/Trilinos10CMakeQuickstart.txt
+
+# Notes on the cmake variables
+#   - the -lz is for the compression library (commsplitter uses crc)
+#   - MPI details are in the toolchain file
+
+# Path to Trilinos source 
+TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
+TRIOS_SRCDIR=${TRILINOS_SRCDIR}/preCopyrightTrilinos/trios
+
 # Load the appropriate bash environment
-. /opt/modules/default/init/bash
-
-# Unload GNU modules for catamount
-module load PrgEnv-pgi
-module load xt-papi
-module load fftw
-
-# There are problems with pgi > 11.0
-module swap pgi/10.9.0
+source ${TRIOS_SRCDIR}/sampleScripts/config/cielo/loadenv.sh
 
 rm -f CMakeCache.txt
 
 TARGET_COMPILER=pgi
-TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
-TOOLCHAIN=${TRILINOS_SRCDIR}/preCopyrightTrilinos/trios/sampleScripts/crosscompile/cielo/toolchain-cnl-${TARGET_COMPILER}.cmake
+TOOLCHAIN=${TRIOS_SRCDIR}/sampleScripts/config/cielo/toolchain-cnl-${TARGET_COMPILER}.cmake
 
-INSTALL_PATH=/home/thkorde/projects/nessie/install/$TARGET_COMPILER
-#COMMSPLITTER_PATH=/home/thkorde/projects/nessie/install/$TARGET_COMPILER/lib
-INSTALL_PATH=/home/raoldfi/research/support/cnos
-COMMSPLITTER_PATH=/home/raoldfi/research/workspace/comm.splitter
+INSTALL_PATH=/home/raoldfi/research/support/cnl/lib/trilinos
+
 
 cmake \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
     -D CMAKE_TOOLCHAIN_FILE=${TOOLCHAIN} \
+    -D BUILD_SHARED_LIBS:BOOL=OFF \
+    -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
+    -D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON \
 \
     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
     -D Trilinos_ENABLE_TESTS:BOOL=ON \
+    -D Trilinos_EXTRA_LINK_FLAGS:STRING="-lz" \
 \
     -D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
 \
-    -D TPL_ENABLE_Gemini:BOOL=ON \
-    -D Gemini_INCLUDE_DIRS:FILEPATH="/opt/cray/gni-headers/default/include" \
+   -D TPL_ENABLE_MPI:BOOL=ON \
 \
     -D TPL_ENABLE_BLAS:STRING=ON \
     -D BLAS_LIBRARY_DIRS:FILEPATH="/opt/pgi/default/linux86-64/default/lib" \
@@ -44,8 +46,9 @@ cmake \
     -D HAVE_TEUCHOS_BLASFLOAT:BOOL=TRUE \
     -D CXX_COMPLEX_BLAS_WORKS:BOOL=TRUE \
 \
+    -D TPL_ENABLE_Gemini:BOOL=ON \
+    -D Gemini_INCLUDE_DIRS:FILEPATH="/opt/cray/gni-headers/default/include" \
+\
     "$@" \
     ${TRILINOS_SRCDIR}
 
-
-#    -D NSSI_EXTRA_LIB_DIRS="$COMMSPLITTER_PATH" \
