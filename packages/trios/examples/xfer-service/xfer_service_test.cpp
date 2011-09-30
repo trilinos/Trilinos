@@ -360,7 +360,9 @@ int main(int argc, char *argv[])
         MPI_Comm_rank(comm, &client_rank);
 
         // Only one process needs to connect to the service
-        if (client_rank == 0) {
+        // TODO: Make get_service a collective call (some transports do not need a connection)
+        //if (client_rank == 0) {
+        {
 
             sleep(args.delay);  // give server time to get started
 
@@ -376,18 +378,18 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
-
         }
 
-        MPI_Bcast(&rc, 1, MPI_INT, 0, comm);
+        //MPI_Bcast(&rc, 1, MPI_INT, 0, comm);
 
         if (rc == NSSI_OK) {
-            if (client_rank == 0) log_debug(LOG_ALL, "Connected to service on attempt %d\n", i);
+            if (client_rank == 0) log_debug(xfer_debug_level, "Connected to service on attempt %d\n", i);
 
             // Broadcast the service description to the other clients
-            log_debug(xfer_debug_level, "Bcasting svc to other clients");
-            MPI_Bcast(&xfer_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
+            //log_debug(xfer_debug_level, "Bcasting svc to other clients");
+            //MPI_Bcast(&xfer_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
 
+            log_debug(xfer_debug_level, "Starting client main");
             // Start the client code
             xfer_client_main(args, xfer_svc, comm);
 
@@ -396,7 +398,7 @@ int main(int argc, char *argv[])
 
             // Tell one of the clients to kill the server
             if (client_rank == 0) {
-                log_debug(LOG_ALL, "%d: Halting xfer service", rank);
+                log_debug(xfer_debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
             }
         }
@@ -408,6 +410,7 @@ int main(int argc, char *argv[])
             //MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
+
     }
 
     log_debug(xfer_debug_level, "%d: clean up nssi", rank);
@@ -418,7 +421,7 @@ int main(int argc, char *argv[])
     if (rc != NSSI_OK)
         log_error(xfer_debug_level, "Error in nssi_rpc_fini");
 
-    log_debug(LOG_ALL, "%d: MPI_Finalize()", rank);
+    log_debug(xfer_debug_level, "%d: MPI_Finalize()", rank);
     MPI_Finalize();
 
 

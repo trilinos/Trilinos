@@ -610,7 +610,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     data_array_t array;
     double start_time;
     FILE *result_fp = stdout;
-    log_level debug_level = LOG_UNDEFINED;
+    log_level debug_level = xfer_debug_level;
     int client_rank, client_size;
 
     /* the array of results (for async experiments) */
@@ -685,6 +685,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
         array.data_array_t_val[i].double_val = (double)i + 0.2;
     }
 
+    log_debug(debug_level, "%d: Starting experiment loop", client_rank);
 
     /* loop over the experiments (count == num_trials, num_reqs == ops_per_trial) */
     for (i=0; i<args.num_trials; i++) {
@@ -697,6 +698,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
         switch (args.io_method) {
 
             case PUSH_SYNC:
+                log_debug(debug_level, "%d: push_sync %d reqs", client_rank, args.num_reqs);
                 for (j=0; j<args.num_reqs; j++) {
                     rc = xfer_push_clnt_blk(&xfer_svc, &array);
                     if (rc != NSSI_OK) {
@@ -708,6 +710,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                 break;
 
             case PUSH_ASYNC:
+                log_debug(debug_level, "%d: push_async %d reqs", client_rank, args.num_reqs);
                 /* submit requests */
                 for (j=0; j<args.num_reqs; j++) {
                     rc = xfer_push_clnt(&xfer_svc, &array, &reqs[j]);
@@ -718,6 +721,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                     }
                 }
 
+                log_debug(debug_level, "%d: push_async wait", client_rank, args.num_reqs);
                 /* wait for results */
                 rc = nssi_waitall(&reqs[0], args.num_reqs, -1);
                 if (rc != NSSI_OK) {
@@ -772,11 +776,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                     if (0 != memcmp(array.data_array_t_val, res3->array.data_array_t_val, args.len*sizeof(data_t))) {
                         log_error(client_debug_level, "result array does NOT match original");
 //                        for (i=0; i<args.len; i++) {
-//                            log_debug(LOG_ALL, "orig array int(%d) float(%f) double(%f)",
+//                            log_debug(debug_level, "orig array int(%d) float(%f) double(%f)",
 //                                    array.data_array_t_val[i].int_val, array.data_array_t_val[i].float_val, array.data_array_t_val[i].double_val);
 //                        }
 //                        for (i=0; i<args.len; i++) {
-//                            log_debug(LOG_ALL, "result array int(%d) float(%f) double(%f)",
+//                            log_debug(debug_level, "result array int(%d) float(%f) double(%f)",
 //                                    res3->array.data_array_t_val[i].int_val, res3->array.data_array_t_val[i].float_val, res3->array.data_array_t_val[i].double_val);
 //                        }
                     }
@@ -825,11 +829,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                     if (0 != memcmp(array.data_array_t_val, res4->array.data_array_t_val, args.len*sizeof(data_t))) {
                         log_error(client_debug_level, "result array does NOT match original");
 //                        for (int idx=0;idx<args.len;idx++) {
-//                            log_debug(LOG_ALL, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
+//                            log_debug(debug_level, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
 //                                    idx, array.data_array_t_val[idx].int_val,
 //                                    idx, array.data_array_t_val[idx].float_val,
 //                                    idx, array.data_array_t_val[idx].double_val);
-//                            log_debug(LOG_ALL, "res4.array[%d].int_val=%u ; res4.array[%d].float_val=%f ; res4.array[%d].double_val=%f",
+//                            log_debug(debug_level, "res4.array[%d].int_val=%u ; res4.array[%d].float_val=%f ; res4.array[%d].double_val=%f",
 //                                    idx, res4->array.data_array_t_val[idx].int_val,
 //                                    idx, res4->array.data_array_t_val[idx].float_val,
 //                                    idx, res4->array.data_array_t_val[idx].double_val);
@@ -861,11 +865,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
                 for (j=0; j<args.num_reqs; j++) {
 //                    for (int idx=0;idx<args.len;idx++) {
-//                        log_debug(LOG_ALL, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
+//                        log_debug(debug_level, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
 //                                idx, array.data_array_t_val[idx].int_val,
 //                                idx, array.data_array_t_val[idx].float_val,
 //                                idx, array.data_array_t_val[idx].double_val);
-//                        log_debug(LOG_ALL, "res4.array[%d].int_val=%u ; res4.array[%d].float_val=%f ; res4.array[%d].double_val=%f",
+//                        log_debug(debug_level, "res4.array[%d].int_val=%u ; res4.array[%d].float_val=%f ; res4.array[%d].double_val=%f",
 //                                idx, res4[j].array.data_array_t_val[idx].int_val,
 //                                idx, res4[j].array.data_array_t_val[idx].float_val,
 //                                idx, res4[j].array.data_array_t_val[idx].double_val);
@@ -891,11 +895,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                     if (0 != memcmp(array.data_array_t_val, put_buf->data_array_t_val, args.len*sizeof(data_t))) {
                         log_error(client_debug_level, "result array does NOT match original");
 //                        for (int idx=0;idx<args.len;idx++) {
-//                            log_debug(LOG_ALL, "array[%d].int_val        =%u ; array[%d].float_val        =%f ; array[%d].double_val        =%f",
+//                            log_debug(debug_level, "array[%d].int_val        =%u ; array[%d].float_val        =%f ; array[%d].double_val        =%f",
 //                                    idx, array.data_array_t_val[idx].int_val,
 //                                    idx, array.data_array_t_val[idx].float_val,
 //                                    idx, array.data_array_t_val[idx].double_val);
-//                            log_debug(LOG_ALL, "put_buf.array[%d].int_val=%u ; put_buf.array[%d].float_val=%f ; put_buf.array[%d].double_val=%f",
+//                            log_debug(debug_level, "put_buf.array[%d].int_val=%u ; put_buf.array[%d].float_val=%f ; put_buf.array[%d].double_val=%f",
 //                                    idx, put_buf->data_array_t_val[idx].int_val,
 //                                    idx, put_buf->data_array_t_val[idx].float_val,
 //                                    idx, put_buf->data_array_t_val[idx].double_val);
@@ -940,6 +944,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                 return -1;
         }
 
+        log_debug(debug_level, "%d: Finished inner loop", client_rank);
         MPI_Barrier(client_comm);
         time = Trios::GetTime() - start_time;
 
@@ -979,6 +984,8 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
         timings_desc.clear();
         timings.clear();
     }
+
+    log_debug(debug_level, "%d: Finished outer loop", client_rank);
 
     if (res3 != NULL) free(res3);
     if (res4 != NULL) free(res4);
