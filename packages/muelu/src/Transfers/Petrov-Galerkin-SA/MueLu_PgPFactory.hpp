@@ -138,10 +138,12 @@ public:
 
         RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAP0);
 
-        if(colbasedomegamap->isDistributed() == true) throw("colbasedomegamap is distributed globally?");
-        if(colbasedomegamap->getMinAllGlobalIndex() != DinvAP0->getDomainMap()->getMinAllGlobalIndex()) throw("MinAllGID does not match");
-        if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAP0->getDomainMap()->getMaxAllGlobalIndex()) throw("MaxAllGID does not match");
-        if(colbasedomegamap->getGlobalNumElements() != DinvAP0->getDomainMap()->getGlobalNumElements()) throw("NumGlobalElements do not match");
+        std::cout<< "after BuildLocallyReplicatedColMap" << std::endl;
+
+        //if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
+        if(colbasedomegamap->getMinAllGlobalIndex() != DinvAP0->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
+        if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAP0->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
+        //if(colbasedomegamap->getGlobalNumElements() != DinvAP0->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
 
         RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Numerator =
                 Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
@@ -150,6 +152,7 @@ public:
         RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ColBasedOmegas =
                 Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
 
+        std::cout<< "do MultiplyAll" << std::endl;
         MultiplyAll(DinvAP0, DinvADinvAP0, colbasedomegamap);
 
         //Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
@@ -261,11 +264,11 @@ public:
 
             left->getLocalRowView(n, lindices_left, lvals_left);
 
-                for (LocalOrdinal i=0; i<lindices_left.size(); i++)
+                /*for (LocalOrdinal i=0; i<lindices_left.size(); i++)
                 {
                     leftrow_local->replaceLocalValue(left->getColMap()->getGlobalElement(lindices_left[i]),0,lvals_left[i]);
                 }
-                leftrow_local->reduce();
+                leftrow_local->reduce();*/
 
 
 
@@ -274,20 +277,33 @@ public:
 
             right->getLocalRowView(n, lindices_right, lvals_right);
 
-                for (LocalOrdinal i=0; i<lindices_right.size(); i++)
+                /*for (LocalOrdinal i=0; i<lindices_right.size(); i++)
                 {
                  rightrow_local->replaceLocalValue(right->getColMap()->getGlobalElement(lindices_right[i]),0,lvals_right[i]);
                 }
-                rightrow_local->reduce();
+                rightrow_local->reduce();*/
 
-                Scalar dotn = leftrow_local->dot(*rightrow_local);
-                std::cout << "n: " << n << " dotn: " << dotn << std::endl;
+             for(size_t i=0; i<lindices_left.size(); i++)
+             {
+               for(size_t j=0; j<lindices_right.size(); j++)
+               {
+                 GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
+                 GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
+                 if(left_gid == right_gid)
+                 {
+                   leftrow_local->sumIntoGlobalValue(left_gid, 0, lvals_left[i] * lvals_right[j]);
+                 }
+               }
+             }
+                //Scalar dotn = leftrow_local->dot(*rightrow_local);
+                //std::cout << "n: " << n << " dotn: " << dotn << std::endl;
                 //InnerProd_local->sumIntoGlobalValue(InnerProdMap->getGlobalElement(lindices_left[n]), 0, dotn);
         }
+        //InnerProdMap->describe(*fos,Teuchos::VERB_EXTREME);
+        //std::cout << "call reduce " << std::endl;
+        leftrow_local->reduce();
 
-        //InnerProd_local->reduce();
-
-        //InnerProd_local->describe(*fos,Teuchos::VERB_EXTREME);
+        leftrow_local->describe(*fos,Teuchos::VERB_EXTREME);
 
         return InnerProd_local; // todo fix me
     }
