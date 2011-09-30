@@ -35,8 +35,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
-    fineLevel.Request("A",NULL,false); // don't call DeclareInput for default factory of "A"
-    fineLevel.Set("A",Op,NULL);
+    fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory(rcpFromRef(tentpFactory));

@@ -74,16 +74,14 @@ namespace MueLuTests {
             if (comm->getRank() == 0)
               out << "||NS|| = " << norms[0] << std::endl;
 
-            // setup finest level
-            RCP<Level> Finest = rcp( new Level() );
-            Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-            Finest->Set("A",Op);                      // set fine level matrix
-            Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
-
             // fill hierarchy
             RCP<Hierarchy> H = rcp( new Hierarchy() );
             H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-            H->SetLevel(Finest); // first associate level with hierarchy (for defaultFactoryHandler!)
+
+            RCP<Level> Finest = H->GetLevel();
+            Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+            Finest->Set("A",Op);                      // set fine level matrix
+            Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
             // define transfer operators
             RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());

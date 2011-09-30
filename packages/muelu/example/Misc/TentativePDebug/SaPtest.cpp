@@ -130,14 +130,12 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
+  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   Finest->Request("A",MueLu::NoFactory::get());
   Finest->Set("A",Op,MueLu::NoFactory::get());
-
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  H->SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);

@@ -16,8 +16,7 @@ namespace MueLuTests {
   {
     Level level;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-    level.Request("A",NULL);	// use default factory handler for finelevel A
-    level.Set("A",A,NULL);
+    level.Set("A",A);
 
     // setup aggregation factory (use default factory for graph)
     UCAggregationFactory aggFact;

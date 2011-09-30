@@ -33,7 +33,7 @@ namespace MueLu {
   private:
 
     //! vector of Level objects
-    std::vector<RCP<Level> > Levels_;
+    Array<RCP<Level> > Levels_;
 
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
@@ -45,19 +45,19 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy() 
-      : maxCoarseSize_(50), implicitTranspose_(false)
-    { }
-
-    //!
-    Hierarchy(const RCP<Operator> & A) :  maxCoarseSize_(50), implicitTranspose_(false) {
-      RCP<Level> Finest = rcp( new Level() );
-      Finest->Set< RCP<Operator> >("A", A);
-      SetLevel(Finest);
+      : maxCoarseSize_(50), implicitTranspose_(false) 
+    { 
+      SetLevel(rcp( new Level() ));
     }
-
-    //! Copy constructor.
-    Hierarchy(Hierarchy const &inHierarchy) {
-      std::cerr << "Not implemented yet." << std::endl;
+    
+    //!
+    Hierarchy(const RCP<Operator> & A) 
+      :  maxCoarseSize_(50), implicitTranspose_(false) 
+    {
+      RCP<Level> Finest = rcp( new Level() );
+      SetLevel(Finest);
+    
+      Finest->Set< RCP<Operator> >("A", A);
     }
 
     //! Destructor.
@@ -68,26 +68,16 @@ namespace MueLu {
     //! @name Set/Get Methods.
     //@{
 
-    //! @name Set methods.
-    //@{
-    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) {
-      maxCoarseSize_ = maxCoarseSize;
-    }
+    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
 
-    //@}
-
-    //! @name Get methods.
-    //@{
-  
-    Xpetra::global_size_t GetMaxCoarseSize() const {
-      return maxCoarseSize_;
-    }
+    Xpetra::global_size_t GetMaxCoarseSize() const { return maxCoarseSize_; }
 
     //! Assign a level to hierarchy.
     // TODO from JG: behavior should be explain or changed. 
     //               Right now, we change the LevelID of the input level and push it at the end of hierarchy.
     //               Certainly better to take the LevelID of the input level into account
-    void SetLevel(RCP<Level> const& level) {
+
+    void SetLevel(const RCP<Level> & level) {
       Levels_.push_back(level);
       level->SetLevelID(Levels_.size());
 
@@ -98,12 +88,12 @@ namespace MueLu {
     }
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level>& GetLevel(int const levelID) /* const */ {
+    RCP<Level> & GetLevel(const int levelID = 1) /* const */ {
       TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value");
       return Levels_[levelID-1];
     }
 
-    LO GetNumberOfLevels() {
+    LO GetNumLevels() {
       return Levels_.size();
     }
 
@@ -256,7 +246,7 @@ namespace MueLu {
           ++i;
         } // while
 
-      for(size_t j = startLevel; j < Levels_.size(); j++) {
+      for(int j = startLevel; j < Levels_.size(); j++) {
         Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
       }
 
@@ -296,7 +286,7 @@ namespace MueLu {
     */
     void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
       
-      LO clevel = GetNumberOfLevels()-1;
+      LO clevel = GetNumLevels()-1;
       
       RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
       Levels_[clevel]->SetDefaultFactoryHandler(factoryHandler);
@@ -323,18 +313,18 @@ namespace MueLu {
       Monitor h(*this, "SetSmoothers");
 
       if (numDesiredLevels == -1)
-        numDesiredLevels = GetNumberOfLevels()-startLevel-1;
+        numDesiredLevels = GetNumLevels()-startLevel-1;
       LO lastLevel = startLevel + numDesiredLevels - 1;
 
       //checks
-      if (startLevel >= GetNumberOfLevels())
+      if (startLevel >= GetNumLevels())
         throw(Exceptions::RuntimeError("startLevel >= actual number of levels"));
 
-      if (startLevel == GetNumberOfLevels() - 1)
+      if (startLevel == GetNumLevels() - 1)
         throw(Exceptions::RuntimeError("startLevel == coarse level. Use SetCoarseSolver()"));
 
-      if (lastLevel >= GetNumberOfLevels() - 1) {
-        lastLevel = GetNumberOfLevels() - 2;
+      if (lastLevel >= GetNumLevels() - 1) {
+        lastLevel = GetNumLevels() - 2;
         GetOStream(Warnings0, 0) << "Warning: coarsest level will have a direct solve!" << std::endl;
       }
 
@@ -472,7 +462,11 @@ namespace MueLu {
     } //Iterate()
 
     //@}
-    
+
+  private:
+    //! Copy constructor is not implemented.
+    Hierarchy(const Hierarchy &h) { }
+        
   }; //class Hierarchy
 
   //TODO

@@ -89,9 +89,8 @@ int main(int argc, char *argv[]) {
   //
   //
 
-  Level l;
   Hierarchy H;
-  H.SetLevel(rcpFromRef(l));
+  Level & l = *H.GetLevel();
   l.Request("A", NULL); //FIXME: remove line
   l.Set("A", A, NULL); //FIXME2: remove NULL
 
