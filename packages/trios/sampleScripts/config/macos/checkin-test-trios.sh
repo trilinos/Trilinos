@@ -21,15 +21,13 @@ TRILINOS_SRC_DIR=${HOME}/research/workspace/Trilinos
 
 echo "
 -D BUILD_SHARED:BOOL=ON
--D CMAKE_CXX_COMPILER=g++-mp-4.4
--D CMAKE_C_COMPILER=gcc-mp-4.4
--D CMAKE_Fortran_COMPILER=gfortran-mp-4.4
 -D TPL_ENABLE_Portals:BOOL=ON
 -D Portals_INCLUDE_DIRS:PATH=${HOME}/research/support/lib/portals/include
 -D Portals_LIBRARY_DIRS:PATH=${HOME}/research/support/lib/portals/lib
 " > COMMON.config
 
 echo "
+-D TPL_ENABLE_MPI:BOOL=ON
 -D MPI_BASE_DIR:PATH=/opt/local/lib/openmpi
 " > MPI_DEBUG.config
 
@@ -38,7 +36,6 @@ echo "
 ${TRILINOS_SRC_DIR}/checkin-test.py \
    --no-eg-git-version-check \
    --trilinos-src-dir=${TRILINOS_SRC_DIR} \
-   --send-email-to='' \
    --enable-all-packages=off \
    --no-enable-fwd-packages \
    --without-serial-release \
