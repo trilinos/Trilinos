@@ -173,7 +173,6 @@ namespace ML_Epetra
     ML_Preconditioner * FacePC;
 
     //! (2,2) Block Preconditioner
-    //    ML_Preconditioner * EdgePC;
     ML_Preconditioner * EdgePC;
 
 #ifdef HAVE_ML_IFPACK
