@@ -42,10 +42,14 @@
 //#define USE_RDMA
 #define USE_MIXED
 
-/* mode 1 */
+/* mode 1: client uses GNI params from ALPS to create a Communication Domain
+ * and attach to it.
+ */
 #define USE_GLOBAL_CDM
-/* mode 2 */
-#undef USE_GLOBAL_CDM
+/* mode 2: client uses a mix of GNI params from ALPS and the server
+ * (cookie/pTag) to create a communication domain and attach to it.
+ */
+//#undef USE_GLOBAL_CDM
 
 
 #define NIC_ADDR_BITS    22
