@@ -9,6 +9,7 @@
 #include "Trios_threads.h"
 #include "Trios_timer.h"
 #include "Trios_signal.h"
+#include "Trios_nssi_fprint_types.h"
 
 #include <assert.h>
 #include <unistd.h>
@@ -30,7 +31,7 @@
 
 #include "nnti_gni.h"
 #include "nnti_utils.h"
-#include "nssi_fprint_types.h"
+
 
 
 
@@ -3138,7 +3139,7 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
 {
     NNTI_result_t   rc=NNTI_OK;
     gni_connection *conn=NULL;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = nnti_debug_level;
 
     nthread_lock(&nnti_conn_instance_lock);
     conn = connections_by_instance[instance];
@@ -3156,7 +3157,7 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
 }
 static void close_all_conn(void)
 {
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = nnti_debug_level;
 
     log_debug(debug_level, "enter (%d instance connections, %d peer connections)",
             connections_by_instance.size(), connections_by_peer.size());
@@ -3263,7 +3264,7 @@ static void close_connection(gni_connection *c)
 {
     int rc;
     int i;
-    log_level debug_level = LOG_ALL;  // nnti_ee_debug_level;
+    log_level debug_level = nnti_debug_level;  // nnti_ee_debug_level;
 
     if (c==NULL) return;
 
@@ -4108,7 +4109,7 @@ static int client_req_queue_destroy(
         gni_connection *c)
 {
     int rc;
-    log_level debug_level = LOG_ALL;  // nnti_debug_level;
+    log_level debug_level = nnti_debug_level;  // nnti_debug_level;
 
     log_debug(debug_level, "client_req_queue_destroy: start");
 
