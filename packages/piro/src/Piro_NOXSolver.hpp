@@ -92,7 +92,7 @@ class NOXSolver
    Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
    Teuchos::RCP<Teuchos::FancyOStream> out;
 
-   Teuchos::RCP<NOX::Solver::Generic> solver;
+  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver;
 
    int num_p;
    int num_g;
