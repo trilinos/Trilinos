@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 
     // Initialize arguments
     args.len = 1;
+    args.delay = 1;
     args.io_method = PUSH_SYNC;
     args.debug_level = LOG_WARN;
     args.num_trials = 1;
@@ -175,6 +176,7 @@ int main(int argc, char *argv[])
            Some examples of setting command line options are:
          */
 
+        parser.setOption("delay", &args.delay, "time(s) for client to wait for server to start" );
         parser.setOption("timeout", &args.timeout, "time(ms) to wait for server to respond" );
         parser.setOption("server", "no-server", &args.server_flag, "Run the server" );
         parser.setOption("client", "no-client", &args.client_flag, "Run the client");
@@ -360,7 +362,7 @@ int main(int argc, char *argv[])
         // Only one process needs to connect to the service
         if (client_rank == 0) {
 
-            sleep(0);  // give server a second to get started
+            sleep(args.delay);  // give server time to get started
 
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
@@ -408,7 +410,7 @@ int main(int argc, char *argv[])
 
     }
 
-    log_debug(LOG_ALL, "%d: clean up nssi", rank);
+    log_debug(xfer_debug_level, "%d: clean up nssi", rank);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Clean up nssi_rpc

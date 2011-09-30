@@ -28,6 +28,14 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS ${DEPLIBS}
 )
 
+SET(EXTRA_TEST_ARGS "")
+
+# Gemini network transport takes a few seconds to initialize
+IF (${PACKAGE_NAME}_ENABLE_Gemini)
+  APPEND_SET(EXTRA_TEST_ARGS "--delay=3")
+ENDIF()
+
+
 SET(TESTNAMES 
    push-sync
    push-async
@@ -43,7 +51,7 @@ foreach (testname ${TESTNAMES})
   PACKAGE_ADD_TEST(
     XferServiceTest
     NAME XferService_${testname}
-    ARGS "--io-method=${testname}"
+    ARGS "--io-method=${testname} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
     NUM_MPI_PROCS 2)
   
