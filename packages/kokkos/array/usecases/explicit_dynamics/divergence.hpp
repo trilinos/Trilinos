@@ -124,8 +124,6 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       , current_state(arg_current_state)
       , previous_state(arg_previous_state)
   {
-      //std::cout << "divergence dt: " << dt << std::endl;
-      //std::cout << "divergence user_dt: " << user_dt << std::endl;
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -623,8 +621,6 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	KOKKOS_MACRO_DEVICE_FUNCTION
     void operator()( int ielem )const {
 
-    std::cout << "Element: " << ielem << std::endl;
-
     Scalar x[8], y[8], z[8];
     int nodes[8];
 
@@ -637,12 +633,8 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		Scalar shr = elem_shrmod(ielem) = two_mu;
 		Scalar dil = elem_dilmod(ielem) =  bulk_modulus + ((2.0*shr)/3.0);
 
-    std::cout << "dil: " << dil << std::endl;
-
 
 		Scalar aspect = comp_aspect(ielem);
-
-    std::cout << "aspect: " << aspect << std::endl;
 
 		Scalar inv_aspect = 1.0 / aspect;
 
@@ -651,15 +643,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 		Scalar eps = traced < 0 ? (lin_bulk_visc - quad_bulk_visc * traced * dtrial) : lin_bulk_visc ;
 
-    std::cout << "eps: " << eps << std::endl;
-
 		Scalar bulkq = eps * dil * dtrial * traced;
 
 		Scalar cur_time_step = dtrial * ( sqrt( 1.0 + eps * eps) - eps);
-
-    std::cout << "time_step: " << cur_time_step << std::endl;
-
-    std::cout << std::endl;
 
     //force fix time step
     cur_time_step = user_dt > 0 ? user_dt : cur_time_step;

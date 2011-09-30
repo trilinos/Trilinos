@@ -17,7 +17,7 @@
 #include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
-#include <internal_force_driver.hpp>
+#include <explicit_dynamics_app.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
 __global__ void dummy_kernel(){}
@@ -33,29 +33,8 @@ namespace test{
 
 		Kokkos::DeviceCuda::initialize();
 
-		for(int i = beg; i < end; i++){
-
-			double min = 100000;
-
-			int x = 10 + 5 * i;
-			int y = 10 + 5 * i;
-			int z = 10 + 5 * i;
-
-			int n = x * y * z;
-
-			for(int j = 0; j < runs; j++){
-
-				double time = internal_force_test<double, Kokkos::DeviceCuda>( x, y, z );
-
-				if ( 0 == j || time < min)
-					min = time;
-			}
-
-			std::cout << 	std::setw(8) << n << ", " << 
-							std::setw(8) << 1000 * min << ", " << 
-							std::setw(8) << 1000 * min / n << std::endl;
-
-		}//for
+    explicit_dynamics::driver<float,Kokkos::DeviceCuda>("Cuda float", beg, end, runs);
+    explicit_dynamics::driver<double,Kokkos::DeviceCuda>("Cuda double", beg, end, runs);
 	}
 
 }// namespace
