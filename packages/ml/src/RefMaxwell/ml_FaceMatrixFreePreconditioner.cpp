@@ -20,7 +20,6 @@ extern void IVOUT(const Epetra_IntVector & A, const char * of);
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_VectorOut.h"
-
 // ================================================ ====== ==== ==== == =
 static int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
@@ -92,14 +91,27 @@ verbose_(false),very_verbose_(false),print_hierarchy(false)
   Label_=new char[80];
   strcpy(Label_,"ML face matrix-free preconditioner");  
 
+  /* Parameter List Options */
+  int OutputLevel = List_.get("ML output", -47);
+  if(OutputLevel == -47) OutputLevel = List_.get("output", 1);
+  if(OutputLevel>=15) very_verbose_=verbose_=true;
+  if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
+  else very_verbose_=verbose_=false;  
+
+
   // Pull diagonal if needed
   const Epetra_CrsMatrix *Op11crs = dynamic_cast<const Epetra_CrsMatrix*>(&*Operator_);
-  if(Diagonal==Teuchos::null && Op11crs){    
-    InvDiagonal_ = new Epetra_Vector(Op11crs->RowMap());  
-    Op11crs->ExtractDiagonalCopy(*InvDiagonal_);
-  }	
-  else    
-    InvDiagonal_ = new Epetra_Vector(*Diagonal);  
+  int SmootherSweeps = List_.get("smoother: sweeps", 0);
+  if(SmootherSweeps){
+    if(Diagonal==Teuchos::null && Op11crs){    
+      if(verbose_ && !Comm_->MyPID()) printf("FMFP: Extracting matrix diagonal\n");
+      InvDiagonal_ = new Epetra_Vector(Op11crs->RowMap());  
+      Op11crs->ExtractDiagonalCopy(*InvDiagonal_);
+    }	
+    else {
+      InvDiagonal_ = new Epetra_Vector(*Diagonal);  
+    }
+  }
 
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
@@ -114,19 +126,12 @@ ML_Epetra::FaceMatrixFreePreconditioner::~FaceMatrixFreePreconditioner(){
 // Computes the preconditioner
 int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
-  Teuchos::ParameterList dummy, ListCoarse;
-  ListCoarse=List_.get("face matrix free: coarse",dummy);
+  Teuchos::ParameterList & ListCoarse=List_.sublist("face matrix free: coarse");
   
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
 
   /* Parameter List Options */
-  int OutputLevel = List_.get("ML output", -47);
-  if(OutputLevel == -47) OutputLevel = List_.get("output", 1);
-  if(OutputLevel>=15) very_verbose_=verbose_=true;
-  if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
-  else very_verbose_=verbose_=false;  
-  
   int SmootherSweeps = List_.get("smoother: sweeps", 0);
   MaxLevels = List_.get("max levels",10); 
   print_hierarchy= List_.get("print hierarchy",false);    
@@ -138,6 +143,14 @@ int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   if (OperatorDomainPoints != OperatorRangePoints)
     ML_CHK_ERR(-1); // only square matrices
 
+ /* Output Header */
+  if(verbose_ && !Comm_->MyPID()) {
+    printf("------------------------------------------------------------------------------\n");
+    printf("***\n");
+    printf("*** ML_Epetra::FaceMatrixFreePreconditioner [%s]\n",Label());
+    printf("***\n");
+  }
+
   /* Invert non-zeros on the diagonal */
   if(SmootherSweeps){
     for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
@@ -147,7 +160,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     InvDiagonal_->Norm2(&nrm);
     if(verbose_ && !Comm_->MyPID()) printf("Inverse Diagonal Norm = %6.4e\n",nrm);
   }/*end if*/
-  
+
   /* Do the eigenvalue estimation for Chebyshev */
   if(SmootherSweeps) 
     ML_CHK_ERR(SetupSmoother());
@@ -171,7 +184,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     if(!CoarsePC) ML_CHK_ERR(-2);
   
     /* Clean Up */
-    //    delete nullspace;
+    //delete nullspace;
   }/*end if*/
     
   return 0;
@@ -318,6 +331,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::NodeAggregate(ML_Aggregate_Struct *
   int    NodesPerAggr = List_.get("aggregation: nodes per aggregate", 
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
 
+  string PrintMsg_ = "FMFP (Level 0): ";
+
   ML_Aggregate_Create(&MLAggr);
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
   ML_Aggregate_Set_StartLevel(MLAggr, 0);
@@ -343,15 +358,26 @@ int ML_Epetra::FaceMatrixFreePreconditioner::NodeAggregate(ML_Aggregate_Struct *
   }
 
   /* Aggregate Nodes */
+  int printlevel=ML_Get_PrintLevel();
+  ML_Set_PrintLevel(10);
   NumAggregates = ML_Aggregate_Coarsen(MLAggr, TMT_ML, &P, ml_comm_);
+  ML_Set_PrintLevel(printlevel);
+
   if (NumAggregates == 0){
     cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
     ML_CHK_ERR(-2);
   }/*end if*/
   else if(very_verbose_) printf("[%d] FMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
 
-  
-  if(very_verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
+  int globalAggs;
+  Comm_->SumAll(&NumAggregates,&globalAggs,1);
+  if( verbose_ && !Comm_->MyPID()) {
+    std::cout << PrintMsg_ << "Aggregation threshold = " << Threshold << std::endl;
+    std::cout << PrintMsg_ << "Global aggregates = " << globalAggs << std::endl;
+    //ML_Aggregate_Print_Complexity(MLAggr);
+  }
+
+
   if(P==0) {fprintf(stderr,"%s","ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
   return 0;
 }  
@@ -450,11 +476,11 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   /* DEBUG: Dump aggregates */ 
   Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
   IVOUT(AGG,"agg.dat");  
-  EpetraExt::RowMatrixToMatlabFile("psparse.dat",*Psparse);
-  EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
-  EpetraExt::VectorToMatrixMarketFile("null0.dat",*(*nullspace)(0));
-  EpetraExt::VectorToMatrixMarketFile("null1.dat",*(*nullspace)(1));
-  EpetraExt::VectorToMatrixMarketFile("null2.dat",*(*nullspace)(2));
+  EpetraExt::RowMatrixToMatlabFile("fmfp_psparse.dat",*Psparse);
+  EpetraExt::RowMatrixToMatlabFile("fmfp_prolongator.dat",*Prolongator_);
+  EpetraExt::VectorToMatrixMarketFile("fmfp_null0.dat",*(*nullspace)(0));
+  EpetraExt::VectorToMatrixMarketFile("fmfp_null1.dat",*(*nullspace)(1));
+  EpetraExt::VectorToMatrixMarketFile("fmfp_null2.dat",*(*nullspace)(2));
 
 #endif
 
@@ -592,7 +618,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
   }    
   else B=&B_;
 
-  
+
   for(int i=0;i<num_cycles;i++){    
     /* Pre-smoothing */
 #ifdef HAVE_ML_IFPACK
