@@ -89,14 +89,14 @@ namespace NOX {
       ::Thyra::V_S(scale_vec.ptr(),1.0);
 
       // Create PPO
-      std::string when_to_scale = nox_parameters.sublist("Solver Options").get("Update Row Sum Scaling", "Before Each Nolinear Iteration");
-      if (when_to_scale == "Before Each Nolinear Iteration")
+      std::string when_to_scale = nox_parameters.sublist("Solver Options").get("Update Row Sum Scaling", "Before Each Nonlinear Iteration");
+      if (when_to_scale == "Before Each Nonlinear Iteration")
 	scaled_ppo = rcp(new NOX::RowSumScaling(scale_vec, NOX::RowSumScaling::NOX_RowSumScaleAtBeginningOfIteration));
-      else if (when_to_scale == "Before Each Nolinear Solve")
+      else if (when_to_scale == "Before Each Nonlinear Solve")
 	scaled_ppo = rcp(new NOX::RowSumScaling(scale_vec, NOX::RowSumScaling::NOX_RowSumScaleAtBeginningOfSolve));
       else 
 	TEST_FOR_EXCEPTION(true, std::logic_error,
-			   "Error the option for \"Update Row Sum Scaling\" input as \"" << when_to_scale << "\" is invalid.  Please use one of the following: \"Before Each Nolinear Iteration\" or \"Before Each Nolinear Solve\".");
+			   "Error the option for \"Update Row Sum Scaling\" input as \"" << when_to_scale << "\" is invalid.  Please use one of the following: \"Before Each Nonlinear Iteration\" or \"Before Each Nonlinear Solve\".");
 
       // Create thyra scaled model evaluator
       scaled_model = rcp(new ::Thyra::ScaledModelEvaluator<double>);
@@ -117,10 +117,10 @@ namespace NOX {
 	ppo_vec->pushBack(scaled_ppo);
 	ppo_vec->pushBack(user_ppo);
 
-	nox_parameters.sublist("Solver Options").set("User Defined Pre/Post Operator", ppo_vec);
+	nox_parameters.sublist("Solver Options").set<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", ppo_vec);
       }
       else
-	nox_parameters.sublist("Solver Options").set("User Defined Pre/Post Operator", scaled_ppo);
+	nox_parameters.sublist("Solver Options").set<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", scaled_ppo);
 
     }
 
