@@ -46,6 +46,7 @@ struct xfer_args {
         std::string result_file;
         std::string result_file_mode;
         int timeout;
+        int delay;
         int num_retries;
 };
 
