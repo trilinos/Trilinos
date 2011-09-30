@@ -47,6 +47,8 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
   typedef typename Kokkos::MDArrayView<int,device_type>    int_array_type ;
 
+  typedef Scalar value_type;
+
   typedef Region<Scalar,device_type> MyRegion;
 
   const int_array_type elem_node_connectivity;
@@ -65,7 +67,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const array_type  elem_mass;
 	const array_type  elem_dilmod;
 	const array_type  elem_shrmod;
-	const array_type  elem_t_step;
+	//const array_type  elem_t_step;
 	const array_type  internal_energy;
 	const array_type  mid_vol;
 
@@ -107,7 +109,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       , elem_mass(region.elem_mass)
       , elem_dilmod(region.dilmod)
       , elem_shrmod(region.shrmod)
-      , elem_t_step(region.elem_t_step)
+      //, elem_t_step(region.elem_t_step)
       , internal_energy(region.internal_energy)
       , mid_vol(region.mid_vol)
       , hgop(region.hgop)
@@ -124,6 +126,16 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       , current_state(arg_current_state)
       , previous_state(arg_previous_state)
   {
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init(value_type &update) {
+    update = 1.0e32;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join(volatile value_type &update, const volatile value_type & source) {
+    update = update < source ? update : source;
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -619,7 +631,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
     }
 
 	KOKKOS_MACRO_DEVICE_FUNCTION
-    void operator()( int ielem )const {
+    void operator()( int ielem, value_type & update )const {
 
     Scalar x[8], y[8], z[8];
     int nodes[8];
@@ -650,8 +662,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
     //force fix time step
     cur_time_step = user_dt > 0 ? user_dt : cur_time_step;
 
+    update = update < cur_time_step ? update : cur_time_step;
 
-		elem_t_step(ielem) = cur_time_step;
+		//elem_t_step(ielem) = cur_time_step;
 
     get_stress(ielem);
 
@@ -674,5 +687,36 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	}
 
 };
+
+template<typename Scalar , class DeviceType>
+struct set_next_time_step;
+
+template<typename Scalar>
+struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
+
+  typedef KOKKOS_MACRO_DEVICE       device_type;
+  typedef device_type::size_type    size_type;
+
+  typedef Scalar value_type;
+
+  typedef Region<Scalar,device_type> MyRegion;
+
+    set_next_time_step(
+                const MyRegion  & arg_region,
+                const int       arg_next_state)
+       : region(arg_region)
+       , next_state(arg_next_state)
+      {}
+
+
+    KOKKOS_MACRO_DEVICE_FUNCTION
+    void operator()(Scalar & result) const {
+      region.delta_t(next_state) = result;
+    }
+
+    MyRegion   region;
+    const int  next_state;
+
+}; //minimum_stable_time_step
 
 #endif

@@ -64,7 +64,7 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
     , mid_vol(Kokkos::create_mdarray<scalar_array>(num_elements))
     , shrmod(Kokkos::create_mdarray<scalar_array>(num_elements))
     , dilmod(Kokkos::create_mdarray<scalar_array>(num_elements))
-    , elem_t_step(Kokkos::create_mdarray<scalar_array>(num_elements))
+    //, elem_t_step(Kokkos::create_mdarray<scalar_array>(num_elements))
     , hg_energy(Kokkos::create_mdarray<scalar_array>(num_elements))
   {
     Kokkos::deep_copy(elem_node_connectivity, mesh.elem_node_ids);
@@ -116,7 +116,7 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   scalar_array  mid_vol;
   scalar_array  shrmod;
   scalar_array  dilmod;
-  scalar_array  elem_t_step;
+  //scalar_array  elem_t_step;
   scalar_array  hg_energy;
 
 

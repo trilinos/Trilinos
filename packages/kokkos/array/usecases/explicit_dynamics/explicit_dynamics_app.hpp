@@ -14,7 +14,7 @@
 #include <grad_hgop.hpp>
 #include <decomp_rotate.hpp>
 #include <divergence.hpp>
-#include <minimum_stable_time_step.hpp>
+//#include <minimum_stable_time_step.hpp>
 #include <finish_step.hpp>
 
 //----------------------------------------------------------------------------
@@ -25,7 +25,6 @@ struct PerformanceData {
   double mesh_time ;
   double init_time ;
   double internal_force_time;
-  double minimum_stable_time_step;
   double central_diff;
   double copy_to_host_time;
 
@@ -33,7 +32,6 @@ struct PerformanceData {
   : mesh_time(0)
   , init_time(0)
   , internal_force_time(0)
-  , minimum_stable_time_step(0)
   , central_diff(0)
   , copy_to_host_time(0)
   {}
@@ -43,7 +41,6 @@ struct PerformanceData {
     if ( rhs.mesh_time < mesh_time ) mesh_time = rhs.mesh_time ;
     if ( rhs.init_time < init_time ) init_time = rhs.init_time ;
     if ( rhs.internal_force_time < internal_force_time ) internal_force_time = rhs.internal_force_time ;
-    if ( rhs.minimum_stable_time_step < minimum_stable_time_step ) minimum_stable_time_step = rhs.minimum_stable_time_step ;
     if ( rhs.central_diff < central_diff ) central_diff = rhs.central_diff ;
     if ( rhs.copy_to_host_time < copy_to_host_time ) copy_to_host_time = rhs.copy_to_host_time ;
   }
@@ -174,20 +171,23 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 
     // Single beastly function in this last functor,
     // did not notice any opportunity for splitting.
-    Kokkos::parallel_for( region.num_elements ,
+    Kokkos::parallel_reduce( region.num_elements ,
         divergence<Scalar, device_type> ( region,
                                           user_dt,
                                           current_state,
                                           previous_state
-                                        ));
+                                        ),
+        set_next_time_step<Scalar,device_type>(region,next_state));
 
     perf.internal_force_time += wall_clock.seconds();
 
+#if 0
     Kokkos::parallel_reduce( region.num_elements,
         minimum_stable_time_step<Scalar, device_type>( region),    //reduction op
         set_next_time_step<Scalar,device_type>(region,next_state)); //post process
 
     perf.minimum_stable_time_step += wall_clock.seconds();
+#endif
 
 
     // Assembly of elements' contributions to nodal force into
@@ -233,7 +233,6 @@ static void driver( const char * label , int beg , int end , int runs )
   std::cout << std::left << std::setw(shift) << "\"Setup\" , ";
   std::cout << std::left << std::setw(shift) << "\"Initialize\" , ";
   std::cout << std::left << std::setw(shift) << "\"InternalForce\" , ";
-  std::cout << std::left << std::setw(shift) << "\"StableTimeStep\" , ";
   std::cout << std::left << std::setw(shift) << "\"CentralDiff\" , ";
   std::cout << std::left << std::setw(shift) << "\"CopyToHost\" , ";
   std::cout << std::left << std::setw(shift) << "\"TimePerElement\"";
@@ -241,7 +240,6 @@ static void driver( const char * label , int beg , int end , int runs )
   std::cout << std::endl;
 
   std::cout << std::left << std::setw(shift) << "\"elements\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
   std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
   std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
   std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
@@ -274,7 +272,7 @@ static void driver( const char * label , int beg , int end , int runs )
        best.best( perf );
      }
    }
-   double time_per_element = (best.internal_force_time + best.minimum_stable_time_step + best.central_diff)/n;
+   double time_per_element = (best.internal_force_time + best.central_diff)/n;
 
 
 
@@ -283,7 +281,6 @@ static void driver( const char * label , int beg , int end , int runs )
              << std::setw(shift-3) << best.mesh_time * 1000 << " , "
              << std::setw(shift-3) << best.init_time * 1000 << " , "
              << std::setw(shift-3) << best.internal_force_time * 1000 << " , "
-             << std::setw(shift-3) << best.minimum_stable_time_step * 1000 << " , "
              << std::setw(shift-3) << best.central_diff * 1000 << " , "
              << std::setw(shift-3) << best.copy_to_host_time * 1000 << " , "
              << std::setw(shift) << time_per_element * 1000

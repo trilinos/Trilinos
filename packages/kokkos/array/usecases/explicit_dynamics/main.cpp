@@ -11,9 +11,9 @@ namespace test{
 int main(int argc, char ** argv)
 {
   int beg = 4 ;
-  int end = 8 ;
-  int runs = 1 ;
-  int threads = 4;
+  int end = 12 ;
+  int runs = 3 ;
+  int threads = 8;
 
   if ( argc == 5) {
     beg = atoi(argv[1]);
