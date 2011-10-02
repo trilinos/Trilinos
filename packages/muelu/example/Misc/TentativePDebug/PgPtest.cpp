@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  H->SetMaxCoarseSize(1);
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   Finest->Request("A",MueLu::NoFactory::get());

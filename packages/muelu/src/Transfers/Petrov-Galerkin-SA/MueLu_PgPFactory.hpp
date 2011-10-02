@@ -83,8 +83,10 @@ public:
   //@{
 
   void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    coarseLevel.Request("P",initialPFact_.get());
-    fineLevel.Request("A",AFact_.get());
+    //coarseLevel.Request("P",initialPFact_.get());
+    //fineLevel.Request("A",AFact_.get());
+    fineLevel.DeclareInput("A",AFact_.get());
+    coarseLevel.DeclareInput("P",initialPFact_.get());
   };
   //@}
 
@@ -109,8 +111,8 @@ public:
     if(restrictionMode_)
       A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
 
-    fineLevel.Release("A", AFact_.get());
-    coarseLevel.Release("P", initialPFact_.get());
+    //fineLevel.Release("A", AFact_.get());
+    //coarseLevel.Release("P", initialPFact_.get());
 
     std::cout << "after Ptent has been calculated" << std::endl;
 
@@ -122,7 +124,7 @@ public:
 
     doFillComplete=true;
     optimizeStorage=false;
-    Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
+    Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
     Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
     // calculate local damping factors
@@ -208,8 +210,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
     }
 
     // create RowBasedOmegas
-    RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
-           Teuchos::null;
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
 
     // build ColBasedOmegas
     if (DinvAP0->getRowMap()->lib() == Xpetra::UseEpetra) {
@@ -253,7 +254,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
         }
       }
       RowBasedOmegas = eRowBasedOmegas;
-      RowBasedOmegas->describe(*fos,Teuchos::VERB_EXTREME);
+
 #else
 throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and EpetraExt enabled.")
 #endif
@@ -302,64 +303,49 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       }
 
       RowBasedOmegas = tRowBasedOmegas;
-      RowBasedOmegas->describe(*fos,Teuchos::VERB_EXTREME);
 #else
       throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.")
 #endif
     }
 
     // check for negative entries in RowBasedOmegas
-    Teuchos::ArrayRCP< Scalar > RowBasedOmega_data   = RowBasedOmegas->getDataNonConst(0);
+    Teuchos::ArrayRCP< Scalar > RowBasedOmega_data = RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
     for(size_t i=0; i<RowBasedOmega_data.size(); i++)
     {
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
 
-    //Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvADinvAP0->getRangeMap()->getComm();
-    //RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > map =
-    //    Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal, Node>::createLocalMap(Xpetra::UseTpetra, DinvADinvAP0->getDomainMap()-<getMaxGlobalIndex(), comm);
-
-    //Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
-    //map->describe(*fos,Teuchos::VERB_EXTREME);
-
-    //RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > locVec =
-    //        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(map);
-    //locVec->describe(*fos,Teuchos::VERB_EXTREME);
-
 
     ///////////////////
 
-    /*RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rcolVec =
-                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getColMap());
-        RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rdomVec =
-                Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getDomainMap());
-
-        RCP<const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > coldomImport =
-                Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(DinvADinvAP0->getDomainMap(),DinvADinvAP0->getColMap());
-     */
 
 
-    /*Teuchos::ArrayView< const GlobalOrdinal > row_globlist = DinvADinvAP0->getRowMap()->getNodeElementList();
-        std::vector<LocalOrdinal> row_nodvec(row_globlist.size(),0);
-        std::vector<LocalOrdinal> row_locvec(row_globlist.size(),0);
-        Teuchos::ArrayView< LocalOrdinal > row_nodlist(row_nodvec);
-        Teuchos::ArrayView< LocalOrdinal > row_loclist(row_locvec);
-        DinvADinvAP0->getRowMap()->getRemoteIndexList(row_globlist,row_nodlist,row_loclist);
-        std::cout << "rowgloblist " <<  row_globlist << std::endl;
-        std::cout << "rownodlist " <<  row_nodlist << std::endl;
-        std::cout << "rowloclist " <<  row_loclist << std::endl;
+    doFillComplete=true;
+    optimizeStorage=false;
+    Utils::MyOldScaleMatrix(DinvAP0,RowBasedOmega_data,false,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-        Teuchos::ArrayView< const GlobalOrdinal > globlist = DinvADinvAP0->getColMap()->getNodeElementList();
-        std::vector<LocalOrdinal> nodvec(globlist.size(),0);
-        std::vector<LocalOrdinal> locvec(globlist.size(),0);
-        Teuchos::ArrayView< LocalOrdinal > nodlist(nodvec);
-        Teuchos::ArrayView< LocalOrdinal > loclist(locvec);
-        DinvADinvAP0->getColMap()->getRemoteIndexList(globlist,nodlist,loclist);
-        std::cout << "colgloblist " <<  globlist << std::endl;
-        std::cout << "colnodlist " <<  nodlist << std::endl;
-        std::cout << "colloclist " <<  loclist << std::endl;*/
+    RCP<Operator> P_smoothed = Teuchos::null;
+    Utils::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
+                                         DinvAP0, false, Teuchos::ScalarTraits<Scalar>::one(),
+                                         P_smoothed);
+    P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
+
+    P_smoothed->describe(*fos,Teuchos::VERB_EXTREME);
 
     ////////////////////
+
+    // Level Set
+    if(!restrictionMode_)
+    {
+        // prolongation factory is in prolongation mode
+        coarseLevel.Set("P", P_smoothed, this);
+    }
+    else
+    {
+        // prolongation factory is in restriction mode
+        RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
+        coarseLevel.Set("R", R, this);
+    }
 
     //Test(DinvAP0);
     //rcolVec->putScalar(Teuchos::as<const Scalar>(2.0));
@@ -396,6 +382,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
   }
 
   //@}
+
 
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MultiplySelfAll(const RCP<Operator>& Op, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
   {
