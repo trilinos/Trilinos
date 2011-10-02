@@ -27,7 +27,6 @@ namespace Zoltan2 {
     The Graph accessor methods defined here mimic those of 
     Tpetra::CrsGraph and Tpetra::Map.
 
-    Scalar: This data type is used for weights and coordinates.
     LID: the type for the application's local Ids
     GID: the type for the application's global Ids
     LNO: the integral type that Zoltan2 will use for local counters.
@@ -36,7 +35,8 @@ namespace Zoltan2 {
       problem's number of objects.
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
+template <typename LNO, typename GNO, typename LID=LNO, typename GID=GNO,
+  typename Node=Kokkos::DefaultNode::DefaultNodeType>
   class GraphInput : public InputAdapter {
 private:
 
@@ -95,8 +95,8 @@ public:
 
   virtual void getVertexListCopy(std::vector<GID> &Ids, 
     std::vector<LID> &localIds,
-    std::vector<Scalar> &xyz,
-    std::vector<Scalar> &wgts) const = 0;
+    std::vector<double> &xyz,
+    std::vector<double> &wgts) const = 0;
 
   /*! Sets pointers to this process' vertex Ids and their weights.
       If this optional call is defined in the adapter, it can save a memory
@@ -118,7 +118,7 @@ public:
    */
 
   LNO getVertexListView(GID *&Ids, LID *&localIds,
-     Scalar *&xyz, Scalar *&wgts)
+     double *&xyz, double *&wgts)
   {
     Ids = NULL;
     localIds = NULL;
@@ -135,7 +135,7 @@ public:
          edges. Weights are listed by edge by weight component.
    */
   virtual void getVertexEdgeCopy(GID ID, LID localID,
-    std::vector<GID> &edgeID, std::vector<Scalar> &wgts) const = 0;
+    std::vector<GID> &edgeID, std::vector<double> &wgts) const = 0;
 
   /*! Obtain a read-only view, if possible, of the edge Ids of the 
       input vertex.
@@ -148,7 +148,7 @@ public:
       \return The number of ids in the edgeID list.
    */
   LNO getVertexEdgeView(GID ID, LID localID, GID *&edgeID,
-    Scalar * &wgts) const
+    double * &wgts) const
   {
     edgeID = NULL;
     return 0;

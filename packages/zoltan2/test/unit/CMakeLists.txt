@@ -5,6 +5,12 @@ INCLUDE(PackageAddExecutableAndTest)
 # for some reason. How do we tell cmake?
 #
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS
+  TestAdapters.hpp
+)
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   IdentifierMap
   SOURCES IdentifierMap.cpp
@@ -53,7 +59,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   XpetraInputAdapters
-  SOURCES XpetraInputAdapters.cpp
+  SOURCES XpetraInputAdapters.cpp TestAdapters.hpp
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "PASS"

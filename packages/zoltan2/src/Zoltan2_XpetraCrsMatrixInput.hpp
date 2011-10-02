@@ -34,7 +34,9 @@ CONSISTENT_CLASS_TEMPLATE_LINE
 class XpetraCrsMatrixInput : public MatrixInput<CONSISTENT_TEMPLATE_PARAMS> {
 private:
 
-  RCP<Xpetra::CrsMatrix<Scalar, LID, GID, Node> > _matrix;
+  typedef Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> xmatrixType;
+
+  RCP<const xmatrixType > _matrix;
   RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
   RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
   LID _base;
@@ -45,50 +47,15 @@ public:
 
   ~XpetraCrsMatrixInput() { }
 
-  /*! Default constructor - can't build a valid object this way
-   *    TODO - remove?
-   */
-  XpetraCrsMatrixInput(): _matrix(), _rowMap(), _colMap(), _base(){}
-
   /*! Constructor with an Xpetra::CrsMatrix
    */
-  XpetraCrsMatrixInput(
-    RCP<Xpetra::CrsMatrix<Scalar, LID, GID, Node> > matrix):
-    _matrix(matrix), _rowMap(matrix->getRowMap()), _colMap(matrix->getColMap()),
-     _base(matrix->getRowMap()->getIndexBase())
-  {
-  }
-
-  /*! Constructor with a Tpetra::CrsMatrix
-   */
-  XpetraCrsMatrixInput(
-    RCP<Tpetra::CrsMatrix<Scalar, LID, GID, Node> > matrix):
+  XpetraCrsMatrixInput(const RCP<const xmatrixType > matrix):
     _matrix(), _rowMap(), _colMap(), _base()
   {
-     Xpetra::TpetraCrsMatrix<Scalar, LID, GID, Node> *xmatrix =
-       new Xpetra::TpetraCrsMatrix<Scalar, LID, GID, Node>(matrix);
-
-    _matrix = 
-      Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LID, GID, Node> >(
-        Teuchos::rcp(xmatrix));
-    _rowMap = _matrix->getRowMap();
-    _colMap = _matrix->getColMap();
-    _base = _rowMap->getIndexBase();
-  }
-
-  /*! Constructor with an Epetra_CrsMatrix
-   */
-  XpetraCrsMatrixInput(RCP<Epetra_CrsMatrix> matrix):
-    _matrix(), _rowMap(), _colMap(), _base()
-  {
-     Xpetra::EpetraCrsMatrix *xmatrix = new Xpetra::EpetraCrsMatrix(matrix);
-
-    _matrix = 
-      Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LID, GID, Node> >(
-        Teuchos::rcp(xmatrix));
-    _rowMap = _matrix->getRowMap();
-    _colMap = _matrix->getColMap();
-    _base = _rowMap->getIndexBase();
+   _matrix = matrix;
+   _rowMap = _matrix->getRowMap();
+   _colMap = _matrix->getColMap();
+   _base = _rowMap->getIndexBase();
   }
 
   ////////////////////////////////////////////////////
@@ -165,6 +132,16 @@ public:
       rowSize[i] = nnz;
     }
   } 
+
+  /*! Access to xpetra matrix
+   */
+
+  RCP<const xmatrixType> getMatrix()
+  {
+    return _matrix;
+  }
+
+
 
   /*! Return a read only view of the data.
       We don't have a view of global data, only of local data.

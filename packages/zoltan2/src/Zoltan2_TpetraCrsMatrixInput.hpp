@@ -28,21 +28,32 @@ class TpetraCrsMatrixInput :
   public XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>{
 private:
 
+  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix;
+  RCP<const crsMatrix > _inmatrix;
+
 public:
   std::string inputAdapterName()const {return std::string("TpetraCrsMatrix");}
 
   ~TpetraCrsMatrixInput() { }
 
-  /*! Default constructor   TODO - remove?
+  /*! Constructor 
    */
-  TpetraCrsMatrixInput(): XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>() {}
+  TpetraCrsMatrixInput(const RCP<const crsMatrix> matrix):
+    XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>(
+      Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO, Node>(
+        Teuchos::rcp_const_cast<crsMatrix>(matrix))))
+    
+  {
+    _inmatrix = matrix;
+  }
 
-  /*! Constructor with matrix only
+  /*! Access to matrix that instantiated adapter
    */
-  TpetraCrsMatrixInput(
-    RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> > matrix):
-      XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>(matrix) {}
 
+  RCP<const crsMatrix> getMatrix() const
+  { 
+    return _inmatrix;
+  }
 };
 } // namespace
 

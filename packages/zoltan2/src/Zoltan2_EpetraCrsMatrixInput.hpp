@@ -26,16 +26,30 @@ namespace Zoltan2 {
 class EpetraCrsMatrixInput : public XpetraCrsMatrixInput<double, int, int>{
 private:
 
+    RCP<const Epetra_CrsMatrix> _inmatrix;
 public:
 
   std::string inputAdapterName()const {return std::string("EpetraCrsMatrix");}
 
   ~EpetraCrsMatrixInput() { }
 
-  /*! Constructor with matrix only
+  /*! Constructor
    */
-  EpetraCrsMatrixInput(RCP<Epetra_CrsMatrix> matrix):
-    XpetraCrsMatrixInput<double, int, int> (matrix) {}
+  EpetraCrsMatrixInput(const RCP<const Epetra_CrsMatrix> matrix):
+    XpetraCrsMatrixInput<double, int, int> (
+      Teuchos::rcp(new Xpetra::EpetraCrsMatrix(
+        Teuchos::rcp_const_cast<Epetra_CrsMatrix>(matrix)))) 
+  {
+    _inmatrix = matrix;
+  }
+
+  /*! Access to matrix that instantiated adapter
+   */
+  RCP<const Epetra_CrsMatrix> getMatrix() const 
+  { 
+    return _inmatrix;
+  }
+
 };
 
 } //namespace Zoltan2

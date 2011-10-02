@@ -31,16 +31,19 @@ namespace Zoltan2 {
     are ints.
 */
 
-template <typename Scalar>
-class EpetraCrsGraphInput : public XpetraCrsGraphInput<Scalar, int, int>{
+class EpetraCrsGraphInput : public XpetraCrsGraphInput<int, int>{
 private:
 
+  RCP<const Epetra_CrsGraph> _ingraph;
+
+#if 0
   int _vtxWeightDim;
   int _edgeWeightDim;
   int _coordinateDim;
-  std::vector<Scalar> _edgeWgt;
-  std::vector<Scalar> _vertexWgt;
-  std::vector<Scalar> _xyz;
+  std::vector<double> _edgeWgt;
+  std::vector<double> _vertexWgt;
+  std::vector<double> _xyz;
+#endif
 
 public:
 
@@ -51,9 +54,15 @@ public:
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */
-  EpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph):
-    XpetraCrsGraphInput<Scalar, int, int> (graph) {}
+  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> graph):
+    XpetraCrsGraphInput<int, int> (
+      Teuchos::rcp(new Xpetra::EpetraCrsGraph(
+        Teuchos::rcp_const_cast<Epetra_CrsGraph>(graph))))
+  {
+    _ingraph = graph;
+  }
 
+#if 0
   /*! Constructor with weights
       \param graph  the graph represented by this input adapter
       \param vertexWeights are given in vertex local number order
@@ -61,10 +70,18 @@ public:
                certain order.  The edgeWeights follow this order, omitting
                any self edges.
    */
-  EpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph,
-                      ArrayRCP<Scalar> vertexWeights,
-                      ArrayRCP<Scalar> edgeWeights):
-    XpetraCrsGraphInput<Scalar, int, int> (graph, vertexWeights, edgeWeights) {}
+  EpetraCrsGraphInput(RCP<const Epetra_CrsGraph> graph,
+                      ArrayRCP<double> vertexWeights,
+                      ArrayRCP<double> edgeWeights):
+    XpetraCrsGraphInput<int, int> (graph) {}
+#endif
+
+  /*! Access to graph that instantiated adapter
+   */
+  RCP<const Epetra_CrsGraph> getGraph() const 
+  { 
+    return _ingraph;
+  }
 };
 
 } //namespace Zoltan2

@@ -30,38 +30,36 @@ namespace Zoltan2 {
     by the Zoltan2 caller are in this class.
 
     The template parameter is the weight type.
-
-    TODO: include NODE
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
+template<typename LNO, typename GNO, typename LID=LNO, typename GID=GNO, 
+  typename Node=Kokkos::DefaultNode::DefaultNodeType>
 class TpetraCrsGraphInput : 
-  public XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>{
+  public XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>{
 private:
+  typedef Tpetra::CrsGraph<LNO, GNO, Node> crsGraph;
+  RCP<const crsGraph > _ingraph;
 
 public:
   std::string inputAdapterName()const {return std::string("TpetraCrsGraph");}
 
   //~TpetraCrsGraphInput() { }
 
-  /*! Default constructor   TODO - remove?
-   */
-  TpetraCrsGraphInput(): XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>() {}
+  TpetraCrsGraphInput(const RCP<const crsGraph> graph): 
+      XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>(
+        Teuchos::rcp(new Xpetra::TpetraCrsGraph<LNO, GNO, Node>(
+          Teuchos::rcp_const_cast<crsGraph>(graph)))) 
+  {
+    _ingraph = graph;
+  }
 
-  /*! Constructor with graph only
-   */
-  TpetraCrsGraphInput(
-    RCP<Tpetra::CrsGraph<LNO, GNO, Node> > graph):
-      XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>(graph) {}
 
-  /*! Constructor with weights
+  /*! Access to graph that instantiated adapter
    */
-  TpetraCrsGraphInput(
-    RCP<Tpetra::CrsGraph<LNO, GNO, Node> > graph,
-    ArrayRCP<Scalar> vertexWeights,
-    ArrayRCP<Scalar> edgeWeights):
-      XpetraCrsGraphInput<CONSISTENT_TEMPLATE_PARAMS>(
-        graph, vertexWeights, edgeWeights) {}
+  RCP<const crsGraph> getGraph()
+  { 
+    return _ingraph;
+  }
 };
 
 } // namespace

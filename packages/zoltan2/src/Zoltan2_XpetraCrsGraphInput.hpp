@@ -30,22 +30,25 @@ namespace Zoltan2 {
                 objects that are not FillCompleted.
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
-class XpetraCrsGraphInput : public GraphInput<CONSISTENT_TEMPLATE_PARAMS> {
+template <typename LNO, typename GNO, typename LID=LNO, typename GID=GNO,
+  typename Node=Kokkos::DefaultNode::DefaultNodeType>
+class XpetraCrsGraphInput : public GraphInput<LNO, GNO, LID, GID, Node> {
 private:
 
-  RCP<Xpetra::CrsGraph<LID, GID, Node> > _graph;
+  typedef Xpetra::CrsGraph<LNO, GNO, Node> xgraphType;
+
+  RCP<const xgraphType > _graph;
   RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
   RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
   std::vector<int> _edgeOffsets; 
+  int _base;
 
   int _vtxWeightDim;
   int _edgeWeightDim;
   int _coordinateDim;
-  int _base;
-  std::vector<Scalar> _edgeWgt;
-  std::vector<Scalar> _vertexWgt;
-  std::vector<Scalar> _xyz;
+  std::vector<double> _edgeWgt;
+  std::vector<double> _vertexWgt;
+  std::vector<double> _xyz;
 
   void makeOffsets()
   {
@@ -66,51 +69,13 @@ public:
 
   ~XpetraCrsGraphInput() { }
 
-  /*! Default constructor - can't build a valid object this way
-   *    TODO - remove?
+  /*! Constructor with a Xpetra::CrsGraph
    */
-  XpetraCrsGraphInput(): _graph(), _rowMap(), _colMap(), _edgeOffsets(),
-    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
-    _edgeWgt(), _vertexWgt(), _xyz() {}
-
-  /*! Constructor with an Xpetra::CrsGraph
-   */
-  XpetraCrsGraphInput(
-    RCP<Xpetra::CrsGraph<LID, GID, Node> > graph):
+  XpetraCrsGraphInput(const RCP<const xgraphType> graph):
     _graph(graph), _rowMap(), _colMap(), _edgeOffsets(),
     _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
     _edgeWgt(), _vertexWgt(), _xyz()
   {
-    makeOffsets();
-  }
-
-  /*! Constructor with a Tpetra::CrsGraph
-   */
-  XpetraCrsGraphInput(
-    RCP<Tpetra::CrsGraph<LID, GID, Node> > graph):
-    _graph(), _rowMap(), _colMap(), _edgeOffsets(),
-    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
-    _edgeWgt(), _vertexWgt(), _xyz()
-  {
-     Xpetra::TpetraCrsGraph<LID, GID, Node> *xgraph =
-       new Xpetra::TpetraCrsGraph<LID, GID, Node>(graph);
-
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
-      Teuchos::rcp(xgraph));
-    makeOffsets();
-  }
-
-  /*! Constructor with an Epetra_CrsGraph
-   */
-  XpetraCrsGraphInput(RCP<Epetra_CrsGraph> graph):
-    _graph(), _rowMap(), _colMap(), _edgeOffsets(),
-    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
-    _edgeWgt(), _vertexWgt(), _xyz()
-  {
-     Xpetra::EpetraCrsGraph *xgraph = new Xpetra::EpetraCrsGraph(graph);
-
-    _graph = Teuchos::rcp_implicit_cast<Xpetra::CrsGraph<LID, GID, Node> >(
-      Teuchos::rcp(xgraph));
     makeOffsets();
   }
 
@@ -119,7 +84,7 @@ public:
    *  \param xyz The coordinates(s) associated with the corresponding vertex
    *    local id.  They should be ordered by vertex by coordinate axis.
    */
-  void setVertexCoordinates(std::vector<LID> &lid, std::vector<Scalar> &xyz)
+  void setVertexCoordinates(std::vector<LID> &lid, std::vector<double> &xyz)
   {
     size_t veclen = xyz.size();
     if (veclen == 0) return;
@@ -161,7 +126,7 @@ public:
    *  \param wgts The weight(s) associated with the corresponding vertex
    *    local id.  Weights should be ordered by vertex by weight coordinate.
    */
-  void setVertexWeights(std::vector<LID> &lid, std::vector<Scalar> &wgts)
+  void setVertexWeights(std::vector<LID> &lid, std::vector<double> &wgts)
   {
     size_t veclen = wgts.size();
     if (veclen == 0) return;
@@ -205,7 +170,7 @@ public:
    */
   void setEdgeWeights(std::vector<LID> &vertexLid, 
     std::vector<LID> &numNbors,
-    std::vector<GID> &nborGid, std::vector<Scalar> &wgts )
+    std::vector<GID> &nborGid, std::vector<double> &wgts )
   {
     LNO nvtx = vertexLid.size();
 
@@ -216,7 +181,7 @@ public:
       _edgeWeightDim = wgts.size() / nborGid.size();
       if (_edgeWeightDim * nborGid.size() != wgts.size())
         throw std::runtime_error("Invalid number of edge weights");
-      _edgeWgt.resize(_edgeWeightDim * getLocalNumEdges(), Scalar(1));
+      _edgeWgt.resize(_edgeWeightDim * getLocalNumEdges(), double(1));
     }
     else if ((nborGid.size() * _edgeWeightDim) != wgts.size()){
       throw std::runtime_error("Invalid number of edge weights");
@@ -233,7 +198,7 @@ public:
       LID lid = vertexLid[v];
       GID gid = _rowMap->getGlobalElement(lid);
       std::vector<GID> edges;
-      std::vector<Scalar> ewgts;
+      std::vector<double> ewgts;
       getVertexEdgeCopy(gid, lid, edges, ewgts); 
 
       if (nnbors > edges.size())
@@ -330,8 +295,8 @@ public:
   /*! Get the list of vertex IDs and their weights.
    */
   void getVertexListCopy(std::vector<GID> &ids, 
-    std::vector<LID> &localIDs, std::vector<Scalar> &xyz,
-    std::vector<Scalar> &wgt) const
+    std::vector<LID> &localIDs, std::vector<double> &xyz,
+    std::vector<double> &wgt) const
   {
     // Global IDs are in local ID order, so we omit localIDs
     // TODO: For Tpetra and Epetra maps, are the GIDs always
@@ -344,9 +309,9 @@ public:
     wgt.resize(nweights); 
 
     if (nweights){
-      Scalar *wTo = &wgt[0];
-      const Scalar *wFrom = &_vertexWgt[0];
-      memcpy(wTo, wFrom, sizeof(Scalar) * nweights);
+      double *wTo = &wgt[0];
+      const double *wFrom = &_vertexWgt[0];
+      memcpy(wTo, wFrom, sizeof(double) * nweights);
     }
 
     ids.resize(numVtx);
@@ -358,16 +323,16 @@ public:
     xyz.resize(ncoords);
 
     if (ncoords){
-      Scalar *cTo = &xyz[0];
-      const Scalar *cFrom = &_xyz[0];
-      memcpy(cTo, cFrom, sizeof(Scalar) * ncoords);
+      double *cTo = &xyz[0];
+      const double *cFrom = &_xyz[0];
+      memcpy(cTo, cFrom, sizeof(double) * ncoords);
     }
   }
 
   /*! Return a read only view of the data.
    */
   LID getVertexListView(const GID *&ids, const LID *& localIDs,
-      const Scalar *& xyz, const Scalar *&wgts)
+      const double *& xyz, const double *&wgts)
   {
     // TODO we need to verify that gids are actually stored
     //   in lid order
@@ -382,7 +347,7 @@ public:
   /*! Return a copy of the edge IDs and edge weights for a vertex.
    */
   void getVertexEdgeCopy(GID vtxId, LID localId, 
-    std::vector<GID> &edgeId, std::vector<Scalar> &wgts) const
+    std::vector<GID> &edgeId, std::vector<double> &wgts) const
   {
     size_t nvtx = this->getLocalNumVertices();
 
@@ -404,10 +369,10 @@ public:
 
       if (_edgeWeightDim > 0){
         int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
-        const Scalar *fromWgt = &_edgeWgt[offset];
+        const double *fromWgt = &_edgeWgt[offset];
         wgts.resize(_edgeWeightDim * nedges);
-        Scalar *toWgt = &wgts[0];
-        memcpy(toWgt, fromWgt, sizeof(Scalar) * _edgeWeightDim * nedges);
+        double *toWgt = &wgts[0];
+        memcpy(toWgt, fromWgt, sizeof(double) * _edgeWeightDim * nedges);
       }
       else{
         wgts.clear();
@@ -415,12 +380,21 @@ public:
     }
   }
 
+  /*! Access to xpetra graph 
+   */ 
+   
+  RCP<const xgraphType> getGraph() const
+  {
+    return _graph;
+  }
+
+
   /*! Return pointers to the edge IDs and edge weights for a vertex.
    *      The edges are available as local IDs only at this point
    *      so this is not defined.  TODO explain better.
    */
   //int getVertexEdgeView(GID vtxId, LID localId, 
-  //  const GID *&edgeId, const Scalar *&wgts) const{}
+  //  const GID *&edgeId, const double *&wgts) const{}
 };
   
 }  //namespace Zoltan2
