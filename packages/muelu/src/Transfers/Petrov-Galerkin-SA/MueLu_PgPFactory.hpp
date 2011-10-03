@@ -99,7 +99,7 @@ public:
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
    */
   void Build(Level& fineLevel, Level &coarseLevel) const {
-
+    Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
     std::ostringstream buf; buf << coarseLevel.GetLevelID();
     RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
     timer->start(true);
@@ -107,6 +107,9 @@ public:
     // Level Get
     RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
     RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
+
+    A->describe(*fos,Teuchos::VERB_EXTREME);
+    Ptent->describe(*fos,Teuchos::VERB_EXTREME);
 
     if(restrictionMode_)
       A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
@@ -121,22 +124,33 @@ public:
     bool doFillComplete=true;
     bool optimizeStorage=false;
     RCP<Operator> DinvAP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+    /*RCP<Xpetra::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > crs_DinvAP0 = Teuchos::rcp_dynamic_cast<Xpetra::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >(DinvAP0);
+    RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > crsMat = crs_DinvAP0->getCrsMatrix();
+    RCP<Xpetra::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > AP0 = rcp(new Xpetra::CrsOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(crsMat));*/
+    RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+
+    DinvAP0->describe(*fos,Teuchos::VERB_EXTREME);
 
     doFillComplete=true;
     optimizeStorage=false;
     Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
     Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
+    DinvAP0->describe(*fos,Teuchos::VERB_EXTREME);
+
     // calculate local damping factors
 
-    // compute D^{-1} * A * D^{-1} * A * P0
+    // compute A * D^{-1} * A * P0
     doFillComplete=true;
     optimizeStorage=false;
-    RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
+    RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
 
-    doFillComplete=true;
-    optimizeStorage=false;
-    Utils::MyOldScaleMatrix(DinvADinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+    ADinvAP0->describe(*fos,Teuchos::VERB_EXTREME);
+
+    //doFillComplete=true;
+    //optimizeStorage=false;
+    //Utils::MyOldScaleMatrix(DinvADinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+    //DinvADinvAP0->describe(*fos,Teuchos::VERB_EXTREME);
 
     RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAP0);
 
@@ -155,10 +169,13 @@ public:
        // Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colbasedomegamap);
 
     std::cout<< "do MultiplyAll" << std::endl;
-    Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
 
-    Numerator = MultiplyAll(DinvAP0, DinvADinvAP0, colbasedomegamap);
-    Denominator = MultiplySelfAll(DinvADinvAP0, colbasedomegamap);
+
+    Numerator = MultiplyAll(AP0, ADinvAP0, colbasedomegamap);
+    Denominator = MultiplySelfAll(ADinvAP0, colbasedomegamap);
+
+    Numerator->describe(*fos,Teuchos::VERB_EXTREME);
+    Denominator->describe(*fos,Teuchos::VERB_EXTREME);
 
     // check for zeros in denominator -> error
     size_t zeros_in_denominator = 0;
@@ -208,6 +225,8 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
     {
       if(ColBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) ColBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
+
+    ColBasedOmegas->describe(*fos,Teuchos::VERB_EXTREME);
 
     // create RowBasedOmegas
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
@@ -315,7 +334,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
 
-
+    RowBasedOmegas->describe(*fos,Teuchos::VERB_EXTREME);
     ///////////////////
 
 
@@ -326,7 +345,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
 
     RCP<Operator> P_smoothed = Teuchos::null;
     Utils::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
-                                         DinvAP0, false, Teuchos::ScalarTraits<Scalar>::one(),
+                                         DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
                                          P_smoothed);
     P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
 
@@ -497,9 +516,9 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       std::cout << "row maps of left and right do not match" << std::endl;
 
     // test
-    /*Teuchos::RCP<Xpetra::Operator<double> > leftT = MueLu::Utils2<double>::Transpose(left,false);
+    Teuchos::RCP<Xpetra::Operator<double> > leftT = MueLu::Utils2<double>::Transpose(left,false);
     Teuchos::RCP<Xpetra::Operator<double> > leftTright = MueLu::Utils<double>::TwoMatrixMultiply(leftT,false,right,false);
-    leftTright->describe(*fos,Teuchos::VERB_EXTREME);*/
+    leftTright->describe(*fos,Teuchos::VERB_EXTREME);
 
 
     // Epetra-specific code

@@ -19,6 +19,7 @@
 
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_PgPFactory.hpp"
+#include "MueLu_GenericRFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
@@ -141,7 +142,7 @@ int main(int argc, char *argv[]) {
 
   RCP<PgPFactory>        Pfact = Teuchos::rcp( new PgPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);
-  RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+  RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
   //RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
@@ -237,13 +238,15 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
 
-  X->setSeed(846930886);
-  X->randomize();
-  X->norm2(norms);
-  if (comm->getRank() == 0)
-    std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  //X->setSeed(846930886);
+  //X->randomize();
+  //X->putScalar(1.0);
+  //X->norm2(norms);
+  //if (comm->getRank() == 0)
+  //  std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  RHS->putScalar(1.0);
 
   // Use AMG directly as an iterative method
   {
