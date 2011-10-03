@@ -22,9 +22,6 @@ namespace MueLu {
   /*!
     @class SaPFactory class.
     @brief Factory for building Smoothed Aggregation prolongators.
-
-    Right now this factory assumes a 1D problem.  Aggregation is hard-coded to divide
-    the # fine dofs by 3.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
