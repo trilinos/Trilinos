@@ -40,6 +40,7 @@
 #include "AnasaziBasicOrthoManager.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -335,7 +336,7 @@ int main(int argc, char *argv[])
     if (numFailed) {
       MyOM->stream(Errors) << numFailed << " errors." << endl;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
+    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
@@ -343,7 +344,7 @@ int main(int argc, char *argv[])
   //
   MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
   return 0;
-}	
+}
 
 
 
@@ -731,7 +732,8 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
       lclMS = MS;
     }
 
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
+    Teuchos::ArrayRCP<ST> Bdata = Teuchos::arcp<ST>(sizeS*sizeS);
+    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),sizeS,sizeS,sizeS) );
 
     try {
       // call routine
@@ -771,7 +773,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
         if (MScopy != null) {
           MScopy = MVT::CloneViewNonConst(*MScopy,ind);
         }
-        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
+        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),ret,ret,sizeS) );
       }
 
       // test all outputs for correctness

@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
     if (numFailed) {
       MyOM->stream(Errors) << numFailed << " errors." << endl;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
+    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
   //
   MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
   return 0;
-}	
+}
 
 
 

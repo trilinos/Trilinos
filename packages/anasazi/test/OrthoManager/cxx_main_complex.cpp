@@ -641,7 +641,9 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 
   for (int t=0; t<numtests; t++) {
 
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
+    // allocate the data separately from B, to allow it to persist as B is delete/reallocated
+    Teuchos::ArrayRCP<ST> Bdata = Teuchos::arcp<ST>(sizeS*sizeS);
+    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),sizeS,sizeS,sizeS) );
 
     try {
       // call routine
@@ -675,7 +677,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
           ind[i] = i;
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
-        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
+        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),ret,ret,sizeS) );
       }
 
       // test all outputs for correctness

@@ -124,25 +124,25 @@ RCP< Anasazi::BasicOutputManager<scalar_type> > MyOM;
 
 static int 
 testProject (RCP<OrthoManager<scalar_type,MV> > OM, 
-	     RCP<const MV> S, 
-	     RCP<const MV> X1, 
-	     RCP<const MV> X2);
+             RCP<const MV> S, 
+             RCP<const MV> X1, 
+             RCP<const MV> X2);
 
 static int 
 testNormalize (RCP<OrthoManager<scalar_type,MV> > OM, 
-	       RCP<const MV> S);
+               RCP<const MV> S);
 
 static int 
 testProjectAndNormalize (RCP<OrthoManager< scalar_type ,MV > > OM, 
-			 RCP<const MV> S, 
-			 RCP<const MV> X1, 
-			 RCP<const MV> X2);
+                         RCP<const MV> S, 
+                         RCP<const MV> X1, 
+                         RCP<const MV> X2);
 
 /// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
 /// $n$ is the number of columns in X.
 static magnitude_type 
 MVDiff (const MV& X, 
-	const MV& Y);
+        const MV& Y);
 
 
 /// Valid command-line parameter values for the OrthoManager subclass
@@ -164,17 +164,17 @@ static std::string
 printValidOrthoManagerList ()
 {
   TEST_FOR_EXCEPTION( numValidOrthoManagers <= 0,
-		      std::logic_error,
-		      "Invalid number " 
-		      << numValidOrthoManagers 
-		      << " of OrthoManager command-line options" );
+                      std::logic_error,
+                      "Invalid number " 
+                      << numValidOrthoManagers 
+                      << " of OrthoManager command-line options" );
   std::ostringstream os;
   if (numValidOrthoManagers > 1)
-    {
-      for (int k = 0; k < numValidOrthoManagers - 1; ++k)
-	os << "\"" << validOrthoManagers[k] << "\", ";
-      os << "or ";
-    }
+  {
+    for (int k = 0; k < numValidOrthoManagers - 1; ++k)
+      os << "\"" << validOrthoManagers[k] << "\", ";
+    os << "or ";
+  }
   os << "\"" << validOrthoManagers[numValidOrthoManagers-1] << "\"";
   return os.str();
 }
@@ -188,7 +188,7 @@ defaultOrthoManagerName () { return std::string("TSQR"); }
 ///
 static RCP< OrthoManager<scalar_type,MV> >
 getOrthoManager (const std::string& ortho, 
-		 const RCP< sparse_matrix_type >& M)
+                 const RCP< sparse_matrix_type >& M)
 {
   if (ortho == "SVQB") {
     return rcp (new SVQBOrthoManager< scalar_type, MV, OP >(M));
@@ -208,9 +208,9 @@ getOrthoManager (const std::string& ortho,
   }
   else {
     TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-			"Invalid value for command-line parameter \"ortho\":"
-			" valid values are " << printValidOrthoManagerList() 
-			<< "." );
+                        "Invalid value for command-line parameter \"ortho\":"
+                        " valid values are " << printValidOrthoManagerList() 
+                        << "." );
   }
 }
 
@@ -244,40 +244,40 @@ main (int argc, char *argv[])
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption ("verbose", "quiet", &verbose,
-		    "Print messages and results.");
+        "Print messages and results.");
     cmdp.setOption ("debug", "nodebug", &debug,
-		    "Print debugging information.");
+        "Print debugging information.");
     cmdp.setOption ("filename", &filename,
-		    "Filename for Harwell-Boeing sparse matrix, used as the M "
-		    "operator for the inner product.  If not provided, no "
-		    "matrix is read and the Euclidean inner product is used.");
+        "Filename for Harwell-Boeing sparse matrix, used as the M "
+        "operator for the inner product.  If not provided, no "
+        "matrix is read and the Euclidean inner product is used.");
     {
       std::ostringstream os;
       os << "OrthoManager subclass to test.  There ";
       if (numValidOrthoManagers > 1)
-	os << "are " << numValidOrthoManagers << "options: ";
+        os << "are " << numValidOrthoManagers << "options: ";
       else
-	os << "is " << numValidOrthoManagers << "option: ";
+        os << "is " << numValidOrthoManagers << "option: ";
 
       os << printValidOrthoManagerList() << ".";
       cmdp.setOption ("ortho", &ortho, os.str().c_str());
     }
     cmdp.setOption ("numRows", &numRows, 
-		    "Controls the number of rows of the test "
-		    "multivectors.  If an input matrix is given, this "
-		    "parameter\'s value is ignored.");
+        "Controls the number of rows of the test "
+        "multivectors.  If an input matrix is given, this "
+        "parameter\'s value is ignored.");
     cmdp.setOption ("sizeS", &sizeS, "Controls the number of columns of the "
-		    "input multivector.");
+        "input multivector.");
     cmdp.setOption ("sizeX1", &sizeX1, "Controls the number of columns of the "
-		    "first basis.");
+        "first basis.");
     cmdp.setOption ("sizeX2", &sizeX2, "Controls the number of columns of the "
-		    "second basis.  We require for simplicity of testing (the "
-		    "routines do not require it) that sizeX1 >= sizeX2.");
+        "second basis.  We require for simplicity of testing (the "
+        "routines do not require it) that sizeX1 >= sizeX2.");
     if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) 
       return -1;
     if (debug) 
       verbose = true;
-    
+
     MyOM = rcp( new BasicOutputManager<scalar_type>() );
 
     // Select which type(s) of messages to print
@@ -287,10 +287,10 @@ main (int argc, char *argv[])
       int theType = Errors; // default (always print errors)
       if (verbose) 
         {
-	  // "Verbose" also means printing out Debug messages.
-	  theType = theType | Warnings | IterationDetails |
-	    OrthoDetails | FinalSummary | TimingDetails |
-	    StatusTestDetails | Debug;
+          // "Verbose" also means printing out Debug messages.
+          theType = theType | Warnings | IterationDetails |
+            OrthoDetails | FinalSummary | TimingDetails |
+            StatusTestDetails | Debug;
         }
       if (debug)
         theType = theType | Debug;
@@ -303,143 +303,143 @@ main (int argc, char *argv[])
     std::ostream& debugOut = MyOM->stream(Debug);
 
     debugOut << "Anasazi version information:" << endl 
-	     << Anasazi_Version() << endl << endl;
+             << Anasazi_Version() << endl << endl;
 
     RCP< map_type > map;
     RCP< sparse_matrix_type > M;
     if (filename != "") 
       {
-	debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
+        debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
 
-	int numCols = 0;
-	int nnz = -1;
-	int rnnzmax = 0;
-	double *dvals = NULL;
-	int *colptr = NULL;
-	int *rowind = NULL;
+        int numCols = 0;
+        int nnz = -1;
+        int rnnzmax = 0;
+        double *dvals = NULL;
+        int *colptr = NULL;
+        int *rowind = NULL;
 
-	if (MyPID == 0) 
-	  {
-	    // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
-	    // format) from the file into the tuple (numRows, numCols, nnz,
-	    // colptr, rowind, dvals).  The routine allocates memory for
-	    // colptr, rowind, and dvals using malloc().
-	    info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
-					 &nnz, &colptr, &rowind, &dvals);
-	    // The Harwell-Boeing routines use info == 0 to signal failure.
-	    if (info != 0)
-	      {
-		// rnnzmax := maximum number of nonzeros per row, over all
-		// rows of the sparse matrix.
-		vector<int> rnnz (numRows, 0);
-		for (int *ri = rowind; ri < rowind + nnz; ++ri) {
-		  ++rnnz[*ri-1];
-		}
-		// This business with the iterator ensures that results
-		// are sensible even if the sequence is empty.
-		vector<int>::const_iterator iter = 
-		  std::max_element (rnnz.begin(),rnnz.end());
-		if (iter != rnnz.end())
-		  rnnzmax = *iter;
-		else
-		  // The matrix has zero rows, so the max number of
-		  // nonzeros per row is trivially zero.
-		  rnnzmax = 0;
-	      }
-	    else
-	      rnnzmax = 0;
-	  }
+        if (MyPID == 0) 
+          {
+            // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
+            // format) from the file into the tuple (numRows, numCols, nnz,
+            // colptr, rowind, dvals).  The routine allocates memory for
+            // colptr, rowind, and dvals using malloc().
+            info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
+                                         &nnz, &colptr, &rowind, &dvals);
+            // The Harwell-Boeing routines use info == 0 to signal failure.
+            if (info != 0)
+              {
+                // rnnzmax := maximum number of nonzeros per row, over all
+                // rows of the sparse matrix.
+                vector<int> rnnz (numRows, 0);
+                for (int *ri = rowind; ri < rowind + nnz; ++ri) {
+                  ++rnnz[*ri-1];
+                }
+                // This business with the iterator ensures that results
+                // are sensible even if the sequence is empty.
+                vector<int>::const_iterator iter = 
+                  std::max_element (rnnz.begin(),rnnz.end());
+                if (iter != rnnz.end())
+                  rnnzmax = *iter;
+                else
+                  // The matrix has zero rows, so the max number of
+                  // nonzeros per row is trivially zero.
+                  rnnzmax = 0;
+              }
+            else
+              rnnzmax = 0;
+          }
 
-	// Proc 0 now broadcasts the sparse matrix data to the other
-	// process(es).  First things broadcast are info and nnz, which
-	// tell the other process(es) whether reading the sparse matrix
-	// succeeded.  (info should be nonzero if so.  The
-	// Harwell-Boeing routines return "C boolean true" rather than
-	// the POSIX-standard "zero for success.")
-	Teuchos::broadcast (*comm, 0, &info);
-	Teuchos::broadcast (*comm, 0, &nnz);
-	Teuchos::broadcast (*comm, 0, &numRows);
-	Teuchos::broadcast (*comm, 0, &numCols);
-	Teuchos::broadcast (*comm, 0, &rnnzmax);
-	if (info == 0 || nnz < 0) 
-	  {
-	    if (MyPID == 0) {
-	      cout << "Error reading Harwell-Boeing sparse matrix file \"" 
-		   << filename << "\"" 
-		   << endl
-		   << "End Result: TEST FAILED" << endl;
-	    }
-	    return -1;
-	  }
-	else if (numRows != numCols)
-	  {
-	    if (MyPID == 0) {
-	      cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
-		   << filename << "' " << "is not square: it is " << numRows 
-		   << " by " << numCols
-		   << endl
-		   << "End Result: TEST FAILED" << endl;
-	    }
-	    return -1;
-	  }
-	else if (nnz == 0) 
-	  {
-	    if (MyPID == 0) {
-	      cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
-		   << filename << "' " << "has zero nonzero values, which "
-		   << "means it does not define a valid inner product." 
-		   << endl
-		   << "End Result: TEST FAILED" << endl;
-	    }
-	    return -1;
-	  }
+        // Proc 0 now broadcasts the sparse matrix data to the other
+        // process(es).  First things broadcast are info and nnz, which
+        // tell the other process(es) whether reading the sparse matrix
+        // succeeded.  (info should be nonzero if so.  The
+        // Harwell-Boeing routines return "C boolean true" rather than
+        // the POSIX-standard "zero for success.")
+        Teuchos::broadcast (*comm, 0, &info);
+        Teuchos::broadcast (*comm, 0, &nnz);
+        Teuchos::broadcast (*comm, 0, &numRows);
+        Teuchos::broadcast (*comm, 0, &numCols);
+        Teuchos::broadcast (*comm, 0, &rnnzmax);
+        if (info == 0 || nnz < 0) 
+          {
+            if (MyPID == 0) {
+              cout << "Error reading Harwell-Boeing sparse matrix file \"" 
+                   << filename << "\"" 
+                   << endl
+                   << "End Result: TEST FAILED" << endl;
+            }
+            return -1;
+          }
+        else if (numRows != numCols)
+          {
+            if (MyPID == 0) {
+              cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
+                   << filename << "' " << "is not square: it is " << numRows 
+                   << " by " << numCols
+                   << endl
+                   << "End Result: TEST FAILED" << endl;
+            }
+            return -1;
+          }
+        else if (nnz == 0) 
+          {
+            if (MyPID == 0) {
+              cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
+                   << filename << "' " << "has zero nonzero values, which "
+                   << "means it does not define a valid inner product." 
+                   << endl
+                   << "End Result: TEST FAILED" << endl;
+            }
+            return -1;
+          }
     
-	// Create Tpetra::Map to represent multivectors in the range of
-	// the sparse matrix.
-	map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
-	M = rcp (new sparse_matrix_type (map, rnnzmax));
+        // Create Tpetra::Map to represent multivectors in the range of
+        // the sparse matrix.
+        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+        M = rcp (new sparse_matrix_type (map, rnnzmax));
 
-	if (MyPID == 0) 
-	  {
-	    // Convert from Harwell-Boeing format (compressed sparse
-	    // column, one-indexed) to CrsMatrix format (compressed
-	    // sparse row, zero-index).  We do this by iterating over
-	    // all the columns of the matrix.
-	    int curNonzeroIndex = 0;
-	    for (int c = 0; c < numCols; ++c) 
-	      {
-		for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
-		  {
-		    // Row index: *rptr - 1 (1-based -> 0-based indexing)
-		    // Column index: c
-		    // Value to insert there: *dptr
-		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
-		    const scalar_type curValue = dvals[curNonzeroIndex];
-		    M->insertGlobalValues (curGlobalRowIndex, 
-					   tuple (c), 
-					   tuple (curValue));
-		    curNonzeroIndex++;
-		  }
-	      }
-	  }
-	if (MyPID == 0) 
-	  {
-	    // Free memory allocated by the Harwell-Boeing input routine.
-	    free (dvals);
-	    dvals = NULL;
-	    free (colptr);
-	    colptr = NULL;
-	    free (rowind);
-	    rowind = NULL;
-	  }
-	// We're done reading in M.
-	M->fillComplete();
-	debugOut << "Completed loading and distributing sparse matrix" << endl;
+        if (MyPID == 0) 
+          {
+            // Convert from Harwell-Boeing format (compressed sparse
+            // column, one-indexed) to CrsMatrix format (compressed
+            // sparse row, zero-index).  We do this by iterating over
+            // all the columns of the matrix.
+            int curNonzeroIndex = 0;
+            for (int c = 0; c < numCols; ++c) 
+              {
+                for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
+                  {
+                    // Row index: *rptr - 1 (1-based -> 0-based indexing)
+                    // Column index: c
+                    // Value to insert there: *dptr
+                    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
+                    const scalar_type curValue = dvals[curNonzeroIndex];
+                    M->insertGlobalValues (curGlobalRowIndex, 
+                                           tuple (c), 
+                                           tuple (curValue));
+                    curNonzeroIndex++;
+                  }
+              }
+          }
+        if (MyPID == 0) 
+          {
+            // Free memory allocated by the Harwell-Boeing input routine.
+            free (dvals);
+            dvals = NULL;
+            free (colptr);
+            colptr = NULL;
+            free (rowind);
+            rowind = NULL;
+          }
+        // We're done reading in M.
+        M->fillComplete();
+        debugOut << "Completed loading and distributing sparse matrix" << endl;
 
       } // else M == null
     else 
       {
-	debugOut << "Testing with Euclidean inner product" << endl;
+        debugOut << "Testing with Euclidean inner product" << endl;
 
         // Let M remain null, and allocate map using the number of rows
         // (numRows) specified on the command line.
@@ -468,24 +468,24 @@ main (int argc, char *argv[])
       debugOut << "Filling X2 with random values... ";
       MVT::MvRandom(*X1);
       debugOut << "done." << endl
-	       << "Calling normalize() on X1... ";
+               << "Calling normalize() on X1... ";
       // The Anasazi and Belos OrthoManager interfaces differ.
       // For example, Anasazi's normalize() method accepts either
       // one or two arguments, whereas Belos' normalize() requires
       // two arguments.
       const int initialX1Rank = OM->normalize(*X1);
       TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
-			 std::runtime_error, 
-			 "normalize(X1) returned rank "
-			 << initialX1Rank << " from " << sizeX1
-			 << " vectors. Cannot continue.");
+                         std::runtime_error, 
+                         "normalize(X1) returned rank "
+                         << initialX1Rank << " from " << sizeX1
+                         << " vectors. Cannot continue.");
       debugOut << "done." << endl 
-	       << "Calling orthonormError() on X1... ";
+               << "Calling orthonormError() on X1... ";
       err = OM->orthonormError(*X1);
       TEST_FOR_EXCEPTION(err > TOL,
-			 std::runtime_error,
-			 "normalize(X1) did meet tolerance: "
-			 "orthonormError(X1) == " << err);
+                         std::runtime_error,
+                         "normalize(X1) did meet tolerance: "
+                         "orthonormError(X1) == " << err);
       debugOut << "done: ||<X1,X1> - I|| = " << err << endl;
 
       //
@@ -495,7 +495,7 @@ main (int argc, char *argv[])
       debugOut << "Filling X1 with random values... ";
       MVT::MvRandom(*X2);
       debugOut << "done." << endl
-	       << "Calling projectAndNormalize(X2,X1)... " << endl;
+               << "Calling projectAndNormalize(X2,X1)... " << endl;
 
       // The projectAndNormalize() interface also differs between 
       // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
@@ -505,26 +505,26 @@ main (int argc, char *argv[])
       // SerialDenseMatrix arguments in the middle, and they are 
       // not optional.
       const int initialX2Rank = 
-	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
+        OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
       TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
-			 std::runtime_error, 
-			 "projectAndNormalize(X2,X1) returned rank " 
-			 << initialX2Rank << " from " << sizeX2 
-			 << " vectors. Cannot continue.");
+                         std::runtime_error, 
+                         "projectAndNormalize(X2,X1) returned rank " 
+                         << initialX2Rank << " from " << sizeX2 
+                         << " vectors. Cannot continue.");
       debugOut << "done." << endl
-	       << "Calling orthonormError() on X2... ";
+               << "Calling orthonormError() on X2... ";
       err = OM->orthonormError (*X2);
       TEST_FOR_EXCEPTION(err > TOL,
-			 std::runtime_error,
-			 "projectAndNormalize(X2,X1) did not meet tolerance: "
-			 "orthonormError(X2) == " << err);
+                         std::runtime_error,
+                         "projectAndNormalize(X2,X1) did not meet tolerance: "
+                         "orthonormError(X2) == " << err);
       debugOut << "done: || <X2,X2> - I || = " << err << endl
-	       << "Calling orthogError(X2, X1)... ";
+               << "Calling orthogError(X2, X1)... ";
       err = OM->orthogError (*X2, *X1);
       TEST_FOR_EXCEPTION(err > TOL,
-			 std::runtime_error,
-			 "projectAndNormalize(X2,X1) did not meet tolerance: "
-			 "orthogError(X2,X1) == " << err);
+                         std::runtime_error,
+                         "projectAndNormalize(X2,X1) did not meet tolerance: "
+                         "orthogError(X2,X1) == " << err);
       debugOut << "done: || <X2,X1> || = " << err << endl;
     }
 
@@ -536,7 +536,7 @@ main (int argc, char *argv[])
       MVT::MvRandom(*S);
 
       debugOut << "Testing project() by projecting a random multivector S "
-	"against various combinations of X1 and X2 " << endl;
+        "against various combinations of X1 and X2 " << endl;
       numFailed += testProject(OM,S,X1,X2);
     }
 
@@ -554,7 +554,7 @@ main (int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
       debugOut << "Testing project() by projecting [X1 X2]-range multivector "
-	"against P_X1 P_X2 " << endl;
+        "against P_X1 P_X2 " << endl;
       numFailed += testProject(OM,S,X1,X2);
     }
 
@@ -613,7 +613,7 @@ main (int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
       debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
-	"multivector against P_X1 P_X2 " << endl;
+        "multivector against P_X1 P_X2 " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
@@ -628,7 +628,7 @@ main (int argc, char *argv[])
       MVT::SetBlock(*mid,ind,*S);
 
       debugOut << "Testing projectAndNormalize() on a rank-deficient "
-	"multivector " << endl;
+        "multivector " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
@@ -655,21 +655,21 @@ main (int argc, char *argv[])
   if (numFailed != 0 || ! success) 
     {
       if (numFailed != 0) {
-	MyOM->stream(Errors) << numFailed << " errors." << endl;
+        MyOM->stream(Errors) << numFailed << " errors." << endl;
       }
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly.
       if (MyPID == 0)
-	cout << "End Result: TEST FAILED" << endl;	
+        cout << "End Result: TEST FAILED" << endl;        
       return -1;
     }
   else 
     {
       if (MyPID == 0)
-	cout << "End Result: TEST PASSED" << endl;
+        cout << "End Result: TEST PASSED" << endl;
       return 0;
     }
-}	
+}        
 
 
 
@@ -677,9 +677,9 @@ main (int argc, char *argv[])
 
 static int 
 testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
-			 RCP< const MV > S, 
-			 RCP< const MV > X1, 
-			 RCP< const MV > X2) 
+                         RCP< const MV > S, 
+                         RCP< const MV > X1, 
+                         RCP< const MV > X2) 
 {
   typedef Array< RCP< MV > >::size_type size_type;
 
@@ -940,7 +940,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
 static int 
 testNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
-	       RCP< const MV > S)
+               RCP< const MV > S)
 {
 
   const scalar_type ONE = SCT::one();
@@ -1011,14 +1011,14 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
 
-	sout << "::: Resulting pre-subset B:" << std::endl;
-	TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
+        sout << "::: Resulting pre-subset B:" << std::endl;
+        TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
 
-	B_original = B; // mfh 22 Jul 2010
+        B_original = B; // mfh 22 Jul 2010
         B = rcp( new serial_matrix_type(Teuchos::View,*B,ret,sizeS) );
 
-	sout << "::: Resulting subset B:" << std::endl;
-	TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
+        sout << "::: Resulting subset B:" << std::endl;
+        TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
       }
 
       // test all outputs for correctness
@@ -1063,9 +1063,9 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
 static int 
 testProject (RCP< OrthoManager< scalar_type, MV > > OM, 
-	     RCP< const MV > S, 
-	     RCP< const MV > X1, 
-	     RCP< const MV > X2) 
+             RCP< const MV > S, 
+             RCP< const MV > X1, 
+             RCP< const MV > X2) 
 {
   typedef Array< RCP< MV > >::size_type size_type;
 
@@ -1123,59 +1123,59 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
       Array< RCP< const MV > > theX;
       Array< RCP< serial_matrix_type > > C;
       if ( (t && 3) == 0 ) {
-	// neither X1 nor X2
-	// C and theX are already empty
+        // neither X1 nor X2
+        // C and theX are already empty
       }
       else if ( (t && 3) == 1 ) {
-	// X1
-	theX = tuple(X1);
-	C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
+        // X1
+        theX = tuple(X1);
+        C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
       }
       else if ( (t && 3) == 2 ) {
-	// X2
-	theX = tuple(X2);
-	C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
+        // X2
+        theX = tuple(X2);
+        C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
       }
       else {
-	// X1 and X2, and the reverse.
-	theX = tuple(X1,X2);
-	C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
-		   rcp(new serial_matrix_type(sizeX2,sizeS)) );
+        // X1 and X2, and the reverse.
+        theX = tuple(X1,X2);
+        C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
+            rcp(new serial_matrix_type(sizeX2,sizeS)) );
       }
 
       try {
-	// call routine
-	// if (t && 3) == 3, {
-	//    call with reversed input: X2 X1
-	// }
-	// test all outputs for correctness
-	// test all outputs for equivalence
+        // call routine
+        // if (t && 3) == 3, {
+        //    call with reversed input: X2 X1
+        // }
+        // test all outputs for correctness
+        // test all outputs for equivalence
 
-	// here is where the outputs go
-	Array<RCP<MV> > S_outs;
-	Array<Array<RCP<serial_matrix_type > > > C_outs;
-	RCP<MV> Scopy;
+        // here is where the outputs go
+        Array<RCP<MV> > S_outs;
+        Array<Array<RCP<serial_matrix_type > > > C_outs;
+        RCP<MV> Scopy;
 
-	// copies of S,MS
-	Scopy = MVT::CloneCopy(*S);
-	// randomize this data, it should be overwritten
-	for (size_type i = 0; i < C.size(); ++i) {
-	  C[i]->random();
-	}
-	// Run test.
+        // copies of S,MS
+        Scopy = MVT::CloneCopy(*S);
+        // randomize this data, it should be overwritten
+        for (size_type i = 0; i < C.size(); ++i) {
+          C[i]->random();
+        }
+        // Run test.
         // Note that Anasazi and Belos differ, among other places, 
         // in the order of arguments to project().
-	OM->project(*Scopy,theX,C);
-	// we allocate S and MS for each test, so we can save these as views
-	// however, save copies of the C
-	S_outs.push_back( Scopy );
-	C_outs.push_back( Array< RCP< serial_matrix_type > >(0) );
-	if (C.size() > 0) {
-	  C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
-	}
-	if (C.size() > 1) {
-	  C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
-	}
+        OM->project(*Scopy,theX,C);
+        // we allocate S and MS for each test, so we can save these as views
+        // however, save copies of the C
+        S_outs.push_back( Scopy );
+        C_outs.push_back( Array< RCP< serial_matrix_type > >(0) );
+        if (C.size() > 0) {
+          C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+        }
+        if (C.size() > 1) {
+          C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+        }
 
       // do we run the reversed input?
       if ( (t && 3) == 3 ) {
@@ -1187,7 +1187,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
-	// Run test.
+        // Run test.
         // Note that Anasazi and Belos differ, among other places, 
         // in the order of arguments to project().
         OM->project(*Scopy,theX,C);
@@ -1283,15 +1283,15 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 
 static magnitude_type 
 MVDiff (const MV& X, 
-	const MV& Y) 
+        const MV& Y) 
 {
   const scalar_type ONE = SCT::one();
   const int ncols_X = MVT::GetNumberVecs(X);
   TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
-		      std::logic_error,
-		      "MVDiff: X and Y should have the same number of columns."
-		      "  X has " << ncols_X << " column(s) and Y has " 
-		      << MVT::GetNumberVecs(Y) << " columns." );
+      std::logic_error,
+      "MVDiff: X and Y should have the same number of columns."
+      "  X has " << ncols_X << " column(s) and Y has " 
+      << MVT::GetNumberVecs(Y) << " columns." );
   serial_matrix_type C (ncols_X, ncols_X);
 
   // tmp := X
