@@ -621,12 +621,12 @@ namespace Ioex {
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
     if (num_info > 0) {
-      char** info = get_exodus_names(num_info, max_line_length); // 'total_lines' pointers to char buffers
-      ex_get_info(get_file_pointer(), info);
+      char** info_rec = get_exodus_names(num_info, max_line_length); // 'total_lines' pointers to char buffers
+      ex_get_info(get_file_pointer(), info_rec);
       for (int i=0; i < num_info; i++) {
-	add_information_record(info[i]);
+	add_information_record(info_rec[i]);
       }
-      delete_exodus_names(info, num_info);
+      delete_exodus_names(info_rec, num_info);
     }
   }
 

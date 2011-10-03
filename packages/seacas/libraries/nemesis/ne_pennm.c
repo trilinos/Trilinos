@@ -55,6 +55,8 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include "ne_nemesisI.h"
+#include "ne_nemesisI_int.h"
+
 /*
  * writes out a portion of the element numbering map to the database;
  * this allows element numbers to be non-contiguous

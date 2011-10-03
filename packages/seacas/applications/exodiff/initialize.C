@@ -200,7 +200,7 @@ void ExoII_Read::Get_Init_Data()
       exit(1);
     }
     
-    int e_count = 0;
+    size_t e_count = 0;
     for (int b = 0; b < num_elmt_blocks; ++b) {
       if (ids[b] <= EX_INVALID_ID) {
 	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Element block Id "

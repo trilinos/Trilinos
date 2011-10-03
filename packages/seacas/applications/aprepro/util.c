@@ -66,8 +66,6 @@ void  conv_string(char *string);
 FILE *open_file(char *file, char *mode);
 FILE *check_open_file(char *file, char *mode);
 
-static char trypath[BUFSIZ];
-
 /* Convert string to all lower-case and replace all spaces with '_' */
 void conv_string (char *string)
 {

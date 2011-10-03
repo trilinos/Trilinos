@@ -141,7 +141,7 @@ namespace {
     if (file2.Dimension() > 2) z2 = (double*)file2.Z_Coords();
   
     double max = 0.0, norm;
-    for (int n = 0; n < file1.Num_Nodes() && is_same; ++n) {
+    for (size_t n = 0; n < file1.Num_Nodes() && is_same; ++n) {
       if (check_only) {
 	if (specs.coord_tol.Diff(x1[n], x2[n])) {
 	  std::cout << "exodiff: ERROR .. Files are different (x nodal coordinate "

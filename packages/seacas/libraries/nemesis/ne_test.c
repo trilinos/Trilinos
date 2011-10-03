@@ -112,6 +112,9 @@ int main(int argc, char *argv[])
   float	  version;
 
   /* Initialized local variables */
+  int    mode3 = EX_CLOBBER;
+  int    mode4 = EX_CLOBBER|EX_NETCDF4|EX_NOCLASSIC;
+
   char  *yo="main";
   int    io_ws=0, cpu_ws=0, t_pass=0, t_fail=0;
   int    debug_flag=0;
@@ -172,8 +175,6 @@ int main(int argc, char *argv[])
 
   /* Create the ExodusII/Nemesis file */
   printf("creating ExodusII file..."); fflush(stdout);
-  int mode3 = EX_CLOBBER;
-  int mode4 = EX_CLOBBER|EX_NETCDF4|EX_NOCLASSIC;
 
   /* Attempt to create a netcdf4-format file; if it fails, then assume
      that the netcdf library does not support that mode and fall back

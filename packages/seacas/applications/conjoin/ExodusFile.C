@@ -29,9 +29,11 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <ExodusFile.h>
-#include <SystemInterface.h>
-#include <smart_assert.h>
+
+#include "ExodusFile.h"
+#include "SystemInterface.h"
+#include "smart_assert.h"
+
 #include <stdlib.h>
 #include <limits.h>
 #include <to_string.h>

@@ -721,7 +721,7 @@ string ExoII_Read::Global_to_Block_Local(int global_elmt_num,
   SMART_ASSERT(Check_State());
   
   if (!Open()) return "ERROR:  File not open!";
-  if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
+  if (global_elmt_num < 1 || global_elmt_num > (int)num_elmts) {
     ostringstream oss;
     oss << "ERROR:  global_elmt_num = " << global_elmt_num
         << " is out of bounds [1, " << num_elmts << "]!";
@@ -1032,8 +1032,8 @@ void ExoII_Read::Display_Maps(std::ostream& s) const
   {
     s << "\tNode Map\tElmt Map" << std::endl;
     
-    int max = num_nodes > num_elmts ? num_nodes : num_elmts;
-    for (int i = 0; i < max; ++i)
+    size_t max = num_nodes > num_elmts ? num_nodes : num_elmts;
+    for (size_t i = 0; i < max; ++i)
     {
       s << "   " << (i+1) << ")\t";
       if (i < num_nodes && node_map != 0) s << node_map[i];

@@ -16,8 +16,8 @@ INCLUDE_DIRECTORIES(
 
 SET(SOURCES
 	cpyrgt.f          dboelb.f          flush.f           locint.f          pltond.f
-	cpystr.f          dboess.f          f2kcli.F          gslibv.f          locrea.f          pltone.f
-	dberr.f           dboini.f          f2kcli.inc        help.F            locstr.f          prterr.f
+	cpystr.f          dboess.f          argparse.f        gslibv.f          locrea.f          pltone.f
+	dberr.f           dboini.f          help.F            locstr.f          prterr.f
 	dbieb1.f          dbomap.f          ffaddc.f          help.h            logerr.f          scanner.c
 	abrstr.f          dbielb.f          dbonam.f          ffaddi.f          help_c.c          lowstr.f          scneof.f
 	addlog.c          dbiess.f          dbonm1.f          ffaddo.f          idblnk.f          matstr.f          screrr.f

@@ -60,19 +60,19 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
   SMART_ASSERT(file1.Open());
   SMART_ASSERT(file2.Open());
   
-  int num_nodes = file1.Num_Nodes();
-  int num_elmts = file1.Num_Elmts();
+  size_t num_nodes = file1.Num_Nodes();
+  size_t num_elmts = file1.Num_Elmts();
   int dim = file1.Dimension();
   
 //  ********************  elements  ********************  //
 
   // Load global ids (0-offset) into id array.
   int* id = new int[num_elmts];
-  {for (int e = 0; e < num_elmts; ++e) id[e] = e;}
+  {for (size_t e = 0; e < num_elmts; ++e) id[e] = e;}
   
   // Get map storage.
   node_map = new int[num_nodes];  SMART_ASSERT(node_map != 0);
-  {for (int i = 0; i < num_nodes; ++i) node_map[i] = -1; }
+  {for (size_t i = 0; i < num_nodes; ++i) node_map[i] = -1; }
   elmt_map = new int[num_elmts];  SMART_ASSERT(elmt_map != 0);
   
   // Create storage for midpoints.
@@ -145,21 +145,21 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
     specs.coord_tol.type = ABSOLUTE;
 
   // Match elmts in first file to their corresponding elmts in second.
-  int num_blocks = file1.Num_Elmt_Blocks();
-  int num_elmts_in_block;
+  size_t num_blocks = file1.Num_Elmt_Blocks();
+  size_t num_elmts_in_block;
   int num_nodes_per_elmt;
   int e1 = 0;
   int e2 = 0;
   int sort_idx;
   double mid_x, mid_y, mid_z;
 
-  for (int b = 0; b < num_blocks; ++b)
+  for (size_t b = 0; b < num_blocks; ++b)
   {
     const Exo_Block* block1 = file1.Get_Elmt_Block_by_Index(b);
     file1.Load_Elmt_Block_Description(b);
     num_elmts_in_block = block1->Size();
     num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
-    for (int i = 0; i < num_elmts_in_block; ++i)
+    for (size_t i = 0; i < num_elmts_in_block; ++i)
     {
       // Connectivity for element i.
       const int* conn1 = block1->Connectivity(i);
@@ -168,7 +168,7 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
       mid_x = 0.0; mid_y = 0.0; mid_z = 0.0;
 
       for (int j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= num_nodes);
+        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (int)num_nodes);
         mid_x += x1_f[conn1[j]-1];
         if (dim > 1) mid_y += y1_f[conn1[j]-1];
         if (dim > 2) mid_z += z1_f[conn1[j]-1];
@@ -296,7 +296,7 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
   // Check that all nodes in the file have been matched...  If any
   // unmatched nodes are found, then perform a node-based matching
   // algorithm...
-  for (int i=0; i < num_nodes; i++) {
+  for (size_t i=0; i < num_nodes; i++) {
     if (node_map[i] < 0) {
       Compute_Node_Map(node_map, file1, file2);
       break;
@@ -620,7 +620,7 @@ void Compute_FileId_Maps(int*& node_map, int*& elmt_map,
   SMART_ASSERT(file2.Open());
 
   {
-    int num_nodes = file1.Num_Nodes();
+    size_t num_nodes = file1.Num_Nodes();
     SMART_ASSERT(num_nodes == file2.Num_Nodes());
 
     node_map = new int[num_nodes];  SMART_ASSERT(node_map != 0);
@@ -636,7 +636,7 @@ void Compute_FileId_Maps(int*& node_map, int*& elmt_map,
   }
   
   {
-    int num_elmts = file1.Num_Elmts();
+    size_t num_elmts = file1.Num_Elmts();
     SMART_ASSERT(num_elmts == file2.Num_Elmts());
     elmt_map = new int[num_elmts];  SMART_ASSERT(elmt_map != 0);
     file1.Load_Elmt_Map();
@@ -653,11 +653,11 @@ void Compute_FileId_Maps(int*& node_map, int*& elmt_map,
 
 void Dump_Maps(const int *node_map, const int *elmt_map, ExoII_Read& file1)
 {
-  int ijk;
+  size_t ijk;
   std::cout << "\n=== node number map (file1 -> file2) local ids\n";
   bool one_to_one = true;
   for (ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
-    if (ijk != node_map[ijk]) {
+    if ((int)ijk != node_map[ijk]) {
       one_to_one = false;
       break;
     }
@@ -672,7 +672,7 @@ void Dump_Maps(const int *node_map, const int *elmt_map, ExoII_Read& file1)
   std::cout << "\n=== element number map (file1 -> file2) local ids\n";
   one_to_one = true;
   for (ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
-    if (ijk != elmt_map[ijk]) {
+    if ((int)ijk != elmt_map[ijk]) {
       one_to_one = false;
       break;
     }
@@ -697,16 +697,16 @@ bool Check_Maps(const int *node_map, const int *elmt_map, const ExoII_Read& file
   }
   
   if (node_map != NULL) {
-    for (int ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
-      if (ijk != node_map[ijk]) {
+    for (size_t ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
+      if ((int)ijk != node_map[ijk]) {
 	return false;
       }
     }
   }
 
   if (elmt_map != NULL) {
-    for (int ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
-      if (ijk != elmt_map[ijk]) {
+    for (size_t ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
+      if ((int)ijk != elmt_map[ijk]) {
 	return false;
       }
     }

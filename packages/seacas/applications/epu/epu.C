@@ -65,13 +65,13 @@ typedef std::vector<std::string> StringVector;
 typedef std::vector<int>    GlobalMap;
 typedef GlobalMap::iterator GMapIter;
 
-#include <Internals.h>
-#include <ExodusFile.h>
-#include <ExodusEntity.h>
-#include <SystemInterface.h>
-#include <Version.h>
-#include <Variables.h>
-#include <ObjectType.h>
+#include "Internals.h"
+#include "ExodusFile.h"
+#include "ExodusEntity.h"
+#include "SystemInterface.h"
+#include "Version.h"
+#include "Variables.h"
+#include "ObjectType.h"
 
 #include <exodusII.h>
 
@@ -123,7 +123,7 @@ namespace {
   bool is_sequential(std::vector<int> &map)
   {
     for (size_t i=0; i < map.size(); i++) {
-      if (map[i] != i+1)
+      if (map[i] != (int)i+1)
 	return false;
     }
     return true;

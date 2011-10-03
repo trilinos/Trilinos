@@ -36,7 +36,7 @@
 #ifndef ParallelDisksH
 #define ParallelDisksH
 
-#include <CodeTypes.h>
+#include "CodeTypes.h"
 #include <string>
 
 /*****************************************************************************/

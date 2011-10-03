@@ -32,7 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#include <SystemInterface.h>
+#include "SystemInterface.h"
 
 #include <iostream>
 #include <algorithm>

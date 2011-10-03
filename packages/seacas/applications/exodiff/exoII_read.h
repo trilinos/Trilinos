@@ -140,9 +140,9 @@ public:
   std::string Free_Elmt_Order();
   const int*  Get_Elmt_Order() { return elmt_order; }
   void Free_All_Maps();
-  inline int Node_Map  (int node_num) const;  // numbers are global, 1-offset
-  inline int Elmt_Map  (int elmt_num) const;  // numbers are global, 1-offset
-  inline int Elmt_Order(int elmt_num) const;  // numbers are global, 1-offset
+  inline int Node_Map  (size_t node_num) const;  // numbers are global, 1-offset
+  inline int Elmt_Map  (size_t elmt_num) const;  // numbers are global, 1-offset
+  inline int Elmt_Order(size_t elmt_num) const;  // numbers are global, 1-offset
   
   
   // Nodal data:
@@ -267,28 +267,28 @@ protected:
   
 };
 
-inline int ExoII_Read::Node_Map(int node_num) const
+inline int ExoII_Read::Node_Map(size_t node_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(node_num > 0 && node_num <= num_nodes);
+  SMART_ASSERT(node_num <= num_nodes);
   
   if (node_map) return node_map[ node_num - 1 ];
   return 0;
 }
 
-inline int ExoII_Read::Elmt_Map(int elmt_num) const
+inline int ExoII_Read::Elmt_Map(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(elmt_num > 0 && elmt_num <= num_elmts);
+  SMART_ASSERT(elmt_num <= num_elmts);
   
   if (elmt_map) return elmt_map[ elmt_num - 1 ];
   return 0;
 }
 
-inline int ExoII_Read::Elmt_Order(int elmt_num) const
+inline int ExoII_Read::Elmt_Order(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(elmt_num > 0 && elmt_num <= num_elmts);
+  SMART_ASSERT(elmt_num <= num_elmts);
   
   if (elmt_order) return elmt_order[ elmt_num - 1 ];
   return 0;

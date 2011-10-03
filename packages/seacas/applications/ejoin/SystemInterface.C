@@ -1,4 +1,5 @@
-#include <SystemInterface.h>
+#include "SystemInterface.h"
+#include "vector3d.h"
 
 #include <iostream>
 #include <algorithm>
@@ -32,7 +33,7 @@ namespace {
   }
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
-  void parse_offset(const char *tokens, Vector3 *offset);
+  void parse_offset(const char *tokens, vector3d *offset);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
   void parse_part_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions,
@@ -524,7 +525,7 @@ namespace {
     }
   }
 
-  void parse_offset(const char *tokens, Vector3 *offset)
+  void parse_offset(const char *tokens, vector3d *offset)
   {
     // Break into tokens separated by ","
     if (tokens != NULL) {

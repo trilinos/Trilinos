@@ -64,7 +64,7 @@
 #include "SystemInterface.h"
 #include "match_xyz.h"
 #include "mapping.h"
-#include "Vector3.h"
+#include "vector3d.h"
 #include "Version.h"
 
 namespace {
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
     part_mesh[p] = new Ioss::Region(dbi, name);
     part_mesh[p]->property_add(Ioss::Property("block_omission_count", (int)omissions[p].size()));
 
-    Vector3 offset = interface.offset();
+    vector3d offset = interface.offset();
     if (p > 0 && (offset.x != 0.0 || offset.y != 0.0 || offset.z != 0.0)) {
       Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
       Ioss::Field coord = nb->get_field("mesh_model_coordinates");

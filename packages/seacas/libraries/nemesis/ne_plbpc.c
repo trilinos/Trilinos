@@ -96,7 +96,6 @@ int ne_put_loadbal_param_cc(int   neid,
   long long num_bor_node = 0, num_ext_node = 0;
   long long num_n_cmaps = 0, num_e_cmaps = 0;
 
-  int    count;
   int  nmstat;
 
   char   errmsg[MAX_ERR_LENGTH];

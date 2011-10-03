@@ -305,13 +305,12 @@ namespace {
     output_region.begin_mode(Ioss::STATE_MODEL);
 
     Ioss::NodeBlock *nb = region.get_node_blocks()[0];
-    size_t node_count = nb->get_property("entity_count").get_int();
     std::vector<double> coordinates;
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     std::vector<int> node_ids(sph_node_count);
-    for (int i=0; i < sph_node_count; i++) {
+    for (size_t i=0; i < sph_node_count; i++) {
       node_ids[i]=i+1;
     }
     onb->put_field_data("ids", node_ids);
