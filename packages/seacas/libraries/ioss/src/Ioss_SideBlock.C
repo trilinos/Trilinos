@@ -40,7 +40,7 @@
 #include <Ioss_ElementTopology.h>
 #include <string>
 
-Ioss::SideBlock::SideBlock(const Ioss::DatabaseIO *io_database,
+Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,
 			   const std::string& side_type,
 			   const std::string& element_type,

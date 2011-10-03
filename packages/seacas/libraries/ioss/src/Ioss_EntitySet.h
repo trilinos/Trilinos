@@ -49,7 +49,7 @@ namespace Ioss {
       get_implicit_property(const std::string& name) const = 0;
 
   protected:
-    EntitySet(const DatabaseIO *io_database,
+    EntitySet(DatabaseIO *io_database,
 	      const std::string& name,
 	      size_t entity_count);
 

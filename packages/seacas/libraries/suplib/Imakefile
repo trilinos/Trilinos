@@ -39,7 +39,7 @@ LIBDIR     = $(PLIBDIR)
 
 LIB = suplib
 
-INCLIST = f2kcli.inc
+INCLIST = argparse.inc
 
 OBJSc  = c_xhelp.o do_help.o help_c.o scanner.o util.o addlog.o wildcmp.o
 
@@ -61,9 +61,9 @@ OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
          numeql.o numstr.o okabrt.o opnfil.o packt.o  pcklab.o \
          pckstr.o pltond.o pltone.o prterr.o scneof.o shocmd.o \
          sqzstr.o strtup.o subv.o   wrapup.o iowdsz.o screrr.o \
-	 indexr.o
+	 indexr.o argparse.o
 
-OBJSF = help.o f2kcli.o
+OBJSF = help.o
 
 #ifndef CrayArchitecture
 #if NeedsFortranFlush == YES

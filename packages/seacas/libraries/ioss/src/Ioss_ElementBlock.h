@@ -44,7 +44,7 @@ namespace Ioss {
 
   class ElementBlock : public EntityBlock {
   public:
-    ElementBlock(const DatabaseIO *io_database,
+    ElementBlock(DatabaseIO *io_database,
 		 const std::string& name, const std::string& element_type,
 		 size_t number_elements);
 

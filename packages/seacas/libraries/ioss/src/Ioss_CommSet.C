@@ -38,7 +38,7 @@
 #include <string>
 #include <assert.h>
 
-Ioss::CommSet::CommSet(const Ioss::DatabaseIO *io_database,
+Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
 		       const std::string& my_name,
 		       const std::string& entity_type,
 		       size_t entity_count)

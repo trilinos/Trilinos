@@ -78,8 +78,8 @@ public:
   
   const std::string& Title() const { return title;        }
   int     Dimension()       const { return dimension;     }
-  int     Num_Nodes()       const { return num_nodes;     }
-  int     Num_Elmts()       const { return num_elmts;     }
+  size_t  Num_Nodes()       const { return num_nodes;     }
+  size_t  Num_Elmts()       const { return num_elmts;     }
   int     Num_Node_Sets()   const { return num_node_sets; }
   int     Num_Side_Sets()   const { return num_side_sets; }
   float Data_Base_Version() const { return db_version;    }
@@ -213,10 +213,10 @@ protected:
   // GENESIS info:
   
   std::string  title;
-  int          num_nodes;
+  size_t       num_nodes;
   std::vector<std::string> coord_names;
   int          dimension;
-  int          num_elmts;
+  size_t       num_elmts;
   int          num_elmt_blocks;
   int          num_node_sets;
   int          num_side_sets;

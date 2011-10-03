@@ -43,7 +43,7 @@ namespace Ioss {
   class FaceSet : public EntitySet {
   public:
     FaceSet(); // Used for template typing only
-    FaceSet(const DatabaseIO *io_database, const std::string& name,
+    FaceSet(DatabaseIO *io_database, const std::string& name,
 	    size_t number_faces);
 
     std::string type_string() const {return "FaceSet";}

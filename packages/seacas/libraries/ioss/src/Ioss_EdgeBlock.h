@@ -44,9 +44,9 @@ namespace Ioss {
 
   class EdgeBlock : public EntityBlock {
   public:
-    EdgeBlock(const DatabaseIO *io_database,
-		 const std::string& name, const std::string& edge_type,
-		 size_t number_edges);
+    EdgeBlock(DatabaseIO *io_database,
+	      const std::string& name, const std::string& edge_type,
+	      size_t number_edges);
 
     ~EdgeBlock();
 

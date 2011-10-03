@@ -541,7 +541,8 @@ string ExoII_Read::Load_Nodal_Coordinates()
   
   if (num_nodes)
   {
-    nodes = new double[num_nodes * dimension];  SMART_ASSERT(nodes != 0);
+    size_t count = num_nodes * dimension;
+    nodes = new double[count];  SMART_ASSERT(nodes != 0);
     double *x = nodes, *y = nodes, *z = nodes;
     if (dimension > 1) y = nodes + num_nodes;
     if (dimension > 2) z = nodes + (2 * num_nodes);
@@ -971,11 +972,11 @@ void ExoII_Read::Display(std::ostream& s) const
   if (nodes)
   {
     s << "\tNodal Coordinates:" << std::endl;
-    for (int n = 0; n < num_nodes; ++n)
+    for (size_t n = 0; n < num_nodes; ++n)
     {
       s << "\t" << (n+1) << "\t" << nodes[n];
       if (dimension > 1) s << "\t" << nodes[ num_nodes + n ];
-      if (dimension > 2) s << "\t" << nodes[ 2 * num_nodes + n ];
+      if (dimension > 2) s << "\t" << nodes[ num_nodes * 2 + n ];
       s << std::endl;
     }
     s << separator << std::endl;
@@ -1073,9 +1074,7 @@ int ExoII_Read::SSet_Index(int sset_id) const
 int ExoII_Read::Check_State() const
 {
   SMART_ASSERT(file_id         >= -1);
-  SMART_ASSERT(num_nodes       >= 0);
   SMART_ASSERT(dimension       >= 0);
-  SMART_ASSERT(num_elmts       >= 0);
   SMART_ASSERT(num_elmt_blocks >= 0);
   SMART_ASSERT(num_node_sets   >= 0);
   SMART_ASSERT(num_side_sets   >= 0);
@@ -1099,12 +1098,5 @@ int ExoII_Read::Check_State() const
   SMART_ASSERT( !( nodal_vars.size() > 0 && !results ) );
   SMART_ASSERT( !( nodal_vars.size() == 0 && results ) );
 
-// #ifndef NDEBUG
-//   int e = 0;
-//   for (int b = 0; b < num_elmt_blocks; ++b)
-//     e += eblocks[b].Num_Elmts();
-//   SMART_ASSERT(e == num_elmts);
-// #endif
-  
   return 1;
 }

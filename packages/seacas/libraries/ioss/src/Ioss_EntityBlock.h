@@ -58,7 +58,7 @@ namespace Ioss {
     int get_offset() const {return idOffset;}
 
   protected:
-    EntityBlock(const DatabaseIO *io_database,
+    EntityBlock(DatabaseIO *io_database,
 		const std::string& name,
 		const std::string& entity_type,
 		size_t entity_count);

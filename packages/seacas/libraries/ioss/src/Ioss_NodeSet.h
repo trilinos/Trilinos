@@ -43,7 +43,7 @@ namespace Ioss {
   class NodeSet : public EntitySet {
   public:
     NodeSet(); // Used for template typing only
-    NodeSet(const DatabaseIO *io_database, const std::string& name,
+    NodeSet(DatabaseIO *io_database, const std::string& name,
 	    size_t number_nodes);
 
     std::string type_string() const {return "NodeSet";}

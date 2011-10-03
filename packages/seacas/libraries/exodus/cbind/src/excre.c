@@ -155,7 +155,7 @@ int ex_create_int (const char *path,
     int run_version_minor = run_version % 100;
     int lib_version_major = EX_API_VERS_NODOT / 100;
     int lib_version_minor = EX_API_VERS_NODOT % 100;
-    fprintf(stderr, "EXODUSII: Warning: This code was compiled with exodusII version %d.%02d,\n          but was linked with exodusII library version %d.%02d\n          This is probably an error in the build process of this code.\n",
+    fprintf(stderr, "EXODUS: Warning: This code was compiled with exodusII version %d.%02d,\n          but was linked with exodusII library version %d.%02d\n          This is probably an error in the build process of this code.\n",
 	    run_version_major, run_version_minor, lib_version_major, lib_version_minor);
   }
 #if defined(NC_NETCDF4)
@@ -165,7 +165,7 @@ int ex_create_int (const char *path,
     if (netcdf4_mode == -1) {
       option = getenv("EXODUS_NETCDF4");
       if (option != NULL) {
-	fprintf(stderr, "EXODUSII: Using netcdf version 4 selected via EXODUS_NETCDF4 environment variable\n");
+	fprintf(stderr, "EXODUS: Using netcdf version 4 selected via EXODUS_NETCDF4 environment variable\n");
 	netcdf4_mode = NC_NETCDF4; 
       } else {
 	netcdf4_mode = 0;
@@ -226,9 +226,15 @@ int ex_create_int (const char *path,
 
   if ((status = nc_create (path, mode, &exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "Error: file create failed for %s, mode: %s",
-	    path, mode_name);
+    if (mode & NC_NETCDF4) {
+      sprintf(errmsg,
+	      "Error: file create failed for %s in NETCDF4 and %s mode.\n\tThis library probably does not support netcdf-4 files.",
+	      path, mode_name);
+    } else {
+      sprintf(errmsg,
+	      "Error: file create failed for %s, mode: %s",
+	      path, mode_name);
+    }
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }

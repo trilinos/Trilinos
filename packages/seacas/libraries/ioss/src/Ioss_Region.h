@@ -194,6 +194,10 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string& name) const;
 
+    const std::vector<std::string> &get_information_records() const;
+    void add_information_records(const std::vector<std::string> &info);
+    void add_information_record(const std::string &info);
+    
   protected:
     int internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
@@ -231,4 +235,13 @@ inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
 inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
 { return get_database()->node_global_to_local(global,must_exist); }
 
+inline const std::vector<std::string> &Ioss::Region::get_information_records() const
+{ return get_database()->get_information_records(); }
+
+inline void Ioss::Region::add_information_records(const std::vector<std::string> &info)
+{ return get_database()->add_information_records(info); }
+
+inline void Ioss::Region::add_information_record(const std::string &info)
+{ return get_database()->add_information_record(info); }
+    
 #endif

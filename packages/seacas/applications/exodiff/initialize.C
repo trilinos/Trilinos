@@ -121,9 +121,14 @@ void ExoII_Read::Get_Init_Data()
   
   char title_buff[MAX_LINE_LENGTH+1];
   
-  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes,
-                        &num_elmts, &num_elmt_blocks, &num_node_sets,
+  int num_nodes_t = 0;
+  int num_elmts_t = 0;
+  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes_t,
+                        &num_elmts_t, &num_elmt_blocks, &num_node_sets,
                         &num_side_sets);
+  num_nodes = num_nodes_t;
+  num_elmts = num_elmts_t;
+  
   if (err < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;

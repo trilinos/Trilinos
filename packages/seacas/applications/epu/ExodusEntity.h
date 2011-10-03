@@ -50,7 +50,8 @@ namespace Excn {
   struct Mesh
   {
     Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
-	 blockCount(0), nodesetCount(0), sidesetCount(0) {}
+	       blockCount(0), nodesetCount(0), sidesetCount(0),
+	       needNodeMap(true), needElementMap(true) {}
     
     size_t count(ObjectType type) const
     {
@@ -79,6 +80,8 @@ namespace Excn {
     int blockCount;
     int nodesetCount;
     int sidesetCount;
+    bool needNodeMap;
+    bool needElementMap;
 
   };
   

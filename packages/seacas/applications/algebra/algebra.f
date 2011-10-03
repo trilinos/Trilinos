@@ -154,7 +154,7 @@ C     equation line error messages
       include 'eqnlns.blk'
 C     floating point byte size
       include 'dbws.blk'
-      include 'f2kcli.inc'
+      include 'argparse.inc'
 
 C     Input/Output File Arguments
 C     CPUWS - The word size in bytes of the floating point variables
@@ -234,7 +234,7 @@ C     Open the log file - temporary file unless the user decides to save it
       CALL OPNLOG (NLOG)
 
 C .. Get filename from command line.  If not specified, emit error message
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('FATAL',
@@ -248,7 +248,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C     Open the input database; Exit on error
-      CALL GET_COMMAND_ARGUMENT(1,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(1,FILNAM, LFIL)
       ndbin = exopen(filnam(:lfil), EXREAD, cpuws, iows,
      &       vers, ierr)
       IF (IERR .NE. 0) THEN
@@ -563,7 +563,7 @@ C     name.
 C *************************************************************
 C                   Open the Output Database
 C *************************************************************
-      CALL GET_COMMAND_ARGUMENT(2,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(2,FILNAM, LFIL)
       ndbout = excre(filnam(:lfil), EXCLOB, CPUWS, IOWS, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Problems creating database "'//FILNAM(:LFIL)//'".'

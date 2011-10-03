@@ -557,6 +557,15 @@ void Compute_Partial_Maps(int*& node_map, int*& elmt_map,
 }
 
 namespace {
+  bool check_sort(const int *map, int count)
+  {
+    for (int i=1; i< count; i++) {
+      if (map[i-1] > map[i])
+	return true;
+    }
+    return false;
+  }
+
   bool internal_compute_maps(int *map, const int *file1_id_map, const int *file2_id_map,
 			     int count, const char *type)
   {
@@ -567,8 +576,14 @@ namespace {
       id2[i] = i;
     }
   
-    index_qsort(file1_id_map, &id1[0], count);
-    index_qsort(file2_id_map, &id2[0], count);
+    // Check whether sorting needed...
+    bool sort1_needed = check_sort(file1_id_map, count);
+    if (sort1_needed)
+      index_qsort(file1_id_map, &id1[0], count);
+    
+    bool sort2_needed = check_sort(file2_id_map, count);
+    if (sort2_needed)
+      index_qsort(file2_id_map, &id2[0], count);
   
     for (int i=0; i < count; i++) {
       if (file1_id_map[id1[i]] == file2_id_map[id2[i]]) {

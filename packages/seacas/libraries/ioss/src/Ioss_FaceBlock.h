@@ -44,9 +44,9 @@ namespace Ioss {
 
   class FaceBlock : public EntityBlock {
   public:
-    FaceBlock(const DatabaseIO *io_database,
-		 const std::string& name, const std::string& face_type,
-		 size_t number_faces);
+    FaceBlock(DatabaseIO *io_database,
+	      const std::string& name, const std::string& face_type,
+	      size_t number_faces);
 
     ~FaceBlock();
 

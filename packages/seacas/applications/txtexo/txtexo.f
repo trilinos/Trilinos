@@ -43,7 +43,7 @@ C     --
 C     --Expects the input text file on unit 20, the output database on unit 11.
 
       include 'exodusII.inc'
-      INCLUDE 'f2kcli.inc'
+      INCLUDE 'argparse.inc'
       CHARACTER*(MXSTLN) QAINFO(6)
 
       CHARACTER*80 TITLE
@@ -82,7 +82,7 @@ C.
       IF (NERR .GT. 0) GOTO 130
 
 C     --Open the database and write the initial variables
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('FATAL', 'Syntax is: "txtexo text_file db_file"')
@@ -96,7 +96,7 @@ C     --Open the database and write the initial variables
       NTXT = 20
       NDB = 12
 
-      CALL GET_COMMAND_ARGUMENT(1,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(1,FILNAM, LFIL)
       open(unit=ntxt, file=filnam(:lfil), status='old', iostat=ierr)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Text file "'//FILNAM(:LFIL)//'" does not exist.'
@@ -105,7 +105,7 @@ C     --Open the database and write the initial variables
       END IF
       EXODUS = .FALSE.
 
-      CALL GET_COMMAND_ARGUMENT(2,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(2,FILNAM, LFIL)
       CMPSIZ = 0
       IOWS   = iowdsz()
       ndb = excre(filnam(:lfil), EXCLOB, CMPSIZ, IOWS, IERR)

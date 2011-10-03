@@ -450,7 +450,7 @@ namespace {
     if (globals.debug) OUTPUT << "DEFINING TRANSIENT FIELDS ... " << '\n';
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       if (!globals.debug) {
-	OUTPUT << "\n Number of time steps on database     =" << std::setw(9)
+	OUTPUT << "\n Number of time steps on database     =" << std::setw(12)
 	       << region.get_property("state_count").get_int() << "\n\n";
       }
 
@@ -589,8 +589,8 @@ namespace {
       int    num_nodes = (*i)->get_property("entity_count").get_int();
       int    degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
-	OUTPUT << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
-	OUTPUT << " Number of nodes                      =" << std::setw(9) << num_nodes << "\n";
+	OUTPUT << " Number of coordinates per node       =" << std::setw(12) << degree << "\n";
+	OUTPUT << " Number of nodes                      =" << std::setw(12) << num_nodes << "\n";
       }
 
       Ioss::NodeBlock *nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
@@ -666,8 +666,8 @@ namespace {
       }
       if (!debug) {
 	OUTPUT << " Number of " << std::setw(14) << (*blocks.begin())->type_string() << "s            ="
-	       << std::setw(9) << blocks.size() << "\t"
-	       << "Length of entity list   =" << std::setw(9) << total_entities << "\n";
+	       << std::setw(12) << blocks.size() << "\t"
+	       << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
       } else {
 	OUTPUT << '\n';
       }
@@ -727,8 +727,8 @@ namespace {
       ++i;
     }
     if (!debug) {
-      OUTPUT << " Number of        SideSets            =" << std::setw(9) << fss.size() << "\t"
-	     << "Number of element sides =" << std::setw(9) << total_sides << "\n";
+      OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
+	     << "Number of element sides =" << std::setw(12) << total_sides << "\n";
     } else {
       OUTPUT << '\n';
     }
@@ -755,8 +755,8 @@ namespace {
 
       if (!debug) {
 	OUTPUT << " Number of " << std::setw(14) << (*sets.begin())->type_string() << "s            ="
-	       << std::setw(9) << sets.size() << "\t"
-	       << "Length of entity list   =" << std::setw(9) << total_entities << "\n";
+	       << std::setw(12) << sets.size() << "\t"
+	       << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
       } else {
 	OUTPUT << '\n';
       }
@@ -883,8 +883,8 @@ namespace {
 
       assert(oge->field_exists(out_field_name));
 
-      int isize = ige->get_field(field_name).get_size();
-      int osize = oge->get_field(out_field_name).get_size();
+      size_t isize = ige->get_field(field_name).get_size();
+      size_t osize = oge->get_field(out_field_name).get_size();
       assert (isize == osize);
 
       data.resize(isize);
@@ -942,7 +942,10 @@ namespace {
   {
 
     size_t isize = ige->get_field(field_name).get_size();
-    assert (isize == oge->get_field(field_name).get_size());
+    if (isize != oge->get_field(field_name).get_size()) {
+      std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tOsize = " << oge->get_field(field_name).get_size() << "\n";
+      assert(isize == oge->get_field(field_name).get_size());
+    }
 
     data.resize(isize);
 

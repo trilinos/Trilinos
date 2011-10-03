@@ -34,6 +34,7 @@ namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
   void parse_offset(const char *tokens, Vector3 *offset);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
+  void parse_part_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions,
 		       const std::string &basename, bool require_ids);
 }
@@ -159,6 +160,13 @@ void SystemInterface::enroll_options()
 		  "\t\tcolon followed by the sideset id.  E.g. -ssetvar sigxx:10:20",
 		  0);
 
+  options_.enroll("info_records", GetLongOpt::OptionalValue,
+		  "If no value specified or not present,\n"
+		  "\t\tthen don't transfer any information records to output file.\n"
+		  "\t\tIf 'p#,p#,...' specified, then only transfer information records on specified parts\n"
+		  "\t\tIf 'all' specified, then transfer all information records",
+		  0);
+
   options_.enroll("disable_field_recognition", GetLongOpt::NoValue,
 		  "Do not try to combine scalar fields into higher-order fields such as\n"
 		  "\t\tvectors or tensors based on the field suffix",
@@ -280,6 +288,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp != NULL) {
       parse_integer_list(temp, &nodesetConvertParts_);
       std::sort(nodesetConvertParts_.begin(), nodesetConvertParts_.end());
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("info_records");
+    if (temp != NULL) {
+      parse_part_list(temp, &infoRecordParts_);
+      std::sort(infoRecordParts_.begin(), infoRecordParts_.end());
     }
   }
 
@@ -554,6 +570,37 @@ namespace {
       while (I != part_list.end()) {
 	int id = strtol((*I).c_str(), NULL, 0);
 	(*list).push_back(id);
+	++I;
+      }
+    }
+  }
+
+  void parse_part_list(const char *tokens, std::vector<int> *list)
+  {
+    // Break into tokens separated by ","
+    // Tokens will be of the form "p$" or "all"
+    if (tokens != NULL) {
+      if (LowerCase(tokens) == "all") {
+	(*list).push_back(0);
+	return;
+      }
+
+      std::string token_string(tokens);
+      StringVector part_list;
+      tokenize(token_string, ",", part_list);
+    
+      std::vector<std::string>::iterator I = part_list.begin();
+      while (I != part_list.end()) {
+	std::string part = *I;
+	if (part[0] == 'p' || part[0] == 'P') {
+	  std::string part_id(part,1);
+	  int part_num = strtoul(part_id.c_str(), NULL, 0);
+	  list->push_back(part_num);
+	} else {
+	  std::cerr << "ERROR: Bad syntax (" << part << ") specifying part number. Use 'p'+ part_number\n"
+		    << "       For example -info_records p1,p2,p7\n";
+	  exit(EXIT_FAILURE);
+	}
 	++I;
       }
     }

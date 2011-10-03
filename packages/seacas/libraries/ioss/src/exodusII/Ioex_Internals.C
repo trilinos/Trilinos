@@ -3058,9 +3058,6 @@ namespace {
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type)
   {
-    if (entities.empty())
-      return EX_NOERR;
-    
     std::vector<char*> names;
     
     names.resize(entities.size());
@@ -3200,22 +3197,6 @@ namespace {
     if (nodes > 0) {
       if (ex_large_model(exodusFilePtr) == 1) {
 	// node coordinate arrays -- separate storage...
-
-	/*
-	 * Check that storage required for coordinates  is less
-	 * than 2GB which is maximum size permitted by netcdf
-	 * (in large file mode). 1<<29 == max number of integer items.
-	 */
-	int shift = nc_flt_code(exodusFilePtr) == NC_DOUBLE ? 28 : 29;
-	if (nodes  > (1<<shift)) {
-	  status  = EX_BADPARAM;
-	  sprintf(errmsg,
-		  "Error: Size to store nodal coordinates exceeds 2GB in file id %d",
-		  exodusFilePtr);
-	  ex_err(routine,errmsg,status);
-	  return (EX_FATAL);
-	}
-
 	dim[0] = node_dim;
 	if (dimension > 0) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_X, nc_flt_code(exodusFilePtr), 1, dim, &varid);

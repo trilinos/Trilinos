@@ -45,7 +45,7 @@ namespace {
   const std::string VECTOR_3D() { return std::string("vector_3d");}
 }
 
-Ioss::NodeBlock::NodeBlock(const Ioss::DatabaseIO *io_database,
+Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
 			   const std::string &my_name,
 			   size_t node_count,
 			   size_t degrees_of_freedom)

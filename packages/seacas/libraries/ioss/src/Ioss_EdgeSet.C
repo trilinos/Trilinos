@@ -46,7 +46,7 @@ Ioss::EdgeSet::EdgeSet()
   : Ioss::EntitySet(NULL, "invalid", 0)
 {}
 
-Ioss::EdgeSet::EdgeSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
+Ioss::EdgeSet::EdgeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
 		       size_t number_edges)
   : Ioss::EntitySet(io_database, my_name, number_edges)
 {

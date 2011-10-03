@@ -1163,73 +1163,55 @@ namespace {
     }
   }
 
-#ifndef MGCVECTOR3_H
-#define MGCVECTOR3_H
-
-  // Magic Software, Inc.
-  // http://www.magic-software.com
-  // Copyright (c) 2000, All Rights Reserved
-  //
-  // Source code from Magic Software is supplied under the terms of a license
-  // agreement and may not be copied or disclosed except in accordance with the
-  // terms of that agreement.  The various license agreements may be found at
-  // the Magic Software web site.  This file is subject to the license
-  //
-  // FREE SOURCE CODE
-  // http://www.magic-software.com/License/free.pdf
-
-  class Vector3
+  class vector3d
   {
   public:
     // construction
-    Vector3 ();
-    Vector3 (double fX, double fY, double fZ);
-    explicit Vector3 (double Coordinate[3]);
-    Vector3 (const Vector3& from);
+    vector3d ();
+    vector3d (double X, double Y, double Z);
+    explicit vector3d (double location[3]);
+    vector3d (const vector3d& from);
 
     double x, y, z;
 
-    // assignment and comparison
-    Vector3& operator= (const Vector3& from);
-    bool operator== (const Vector3& from) const;
-    bool operator!= (const Vector3& from) const;
-    void set(double fX, double fY, double fZ);
-    void set(double Coordinate[3]);
-    Vector3& reverse();
+    vector3d& operator= (const vector3d& from);
+    bool operator== (const vector3d& from) const;
+    bool operator!= (const vector3d& from) const;
+    void set(double X, double Y, double Z);
+    void set(double location[3]);
+    vector3d& reverse();
 
-    // arithmetic operations
-    Vector3 operator- () const;
+    vector3d operator- () const;
 
-    // arithmetic updates
-    Vector3& operator+= (const Vector3& from);
-    Vector3& operator-= (const Vector3& from);
-    Vector3& operator*= (double scalar);
-    Vector3& operator/= (double scalar);
+    vector3d& operator+= (const vector3d& from);
+    vector3d& operator-= (const vector3d& from);
+    vector3d& operator*= (double scalar);
+    vector3d& operator/= (double scalar);
 
-    // vector operations
     double length () const;
     double squared_length () const;
-    double dot (const Vector3& from) const;
+    double dot (const vector3d& from) const;
     double normalize (double tolerance = 1e-06);
-    Vector3 cross (const Vector3& from) const;
-    static Vector3 plane_normal(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3);
+    vector3d cross (const vector3d& from) const;
+    static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3);
   };
 
-  const Vector3 operator* (double scalar, const Vector3& vec);
-  const Vector3 operator+ (const Vector3& vec, const Vector3& vec2);
-  const Vector3 operator- (const Vector3& vec, const Vector3& vec2);
-  const Vector3 operator* (double scalar, const Vector3& vec);
-  const Vector3 operator/ (const Vector3& vec, double scalar);
+  const vector3d operator* (double scalar, const vector3d& vec);
+  const vector3d operator* (const vector3d& vec, double scalar);
+  const vector3d operator/ (const vector3d& vec, double scalar);
+
+  const vector3d operator+ (const vector3d& vec1, const vector3d& vec2);
+  const vector3d operator- (const vector3d& vec1, const vector3d& vec2);
 
   //----------------------------------------------------------------------------
-  inline Vector3 Vector3::cross (const Vector3& from) const
+  inline vector3d vector3d::cross (const vector3d& from) const
   {
-    return Vector3(y*from.z - z*from.y,
-		   z*from.x - x*from.z,
-		   x*from.y - y*from.x);
+    return vector3d(y * from.z - z * from.y,
+		    z * from.x - x * from.z,
+		    x * from.y - y * from.x);
   }
   //----------------------------------------------------------------------------
-  inline Vector3& Vector3::operator+= (const Vector3& from)
+  inline vector3d& vector3d::operator+= (const vector3d& from)
   {
     x += from.x;
     y += from.y;
@@ -1237,7 +1219,7 @@ namespace {
     return *this;
   }
   //----------------------------------------------------------------------------
-  inline Vector3& Vector3::operator-= (const Vector3& from)
+  inline vector3d& vector3d::operator-= (const vector3d& from)
   {
     x -= from.x;
     y -= from.y;
@@ -1245,14 +1227,13 @@ namespace {
     return *this;
   }
   //----------------------------------------------------------------------------
-  inline Vector3& Vector3::operator*= (double scalar)
+  inline vector3d& vector3d::operator*= (double scalar)
   {
     x *= scalar;
     y *= scalar;
     z *= scalar;
     return *this;
   }
-#endif
 
   void output_normals(Ioss::Region &region, Ioss::Region &output_region, bool reverse_normals)
   {
@@ -1338,7 +1319,7 @@ namespace {
 
     int nsize = node_normal.size();
     for (int i=0; i < nsize; i+=3) {
-      Vector3 a(node_normal[i+0], node_normal[i+1], node_normal[i+2]);
+      vector3d a(node_normal[i+0], node_normal[i+1], node_normal[i+2]);
       a.normalize();
 
       node_normal[i+0] = a.x;
@@ -1369,13 +1350,13 @@ namespace {
 
       // Triangular faces...
       if (num_node_per_elem == 3) {
-	Vector3 local[3];
+	vector3d local[3];
 	for (int i=0; i < 3; i++) {
 	  int node = conn[ioff+i];
 	  local[i].set(coord[node*3+0], coord[node*3+1], coord[node*3+2]);
 	}
 
-	Vector3 plnorm = Vector3::plane_normal(local[0], local[1], local[2]);
+	vector3d plnorm = vector3d::plane_normal(local[0], local[1], local[2]);
 	plnorm.normalize();
 	if (reverse_normals)
 	  plnorm.reverse();
@@ -1394,7 +1375,7 @@ namespace {
 
 	// Quadrilateral faces...
 	assert(num_node_per_elem == 4);
-	Vector3 local[4];
+	vector3d local[4];
 	for (int i=0; i < 4; i++) {
 	  int node = conn[ioff+i];
 	  local[i].set(coord[node*3+0], coord[node*3+1], coord[node*3+2]);
@@ -1408,7 +1389,7 @@ namespace {
 	  int nb = (i+3)%4;
 	  int na = (i+1)%4;
 
-	  Vector3 a = Vector3::plane_normal(local[nb], local[i], local[na]);
+	  vector3d a = vector3d::plane_normal(local[nb], local[i], local[na]);
 	  a.normalize();
 	  if (reverse_normals)
 	    a.reverse();
@@ -1423,7 +1404,7 @@ namespace {
 	  node_normal[node*3+2] += a.z;
 	}
       }
-      Vector3 a(face_normal[iel*3+0], face_normal[iel*3+1], face_normal[iel*3+2]);
+      vector3d a(face_normal[iel*3+0], face_normal[iel*3+1], face_normal[iel*3+2]);
       a.normalize();
       face_normal[iel*3+0] = a.x;
       face_normal[iel*3+1] = a.y;
@@ -1440,55 +1421,42 @@ namespace {
   }
 }
 
-// Magic Software, Inc.
-// http://www.magic-software.com
-// Copyright (c) 2000, All Rights Reserved
-//
-// Source code from Magic Software is supplied under the terms of a license
-// agreement and may not be copied or disclosed except in accordance with the
-// terms of that agreement.  The various license agreements may be found at
-// the Magic Software web site.  This file is subject to the license
-//
-// FREE SOURCE CODE
-// http://www.magic-software.com/License/free.pdf
-
-
 //----------------------------------------------------------------------------
-Vector3::Vector3 ()
+vector3d::vector3d ()
   : x(0.0), y(0.0), z(0.0)
 {
 }
 
 //----------------------------------------------------------------------------
-Vector3::Vector3 (double fX, double fY, double fZ)
-  : x(fX), y(fY), z(fZ)
+vector3d::vector3d (double X, double Y, double Z)
+  : x(X), y(Y), z(Z)
 {}
 
 //----------------------------------------------------------------------------
-Vector3::Vector3 (double Coordinate[3])
-  : x(Coordinate[0]), y(Coordinate[1]), z(Coordinate[2])
+vector3d::vector3d (double location[3])
+  : x(location[0]), y(location[1]), z(location[2])
 {}
 
 //----------------------------------------------------------------------------
-Vector3::Vector3 (const Vector3& from)
+vector3d::vector3d (const vector3d& from)
   : x(from.x), y(from.y), z(from.z)
 {}
 
-void Vector3::set(double fX, double fY, double fZ)
+void vector3d::set(double X, double Y, double Z)
 {
-    x = fX;
-    y = fY;
-    z = fZ;
+    x = X;
+    y = Y;
+    z = Z;
 }
 
-void Vector3::set(double Coordinate[3])
+void vector3d::set(double location[3])
 {
-    x = Coordinate[0];
-    y = Coordinate[1];
-    z = Coordinate[2];
+    x = location[0];
+    y = location[1];
+    z = location[2];
 }
 
-Vector3& Vector3::operator= (const Vector3& from)
+vector3d& vector3d::operator= (const vector3d& from)
 {
     x = from.x;
     y = from.y;
@@ -1496,7 +1464,7 @@ Vector3& Vector3::operator= (const Vector3& from)
     return *this;
 }
 
-Vector3& Vector3::reverse()
+vector3d& vector3d::reverse()
 {
   x = -x;
   y = -y;
@@ -1505,63 +1473,67 @@ Vector3& Vector3::reverse()
 }
 
 
-bool Vector3::operator== (const Vector3& from) const
+bool vector3d::operator== (const vector3d& from) const
 {
     return ( x == from.x && y == from.y && z == from.z );
 }
 
-bool Vector3::operator!= (const Vector3& from) const
+bool vector3d::operator!= (const vector3d& from) const
 {
     return ( x != from.x || y != from.y || z != from.z );
 }
 
-const Vector3 operator+ (const Vector3& lhs, const Vector3& rhs)
+const vector3d operator+ (const vector3d& lhs, const vector3d& rhs)
 {
-  Vector3 Sum(lhs);
-  return Sum += rhs;
+  vector3d tmp(lhs);
+  return tmp += rhs;
 }
 
-const Vector3 operator- (const Vector3& lhs, const Vector3& rhs)
+const vector3d operator- (const vector3d& lhs, const vector3d& rhs)
 {
-  Vector3 Diff(lhs);
-  return Diff -= rhs;
+  vector3d tmp(lhs);
+  return tmp -= rhs;
 }
 
-const Vector3 operator* (const Vector3& lhs, double scalar)
+const vector3d operator* (const vector3d& lhs, double scalar)
 {
-  Vector3 Prod(lhs);
-  return Prod *= scalar;
+  vector3d tmp(lhs);
+  return tmp *= scalar;
 }
 
-Vector3 Vector3::operator- () const
+vector3d vector3d::operator- () const
 {
-    Vector3 Neg;
-    return Neg *= -1.0;
+  vector3d tmp(x, y, z);
+  return tmp *= -1.0;
 }
 
-const Vector3 operator* (double scalar, const Vector3& from)
+const vector3d operator* (double scalar, const vector3d& from)
 {
-  Vector3 Prod(from);
-  return Prod *= scalar;
+  vector3d tmp(from);
+  return tmp *= scalar;
 }
 
-double Vector3::squared_length () const
+double vector3d::squared_length () const
 {
     return x*x + y*y + z*z;
 }
 
-double Vector3::dot (const Vector3& from) const
+double vector3d::dot (const vector3d& from) const
 {
     return x*from.x + y*from.y + z*from.z;
 }
 
-Vector3 operator/ (const Vector3& lhs, double scalar)
+vector3d operator/ (const vector3d& lhs, double scalar)
 {
-  Vector3 Quot(lhs);
-  return Quot /= scalar;
+  if ( scalar != 0.0 ) {
+    vector3d tmp(lhs);
+    return tmp /= scalar;
+  } else {
+    return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
+  }
 }
 
-Vector3& Vector3::operator/= (double scalar)
+vector3d& vector3d::operator/= (double scalar)
 {
   if ( scalar != 0.0 ) {
     x /= scalar;
@@ -1576,12 +1548,12 @@ Vector3& Vector3::operator/= (double scalar)
   return *this;
 }
 
-double Vector3::length () const
+double vector3d::length () const
 {
   return sqrt(x*x + y*y + z*z);
 }
 
-double Vector3::normalize (double tolerance)
+double vector3d::normalize (double tolerance)
 {
   double mylength = length();
 
@@ -1596,13 +1568,11 @@ double Vector3::normalize (double tolerance)
   return mylength;
 }
 
-Vector3 Vector3::plane_normal(const Vector3 &v1,
-			      const Vector3 &v2,
-			      const Vector3 &v3)
+vector3d vector3d::plane_normal(const vector3d &v1,
+				const vector3d &v2,
+				const vector3d &v3)
 {
-  Vector3 v32 = v3;
-  v32 -= v2;
-  Vector3 v12 = v1;
-  v12 -= v2;
+  vector3d v32 = v3;   v32 -= v2;
+  vector3d v12 = v1;   v12 -= v2;
   return v32.cross(v12);
 }

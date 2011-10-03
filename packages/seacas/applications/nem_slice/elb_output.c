@@ -62,7 +62,8 @@ int write_nemesis(char *nemI_out_file,
                   LB_INFO_PTR lb,
                   SPHERE_INFO_PTR sphere)
 {
-  int     cnt, cnt2, cnt3, proc, exoid, cpu_ws, io_ws;
+  size_t  cnt, cnt2, cnt3;
+  int     proc, exoid, cpu_ws, io_ws;
   char    title[MAX_LINE_LENGTH+1], method1[MAX_LINE_LENGTH+1];
   char    method2[MAX_LINE_LENGTH+1], *info[3];
 
@@ -73,13 +74,14 @@ int write_nemesis(char *nemI_out_file,
   char    qa_vers[10];
   char  **lqa_record;
 
-  int     nsize, i2;
+  size_t  nsize, i2;
   int    *n_cmap_nodes, *n_cmap_procs;
 
   int    *num_nmap_cnts, *num_emap_cnts;
   int    *node_proc_ptr, *node_cmap_ids_cc, *node_cmap_cnts_cc;
   int    *elem_proc_ptr, *elem_cmap_ids_cc, *elem_cmap_cnts_cc;
 
+  int     mode3, mode4;
   /* Function prototypes */
   int  cmp_ints(int *, int *);
   int  (*func_ptr)();
@@ -92,21 +94,25 @@ int write_nemesis(char *nemI_out_file,
   printf("Outputting load balance to file %s\n", nemI_out_file);
 
   /* Create the load balance file */
-  /* NOTE: Typically, opening with EX_SHARE is a bad thing for speed.
-     However, on lustre and panasas filesystems, it turns out that the
-     EX_SHARE works very good (orders of magnitude faster) for the
-     nemesis files.  Until we figure out how best to determine the
-     underlying filesystem type, we just always open it EX_SHARE
+  /* Attempt to create a netcdf4-format file; if it fails, then assume
+     that the netcdf library does not support that mode and fall back
+     to classic netcdf3 format.  If that fails, issue an error and
+     return failure.
   */
-  if((exoid=ex_create(nemI_out_file, EX_CLOBBER|EX_SHARE, &cpu_ws, &io_ws)) < 0)
-  {
-    Gen_Error(0, "fatal: failed to create Nemesis file");
-    return 0;
+  mode3 = EX_CLOBBER;
+  mode4 = mode3|EX_NETCDF4|EX_NOCLASSIC;
+  if((exoid=ex_create(nemI_out_file, mode4, &cpu_ws, &io_ws)) < 0) {
+    if((exoid=ex_create(nemI_out_file, mode3, &cpu_ws, &io_ws)) < 0) {
+      Gen_Error(0, "fatal: failed to create Nemesis file");
+      return 0;
+    }
   }
 
   /* Set the error reporting value */
-  if(error_lev > 1)
+  if (error_lev > 1)
     ex_opts(EX_VERBOSE | EX_DEBUG);
+  else
+    ex_opts(EX_VERBOSE);
 
   /* Create the title */
   if(problem->type == NODAL)
