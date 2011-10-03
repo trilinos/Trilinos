@@ -1,0 +1,7 @@
+Decomposition Method 	= graph
+zoltan parameters	= graph_package=metis
+zoltan parameters	= num_global_parts=4
+zoltan parameters	= lb_approach=partition
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0

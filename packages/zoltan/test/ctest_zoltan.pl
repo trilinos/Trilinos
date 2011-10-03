@@ -123,7 +123,7 @@ if ($package eq "Zoltan") {
 } 
 if ($package eq "ParMETIS") {
   ### ParMETIS tests
-  @oneprocfiles = glob("zdrive.inp.*order-metis-*");
+  @oneprocfiles = glob("zdrive.inp.*order-metis-* zdrive.inp.graph-metis");
   if ($np > 1) {
     @inpfiles = glob("zdrive.inp.adap*
                       zdrive.inp.part* 
