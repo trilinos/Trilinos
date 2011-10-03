@@ -663,7 +663,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
   int err = 0;
 
   for(int i=0; i<numRows; ++i) {
-    double* valuesptr = (double*)values + i*numRows;
+    double* valuesptr = (double*)values + i*numCols;
 
     int local_row_id = Map().LID(rows[i]);
     if (local_row_id >= 0) {
