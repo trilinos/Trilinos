@@ -67,6 +67,9 @@
 #include <exodusII.h>
 #include <exodusII_int.h>
 #include <netcdf.h>
+#ifndef NC_INT64
+#define NC_INT64 NC_INT
+#endif
 
 #include "ne_nemesisI.h"
 #include "ne_nemesisI_int.h"

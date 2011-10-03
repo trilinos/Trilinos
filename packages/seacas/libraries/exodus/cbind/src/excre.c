@@ -226,7 +226,7 @@ int ex_create_int (const char *path,
 
   if ((status = nc_create (path, mode, &exoid)) != NC_NOERR) {
     exerrval = status;
-    if (mode & NC_NETCDF4) {
+    if (cmode & EX_NETCDF4) {
       sprintf(errmsg,
 	      "Error: file create failed for %s in NETCDF4 and %s mode.\n\tThis library probably does not support netcdf-4 files.",
 	      path, mode_name);
