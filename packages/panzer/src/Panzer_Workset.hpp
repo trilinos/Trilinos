@@ -13,9 +13,6 @@
 
 #include "Intrepid_FieldContainer.hpp"
 
-class Epetra_Vector;
-class Epetra_CrsMatrix;
-
 namespace panzer {
 
   class LinearObjContainer;
