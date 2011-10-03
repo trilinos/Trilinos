@@ -49,9 +49,11 @@
 int 
 main (int argc, char *argv[]) 
 {
+  using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
+  typedef double scalar_type;
 
   // Initialize MPI using Teuchos wrappers, if Trilinos was built with
   // MPI support.  Otherwise, initialize a communicator with one
@@ -60,8 +62,8 @@ main (int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
-
+  //const int numProcs = comm->getSize();
+  
   // Command-line arguments
   bool verbose = false;
   int testProblemSize = 10;
@@ -83,7 +85,7 @@ main (int argc, char *argv[])
   out << Belos::Belos_Version() << endl;
 
   // Test the projected least-squares solver.
-  Belos::ProjectedLeastSquaresSolver<scalar_type> solver;
+  Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
   const bool success = solver.testUpdateColumn (out, testProblemSize);
   
   if (success) {

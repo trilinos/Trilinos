@@ -766,27 +766,29 @@ namespace Belos {
     //! Output manager
     Teuchos::RCP<OutputManager<Scalar> > outMan_;
 
-    /// \brief "Native" residual vector
-    ///
-    /// "Native" means computed using exact-arithmetic invariants of
-    /// the iterative method.  In this case, if m is the current
-    /// number of iterations and \f$r_0 = A x_0 - b\f$,
-    /// \f{eqnarray*}{
-    ///    A x_k - b &=& A (x_0 + Z(1:m) y(1:m)) - b  \\
-    ///              &=& r_0 + A Z(1:m) y(1:m) \\
-    ///              &=& r_0 + V(1:m+1) H(1:m+1, 1:m) y(1:m). 
-    /// \f}
-    /// Accuracy of the above formula depends only on the Arnoldi
-    /// relation, which in turn depends mainly on the residual error
-    /// of the orthogonalization being small.  This is true for just
-    /// about any orthogonalization method, so the above computation
-    /// should hold just about always.
-    ///
-    /// Storage for the native residual vector is allocated only on
-    /// demand.  The storage is cached and reallocated only when the
-    /// LinearProblem changes.  (This ensures that the dimensions and
-    /// data distribution are correct, i.e., are the same as the
-    /// initial residual vector in the linear problem).
+    /**
+     * \brief "Native" residual vector
+     *
+     * "Native" means computed using exact-arithmetic invariants of
+     * the iterative method.  In this case, if m is the current
+     * number of iterations and \f$r_0 = A x_0 - b\f$,
+     * \f{eqnarray*}{
+     *    A x_k - b &=& A (x_0 + Z(1:m) y(1:m)) - b \\
+     *              &=& r_0 + A Z(1:m) y(1:m) \\
+     *              &=& r_0 + V(1:m+1) H(1:m+1, 1:m) y(1:m). 
+     * \f}
+     * Accuracy of the above formula depends only on the Arnoldi
+     * relation, which in turn depends mainly on the residual error
+     * of the orthogonalization being small.  This is true for just
+     * about any orthogonalization method, so the above computation
+     * should hold just about always.
+     *
+     * Storage for the native residual vector is allocated only on
+     * demand.  The storage is cached and reallocated only when the
+     * LinearProblem changes.  (This ensures that the dimensions and
+     * data distribution are correct, i.e., are the same as the
+     * initial residual vector in the linear problem).
+     */
     Teuchos::RCP<MV> nativeResVec_;
 
     /// \brief Initial residual vector.
