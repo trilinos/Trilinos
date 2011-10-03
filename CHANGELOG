@@ -1,0 +1,10 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.8 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 10.8.1 October 3, 2011
+
+1. Epetra - Fix bug in FECrsMatrix related to non-square matrix contributions.
+
