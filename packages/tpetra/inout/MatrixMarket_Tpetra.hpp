@@ -2731,7 +2731,7 @@ namespace Tpetra {
 		      const std::string& matrixName,
 		      const std::string& matrixDescription)
       {
-        const int myRank = Teuchos::rank (*(X->getComm()));
+        const int myRank = Teuchos::rank (*(X->getMap()->getComm()));
         std::ofstream out;        
 
         if (myRank == 0) // Only open the file on Rank 0.
@@ -2817,7 +2817,7 @@ namespace Tpetra {
         // terminates.
         details::SetScientific<scalar_type> sci (out);
 
-        RCP<const Comm<int> > pComm = X->getComm();
+        RCP<const Comm<int> > pComm = X->getMap()->getComm();
         const int myRank = Teuchos::rank (*pComm);
         RCP<const map_type> pMap = X->getMap();
         const global_size_t numRows = pMap->getGlobalNumElements();
@@ -2879,7 +2879,7 @@ namespace Tpetra {
 			       "The multivector Y imported onto Rank 0 does not"
 			       " have constant stride.  Please report this bug "
 			       "to the Tpetra developers.");
-	    ArrayRCP<const scalar_type> Y_view = Y->get1DView();
+	    ArrayRCP<const scalar_type> Y_view = Y->get1dView();
 	    //
 	    // Print the entries of the matrix, in column-major order.
 	    //
