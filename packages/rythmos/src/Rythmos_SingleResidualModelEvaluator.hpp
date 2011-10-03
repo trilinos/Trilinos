@@ -303,11 +303,18 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 SingleResidualModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
+  const RCP<const Thyra::ModelEvaluator<Scalar> >
+    daeModel = this->getUnderlyingModel();
+  MEB::OutArgs<Scalar> daeOutArgs = daeModel->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
-  outArgs.setSupports(MEB::OUT_ARG_W);
-  outArgs.setSupports(MEB::OUT_ARG_W_op);
+  if (daeOutArgs.supports(MEB::OUT_ARG_W_op)) {
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+  }
+  if (daeOutArgs.supports(MEB::OUT_ARG_W)) {
+    outArgs.setSupports(MEB::OUT_ARG_W);
+  }
   return outArgs;
 }
 
@@ -396,8 +403,12 @@ void SingleResidualModelEvaluator<Scalar>::evalModelImpl(
   daeInArgs.set_beta(coeff_x_);
   MEB::OutArgs<Scalar> daeOutArgs = daeModel->createOutArgs();
   daeOutArgs.set_f(outArgs_bar.get_f()); // can be null
-  daeOutArgs.set_W(outArgs_bar.get_W()); // can be null
-  daeOutArgs.set_W_op(outArgs_bar.get_W_op()); // can be null
+  if (daeOutArgs.supports(MEB::OUT_ARG_W)) {
+    daeOutArgs.set_W(outArgs_bar.get_W()); // can be null
+  }
+  if (daeOutArgs.supports(MEB::OUT_ARG_W_op)) {
+    daeOutArgs.set_W_op(outArgs_bar.get_W_op()); // can be null
+  }
   daeModel->evalModel(daeInArgs,daeOutArgs);
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
