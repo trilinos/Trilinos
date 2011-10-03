@@ -92,9 +92,15 @@ int ne_put_cmap_params_cc(int  neid,
   int     num_icm;
   size_t start[1], count[1];
   size_t ecnt_cmap, ncnt_cmap;
+#if defined NC_NETCDF4
   long long nl_ecnt_cmap, nl_ncnt_cmap;
   long long *n_var_idx = NULL;
   long long *e_var_idx = NULL;
+#else
+  int  nl_ecnt_cmap, nl_ncnt_cmap;
+  int *n_var_idx = NULL;
+  int *e_var_idx = NULL;
+#endif
 
   int  nmstat;
 
@@ -180,7 +186,11 @@ file ID %d",
     n_var_idx[0] = 0;
 
     /* get the communication map info index */
+#if defined(NC_NETCDF4)
     status = nc_get_var_longlong(neid, n_varid_idx, &(n_var_idx[1]));
+#else
+    status = nc_get_var_int(neid, n_varid_idx, &(n_var_idx[1]));
+#endif
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -233,7 +243,11 @@ file ID %d",
     e_var_idx[0] = 0;
 
     /* get the communication map info index */
+#if defined NC_NETCDF4
     status = nc_get_var_longlong(neid, e_varid_idx, &(e_var_idx[1]));
+#else
+    status = nc_get_var_int(neid, e_varid_idx, &(e_var_idx[1]));
+#endif
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -451,7 +465,11 @@ file ID %d",
 	nl_ncnt_cmap += node_cmap_node_cnts[node_proc_ptrs[iproc]+icm];
 
 	/* fill the data index variable */
+#if defined NC_NETCDF4
 	status = nc_put_var1_longlong(neid, n_varid_idx, start, &nl_ncnt_cmap);
+#else
+	status = nc_put_var1_int(neid, n_varid_idx, start, &nl_ncnt_cmap);
+#endif
 	if (status != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
@@ -535,7 +553,11 @@ file ID %d",
 	nl_ecnt_cmap += elem_cmap_elem_cnts[elem_proc_ptrs[iproc]+icm];
 
 	/* fill the data index variable */
+#if defined NC_NETCDF4
 	status = nc_put_var1_longlong(neid, e_varid_idx, start, &nl_ecnt_cmap);
+#else
+	status = nc_put_var1_int(neid, e_varid_idx, start, &nl_ecnt_cmap);
+#endif
 	if (status != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,

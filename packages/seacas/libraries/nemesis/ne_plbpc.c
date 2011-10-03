@@ -95,9 +95,15 @@ int ne_put_loadbal_param_cc(int   neid,
   char    ftype[2];
   int  oldfill;
 
+#if defined(NC_NETCDF4)
   long long num_int_elem = 0, num_int_node = 0, num_bor_elem = 0;
   long long num_bor_node = 0, num_ext_node = 0;
   long long num_n_cmaps = 0, num_e_cmaps = 0;
+#else
+  int num_int_elem = 0, num_int_node = 0, num_bor_elem = 0;
+  int num_bor_node = 0, num_ext_node = 0;
+  int num_n_cmaps = 0, num_e_cmaps = 0;
+#endif
 
   int  nmstat;
 
@@ -738,7 +744,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[0] > 0) {
       /* increment to the next starting position */
       num_int_elem += num_int_elems[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[0], start, &num_int_elem);
+#else
+      status = nc_put_var1_int(neid, varid_idx[0], start, &num_int_elem);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -752,7 +762,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[1] > 0) {
       /* increment to the next starting position */
       num_bor_elem += num_bor_elems[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[1], start, &num_bor_elem);
+#else
+      status = nc_put_var1_int(neid, varid_idx[1], start, &num_bor_elem);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -766,7 +780,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[2] > 0) {
       /* increment to the next starting position */
       num_int_node += num_int_nodes[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[2], start, &num_int_node);
+#else
+      status = nc_put_var1_int(neid, varid_idx[2], start, &num_int_node);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -780,7 +798,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[3] > 0) {
       /* increment to the next starting position */
       num_bor_node += num_bor_nodes[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[3], start, &num_bor_node);
+#else
+      status = nc_put_var1_int(neid, varid_idx[3], start, &num_bor_node);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -794,7 +816,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[4] > 0) {
       /* increment to the next starting position */
       num_ext_node += num_ext_nodes[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[4], start, &num_ext_node);
+#else
+      status = nc_put_var1_int(neid, varid_idx[4], start, &num_ext_node);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -808,7 +834,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[5] > 0) {
       /* increment to the next starting position */
       num_n_cmaps += num_node_cmaps[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[5], start, &num_n_cmaps);
+#else
+      status = nc_put_var1_int(neid, varid_idx[5], start, &num_n_cmaps);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
@@ -822,7 +852,11 @@ int ne_put_loadbal_param_cc(int   neid,
     if (varid_idx[6] > 0) {
       /* increment to the next starting position */
       num_e_cmaps += num_elem_cmaps[iproc];
+#if defined(NC_NETCDF4)
       status = nc_put_var1_longlong(neid, varid_idx[6], start, &num_e_cmaps);
+#else
+      status = nc_put_var1_int(neid, varid_idx[6], start, &num_e_cmaps);
+#endif
       if (status != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,

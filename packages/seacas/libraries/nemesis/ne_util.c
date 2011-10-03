@@ -350,7 +350,11 @@ int ne_get_idx(int neid, char *ne_var_name, int64_t *index, int pos)
   int      status;
   int      varid;
   size_t   start[1], count[1];
+#if defined(NC_NETCDF4)
   long long varidx[2];
+#else
+  int varidx[2];
+#endif
   char   errmsg[MAX_ERR_LENGTH];
 /*-----------------------------Execution begins-----------------------------*/
 
@@ -375,7 +379,11 @@ int ne_get_idx(int neid, char *ne_var_name, int64_t *index, int pos)
       count[0] = 2;
     }
 
+#if defined(NC_NETCDF4)
     status = nc_get_vara_longlong(neid, varid, start, count, varidx);
+#else
+    status = nc_get_vara_int(neid, varid, start, count, varidx);
+#endif
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
