@@ -91,7 +91,7 @@ public:
   */
   NStep(int numberOfStepsForConvergence, 
 	int numberOfNonlinearSolvesInRampingPhase = 0, 
-	int rampingPhaseNumberOfStepsForConvergence = 0,
+	int rampingPhaseNumberOfStepsForConvergence = 10,
 	const NOX::Utils* u = NULL);
 
   // derived

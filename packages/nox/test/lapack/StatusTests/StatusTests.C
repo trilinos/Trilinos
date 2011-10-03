@@ -784,14 +784,27 @@ int main(int argc, char *argv[])
     Teuchos::RCP<NOX::LAPACK::Group> group = 
       Teuchos::rcp(new NOX::LAPACK::Group(interface));
 
-    RCP<Combo> combo = rcp(new Combo(Combo::OR));
-    RCP<NStep> nstep = rcp(new NStep(1, 2, 3));
-    RCP<MaxIters> mist = rcp(new MaxIters(20));
-    combo->addStatusTest(nstep);
-    combo->addStatusTest(mist);
-    
+    Teuchos::ParameterList p;
+
+    p.set("Test Type", "Combo");
+    p.set("Combo Type", "OR");
+    p.set("Number of Tests", 2);
+
+    Teuchos::ParameterList& nstep = p.sublist("Test 0");
+    nstep.set("Test Type", "NStep");
+    nstep.set<int>("Number of Nonlinear Iterations", 2);
+    nstep.set<int>("Number of Initial Ramping Steps", 2);
+    nstep.set<int>("Number of Nonlinear Iterations in Ramping Phase", 3);
+
+    Teuchos::ParameterList& maxiters = p.sublist("Test 1");
+    maxiters.set("Test Type", "MaxIters");
+    maxiters.set("Maximum Iterations", 20);
+
+    RCP<NOX::StatusTest::Generic> st = 
+      NOX::StatusTest::buildStatusTests(p, utils);
+
     Teuchos::RCP<NOX::Solver::Generic> solver = 
-      NOX::Solver::buildSolver(group, combo, solverParametersPtr);
+      NOX::Solver::buildSolver(group, st, solverParametersPtr);
 
     // first time step
     status = solver->solve();
@@ -805,12 +818,12 @@ int main(int argc, char *argv[])
     // third time step (out of ramping phase)
     solver->reset(solver->getSolutionGroup().getX());
     status = solver->solve();
-    TEUCHOS_ASSERT(solver->getNumIterations() == 1);
+    TEUCHOS_ASSERT(solver->getNumIterations() == 2);
 
     // fourth time step (out of ramping phase)
     solver->reset(solver->getSolutionGroup().getX());
     status = solver->solve();
-    TEUCHOS_ASSERT(solver->getNumIterations() == 1);
+    TEUCHOS_ASSERT(solver->getNumIterations() == 2);
 
     // A failure reported by stagnation is a passing test
     if (status == NOX::StatusTest::Converged) {

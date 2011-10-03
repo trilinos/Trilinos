@@ -189,6 +189,14 @@ namespace StatusTest {
        <li> "Tolerance" <double> required tolerance for the test to return a converged status. (default = 1.0e-8)
      </ul>
 
+     Additional parameters valid for a NStep test
+     (NOX::StatusTest::RelativeNormF): 
+     <ul> 
+       <li> "Number of Nonlinear Iterations" <int> Number of nonlinear iterations to take until convergence (default = 1)
+       <li> "Number of Initial Ramping Steps" <int> Number of nonlinear solves in an initial ramping phase (default = 0)
+       <li> "Number of Nonlinear Iterations in Ramping Phase" <int> Number of nonlinear iterations to take until convergence in ramping phase (default = 10)
+     </ul>
+
      Additional parameters valid for a "User Defined" test: 
      <ul> 
        <li> "User Status Test" < Teuchos::RCP<NOX::StatusTest::Generic> > A status test suppied by the user.  It is very important that when registering this status test, that the user set it as a "Generic" object since there is no implicit casting on the ParameterList's get method.  See the example below.
@@ -315,6 +323,10 @@ private:
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildRelativeNormFTest(Teuchos::ParameterList& p, 
 			 const NOX::Utils& utils) const;
+
+  Teuchos::RCP<NOX::StatusTest::Generic> 
+  buildNStepTest(Teuchos::ParameterList& p, 
+		 const NOX::Utils& utils) const;
 
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildUserDefinedTest(Teuchos::ParameterList& p, 
