@@ -30,7 +30,7 @@ public:
      */
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getBCWorksets(const panzer::BC & bc,
+   getSideWorksets(const panzer::BC & bc,
                  const panzer::InputPhysicsBlock & pb) const = 0;
 };
 

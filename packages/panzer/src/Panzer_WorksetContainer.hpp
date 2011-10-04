@@ -3,10 +3,17 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_InputPhysicsBlocks.hpp"
+#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
 
 namespace panzer {
+
+struct LessBC_str {
+   bool operator()(const BC& left, 
+                   const BC& right) const
+   { return   left.sidesetID()+"_"+left.elementBlockID() 
+            < right.sidesetID()+"_"+right.elementBlockID(); }
+};
 
 /** \brief Class that provides access to worksets on
   * each element block and side set.
@@ -44,19 +51,19 @@ public:
    /** Set the workset factory, and as a consequence clear out all previously computed
      * worksets.
      */ 
-   void setFactory(const Teuchos::RCP<const WorksetFactoryBase> & factory);
+   void setFactory(const Teuchos::RCP<const WorksetFactoryBase> & factory)
    { clear(); wkstFactory_ = factory; }
 
    //! Access the workset factory pointer.
-   Teuchos::RCP<const WorksetFactoryBase> getFactory() const;
+   Teuchos::RCP<const WorksetFactoryBase> getFactory() const
    { return wkstFactory_; }
 
    //! The input physics block map
-   void setInputPhysicsBlockMap(const std::map<std::string,InputPhysicsBlock> & ebToIpb);
+   void setInputPhysicsBlockMap(const std::map<std::string,InputPhysicsBlock> & ebToIpb)
    { ebToIpb_ = ebToIpb; }   
   
    //! get a reference to the input physics block map
-   const std::map<std::string,InputPhysicsBlock> & getInputPhysicsBlockMap() const;
+   const std::map<std::string,InputPhysicsBlock> & getInputPhysicsBlockMap() const
    { return ebToIpb_; }
 
    /** Clear all allocated worksets, maintain the workset factory and element to physics
@@ -74,19 +81,19 @@ public:
    std::map<unsigned,Workset> & getSideWorksets(const BC & bc);
 
    //! Iterator access to volume worksets
-   inline std::vector<Workset>::iterator begin(const std::string & eBlock);
+   inline std::vector<Workset>::iterator begin(const std::string & eBlock)
    { return getVolumeWorksets(eBlock).begin(); }
 
    //! Iterator access to volume worksets
-   inline std::vector<Workset>::iterator end(const std::string & eBlock);
+   inline std::vector<Workset>::iterator end(const std::string & eBlock)
    { return getVolumeWorksets(eBlock).end(); }
 
    //! Iterator access to side worksets
-   inline std::map<unsigned,Workset>::iterator begin(const BC & bc);
+   inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
    { return getSideWorksets(bc).begin(); }
 
    //! Iterator access to side worksets
-   inline std::map<unsigned,Workset>::iterator end(const BC & bc);
+   inline std::map<unsigned,Workset>::iterator end(const BC & bc)
    { return getSideWorksets(bc).end(); }
 
 
@@ -102,7 +109,7 @@ public:
 
 private:
    typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC> BCMap;
+   typedef std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC_str> BCMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,InputPhysicsBlock> ebToIpb_; //! Maps element blocks to input physics block objects

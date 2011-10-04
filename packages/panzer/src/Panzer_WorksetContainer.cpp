@@ -24,7 +24,7 @@ WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> 
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)
-   : wkstFactory_(wc.wkstFactory), ebToIpb_(wc.ebToIpb_), worksetSize_(wc.worksetSize_)
+   : wkstFactory_(wc.wkstFactory_), ebToIpb_(wc.ebToIpb_), worksetSize_(wc.worksetSize_)
 {
 }
 
@@ -44,7 +44,7 @@ const InputPhysicsBlock & WorksetContainer::lookupInputPhysicsBlock(const std::s
  
    TEST_FOR_EXCEPTION(itr==ebToIpb_.end(),std::logic_error, 
                       "WorksetContainer::lookupInputPhysicsBlock no InputPhysicsBlock object is associated "
-                      "with the element block \""+eBlock"\".");
+                      "with the element block \""+eBlock+"\".");
 
    return itr->second;
 }
@@ -77,11 +77,12 @@ WorksetContainer::getSideWorksets(const BC & bc)
    BCMap::iterator itr = sideWorksets_.find(bc);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(bc.elementBlockID());
+      const std::string & eBlock = bc.elementBlockID();
+      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
       worksetMap = wkstFactory_->getSideWorksets(bc,ipb);
 
       // store map for reuse in the future
-      sideWorksets_[eBlock] = worksetMap;
+      sideWorksets_[bc] = worksetMap;
    }
    else 
       worksetMap = itr->second;
@@ -106,13 +107,12 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
    for(std::size_t i=0;i<bcs.size();i++) {
       // couldn't find workset, build it!
       const BC & bc = bcs[i];
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(bc.elementBlockID());
+      const std::string & eBlock = bc.elementBlockID();
+      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
 
       // store map for reuse in the future
-      sideWorksets_[eBlock] = wkstFactory_->getSideWorksets(bc,ipb);
+      sideWorksets_[bc] = wkstFactory_->getSideWorksets(bc,ipb);
    }
 }
 
 }
-
-#endif
