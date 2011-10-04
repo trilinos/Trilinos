@@ -123,8 +123,9 @@ public:
     Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
     /////////////////// calculate local damping factors omega
-    Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
-
+    //Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
+    Teuchos::ArrayRCP<Scalar> RowBasedOmega = RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
 
     /////////////////// prolongator smoothing using local damping parameters omega
     RCP<Operator> P_smoothed = Teuchos::null;
@@ -158,7 +159,8 @@ public:
 
   //@}
 
-  Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+  //Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
   {
     RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
 
@@ -262,14 +264,15 @@ public:
     }
 
     /////////////////// transform ColBasedOmegas to row based omegas (local ids)
-    Teuchos::ArrayRCP< Scalar > RowBasedOmegas =
+    //Teuchos::ArrayRCP< Scalar > RowBasedOmegas = Teuchos::null;
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
         TransformCol2RowBasedOmegas(ColBasedOmegas, colbasedomegamap, DinvAPtent);
 
     return RowBasedOmegas;
   }
 
   // This routine still has Epetra/Tpetra specific code
-  Teuchos::ArrayRCP< Scalar > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const RCP<const Operator>& Op) const
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const RCP<const Operator>& Op) const
   {
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
 
@@ -377,7 +380,9 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
 
-    return RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
+    //RowBasedOmega_data_ret = RowBasedOmega_data;
+    //return RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
+    return RowBasedOmegas;
   }
 
   RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
