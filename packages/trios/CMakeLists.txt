@@ -65,6 +65,13 @@ CONFIGURE_FILE(
   COPYONLY
 )
 
+# Copy the ProcessXDR.cmake file
+CONFIGURE_FILE(
+  ${PACKAGE_SOURCE_DIR}/cmake/UseTrios.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
+  COPYONLY
+)
+
 
 ###########################################################
 # C) Add the libraries, tests, and examples
@@ -92,7 +99,8 @@ PACKAGE_POSTPROCESS()
 
 # Install cmake scripts so others can use them
 INSTALL(FILES 
-  ${PACKAGE_SOURCE_DIR}/cmake/ProcessXDR.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/ProcessXDR.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
   DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"
 )
 
