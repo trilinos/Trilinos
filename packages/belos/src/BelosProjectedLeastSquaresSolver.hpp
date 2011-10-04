@@ -65,6 +65,46 @@ namespace Belos {
   ///   it contains may change at any time.
   namespace details {
 
+    // Anonymous namespace restricts contents to file scope.
+    namespace {
+      /// \fn printMatrix
+      /// \brief Print A, a dense matrix, in Matlab-readable ASCII format.
+      template<class Scalar>
+      void 
+      printMatrix (std::ostream& out, 
+		   const std::string& name,
+		   const Teuchos::SerialDenseMatrix<int, Scalar>& A)
+      {
+	using std::endl;
+
+        const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	out << name << " = " << endl << '[';
+	if (numCols == 1) {
+	  // Compact form for column vectors; valid Matlab.
+	  for (int i = 0; i < numRows; ++i) {
+	    out << A(i,0);
+	    if (i < numRows-1) {
+	      out << "; ";
+	    } 
+	  }
+	} else {
+	  for (int i = 0; i < numRows; ++i) {
+	    for (int j = 0; j < numCols; ++j) {
+	      out << A(i,j);
+	      if (j < numCols-1) {
+		out << ", ";
+	      } else if (i < numRows-1) {
+		out << ';' << endl;
+	      }
+	    }
+	  }
+	}
+	out << ']' << endl;
+      }
+    } // namespace (anonymous)
+
     /// \struct ProjectedLeastSquaresProblem
     /// \brief "Container" for the data representing the projected least-squares problem.
     /// \author Mark Hoemmen
@@ -133,8 +173,8 @@ namespace Belos {
 	R (maxNumIterations+1, maxNumIterations),
 	y (maxNumIterations+1, 1),
 	z (maxNumIterations+1, 1),
-	theCosines (maxNumIterations),
-	theSines (maxNumIterations)
+	theCosines (maxNumIterations+1),
+	theSines (maxNumIterations+1)
       {}
     };
     
@@ -159,6 +199,10 @@ namespace Belos {
       typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
 
     public:
+      ProjectedLeastSquaresSolver (std::ostream& debugStream) :
+	dbg_ (debugStream)
+      {}
+
       /// \brief Update column curCol of the projected least-squares problem.
       ///
       /// \param problem [in/out] The projected least-squares problem.
@@ -192,6 +236,31 @@ namespace Belos {
 				    startCol, endCol);
       }
 
+      //! Test Givens rotations.
+      void
+      testGivensRotations (std::ostream& out)
+      {
+	using std::endl;
+
+	out << "Testing Givens rotations:" << endl;
+	Scalar x = STS::random();
+	Scalar y = STS::random();
+	out << "  x = " << x << ", y = " << y << endl;
+
+	Scalar theCosine, theSine, result;
+	blas_type blas;
+	computeGivensRotation (x, y, theCosine, theSine, result);
+	out << "-- After computing rotation:" << endl;
+	out << "---- cos,sin = " << theCosine << "," << theSine << endl;
+	out << "---- x = " << x << ", y = " << y 
+	    << ", result = " << result << endl;
+
+	blas.ROT (1, &x, 1, &y, 1, &theCosine, &theSine);
+	out << "-- After applying rotation:" << endl;
+	out << "---- cos,sin = " << theCosine << "," << theSine << endl;
+	out << "---- x = " << x << ", y = " << y << endl;
+      }
+
       /// \brief Test \c updateColumnGivens() against \c updateColumnLapack().
       ///
       /// \param out [out] Output stream to which to print results.
@@ -199,6 +268,9 @@ namespace Belos {
       /// \param numCols [in] Number of columns in the projected
       ///   least-squares problem to test.  (The number of rows is one
       ///   plus the number of columns.)
+      ///
+      /// \param verbose [in] Whether to print verbose output (e.g.,
+      ///   the test problem and results).
       ///
       /// \return Whether the least-squares solution error is within the
       ///   expected bound.
@@ -214,17 +286,20 @@ namespace Belos {
       /// column in turn).  We print out the results to the given output
       /// stream.
       bool
-      testUpdateColumn (std::ostream& out, const int numCols) const
+      testUpdateColumn (std::ostream& out, 
+			const int numCols,
+			const bool verbose=false) const
       {
 	using Teuchos::Array;
 	using std::endl;
+	const bool testBlockGivens = false;
 	
 	TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
 			   "numCols = " << numCols << " <= 0.");
 	const int numRows = numCols + 1;
 
 	mat_type H (numRows, numCols);
-	mat_type z (numRows, numCols);
+	mat_type z (numRows, 1);
 
 	mat_type R_givens (numRows, numCols);
 	mat_type y_givens (numRows, 1);
@@ -232,35 +307,52 @@ namespace Belos {
 	Array<Scalar> theCosines (numCols);
 	Array<Scalar> theSines (numCols);
 
+	mat_type R_blockGivens (numRows, numCols);
+	mat_type y_blockGivens (numRows, 1);
+	mat_type z_blockGivens (numRows, 1);
+	Array<Scalar> blockCosines (numCols);
+	Array<Scalar> blockSines (numCols);
+	const int panelWidth = std::min (3, numCols);
+
 	mat_type R_lapack (numRows, numCols);
 	mat_type y_lapack (numRows, 1);
 	mat_type z_lapack (numRows, 1);
 
-	// Make a random least-squares problem.  In GMRES, z always starts
-	// out with only the first entry being nonzero.  That entry always
-	// has nonnegative real part and zero imaginary part, since it is
-	// the initial residual norm.
-	H.random ();
-	{
-	  const magnitude_type z_init = STM::random ();
-	  const magnitude_type z_first = (z_init < 0) ? -z_init : z_init;
-
-	  // NOTE I'm assuming here that "scalar_type = magnitude_type"
-	  // assignments make sense.
-	  z(0,0) = z_first;
-	  z_givens(0,0) = z_first;
-	  z_lapack(0,0) = z_first;
+	// Make a random least-squares problem.  
+	makeRandomProblem (H, z);
+	if (verbose) {
+	  printMatrix<Scalar> (out, "H", H);
+	  printMatrix<Scalar> (out, "z", z);
 	}
+
+	// Set up the right-hand side copies for each of the methods.
+	// Each method is free to overwrite its given right-hand side.
+	z_givens.assign (z);
+	if (testBlockGivens) {
+	  z_blockGivens.assign (z);
+	}
+	z_lapack.assign (z);
 
 	//
 	// Imitate how one would update the least-squares problem in a
 	// typical GMRES implementation, for each updating method.
 	//
-	// Update using Givens rotations.
+	// Update using Givens rotations, one at a time.
 	magnitude_type residualNormGivens = STM::zero();
 	for (int curCol = 0; curCol < numCols; ++curCol) {
 	  residualNormGivens = updateColumnGivens (H, R_givens, y_givens, z_givens, 
 						   theCosines, theSines, curCol);
+	}
+	// Update using the "panel left-looking" Givens approach, with
+	// the given panel width.
+	magnitude_type residualNormBlockGivens = STM::zero();
+	if (testBlockGivens) {
+	  for (int startCol = 0; startCol < numCols; startCol += panelWidth) {
+	    int endCol = std::min (startCol + panelWidth, numCols - 1);
+	    residualNormBlockGivens = 
+	      updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
+				   blockCosines, blockSines, startCol, endCol);
+	  }
 	}
 	// Update using LAPACK's least-squares solver.
 	magnitude_type residualNormLapack = STM::zero();
@@ -269,82 +361,191 @@ namespace Belos {
 						   curCol);
 	}
 
-	// Compute the condition number of the least-squares problem,
-	// using the residual from the LAPACK method.
+	// Compute the condition number of the least-squares problem.
+	// This requires a residual, so use the residual from the
+	// LAPACK method.  All that the method needs for an accurate
+	// residual norm is forward stability.
 	const magnitude_type leastSquaresCondNum = 
 	  leastSquaresConditionNumber (H, z, residualNormLapack);
 
-	// Compute the relative least-squares solution error.  We assume
-	// that the LAPACK solution is "exact" and compare against the
-	// Givens rotations solution.  This is taking liberties with the
-	// definition of condition number, but it's the best we can do,
-	// since we don't know the exact solution.
-	magnitude_type leastSquaresSolutionError = STM::zero();
-	{
-	  mat_type y (numCols, 1);
-	  for (int i = 0; i < numCols; ++i) {
-	    y(i,0) = y_givens(i,0) - y_lapack(i,0);
-	  }
-	  const magnitude_type scalingFactor = y_lapack.normFrobenius();
+	// Compute the relative least-squares solution error for both
+	// Givens methods.  We assume that the LAPACK solution is
+	// "exact" and compare against the Givens rotations solution.
+	// This is taking liberties with the definition of condition
+	// number, but it's the best we can do, since we don't know
+	// the exact solution and don't have an extended-precision
+	// solver.
+	const magnitude_type givensSolutionError = 
+	  solutionError (y_givens, y_lapack);
+	const magnitude_type blockGivensSolutionError = testBlockGivens ?
+	  solutionError (y_blockGivens, y_lapack) : 
+	  STM::zero();
 
-	  // If y_lapack has zero norm, just use the absolute difference.
-	  leastSquaresSolutionError = y.normFrobenius() / 
-	    (scalingFactor == STM::zero() ? STM::one() : scalingFactor);
-	}    
-
-	// Compute the normwise difference between the two computed R factors.
-	magnitude_type R_factorDeviation = STM::zero();
-	{
-	  // Copy out the R factors.  R_lapack, if not also R_givens,
-	  // contains some additional stuff below the upper triangle, so
-	  // we copy out the upper triangle (including the diagonal).
+	// If printing out the matrices, copy out the upper triangular
+	// factors for printing.  (Both methods are free to leave data
+	// below the lower triangle.)
+	if (verbose) {
 	  mat_type R_factorFromGivens (numCols, numCols);
+	  mat_type R_factorFromBlockGivens (numCols, numCols);
 	  mat_type R_factorFromLapack (numCols, numCols);
+
 	  for (int j = 0; j < numCols; ++j) {
 	    for (int i = 0; i <= j; ++i) {
 	      R_factorFromGivens(i,j) = R_givens(i,j);
+	      if (testBlockGivens) {
+		R_factorFromBlockGivens(i,j) = R_blockGivens(i,j);
+	      }
 	      R_factorFromLapack(i,j) = R_lapack(i,j);
 	    }
 	  }
-	  mat_type R_diff (numCols, numCols);
-	  for (int j = 0; j < numCols; ++j) {
-	    for (int i = 0; i < numCols; ++i) {
-	      R_diff(i,j) = R_factorFromGivens(i,j) - R_factorFromLapack(i,j);
-	    }
+
+	  printMatrix<Scalar> (out, "R_givens", R_factorFromGivens);
+	  printMatrix<Scalar> (out, "y_givens", y_givens);
+	  printMatrix<Scalar> (out, "z_givens", z_givens);
+
+	  if (testBlockGivens) {
+	    printMatrix<Scalar> (out, "R_blockGivens", R_factorFromBlockGivens);
+	    printMatrix<Scalar> (out, "y_blockGivens", y_blockGivens);
+	    printMatrix<Scalar> (out, "z_blockGivens", z_blockGivens);
 	  }
-	  R_factorDeviation = R_diff.normFrobenius();
+
+	  printMatrix<Scalar> (out, "R_lapack", R_factorFromLapack);
+	  printMatrix<Scalar> (out, "y_lapack", y_lapack);
+	  printMatrix<Scalar> (out, "z_lapack", z_lapack);
 	}
 
 	// Compute the (Frobenius) norm of the original matrix H.
 	const magnitude_type H_norm = H.normFrobenius();
 
-	out << "||R_givens - R_lapack||_F = " << R_factorDeviation << endl;
 	out << "||H||_F = " << H_norm << endl;
+
+	out << "||H y_givens - z||_2 / ||H||_F = " 
+	    << leastSquaresResidualNorm (H, y_givens, z) / H_norm << endl;
+	if (testBlockGivens) {
+	  out << "||H y_blockGivens - z||_2 / ||H||_F = " 
+	      << leastSquaresResidualNorm (H, y_blockGivens, z) / H_norm << endl;
+	}
+	out << "||H y_lapack - z||_2 / ||H||_F = " 
+	    << leastSquaresResidualNorm (H, y_lapack, z) / H_norm << endl;
+
 	out << "||y_givens - y_lapack||_2 / ||y_lapack||_2 = " 
-	    << leastSquaresSolutionError << endl;
-	out << "Least-squares condition number = " << leastSquaresCondNum << endl;
+	    << givensSolutionError << endl;
+	if (testBlockGivens) {
+	  out << "||y_blockGivens - y_lapack||_2 / ||y_lapack||_2 = " 
+	      << blockGivensSolutionError << endl;
+	}
 
-	// Now for the controversial part of the test: judging whether we
-	// succeeded.  This includes the problem's condition number, which
-	// is a measure of the maximum perturbation in the solution for
-	// which we can still say that the solution is valid.  We include
-	// a little wiggle room, computing by the conventional
-	// Wilkinsonian square-root root, times 10 for good measure.
-	// (This doesn't really have anything to do with probability.
-	// What's an "average problem"?  However, you can explain it to
-	// yourself with a standard deviation argument.)
+	out << "Least-squares condition number = " 
+	    << leastSquaresCondNum << endl;
+
+	// Now for the controversial part of the test: judging whether
+	// we succeeded.  This includes the problem's condition
+	// number, which is a measure of the maximum perturbation in
+	// the solution for which we can still say that the solution
+	// is valid.  We include a little wiggle room by including a
+	// factor proportional to the square root of the number of
+	// floating-point operations that influence the last entry
+	// (the conventional Wilkinsonian heuristic), times 10 for
+	// good measure.
+	//
+	// (The square root looks like it has something to do with an
+	// average-case probabilistic argument, but doesn't really.
+	// What's an "average problem"?)
+	const magnitude_type wiggleFactor = 
+	  10 * STM::squareroot( numRows*numCols );
+	const magnitude_type solutionErrorBoundFactor = 
+	  wiggleFactor * leastSquaresCondNum;
 	const magnitude_type solutionErrorBound = 
-	  10 * STM::squareroot( numRows*numCols ) * leastSquaresCondNum;
-	out << "Solution error bound: 10*sqrt(numRows*numCols)*cond = " 
-	    << solutionErrorBound << endl;
+	  solutionErrorBoundFactor * STS::eps();
+	out << "Solution error bound: " << solutionErrorBoundFactor 
+	    << " * eps = " << solutionErrorBound << endl;
 
-	if (leastSquaresSolutionError > solutionErrorBound)
+	if (givensSolutionError > solutionErrorBound)
+	  return false;
+	else if (testBlockGivens && blockGivensSolutionError > solutionErrorBound)
 	  return false;
 	else
 	  return true;
       }
 
     private:
+      //! Debug output stream.
+      std::ostream& dbg_;
+
+      //! Make a random least-squares problem.
+      void
+      makeRandomProblem (mat_type& H, mat_type& z) const
+      {
+	// In GMRES, z always starts out with only the first entry
+	// being nonzero.  That entry always has nonnegative real part
+	// and zero imaginary part, since it is the initial residual
+	// norm.
+	H.random ();
+	// Zero out the entries below the subdiagonal of H, so that it
+	// is upper Hessenberg.
+	for (int j = 0; j < H.numCols(); ++j) {
+	  for (int i = j+2; i < H.numRows(); ++i) {
+	    H(i,j) = STS::zero();
+	  }
+	}
+	// Initialize z, the right-hand side of the least-squares
+	// problem.  Make the first entry of z nonzero.
+	{
+	  // It's still possible that a random number will come up
+	  // zero after 1000 trials, but unlikely.  Nevertheless, it's
+	  // still important not to allow an infinite loop, for
+	  // example if the pseudorandom number generator is broken
+	  // and always returns zero.
+	  const int numTrials = 1000;
+	  magnitude_type z_init = STM::zero();
+	  for (int trial = 0; trial < numTrials && z_init == STM::zero(); ++trial) {
+	    z_init = STM::random();
+	  }
+	  TEST_FOR_EXCEPTION(z_init == STM::zero(), std::runtime_error,
+			     "After " << numTrials << " trial" 
+			     << (numTrials != 1 ? "s" : "") 
+			     << ", we were unable to generate a nonzero pseudo"
+			     "random real number.  This most likely indicates a "
+			     "broken pseudorandom number generator.");
+	  const magnitude_type z_first = (z_init < 0) ? -z_init : z_init;
+
+	  // NOTE I'm assuming here that "scalar_type = magnitude_type"
+	  // assignments make sense.
+	  z(0,0) = z_first;
+	}
+      }
+
+      /// \brief Compute the Givens rotation corresponding to [x; y].
+      ///
+      /// The result of applying the rotation is [result; 0].
+      void
+      computeGivensRotation (const Scalar& x, 
+			     const Scalar& y, 
+			     Scalar& theCosine, 
+			     Scalar& theSine,
+			     Scalar& result) const
+      {
+	// _LARTG, an LAPACK aux routine, is slower but more accurate
+	// than the BLAS' _ROTG.
+	const bool useLartg = false;
+
+	if (useLartg) {
+	  lapack_type lapack;
+	  // _LARTG doesn't clobber its input arguments x and y.
+	  lapack.LARTG (x, y, &theCosine, &theSine, &result);
+	} else {
+	  // _ROTG clobbers its first two arguments.  x is overwritten
+	  // with the result of applying the Givens rotation: [x; y] ->
+	  // [x (on output); 0].  y is overwritten with the "fast"
+	  // Givens transform (see Golub and Van Loan, 3rd ed.).
+	  Scalar x_temp = x;
+	  Scalar y_temp = y;
+	  blas_type blas;
+	  blas.ROTG (&x_temp, &y_temp, &theCosine, &theSine);
+	  result = x_temp;
+	}
+      }
+
       /// \brief The (largest, smallest) singular values of the given matrix.
       ///
       /// We use these for computing the 2-norm condition number of the
@@ -449,6 +650,48 @@ namespace Belos {
 	// Condition number for the full-rank least-squares problem.
 	return 2 * A_cond / cosTheta + tanTheta * A_cond * A_cond;
       }
+      
+      //! \f$\| b - A x \|_2\f$ (Frobenius norm if b has more than one column).
+      magnitude_type
+      leastSquaresResidualNorm (const mat_type& A,
+				const mat_type& x,
+				const mat_type& b) const
+      {
+	mat_type r (b.numRows(), b.numCols());
+
+	// r := b - A*x
+	r.assign (b);
+	blas_type blas;
+	blas.GEMM (Teuchos::NO_TRANS, Teuchos::NO_TRANS, 
+		   b.numRows(), b.numCols(), A.numCols(),
+		   -STS::one(), A.values(), A.stride(), x.values(), x.stride(),
+		   STS::one(), r.values(), r.stride());
+	return r.normFrobenius ();
+      }
+
+      /// \brief ||x_approx - x_exact||_2 // ||x_exact||_2.
+      ///
+      /// Use the Frobenius norm if more than one column.
+      /// Don't scale if ||x_exact|| == 0.
+      magnitude_type
+      solutionError (const mat_type& x_approx,
+		     const mat_type& x_exact) const
+      {
+	const int numRows = x_exact.numRows();
+	const int numCols = x_exact.numCols();
+
+	mat_type x_diff (numRows, numCols);
+	for (int j = 0; j < numCols; ++j) {
+	  for (int i = 0; i < numRows; ++i) {
+	    x_diff(i,j) = x_exact(i,j) - x_approx(i,j);
+	  }
+	}
+	const magnitude_type scalingFactor = x_exact.normFrobenius();
+
+	// If x_exact has zero norm, just use the absolute difference.
+	return x_diff.normFrobenius() / 
+	  (scalingFactor == STM::zero() ? STM::one() : scalingFactor);
+      }
 
       /// \brief Update current column using Givens rotations.
       ///
@@ -493,37 +736,76 @@ namespace Belos {
 			  Teuchos::ArrayView<scalar_type> theSines,
 			  const int curCol) const
       {
-	const int numRows = curCol + 2;
-	const int LDR = R.stride();
+	using std::endl;
 
-	// View of H( 1:curCol+1, curCol ) (in Matlab notation).
+	const int numRows = curCol + 2; // curCol is zero-based
+	const int LDR = R.stride();
+	const bool extraDebug = false;
+
+	if (extraDebug) {
+	  dbg_ << "updateColumnGivens: curCol = " << curCol << endl;
+	}
+
+	// View of H( 1:curCol+1, curCol ) (in Matlab notation, if
+	// curCol were a one-based index, as it would be in Matlab but
+	// is not here).
 	const mat_type H_col (Teuchos::View, H, numRows, 1, 0, curCol);
 
-	// View of R( 1:curCol+1, curCol ).
+	// View of R( 1:curCol+1, curCol ) (again, in Matlab notation,
+	// if curCol were a one-based index).
 	mat_type R_col (Teuchos::View, R, numRows, 1, 0, curCol);
 
 	// 1. Copy the current column from H into R, where it will be
 	//    modified.
 	R_col.assign (H_col);
 
+	if (extraDebug) {
+	  printMatrix<Scalar> (dbg_, "R_col before ", R_col);
+	}
+
 	// 2. Apply all the previous Givens rotations, if any, to the
 	//    current column of the matrix.
 	blas_type blas;
 	for (int j = 0; j < curCol; ++j) {
-	  blas.ROT (1, 
-		    &R_col(j,0), LDR, &R_col(j+1,0), LDR,
-		    &theCosines[j], &theSines[j]);
+	  // BLAS::ROT really should take "const Scalar*" for these
+	  // arguments, but it wants a "Scalar*" instead, alas.
+	  Scalar theCosine = theCosines[j];
+	  Scalar theSine = theSines[j];
+	  
+	  if (extraDebug) {
+	    dbg_ << "  j = " << j << ": (cos,sin) = " 
+		 << theCosines[j] << "," << theSines[j] << endl;
+	  }
+	  blas.ROT (1, &R_col(j,0), LDR, &R_col(j+1,0), LDR,
+		    &theCosine, &theSine);
+	}
+	if (extraDebug && curCol > 0) {
+	  printMatrix<Scalar> (dbg_, "R_col after applying previous "
+			       "Givens rotations", R_col);
 	}
 
 	// 3. Calculate new Givens rotation for R(curCol, curCol),
 	//    R(curCol+1, curCol).
-	magnitude_type theCosine, theSine;
-	blas.ROTG (&R_col(curCol,0), &R_col(curCol+1,0), &theCosine, &theSine);
+	Scalar theCosine, theSine, result;
+	computeGivensRotation (R_col(curCol,0), R_col(curCol+1,0), 
+			       theCosine, theSine, result);
 	theCosines[curCol] = theCosine;
 	theSines[curCol] = theSine;
 
-	// 4. Zero out the subdiagonal element R(curCol+1, curCol).
-	R_col(curCol+1,0) = STS::zero();
+	if (extraDebug) {
+	  dbg_ << "  New cos,sin = " << theCosine << "," << theSine << endl;
+	}
+
+	// 4. _Apply_ the new Givens rotation.  We don't need to
+	//    invoke _ROT here, because computeGivensRotation()
+	//    already gives us the result: [x; y] -> [result; 0].
+	R_col(curCol, 0) = result;
+	R_col(curCol+1, 0) = STS::zero();
+
+	if (extraDebug) {
+	  printMatrix<Scalar> (dbg_, "R_col after applying current "
+			       "Givens rotation", R_col);
+	}
 
 	// 5. Apply the resulting Givens rotation to z (the right-hand
 	//    side of the projected least-squares problem).
@@ -543,25 +825,36 @@ namespace Belos {
 	// solution, so first copy z into y.  We need to keep z, since
 	// each call to one of this class' update routines updates it.
 	{
-	  // If z has more columns than y, we ignore the remaining columns
-	  // of z when solving the upper triangular system.  They will get
-	  // updated correctly, but they just won't be counted in the
-	  // solution.  Of course, z should always have been initialized
-	  // with the same number of columns as y, but we relax this
-	  // unnecessary restriction here.
+	  TEST_FOR_EXCEPTION(y.numCols() > z.numCols(), std::logic_error,
+			     "y.numCols() = " << y.numCols() 
+			     << " > z.numCols() = " << z.numCols() << ".");
+	  // If z has more columns than y, we ignore the remaining
+	  // columns of z when solving the upper triangular system.
+	  // They will get updated correctly, but they just won't be
+	  // counted in the solution.  Of course, z should always have
+	  // been initialized with the same number of columns as y,
+	  // but we relax this unnecessary restriction here.
 	  const mat_type z_view (Teuchos::View, z, numRows, y.numCols());
 	  mat_type y_view (Teuchos::View, y, numRows, y.numCols());
 	  y_view.assign (z_view);
+
+	  // Solve Ry = z.
+	  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+		    Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(), 
+		    STS::one(), R.values(), LDR, y.values(), y.stride());
 	}
-	// Solve Ry = z.  (Only use the first curCol+1 entries of z.)
-	blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		  Teuchos::NON_UNIT_DIAG, numRows - 1, numRows - 1,
-		  STS::one(), R.values(), LDR, y.values(), y.stride());
+
+	if (extraDebug) {
+	  //mat_type R_after (Teuchos::View, R, numRows, numRows-1);
+	  //printMatrix<Scalar> (dbg_, "R_after", R_after);
+	  //mat_type z_after (Teuchos::View, z, numRows, z.numCols());
+	  printMatrix<Scalar> (dbg_, "z_after", z);
+	}
 
 	// The last entry of z is the nonzero part of the residual of the
 	// least-squares problem.  Its magnitude gives the residual 2-norm
 	// of the least-squares problem.
-	return STS::magnitude( z(numRows, 0) );
+	return STS::magnitude( z(numRows-1, 0) );
       }
 
       /// \brief Update current column using LAPACK least-squares solver.
@@ -620,10 +913,10 @@ namespace Belos {
 	// magnitude, since computing the magnitude may overflow due
 	// to squaring and square root to int.  Hopefully LAPACK
 	// doesn't ever overflow int this way.
-	const int lwork = static_cast<int> (STS::real (lworkScalar));
+	const int lwork = std::max (1, static_cast<int> (STS::real (lworkScalar)));
 
 	// Allocate workspace for solving the least-squares problem.
-	Teuchos::Array<Scalar> work (lwork, STS::zero());
+	Teuchos::Array<Scalar> work (lwork);
 
 	// Solve the least-squares problem.  The ?: operator prevents
 	// accessing the first element of the work array, if it has
@@ -643,7 +936,7 @@ namespace Belos {
 	// Extract the projected least-squares problem's residual error.
 	// It's the magnitude of the last entry of y_view on output from
 	// LAPACK's least-squares solver.  
-	return STS::magnitude( y_view(numRows, 0) );	
+	return STS::magnitude( y_view(numRows-1, 0) );	
       }
 
       /// \brief Update columns [startCol,endCol] of the projected least-squares problem.
@@ -670,12 +963,12 @@ namespace Belos {
 	const int numCols = endCol - startCol + 1;
 	const int LDR = R.stride();
 
+	// 1. Copy columns [startCol, endCol] from H into R, where they
+	//    will be modified.
 	{
-	  // 1. Copy columns [startCol, endCol] from H into R, where they
-	  //    will be modified.
-	  const mat_type H_cur (Teuchos::View, H, numRows, numCols, 0, startCol);
-	  mat_type R_cur (Teuchos::View, R, numRows, numCols, 0, startCol);
-	  R_cur.assign (H_cur);
+	  const mat_type H_view (Teuchos::View, H, numRows, numCols, 0, startCol);
+	  mat_type R_view (Teuchos::View, R, numRows, numCols, 0, startCol);
+	  R_view.assign (H_view);
 	}
 
 	// 2. Apply all the previous Givens rotations, if any, to columns
@@ -684,7 +977,7 @@ namespace Belos {
 	for (int j = 0; j < startCol; ++j) {
 	  blas.ROT (numCols - j, 
 		    &R(j, startCol), LDR, &R(j+1, startCol), LDR, 
-		    theCosines[j], theSines[j]);
+		    &theCosines[j], &theSines[j]);
 	}
 
 	// 3. Update each column in turn of columns [startCol, endCol].
@@ -693,18 +986,21 @@ namespace Belos {
 	  //    (Step 3 of the current invocation of this method) to the
 	  //    current column of R.
 	  for (int j = startCol; j < curCol; ++j) {
-	    blas.ROT (1, &R(j, curCol), LDR, &R(j+1, curCol), 
-		      theCosines[j], theSines[j]);
+	    blas.ROT (1, &R(j, curCol), LDR, &R(j+1, curCol), LDR, 
+		      &theCosines[j], &theSines[j]);
 	  }
 	  // b. Calculate new Givens rotation for R(curCol, curCol),
 	  //    R(curCol+1, curCol).
-	  magnitude_type theCosine, theSine;
-	  blas.ROTG (&R(curCol, curCol), &R(curCol+1, curCol), 
-		     &theCosine, &theSine);
+	  Scalar theCosine, theSine, result;
+	  computeGivensRotation (R(curCol, curCol), R(curCol+1, curCol), 
+				 theCosine, theSine, result);
 	  theCosines[curCol] = theCosine;
 	  theSines[curCol] = theSine;
-      
-	  // c. Zero out the subdiagonal element R(curCol+1, curCol).
+
+	  // c. _Apply_ the new Givens rotation.  We don't need to
+	  //    invoke _ROT here, because computeGivensRotation()
+	  //    already gives us the result: [x; y] -> [result; 0].
+	  R(curCol+1, curCol) = result;
 	  R(curCol+1, curCol) = STS::zero();
 
 	  // d. Apply the resulting Givens rotation to z (the right-hand
@@ -736,19 +1032,15 @@ namespace Belos {
 	  mat_type y_view (Teuchos::View, y, numRows, y.numCols());
 	  y_view.assign (z_view);
 	}
-	// Solve Ry = z.  (Only use the first curCol+1 entries of z.)
-	//
-	// Remember that numCols only refers to the number of columns to
-	// update, not to the dimension of the current upper triangular
-	// matrix.
-	blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		  Teuchos::NON_UNIT_DIAG, numRows - 1, numRows - 1,
+	// Solve Ry = z.
+	blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+		  Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(),
 		  STS::one(), R.values(), LDR, y.values(), y.stride());
 
 	// The last entry of z is the nonzero part of the residual of the
 	// least-squares problem.  Its magnitude gives the residual 2-norm
 	// of the least-squares problem.
-	return STS::magnitude( z(numRows, 0) );
+	return STS::magnitude( z(numRows-1, 0) );
       }
     }; // class ProjectedLeastSquaresSolver
   } // namespace details

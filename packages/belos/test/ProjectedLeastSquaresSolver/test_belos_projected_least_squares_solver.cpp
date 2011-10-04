@@ -55,14 +55,20 @@ main (int argc, char *argv[])
   using std::endl;
   typedef double scalar_type;
 
+  Teuchos::oblackholestream blackHole;
+  // MPI is crashing on my machine for some reason, but this test
+  // doesn't depend on MPI.
+#if 0
   // Initialize MPI using Teuchos wrappers, if Trilinos was built with
   // MPI support.  Otherwise, initialize a communicator with one
   // process.
-  Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   const int myRank = comm->getRank();
   //const int numProcs = comm->getSize();
+#else
+  const int myRank = 0;
+#endif // 0
   
   // Command-line arguments
   bool verbose = false;
@@ -82,11 +88,12 @@ main (int argc, char *argv[])
   // Output stream only prints on MPI Proc 0, and only in verbose mode.
   std::ostream& out = (myRank == 0 && verbose) ? std::cout : blackHole;
 
-  out << Belos::Belos_Version() << endl;
-
-  // Test the projected least-squares solver.
-  Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
-  const bool success = solver.testUpdateColumn (out, testProblemSize);
+  bool success = true;
+  if (testProblemSize > 0) {
+    // Test the projected least-squares solver.
+    Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver (out);
+    success = solver.testUpdateColumn (out, testProblemSize, verbose);
+  }
   
   if (success) {
     if (myRank == 0) {
