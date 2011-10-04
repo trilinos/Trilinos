@@ -39,6 +39,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
+using Teuchos::arcp;
 using Teuchos::ArrayView;
 #ifdef HAVE_MPI
 using Teuchos::MpiComm;
@@ -63,5 +64,15 @@ using Teuchos::ParameterEntry;
 
 // Memory allocation macros
 #include <Zoltan2_Memory.hpp>
+
+//////////////////////////////////////////////////////
+// Until Kokkos node types are supported, use default
+//////////////////////////////////////////////////////
+
+#include <Kokkos_DefaultNode.hpp>
+
+namespace Zoltan2{
+typedef Kokkos::DefaultNode::DefaultNodeType default_node_t;
+}
 
 #endif

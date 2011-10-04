@@ -174,8 +174,9 @@ public:
   /*! Map application global IDs to internal global numbers.
 
       \param in_gid input, an array of the Caller's global IDs
-      \param out_gno output, an array of the corresponding global numbers
-                          used by Zoltan2
+      \param out_gno output, an optional array of the corresponding 
+          global numbers used by Zoltan2.  If out_gno.size() is zero,
+          we assume global numbers are not needed.
       \param out_proc output, an array of the process ranks corresponding with
                          the in_gid and out_gno, out_proc[i] is the process
                          that supplied in_gid[i] to Zoltan2.
@@ -428,9 +429,11 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     return;
   }
 
+  bool skipGno = (out_gno.size() == 0);
+
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "Destination array is too small", 
-    (out_gno.size() >= len) && (out_proc.size() >= len),
+    (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
   if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && (_gnoDist.size() > 0)){
@@ -448,7 +451,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
     for (teuchos_size_t i=0; i < len; i++){
       GNO globalNumber = static_cast<GNO>(in_gid[i]);
-      out_gno[i] = globalNumber;
+      if (!skipGno)
+        out_gno[i] = globalNumber;
       pos = firstGnoToProc.upper_bound(globalNumber);
       out_proc[i] = pos->first - 1;
     }
@@ -773,8 +777,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     }
 
     for (teuchos_size_t j=0; j < v.size(); j++){
-      out_gno[v[j]] = gno;
       out_proc[v[j]] = gidProc;
+      if (!skipGno)
+        out_gno[v[j]] = gno;
     }
   }
 }

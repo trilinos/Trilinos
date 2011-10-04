@@ -42,6 +42,13 @@ private:
 
 public:
 
+  typedef Scalar scalarType;
+  typedef LID lidType;
+  typedef GID gidType;
+  typedef LNO lnoType;
+  typedef GNO gnoType;
+  typedef Node  nodeType;
+
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
   // User should not rewrite this function.
@@ -108,7 +115,6 @@ public:
     colIds = NULL;
     return 0;
   }
-
 };
   
   

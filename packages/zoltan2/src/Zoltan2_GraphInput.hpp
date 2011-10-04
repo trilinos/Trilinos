@@ -42,6 +42,12 @@ private:
 
 public:
 
+  typedef LID lidType;
+  typedef GID gidType;
+  typedef LNO lnoType;
+  typedef GNO gnoType;
+  typedef Node  nodeType;
+
   // adapterType == GraphAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
   // User should not rewrite this function.
