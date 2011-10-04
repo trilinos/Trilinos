@@ -419,10 +419,13 @@ Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
   double tolerance = p.get("Tolerance", 1.0e-8);
+  bool scale_by_length = p.get("Scale Norm by Length", false);
 
   RCP<NOX::StatusTest::RelativeNormF> status_test;
 
-  status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance, &u));
+  status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance, 
+						       scale_by_length,
+						       &u));
   
   return status_test;
 }
