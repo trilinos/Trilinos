@@ -21,6 +21,9 @@
 #define Z2PARAM_TEMPLATE \
         Scalar, LNO, GNO, LID, GID, Node
 
+#define Z2PARAM_ID_EQ_NO \
+        Scalar, LNO, GNO, LNO, GNO, Node
+
 // TODO : Need to add sparse ops ??
 #define CONSISTENT_TRILINOS_CLASS_TEMPLATE_LINE \
         template <typename Scalar=float, \
