@@ -3058,13 +3058,15 @@ namespace {
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type)
   {
-    std::vector<char*> names;
-    
-    names.resize(entities.size());
-    for (size_t i=0; i < entities.size(); i++) {
-      names[i] = (char*)entities[i].name.c_str();
+    if (!entities.empty()) {
+      std::vector<char*> names;
+      
+      names.resize(entities.size());
+      for (size_t i=0; i < entities.size(); i++) {
+	names[i] = (char*)entities[i].name.c_str();
+      }
+      return ex_put_names(exoid, nc_type, &names[0]);
     }
-    return ex_put_names(exoid, nc_type, &names[0]);
   }
 
   int conditional_define_variable(int exodusFilePtr, const char *var, int dimid, int *varid,  nc_type type)
