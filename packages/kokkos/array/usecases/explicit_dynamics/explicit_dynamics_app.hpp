@@ -118,6 +118,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 
 
   perf.mesh_time = wall_clock.seconds(); // Mesh and graph allocation and population.
+  wall_clock.reset();
 
 
 
@@ -140,6 +141,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
       );
 
   perf.init_time = wall_clock.seconds(); // Initialization
+  wall_clock.reset();
 
   int current_state = 0;
   int previous_state = 0;
@@ -184,6 +186,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
         set_next_time_step<Scalar,device_type>(region));
 
     perf.internal_force_time += wall_clock.seconds();
+    wall_clock.reset();
 
 
     // Assembly of elements' contributions to nodal force into
@@ -197,6 +200,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
                                           next_state
                                         ));
     perf.central_diff += wall_clock.seconds();
+    wall_clock.reset();
 
 #ifdef KOKKOS_DEVICE_CUDA
     if (step%100 == 0 ) {
@@ -209,6 +213,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 #endif
 
     perf.copy_to_host_time += wall_clock.seconds();
+    wall_clock.reset();
 
 
   }
