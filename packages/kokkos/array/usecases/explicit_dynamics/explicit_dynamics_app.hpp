@@ -185,6 +185,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
                                         ),
         set_next_time_step<Scalar,device_type>(region));
 
+    device_type::wait_functor_completion();
+
     perf.internal_force_time += wall_clock.seconds();
     wall_clock.reset();
 
@@ -199,6 +201,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
                                           current_state,
                                           next_state
                                         ));
+
+    device_type::wait_functor_completion();
     perf.central_diff += wall_clock.seconds();
     wall_clock.reset();
 
@@ -212,6 +216,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
     }
 #endif
 
+    device_type::wait_functor_completion();
     perf.copy_to_host_time += wall_clock.seconds();
     wall_clock.reset();
 
