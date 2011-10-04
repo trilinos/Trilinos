@@ -143,6 +143,7 @@ APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
   BelosNewtonBasis.hpp
   BelosNewtonOpAkx.hpp
   BelosOpAkx.hpp
+  BelosProjectedLeastSquaresSolver.hpp
   BelosStandardGmres.hpp
 )
 
