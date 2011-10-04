@@ -46,6 +46,7 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Operator.h"
+#include "Teuchos_as.hpp"
 
 // *****************************************************************
 // *****************************************************************
@@ -57,16 +58,16 @@ ModelEvaluatorInterface(
   NOX::Epetra::ModelEvaluatorInterface(m),
   LOCA::DerivUtils(global_data, perturb),
   param_vec(*(m->get_p_init(0))),
-  alpha_prev(0),
-  beta_prev(1),
   loca_param_vec(),
   x_dot(NULL),
+  alpha_prev(0),
+  beta_prev(1),
   observer(Teuchos::null)
 {
   // Get parameter names
   Teuchos::RefCountPtr<const Teuchos::Array<std::string> > param_names =
     m->get_p_names(0);
-  for (std::size_t i=0; i<param_names->size(); i++)
+  for (std::size_t i=0; i< Teuchos::as<std::size_t>(param_names->size()); i++)
     loca_param_vec.addParameter((*param_names)[i], param_vec[i]);
 }
 
