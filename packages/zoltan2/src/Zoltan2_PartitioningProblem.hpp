@@ -13,13 +13,13 @@
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-CONSISTENT_CLASS_TEMPLATE_LINE
-class PartitioningProblem : public Problem<CONSISTENT_TEMPLATE_PARAMS>
+template<Z2CLASS_TEMPLATE>
+class PartitioningProblem : public Problem<Z2PARAM_TEMPLATE>
 {
 protected:
   void createPartitioningProblem();
 
-  //TODO RCP<PartitioningSolution> _solution;
+  //TODO RCP<PartitioningSolution> solution_;
 
 public:
 
@@ -30,30 +30,96 @@ public:
   PartitioningProblem(
     Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
     ParameterList &p
-  ) : Problem<CONSISTENT_TEMPLATE_PARAMS>(A, p) 
+  ) : Problem<Z2PARAM_TEMPLATE>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
   }
 
+  // Other methods
   virtual void solve();
+  virtual void redistribute();
+
 };
 
-CONSISTENT_FN_TEMPLATE_LINE
-void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::solve()
+////////////////////////////////////////////////////////////////////////
+template <Z2FN_TEMPLATE>
+void PartitioningProblem<Z2PARAM_TEMPLATE>::solve()
 {
   HELLO;
 }
 
-//! createPartitioningProblem 
-CONSISTENT_FN_TEMPLATE_LINE
-void PartitioningProblem<CONSISTENT_TEMPLATE_PARAMS>::createPartitioningProblem()
+////////////////////////////////////////////////////////////////////////
+template <Z2FN_TEMPLATE>
+void PartitioningProblem<Z2PARAM_TEMPLATE>::redistribute()
 {
   HELLO;
-  //KDDZoltan2::InputAdapterType adapterType = _inputAdapter->inputAdapterType();
+}
+
+////////////////////////////////////////////////////////////////////////
+//! createPartitioningProblem 
+//  Method with common functionality for creating a PartitioningProblem.
+//  Individual constructors do appropriate conversions of input, etc.
+//  This method does everything that all constructors must do.
+
+template <Z2FN_TEMPLATE>
+void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
+{
+  HELLO;
+  cout << __func__ << " input adapter type " 
+       << this->inputAdapter_->inputAdapterType() << " " 
+       << this->inputAdapter_->inputAdapterName() << endl;
+
+  InputAdapterType adapterType = this->inputAdapter_->inputAdapterType();
+
+  // Determine which parameters are relevant here.
+  // For now, assume parameters similar to Zoltan:
+  //   MODEL = graph, hypergraph, geometric, ids
+  //   APPROACH = partition, repartition
+  //   ALGORITHM = metis, parmetis, scotch, ptscotch, patoh, 
+  //               phg, rcb, rib, hsfc, block, cyclic, random
+  // TODO: I will need help from Lee Ann understanding how to use the parameter
+  // functionality in Zoltan2.  For now, I will set a few parameters and
+  // continue computing.
+  ModelType model = GraphModelType;
 
   // Select Model based on parameters and InputAdapter type
-
+  switch (model) {
+  case GraphModelType:
+    switch (adapterType) {
+    case MatrixAdapterType:
+      cout << __func__ << " Matrix adapter switch" << endl;
+      //TODO model_ = 
+      //TODO    new GraphModel<MatrixInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
+      break;
+    case GraphAdapterType:
+      cout << __func__ << " Graph adapter switch" << endl;
+      //TODO model_ = 
+      //TODO    new GraphModel<GraphInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
+      break;
+    case MeshAdapterType:
+    case CoordAdapterType:
+    case IdAdapterType:
+      cout << __func__ 
+           << " PartitioningProblem not yet implemented for this input adapter "
+           << this->inputAdapter_->inputAdapterName() << endl;
+      break;
+    default:
+      cout << "Invalid adapter type; this condition should never happen." 
+           << endl;
+      break;
+    }
+    break;
+  case HypergraphModelType:
+  case GeometryModelType:
+  case IdModelType:
+    cout << __func__ << " Model type " << model << " not yet supported." 
+         << endl;
+    break;
+  default:
+    cout << __func__ << " Invalid model" << model << endl;
+    break;
+  }
 }
 
 }

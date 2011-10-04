@@ -2,10 +2,12 @@
 #define _ZOLTAN2_PROBLEM_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
-#include <Zoltan2_InputAdapter.hpp>
 
+#include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_TpetraCrsMatrixInput.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+
+#include <Zoltan2_Model.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Problem.hpp
@@ -21,9 +23,8 @@ namespace Zoltan2{
 //! \class Problem
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-CONSISTENT_CLASS_TEMPLATE_LINE
+template<Z2CLASS_TEMPLATE>
 class Problem {
-
 public:
   // Constructors (there will be several to support novice interface)
   // Each will make sure the InputAdapter, parameters, etc. are set 
@@ -37,11 +38,12 @@ public:
 
   // Other methods
   virtual void solve() = 0;
+  virtual void redistribute() = 0;
 
 protected:
-  RCP<InputAdapter> _inputAdapter;
-  //TODO RCP<Model> _model;
-  RCP<Teuchos::ParameterList> _params;
+  RCP<InputAdapter> inputAdapter_;
+  //TODO RCP<Model<InputAdapter, Z2FN_TEMPLATE> > model_;  
+  RCP<Teuchos::ParameterList> params_;
 
 private:
 
@@ -51,16 +53,17 @@ private:
 ////////////////////////////////////////////////////////////////////////
 //! Problem class constructor:  Tpetra matrix input must be converted
 //! to XpetraMatrixAdapter.
-CONSISTENT_FN_TEMPLATE_LINE
-Problem<CONSISTENT_TEMPLATE_PARAMS>::Problem(
+template <Z2FN_TEMPLATE>
+Problem<Z2PARAM_TEMPLATE>::Problem(
   Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> &A,
   Teuchos::ParameterList &p
 ) 
 {
   HELLO;
-  _inputAdapter = rcp(new TpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>
+  inputAdapter_ = rcp(new TpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
                                 (rcpFromRef(A)));
-  _params = rcpFromRef(p);
+  params_ = rcpFromRef(p);
+  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() << " " << inputAdapter_->inputAdapterName() << endl;
 }
 
 }

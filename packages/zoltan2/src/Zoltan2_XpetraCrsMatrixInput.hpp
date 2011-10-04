@@ -30,8 +30,8 @@ namespace Zoltan2 {
 
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
-class XpetraCrsMatrixInput : public MatrixInput<CONSISTENT_TEMPLATE_PARAMS> {
+template <Z2CLASS_TEMPLATE>
+class XpetraCrsMatrixInput : public MatrixInput<Z2PARAM_TEMPLATE> {
 private:
 
   typedef Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> xmatrixType;

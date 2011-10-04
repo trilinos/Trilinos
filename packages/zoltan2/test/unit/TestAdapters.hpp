@@ -65,7 +65,7 @@ if (gval){ \
 } \
 }
 
-CONSISTENT_CLASS_TEMPLATE_LINE
+template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 
 private:
@@ -73,11 +73,11 @@ private:
     typedef Zoltan2::EpetraCrsMatrixInput EpetraCrsMatrixInput;
     typedef Zoltan2::TpetraCrsGraphInput<LNO, GNO, LID, GID, Node> 
       TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS> 
+    typedef Zoltan2::TpetraCrsMatrixInput<Z2PARAM_TEMPLATE> 
       TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<LNO, GNO, LID, GID, Node> 
       XpetraCrsGraphInput;
-    typedef Zoltan2::XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS> 
+    typedef Zoltan2::XpetraCrsMatrixInput<Z2PARAM_TEMPLATE> 
       XpetraCrsMatrixInput;
     typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix;
     typedef Tpetra::CrsGraph<LNO, GNO, Node> crsGraph;

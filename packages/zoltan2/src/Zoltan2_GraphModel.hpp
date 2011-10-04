@@ -36,11 +36,11 @@ namespace Zoltan2 {
     to be called asynchronously.
 */
 template <
-  typename Scalar, typename LNO, typename GNO, typename LID, typename GID, 
-  typename Node, 
-
   template <typename, typename, typename, typename, typename, typename> 
-  class AdapterType>
+  class AdapterType,
+  typename Scalar, typename LNO, typename GNO, typename LID, typename GID, 
+  typename Node
+>
     struct GraphModel {
 private:
 
@@ -131,9 +131,8 @@ public:
      TODO - default template arguments are not allowed in partial specializations
 */
 
-template <typename Scalar,typename LNO, typename GNO,
-  typename LID, typename GID, typename Node>
-struct GraphModel<Scalar, LNO, GNO, LID, GID, Node, MatrixInput>
+template <typename Adapter, Z2FN_TEMPLATE>
+struct GraphModel<MatrixInput, Z2PARAM_TEMPLATE>
 {
 
 private:
@@ -197,7 +196,7 @@ public:
    */
   GraphModel(
     RCP<const MatrixInput<Scalar, LNO, GNO, LID, GNO, Node> > inputAdapter,
-    RCP<const Comm<int> comm, RCP<const Environment <int> env) : 
+    RCP<const Comm<int> > comm, RCP<const Environment <int> > env) : 
       _input(inputAdapter), _comm(comm), _env(env),
       _gids(), _gnos(), _lids(), _nedges(), _edgeGids(), _edgeGnos(),
       _procIds(), _offsets(), _gnoToLno(),

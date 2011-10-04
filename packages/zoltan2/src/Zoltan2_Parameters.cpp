@@ -302,7 +302,7 @@ void createValidParameterList(ParameterList &pl)
   validChoices.clear();
   validChoices.push_back("balance_object_count");
   validChoices.push_back("balance_object_weight");
-  validChoices.push_back("redistribution_commvolume_tradeoff");  // doesn't this need it's own param
+  validChoices.push_back("redistribution_commvolume_tradeoff");  // doesn't this need its own param
   validChoices.push_back("multicriteria_minimize_total_weight");
   validChoices.push_back("multicriteria_minimize_maximum_weight");
   validChoices.push_back("minimize_cut_edge_count");
@@ -422,6 +422,7 @@ void createValidParameterList(ParameterList &pl)
   validChoices.push_back("hypergraph");
   validChoices.push_back("graph");
   validChoices.push_back("geometry");
+  validChoices.push_back("ids");
   docString.str("todo");
   strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
   entry = ParameterEntry(
@@ -445,6 +446,9 @@ void createValidParameterList(ParameterList &pl)
   validChoices.push_back("parmetis");
   validChoices.push_back("scotch");
   validChoices.push_back("ptscotch");
+  validChoices.push_back("block");
+  validChoices.push_back("cyclic");
+  validChoices.push_back("random");
   docString.str("todo");
   strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
   entry = ParameterEntry(

@@ -23,9 +23,9 @@ namespace Zoltan2 {
     \brief Provides access for Zoltan2 to Tpetra::CrsMatrix data. 
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
+template <Z2CLASS_TEMPLATE>
 class TpetraCrsMatrixInput : 
-  public XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>{
+  public XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>{
 private:
 
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix;
@@ -39,7 +39,7 @@ public:
   /*! Constructor 
    */
   TpetraCrsMatrixInput(const RCP<const crsMatrix> matrix):
-    XpetraCrsMatrixInput<CONSISTENT_TEMPLATE_PARAMS>(
+    XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>(
       Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO, Node>(
         Teuchos::rcp_const_cast<crsMatrix>(matrix))))
     

@@ -89,6 +89,7 @@ int main(int narg, char** arg)
   Zoltan2::PartitioningProblem<Scalar,z2TestLO,z2TestGO,z2TestLO,z2TestGO,Node>
                                problem(*origMatrix, params);
   problem.solve();
+  problem.redistribute();
 
   ////// Redistribute matrix and vector into new matrix and vector.
 

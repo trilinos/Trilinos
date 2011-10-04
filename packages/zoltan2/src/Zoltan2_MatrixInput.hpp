@@ -36,7 +36,7 @@ namespace Zoltan2 {
       problem's number of objects.
 */
 
-CONSISTENT_CLASS_TEMPLATE_LINE
+template <Z2CLASS_TEMPLATE>
   class MatrixInput : public InputAdapter {
 private:
 
