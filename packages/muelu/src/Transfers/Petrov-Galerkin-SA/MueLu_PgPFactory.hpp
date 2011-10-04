@@ -160,7 +160,24 @@ public:
 
   Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
   {
+    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
+
+    if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
+    if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
+    if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
+    if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
+
+
 #if 0 // MUEMAT mode (=paper)
+    // Minimize with respect to the (A)' A norm.
+    // Need to be smart here to avoid the construction of A' A
+    //
+    //                   diag( P0' (A' A) D^{-1} A P0)
+    //   omega =   ------------------------------------------
+    //             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
+    //
+    // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
+
     // calculate A * Ptent
     bool doFillComplete=true;
     bool optimizeStorage=false;
@@ -169,46 +186,62 @@ public:
     // compute A * D^{-1} * A * P0
     RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
 
-    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
-
-    if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
-    if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
-    if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
-    if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
-
     RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(AP0, ADinvAP0, colbasedomegamap);
     RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(ADinvAP0, colbasedomegamap);
+#elif 0
+    // ML mode 1 (cheapest)
+    // Minimize with respect to L2 norm
+    //                  diag( P0' D^{-1} A P0)
+    //   omega =   -----------------------------
+    //             diag( P0' A' D^{-1}' D^{-1} A P0)
+    //
+
+    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(Ptent, DinvAPtent, colbasedomegamap);
+    RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(DinvAPtent, colbasedomegamap);
 #elif 1
     // ML mode 2
+    // Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
+    // Need to be smart here to avoid the construction of A' A
+    //
+    //                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+    //   omega =   --------------------------------------------------------
+    //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+    //
 
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
     RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
-    //Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A); // todo: give diagA as parameter!
     Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
-
-    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
-
-    if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
-    if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
-    if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
-    if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
 
     RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, colbasedomegamap);
     RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(DinvADinvAP0, colbasedomegamap);
 #elif 0
-    // ML mode 1 (cheapest)
+    // ML mode 3 (most expensive)
+    //             diag( P0' ( A'D' + DA) D A P0)
+    //   omega =   -----------------------------
+    //             diag( P0'A'D' ( A'D' + DA) D A P0)
+    //
+    //             diag( DinvAP0'DinvAP0 + P0'DinvADinvAP0)
+    //         =   -----------------------------
+    //                2*diag( DinvADinvAP0'DinvAP0)
+    //
+    //
 
-    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
+    // compute D^{-1} * A * D^{-1} * A * P0
+    bool doFillComplete=true;
+    bool optimizeStorage=false;
+    RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+    Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-    if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
-    if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
-    if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
-    if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
-
-    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(Ptent, DinvAPtent, colbasedomegamap);
-    RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(DinvAPtent, colbasedomegamap);
+    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(Ptent, DinvADinvAP0, colbasedomegamap);
+    RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, colbasedomegamap);
+    if(Numerator->size() != Numerator2->size()) std::cout << "Error: size of Numerator and Numerator2 different. Error" << std::endl;
+    for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
+      (*Numerator)[i] += (*Numerator2)[i];
+    RCP<Teuchos::Array<Scalar> > Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, colbasedomegamap);
+    for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
+      (*Denominator)[i] *= 2.;
 #endif
 
     /////////////////// DEBUG: check for zeros in denominator
@@ -235,7 +268,7 @@ public:
     return RowBasedOmegas;
   }
 
-  //RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const RCP<const Operator>& Op) const
+  // This routine still has Epetra/Tpetra specific code
   Teuchos::ArrayRCP< Scalar > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const RCP<const Operator>& Op) const
   {
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
@@ -427,7 +460,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
 
   Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0) const
   {
-    Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+    //Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
     Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvAP0->getRangeMap()->getComm();
 
     // generate allreduced column-based array vector for local damping factors
@@ -451,7 +484,6 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       //Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetra_locreplicatedomegagids = Tpetra::createNonContigMap<GlobalOrdinal,LocalOrdinal>(*arView, comm);
       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetra_locreplicatedomegagids = Tpetra::createLocalMap<GlobalOrdinal,LocalOrdinal>(Teuchos::as<size_t>(DinvAP0->getColMap()->getMaxAllGlobalIndex()+1), comm); // create local map
       const RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > xpetra_locreplicatedomegagids = Xpetra::toXpetra(tpetra_locreplicatedomegagids);
-      //xpetra_locreplicatedomegagids->describe(*fos,Teuchos::VERB_EXTREME);
       return xpetra_locreplicatedomegagids;
 #else
       throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.")
