@@ -238,12 +238,12 @@ void pack_outgoing_rows(const Epetra_CrsMatrix& mtx,
       if (mtx.Filled()) {
         const Epetra_Map& colmap = mtx.ColMap();
         graph.ExtractMyRowView(i, rowlen, col_indices);
-        if (rowlen > 0) {
-          int begin = colmap.GID(col_indices[0]);
-          int end = colmap.GID(col_indices[rowlen-1]);
-          if (first_col <= end && last_col >= begin) {
+        for(int j=0; j<rowlen; ++j) {
+          int col = colmap.GID(col_indices[j]);
+          if (first_col <= col && last_col >= col) {
             ++num_send_rows;
             send_rows.push_back(grow);
+            break;
           }
         }
       }
