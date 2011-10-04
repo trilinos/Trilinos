@@ -38,6 +38,7 @@ namespace Zoltan2 {
 template <
   typename Scalar, typename LNO, typename GNO, typename LID, typename GID, 
   typename Node, 
+
   template <typename, typename, typename, typename, typename, typename> 
   class AdapterType>
     struct GraphModel {
@@ -137,7 +138,7 @@ struct GraphModel<Scalar, LNO, GNO, LID, GID, Node, MatrixInput>
 
 private:
 
-  RCP<const MatrixInput<Scalar, LNO, GNO, LID, GID, Node> _input;
+  RCP<const MatrixInput<Scalar, LNO, GNO, LID, GID, Node> > _input;
   RCP<const Teuchos::Comm<int> > _comm;
   RCP<const Environment > _env;
 
@@ -451,6 +452,8 @@ public:
 
     procId = _procIds.view(firstIdx, nEdges);
     // TODO edge weights
+
+    return nEdges;
   }
 };
 
