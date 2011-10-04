@@ -190,7 +190,7 @@ namespace StatusTest {
      </ul>
 
      Additional parameters valid for a NStep test
-     (NOX::StatusTest::RelativeNormF): 
+     (NOX::StatusTest::NStep): 
      <ul> 
        <li> "Number of Nonlinear Iterations" <int> Number of nonlinear iterations to take until convergence (default = 1)
        <li> "Number of Initial Ramping Steps" <int> Number of nonlinear solves in an initial ramping phase (default = 0)
