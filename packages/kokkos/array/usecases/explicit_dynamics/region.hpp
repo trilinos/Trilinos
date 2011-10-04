@@ -13,6 +13,8 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef Kokkos::MDArrayView<Scalar,device_type>   scalar_array;
   typedef Kokkos::MDArrayView<int,device_type>      int_array;
 
+  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+
   template <class Mesh>
   Region(
       int num_states,
@@ -41,7 +43,8 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
     , node_elem_offset(Kokkos::create_mdarray<int_array>(mesh.node_elem_offset.dimension(0),mesh.node_elem_offset.dimension(1)))
     , model_coords(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
     // input/output
-    , delta_t(Kokkos::create_mdarray<scalar_array>(num_states))
+    , dt(Kokkos::create_value<scalar>())
+    , prev_dt(Kokkos::create_value<scalar>())
     , displacement(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
     , velocity(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
     , acceleration(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
@@ -92,7 +95,8 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   scalar_array  model_coords;
 
   // input / output
-  scalar_array  delta_t;
+  scalar        dt;
+  scalar        prev_dt;
   scalar_array  displacement;
   scalar_array  velocity;
   scalar_array  acceleration;

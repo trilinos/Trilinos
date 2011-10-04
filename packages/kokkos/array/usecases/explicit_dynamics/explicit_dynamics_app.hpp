@@ -81,6 +81,29 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
   Kokkos::Impl::Timer wall_clock ;
 
   BoxMeshFixture<int_array_h, scalar_array_h> mesh(ex,ey,ez);
+
+  scalar_array_h  nodal_mass_h     =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes);
+  scalar_array_h  elem_mass_h      =  Kokkos::create_mdarray< scalar_array_h >(mesh.nelems);
+
+
+  scalar_array_h  acceleration_h   =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
+  scalar_array_h  velocity_h     =   Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
+  scalar_array_h  displacement_h   =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
+  scalar_array_h  internal_force_h =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
+  scalar_array_h  stress_new_h     =  Kokkos::create_mdarray< scalar_array_h >(mesh.nelems,6);
+
+
+  //setup the initial condition on velocity
+  {
+    const unsigned X = 0;
+    for (int inode = 0; inode< mesh.nnodes; ++inode) {
+      if ( mesh.node_coords(inode,X) == 0) {
+        velocity_h(inode,X,0) = 1.0e3;
+        velocity_h(inode,X,1) = 1.0e3;
+      }
+    }
+  }
+
   Region<Scalar,device_type>  region( NumStates,
                                       mesh,
                                       lin_bulk_visc,
@@ -91,31 +114,12 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
                                       poissons_ratio,
                                       density);
 
+  Kokkos::deep_copy(region.velocity, velocity_h);
 
-  scalar_array_h  nodal_mass_h     =  Kokkos::create_mdarray< scalar_array_h >(region.num_nodes);
-  scalar_array_h  elem_mass_h      =  Kokkos::create_mdarray< scalar_array_h >(region.num_elements);
-
-
-  scalar_array_h  acceleration_h   =  Kokkos::create_mdarray< scalar_array_h >(region.num_nodes, 3);
-  scalar_array_h  velocity_h     =   Kokkos::create_mdarray< scalar_array_h >(region.num_nodes, 3, 2); // two state field
-  scalar_array_h  displacement_h   =  Kokkos::create_mdarray< scalar_array_h >(region.num_nodes, 3, 2); // two state field
-  scalar_array_h  internal_force_h =  Kokkos::create_mdarray< scalar_array_h >(region.num_nodes, 3);
-  scalar_array_h  stress_new_h     =  Kokkos::create_mdarray< scalar_array_h >(region.num_elements,6);
 
   perf.mesh_time = wall_clock.seconds(); // Mesh and graph allocation and population.
 
-  //setup the initial condition on velocity
-  {
-    const unsigned X = 0;
-    for (int inode = 0; inode< region.num_nodes; ++inode) {
-      if ( region.model_coords(inode,X) == 0) {
-        velocity_h(inode,X,0) = 1.0e3;
-        velocity_h(inode,X,1) = 1.0e3;
-      }
-    }
-  }
 
-  Kokkos::deep_copy(region.velocity, velocity_h);
 
   // Parameters required for the internal force computations.
 
@@ -177,17 +181,9 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
                                           current_state,
                                           previous_state
                                         ),
-        set_next_time_step<Scalar,device_type>(region,next_state));
+        set_next_time_step<Scalar,device_type>(region));
 
     perf.internal_force_time += wall_clock.seconds();
-
-#if 0
-    Kokkos::parallel_reduce( region.num_elements,
-        minimum_stable_time_step<Scalar, device_type>( region),    //reduction op
-        set_next_time_step<Scalar,device_type>(region,next_state)); //post process
-
-    perf.minimum_stable_time_step += wall_clock.seconds();
-#endif
 
 
     // Assembly of elements' contributions to nodal force into
