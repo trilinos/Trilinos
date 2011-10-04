@@ -32,6 +32,7 @@ APPEND_SET(HEADERS
   Panzer_STKConnManager.hpp
   Panzer_STK_SetupUtilities.hpp
   Panzer_STK_SetupUtilitiesT.hpp
+  Panzer_STK_WorksetFactory.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_LineMeshFactory.hpp
@@ -61,6 +62,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_PeriodicBC_Matcher.cpp
   stk_interface/Panzer_STK_PeriodicBC_Parser.cpp
   Panzer_STK_Utilities.cpp
+  Panzer_STK_WorksetFactory.cpp
   )
 
 #
