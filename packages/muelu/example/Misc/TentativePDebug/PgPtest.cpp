@@ -240,13 +240,12 @@ int main(int argc, char *argv[]) {
 
   //X->setSeed(846930886);
   //X->randomize();
-  //X->putScalar(1.0);
-  //X->norm2(norms);
-  //if (comm->getRank() == 0)
-  //  std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  X->putScalar(1.0);
+  X->norm2(norms);
+  if (comm->getRank() == 0)
+    std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  RHS->putScalar(1.0);
+  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
   // Use AMG directly as an iterative method
   {
