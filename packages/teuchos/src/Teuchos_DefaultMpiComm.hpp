@@ -219,7 +219,10 @@ public:
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const;
-
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int>& ranks) const;
   //@}
 
   //! @name Overridden from Describable 
@@ -656,6 +659,56 @@ void MpiComm<Ordinal>::wait(
   *request = null;
 }
 
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::split(const int color, const int key) const
+{
+  MPI_Comm newComm;
+  int splitReturn = MPI_Comm_split(
+    *rawMpiComm_,
+    color < 0 ? MPI_UNDEFINED : color,
+    key,
+    &newComm);
+  TEST_FOR_EXCEPTION(
+    splitReturn != MPI_SUCCESS,
+    std::logic_error,
+    "Failed to create communicator with color " << color <<
+    "and key " << key << ".");
+  if (newComm == MPI_COMM_NULL) {
+    return RCP< Comm<Ordinal> >();
+  } else {
+    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+  }
+}
+
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
+{
+  int mpiReturn;
+
+  // Get the group that this communicator is in.
+  MPI_Group thisGroup;
+  mpiReturn = MPI_Comm_group(*rawMpiComm_, &thisGroup);
+  TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to obtain group.");
+  // Create a new group with the specified members.
+  MPI_Group newGroup;
+  mpiReturn = MPI_Group_incl(
+    thisGroup, ranks.size(), const_cast<int *>(&ranks[0]), &newGroup);
+  TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to create subgroup.");
+  // Create a new communicator from the new group.
+  MPI_Comm newComm;
+  mpiReturn = MPI_Comm_create(*rawMpiComm_, newGroup, &newComm);
+  TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to create subcommunicator.");
+  if (newComm == MPI_COMM_NULL) {
+    return RCP< Comm<Ordinal> >();
+  } else {
+    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+  }
+}
 
 // Overridden from Describable
 

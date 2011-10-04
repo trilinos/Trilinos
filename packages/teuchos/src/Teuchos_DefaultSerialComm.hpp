@@ -63,6 +63,9 @@ public:
   /** \brief . */
   SerialComm();
 
+  /** \brief Default copy constructor. */
+  SerialComm(const SerialComm<Ordinal>& other);
+
   //@}
 
   //! @name Overridden from Comm 
@@ -130,6 +133,10 @@ public:
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const;
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
+  /** brief . */
+  virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int> & ranks) const;
 
   //@}
 
@@ -164,6 +171,10 @@ RCP<SerialComm<Ordinal> > createSerialComm()
 
 template<typename Ordinal>
 SerialComm<Ordinal>::SerialComm()
+{}
+
+template<typename Ordinal>
+SerialComm<Ordinal>::SerialComm(const SerialComm<Ordinal>& other)
 {}
 
 
@@ -341,6 +352,27 @@ void SerialComm<Ordinal>::wait(
   TEST_FOR_EXCEPT(true);
 }
 
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+SerialComm<Ordinal>::split(const int color, const int /*key*/) const
+{
+  if (color < 0) {
+    return RCP< Comm<Ordinal> >();
+  }
+  // Simply return a copy of this communicator.
+  return rcp(new SerialComm<Ordinal>(*this));
+}
+
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+SerialComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
+{
+  if ((ranks.size()) == 1 && (ranks[0] == 0)) {
+    return rcp(new SerialComm<Ordinal>(*this));
+  } else {
+    return RCP< Comm<Ordinal> >();
+  }
+}
 
 // Overridden from Describable
 

@@ -682,6 +682,77 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, split, Ordinal) {
+  RCP< const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  int initialRank = comm->getRank();
+  int initialSize = comm->getSize();
+
+  // Partition this communicator into two: one with the odd ranks and one with
+  // the even ones. Pass a common key for everyone to maintain the same
+  // ordering as in the initial communicator.
+  RCP< const Comm<Ordinal> > newComm = comm->split(initialRank % 2, 0);
+
+  // Check the size of the new communicator and my rank within it.
+  int halfSize = initialSize / 2;
+  int newSize = newComm->getSize();
+  int newRank = newComm->getRank();
+  if (initialSize % 2 == 0) {
+    TEST_EQUALITY(newSize, halfSize);
+  }
+  else {
+    TEST_EQUALITY(newSize, initialRank % 2 == 0 ? halfSize + 1 : halfSize);
+  }
+  TEST_EQUALITY(newRank, initialRank / 2);
+
+  // Negative color values get a null communicator.
+  RCP< const Comm<Ordinal> > shouldBeNull = comm->split(-1, 0);
+  TEST_ASSERT(shouldBeNull.is_null());
+}
+
+namespace {
+
+template<typename ValueType>
+class MonotoneSequence
+{
+  ValueType currentValue_;
+public:
+  typedef ValueType value_type;
+
+  MonotoneSequence(const value_type& initialValue) : currentValue_(initialValue)
+  {}
+
+  value_type operator()()
+  {
+    return currentValue_++;
+  }
+};
+
+} // namepsace
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal) {
+  RCP< const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  int initialRank = comm->getRank();
+  int initialSize = comm->getSize();
+
+  // Create a new communicator that reverses all of the ranks.
+  std::vector< int > ranks(initialSize);
+  std::generate(ranks.begin(), ranks.end(), MonotoneSequence<int>(0));
+  std::reverse(ranks.begin(), ranks.end());
+  RCP< const Comm<Ordinal> > newComm = comm->createSubcommunicator(ranks);
+  TEST_EQUALITY(newComm->getSize(), initialSize);
+  int expectedNewRank = initialSize - initialRank - 1;
+  TEST_EQUALITY(newComm->getRank(), expectedNewRank);
+
+  // Processes that aren't in the group get a null communicator.
+  std::vector<int> rank0Only(1, 0);
+  RCP< const Comm<Ordinal> > rank0Comm = comm->createSubcommunicator(rank0Only);
+  // Original rank 0 should be valid, all others should be null.
+  if (initialRank == 0) {
+    TEST_ASSERT(rank0Comm.is_valid_ptr());
+  } else {
+    TEST_ASSERT(rank0Comm.is_null());
+  }
+}
 
 //
 // Instantiations
@@ -723,6 +794,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PAIROFPACKETS )
 
+#define UNIT_TEST_GROUP_ORDINAL_SUBCOMMUNICATORS( ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, split, ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, createSubcommunicator, ORDINAL )
+
 
 typedef std::pair<short, short> PairOfShorts;
 typedef std::pair<int,int> PairOfInts;
@@ -760,7 +835,8 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL) \
+    UNIT_TEST_GROUP_ORDINAL_SUBCOMMUNICATORS(ORDINAL)
 
 #  define UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS_AND_QD( ORDINAL ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
