@@ -53,6 +53,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #define _NSSI_RPC_CLNT_H_
 
 #include "Trios_nssi_request.h"
+#include "Trios_nssi_rpc.h"
 
 
 /**
