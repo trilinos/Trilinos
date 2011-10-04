@@ -187,7 +187,7 @@ namespace StatusTest {
      (NOX::StatusTest::RelativeNormF): 
      <ul> 
        <li> "Tolerance" <double> required tolerance for the test to return a converged status. (default = 1.0e-8)
-       <li> "Scale Norm by Length" <bool> if set to true, the norms are scaled by the length of the vector. (default = false)
+       <li> "Scale Norms by Length" <bool> if set to true, the norms are scaled by the length of the vector. (default = false)
      </ul>
 
      Additional parameters valid for a NStep test
