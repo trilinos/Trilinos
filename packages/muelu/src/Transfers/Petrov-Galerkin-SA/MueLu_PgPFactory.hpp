@@ -13,8 +13,9 @@
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraVector.hpp>
-
+#endif
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities.hpp"
@@ -368,7 +369,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
 
       RowBasedOmegas = tRowBasedOmegas;
 #else
-      throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.")
+      throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.");
 #endif
     }
 
@@ -491,7 +492,7 @@ throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and Ep
       const RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > xpetra_locreplicatedomegagids = Xpetra::toXpetra(tpetra_locreplicatedomegagids);
       return xpetra_locreplicatedomegagids;
 #else
-      throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.")
+      throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.");
 #endif
     }
 
