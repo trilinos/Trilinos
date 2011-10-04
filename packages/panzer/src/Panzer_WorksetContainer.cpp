@@ -74,15 +74,16 @@ std::map<unsigned,Workset> &
 WorksetContainer::getSideWorksets(const BC & bc)
 {
    Teuchos::RCP<std::map<unsigned,Workset> > worksetMap;
-   BCMap::iterator itr = sideWorksets_.find(bc);
+   SideId side(bc);
+   SideMap::iterator itr = sideWorksets_.find(side);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      const std::string & eBlock = bc.elementBlockID();
+      const std::string & eBlock = side.eblk_id;
       const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
       worksetMap = wkstFactory_->getSideWorksets(bc,ipb);
 
       // store map for reuse in the future
-      sideWorksets_[bc] = worksetMap;
+      sideWorksets_[side] = worksetMap;
    }
    else 
       worksetMap = itr->second;
@@ -107,11 +108,12 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
    for(std::size_t i=0;i<bcs.size();i++) {
       // couldn't find workset, build it!
       const BC & bc = bcs[i];
+      SideId side(bc);
       const std::string & eBlock = bc.elementBlockID();
       const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
 
       // store map for reuse in the future
-      sideWorksets_[bc] = wkstFactory_->getSideWorksets(bc,ipb);
+      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,ipb);
    }
 }
 

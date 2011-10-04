@@ -8,11 +8,22 @@
 
 namespace panzer {
 
-struct LessBC_str {
-   bool operator()(const BC& left, 
-                   const BC& right) const
-   { return   left.sidesetID()+"_"+left.elementBlockID() 
-            < right.sidesetID()+"_"+right.elementBlockID(); }
+struct SideId {
+   SideId(const BC & bc)
+      : ss_id(bc.sidesetID()), eblk_id(bc.elementBlockID()) {}
+
+   std::string ss_id;
+   std::string eblk_id;
+};
+
+/** Required to distinguish between boundary conditions
+  * and sides.
+  */
+struct LessSide {
+   bool operator()(const SideId & left, 
+                   const SideId  right) const
+   { return   (left.ss_id+"_"+left.eblk_id 
+            < right.ss_id+"_"+right.eblk_id); }
 };
 
 /** \brief Class that provides access to worksets on
@@ -109,13 +120,13 @@ public:
 
 private:
    typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC_str> BCMap;
+   typedef std::map<SideId,Teuchos::RCP<std::map<unsigned,Workset> >,LessSide> SideMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,InputPhysicsBlock> ebToIpb_; //! Maps element blocks to input physics block objects
 
    VolumeMap volWorksets_;
-   BCMap sideWorksets_;
+   SideMap sideWorksets_;
 
    std::size_t worksetSize_;
 };
