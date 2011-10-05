@@ -196,7 +196,7 @@ public:
     offsets_ = arcp(offsets, 0, numVtx, false);
 
     numLocalEdges_ = 0;
-    for (size_t i=0; i < offsets_.size(); i++){
+    for (LNO i=0; i < offsets_.size(); i++){
       numLocalEdges_ += offsets_[i];
     }
 

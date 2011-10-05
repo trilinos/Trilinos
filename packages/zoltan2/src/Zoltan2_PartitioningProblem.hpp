@@ -3,6 +3,8 @@
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
+#include <Zoltan2_PartitioningAlgorithms.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 /*! \file Zoltan2_PartitioningProblem.hpp
 
@@ -19,7 +21,7 @@ class PartitioningProblem : public Problem<Z2PARAM_TEMPLATE>
 protected:
   void createPartitioningProblem();
 
-  //TODO RCP<PartitioningSolution> solution_;
+  RCP<PartitioningSolution<Z2PARAM_TEMPLATE> > solution_;
 
 public:
 
@@ -47,6 +49,11 @@ template <Z2FN_TEMPLATE>
 void PartitioningProblem<Z2PARAM_TEMPLATE>::solve()
 {
   HELLO;
+  // Determine which algorithm to use based on defaults and parameters.
+  // For now, assuming Scotch graph partitioning.
+  // Need some exception handling here, too.
+
+  AlgScotch<Z2PARAM_TEMPLATE> alg(this->model_, this->solution_, this->params_);
 }
 
 ////////////////////////////////////////////////////////////////////////

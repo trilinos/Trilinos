@@ -42,7 +42,7 @@ public:
 
 protected:
   RCP<InputAdapter> inputAdapter_;
-  //TODO RCP<Model<InputAdapter, Z2FN_TEMPLATE> > model_;  
+  RCP<Model<Z2PARAM_TEMPLATE> > model_;  
   RCP<Teuchos::ParameterList> params_;
 
 private:

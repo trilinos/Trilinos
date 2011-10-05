@@ -22,6 +22,15 @@ namespace Zoltan2 {
 /*! Zoltan2::Model
     to be called asynchronously.
 */
+enum ModelType {
+  InvalidModel = 0,
+  HypergraphModelType,
+  GraphModelType,
+  GeometryModelType,
+  IdModelType
+};
+
+
 template <Z2CLASS_TEMPLATE>
   class Model
 {
