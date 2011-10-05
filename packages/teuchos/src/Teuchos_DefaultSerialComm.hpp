@@ -134,6 +134,8 @@ public:
     const Ptr<RCP<CommRequest> > &request
     ) const;
   /** \brief . */
+  virtual RCP< Comm<Ordinal> > duplicate() const;
+  /** \brief . */
   virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
   /** brief . */
   virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int> & ranks) const;
@@ -350,6 +352,13 @@ void SerialComm<Ordinal>::wait(
   ) const
 {
   TEST_FOR_EXCEPT(true);
+}
+
+template< typename Ordinal>
+RCP< Comm<Ordinal> >
+SerialComm<Ordinal>::duplicate() const
+{
+  return rcp(new SerialComm<Ordinal>(*this));
 }
 
 template<typename Ordinal>
