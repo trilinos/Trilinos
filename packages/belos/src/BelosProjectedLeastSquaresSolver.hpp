@@ -192,8 +192,8 @@ namespace Belos {
     /// 2. Encapsulate common functionality of many GMRES-like
     ///    solvers.  Avoid duplicated code and simplify debugging,
     ///    testing, and implementation of new GMRES-like solvers.
-    /// 3. Provide more robust implementations of solvers for the
-    ///    projected least-squares problem.
+    /// 3. Provide an option for more robust implementations of
+    ///    solvers for the projected least-squares problem.
     ///
     /// "Robust" here means regularizing the least-squares solve, so
     /// that the solution is well-defined even if the problem is
@@ -205,16 +205,23 @@ namespace Belos {
     /// different BLAS or LAPACK calls on different processes may
     /// result in different answers.  The answers may be significantly
     /// different if the projected problem is singular or
-    /// ill-conditioned.  This is bad because iterative methods assume
-    /// that the projected problem has the same solution on all
-    /// processes.  Regularizing the projected problem is one way to
-    /// ensure that different processes compute (almost) the same
-    /// solution.
+    /// ill-conditioned.  This is bad because GMRES variants use the
+    /// projected problem's solution as the coefficients for the
+    /// solution update.  The solution update coefficients must be
+    /// (almost nearly) the same on all processes.  Regularizing the
+    /// projected problem is one way to ensure that different
+    /// processes compute (almost) the same solution.
     template<class Scalar>
     class ProjectedLeastSquaresSolver {
     public:
+      /// \typedef scalar_type
+      /// \brief The template parameter of this class.
       typedef Scalar scalar_type;
+      /// \typedef magnitude_type
+      /// \brief The type of the magnitude of a \c scalar_type value.
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      /// \typedef mat_type
+      /// \brief The type of a dense matrix (or vector) of \c scalar_type.
       typedef Teuchos::SerialDenseMatrix<int,Scalar> mat_type;
 
     private:
@@ -267,7 +274,8 @@ namespace Belos {
       ///
       /// \param out [out] Stream to which to write test output.
       ///
-      void
+      /// \return true if the test succeeded, else false.
+      bool
       testGivensRotations (std::ostream& out)
       {
 	using std::endl;
@@ -289,6 +297,12 @@ namespace Belos {
 	out << "-- After applying rotation:" << endl;
 	out << "---- cos,sin = " << theCosine << "," << theSine << endl;
 	out << "---- x = " << x << ", y = " << y << endl;
+
+	// Allow only a tiny bit of wiggle room for zeroing-out of y.
+	if (STS::magnitude(y) > 2*STS::eps())
+	  return false;
+	else 
+	  return true;
       }
 
       /// \brief Test \c updateColumnGivens() against \c updateColumnLapack().
