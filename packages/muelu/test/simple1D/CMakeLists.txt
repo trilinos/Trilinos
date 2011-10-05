@@ -13,14 +13,52 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
+   simple1D
+   SOURCES main.cpp
+   COMM serial mpi
+   DEPLIBS muelu muelu-xpetra muelu-adapters
+)
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  PACKAGE_ADD_TEST(
     simple1D
-    SOURCES main.cpp
-    ARGS ""
+    NAME "simple1DEpetra"
+    ARGS "--linAlgebra=0"
+    NUM_MPI_PROCS 1
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
-  )
+    )
+
+  PACKAGE_ADD_TEST(
+    simple1D
+    NAME "simple1DEpetra"
+    ARGS "--linAlgebra=0"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+   IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+   
+  PACKAGE_ADD_TEST(
+    simple1D
+    NAME "simple1DTpetra"
+    ARGS "--linAlgebra=1"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_TEST(
+    simple1D
+    NAME "simple1DTpetra"
+    ARGS "--linAlgebra=1"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+   ENDIF()
 ENDIF()
 
 # PACKAGE_ADD_EXECUTABLE_AND_TEST(

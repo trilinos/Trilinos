@@ -14,12 +14,51 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
     ScalingTest
     SOURCES ScalingTest.cpp
-    ARGS ""
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
-  )
+    )
+
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  PACKAGE_ADD_TEST(
+    ScalingTest
+    NAME "ScalingTestEpetra"
+    ARGS "--linAlgebra=0"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_TEST(
+    ScalingTest
+    NAME "ScalingTestEpetra"
+    ARGS "--linAlgebra=0"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+   IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+   
+  PACKAGE_ADD_TEST(
+    ScalingTest
+    NAME "ScalingTestTpetra"
+    ARGS "--linAlgebra=1"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_TEST(
+    ScalingTest
+    NAME "ScalingTestTpetra"
+    ARGS "--linAlgebra=1"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+   ENDIF()
 ENDIF()
