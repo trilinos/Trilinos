@@ -190,8 +190,8 @@ namespace Teuchos
 	   ScalarType* A, 
 	   const OrdinalType LDA,
 	   ScalarType* X, 
-	   ScalarType* SCALE,
-	   ScalarType* CNORM,
+	   MagnitudeType* SCALE,
+	   MagnitudeType* CNORM,
 	   OrdinalType* INFO) const;
 
     //! Estimates the reciprocal of the condition number of a general real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
@@ -515,6 +515,24 @@ namespace Teuchos
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
+
+  template<typename OrdinalType, typename ScalarType>
+  void 
+  LAPACK<OrdinalType,ScalarType>::
+  LATRS (const char UPLO, 
+	 const char TRANS, 
+	 const char DIAG, 
+	 const char NORMIN, 
+	 const OrdinalType N, 
+	 ScalarType* A, 
+	 const OrdinalType LDA, 
+	 ScalarType* X, 
+	 MagnitudeType* SCALE, 
+	 MagnitudeType* CNORM, 
+	 OrdinalType* INFO) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
   
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
@@ -795,6 +813,7 @@ namespace Teuchos
 
 
     void GETRI(const int n, float* A, const int lda, const int* IPIV, float* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, float* A, const int LDA, float* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
     void GESV(const int n, const int nrhs, float* A, const int lda, int* IPIV, float* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
@@ -891,6 +910,7 @@ namespace Teuchos
     void GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* IPIV, double* B, const int ldb, int* info) const;
     void GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, double* A, const int LDA, double* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
     void GESV(const int n, const int nrhs, double* A, const int lda, int* IPIV, double* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
@@ -989,6 +1009,7 @@ namespace Teuchos
     void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<float>* A, const int LDA, std::complex<float>* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GESV(const int n, const int nrhs, std::complex<float>* A, const int lda, int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
@@ -1068,6 +1089,7 @@ namespace Teuchos
     void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<double>* A, const int LDA, std::complex<double>* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GESV(const int n, const int nrhs, std::complex<double>* A, const int lda, int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
