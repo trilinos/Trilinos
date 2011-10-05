@@ -159,6 +159,11 @@ INCLUDE(PrintVar)
 #     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  See the COMM
 #     argument in the script PACKAGE_ADD_TEST(...) for more details.
 #
+#   CATEGORIES <category1> <category2> ...
+#
+#     Gives the test categories this test will be added.  See
+#     PACKAGE_ADD_TEST(...) for more details.
+#
 # Each test command is either package-built test executable or some general
 # command executable and is defined as either:
 #

@@ -202,9 +202,14 @@ FUNCTION(PACKAGE_ADD_TEST_PROCESS_CATEGORIES  ADD_THE_TEST_OUT)
       IF (CATEGORY STREQUAL ${CATEGORY_USR_SET})
         # Exact match for the category, add the test
         SET(ADD_THE_TEST TRUE)
-      ELSEIF(CATEGORY STREQUAL "BASIC" AND CATEGORY_USR_SET STREQUAL "NIGHTLY")
-        # All basic tests are run as part of nighly tests
-        SET(ADD_THE_TEST TRUE)
+      ELSEIF(CATEGORY STREQUAL "BASIC")
+        IF (CATEGORY_USR_SET STREQUAL "CONTINUOUS" OR CATEGORY_USR_SET STREQUAL "NIGHTLY")
+          SET(ADD_THE_TEST TRUE)
+        ENDIF()
+      ELSEIF(CATEGORY STREQUAL "CONTINUOUS")
+        IF (CATEGORY_USR_SET STREQUAL "NIGHTLY")
+          SET(ADD_THE_TEST TRUE)
+        ENDIF()
       ELSE()
         # No matches for the category, don't add the test
       ENDIF()
