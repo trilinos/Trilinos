@@ -6,6 +6,7 @@
 #include "ml_epetra_utils.h"
 #include "Ifpack.h"
 #include "ml_ValidateParameters.h"
+#include "ml_ifpack_epetra_wrap.h"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -97,6 +98,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   StartTimer(&t_time);
 #endif
   int output_level=List_.get("ML output",0);
+  if(output_level>0) verbose_=true;
 
   // Sanity check
   if(!A0_->DomainMap().SameAs(P0_->RangeMap())) return -1;
@@ -111,17 +113,8 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   else if(PreOrPostSmoother == "both") pre_or_post = ML_BOTH;
 
   Teuchos::ParameterList & IfpackList=List_.sublist("smoother: ifpack list");
-  string MyIfpackType = List_.get("smoother: type", "Gauss-Seidel");
-  if(MyIfpackType=="IFPACK") MyIfpackType = List_.get("smoother: ifpack type", MyIfpackType);
-  int MyIfpackOverlap = List_.get("smoother: ifpack overlap", 0);
-
-  Ifpack Factory;
-  Ifpack_Preconditioner* Prec= Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(&*A0_), MyIfpackOverlap);
-  Prec->SetParameters(IfpackList);
-  Prec->Compute();
-  Smoother_=rcp<Ifpack_Preconditioner>(Prec);
-  Smoother_->Print(cout);
-
+  Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0, IfpackList,"LevelWrap Smoother (level 0): ",verbose_));
+  
   //********************
   // Setup A1
   //********************

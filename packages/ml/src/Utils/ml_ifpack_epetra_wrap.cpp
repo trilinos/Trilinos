@@ -40,10 +40,7 @@ namespace ML_Epetra{
   string SmooType = List.get("smoother: type", "Chebyshev");
   if(SmooType=="IFPACK") SmooType=List.get("smoother: ifpack type","Chebyshev");
   int Sweeps = List.get("smoother: sweeps", 3);
-  int MaximumIterations = List.get("eigen-analysis: max iters", 10);
-  string EigenType_ = List.get("eigen-analysis: type", "cg");
-  double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
-  double alpha = List.get("chebyshev: alpha",30.0001);  
+  int IfpackOverlap = List.get("smoother: ifpack overlap",0);
   double omega = List.get("smoother: damping factor",1.0);
   Ifpack_Chebyshev* SmootherC_=0;
   Ifpack_Preconditioner* SmootherP_=0;
@@ -65,6 +62,11 @@ namespace ML_Epetra{
   /***               Chebyshev                ***/
   /**********************************************/
   if(SmooType=="Chebyshev"){
+    int MaximumIterations = List.get("eigen-analysis: max iters", 10);
+    string EigenType_ = List.get("eigen-analysis: type", "cg");
+    double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
+    double alpha = List.get("chebyshev: alpha",30.0001);  
+
     /* Grab Diagonal & invert if not provided */
     Epetra_Vector *InvDiagonal_;
     if(InvDiagonal) InvDiagonal_=const_cast<Epetra_Vector *>(InvDiagonal);
@@ -110,35 +112,66 @@ namespace ML_Epetra{
     return SmootherC_;
   }
   /**********************************************/
-  /***               Gauss-Seidel             ***/
+  /***           Point Relaxation             ***/
   /**********************************************/
-  else if(SmooType=="Gauss-Seidel" || SmooType=="symmetric Gauss-Seidel" || SmooType=="point relaxation stand-alone"){      
-    bool gs_type = List.get("smoother: Gauss-Seidel efficient symmetric",false);
+  else if(SmooType=="Gauss-Seidel" || SmooType=="symmetric Gauss-Seidel" || SmooType=="Jacobi"
+	  || SmooType=="point relaxation stand-alone" || SmooType=="point relaxation" ){      
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
     string MyIfpackType="point relaxation stand-alone";
+    if(IfpackOverlap > 0) MyIfpackType="point relaxation";
     string MyRelaxType="symmetric Gauss-Seidel";
-    if(SmooType=="Gauss-Seidel" || SmooType=="symmetric Gauss-Seidel") MyRelaxType=SmooType;
-    IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",SmooType));
+    if(SmooType=="symmetric Gauss-Seidel") MyRelaxType=SmooType;
+    else if(SmooType=="Jacobi") MyRelaxType=SmooType;
+
+    IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",MyRelaxType));
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
 
     if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << IFPACKList.get("relaxation: type",SmooType).c_str()<<" (sweeps="
-	   << Sweeps << ",omega=" << omega << endl;
+      cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
+	   << Sweeps << ",omega=" << omega <<  ")" <<endl;
     }
     	
-    //NTS: Finish
     Ifpack Factory;
-    SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),0);
+    SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
     SmootherP_->Initialize();
     SmootherP_->Compute();
     return SmootherP_;
-
-
   }
+  /**********************************************/
+  /***           Block Relaxation             ***/
+  /**********************************************/
+  else if(SmooType=="block Gauss-Seidel" || SmooType=="symmetric block Gauss-Seidel" || SmooType=="block Jacobi" 
+	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation" ){      
+    const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
+    if(!Acrs) return 0;
+    string MyIfpackType="block relaxation stand-alone";
+    if(IfpackOverlap > 0) MyIfpackType="block relaxation";
+    string MyRelaxType="symmetric Gauss-Seidel";
+    if(SmooType=="block Gauss-Seidel") MyRelaxType="Gauss-Seidel";
+    else if(SmooType=="block Jacobi") MyRelaxType="Jacobi";
+
+    IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",MyRelaxType));
+    IFPACKList.set("relaxation: sweeps", Sweeps);
+    IFPACKList.set("relaxation: damping factor", omega);
+   
+    if(verbose && !A->Comm().MyPID()){
+      cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
+	   << Sweeps << ",omega=" << omega << ")" <<endl;
+    }
+
+    Ifpack Factory;
+    SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
+    if (SmootherP_ == 0) return 0;
+    SmootherP_->SetParameters(IFPACKList);
+    SmootherP_->Initialize();
+    SmootherP_->Compute();
+    return SmootherP_;
+  }
+
   else{
     printf("ML_Gen_Smoother_Ifpack_New: Unknown preconditioner\n");
     ML_CHK_ERR(0);

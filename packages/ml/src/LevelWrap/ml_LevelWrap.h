@@ -25,8 +25,6 @@
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_RCP.hpp"
-#include "Ifpack_Preconditioner.h"
-#include "ml_MultiLevelPreconditioner.h"
 
 namespace ML_Epetra
 {
@@ -141,7 +139,7 @@ namespace ML_Epetra
     bool user_A1_;
 
     //! Smoother
-    Teuchos::RCP<Ifpack_Preconditioner> Smoother_;
+    Teuchos::RCP<Epetra_Operator> Smoother_;
 
     //! Smoother pre or post
     int pre_or_post;
