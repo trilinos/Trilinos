@@ -11,11 +11,27 @@
 #
 # then run it, for example, as (this builds and tests):
 #
-#  $ ./checkin-test-local.sh --do-all
+#  $ ./checkin-test-neams-smp.sh --do-all
 #
 # (This pushes after successful tests have been run)
 #
-#  $ ./checkin-test-local.sh --push
+#  $ ./checkin-test-neams-smp.sh --push
+
+for word in "$@"
+do
+  if [ ${word} == "--help" ]; then
+    echo "
+To run this script (this builds and tests):
+
+$ ./checkin-test-neams-smp.sh --do-all
+
+(This pushes after successful tests have been run)
+
+$ ./checkin-test-neams-smp.sh --push "
+exit
+
+  fi
+done
 
 #
 # Set up configuration files
@@ -43,8 +59,9 @@ echo "
 
 EXTRA_ARGS=$@
 
-../checkin-test.py 
+../checkin-test.py \
 --make-options="-j8" \
 --ctest-options="-j8" \
 --send-email-to="" \
---do-all $EXTRA_ARGS
+--no-eg-git-version-check \
+$EXTRA_ARGS
