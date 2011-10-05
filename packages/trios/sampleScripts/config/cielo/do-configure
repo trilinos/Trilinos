@@ -32,7 +32,6 @@ cmake \
     -D Trilinos_ENABLE_TESTS:BOOL=ON \
     -D Trilinos_EXTRA_LINK_FLAGS:STRING="-lz" \
 \
-    -D Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
 \
    -D TPL_ENABLE_MPI:BOOL=ON \
