@@ -7,6 +7,7 @@
 
 #include "MueLu_Utilities.hpp"
 
+#include "MueLu_NoFactory.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -54,6 +55,19 @@ namespace MueLuTests {
     //aLevel.print(std::cout);
 
   }
+
+#ifdef FOR_TOBIAS
+  TEUCHOS_UNIT_TEST(Level, RequestRelease)
+  {
+    Level l;
+    
+    RCP<FactoryBase> factory = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    
+    l.Request("Graph", factory.get());
+    l.Release("Graph", factory.get());
+    
+  }
+#endif
 
 } // namespace MueLuTests
 

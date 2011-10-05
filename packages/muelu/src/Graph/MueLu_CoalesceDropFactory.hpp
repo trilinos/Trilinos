@@ -31,7 +31,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<FactoryBase> AFact = Teuchos::null)
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null)
       : AFact_(AFact)
     { }
 
@@ -59,7 +59,7 @@ namespace MueLu {
 
   private:
     //! A Factory
-    RCP<FactoryBase> AFact_;
+    RCP<const FactoryBase> AFact_;
 
   }; //class CoalesceDropFactory
 
