@@ -10,6 +10,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
+#include "ml_ifpack_epetra_wrap.h"
 using namespace std;
 
 #define ABS(x)((x)>0?(x):-(x))
@@ -195,59 +196,12 @@ int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 // Setup the Smoother
 int ML_Epetra::FaceMatrixFreePreconditioner::SetupSmoother()
 {
+
 #ifdef HAVE_ML_IFPACK
-  /* Variables */
-  double lambda_min = 0.0;
-  double lambda_max = 0.0;
-  Teuchos::ParameterList IFPACKList;  
-
-  /* Parameter-list Options */
-  int PolynomialDegree = List_.get("smoother: degree", 3);
-  PolynomialDegree = List_.get("smoother: sweeps", 3);// override if need be  
-  int MaximumIterations = List_.get("eigen-analysis: max iters", 10);
-  string EigenType_ = List_.get("eigen-analysis: type", "cg");
-  double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
-
-  if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("inv_diagonal.dat",*InvDiagonal_,0,0,false);
-  
-  /* Do the eigenvalue estimation*/
-  if (EigenType_ == "power-method"){   
-    ML_CHK_ERR(Ifpack_Chebyshev::PowerMethod(*Operator_,*InvDiagonal_,MaximumIterations,lambda_max));
-    lambda_min=lambda_max/30.0;
-  }/*end if*/
-  else if(EigenType_ == "cg"){    
-    ML_CHK_ERR(Ifpack_Chebyshev::CG(*Operator_,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max));
-  }/*end else if*/
-  else
-    ML_CHK_ERR(-1); // not recognized
-
-  double alpha = List_.get("chebyshev: alpha",30.0001);
-  lambda_min=lambda_max / alpha;
-  
-  /* Setup the Smoother's List*/
-  IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
-  IFPACKList.set("chebyshev: max eigenvalue", boost * lambda_max);
-  IFPACKList.set("chebyshev: ratio eigenvalue",alpha);
-  IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
-  IFPACKList.set("chebyshev: degree", PolynomialDegree);
-  IFPACKList.set("chebyshev: zero starting solution",false);
-
-  //NTS: Need to create two of these lists, one to use in the first iteration
-  // (with zero starting solution set to true) and another to use when it's set
-  // to false.
-  
-  /* Build the Smoother */
-  Smoother_ = new Ifpack_Chebyshev(&*Operator_);
-  if (Smoother_ == 0) ML_CHK_ERR(-1); 
-  ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
-  ML_CHK_ERR(Smoother_->Initialize());
-  ML_CHK_ERR(Smoother_->Compute());
-
-  if(verbose_ && !Comm_->MyPID())
-    printf("FMFP: Building Chebyshev smoother %d sweeps (lmin=%6.4e lmax=%6.4e)\n",PolynomialDegree,lambda_min,boost*lambda_max);
+  Smoother_=ML_Epetra::ML_Gen_Smoother_Ifpack_Epetra(&*Operator_,InvDiagonal_,List_,"FMFP Smoother (level 0): ",verbose_);
 #else
   if(!Comm_->MyPID())
-    printf("ERROR: FaceMNatrixFreePreconditioner must be compiled with --enable-ml-ifpack for this mode to work\n");
+    printf("ERROR: FMFP must be compiled with --enable-ml-ifpack for this mode to work\n");
 #endif
   return 0;
 }/*end SetupSmoother */
@@ -337,6 +291,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::NodeAggregate(ML_Aggregate_Struct *
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
   ML_Aggregate_Set_StartLevel(MLAggr, 0);
   ML_Aggregate_Set_Threshold(MLAggr, Threshold);
+  ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr); 
   MLAggr->keep_agg_information = 1;  
