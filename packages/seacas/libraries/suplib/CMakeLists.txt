@@ -33,7 +33,8 @@ SET(SOURCES
 	cpuifc.f          dbitim.f          dbvini.f          ffreal.f          iowdsz.f          opnfil.f          zeroin.f
 	cpyint.f          dbiv0.f           do_help.c         ffrrng.f          ismax.f           packt.f
 	cpylog.f          dbixyz.f          engnot.f          ismin.f           pcklab.f 
-	cpyrea.f          dboeb1.f          engstr.f          ffvrng.f          lenstr.f          pckstr.f)
+	cpyrea.f          dboeb1.f          engstr.f          ffvrng.f          lenstr.f          pckstr.f
+	indexi.f          indexn.f          indexr.f          indexx.f          ran1.f            hunt.f)
 
 PACKAGE_ADD_LIBRARY(
 	suplib
