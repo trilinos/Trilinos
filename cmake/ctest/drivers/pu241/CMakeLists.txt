@@ -81,6 +81,12 @@ ELSE()
       )
   
     TRILINOS_DRIVER_ADD_DASHBOARD(
+      MPI_RELEASE_GCC_CASLDEV
+      ctest_linux_nightly_mpi_release_gcc_4.5.1_casl_dev.cmake
+      TIMEOUT_MINUTES 240
+      )
+  
+    TRILINOS_DRIVER_ADD_DASHBOARD(
       SERIAL_RELEASE_GCC_CASLDEV
       ctest_linux_nightly_serial_release_gcc_4.5.1_casl_dev.cmake
       TIMEOUT_MINUTES 240
