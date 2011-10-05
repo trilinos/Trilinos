@@ -1,7 +1,7 @@
 INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
 INCLUDE(AddOptionAndDefine)
-INCLUDE(ProcessXDR)
+INCLUDE(TriosProcessXDR)
 
 ############# Special exception for rpcgen extra commas in enum ##########
 IF (CMAKE_COMPILER_IS_GNUCXX)
@@ -18,7 +18,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 #INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
 
 # Generate the XDR header and source file for the service arguments
-ProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/xfer_service_args.x)
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/xfer_service_args.x)
 
 
 

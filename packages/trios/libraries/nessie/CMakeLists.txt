@@ -3,7 +3,7 @@ INCLUDE(PackageLibraryMacros)
 INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
 INCLUDE(AddOptionAndDefine)
-INCLUDE(ProcessXDR)
+INCLUDE(TriosProcessXDR)
 
 ############# Process Subdirectories ###################
 #ADD_SUBDIRECTORY(common)
@@ -32,9 +32,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/common)
 # The rpcgen files should be treated as system files to avoid annoying warnings
 # INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
 
-ProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/Trios_nnti_xdr.x)
-ProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/Trios_nssi_types_xdr.x)
-ProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/nssi_service_args.x)
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/Trios_nnti_xdr.x)
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/Trios_nssi_types_xdr.x)
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/common/nssi_service_args.x)
 
 
 APPEND_SET(NOINSTHEADERS

@@ -58,14 +58,14 @@ ENDIF()
 # Create the Trios_config.h file in ${CMAKE_BINARY_DIR}
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
-# Copy the ProcessXDR.cmake file
+# Copy the TriosProcessXDR.cmake file
 CONFIGURE_FILE(
-  ${PACKAGE_SOURCE_DIR}/cmake/ProcessXDR.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/ProcessXDR.cmake
+  ${PACKAGE_SOURCE_DIR}/cmake/TriosProcessXDR.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/TriosProcessXDR.cmake
   COPYONLY
 )
 
-# Copy the ProcessXDR.cmake file
+# Copy the UseTrios.cmake file
 CONFIGURE_FILE(
   ${PACKAGE_SOURCE_DIR}/cmake/UseTrios.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
@@ -99,7 +99,7 @@ PACKAGE_POSTPROCESS()
 
 # Install cmake scripts so others can use them
 INSTALL(FILES 
-  ${CMAKE_CURRENT_BINARY_DIR}/ProcessXDR.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/TriosProcessXDR.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
   DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"
 )
