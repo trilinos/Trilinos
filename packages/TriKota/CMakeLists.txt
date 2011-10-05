@@ -58,6 +58,18 @@ IF(TriKota_ENABLE_DakotaCMake)
   # Tell Dakota it is building inside Trilinos
   # (affects use of Teuchos and exported lists of includes and libs)
   SET(BUILD_IN_TRILINOS ON)
+
+  # Work around what appears to be a limitation in FindBoost.cmake and
+  # minimize chance Trilinos and DAKOTA pick up different Boost versions
+  # (Boost_INCLUDE_DIRS doesn't seem to work as expected)
+  # This may fail is Boost_INCLUDE_DIRS contains a list of DIRS!
+  # Could consider mapping BoostLib_LIBRARY_DIRS to Boost_LIBRARY_DIRS as well
+  IF(TPL_ENABLE_Boost)
+    IF(Boost_INCLUDE_DIRS)
+      SET(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIRS} CACHE FILEPATH 
+	"Boost include directory set by TriKota")
+    ENDIF()
+  ENDIF()
   
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
