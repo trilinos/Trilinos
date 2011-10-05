@@ -20,7 +20,7 @@ EXTRA_ARGS=$@
 TRILINOS_SRC_DIR=${HOME}/research/workspace/Trilinos
 
 echo "
--D BUILD_SHARED:BOOL=ON
+-D BUILD_SHARED_LIBS:BOOL=ON
 -D TPL_ENABLE_Portals:BOOL=ON
 -D Portals_INCLUDE_DIRS:PATH=${HOME}/research/support/lib/portals/include
 -D Portals_LIBRARY_DIRS:PATH=${HOME}/research/support/lib/portals/lib
@@ -39,12 +39,14 @@ ${TRILINOS_SRC_DIR}/checkin-test.py \
    --enable-all-packages=off \
    --no-enable-fwd-packages \
    --without-serial-release \
-   --extra-repos=preCopyrightTrilinos \
    --enable-packages=Trios \
    --extra-build=MPI_DEBUG \
    --pull \
    --configure \
    --build \
    --test \
+   --send-email-to='' \
    $EXTRA_ARGS
 
+# If we have stuff in preCopyrightTrilinos, this is how we enable it
+#   --extra-repos=preCopyrightTrilinos \
