@@ -149,6 +149,32 @@ namespace Teuchos
   
   void LAPACK<int,float>::GETRI(const int n, float* A, const int lda, const int* IPIV, float* WORK, const int lwork, int* info) const
   { SGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info); }
+
+  void 
+  LAPACK<int, float>::LATRS (const char UPLO, 
+			     const char TRANS, 
+			     const char DIAG, 
+			     const char NORMIN, 
+			     const int N,
+			     float* A, 
+			     const int LDA,
+			     float* X, 
+			     float* SCALE,
+			     float* CNORM,
+			     int* INFO) const
+  {
+    SLATRS_F77(CHAR_MACRO(UPLO), 
+	       CHAR_MACRO(TRANS), 
+	       CHAR_MACRO(DIAG), 
+	       CHAR_MACRO(NORMIN), 
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
+  }
   
   
   void LAPACK<int,float>::GECON(const char NORM, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const
@@ -422,7 +448,32 @@ namespace Teuchos
   
   void LAPACK<int,double>::GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const
   { DGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info); }
-  
+
+  void 
+  LAPACK<int, double>::LATRS (const char UPLO, 
+			      const char TRANS, 
+			      const char DIAG, 
+			      const char NORMIN, 
+			      const int N,
+			      double* A, 
+			      const int LDA,
+			      double* X, 
+			      double* SCALE,
+			      double* CNORM,
+			      int* INFO) const
+  {
+    DLATRS_F77(CHAR_MACRO(UPLO), 
+	       CHAR_MACRO(TRANS), 
+	       CHAR_MACRO(DIAG), 
+	       CHAR_MACRO(NORMIN), 
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
+  }
   
   void LAPACK<int,double>::GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const
   { DGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, IWORK, info); }
@@ -767,6 +818,33 @@ namespace Teuchos
     CGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
   }
   
+
+  void 
+  LAPACK<int, std::complex<float> >::LATRS (const char UPLO, 
+					    const char TRANS, 
+					    const char DIAG, 
+					    const char NORMIN, 
+					    const int N,
+					    std::complex<float>* A, 
+					    const int LDA,
+					    std::complex<float>* X, 
+					    float* SCALE,
+					    float* CNORM,
+					    int* INFO) const
+  {
+    CLATRS_F77(CHAR_MACRO(UPLO), 
+	       CHAR_MACRO(TRANS), 
+	       CHAR_MACRO(DIAG), 
+	       CHAR_MACRO(NORMIN), 
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
+  }
+
   
   void LAPACK<int,std::complex<float> >::GECON(const char NORM, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const
   {
@@ -1062,7 +1140,32 @@ namespace Teuchos
   {
     ZGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
   }
-  
+
+  void 
+  LAPACK<int, std::complex<double> >::LATRS (const char UPLO, 
+					     const char TRANS, 
+					     const char DIAG, 
+					     const char NORMIN, 
+					     const int N,
+					     std::complex<double>* A, 
+					     const int LDA,
+					     std::complex<double>* X, 
+					     double* SCALE,
+					     double* CNORM,
+					     int* INFO) const
+  {
+    ZLATRS_F77(CHAR_MACRO(UPLO), 
+	       CHAR_MACRO(TRANS), 
+	       CHAR_MACRO(DIAG), 
+	       CHAR_MACRO(NORMIN), 
+	       &N,
+	       A,
+	       &LDA,
+	       X,
+	       SCALE,
+	       CNORM,
+	       INFO);
+  }
   
   void LAPACK<int,std::complex<double> >::GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const
   {

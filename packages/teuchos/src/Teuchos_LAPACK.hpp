@@ -177,6 +177,23 @@ namespace Teuchos
     //! Computes the inverse of a matrix \c A using the LU factorization computed by GETRF.
     void GETRI(const OrdinalType n, ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
+    /// \brief Robustly solve a possibly singular triangular linear system.  
+    ///
+    /// \note This routine is slower than the BLAS' TRSM, but can
+    ///   detect possible singularity of A.
+    void 
+    LATRS (const char UPLO, 
+	   const char TRANS, 
+	   const char DIAG, 
+	   const char NORMIN, 
+	   const OrdinalType N,
+	   ScalarType* A, 
+	   const OrdinalType LDA,
+	   ScalarType* X, 
+	   ScalarType* SCALE,
+	   ScalarType* CNORM,
+	   OrdinalType* INFO) const;
+
     //! Estimates the reciprocal of the condition number of a general real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
     void GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
