@@ -134,7 +134,7 @@ template<typename T> inline
 bool operator>=( const Array<T> &a1, const Array<T> &a2 );
 
 
-/** \brief Memory-safe tempalted array class that encapsulates std::vector.
+/** \brief Memory-safe templated array class that encapsulates std::vector.
  *
  * ToDo: Finish documentation!
  *

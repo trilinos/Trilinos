@@ -84,6 +84,7 @@
 #define DTRTRI_F77  F77_BLAS_MANGLE(strtri,STRTRI)
 #define DTRTRS_F77  F77_BLAS_MANGLE(strtrs,STRTRS)
 #define DGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
+#define DGELSS_F77   F77_BLAS_MANGLE(sgelss,SGELSS)
 #define DGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
@@ -139,6 +140,7 @@
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ctrtrs,CTRTRS)
 #define ZTRTRI_F77  F77_BLAS_MANGLE(ctrtri,CTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(cgels,CGELS)
+#define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define ZGESVD_F77  F77_BLAS_MANGLE(cgesvd,CGESVD)
 //#define ZGGEV_F77   F77_BLAS_MANGLE(cggev,CGGEV)
@@ -192,6 +194,7 @@
 #define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGELSS_F77   F77_BLAS_MANGLE(dgelss,DGELSS)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
@@ -246,6 +249,7 @@
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
 #define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
+#define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
 //#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
@@ -299,6 +303,7 @@
 #define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGELSS_F77   F77_BLAS_MANGLE(dgelss,DGELSS)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
@@ -353,6 +358,7 @@
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
 #define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
+#define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
 //#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
@@ -500,7 +506,7 @@
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
 #define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
-//#define ZGELSS_F77  F77_BLAS_MANGLE(zgelss,ZGELSS)
+#define ZGELSS_F77  F77_BLAS_MANGLE(zgelss,ZGELSS)
 //#define ZGGLSE_F77  F77_BLAS_MANGLE(zgglse,ZGGLSE)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
@@ -607,7 +613,7 @@
 #define CTRTRS_F77  F77_BLAS_MANGLE(ctrtrs,CTRTRS)
 #define CTRTRI_F77  F77_BLAS_MANGLE(ctrtri,CTRTRI)
 #define CGELS_F77   F77_BLAS_MANGLE(cgels,CGELS)
-//#define CGELSS_F77  F77_BLAS_MANGLE(cgelss,CGELSS)
+#define CGELSS_F77  F77_BLAS_MANGLE(cgelss,CGELSS)
 //#define CGGLSE_F77  F77_BLAS_MANGLE(cgglse,CGGLSE)
 #define CGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define CGESVD_F77  F77_BLAS_MANGLE(cgesvd,CGESVD)
@@ -771,6 +777,7 @@ double PREFIX DLAPY2_F77(const double* x, const double* y);
 
 // Double precision complex LAPACK linear solvers
 void PREFIX ZGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, std::complex<double>* work, const int* lwork, int* info);
+void PREFIX ZGELSS_F77(const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, double* s, const double* rcond, int* rank, std::complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZGEQRF_F77(const int* m, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZUNGQR_F77(const int* m, const int* n, const int* k, std::complex<double>* a, const int* lda, const std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZGETRF_F77(const int* m, const int* n, std::complex<double>* a, const int* lda, int* ipiv, int* info); 
@@ -800,6 +807,7 @@ void PREFIX ZTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const std::comple
 // Single precision complex LAPACK linear solvers
 
 void PREFIX CGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, std::complex<float>* work, const int* lwork, int* info);
+void PREFIX CGELSS_F77(const int* m, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, float* s, const float* rcond, int* rank, std::complex<float>* work, const int* lwork, float* rwork, int* info);
 void PREFIX CGEQRF_F77(const int* m, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CUNGQR_F77(const int* m, const int* n, const int* k, std::complex<float>* a, const int* lda, const std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CGETRF_F77(const int* m, const int* n, std::complex<float>* a, const int* lda, int* ipiv, int* info);
