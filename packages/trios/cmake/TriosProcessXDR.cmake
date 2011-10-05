@@ -1,6 +1,6 @@
 ############# Function to generate XDR source and header Files ###############
 
-function (ProcessXDR path)
+function (TriosProcessXDR path)
 
    GET_FILENAME_COMPONENT(file ${path} NAME_WE)
 
@@ -32,5 +32,5 @@ function (ProcessXDR path)
      SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isystem ${CMAKE_CURRENT_BINARY_DIR}")
    ENDIF (CMAKE_COMPILER_IS_GNUCXX)
 
-endfunction (ProcessXDR)
+endfunction (TriosProcessXDR)
 
