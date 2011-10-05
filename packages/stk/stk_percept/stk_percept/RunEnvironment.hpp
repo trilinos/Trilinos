@@ -95,8 +95,26 @@ namespace stk {
 
     void my_report_handler(const char *message, int type);
 
-    class RunEnvironment
+    // this little class is simply here to force an ordering in the ~RunEnvironment() dtor, so that
+    //   parallel_machine_finalize gets called after m_comm is destroyed; but, it still only works
+    //   if this is invoked after returning from an enclosing block of RunEnvironment.  why?
+    class ParallelMachineFinalize
     {
+      bool m_need_to_finalize;
+    public:
+      ParallelMachineFinalize(bool need_to_finalize=false) : m_need_to_finalize(need_to_finalize) {}
+      ~ParallelMachineFinalize()
+      {
+        if (m_need_to_finalize)
+          {
+            stk::parallel_machine_finalize();
+          }
+      }
+    };
+
+    class RunEnvironment : public ParallelMachineFinalize
+    {
+
     public:
       // Will initialize a comm
       RunEnvironment(int *argc, char ***argv, bool debug=false);
@@ -104,7 +122,8 @@ namespace stk {
       // Assumes already-initialized comm
       RunEnvironment(int *argc, char ***argv, stk::ParallelMachine comm, bool debug=false);
 
-      void processCommandLine(int* argc, char ***argv);
+      void processCommandLine(int argc, char **argv);
+      void processCommandLine() { processCommandLine(m_argc, m_argv); }
 
       ~RunEnvironment();
 
@@ -121,6 +140,8 @@ namespace stk {
                             int                           parallel_rank,
                             int                           parallel_size);
 
+      int get_argc() { return m_argc; }
+      char **get_argv() { return m_argv; }
 
       static std::string
       get_working_directory();
@@ -151,10 +172,15 @@ namespace stk {
       bool                          m_need_to_finalize;
       bool                          m_debug;
       bool                          m_processCommandLine_invoked;
+      std::string                  *m_argv_new;
+      int                           m_argc;
+      char                        **m_argv;
+
+      //ParallelMachineFinalize       m_par_finalize;
 
       int  processCLP(int procRank, int argc, char* argv[]);
       // shared constructor implementation; do not call directly
-      void internal_initialize(int* argc, char ***argv);
+      void internal_initialize(int argc, char **argv);
       void bootstrap();
 
       void setSierraOpts(int procRank, int argc, char* argv[]);

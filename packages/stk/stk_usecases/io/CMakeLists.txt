@@ -27,7 +27,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stk_use_cases_io
     SOURCES ${SOURCES}
     DEPLIBS stk_io
-    ARGS "--mesh gen:10x10x10"
+    ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "STKUNIT_ALL_PASS"

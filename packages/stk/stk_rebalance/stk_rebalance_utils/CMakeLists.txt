@@ -13,7 +13,6 @@ FILE(GLOB HEADERS *.cpp)
 
 PACKAGE_ADD_LIBRARY(
   stk_rebalance_utils
-  DEPLIBS stk_mesh_base
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

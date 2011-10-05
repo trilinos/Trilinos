@@ -51,8 +51,7 @@ PACKAGE_ADD_LIBRARY(
   stk_mesh_base
   NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
   SOURCES ${SOURCES} ${SOURCES_IMPL}
-#srk  DEPLIBS stk_util_env stk_util_parallel stk_util_diag stk_util_use_cases
-  DEPLIBS stk_util_env stk_util_parallel stk_util_diag 
+  DEPLIBS stk_util_env stk_util_parallel
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION

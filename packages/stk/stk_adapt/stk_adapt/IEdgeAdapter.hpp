@@ -1,7 +1,7 @@
-#ifndef stk_adapt_EdgeMarker_hpp
-#define stk_adapt_EdgeMarker_hpp
+#ifndef stk_adapt_IEdgeAdapter_hpp
+#define stk_adapt_IEdgeAdapter_hpp
 
-#include <stk_adapt/Marker.hpp>
+#include <stk_adapt/IAdapter.hpp>
 
 namespace stk {
   namespace adapt {
@@ -10,14 +10,14 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     /**
-     * An EdgeMarker is an abstract base class for derived classes that are required to overload the mark method,
+     * An IEdgeAdapter is an abstract base class for derived classes that are required to overload the mark method,
      *    which provides info such as the element the edge belongs to, which edge ordinal it is, the nodes of the edge
      *    and the edge coordinates.  
      */
-    class EdgeMarker : public Marker
+    class IEdgeAdapter : public IAdapter
     {
     public:
-      EdgeMarker(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
       /// can be overriden
       virtual ElementUnrefineCollection  buildUnrefineList();
@@ -25,33 +25,29 @@ namespace stk {
     protected:
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
-      ///    0 (nothing), 1 (refine)
+      ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
 
       virtual int mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
-                           double *coord0, double *coord1, std::vector<int>& existing_edge_marks) = 0;
+                           double *coord0, double *coord1, std::vector<int>* existing_edge_marks) = 0;
 
-      ///    -1 (unrefine), 0 (nothing)
-      virtual int markUnrefine(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
-                                double *coord0, double *coord1) = 0;
-
-      /// This methods calls markUnrefine and if all edges are marked for unrefine, it returns -1 to unrefine the element.
+      /// This convenience method calls mark and if all edges are marked for unrefine, it returns -1 to unrefine the element.
       /// This method can be overriden to allow for an "element-based" determination that doesn't need to visit edges.
       virtual int markUnrefine(const stk::mesh::Entity& element);
 
       virtual void 
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
     };
 
-    EdgeMarker::EdgeMarker(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
-      Marker(eMesh, bp, proc_rank_field)
+    IEdgeAdapter::IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+      IAdapter(eMesh, bp, proc_rank_field)
     {
     }
 
-    void EdgeMarker::
-    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+    void IEdgeAdapter::
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
                                             vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -73,12 +69,12 @@ namespace stk {
           else if (needed_entity_rank == m_eMesh.face_rank())
             {
               numSubDimNeededEntities = cell_topo_data->side_count;
-              throw std::runtime_error("EdgeMarker::apply can't use EdgeMarker for RefinerPatterns that require face nodes");
+              throw std::runtime_error("IEdgeAdapter::apply can't use IEdgeAdapter for RefinerPatterns that require face nodes");
             }
           else if (needed_entity_rank == m_eMesh.element_rank())
             {
               numSubDimNeededEntities = 1;
-              throw std::runtime_error("EdgeMarker::apply can't use EdgeMarker for RefinerPatterns that require volume nodes");
+              throw std::runtime_error("IEdgeAdapter::apply can't use IEdgeAdapter for RefinerPatterns that require volume nodes");
             }
 
           // see how many edges are already marked
@@ -107,9 +103,9 @@ namespace stk {
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
                   
 
-                  int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, edge_marks);
+                  int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, &edge_marks);
 
-                  bool needNodes = (1 == markInfo);
+                  bool needNodes = (DO_REFINE & markInfo);
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, needNodes);
                     }
@@ -119,7 +115,7 @@ namespace stk {
         } // ineed_ent
     }
 
-    int EdgeMarker::markUnrefine(const stk::mesh::Entity& element)
+    int IEdgeAdapter::markUnrefine(const stk::mesh::Entity& element)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
@@ -139,8 +135,9 @@ namespace stk {
           double * const coord0 = stk::mesh::field_data( *coordField , node0 );
           double * const coord1 = stk::mesh::field_data( *coordField , node1 );
                   
-          int markInfo = markUnrefine(element, iSubDimOrd, node0, node1, coord0, coord1);
-          if (markInfo >= 0)
+          int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, 0);
+          bool do_unref = markInfo & DO_UNREFINE;
+          if (!do_unref)
             {
               unrefAllEdges = false;
               break;
@@ -152,7 +149,7 @@ namespace stk {
         return 0;
     }
 
-    ElementUnrefineCollection EdgeMarker::buildUnrefineList()
+    ElementUnrefineCollection IEdgeAdapter::buildUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
 
@@ -181,7 +178,7 @@ namespace stk {
                 if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                   {
                     int markInfo = markUnrefine(element);
-                    if (markInfo < 0)
+                    if (markInfo & DO_UNREFINE)
                       {
                         elements_to_unref.insert(&element);
                         //std::cout << "tmp unref element id= " << element.identifier() << std::endl;

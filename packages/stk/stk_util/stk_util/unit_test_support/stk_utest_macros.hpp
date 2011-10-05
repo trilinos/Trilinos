@@ -101,7 +101,11 @@
 #define STKUNIT_EXPECT_NEAR(A,B, tol) STKUNIT_ASSERT_NEAR(A, B, tol)
 
 #define STKUNIT_MAIN(argc,argv) \
+int* STKUNIT_ARGC;                                                 \
+char** STKUNIT_ARGV;                                               \
 int main(int argc,char**argv) {\
+STKUNIT_ARGC = &argc; \
+STKUNIT_ARGV = argv; \
   Teuchos::GlobalMPISession mpiSession(&argc, &argv); \
   int error = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
   RUN_TEST_REDUCE(error); \
@@ -156,10 +160,10 @@ int main(int argc, char **argv) {                                  \
     std::cerr << "MPI_Init FAILED" << std::endl ;                  \
     std::abort();                                                  \
   }                                                                \
-  std::cout << "Running main() from gtest_main.cc\n";              \
-  testing::InitGoogleTest(&argc, argv);                            \
   STKUNIT_ARGC = &argc;                                            \
   STKUNIT_ARGV = argv;                                             \
+  std::cout << "Running main() from gtest_main.cc\n";              \
+  testing::InitGoogleTest(&argc, argv);                            \
   int error = RUN_ALL_TESTS();                                     \
   RUN_TEST_REDUCE(error);                                          \
   MPI_Finalize();                                                  \

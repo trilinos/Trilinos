@@ -23,7 +23,7 @@ namespace stk {
 
 
       virtual void 
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
             vector<NeededEntityType>& needed_entity_ranks);
 
 
@@ -39,7 +39,7 @@ namespace stk {
 
 
     void TestLocalRefinerTet_N_4::
-    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 

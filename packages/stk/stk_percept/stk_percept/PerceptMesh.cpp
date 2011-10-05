@@ -825,6 +825,9 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
               entity_rank_names.push_back("FAMILY_TREE");
 #endif
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+              entity_rank_names.push_back("PSEUDO_ELEMENT");
+#endif
               m_metaData   = new stk::mesh::fem::FEMMetaData( m_spatialDim, entity_rank_names);
               m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
             }
@@ -1005,7 +1008,7 @@ namespace stk {
         }
       else
         {
-          stk::mesh::PartVector empty ;
+          static stk::mesh::PartVector empty ;
           stk::mesh::Entity & node_0 = getBulkData()->declare_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_id, empty );
 
           double * const coord = stk::mesh::field_data( *getCoordinatesField() , node_0 );

@@ -1,7 +1,7 @@
-#ifndef stk_adapt_ElementMarker_hpp
-#define stk_adapt_ElementMarker_hpp
+#ifndef stk_adapt_IElementAdapter_hpp
+#define stk_adapt_IElementAdapter_hpp
 
-#include <stk_adapt/Marker.hpp>
+#include <stk_adapt/IAdapter.hpp>
 
 namespace stk {
   namespace adapt {
@@ -10,44 +10,37 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     /**
-     * An ElementMarker is an abstract base class for derived classes that are required to overload the mark method,
-     *   which supplies the derived class with the element to be marked, and markUnrefine method specifying elements to
-     *   unrefine.
+     * An IElementAdapter is an abstract base class for derived classes that are required to overload the mark method,
+     *   which supplies the derived class with the element to be marked for refine, unrefine, or both (@see IAdapter::AdaptInstruction)
      */
-    class ElementMarker : public Marker
+    class IElementAdapter : public IAdapter
     {
     public:
-      ElementMarker(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      IElementAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
       virtual ElementUnrefineCollection  buildUnrefineList() ;
 
     protected:
 
       /// Client supplies this method - given an element return instruction on what to do to the element:
-      ///    0 (nothing), 1 (refine)
-
+      ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
       virtual int mark(const stk::mesh::Entity& element) = 0;
 
-      /// Client supplies this method - given an element return instruction on what to do to the element:
-      ///    -1 (unrefine), 0 (nothing)
-
-      virtual int markUnrefine(const stk::mesh::Entity& element) = 0;
-
       virtual void
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
                                               vector<NeededEntityType>& needed_entity_ranks);
 
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    ElementMarker::ElementMarker(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
-      Marker(eMesh, bp, proc_rank_field)
+    IElementAdapter::IElementAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+      IAdapter(eMesh, bp, proc_rank_field)
     {
     }
 
-    void ElementMarker::
-    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+    void IElementAdapter::
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
                                             vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -58,11 +51,6 @@ namespace stk {
       //VectorFieldType* coordField = m_eMesh.getCoordinatesField();
 
       int markInfo = mark(element);
-#if 0
-      if (markInfo <= 0)
-        return;
-#endif
-
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -82,7 +70,7 @@ namespace stk {
               numSubDimNeededEntities = 1;
             }
 
-          bool needNodes = (1 == markInfo);
+          bool needNodes = ( markInfo & DO_REFINE);
             {
               for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                 {
@@ -93,7 +81,7 @@ namespace stk {
     }
 
 
-    ElementUnrefineCollection ElementMarker::buildUnrefineList()
+    ElementUnrefineCollection IElementAdapter::buildUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
 
@@ -121,8 +109,8 @@ namespace stk {
 
                 if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                   {
-                    int markInfo = markUnrefine(element);
-                    if (markInfo < 0)
+                    int markInfo = mark(element);
+                    if (markInfo & DO_UNREFINE)
                       {
                         elements_to_unref.insert(&element);
                       }

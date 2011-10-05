@@ -47,6 +47,76 @@ namespace stk
       //======================================================================================================================      
       //======================================================================================================================      
 #if 1
+      STKUNIT_UNIT_TEST(nodeRegistry_regr, test_parallel_0)
+      {
+        using namespace mesh;
+        using namespace fem;
+
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        // start_demo_nodeRegistry_test_parallel_1
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if ( p_size == 3)
+          {
+
+            // Set up meta and bulk data
+            const unsigned spatial_dim = 2;
+            FEMMetaData meta_data(spatial_dim);
+            meta_data.commit();
+            BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+            //unsigned p_rank = mesh.parallel_rank();
+            //unsigned p_size = mesh.parallel_size();
+            const EntityRank elem_rank = meta_data.element_rank();
+
+            // Begin modification cycle so we can create the entities and relations
+            mesh.modification_begin();
+
+            // We're just going to add everything to the universal part
+            stk::mesh::PartVector empty_parts;
+            stk::mesh::Part *  owned_part = & meta_data.locally_owned_part();
+            stk::mesh::Part *  shared_part = & meta_data.globally_shared_part();
+            stk::mesh::PartVector owned_parts(1,owned_part);
+            stk::mesh::PartVector shared_parts(1,shared_part);
+
+            // Create nodes
+            Entity *node=0;
+            node = &mesh.declare_entity(0,
+                                        p_rank+1,
+                                        empty_parts);
+
+
+            Entity& elem = mesh.declare_entity(elem_rank,
+                                               p_rank+1,
+                                               empty_parts);
+
+
+            if (p_rank==0 || p_rank==2)
+              {
+                node = &mesh.declare_entity(0,
+                                            2,
+                                            empty_parts);
+                mesh.declare_relation(elem, *node, 0);
+              }
+            else
+              {
+                mesh.declare_relation(elem, *node, 0);
+              }
+
+
+
+            mesh.modification_end();
+          }
+
+        //exit(123);
+      }
+#endif
+      //======================================================================================================================      
+      //======================================================================================================================      
+      //======================================================================================================================      
+#if 1
       STKUNIT_UNIT_TEST(nodeRegistry_regr, test_parallel_1)
       {
         EXCEPTWATCH;
@@ -73,7 +143,8 @@ namespace stk
             if (p_size != 3) // FIXME
               return;
 
-            NodeRegistry nodeRegistry(eMesh);
+            bool useGhosting = true;
+            NodeRegistry nodeRegistry(eMesh, useGhosting);
             nodeRegistry.initialize();
 
             if (p_size == 3)
@@ -208,6 +279,8 @@ namespace stk
                   }
               }
           }
+        //exit(123);
+
       }
 #endif
 
@@ -244,7 +317,8 @@ namespace stk
             if (p_size != 3) // FIXME
               return;
 
-            NodeRegistry nodeRegistry(eMesh);
+            bool useGhosting = true;
+            NodeRegistry nodeRegistry(eMesh, useGhosting);
             nodeRegistry.initialize();
 
             if (p_size == 3)

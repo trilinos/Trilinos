@@ -158,25 +158,30 @@ namespace stk {
     std::string RunEnvironment::m_workingDirectory = "";
 
     RunEnvironment::RunEnvironment(
-                                   int *         argc,
+                                   int  *        argc,
                                    char ***      argv, bool debug)
-      : m_comm(stk::parallel_machine_init(argc, argv)),
-        m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false)
+      : ParallelMachineFinalize(false),
+      m_comm( stk::parallel_machine_init(argc, argv)),
+      m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
+      //,m_par_finalize(false)
     {
-      internal_initialize(argc, argv);
+      internal_initialize(*argc, *argv);
     }
 
     RunEnvironment::RunEnvironment(
-                                   int *         argc,
+                                   int   *      argc,
                                    char ***      argv,
                                    stk::ParallelMachine comm, bool debug)
-      : m_comm(comm),
-        m_need_to_finalize(false), m_debug(debug), m_processCommandLine_invoked(false)
+      : ParallelMachineFinalize(false),
+        m_comm(comm),
+        m_need_to_finalize(false), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
+        //,m_par_finalize(false)
+
     {
-      internal_initialize(argc, argv);
+      internal_initialize(*argc, *argv);
     }
 
-    void RunEnvironment::internal_initialize(int* argc, char*** argv)
+    void RunEnvironment::internal_initialize(int argc, char** argv)
     {
       // Broadcast argc and argv to all processors.
       int parallel_rank = stk::parallel_machine_rank(m_comm);
@@ -184,41 +189,42 @@ namespace stk {
 
       if (m_debug && !parallel_rank)
         {
-          for (int i = 0; i < *argc; ++i) {
-            const std::string s((*argv)[i]);
+          for (int i = 0; i < argc; ++i) {
+            const std::string s((argv)[i]);
             std::cout << "tmp 1 argv["<<i<<"]= " << s << std::endl;
           }
         }
 
-      int pargc = *argc;
-      std::string *argv_new = new std::string[pargc];
+      int pargc = argc;
+      m_argv_new = new std::string[pargc];
       int argc_new = 0;
       for (int i = 0; i < pargc; i++)
         {
-          std::string pargvi( (*argv)[i] );
+          std::string pargvi( (argv)[i] );
           int incr=0;
           if (pargvi == "-d")
             {
-              pargvi = "--d="+std::string((*argv)[i+1]);
+              pargvi = "--d="+std::string((argv)[i+1]);
               incr=1;
             }
           if (pargvi == "-o")
             {
-              pargvi = "--o="+std::string((*argv)[i+1]);
+              pargvi = "--o="+std::string((argv)[i+1]);
               incr=1;
             }
           if (incr)
             {
               i++;
             }
-          argv_new[argc_new++] = pargvi;
+          m_argv_new[argc_new++] = pargvi;
         }
 
-      *argc = argc_new;
+      m_argc = argc_new;
+      m_argv = new char*[m_argc];
 
-      for (int i = 0; i < *argc; ++i) {
-        (*argv)[i] = const_cast<char *>(argv_new[i].c_str());
-        if (m_debug && !parallel_rank) std::cout << "modified argv["<<i<<"]= " << argv_new[i] << std::endl;
+      for (int i = 0; i < m_argc; ++i) {
+        (m_argv)[i] = const_cast<char *>(m_argv_new[i].c_str());
+        if (m_debug && !parallel_rank) std::cout << "modified argv["<<i<<"]= " << m_argv_new[i] << std::endl;
       }
 
       output_log_opt = "sierra.output.log";
@@ -245,8 +251,8 @@ namespace stk {
 
       stk::Bootstrap::bootstrap();
 
-      for (int i = 0; i < *argc; ++i) {
-        const std::string s((*argv)[i]);
+      for (int i = 0; i < m_argc; ++i) {
+        const std::string s((m_argv)[i]);
         if ( s == "-h" || s == "-help" || s == "--help") {
           //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
           printHelp();
@@ -256,21 +262,22 @@ namespace stk {
       }
 
       Util::setRank(parallel_rank);
-      stk::BroadcastArg b_arg(m_comm, *argc, *argv);
+      stk::BroadcastArg b_arg(m_comm, argc, argv);
 
       bootstrap();
 
-      setSierraOpts(parallel_rank, *argc, *argv);
+      setSierraOpts(parallel_rank, argc, argv);
+
     }
 
-    void RunEnvironment::processCommandLine(int* argc, char*** argv)
+    void RunEnvironment::processCommandLine(int argc, char** argv)
     {
       int parallel_rank = stk::parallel_machine_rank(m_comm);
       int parallel_size = stk::parallel_machine_size(m_comm);
 
       unsigned failed = 0;
 
-      int success = processCLP(parallel_rank, *argc, *argv);
+      int success = processCLP(parallel_rank, argc, argv);
       failed = success == 0 ? 0u : 1u;
 
       if (failed)
@@ -278,9 +285,9 @@ namespace stk {
           if ( !parallel_rank)
             {
               std::cout << "Command Line error: echo of args:" << std::endl;
-              for (int ii=0; ii < *argc; ii++)
+              for (int ii=0; ii < argc; ii++)
                 {
-                  std::cout << "failed = 1, arg[" << ii  << "] = " << (*argv)[ii] << std::endl;
+                  std::cout << "failed = 1, arg[" << ii  << "] = " << (argv)[ii] << std::endl;
                 }
               printHelp();
             }
@@ -341,8 +348,11 @@ namespace stk {
       stk::unregister_log_ostream(std::cerr);
       stk::unregister_log_ostream(std::cout);
 
+      if (m_argv_new) delete[] m_argv_new;
+      if (m_argv) delete[] m_argv;
+
       if (m_need_to_finalize) {
-        stk::parallel_machine_finalize();
+        //stk::parallel_machine_finalize();
       }
     }
 
@@ -702,7 +712,7 @@ namespace stk {
         }
       else
         {
-          throw new std::runtime_error("bad format for input file name");
+          throw std::runtime_error("bad format for input file name");
         }
 
       size_t found = 0;
@@ -748,7 +758,7 @@ namespace stk {
 
           size_t found = meshFileName.find_last_of(".");
           if (found == std::string::npos) {
-            throw new std::runtime_error("RunEnvironment::doLoadBalance input file name must have an extension");
+            throw std::runtime_error("RunEnvironment::doLoadBalance input file name must have an extension");
           }
           extension_length = meshFileName.length() - found - 1;
           std::string base_name = meshFileName.substr(0, meshFileName.length()-(extension_length+1));

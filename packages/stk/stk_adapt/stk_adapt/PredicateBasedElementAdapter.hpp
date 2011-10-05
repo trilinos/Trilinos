@@ -1,9 +1,9 @@
-#ifndef stk_adapt_PredicateBasedMarker_hpp
-#define stk_adapt_PredicateBasedMarker_hpp
+#ifndef stk_adapt_PredicateBasedElementAdapter_hpp
+#define stk_adapt_PredicateBasedElementAdapter_hpp
 
 #include <functional>
 
-#include <stk_adapt/Marker.hpp>
+#include <stk_adapt/IAdapter.hpp>
 
 namespace stk {
   namespace adapt {
@@ -13,20 +13,22 @@ namespace stk {
     //========================================================================================================================
     /**
      *  Predicate-based marker
+     *
+     *  The functor @class RefinePredicate should supply an operator() that returns an entry from AdaptInstruction, 
+     *    either to do nothing, refine, unrefine, or both refine & unrefine (useful for unit testing, etc.)
      */
-    typedef std::unary_function<stk::mesh::Entity& , bool> MarkerPredicateFunctor;
+    typedef std::unary_function<stk::mesh::Entity& , bool> AdapterPredicateFunctor;
 
-    template<class RefinePredicate, class UnrefinePredicate>
-    class PredicateBasedMarker : public Marker
+    template<class RefinePredicate>
+    class PredicateBasedElementAdapter : public IAdapter
     {
-      RefinePredicate m_predicate_refine;
-      UnrefinePredicate m_predicate_unrefine;
+      RefinePredicate& m_predicate_refine;
 
     public:
 
-      PredicateBasedMarker(RefinePredicate predicate_refine, UnrefinePredicate predicate_unrefine,
+      PredicateBasedElementAdapter(RefinePredicate& predicate_refine,
                            percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0) :
-        Marker(eMesh, bp, proc_rank_field), m_predicate_refine(predicate_refine), m_predicate_unrefine(predicate_unrefine)
+        IAdapter(eMesh, bp, proc_rank_field), m_predicate_refine(predicate_refine)
       {
       }
 
@@ -59,7 +61,7 @@ namespace stk {
                   if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                     {
 
-                      if (m_predicate_unrefine(element))
+                      if (m_predicate_refine(element) & DO_UNREFINE)
                         elements_to_unref.insert(&element);
                     }
                 }
@@ -72,7 +74,7 @@ namespace stk {
     protected:
 
       virtual void 
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
             vector<NeededEntityType>& needed_entity_ranks)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -82,7 +84,7 @@ namespace stk {
 
         //VectorFieldType* coordField = m_eMesh.getCoordinatesField();
 
-        bool markInfo = m_predicate_refine(element);
+        bool markInfo = (m_predicate_refine(element) & DO_REFINE);
 
         for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
           {
