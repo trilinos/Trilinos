@@ -136,7 +136,7 @@ public:
   /*! Access to xpetra matrix
    */
 
-  RCP<const xmatrixType> getMatrix()
+  RCP<const xmatrixType> getMatrix() const
   {
     return _matrix;
   }
@@ -147,7 +147,7 @@ public:
       We don't have a view of global data, only of local data.
    */
   //LNO getRowListView(GID *&rowIds, LID *&localIds,
-  //  LNO *&rowSize, GID *& colIds)
+  //  LNO *&rowSize, GID *& colIds) const
 
 
 };

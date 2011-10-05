@@ -44,11 +44,13 @@ APPEND_SET(HEADERS
       Zoltan2_EpetraCrsMatrixInput.hpp
       Zoltan2_Exceptions.hpp
       Zoltan2_GraphInput.hpp
+      Zoltan2_GraphModel.hpp
       Zoltan2_IdentifierMap.hpp
       Zoltan2_IdentifierTraits.hpp
       Zoltan2_InputAdapter.hpp
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
+      Zoltan2_Model.hpp
       Zoltan2_Parameters.hpp
       Zoltan2_PartitioningProblem.hpp
       Zoltan2_Problem.hpp

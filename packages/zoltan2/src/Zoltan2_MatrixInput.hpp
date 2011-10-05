@@ -107,7 +107,7 @@ public:
    */
 
   LNO getRowListView(GID *&rowIds, LID *&localIds, 
-    LNO *&rowSize, GID *& colIds)
+    LNO *&rowSize, GID *& colIds) const
   {
     rowIds = NULL;
     localIds = NULL;

@@ -9,8 +9,11 @@
 //
 // Testing of GraphModel built from Xpetra matrix input adapters.
 //
+//    TODO test GraphModel for a matrix that is not Xpetra, that
+//         that global IDs that are not Teuchos::Ordinals.
 
 #include <string>
+#include <vector>
 #include <TestAdapters.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
@@ -33,13 +36,15 @@ using Teuchos::ArrayView;
 //#include <Zoltan2_IdentifierTraits.hpp>
 //using Zoltan2::IdentifierTraits;
 
-template <typename Scalar, typename LNO, typename GNO>
+
+template <typename Scalar, typename LNO, typename GNO, typename Node>
   void checkGraph(
-    Zoltan2::GraphModel<Scalar, LNO, GNO, 
-      Zoltan2::MatrixInput<Scalar, LNO, GNO> > &graph, 
+    Zoltan2::GraphModel<Z2PARAM_ID_EQ_NO, Zoltan2::XpetraCrsMatrixInput>
+      &graph,
     RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > M, std::string errMsg)
 {
-  RCP<Comm<int> > &comm = M->getComm();
+  const RCP<const Comm<int> > &comm = M->getComm();
+  int rank = comm->getRank();
   RCP<const Zoltan2::Environment> default_env = 
     Teuchos::rcp(new Zoltan2::Environment);
 
@@ -69,9 +74,9 @@ template <typename Scalar, typename LNO, typename GNO>
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getLocalNumEdges"+errMsg, 1)
 
-  ArrayView<GNO> vertexGids;
-  ArrayView<Scalar> coords;     // not implemented
-  ArrayView<Scalar> wgts;     // not implemented
+  ArrayView<const GNO> vertexGids;
+  ArrayView<const Scalar> coords;     // not implemented
+  ArrayView<const Scalar> wgts;     // not implemented
 
   try{
     graph.getVertexList(vertexGids, coords, wgts);
@@ -82,33 +87,36 @@ template <typename Scalar, typename LNO, typename GNO>
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getVertexList"+errMsg, 1)
 
-  size_t *edgeSize = new size_t [nRows];
-  GNO *edgeId = new GNO [nEntries];
-  int *procOwner = new int [nEntries];
+  ArrayView<const GNO> edgeGids;
+  ArrayView<const int> procIds;
 
-  ArrayView<GNO> edgeGids;
-  ArrayView<int> procIds;
-  ArrayView<Scalar> wgts;           // not implemented
-
+#if 0
+   // TODO won't compile
   for (LNO lid=0; lid < vertexGids.size(); lid++){
-    edgeSize[lid] = graph.getVertexLocalEdge(lid, edgesGids, procIds, wgts);
-    edgeId[lid] = edgeGids.getPtr();
-    procOwner[lid] = procIds.getPtr();
+    size_t edgeSize = 
+       graph.getVertexLocalEdge(lid, edgeGids, procIds, wgts);
+    //size_t edgeSize = graph.getVertexLocalEdge(lid, edgeGids, procIds, wgts);
+    // TODO check that these make sense
   }
+#endif
 
+#if 0
+  // graph.getVertexGlobalEdge not implemented for now
   for (LNO lid=0; lid < vertexGids.size(); lid++){
     edgeSize[lid] = 
       graph.getVertexGlobalEdge(vertexGids[lid], edgesGids, procIds, wgts);
-    edgeId[lid] = edgeGids.getPtr();
-    procOwner[lid] = procIds.getPtr();
+    edgeId[lid] = edgeGids.getRawPtr();
+    procOwner[lid] = procIds.getRawPtr();
   }
+#endif
   // TODO check that graph returned represents M
+  // TODO test graph.getEdgeList()
 }
 
-template <typename Scalar, typename LNO, typename GNO>
+template <typename Scalar, typename LNO, typename GNO, typename Node>
   void testGraphFromXpetraMatrix(std::string fname, RCP<const Comm<int> > comm)
 {
-  int rank = comm->getRank;
+  int rank = comm->getRank();
   bool includeEpetra = false;
   std::string intName(OrdinalTraits<int>::name());
   std::string ScalarName(ScalarTraits<Scalar>::name());
@@ -126,8 +134,8 @@ template <typename Scalar, typename LNO, typename GNO>
   // Create some matrix input adapters
 
   typedef Zoltan2::EpetraCrsMatrixInput epetraMatrix_t;
-  typedef Zoltan2::TpetraCrsMatrixInput<Scalar, LNO, GNO> tpetraMatrix_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<Scalar, LNO, GNO> xpetraMatrix_t;
+  typedef Zoltan2::TpetraCrsMatrixInput<Z2PARAM_ID_EQ_NO> tpetraMatrix_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<Z2PARAM_ID_EQ_NO> xpetraMatrix_t;
 
   RCP<epetraMatrix_t> emi;
   RCP<tpetraMatrix_t> tmi;
@@ -152,17 +160,20 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Create a graph model with each and test it.
 
+  typedef Zoltan2::GraphModel<Z2PARAM_ID_EQ_NO, 
+    Zoltan2::XpetraCrsMatrixInput> xGraphModel_t;
+
   int fail = 0;
   if (includeEpetra){
 
     // GraphModel built with EpetraCrsMatrixInput
 
-    typedef Zoltan2::GraphModel<Scalar, LNO, GNO, epetraMatrix_t> epetraMatrixGraphModel_t;
+    RCP<xpetraMatrix_t> eM = Teuchos::rcp_dynamic_cast<xpetraMatrix_t>(emi);
 
-    epetraMatrixGraphModel_t *graph = NULL;
+    xGraphModel_t *graph = NULL;
 
     try{
-      graph = new epetraMatrixGraphModel_t(emi, comm, default_env);
+      graph = new xGraphModel_t(eM, comm, default_env);
     }
     catch (std::exception &e){
       std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -177,11 +188,11 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // GraphModel built with TpetraCrsMatrixInput
 
-  typedef Zoltan2::GraphModel<Scalar, LNO, GNO, tpetraMatrix_t> tpetraMatrixGraphModel_t;
+  RCP<xpetraMatrix_t> tM = Teuchos::rcp_implicit_cast<xpetraMatrix_t>(tmi);
 
-  tpetraMatrixGraphModel_t *tgraph=NULL;
+  xGraphModel_t *tgraph=NULL;
   try{
-    tgraph = new tpetraMatrixGraphModel_t(tmi, comm, default_env);
+    tgraph = new xGraphModel_t(tM, comm, default_env);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -195,11 +206,9 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // GraphModel built with XpetraCrsMatrixInput
 
-  typedef Zoltan2::GraphModel<Scalar, LNO, GNO, xpetraMatrix_t> xpetraMatrixGraphModel_t;
-
-  xpetraMatrixGraphModel_t *xgraph=NULL;
+  xGraphModel_t *xgraph=NULL;
   try{
-    xgraph = new xpetraMatrixGraphModel_t(xmi, comm, default_env);
+    xgraph = new xGraphModel_t(xmi, comm, default_env);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -223,7 +232,7 @@ template <typename Scalar, typename LNO, typename GNO>
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  const RCP<const Comm<int> > &comm = DefaultComm<int>::getComm();
 
   std::vector<std::string> mtxFiles;
   
@@ -235,8 +244,12 @@ int main(int argc, char *argv[])
   // mtxFiles.push_back("../data/diag500_4.mtx");
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-    testGraphFromXpetraMatrix<double, int, int>(mtxFiles[fileNum], comm);
-    testGraphFromXpetraMatrix<double, int, long>(mtxFiles[fileNum], comm);
+
+    testGraphFromXpetraMatrix<
+      double, int, int, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
+
+    testGraphFromXpetraMatrix<
+      double, int, long, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
   }
 
   return 0;
