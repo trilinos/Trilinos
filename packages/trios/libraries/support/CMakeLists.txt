@@ -1,0 +1,120 @@
+
+INCLUDE(PackageLibraryMacros)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
+INCLUDE(AddOptionAndDefine)
+
+#
+# A) Package-specific configuration options
+#
+
+# Initializations
+SET(HEADERS "")
+SET(NONINSTALLHEADERS "")
+SET(SOURCES "")
+SET(MODULES "")
+
+#INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
+#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/..)
+
+APPEND_SET(HEADERS
+  ${PACKAGE_BINARY_DIR}/Trios_config.h
+)
+
+############# LOGGER ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/logger)
+
+APPEND_SET(HEADERS
+  logger/Trios_logger.h
+)
+
+APPEND_SET(SOURCES
+  logger/logger.cpp
+)
+
+
+############# THREADS ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/threads)
+
+# If pthreads is supported, we use some of the features from Unix98: PTHREAD_MUTEX_DEFAULT, 
+# PTHREAD_MUTEX_NORMAL, PTHREAD_MUTEX_RECURSIVE, and PTHREAD_MUTEX_ERRORCHECK
+ADD_DEFINITIONS(-D_GNU_SOURCE)
+
+APPEND_SET(HEADERS
+  threads/Trios_threads.h
+)
+
+APPEND_SET(SOURCES
+  threads/trios_threads.cpp
+)
+
+############# TIMER ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/timer)
+
+APPEND_SET(HEADERS
+  timer/Trios_timer.h
+)
+
+APPEND_SET(SOURCES
+  timer/timer.c
+  timer/Trios_Timer.cpp
+)
+
+
+############# SIGNAL ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/signal)
+
+APPEND_SET(HEADERS
+  signal/Trios_signal.h
+)
+
+APPEND_SET(SOURCES
+  signal/signal.cpp
+)
+
+
+########### Trace  ###############
+
+
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/trace)
+  
+APPEND_SET(HEADERS
+  trace/Trios_trace.h
+)
+  
+APPEND_SET(NOINSTALLHEADERS
+  trace/SDDF.h
+  trace/TraceFile.h
+  trace/TraceGroup.h
+)
+  
+APPEND_SET(SOURCES
+  trace/trace.cc
+)
+  
+# See if PABLO is enabled
+IF (${PACKAGE_NAME}_ENABLE_Pablo)
+  APPEND_SET(SOURCES trace/SDDF.cc)
+ENDIF (${PACKAGE_NAME}_ENABLE_Pablo)
+
+
+
+########################### TRIOS SUPPORT LIBRARY ###############
+
+PACKAGE_ADD_LIBRARY(
+   trios_support
+   HEADERS ${HEADERS}
+   NOINSTALLHEADERS ${NOINSTALLHEADERS}
+   SOURCES ${SOURCES}
+   DEPLIBS ${DEPLIBS}
+   )
+
+
+########### install targets ###############
+
+# INSTALL(FILES ${MODULES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
