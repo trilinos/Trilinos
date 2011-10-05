@@ -86,27 +86,26 @@ public:
    const InputPhysicsBlock & lookupInputPhysicsBlock(const std::string & eBlock) const;
 
    //! Access, and construction of volume worksets
-   std::vector<Workset> & getVolumeWorksets(const std::string & eBlock);
+   Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
  
    //! Access, and construction of side worksets
-   std::map<unsigned,Workset> & getSideWorksets(const BC & bc);
+   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
 
    //! Iterator access to volume worksets
    inline std::vector<Workset>::iterator begin(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock).begin(); }
+   { return getVolumeWorksets(eBlock)->begin(); }
 
    //! Iterator access to volume worksets
    inline std::vector<Workset>::iterator end(const std::string & eBlock)
-   { return getVolumeWorksets(eBlock).end(); }
+   { return getVolumeWorksets(eBlock)->end(); }
 
    //! Iterator access to side worksets
    inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
-   { return getSideWorksets(bc).begin(); }
+   { return getSideWorksets(bc)->begin(); }
 
    //! Iterator access to side worksets
    inline std::map<unsigned,Workset>::iterator end(const BC & bc)
-   { return getSideWorksets(bc).end(); }
-
+   { return getSideWorksets(bc)->end(); }
 
    /** Allocate worksets associated with the element blocks in a vector, this
      * will overwrite an previously constructed worksets.
@@ -130,6 +129,32 @@ private:
 
    std::size_t worksetSize_;
 };
+
+/** Build a map of volume worksets from a list of element blocks. Note that this
+  * may, if needed, allocate these worksets in the workset container object.
+  *
+  * \param[in] wc Workset container that contains, or will contain, the volume worksets.
+  * \param[in] elementBlockNames Element blocks to build the worksets for.
+  * \param[out] volumeWksts Map form element block ids to the volume worksets. This will
+  *                         not be cleared but the worksets with shared element names 
+  *                         will be overwritten.
+  */
+void getVolumeWorksetsFromContainer(WorksetContainer & wc,
+                                    const std::vector<std::string> & elementBlockNames,
+                                    std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts);
+
+/** Build a map of side worksets from a list of boundary conditions. Note that this
+  * may, if needed, allocate these worksets in the workset container object.
+  *
+  * \param[in]  wc        Workset container that contains, or will contain, the volume worksets.
+  * \param[in]  bcs       Boundary conditions to use.
+  * \param[out] sideWksts Map form element block ids to the volume worksets. This will
+  *                       not be cleared but the worksets with shared element names 
+  *                       will be overwritten.
+  */
+void getSideWorksetsFromContainer(WorksetContainer & wc,
+                                  const std::vector<BC> & bcs,
+                                  std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC> & sideWksts);
 
 }
 

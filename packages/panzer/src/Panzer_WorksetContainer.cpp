@@ -50,7 +50,7 @@ const InputPhysicsBlock & WorksetContainer::lookupInputPhysicsBlock(const std::s
 }
 
 //! Access, and construction of volume worksets
-std::vector<Workset> & 
+Teuchos::RCP<std::vector<Workset> >  
 WorksetContainer::getVolumeWorksets(const std::string & eBlock)
 {
    Teuchos::RCP<std::vector<Workset> > worksetVector;
@@ -66,11 +66,11 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
    else 
       worksetVector = itr->second;
 
-   return *worksetVector;
+   return worksetVector;
 }
  
 //! Access, and construction of side worksets
-std::map<unsigned,Workset> & 
+Teuchos::RCP<std::map<unsigned,Workset> > 
 WorksetContainer::getSideWorksets(const BC & bc)
 {
    Teuchos::RCP<std::map<unsigned,Workset> > worksetMap;
@@ -88,7 +88,7 @@ WorksetContainer::getSideWorksets(const BC & bc)
    else 
       worksetMap = itr->second;
 
-   return *worksetMap;
+   return worksetMap;
 }
 
 void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & eBlocks)
@@ -115,6 +115,22 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       // store map for reuse in the future
       sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,ipb);
    }
+}
+
+void getVolumeWorksetsFromContainer(WorksetContainer & wc,
+                                    const std::vector<std::string> & elementBlockNames,
+                                    std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts) 
+{
+   for(std::size_t i=0;i<elementBlockNames.size();i++)
+      volumeWksts[elementBlockNames[i]] = wc.getVolumeWorksets(elementBlockNames[i]);
+}
+
+void getSideWorksetsFromContainer(WorksetContainer & wc,
+                                  const std::vector<BC> & bcs,
+                                  std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC> & sideWksts)
+{
+   for(std::size_t i=0;i<bcs.size();i++)
+      sideWksts[bcs[i]] = wc.getSideWorksets(bcs[i]);
 }
 
 }
