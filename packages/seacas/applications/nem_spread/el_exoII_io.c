@@ -676,8 +676,8 @@ void load_mesh(int io_ws)
     if ((mesh_exoid=ex_create(Par_Nem_File_Name, EX_CLOBBER|EX_SHARE, &cpu_ws,
                               &io_ws)) == -1) {
 #endif
-      fprintf(stderr,"[%d] %sCould not create parallel Exodus II file\n",
-              Proc, yo);
+      fprintf(stderr,"[%d] %sCould not create parallel Exodus II file:\n\t%s\n",
+              Proc, yo, Par_Nem_File_Name);
       exit(1);
     }
 
@@ -3773,9 +3773,9 @@ static void read_side_sets(int exoid, int *num_elem_in_ssets,
                * now sort the proc_dr_ptr array so that it is monotonic,
                * and can be searched more easily
                */
-              sortN_int_int(proc_elem_list_cnt[iproc][ss_num[iproc]-1],
-                            proc_df_ptr[iproc][ss_num[iproc]-1], 1,
-                            proc_df_map[iproc]);
+              sort_int_int(proc_elem_list_cnt[iproc][ss_num[iproc]-1],
+			   proc_df_ptr[iproc][ss_num[iproc]-1],
+			   proc_df_map[iproc]);
 
             }
 

@@ -1453,9 +1453,9 @@ static int read_elem_vars_n(int exoid, int index, int blk_cnt, int *eb_ids,
 	if (!check_monot(glob_elem, num_ev_in_mesg)) {
 
 	  if (io_ws == sizeof(float))
-	    sortN_int_float(num_ev_in_mesg, glob_elem, 1, sp_vals);
+	    sort_int_float(num_ev_in_mesg, glob_elem,  sp_vals);
 	  else
-	    sortN_int_double(num_ev_in_mesg, glob_elem, 1, dp_vals);
+	    sort_int_double(num_ev_in_mesg, glob_elem, dp_vals);
 	}
 
 
