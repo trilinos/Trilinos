@@ -173,7 +173,7 @@ void log_output(const char *prefix,
         ...)
 {
     va_list ap;
-    char *file;
+    const char *file;
     char buf1[256];
     char buf2[256];
 
