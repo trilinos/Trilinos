@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA                                                                       
  * 
- * Questions? Contact Glen Hansen (Glen.Hansen@inl.gov), Idaho National Laboratory
+ * Questions? Contact Glen Hansen (gahanse@sandia.gov)
  * 
  */
 //@HEADER

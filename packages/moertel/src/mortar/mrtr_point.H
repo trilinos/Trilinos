@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
+# Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -88,7 +88,7 @@ of the polygon discretization and therefore has capabilities to store a Node cla
 
 The \ref MOERTEL::Point class supports the ostream& operator <<
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Point
