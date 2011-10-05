@@ -71,11 +71,14 @@ main (int argc, char *argv[])
 #endif // 0
   
   // Command-line arguments
+  bool testBlockGivens = false;
   bool verbose = false;
   int testProblemSize = 10;
 
   // Parse command-line arguments
   CommandLineProcessor cmdp (false,true);
+  cmdp.setOption ("testBlockGivens", "dontTestBlockGivens", &testBlockGivens, 
+		  "Print messages and results.");
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("testProblemSize", &testProblemSize, 
 		  "Number of columns in the projected least-squares test problem.");
@@ -91,8 +94,9 @@ main (int argc, char *argv[])
   bool success = true;
   if (testProblemSize > 0) {
     // Test the projected least-squares solver.
-    Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver (out);
-    success = solver.testUpdateColumn (out, testProblemSize, verbose);
+    Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
+    success = solver.testUpdateColumn (out, testProblemSize, 
+				       testBlockGivens, verbose);
   }
   
   if (success) {
