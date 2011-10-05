@@ -148,7 +148,7 @@
 
 #define ABS(x) ((x)>0?(x):-(x))
 
-#define DUMP_DATA
+//#define DUMP_DATA
 
 using namespace std;
 using namespace Intrepid;
@@ -710,9 +710,9 @@ int main(int argc, char *argv[]) {
     std::cout << "    Number of Edges: " << numEdgesGlobal << " \n";
     std::cout << "    Number of Faces: " << numFacesGlobal << " \n\n";
   }
-    char str[80];
-    sprintf(str,"file_%d.out",MyPID);
-    std::ofstream myout(str);
+  //    char str[80];
+  //    sprintf(str,"file_%d.out",MyPID);
+  //    std::ofstream myout(str);
     
     //some output for debugging
    /* myout << "mypid "<< MyPID << " globalMapJoint " << globalMapJoint << " \n";
@@ -1667,9 +1667,14 @@ int main(int argc, char *argv[]) {
    List_Coarse.set("y-coordinates",Ny.Values());
    List_Coarse.set("z-coordinates",Nz.Values());
    List_Coarse.set("ML output",10);
+   List_Coarse.set("smoother: type","Chebyshev");
+   List_Coarse.set("smoother: sweeps",4);
   
    Teuchos::ParameterList List11,List11c,List22,List22c;
    ML_Epetra::UpdateList(List_Coarse,List11,true); 
+   List11.set("smoother: type","do-nothing");
+   List11.set("smoother: sweeps",0);
+
    ML_Epetra::UpdateList(List_Coarse,List22,true); 
    ML_Epetra::UpdateList(List_Coarse,List11c,true); 
    ML_Epetra::UpdateList(List_Coarse,List22c,true); 
@@ -1680,8 +1685,10 @@ int main(int argc, char *argv[]) {
    ListHdiv.set("graddiv: 22list",List22);
    ListHdiv.set("smoother: sweeps",2);
    ListHdiv.set("ML output",10);
+   ListHdiv.set("smoother: type","Chebyshev");
 
-   SetDefaultsGradDiv(ListHdiv,false);
+   ML_Epetra::SetDefaultsGradDiv(ListHdiv,false);
+
 
    RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,StiffG,ListHdiv));
 
@@ -1690,6 +1697,7 @@ int main(int argc, char *argv[]) {
    Teuchos::ParameterList ListHgrad;
    ML_Epetra::SetDefaults("SA",ListHgrad);
    ListHgrad.set("smoother: sweeps",2);
+   ListHgrad.set("smoother: type","Chebyshev");
    ListHgrad.set("coarse: type","Amesos-KLU");
    ListHgrad.set("ML output",10);
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));
@@ -1754,11 +1762,13 @@ int main(int argc, char *argv[]) {
   
 
   //primitive max error check, no measures, just max of Error over all nodes
-  double maxerr=0;
+  double maxerr=0,maxerrGlobal=0;
    for (int i=numOwnedFaces; i<jointLocalVarSize; i++)
      maxerr=max(abs(exactSoln[i-numOwnedFaces]-globalSoln[0][i]),maxerr);
    
-   std::cout << "My PID = " << MyPID <<" Max Error over all nodes: "<<maxerr<<"\n";
+   Comm.SumAll(&maxerr,&maxerrGlobal,1);
+   if(!Comm.MyPID())
+     std::cout << "Max Error over all nodes: "<<maxerrGlobal<<endl;
 	
 #ifdef DUMP_DATA	
      EpetraExt::MultiVectorToMatrixMarketFile("solnVectorDarcy.dat",globalSoln,0,0,false);             
