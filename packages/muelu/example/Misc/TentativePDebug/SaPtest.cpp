@@ -4,17 +4,6 @@
  *  Created on: Sep 9, 2011
  *      Author: wiesner
  */
-
-
-
-/*
- * tentativePtest.cpp
- *
- *  Created on: Sep 6, 2011
- *      Author: wiesner
- */
-
-
 #include <iostream>
 
 // Teuchos
@@ -55,12 +44,12 @@
 /**********************************************************************************/
 
 // Belos
-#ifdef HAVE_MUELU_BELOS
-#include "BelosConfigDefs.hpp"
-#include "BelosLinearProblem.hpp"
-#include "BelosBlockCGSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
-#endif
+//#ifdef HAVE_MUELU_BELOS
+//#include "BelosConfigDefs.hpp"
+//#include "BelosLinearProblem.hpp"
+//#include "BelosBlockCGSolMgr.hpp"
+//#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+//#endif
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
