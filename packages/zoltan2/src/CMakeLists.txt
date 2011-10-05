@@ -53,7 +53,9 @@ APPEND_SET(HEADERS
       Zoltan2_Model.hpp
       Zoltan2_Parameters.hpp
       Zoltan2_PartitioningProblem.hpp
+      Zoltan2_PartitioningSolution.hpp
       Zoltan2_Problem.hpp
+      Zoltan2_Solution.hpp
       Zoltan2_Standards.hpp
       Zoltan2_TemplateMacros.hpp
       Zoltan2_TpetraCrsGraphInput.hpp
@@ -62,6 +64,13 @@ APPEND_SET(HEADERS
       Zoltan2_XpetraCrsGraphInput.hpp
       Zoltan2_XpetraCrsMatrixInput.hpp
   )
+
+APPEND_SET(HEADERS
+      algorithms/partition/Zoltan2_PartitioningAlgorithms.hpp
+      algorithms/partition/Zoltan2_AlgScotch.hpp
+  )
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
+
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/tpetra/src)
