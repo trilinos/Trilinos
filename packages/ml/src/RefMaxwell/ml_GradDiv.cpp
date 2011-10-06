@@ -366,11 +366,12 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
 
 
 
+
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite)
 {  
   /* Sublists */
-  Teuchos::ParameterList ListRF,List11,List11c,List22,List22c,ListIf;
+  Teuchos::ParameterList ListGD,List11,List11c,List22,List22c,ListIf;
   Teuchos::ParameterList & List11_=inList.sublist("graddiv: 11list");
   Teuchos::ParameterList & List22_=inList.sublist("graddiv: 22list");
   Teuchos::ParameterList & List11c_=List11_.sublist("face matrix free: coarse");
@@ -381,8 +382,9 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   ML_Epetra::SetDefaults("SA",List11c);
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);
-  List11c.set("smoother: sweeps",2);
+  List11c.set("smoother: sweeps",4);
   List11c.set("coarse: type","Amesos-KLU");  
+  List11c.set("coarse: max size",200);  
   List11c.set("ML label","coarse face block");
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite); 
 
@@ -390,9 +392,8 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   ML_Epetra::SetDefaults("SA",List22c);
   List22c.set("smoother: type","Chebyshev");
   List22c.set("aggregation: threshold",.01);
-  List22c.set("smoother: sweeps",2);
-  //  List22c.set("coarse: type","symmetric Gauss-Seidel");  
-  //  List22c.set("coarse: sweeps",6);
+  List22c.set("smoother: sweeps",4);
+  List22c.set("coarse: max size",200);  
   List22c.set("ML label","coarse edge block");
   ML_Epetra::UpdateList(List22c,List22c_,OverWrite);
 
@@ -414,18 +415,13 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   List22.set("ML label","edge matrix free");
   ML_Epetra::UpdateList(List22,List22_,OverWrite);
 
-  /* Ifpack list for overall */
-  ListIf.set("relaxation: type","symmetric Gauss-Seidel");
-  ListIf.set("relaxation: sweeps",2);
-  ListIf.set("relaxation: zero starting solution",false);
-  ML_Epetra::UpdateList(ListIf,ListIf_,OverWrite);
-
   /* Build Teuchos List: Overall */  
-  SetDefaults("SA",ListRF,0,0,false);
-  ListRF.set("smoother: ifpack type","point relaxation stand-alone");
-  ListRF.set("smoother: type","IFPACK");
+  SetDefaults("SA",ListGD,0,0,false);
+  ListGD.set("smoother: type","Chebyshev");
+  ListGD.set("smoother: sweeps",2);
+  ListGD.set("ML label","grad-div preconditioner");
 
-  ML_Epetra::UpdateList(ListRF,inList,OverWrite);
+  ML_Epetra::UpdateList(ListGD,inList,OverWrite);
   return 0;
 }/*end SetDefaultsGradDiv*/
 
