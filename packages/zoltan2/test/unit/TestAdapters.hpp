@@ -18,6 +18,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <MatrixMarket_Tpetra.hpp>
@@ -25,6 +26,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Zoltan2_EpetraCrsGraphInput.hpp>
 
+#include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Zoltan2_TpetraCrsGraphInput.hpp>
 
@@ -91,6 +93,7 @@ private:
 
     Teuchos::RCP<TpetraCrsGraphInput > _tgi;
     Teuchos::RCP<TpetraCrsMatrixInput > _tmi;
+    Teuchos::RCP<TpetraCrsMatrixInput > _tmi64;
     Teuchos::RCP<XpetraCrsGraphInput > _xgi;
     Teuchos::RCP<XpetraCrsMatrixInput > _xmi;
 
@@ -164,6 +167,62 @@ public:
       return _tmi;
     }
     
+    Teuchos::RCP<TpetraCrsMatrixInput > getTpetraCrsMatrixInputAdapter64(
+      bool DestroyM=false)
+    {
+      if (sizeof(GNO) < 8){
+        throw std::runtime_error("global IDs are less than 8 bytes");
+      }
+
+      if (_tmi64.is_null()){
+        if (_M.is_null())
+          createMatrix();
+        GNO newBase = 0x70f000000000;
+        global_size_t nrows = _M->getNodeNumRows();
+        global_size_t maxnnz = _M->getNodeMaxNumRowEntries();
+        global_size_t ngrows = _M->getGlobalNumRows();
+        Teuchos::RCP<const map > rowMap = _M->getMap();
+
+        Teuchos::Array<GNO> newRowGNOs(nrows);
+        Teuchos::ArrayView<const GNO> oldRowGNOs = rowMap->getNodeElementList();
+        for (size_t i=0; i < nrows; i++){
+          newRowGNOs[i] = oldRowGNOs[i] + newBase;
+        }
+
+        Teuchos::ArrayRCP<size_t> entriesPerRow(nrows);
+        for (size_t i=0; i < nrows; i++){
+          entriesPerRow[i] = _M->getNumEntriesInLocalRow(i);
+        }
+
+        Teuchos::RCP<map > newMap = 
+          Teuchos::rcp(new map(ngrows, newRowGNOs, newBase, _tcomm));
+
+        Teuchos::RCP<crsMatrix > newM64 =
+          Teuchos::rcp(new crsMatrix(newMap, entriesPerRow, 
+            Tpetra::StaticProfile));
+ 
+        Teuchos::ArrayView<const LNO> lids;
+        Teuchos::ArrayView<const Scalar> nzvals;
+        Teuchos::Array<GNO> gids(maxnnz);
+
+        for (size_t i=0; i < nrows; i++){
+          _M->getLocalRowView(LNO(i), lids, nzvals);
+          for (size_t j=0; j < lids.size(); j++){
+            gids[j] = rowMap->getGlobalElement(lids[j]) + newBase;
+          }
+          newM64->insertGlobalValues(rowMap->getGlobalElement(i), gids, nzvals);
+        }
+
+        newM64->fillComplete();
+
+        if (DestroyM)
+          _M.release();
+        
+        _tmi64 = Teuchos::rcp(new TpetraCrsMatrixInput(newM64));
+      }
+      return _tmi64;
+    }
+
     Teuchos::RCP<XpetraCrsMatrixInput > getXpetraCrsMatrixInputAdapter()
     {
       if (_xmi.is_null()){
