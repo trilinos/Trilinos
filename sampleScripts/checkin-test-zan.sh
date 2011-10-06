@@ -23,37 +23,45 @@ EXTRA_ARGS=$@
 #
 
 echo "
--DBUILD_SHARED_LIBS:BOOL=ON
--DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
+ -D Trilinos_ENABLE_CXX11:BOOL=ON
+ -D CMAKE_CXX_FLAGS='-std=c++0x'
+ -D CMAKE_C_FLAGS=''
+ -D CMAKE_Fortran_FLAGS=''
+ -D Tpetra_ENABLE_RTI=ON
+ -D TPL_ENABLE_QD:BOOL=ON
+ -D QD_INCLUDE_DIRS=/usr/local/qd/include
+ -D QD_LIBRARY_DIRS=/usr/local/qd/lib
+ -D TPL_ENABLE_TBB:BOOL=ON
+ -D TBB_LIBRARY_DIRS=/Users/ogb/sw_builds/TBB22/ia32/cc4.0.1_os10.4.9/lib
+ -D TBB_INCLUDE_DIRS=/Users/ogb/sw_builds/TBB22/include
+ -D TPL_ENABLE_CUDA:BOOL=OFF
+ -D TPL_ENABLE_Thrust:BOOL=OFF
+ -D Trilinos_ENABLE_OpenMP:BOOL=ON 
 " > COMMON.config
 
 echo "
--DCMAKE_CXX_COMPILER=g++-4.2
--DCMAKE_C_COMPILER=gcc-4.2
--DTrilinos_ENABLE_Fortran=OFF
--DCMAKE_BUILD_TYPE:STRING=DEBUG
--DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
--DTrilinos_ENABLE_ThreadPool:BOOL=ON
--DThreadPool_ENABLE_TESTS=OFF
--DTPL_ENABLE_Pthread:BOOL=ON
--DTPL_ENABLE_TBB:BOOL=ON
--DTBB_LIBRARY_DIRS=/Users/ogb/sw_builds/TBB22/ia32/cc4.0.1_os10.4.9/lib
--DTBB_INCLUDE_DIRS=/Users/ogb/sw_builds/TBB22/include
--DTPL_ENABLE_CUDA:BOOL=ON
--DTPL_ENABLE_Thrust:BOOL=ON
--DThrust_INCLUDE_DIRS=/usr/local/cuda/include
-" > SERIAL_DEBUG_MULTICORE.config
-
-echo "
--DMPI_BASE_DIR:PATH=/opt/openmpi143
--DTrilinos_ENABLE_Fortran=OFF
-" > MPI_DEBUG.config
+ -D CMAKE_C_COMPILER=/usr/bin/gcc
+ -D CMAKE_CXX_COMPILER=/usr/bin/g++
+ -D Trilinos_ENABLE_Fortran:BOOL=OFF 
+ -D Trilinos_ENABLE_CXX11:BOOL=OFF
+ -D Tpetra_ENABLE_RTI=OFF
+ -D TPL_ENABLE_QD:BOOL=ON
+ -D QD_INCLUDE_DIRS=/usr/local/qd/include
+ -D QD_LIBRARY_DIRS=/usr/local/qd/lib
+ -D TPL_ENABLE_CUDA:BOOL=ON
+ -D TPL_ENABLE_Thrust:BOOL=ON
+ -D Thrust_INCLUDE_DIRS=/usr/local/cuda/include
+" > SERIAL_RELEASE_CUDA.config
 
 echo "
 -DCMAKE_CXX_COMPILER=/opt/gcc451/bin/g++
 -DCMAKE_C_COMPILER=/opt/gcc451/bin/gcc
 -DCMAKE_Fortran_COMPILER=/opt/gcc451/bin/gfortran
 " > SERIAL_RELEASE.config
+
+echo "
+-DMPI_BASE_DIR:PATH=/opt/openmpi143
+" > MPI_DEBUG.config
 
 #
 # Run the standard checkin testing script with my specializations
@@ -65,6 +73,7 @@ echo "
 --ctest-options="-j1" \
 --ctest-timeout=180 \
 --enable-all-packages=off --no-enable-fwd-packages \
+--extra-builds=SERIAL_RELEASE_CUDA \
 $EXTRA_ARGS  
 
 # Options to run with:
