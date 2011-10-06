@@ -143,6 +143,17 @@ namespace panzer {
        mutable Teuchos::RCP<SGEpetraLinearObjContainer> sg_ghostedContainer_;
     #endif
   };
+
+  /** From a genericly typed linear object factory try and build an epetra model evaluator.
+    * This method attempts to cast to the right linear object factory and then calls the
+    * appropriate constructor of ModelEvaluator_Epetra.
+    */
+  Teuchos::RCP<ModelEvaluator_Epetra> 
+  buildEpetraME(const Teuchos::RCP<FieldManagerBuilder<int,int> >& fmb,
+                const Teuchos::RCP<ResponseLibrary<panzer::Traits> >& rLibrary,
+	        const Teuchos::RCP<LinearObjFactory<panzer::Traits> >& lof,
+	        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+	        bool build_transient_support);
   
 }
 

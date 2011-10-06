@@ -77,6 +77,14 @@ public:
    const std::map<std::string,InputPhysicsBlock> & getInputPhysicsBlockMap() const
    { return ebToIpb_; }
 
+   //! set the workset size
+   void setWorksetSize(std::size_t worksetSize)
+   { worksetSize_ = worksetSize; }
+
+   //! get the workset size
+   std::size_t getWorksetSize() const
+   { return worksetSize_; }
+
    /** Clear all allocated worksets, maintain the workset factory and element to physics
      * block map.
      */ 

@@ -12,7 +12,7 @@ namespace panzer_stk {
   */
 class WorksetFactory : public panzer::WorksetFactoryBase {
 public:
-   WorksetFactory(Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
+   WorksetFactory(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
    virtual ~WorksetFactory() {}
 
    /** Build sets of volume worksets

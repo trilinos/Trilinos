@@ -564,4 +564,41 @@ evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArg
    TEUCHOS_ASSERT(false); // fail until implemented
 }
 
+Teuchos::RCP<panzer::ModelEvaluator_Epetra> 
+panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                      const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+      	              const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+	              const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+	              bool build_transient_support)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+   using Teuchos::rcp;
+
+   std::stringstream ss;
+   ss << "panzer::buildEpetraME: Linear object factory is incorrect type. Should be one of: ";
+
+   RCP<EpetraLinearObjFactory<panzer::Traits,int> > ep_lof 
+       = rcp_dynamic_cast<EpetraLinearObjFactory<panzer::Traits,int> >(lof);
+
+   // if you can, build from an epetra linear object factory
+   if(ep_lof!=Teuchos::null) 
+     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
+
+   ss << "\"EpetraLinearObjFactory\", ";
+
+#ifdef HAVE_STOKHOS
+   RCP<SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof 
+       = rcp_dynamic_cast<SGEpetraLinearObjFactory<panzer::Traits,int> >(lof);
+
+   // if you can, build from an SG epetra linear object factory
+   if(sg_lof!=Teuchos::null) 
+     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,build_transient_support));
+
+   ss << "\"SGEpetraLinearObjFactory\", ";
+#endif
+
+   TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
+}
+
 #endif
