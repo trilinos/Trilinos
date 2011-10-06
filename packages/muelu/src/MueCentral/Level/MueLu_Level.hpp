@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <Teuchos_Utils.hpp> // toString()
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Needs.hpp"
@@ -97,12 +99,20 @@ public:
     //! @name Level handling
 
     //! @brief Set level number.
-    void SetLevelID(int i) const { levelID_ = i; }
+    void SetLevelID(int levelID) const { 
+      if (levelID_ != -1 && levelID_ != levelID)
+        GetOStream(Warnings1, 0) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << "newID=" << levelID << std::endl;
+      
+      levelID_ = levelID; 
+    }
 
     //! @brief Return level number.
     int GetLevelID() const { return levelID_; }
 
     void SetPreviousLevel(const RCP<Level> & previousLevel) {
+      if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
+        GetOStream(Warnings1, 0) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
+      
         previousLevel_ = previousLevel;
     }
 
@@ -324,6 +334,7 @@ public:
     	 !IsRequested(ename,fac) &&
     	 !IsAvailable(ename,fac))
       {
+        //TODO: request done several time if fac produces several data
         Request(*fac);
       }
 
@@ -485,13 +496,13 @@ private:
     //! Get ptr to default factory.
     const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) const
     {      
-  		TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
-   		return &(defaultFactoryHandler_->GetDefaultFactory(varname));
+      TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler. LevelID = " + Teuchos::toString(GetLevelID()));
+      return &(defaultFactoryHandler_->GetDefaultFactory(varname));
     }
 
     //! Get default factory.
     const FactoryBase & GetDefaultFactory(const std::string& varname) {
-        TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
+      TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler. LevelID = " + Teuchos::toString(GetLevelID()));
         return defaultFactoryHandler_->GetDefaultFactory(varname);
     }
 
@@ -506,3 +517,4 @@ std::ostream& operator<<(std::ostream& os, Level const &level);
 
 #define MUELU_LEVEL_SHORT
 #endif //ifndef MUELU_LEVEL_HPP
+

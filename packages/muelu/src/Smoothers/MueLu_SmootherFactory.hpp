@@ -127,7 +127,14 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const { }
+    void DeclareInput(Level &currentLevel) const { 
+      if (preSmootherPrototype_ != Teuchos::null) {
+	preSmootherPrototype_->DeclareInput(currentLevel);
+      }
+      if ((postSmootherPrototype_ != Teuchos::null) && (preSmootherPrototype_ != postSmootherPrototype_)) {
+	postSmootherPrototype_->DeclareInput(currentLevel);
+      }
+    }
 
     //@}
 
@@ -167,7 +174,7 @@ namespace MueLu {
         
         // Level Set
         currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
-        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother);
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother); //TODO: remove this
       }
       
       if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
@@ -211,7 +218,7 @@ namespace MueLu {
             
             // Level Set
             currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother);
+            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother); // TODO: remove this
           }
         
     } // Build()

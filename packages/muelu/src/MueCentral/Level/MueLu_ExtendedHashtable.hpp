@@ -48,7 +48,7 @@ public:
     inline ExtendedHashtable() {};
 
 
-    template<typename Value> inline void Set(const string& ename, const Value& evalue, const FactoryBase* factory)
+    template<class Value> inline void Set(const string& ename, const Value& evalue, const FactoryBase* factory)
     {
         // if ename does not exist at all
         if (!dataTable_.count(ename) > 0)
@@ -62,7 +62,7 @@ public:
         foundEntry.setValue(evalue);
     }
 
-    template<typename Value> Value& Get(const string& ename, const FactoryBase* factory)
+    template<class Value> Value& Get(const string& ename, const FactoryBase* factory)
     {
         if(!dataTable_.count(ename) > 0)
         {
@@ -82,7 +82,7 @@ public:
         return Teuchos::getValue<Value>(entry(i));
     }
 
-    template<typename Value>
+    template<class Value>
     const Value& Get(const string& ename, const FactoryBase* factory) const
     {
         if(!dataTable_.count(ename) > 0)
@@ -104,7 +104,7 @@ public:
         return Teuchos::getValue<Value>(entry(i));
     }
 
-    template<typename Value> void Get(const string& ename, Value& value, const FactoryBase* factory)
+    template<class Value> void Get(const string& ename, Value& value, const FactoryBase* factory)
     {
         if(!dataTable_.count(ename) > 0)
         {
@@ -122,7 +122,7 @@ public:
         value = Teuchos::getValue<Value>(entry(i));
     }
 
-    template<typename Value> void Get(const string& ename, Value& value, const FactoryBase* factory) const
+    template<class Value> void Get(const string& ename, Value& value, const FactoryBase* factory) const
     {
         if(!dataTable_.count(ename) > 0)
         {
@@ -169,7 +169,7 @@ public:
             dataTable_.erase(ename); // last instance of 'ename' can be removed
     }
 
-    inline std::string GetType(const string& ename, const FactoryBase* factory) const
+    std::string GetType(const string& ename, const FactoryBase* factory) const
     {
         if(!dataTable_.count(ename) > 0)
         {
@@ -275,32 +275,6 @@ private:
 
     //@}
 
-    /*const MueLu::FactoryBase* resolveFactoryPtr(const string& ename, const RCP<const FactoryBase>& fact)
-      {
-        const FactoryBase* ptrFactory = fact.get(); // this is the memory ptr to the Factory, we are searching for
-
-        // ptrFactory = NULL: no factory at all
-        if(ptrFactory==NULL)
-          return NULL;
-
-        std::vector<const MueLu::FactoryBase*> ehandles = handles(ename);
-        for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
-        {
-          if(*kt==ptrFactory)
-          {
-            if((*kt)->getID() == fact->getID())
-              return *kt;
-            else
-              throw(Exceptions::RuntimeError("Ooops. Two factories have the same memory address but different ids?"));
-          }
-        }
-
-        // no corresponding already existing Teuchos::RCP<FactoryBase> found
-        // return memory ptr of fact
-        return fact.get();
-      }*/
-
-
 private:
     //! data storage object for extended hashtable
     dataTableType dataTable_;
@@ -312,3 +286,5 @@ private:
 
 
 #endif /* MUELU_EXTENDENDEDHASHTABLE_HPP */
+
+//TODO: use factory ID instead of pointer to distinghuish factories

@@ -8,8 +8,12 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
+#include "MueLu_FactoryManager.hpp"
+
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SmootherFactory.hpp"
+
+#include "MueLu_HierarchyHelpers.hpp"
 
 namespace MueLu {
   /*!
@@ -27,17 +31,6 @@ namespace MueLu {
 
 #include "MueLu_UseShortNames.hpp"
 
-    template<class AA, class BB, class CC, class DD, class EE>
-    inline friend std::ostream& operator<<(std::ostream& os, Hierarchy<AA,BB,CC,DD,EE> &hierarchy);
-
-  private:
-
-    //! vector of Level objects
-    Array<RCP<Level> > Levels_;
-
-    Xpetra::global_size_t maxCoarseSize_;
-    bool implicitTranspose_;
-
   public:
 
     //! @name Constructors/Destructors
@@ -50,7 +43,7 @@ namespace MueLu {
       AddLevel(rcp( new Level() ));
     }
     
-    //!
+    //! Constructor
     Hierarchy(const RCP<Operator> & A) 
       :  maxCoarseSize_(50), implicitTranspose_(false)
     {
@@ -68,38 +61,54 @@ namespace MueLu {
     //! @name Set/Get Methods.
     //@{
 
+    //!
     void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
 
+    //!
     Xpetra::global_size_t GetMaxCoarseSize() const { return maxCoarseSize_; }
 
-    //! Assign a level to hierarchy.
-    // TODO from JG: behavior should be explain or changed. 
-    //               Right now, we change the LevelID of the input level and push it at the end of hierarchy.
-    //               Certainly better to take the LevelID of the input level into account
+  private:
+    int LastLevelID() const { return Levels_.size() - 1; }
 
+  public:
+
+    //! Add a level at the end of the hierarchy
     void AddLevel(const RCP<Level> & level) {
-      Levels_.push_back(level);
-      level->SetLevelID(Levels_.size());
+      int levelID = LastLevelID() + 1; // ID of the inserted level
 
-      if (Levels_.size() < 2)
+      if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
+        GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << endl
+                                 << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
+
+      Levels_.push_back(level);
+      level->SetLevelID(levelID);
+
+      if (levelID == 0)
         level->SetPreviousLevel(Teuchos::null);
       else
-        level->SetPreviousLevel(Levels_[Levels_.size()-2]); // new level = size-1, previous = size-2
+        level->SetPreviousLevel(Levels_[LastLevelID() - 1]);
     }
+
+    //! Add a new level at the end of the hierarchy
+    void AddNewLevel() {
+      RCP<Level> newLevel = Levels_[LastLevelID()]->Build(); // new coarse level, using copy constructor
+      this->AddLevel(newLevel);                              // add to hierarchy
+    }
+
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level> & GetLevel(const int levelID = 1) {
-      TEST_FOR_EXCEPTION(levelID < 1, Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value");
-      return Levels_[levelID-1];
+    RCP<Level> & GetLevel(const int levelID = 0) {
+      TEST_FOR_EXCEPTION(levelID < 0 || levelID > LastLevelID(), Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value: LevelID = " << levelID);
+      return Levels_[levelID];
     }
 
-    LO GetNumLevels() { return Levels_.size(); }
+    LO GetNumLevels() const { return Levels_.size(); }
 
     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
-    void SetImplicitTranspose(bool const &implicit) { implicitTranspose_ = implicit; }
+    void SetImplicitTranspose(const bool &implicit) { implicitTranspose_ = implicit; }
 
     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
-    bool GetImplicitTranspose() { return implicitTranspose_; }
+    bool GetImplicitTranspose() const { return implicitTranspose_; }
 
     //@}
 
@@ -113,22 +122,21 @@ namespace MueLu {
       restriction, coarse level discretizations, and smoothers in this
       order) a multigrid Hierarchy starting with information on 'startLevel'
       and continuing for at most 'numDesiredLevels'.
-
-      Note: Empty factories are simply skipped.
     */
-    Teuchos::ParameterList FullPopulate(const PFactory & PFact,
-                                        const RFactory & RFact,
+    Teuchos::ParameterList FullPopulate(const FactoryBase & PFact,
+                                        const FactoryBase & RFact,
                                         const TwoLevelFactoryBase & AcFact,
                                         const SmootherFactory & SmooFact,
-                                        int const &startLevel=0, int const &numDesiredLevels=10 )
-    {
-      Teuchos::ParameterList status;
-      status = FillHierarchy(PFact,RFact,AcFact,startLevel,numDesiredLevels);
+                                        const int &startLevel = 0, const int &numDesiredLevels = 10) {
+      
+      // Note: It's OK to use rcpFromRef here, because data will only be kept by the FactoryManager 
+      //       and the FactoryManager is deleted at the end of this function.
 
-      SetSmoothers(SmooFact,startLevel,numDesiredLevels-1);
-      return status;
-
-    } //FullPopulate()
+      FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
+      manager.SetSmootherFactory(rcpFromRef(SmooFact));
+      
+      return Setup(manager, startLevel, numDesiredLevels);
+    }
 
     /*! @brief Populate hierarchy with A's, R's, and P's.
 
@@ -140,134 +148,127 @@ namespace MueLu {
     @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
     matrix, and the sum of nonzeros all matrices (including the fine).
     */
-    Teuchos::ParameterList FillHierarchy(PFactory const &PFact, RFactory const &RFact,
-                                         TwoLevelFactoryBase const &AcFact,
-                                         int const startLevel=0, int const numDesiredLevels=10 ) //TODO: startLevel should be 1!! Because a) it's the way it is in MueMat; b) according to SetLevel(), LevelID of first level=1, not 0
-    {
-      Monitor h(*this, "FillHierarchy");
+    Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact,
+                                         const TwoLevelFactoryBase & AcFact,
+                                         const int startLevel = 0, const int numDesiredLevels = 10) {
+
+      FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
       
+      return Setup(manager, startLevel, numDesiredLevels);
+
+    }
+    // FillHierarchy
+
+    Teuchos::ParameterList Setup(const FactoryManager & manager,
+                                 const int &startLevel = 0, const int &numDesiredLevels = 10) {
+
+      TopRAPFactory<SC,LO,GO,NO>      rapFactory           (manager.GetFactoryManager(), manager.GetPFact(), manager.GetRFact(), manager.GetAcFact());
+      TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (manager.GetFactoryManager(), manager.GetSmootherFactory());
+      TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(manager.GetFactoryManager(), manager.GetCoarsestSolverFactory());
+
+      Monitor h(*this, "Setup");
+      Xpetra::global_size_t sumCoarseNnz = 0;
+      
+      TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");
+
+      //TODO: check Levels_[startLevel] exists.
+
       // Check for fine level matrix A
-      TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+      TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): no fine level matrix A! Set fine level matrix A using Level.Set()");
 
-      Xpetra::global_size_t fineNnz = -1;
-      {
-        RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
-        fineNnz = A->getGlobalNumEntries();
-      }
-      Xpetra::global_size_t totalNnz = fineNnz;
+      // Check coarse levels
+      // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
 
-      RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
-      {
-        Level & fineLevel = *Levels_[startLevel];
-        fineLevel.SetDefaultFactoryHandler(factoryHandler);
-      }
+      //
+      //
+      //
 
-      // Setup level structure
-      int i = startLevel;
-      while (i < startLevel + numDesiredLevels - 1)
-        {
-    	  // 3.1) setup levels
-          Level & fineLevel = *Levels_[i];
+      Levels_[startLevel]->Request(smootherFactory);
+      // Levels_[startLevel]->Request(coarsestSolverFactory);
 
-          if ((i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null) {
-            RCP<Level> coarseLevel = fineLevel.Build(); // new coarse level, using copy constructor
-            this->AddLevel(coarseLevel);                // add to hierarchy
-          }
+      //
+      const int lastLevel = startLevel + numDesiredLevels - 1;
+      int iLevel;
+      std::cout << "Setup(): startLevel=" << startLevel << ", lastLevel=" << lastLevel << ", numDesiredLevels=" << numDesiredLevels << std::endl;
 
-          Level & coarseLevel = *Levels_[i+1];
-          coarseLevel.SetDefaultFactoryHandler(factoryHandler);
+      for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
+        SubMonitor m(*this, "Level " + Teuchos::toString(iLevel));
 
-          // Warning: shift of 1 between i and LevelID. Weird...
-          TEST_FOR_EXCEPTION(fineLevel.GetLevelID()   != i+1, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): FineLevel have a wrong level ID");
-          TEST_FOR_EXCEPTION(coarseLevel.GetLevelID() != i+2, Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): CoarseLevel have a wrong level ID");
-          TEST_FOR_EXCEPTION(coarseLevel.GetPreviousLevel() != Levels_[i], Exceptions::RuntimeError, "MueLu::Hierarchy::FillHierarchy(): coarseLevel parent is not fineLevel");
+        // Prepare next level (to keep useful data of current level!)
+        int nextCoarseLevelID = iLevel + 1;
+        if (nextCoarseLevelID <= lastLevel) {
+          if (nextCoarseLevelID > LastLevelID()) { AddNewLevel(); }
 
-          // 3.2) declare input for levels (recursively)
-          GetOStream(Debug, 0) << "declareInput for P's, R's and RAP" << std::endl;
-          coarseLevel.Request(PFact);
-          coarseLevel.Request(RFact);
-          coarseLevel.Request(AcFact);
+	  std::cout << "Level " << nextCoarseLevelID << ": Request RAP" << std::endl; std::cout.flush();
+          Levels_[nextCoarseLevelID]->Request(rapFactory);
+	  Levels_[nextCoarseLevelID]->Request(smootherFactory); //TODO: skip if lastLevel
+	  // Levels_[nextCoarseLevelID]->Request(coarsestSolverFactory);
+        }
 
-          ++i;
-        } //while
-
-      // Build levels
-      i = startLevel;
-      while (i < startLevel + numDesiredLevels - 1)
-        {
-          SubMonitor m(*this, "Level " + Teuchos::toString(i));
-
-          Level & fineLevel   = *Levels_[i];
-          Level & coarseLevel = *Levels_[i+1];
-
-          {
-            RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-            if (A->getRowMap()->getGlobalNumElements() <= maxCoarseSize_) {
-              Levels_.resize(i+1);
-              break;
-            }
-          }
-
-          // Request P, R and A at the beginning, because they might be generated by first Build() called, if Pfact==Rfact==AFact...
-          coarseLevel.Request("P", &PFact);
-          coarseLevel.Request("R", &RFact);
-          coarseLevel.Request("A", &AcFact);
-
-          PFact.Build(fineLevel, coarseLevel);
-          RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &PFact);
-          coarseLevel.Release("P", &PFact);
-          coarseLevel.Set("P", P);
-
-          RFact.Build(fineLevel, coarseLevel);
-          RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &RFact);
-          coarseLevel.Release("R", &RFact);
-          coarseLevel.Set("R", R);
-
-          //          TEST_FOR_EXCEPTION((int)Levels_.size() > i, Exceptions::RuntimeError, "WhaT?");
-
-          //TODO: group with the break at the beginning of the loop by changing i to i-1?
-          if ((int)Levels_.size() <= i) { //TODO is this the right way to cast?
-            Levels_.resize(i+1); //keep only entries 0..i
-            break;
-          }
-
-          RCP<Operator> Ac = coarseLevel.Get< RCP<Operator> >("A", &AcFact);
-          coarseLevel.Release("A", &AcFact);
-          coarseLevel.Set("A", Ac);
+        Level & level = *Levels_[iLevel];
+        TEST_FOR_EXCEPTION(level.GetLevelID() != iLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level ID");
+        
+        //
+        if (iLevel != startLevel) {
+          TEST_FOR_EXCEPTION(level.GetPreviousLevel() != Levels_[iLevel-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
           
-          totalNnz += Ac->getGlobalNumEntries();
+          rapFactory.Build(*level.GetPreviousLevel(), level);
+	  std::cout << "Level " << iLevel << ": Release RAP" << std::endl; std::cout.flush();
+          level.Release(rapFactory);
+        }
+        //
 
-          ++i;
-        } // while
+	RCP<Operator> Ac;
+	if (level.IsAvailable("A")) {
+	  Ac = level.Get<RCP<Operator> >("A");
+	  sumCoarseNnz += Ac->getGlobalNumEntries();
+	} else {
+	  //TODO: happen when Ac factory = do nothing (ie: SetSmoothers)
+	}
 
-      for(int j = startLevel; j < Levels_.size(); j++) {
-        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
-      }
+        if (iLevel == lastLevel || (Ac != Teuchos::null && Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
+          if (nextCoarseLevelID <= lastLevel) {
+	    std::cout << "Level " << nextCoarseLevelID << ": Release RAP" << std::endl; std::cout.flush();
+            // Levels_[nextCoarseLevelID]->Release(rapFactory);
+            // Levels_[nextCoarseLevelID]->Release(smootherFactory);
+	    // Levels_[nextCoarseLevelID]->Release(coarsestSolverFactory);
+          }
 
-      ////////////////////////////////////////////////////////////
-      //i = startLevel;
-      //while (i < startLevel + Levels_.size() - 1)
-      //  {
-      //    Level & fineLevel = *Levels_[i];
-      //    Level & coarseLevel = *Levels_[i+1];
-      //    std::cout << "GenericPRFactory.Build: (start)" << std::endl;
-      //    std::cout << "FineLevel:" << std::endl;
-      //    fineLevel.print(std::cout);
-      //    std::cout << "CoarseLevel:" << std::endl;
-      //    coarseLevel.print(std::cout);
-      //    ++i;
-      //  }
-      ////////////////////////////////////////////////////////////
+	  std::cout << "BUILD COARSE" << std::endl; std::cout.flush();
+	  coarsestSolverFactory.Build(level); //TODO: PRE?POST
+	  // level.Release(smootherFactory);
+	  level.Release(coarsestSolverFactory);
+
+          break;
+
+        } else {
+
+	  std::cout << "BUILD SMOO" << std::endl; std::cout.flush();
+          smootherFactory.Build(level);
+          level.Release(smootherFactory);
+	  // level.Release(coarsestSolverFactory);
+          
+        }
+
+      } // for loop
+
+      // Crop
+      Levels_.resize(iLevel + 1);
 
       // Gather statistics
+      Xpetra::global_size_t fineNnz = Levels_[startLevel]->Get< RCP<Operator> >("A")->getGlobalNumEntries();
+      Xpetra::global_size_t totalNnz = fineNnz + sumCoarseNnz;
+
       Teuchos::ParameterList status;
-      status.set("fine nnz",fineNnz);
-      status.set("total nnz",totalNnz);
-      status.set("start level",startLevel);
-      status.set("end level",i);
-      status.set("operator complexity",((SC)totalNnz) / fineNnz);
+      status.set("fine nnz", fineNnz);
+      status.set("total nnz", totalNnz);
+      status.set("start level", startLevel);
+      status.set("end level", iLevel); //TODO: check if it's actually correct (exit by break vs. end of loop)
+      status.set("operator complexity", ((SC)totalNnz) / fineNnz);
+
       return status;
-    } //FillHierarchy
+
+    } // Setup()
 
     /*! @brief Set solve method for coarsest level.
 
@@ -278,21 +279,30 @@ namespace MueLu {
     controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome,
     however.
     */
+    //TODO: remove PRE/POST
+
     void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
-      
-      LO clevel = GetNumLevels()-1;
-      
-      RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
-      Levels_[clevel]->SetDefaultFactoryHandler(factoryHandler);
+      Level & level = *Levels_[LastLevelID()];
+      RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+      SetFactoryManager SFM(level, manager);
 
-      smooFact.BuildSmoother(*Levels_[clevel], pop);
+      level.Request(smooFact);
+      smooFact.BuildSmoother(level, pop);
 
-      Levels_[clevel]->SetDefaultFactoryHandler(Teuchos::null);
-      //TODO: setdefaultfactoryhandler
+      if (level.IsAvailable("PreSmoother", &smooFact)) {
+	RCP<SmootherBase> Pre  = level.Get<RCP<SmootherBase> >("PreSmoother", &smooFact);
+	level.Set("PreSmoother", Pre);
+      }
+      
+      if (level.IsAvailable("PostSmoother", &smooFact)) {
+	RCP<SmootherBase> Post = level.Get<RCP<SmootherBase> >("PostSmoother", &smooFact);
+	level.Set("PostSmoother", Post);
+      }
+
+      level.Release(smooFact);
     }
 
     /*! @brief Construct smoothers on all levels but the coarsest.
-      TODO need to check whether using Tpetra or Epetra
 
       Invoke a set of factories to construct smoothers within 
       a multigrid Hierarchy starting with information on 'startLevel' 
@@ -302,8 +312,7 @@ namespace MueLu {
       to define a smoother for the last level. Otherwise, a direct solve is
       assumed
     */
-    void SetSmoothers(SmootherFactory const &smooFact, LO const &startLevel=0, LO numDesiredLevels=-1)
-    {
+    void SetSmoothers(SmootherFactory const & smooFact, LO const & startLevel = 0, LO numDesiredLevels = -1) {
       Monitor h(*this, "SetSmoothers");
 
       if (numDesiredLevels == -1)
@@ -322,25 +331,14 @@ namespace MueLu {
         GetOStream(Warnings0, 0) << "Warning: coarsest level will have a direct solve!" << std::endl;
       }
 
-      for(int j = startLevel; j<=lastLevel; j++) {
-        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
-      }
+      FactoryManager manager;
+      manager.SetSmootherFactory(rcpFromRef(smooFact));
 
-      {
-        RCP<DefaultFactoryHandler> factoryHandler = rcp(new DefaultFactoryHandler());
-        for(int j = startLevel; j<=lastLevel; j++) {
-          Levels_[j]->SetDefaultFactoryHandler(factoryHandler);
-        }
-      }
+      lastLevel++; // hack: nothing will be done on the last level in Setup() because coarse solver of manager == Teuchos::null
+      numDesiredLevels = lastLevel - startLevel + 1;
 
-      for (int i=startLevel; i<=lastLevel; i++) {
-        SubMonitor m(*this, "Level " + Teuchos::toString(i));
-        smooFact.Build(*Levels_[i]);
-      }
-
-      for(int j = startLevel; j<=lastLevel; j++) {
-        Levels_[j]->SetDefaultFactoryHandler(Teuchos::null);
-      }
+      // std::cout << "startLevel=" << startLevel << ", nummDesiredLevels=" << numDesiredLevels << std::endl;
+      Setup(manager, startLevel, numDesiredLevels);
 
     } //SetSmoothers()
 
@@ -358,8 +356,8 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value=1
-                 bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
+    void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
+                 const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0)
     {
       //Teuchos::Array<Magnitude> norms(1);
       bool zeroGuess=InitialGuessIsZero;
@@ -413,8 +411,12 @@ namespace MueLu {
           RCP<Level> Coarse = Levels_[startLevel+1];
 
           //TODO: add IsAvailable test to avoid building default smoother
-          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
-          preSmoo->Apply(X, B, zeroGuess);
+          if (Fine->IsAvailable("PreSmoother")) {
+            RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+            preSmoo->Apply(X, B, zeroGuess);
+          } else {
+            GetOStream(Errors, 0) << "Error: Fine = " <<  startLevel << ": No Smoother!" << std::endl;
+          }
 
           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
 
@@ -423,12 +425,12 @@ namespace MueLu {
           RCP<MultiVector> coarseRhs, coarseX;
           if (implicitTranspose_) {
             coarseRhs = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
-            coarseX = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
+            coarseX   = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
             P->apply(*residual,*coarseRhs,Teuchos::TRANS,1.0,0.0);
           } else {
             R = Coarse->Get< RCP<Operator> >("R");
             coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
-            coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
+            coarseX   = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
             R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
           }
           coarseX->putScalar(0.);
@@ -447,8 +449,12 @@ namespace MueLu {
 
           //X.norm2(norms);
           //TODO: add IsAvailable test to avoid building default smoother
-          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-          postSmoo->Apply(X, B, false);
+          if (Fine->IsAvailable("PostSmoother")) {
+            RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+            postSmoo->Apply(X, B, false);
+          } else {
+            GetOStream(Errors,0) << "Error: Fine = " <<  startLevel << ": No Smoother!" << std::endl;
+          }
         }
         zeroGuess=false;
       } //for (LO i=0; i<nIts; i++)
@@ -460,18 +466,14 @@ namespace MueLu {
   private:
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h) { }
+
+    //! vector of Level objects
+    Array<RCP<Level> > Levels_;
+
+    Xpetra::global_size_t maxCoarseSize_;
+    bool implicitTranspose_;
         
   }; //class Hierarchy
-
-  //TODO
-  template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
-    os << "Printing Hierarchy object" << std::endl;
-    typename std::vector< RCP<Level> >::const_iterator i;
-    for (i=hierarchy.Levels_.begin(); i != hierarchy.Levels_.end(); ++i)
-      os << *(*i) << std::endl;
-    return os;
-  }
 
 } //namespace MueLu
 
@@ -480,4 +482,3 @@ namespace MueLu {
 #endif //ifndef MUELU_HIERARCHY_HPP
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
 
-//TODO: GetNumbertOfLevels() -> GetNumLevels()

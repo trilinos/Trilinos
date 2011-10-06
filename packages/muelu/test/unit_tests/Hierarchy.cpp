@@ -143,6 +143,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 //   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
 
 #ifdef HAVE_MUELU_IFPACK
+
   RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
   H.SetSmoothers(*smooFactory);
@@ -168,10 +169,17 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   SmootherFactory SmooFactory(smoother);
 
   Hierarchy H(A);
-
   RCP<Level> levelOne = H.GetLevel();
+  
+  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
+  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  levelOne->SetDefaultFactoryHandler(manager);
+ 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
+
+  //JG FIXME
+  levelOne->SetDefaultFactoryHandler(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory);
 
@@ -202,13 +210,18 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   SmootherFactory SmooFactory(smoother);
 
-  Hierarchy H;
+  Hierarchy H(A);
   RCP<Level> levelOne = H.GetLevel();
-  levelOne->Request("A");
-  levelOne->Set("A",A);
 
+  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
+  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  levelOne->SetDefaultFactoryHandler(manager);
+ 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
+
+  //JG FIXME
+  levelOne->SetDefaultFactoryHandler(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
 
@@ -240,9 +253,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
 
   Hierarchy H(A);
   RCP<Level> levelOne = H.GetLevel();
-
+  
+  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
+  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  levelOne->SetDefaultFactoryHandler(manager);
+ 
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
+
+  //JG FIXME
+  levelOne->SetDefaultFactoryHandler(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
 

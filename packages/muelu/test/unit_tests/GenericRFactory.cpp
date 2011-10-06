@@ -93,10 +93,10 @@ namespace MueLuTests {
     SmootherFactory coarseSolveFact(smooProto);
     H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
-    RCP<Level> coarseLevel = H->GetLevel(2);
+    RCP<Level> coarseLevel = H->GetLevel(1);
     RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
     RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
-    RCP<Level> coarseLevel2 = H->GetLevel(3);
+    RCP<Level> coarseLevel2 = H->GetLevel(2);
     RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
     RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
 

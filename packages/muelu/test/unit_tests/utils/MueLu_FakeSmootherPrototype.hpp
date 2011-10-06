@@ -26,6 +26,8 @@ namespace MueLu {
       return rcp(new FakeSmootherPrototype(*this)); 
     }
 
+    void DeclareInput(Level &currentLevel) const { }
+
     void Setup(Level &) { 
       numOfSetupCall_++; 
       if (SmootherPrototype::IsSetup()) return;

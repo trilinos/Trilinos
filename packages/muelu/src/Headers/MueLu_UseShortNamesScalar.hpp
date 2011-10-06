@@ -93,3 +93,7 @@ typedef MueLu::DefaultFactoryHandler<Scalar, LocalOrdinal,GlobalOrdinal,Node,Loc
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> NullspaceFactory;
 #endif
+
+#ifdef MUELU_FACTORYMANAGER_SHORT
+typedef MueLu::FactoryManager<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
+#endif

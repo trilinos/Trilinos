@@ -40,13 +40,14 @@ namespace MueLu {
 
     //!
     virtual void NewBuild(Level & requestedLevel) const {
+      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "");
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //!
     virtual void callDeclareInput(Level & requestedLevel) const {
-      if(requestedLevel.GetPreviousLevel() != Teuchos::null)
-        DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "");
+      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //@}

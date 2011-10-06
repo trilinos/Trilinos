@@ -54,6 +54,15 @@ namespace MueLu {
     virtual ~Amesos2Smoother() {}
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &currentLevel) const {
+        currentLevelfineLevel.DeclareInput("A", AFact_.get());
+    }
+
+    //@}
+
     //! @name Setup and Apply methods.
     //@{
 

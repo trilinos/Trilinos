@@ -112,14 +112,14 @@ namespace MueLuTests {
             H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
             // test some basic multigrid data
-            RCP<Level> coarseLevel = H->GetLevel(2);
+            RCP<Level> coarseLevel = H->GetLevel(1);
             RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
             RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P1->getGlobalNumRows(), 63);
             TEST_EQUALITY(P1->getGlobalNumCols(), 21);
             TEST_EQUALITY(R1->getGlobalNumRows(), 21);
             TEST_EQUALITY(R1->getGlobalNumCols(), 63);
-            RCP<Level> coarseLevel2 = H->GetLevel(3);
+            RCP<Level> coarseLevel2 = H->GetLevel(2);
             RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
             RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P2->getGlobalNumRows(), 21);

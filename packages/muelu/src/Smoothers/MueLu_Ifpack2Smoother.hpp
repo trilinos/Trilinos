@@ -99,6 +99,15 @@ namespace MueLu {
 
     //@}
 
+    //! Input
+    //@{
+
+    void DeclareInput(Level &currentLevel) const {
+        currentLevel.DeclareInput("A", AFact_.get());
+    }
+
+    //@}
+
     //! @name Computational methods.
     //@{
 

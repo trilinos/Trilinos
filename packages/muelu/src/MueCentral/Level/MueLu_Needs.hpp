@@ -65,11 +65,13 @@ namespace MueLu {
     //@{
 
     //! Store need label and its associated data. This does not increment the storage counter.
+    //TODO: rename SetData -> Set
     template <class T>
     void SetData(const std::string& ename, const T &entry, const FactoryBase* factory) {
         // check if data is requested
         if(countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0)
         {
+          //TODO: what this 'if' is for?
           if(!countTable_.isKey(ename, factory))
             countTable_.Set(ename,0,factory);    // make sure that 'ename' is counted
           dataTable_.Set(ename,entry,factory);
