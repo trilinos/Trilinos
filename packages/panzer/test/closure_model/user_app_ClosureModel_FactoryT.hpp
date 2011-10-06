@@ -58,7 +58,36 @@ buildClosureModels(const std::string& model_id,
     ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
-    
+
+    #ifdef HAVE_STOKHOS
+    if (plist.isType<double>("Value") && plist.isType<double>("UQ") 
+                           && plist.isParameter("Expansion")
+                           && (typeid(EvalT)==typeid(panzer::Traits::SGResidual) || 
+                               typeid(EvalT)==typeid(panzer::Traits::SGJacobian)) ) {
+      { // at IP
+	input.set("Name", key);
+	input.set("Value", plist.get<double>("Value"));
+	input.set("UQ", plist.get<double>("UQ"));
+	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
+	input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	evaluators->push_back(e);
+      }
+      { // at BASIS
+	input.set("Name", key);
+	input.set("Value", plist.get<double>("Value"));
+	input.set("UQ", plist.get<double>("UQ"));
+	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
+	input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	evaluators->push_back(e);
+      }
+      found = true;
+    }
+    else 
+    #endif
     if (plist.isType<double>("Value")) {
       { // at IP
 	input.set("Name", key);

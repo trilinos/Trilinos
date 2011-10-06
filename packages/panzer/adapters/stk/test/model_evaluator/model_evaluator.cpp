@@ -362,6 +362,8 @@ namespace panzer {
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("UQ",1.0);
+    closure_models.sublist("ion solid").sublist("ION_DENSITY").set("Expansion",sgExpansion);
     closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
 
     Teuchos::ParameterList user_data("User Data");
