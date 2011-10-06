@@ -13,6 +13,9 @@
 #if defined(HAVE_KOKKOS_THREADPOOL)
 #  include <Kokkos_TPINode.hpp>
 #endif
+#if defined(HAVE_KOKKOS_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
@@ -29,6 +32,9 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,float,int,int,Kokkos::TPINode)
 #endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,float,int,int,Kokkos::OpenMPNode)
+#endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,float,int,int,Kokkos::ThrustGPUNode)
 #endif
@@ -41,6 +47,9 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,double,int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,double,int,int,Kokkos::OpenMPNode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,double,int,int,Kokkos::ThrustGPUNode)
@@ -55,6 +64,9 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::TPINode)
 #endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::OpenMPNode)
+#endif
 // not yet supported
 // #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
 //     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::ThrustGPUNode)
@@ -68,6 +80,9 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::OpenMPNode)
 #endif
 // not yet supported
 // #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
@@ -88,6 +103,10 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,float,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,double,int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,float,int,int,Kokkos::OpenMPNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,double,int,int,Kokkos::OpenMPNode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,float,int,int,Kokkos::ThrustGPUNode)

@@ -16,6 +16,24 @@ SET(${PACKAGE_NAME}_VERSION "1.3d")
 
 PACKAGE_ADD_DEBUG_OPTION()
 
+# ADD_OPTION_AND_DEFINE( 
+#   Kokkos_DEFAULT_NODE
+#   KOKKOS_DEFAULT_NODE
+#   "Kokkos default node: SerialNode, OpenMPNode, TBBNode, TPINode, ThrustGPUNode"
+#   "SerialNode"
+#   )
+
+ADD_OPTION_AND_DEFINE( 
+  Kokkos_ENABLE_OpenMP
+  HAVE_KOKKOS_OPENMP
+  "Enable OpenMP in Kokkos."
+  ${Trilinos_ENABLE_OpenMP}
+  )
+IF(Kokkos_ENABLE_OpenMP AND NOT Trilinos_ENABLE_OpenMP)
+  MESSAGE(WARNING "Disabling OpenMP in Kokkos because Trilinos_ENABLE_OpenMP is ${Trilinos_ENABLE_OpenMP}")
+ENDIF()
+
+
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_NodeAPI
   HAVE_KOKKOS_NODEAPI

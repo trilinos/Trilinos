@@ -26,48 +26,26 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef KOKKOS_DEFAULT_NODE_HPP_
-#define KOKKOS_DEFAULT_NODE_HPP_
-
-#include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOS_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOS_OPENMP
+#include <Teuchos_ParameterList.hpp>
 #include "Kokkos_OpenMPNode.hpp"
-#endif
-
-#include <Teuchos_RCP.hpp>
 
 namespace Kokkos {
 
-  /** \brief Class to specify %Kokkos default node type and instantiate the default node.
-      \ingroup kokkos_node_api
-    */
-  class DefaultNode {
-    public:
-#if   defined(HAVE_KOKKOS_THREADPOOL)
-      typedef TPINode DefaultNodeType;
-#elif defined(HAVE_KOKKOS_TBB)
-      typedef TBBNode DefaultNodeType;
-#elif defined(HAVE_KOKKOS_OPENMP)
-      typedef OpenMPNode DefaultNodeType;
-#else
-      //! Typedef specifying the default node type.
-      typedef SerialNode DefaultNodeType;
-#endif
+  OpenMPNode::OpenMPNode(Teuchos::ParameterList &pl) {
+    curNumThreads_ = pl.get<int>("Num Threads", -1);
+    int verbose = pl.get<int>("Verbose", 0);
+    TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error,
+        "OpenMPNode::OpenMPNode(): invalid ""Num Threads"" specification.");
+    if (verbose) {
+      std::cout << "OpenMPNode initializing with numThreads == " << curNumThreads_ << std::endl;
+    }
+    init(curNumThreads_);
+  }
 
-      //! \brief Return a pointer to the default node.
-      static RCP<DefaultNodeType> getDefaultNode();
+  OpenMPNode::~OpenMPNode() {}
 
-    private:
-      static RCP<DefaultNodeType> node_;
-  };
+  void OpenMPNode::init(int numThreads) {
+    omp_set_num_threads(numThreads);
+  }
 
 }
-
-#endif

@@ -19,6 +19,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
@@ -94,6 +97,10 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
+#endif
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
@@ -162,6 +169,18 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",1);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
   }
 #endif
 
@@ -2164,6 +2183,13 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OMPNODE(ORDINAL, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OMPNODE(ORDINAL, SCALAR)
+#endif
+
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
 #if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
 // float
@@ -2205,7 +2231,8 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_ALLCPUNODES(ORDINAL, SCALAR) \
     UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
     UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TPINODE(ORDINAL, SCALAR)
+    UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
+    UNIT_TEST_OMPNODE(ORDINAL, SCALAR)
 
 #define UNIT_TEST_FLOAT(ORDINAL) \
     UNIT_TEST_ALLCPUNODES(ORDINAL, float) \

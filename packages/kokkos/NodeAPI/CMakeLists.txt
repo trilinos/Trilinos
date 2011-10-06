@@ -60,6 +60,14 @@ APPEND_SET(TPI_SOURCES
     Kokkos_TPINode.cpp
 )
 
+# OpenMP-specific source and headers
+APPEND_SET(OMP_HEADERS
+    Kokkos_OpenMPNode.hpp
+)
+APPEND_SET(OMP_SOURCES
+    Kokkos_OpenMPNode.cpp
+)
+
 # general headers, sources
 APPEND_SET(HEADERS
     Kokkos_BufferMacros.hpp
@@ -78,20 +86,30 @@ APPEND_SET(SOURCES
 
 ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 IF (Kokkos_ENABLE_Thrust)
+  MESSAGE(STATUS "Enabling node: CUDA/Thrust")
   APPEND_SET(HEADERS ${CUDA_HEADERS})
   APPEND_SET(SOURCES ${CUDA_SOURCES})
 ENDIF()
 
 ASSERT_DEFINED(Kokkos_ENABLE_TBB)
 IF (Kokkos_ENABLE_TBB)
+  MESSAGE(STATUS "Enabling node: TBB")
   APPEND_SET(HEADERS ${TBB_HEADERS})
   APPEND_SET(SOURCES ${TBB_SOURCES})
 ENDIF()
 
 ASSERT_DEFINED(Kokkos_ENABLE_ThreadPool)
 IF (Kokkos_ENABLE_ThreadPool)
+  MESSAGE(STATUS "Enabling node: ThreadPool")
   APPEND_SET(HEADERS ${TPI_HEADERS})
   APPEND_SET(SOURCES ${TPI_SOURCES})
+ENDIF()
+
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+IF (Kokkos_ENABLE_OpenMP)
+  MESSAGE(STATUS "Enabling node: OpenMP")
+  APPEND_SET(HEADERS ${OMP_HEADERS})
+  APPEND_SET(SOURCES ${OMP_SOURCES})
 ENDIF()
 
 #

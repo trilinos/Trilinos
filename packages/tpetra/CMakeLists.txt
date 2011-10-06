@@ -43,6 +43,16 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_OpenMP
+  HAVE_TPETRA_OPENMP
+  "Enabling OpenMP in Tpetra"
+  ${Kokkos_ENABLE_OpenMP}
+  )
+IF(Tpetra_ENABLE_OpenMP AND NOT Kokkos_ENABLE_OpenMP)
+  MESSAGE(WARNING "Disabling OpenMP in Tpetra because Kokkos_ENABLE_OpenMP is ${Kokkos_ENABLE_OpenMP}")
+ENDIF()
+
+ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."

@@ -48,8 +48,7 @@ namespace {
 
   template <class SCALAR, class NODE>
   std::pair<double,double> nativeTimings(int N, int numIters, SCALAR &result) {
-    // TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
-    // FINISH
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
     return std::pair<double,double>(0.0,0.0);
   }
 

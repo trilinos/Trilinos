@@ -38,16 +38,16 @@ namespace Kokkos {
   {
     if (node_ == null) {
       Teuchos::ParameterList pl;
-#ifdef HAVE_KOKKOS_THREADPOOL
+#if   defined(HAVE_KOKKOS_THREADPOOL)
       pl.set<int>("Num Threads",1);
       node_ = rcp<TPINode>(new TPINode(pl));
-#else
-#  ifdef HAVE_KOKKOS_TBB
+#elif defined(HAVE_KOKKOS_TBB)
       pl.set<int>("Num Threads",0);
       node_ = rcp<TBBNode>(new TBBNode(pl));
-#  else
+#elif defined(HAVE_KOKKOS_OPENMP)
+      node_ = rcp<TBBNode>(new OpenMPNode(pl));
+#else
       node_ = rcp<SerialNode>(new SerialNode(pl));
-#  endif
 #endif
     }
     return node_;
