@@ -75,7 +75,7 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
+      //if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
 
       currentLevel.DeclareInput("Graph", graphFact_.get()); // we should request data...
     }
