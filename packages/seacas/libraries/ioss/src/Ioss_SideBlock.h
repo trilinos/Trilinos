@@ -46,7 +46,7 @@ namespace Ioss {
   public:
     friend class SideSet;
 
-    SideBlock(const DatabaseIO *io_database, const std::string& name,
+    SideBlock(DatabaseIO *io_database, const std::string& name,
 	      const std::string& side_type, const std::string& element_type,
 	      size_t side_count);
 

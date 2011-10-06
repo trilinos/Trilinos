@@ -503,24 +503,23 @@ namespace stk {
 	// If in_region is NULL, then open the file;
 	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
 	// should be used.
-	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
-
-	  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-							  Ioss::READ_MODEL, comm);
-	  if (dbi == NULL || !dbi->ok()) {
-	    std::cerr  << "ERROR: Could not open database '" << mesh_filename
-		       << "' of type '" << mesh_type << "'\n";
-	    std::exit(EXIT_FAILURE);
+	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
+							Ioss::READ_MODEL, comm);
+	if (dbi == NULL || !dbi->ok()) {
+	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
+		     << "' of type '" << mesh_type << "'\n";
+	  Ioss::NameList db_types;
+	  Ioss::IOFactory::describe(&db_types);
+	  std::cerr << "\nSupported database types:\n\t";
+	  for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+	    std::cerr << *IF << "  ";
 	  }
-
-	  // NOTE: 'in_region' owns 'dbi' pointer at this time...
-	  in_region = new Ioss::Region(dbi, "input_model");
-	  mesh_data.m_input_region = in_region;
-	} else {
-	  std::cerr << "ERROR: Unrecognized or unsupported mesh type '" << mesh_type
-		    << "'. \n";
-	  std::exit(EXIT_FAILURE);
+	  std::cerr << "\n\n";
 	}
+
+	// NOTE: 'in_region' owns 'dbi' pointer at this time...
+	in_region = new Ioss::Region(dbi, "input_model");
+	mesh_data.m_input_region = in_region;
       }
 
       size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
@@ -815,6 +814,27 @@ namespace stk {
       }
     }
     // ========================================================================
+    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time)
+    {
+      // Find the step on the database with time closest to the requested time...
+      Ioss::Region *region = mesh_data.m_input_region;
+      int step_count = region->get_property("state_count").get_int();
+      double delta_min = 1.0e30;
+      int    step_min  = 0;
+      for (int istep = 0; istep < step_count; istep++) {
+	double state_time = region->get_state_time(istep+1);
+	double delta = state_time - time;
+	if (delta < 0.0) delta = -delta;
+	if (delta < delta_min) {
+	  delta_min = delta;
+	  step_min  = istep;
+	  if (delta == 0.0) break;
+	}
+      }
+      // Exodus steps are 1-based;
+      process_input_request(mesh_data, bulk, step_min+1);
+    }
+
     void process_input_request(MeshData &mesh_data,
 			       stk::mesh::BulkData &bulk,
 			       int step)

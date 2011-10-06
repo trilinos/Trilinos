@@ -68,7 +68,7 @@ namespace Ioss {
     bool get_value(int    *value) const;
     bool get_value(double   *value) const;
     bool get_value(std::string *value) const;
-    bool get_value(void   *value) const;
+    bool get_value(void   *&value) const;
 
     std::string get_string()  const;
     int    get_int()     const;

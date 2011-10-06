@@ -480,52 +480,6 @@ ne_put_elem_cmap(int  neid,	/* NetCDF/Exodus file ID */
                  int  processor	/* This processor ID */
                  );
 
-/* Only used internally by NEMESIS */
-
-extern int
-ne_leavedef(int neid, 		/* NemesisI file ID         */
-            char *func_name	/* Name of calling function */
-            );
-
-extern int
-ne_get_file_type(int neid,	/* NetCDF/Exodus file ID */
-                 char *ftype	/* Nemesis file type */
-                 );
-
-extern char *
-ne_catstr2(char *name,	/* The name to attach num1 and num2 to */
-           int   num1,	/* First number to tack to name */
-           int   num2	/* Second number to tack to name */
-           );
-
-extern int
-ne_id_lkup(int   neid,		/* NetCDF/Exodus file ID */
-           char *var_name,	/* Nemesis variable name */
-           size_t *idx,         /* index variable for variable, length 2 */
-           int   ne_var_id	/* NetCDF variable ID */
-           );
-
-extern int
-ne_get_map_status(int neid,
-		  char *stat_var,
-		  int proc_id,
-		  int *stat);
-
-extern int
-ne_put_version(int neid		/* NetCDF/Exodus file ID */
-               );
-
-extern int
-ne_check_file_version(int neid	/* NetCDF/Exodus file ID */
-                      );
-
-extern int
-ne_get_idx(int   neid,		/* NetCDF/Exodus file ID */
-           char *ne_var_name,	/* Nemesis index variable name */
-           size_t *index,		/* array of length 2 to hold results */
-           int   pos		/* position of this proc/cmap in index */
-           );
-
 #ifdef __cplusplus
 }
 #endif

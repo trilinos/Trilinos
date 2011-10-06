@@ -52,12 +52,12 @@ C
       include 'ntpdat.blk'
       include 'tapes.blk'
       include 'exodusII.inc'
-      include 'f2kcli.inc'
+      include 'argparse.inc'
 C
 C     ******************************************************************
 C
 C .. Get filename from command line.  If not specified, emit error message
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .eq. 0) then
         CALL PRTERR ('FATAL', 'Invalid syntax.')
         CALL PRTERR ('CMDSPEC',
@@ -69,7 +69,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C ... Get 'base' and do default file assignments.
-      CALL GET_COMMAND_ARGUMENT(NARG,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(NARG,FILNAM, LFIL)
       fntpo = filnam(:lfil) // '.o'
       fntp2 = filnam(:lfil) // '.e'
       fntp3 = filnam(:lfil) // '.g'
@@ -78,8 +78,8 @@ C ... Get 'base' and do default file assignments.
 C ... parse arguments to see if any files set explicitly
 C     All (except for base) should be of the form "-option file"
       do iarg = 1, narg-1, 2
-        CALL GET_COMMAND_ARGUMENT(iarg,  OPTION, LOPT, ISTATUS)
-        CALL GET_COMMAND_ARGUMENT(iarg+1,FILNAM, LFIL, ISTATUS)
+        CALL get_argument(iarg,  OPTION, LOPT)
+        CALL get_argument(iarg+1,FILNAM, LFIL)
         
         if (option(1:1) .ne. '-') then
           errmsg = 'Option "'//OPTION(:LOPT)//

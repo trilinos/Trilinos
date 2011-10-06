@@ -77,15 +77,15 @@ namespace Ioss {
     friend class Property;
 
     GroupingEntity();
-    GroupingEntity(const DatabaseIO *io_database, const std::string& name,
+    GroupingEntity(DatabaseIO *io_database, const std::string& name,
 		   size_t entity_count);
     
     virtual ~GroupingEntity();
 
     State get_state() const;
 
-    const DatabaseIO* get_database() const;
-    void  set_database(const DatabaseIO *io_database);
+    DatabaseIO* get_database() const;
+    void  set_database(DatabaseIO *io_database);
     virtual void delete_database();
 
     //: Return name of entity.  This short-circuits the process of
@@ -196,7 +196,7 @@ namespace Ioss {
 
     std::string entityName;
 
-    const DatabaseIO* database_;
+    DatabaseIO* database_;
 
     State entityState;
     mutable size_t attributeCount;

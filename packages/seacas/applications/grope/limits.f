@@ -47,7 +47,9 @@ C=======================================================================
       WRITE (*, *) ' '
       WRITE (*, *) 'Mesh Limits: '
       WRITE (*, 10000) 'X', XMIN, 'X', XMAX, XMAX-XMIN
-      WRITE (*, 10000) 'Y', YMIN, 'Y', YMAX, YMAX-YMIN
+      IF (NDIM .GE. 2) THEN
+        WRITE (*, 10000) 'Y', YMIN, 'Y', YMAX, YMAX-YMIN
+      ENDIF 
       IF (NDIM .EQ. 3) THEN
          WRITE (*, 10000) 'Z', ZMIN, 'Z', ZMAX, ZMAX-ZMIN
       END IF

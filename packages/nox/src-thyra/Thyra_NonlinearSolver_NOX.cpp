@@ -6,6 +6,7 @@
 
 #include "NOX.H"
 #include "NOX_Thyra.H"
+#include "NOX_RowSumScaling_Utilities.H"
 
 // ****************************************************************
 // ****************************************************************
@@ -99,6 +100,13 @@ solve(VectorBase<double> *x,
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
   if (Teuchos::is_null(solver_)) {
+   
+    if (param_list_->sublist("Solver Options").get("Use Row Sum Scaling", false)) {
+      Teuchos::RCP< ::Thyra::ScaledModelEvaluator<double> > scaled_model;
+      NOX::Thyra::setupProblemForRowSumScaling(model_, scaled_model, *param_list_);
+      model_ = scaled_model;
+    }
+
     nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_));
     status_test_ = this->buildStatusTests(*param_list_);
     solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
@@ -130,10 +138,10 @@ solve(VectorBase<double> *x,
     vec.getThyraVector();
 
   if (delta)
-    ::Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
+    ::Thyra::V_StVpStV<double>(Teuchos::ptr(delta),1.0,new_x,-1.0,*x);
 
   //*x = new_x;
-  ::Thyra::assign(x, new_x);
+  ::Thyra::assign(Teuchos::ptr(x), new_x);
 
   return t_status;
 
@@ -217,6 +225,14 @@ void Thyra::NOXNonlinearSolver::resetSolver()
   nox_group_ = Teuchos::null;
   status_test_ = Teuchos::null;
   solver_ = Teuchos::null;
+}
+
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP<const NOX::Solver::Generic>
+Thyra::NOXNonlinearSolver::getNOXSolver() const
+{
+  return solver_;
 }
 
 // ****************************************************************

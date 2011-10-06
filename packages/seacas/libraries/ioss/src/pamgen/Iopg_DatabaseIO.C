@@ -84,8 +84,6 @@ namespace {
   const size_t max_string_length = MAX_STR_LENGTH;
   const size_t max_line_length   = MAX_LINE_LENGTH;
   const std::string SCALAR()     {return std::string("scalar");}
-  const std::string VECTOR3D()   {return std::string("vector_3d");}
-  const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
 
   void separate_surface_element_sides(Ioss::IntVector &element,
 				      Ioss::IntVector &sides,
@@ -1006,7 +1004,7 @@ namespace Iopg {
 	  if (ierr < 0)
 	    pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
-	  int index = 0;
+	  size_t index = 0;
 	  for (size_t i=0; i < num_to_get; i++) {
 	    rdata[index++] = x[i];
 	    rdata[index++] = y[i];

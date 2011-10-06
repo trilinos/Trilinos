@@ -74,6 +74,8 @@ public:
   
   //@}
 
+  RCP<const NOX::Solver::Generic> getNOXSolver() const;
+
 private:
 
   //! Called to rebuild the solver if a new parameter list is set.

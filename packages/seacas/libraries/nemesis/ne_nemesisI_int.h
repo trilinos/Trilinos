@@ -32,21 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile: ne_nemesisI_int.h,v $
- *
- * $Author: gdsjaar $
- *
- * $Date: 2007/10/31 21:39:17 $
- *
- * $Revision: 1.21 $
- *
- * $Name:  $
- *====================================================================*/
 
 /**********************************************************************
  * This file contains constant definitions used internally NEMESIS.
@@ -55,10 +40,10 @@
 #ifndef _NE_NEMESISI_INT_H
 #define _NE_NEMESISI_INT_H
 
+#include <stdint.h>
+
 #define NEMESIS_FILE_VERSION		2.6
 
-/* mms: start changing things, no longer need to distinguish **
-** between processors for dimensions and variables           */
 #define VAR_ELBLK_IDS_GLOBAL            "el_blk_ids_global"
 #define VAR_ELBLK_CNT_GLOBAL            "el_blk_cnt_global"
 #define VAR_NS_IDS_GLOBAL               "ns_ids_global"
@@ -98,10 +83,6 @@
 #define VAR_E_COMM_PROC                 "e_comm_proc"
 #define VAR_E_COMM_DATA_IDX             "e_comm_data_idx"
 
-/* variable which allow me to take the tail off some names */
-#define END_CMAP_IDX                    "_info_idx"
-#define END_CMAP_IDS                    "_ids"
-
 #define DIM_NUM_INT_NODES               "num_int_node"
 #define DIM_NUM_BOR_NODES               "num_bor_node"
 #define DIM_NUM_EXT_NODES               "num_ext_node"
@@ -118,5 +99,58 @@
 #define DIM_NUM_E_CMAPS                 "num_e_cmaps"
 #define DIM_NCNT_CMAP                   "ncnt_cmap"
 #define DIM_ECNT_CMAP                   "ecnt_cmap"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Only used internally by NEMESIS */
+
+extern int
+ne_leavedef(int neid, 		/* NemesisI file ID         */
+            char *func_name	/* Name of calling function */
+            );
+
+extern int
+ne_get_file_type(int neid,	/* NetCDF/Exodus file ID */
+                 char *ftype	/* Nemesis file type */
+                 );
+
+extern int
+ne_get_map_status(int neid,
+		  char *stat_var,
+		  int proc_id,
+		  int *stat);
+
+extern int
+ne_put_version(int neid		/* NetCDF/Exodus file ID */
+               );
+
+extern int
+ne_check_file_version(int neid	/* NetCDF/Exodus file ID */
+                      );
+extern char *
+ne_catstr2(char *name,	/* The name to attach num1 and num2 to */
+           int   num1,	/* First number to tack to name */
+           int   num2	/* Second number to tack to name */
+           );
+
+extern int
+ne_id_lkup(int      neid,	/* NetCDF/Exodus file ID */
+           char    *var_name,	/* Nemesis variable name */
+           int64_t *idx,        /* index variable for variable, length 2 */
+           int      ne_var_id	/* NetCDF variable ID */
+           );
+
+extern int
+ne_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+           char    *ne_var_name, /* Nemesis index variable name */
+           int64_t *index,	 /* array of length 2 to hold results */
+           int      pos		 /* position of this proc/cmap in index */
+           );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NE_NEMESISI_INT_H */

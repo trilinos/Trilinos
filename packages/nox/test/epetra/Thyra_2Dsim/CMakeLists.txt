@@ -31,4 +31,12 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
   
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Thyra_RowSumScaling
+    SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_RowSumScaling.C
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+  
 ENDIF()

@@ -473,6 +473,8 @@ C
      &              0,' ',0,' ',' ',1)
       END IF
 C
+      call inirea(nodesb*nvarnp, 0.0, a(nbsoln))
+      
       call debug('TRUTBL')
       CALL TRUTBL(IA(NMAP),IMP,IA(NAEB),IA(NBEB),IA(ITTA),IA(ITTB))
 C

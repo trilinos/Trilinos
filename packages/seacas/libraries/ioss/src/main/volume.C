@@ -125,18 +125,6 @@ namespace {
     grad_ptr[23] = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54);
   }
 
-  void transform_38_matrix_to_83_matrix(const double *cordel_ptr, double *const cur_coords) {
-    double* const cur_coord_x = cur_coords;
-    double* const cur_coord_y = cur_coords+8;
-    double* const cur_coord_z = cur_coords+16;
-    for(int i = 0; i < 8; ++i) {
-      cur_coord_x[i] = cordel_ptr[0];
-      cur_coord_y[i] = cordel_ptr[1];
-      cur_coord_z[i] = cordel_ptr[2];
-      cordel_ptr += 3;
-    }
-  }
-
   inline double dot8(const double *const x1, const double *const x2) {
     double d1 = x1[0] * x2[0] + x1[1] * x2[1];
     double d2 = x1[2] * x2[2] + x1[3] * x2[3];
@@ -146,64 +134,37 @@ namespace {
   }
 }
 
-void hex_volume(Ioss::ElementBlock *block, std::vector<double> &coordinates)
+void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates)
 {
   const double one12th = 1.0 / 12.0;
   size_t nelem  = block->get_property("entity_count").get_int();
   std::vector<int> connectivity;
   block->get_field_data("connectivity_raw", connectivity);
 
-  // Build 'cordel' vector -- coordinates for each node of the hex in x1,y1,z1, x2,y2,z2, ..., x8,y8,z8,...
-  // for each hex.  This is done to match the interface used in Sierra...
-  std::vector<double> cordel(8*3*nelem);
-
-  for(size_t ielem=0; ielem < nelem; ++ielem) {
-    for (int j = 0; j < 8; j++) {
-      int node = connectivity[ielem*8 + j] - 1;
-      cordel[ielem*24 + 3*j + 0] = coordinates[node*3 + 0];
-      cordel[ielem*24 + 3*j + 1] = coordinates[node*3 + 1];
-      cordel[ielem*24 + 3*j + 2] = coordinates[node*3 + 2];
-    }
-  }
-    
+  double gradop12x[24];
+  double x[8], y[8], z[8];
   std::vector<double> volume(nelem);
 
-  double gradop12x[24];
-  double cur_coords[8*3];
-    
   size_t t1 = timer();
-    
-  for (size_t ielem=0; ielem < nelem; ++ielem) {
-    double *cordel_ptr = &cordel[24*ielem];
 
-    double *x_ptr = &cur_coords[0];
-    double *y_ptr = &cur_coords[8];
-    double *z_ptr = &cur_coords[16];
+  for(size_t ielem=0; ielem < nelem; ++ielem) {
+    for (size_t j = 0; j < 8; j++) {
+      size_t node = connectivity[ielem*8 + j] - 1;
+      x[j] = coordinates[node*3 + 0];
+      y[j] = coordinates[node*3 + 1];
+      z[j] = coordinates[node*3 + 2];
+    }
 
-    //
-    //  Store local coordintes, note this changes the way coordinates are stored from
-    //
-    //  (x1, y1, z1, x2, y2, z2 .......)
-    //    to
-    //  (x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, .....)
-    //
-    transform_38_matrix_to_83_matrix(cordel_ptr, &cur_coords[0]);
-    //
-    //  Compute 12 times the gradient operator in three seperate steps
-    //
-    comp_grad12x(&gradop12x[0], x_ptr, y_ptr, z_ptr);
-    //
-    // calculate 12 times the element volume, store the actual element volume
-    //
-    const double volume12x = dot8(x_ptr, &gradop12x[0]);
+    comp_grad12x(&gradop12x[0], x, y, z);
+    const double volume12x = dot8(x, &gradop12x[0]);
     volume[ielem] = volume12x * one12th;
   }
   size_t t2 = timer();
 
   OUTPUT << std::setw(12) << block->name()
 	 << "\tMin volume = " << std::setw(12) << *std::min_element(volume.begin(), volume.end()) 
-	 << "\tMax volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
-	 << "\tElement Count = " << nelem
-	 << "\tTime/Element = " << double(t2-t1)/nelem << "\n";
+	 << "  Max volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
+	 << "  Elements = "   << std::setw(12) << nelem
+	 << "  Time/Elem = " << double(t2-t1)/nelem << "\n";
 }
   

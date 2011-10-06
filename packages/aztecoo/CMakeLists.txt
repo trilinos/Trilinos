@@ -87,6 +87,8 @@ PACKAGE_ARCH_EXCLUDE_FILES(
   src/md_wrap_sp2_c.c
   src/stamp-h.in
   test/scripts/daily/serial/Ex_AztecOO_UserOpUserMat
+  test/AztecOO_UserOpUserMat/Ex_AztecOO_UserOpUserMat
+  test/scripts/daily/serial/autotoolsTestAll
   )
 
 #

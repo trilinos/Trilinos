@@ -289,7 +289,9 @@ namespace stk {
         {
           argv_new_cstr[i] = (char *)argv_new[i].c_str();
         }
-      return adapt_main_full_options(argc_new, argv_new_cstr);
+      int ret_val = adapt_main_full_options(argc_new, argv_new_cstr);
+      delete[] argv_new_cstr;
+      return ret_val;
     }
 
     static void dump_args(int argc, char **argv) 
@@ -317,13 +319,14 @@ namespace stk {
     { 
       EXCEPTWATCH;
       bool debug_re = false;
+
       RunEnvironment run_environment(&argc, &argv, debug_re);
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
       unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
 
 
       std::string options_description_desc = "stk_adapt options";
-    
+
       // NOTE: Options --directory --output-log --runtest are handled/defined in RunEnvironment
       std::string input_mesh="";
       std::string input_geometry="";
@@ -404,7 +407,7 @@ namespace stk {
       run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
       run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage        , "print memory usage");
 
-      run_environment.processCommandLine(&argc, &argv);
+      run_environment.processCommandLine();
 
       int result = 0;
       unsigned failed_proc_rank = 0u;
@@ -653,6 +656,9 @@ namespace stk {
 //#if !PY_PERCEPT
 int main(int argc, char **argv) { 
 
-  return stk::adapt::adapt_main(argc, argv);
+  int res=0;
+  res = stk::adapt::adapt_main(argc, argv);
+  stk::adapt::ParallelMachineFinalize pm(true);
+  return res;
 }
 //#endif

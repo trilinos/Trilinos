@@ -78,8 +78,8 @@ public:
   
   const std::string& Title() const { return title;        }
   int     Dimension()       const { return dimension;     }
-  int     Num_Nodes()       const { return num_nodes;     }
-  int     Num_Elmts()       const { return num_elmts;     }
+  size_t  Num_Nodes()       const { return num_nodes;     }
+  size_t  Num_Elmts()       const { return num_elmts;     }
   int     Num_Node_Sets()   const { return num_node_sets; }
   int     Num_Side_Sets()   const { return num_side_sets; }
   float Data_Base_Version() const { return db_version;    }
@@ -140,9 +140,9 @@ public:
   std::string Free_Elmt_Order();
   const int*  Get_Elmt_Order() { return elmt_order; }
   void Free_All_Maps();
-  inline int Node_Map  (int node_num) const;  // numbers are global, 1-offset
-  inline int Elmt_Map  (int elmt_num) const;  // numbers are global, 1-offset
-  inline int Elmt_Order(int elmt_num) const;  // numbers are global, 1-offset
+  inline int Node_Map  (size_t node_num) const;  // numbers are global, 1-offset
+  inline int Elmt_Map  (size_t elmt_num) const;  // numbers are global, 1-offset
+  inline int Elmt_Order(size_t elmt_num) const;  // numbers are global, 1-offset
   
   
   // Nodal data:
@@ -213,10 +213,10 @@ protected:
   // GENESIS info:
   
   std::string  title;
-  int          num_nodes;
+  size_t       num_nodes;
   std::vector<std::string> coord_names;
   int          dimension;
-  int          num_elmts;
+  size_t       num_elmts;
   int          num_elmt_blocks;
   int          num_node_sets;
   int          num_side_sets;
@@ -267,28 +267,28 @@ protected:
   
 };
 
-inline int ExoII_Read::Node_Map(int node_num) const
+inline int ExoII_Read::Node_Map(size_t node_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(node_num > 0 && node_num <= num_nodes);
+  SMART_ASSERT(node_num <= num_nodes);
   
   if (node_map) return node_map[ node_num - 1 ];
   return 0;
 }
 
-inline int ExoII_Read::Elmt_Map(int elmt_num) const
+inline int ExoII_Read::Elmt_Map(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(elmt_num > 0 && elmt_num <= num_elmts);
+  SMART_ASSERT(elmt_num <= num_elmts);
   
   if (elmt_map) return elmt_map[ elmt_num - 1 ];
   return 0;
 }
 
-inline int ExoII_Read::Elmt_Order(int elmt_num) const
+inline int ExoII_Read::Elmt_Order(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(elmt_num > 0 && elmt_num <= num_elmts);
+  SMART_ASSERT(elmt_num <= num_elmts);
   
   if (elmt_order) return elmt_order[ elmt_num - 1 ];
   return 0;

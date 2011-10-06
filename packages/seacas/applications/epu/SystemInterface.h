@@ -35,8 +35,8 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include <CodeTypes.h>
-#include <GetLongOpt.h>
+#include "CodeTypes.h"
+#include "GetLongOpt.h"
 
 #include <string>
 #include <iosfwd>

@@ -33,7 +33,7 @@
  * 
  */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-#include <GetLongOpt.h>
+#include "GetLongOpt.h"
 #include <string.h>
 
 Excn::GetLongOpt::GetLongOpt(const char optmark)

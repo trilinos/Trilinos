@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
     if (numFailed) {
       MyOM->stream(Errors) << numFailed << " errors." << endl;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
+    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
   //
   MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
   return 0;
-}	
+}
 
 
 
@@ -662,7 +662,8 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 
   for (int t=0; t<numtests; t++) {
 
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
+    Teuchos::ArrayRCP<ST> Bdata = Teuchos::arcp<ST>(sizeS*sizeS);
+    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),sizeS,sizeS,sizeS) );
 
     try {
       // call routine
@@ -696,7 +697,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
           ind[i] = i;
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
-        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
+        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),ret,ret,sizeS) );
       }
 
       // test all outputs for correctness

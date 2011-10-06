@@ -119,7 +119,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableTeuchos
-  ARGS Trilinos_PACKAGES=Teuchos
+  ARGS Trilinos_PACKAGES=Teuchos Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Experimental
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos 1"
     "Final set of non-enabled packages:  TrilinosFramework RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
@@ -132,7 +132,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableThyra
-  ARGS Trilinos_PACKAGES=Thyra
+  ARGS Trilinos_PACKAGES=Thyra Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Experimental
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 15"

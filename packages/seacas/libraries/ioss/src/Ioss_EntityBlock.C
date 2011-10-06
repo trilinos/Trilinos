@@ -40,7 +40,7 @@
 #include <string>
 #include <assert.h>
 
-Ioss::EntityBlock::EntityBlock(const Ioss::DatabaseIO *io_database,
+Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database,
 			       const std::string& my_name,
 			       const std::string& entity_type,
 			       size_t entity_count)

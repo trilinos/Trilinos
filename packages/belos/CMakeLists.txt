@@ -122,9 +122,11 @@ PACKAGE_ARCH_EXCLUDE_FILES(
   src/BelosNewtonBasis.hpp
   src/BelosNewtonOpAkx.hpp
   src/BelosOpAkx.hpp
+  src/BelosProjectedLeastSquaresSolver.hpp
   src/BelosStandardGmres.hpp
   src/BelosInnerSolveResult.cpp
   tpetra/test/Gmres
+  test/ProjectedLeastSquaresSolver
 )
 
 ######################################################################

@@ -32,9 +32,10 @@ namespace stk
       
 
       bool debug_re=true;
+      ParallelMachineFinalize pmf(true);
       RunEnvironment run_environment(&argc, &argv, debug_re);
       process_options(run_environment);
-      run_environment.processCommandLine(&argc, &argv);
+      run_environment.processCommandLine();
 
       {
         if (run_environment.help_opt) {

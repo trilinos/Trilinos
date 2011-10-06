@@ -46,7 +46,7 @@ Ioss::NodeSet::NodeSet()
   : Ioss::EntitySet(NULL, "invalid", 0)
 {}
 
-Ioss::NodeSet::NodeSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
+Ioss::NodeSet::NodeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
 		       size_t number_nodes)
   : Ioss::EntitySet(io_database, my_name, number_nodes)
 {

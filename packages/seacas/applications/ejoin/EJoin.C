@@ -64,7 +64,7 @@
 #include "SystemInterface.h"
 #include "match_xyz.h"
 #include "mapping.h"
-#include "Vector3.h"
+#include "vector3d.h"
 #include "Version.h"
 
 namespace {
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
     part_mesh[p] = new Ioss::Region(dbi, name);
     part_mesh[p]->property_add(Ioss::Property("block_omission_count", (int)omissions[p].size()));
 
-    Vector3 offset = interface.offset();
+    vector3d offset = interface.offset();
     if (p > 0 && (offset.x != 0.0 || offset.y != 0.0 || offset.z != 0.0)) {
       Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
       Ioss::Field coord = nb->get_field("mesh_model_coordinates");
@@ -342,6 +342,22 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh)
     }
   }
     
+  if (!interface.information_record_parts().empty()) {
+    const std::vector<int> &info_parts = interface.information_record_parts();
+    if (info_parts[0] == 0) {
+      // Transfer info records from all parts...
+      for (size_t p = 0; p < part_count; p++) {
+	const std::vector<std::string> &info = part_mesh[p]->get_information_records();
+	output_region.add_information_records(info);
+      }
+    } else {
+      for (size_t i = 0; i < info_parts.size(); i++) {
+	const std::vector<std::string> &info = part_mesh[info_parts[i]-1]->get_information_records();
+	output_region.add_information_records(info);
+      }
+    }
+  }
+
   output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
   output_region.begin_mode(Ioss::STATE_MODEL);

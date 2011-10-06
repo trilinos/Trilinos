@@ -34,10 +34,9 @@
 
 
 template <typename Scalar>
-Piro::NOXSolver<Scalar>::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-                          Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model_
-                 //Need NOX_Thyra_Observer
-                                   ) :
+Piro::NOXSolver<Scalar>::
+NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
+	  Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
   appParams(appParams_),
   model(model_)
 {
@@ -49,41 +48,21 @@ Piro::NOXSolver<Scalar>::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParam
   RCP<Teuchos::ParameterList> noxParams =
 	rcp(&(appParams->sublist("NOX")),false);
 
-  string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+//   string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
 
-  if (jacobianSource == "Matrix-Free") {
-    TEST_FOR_EXCEPTION(jacobianSource == "Matrix-Free", std::logic_error,
-       "MATRIX_free not yet implemented for Piro Thyra");
-    // model = rcp(new Piro::Thyra::MatrixFreeDecorator(model));
-  }
+//   if (jacobianSource == "Matrix-Free") {
+//     TEST_FOR_EXCEPTION(jacobianSource == "Matrix-Free", std::logic_error,
+//        "MATRIX_free not yet implemented for Piro Thyra");
+//     model = rcp(new Piro::Thyra::MatrixFreeDecorator(model));
+//   }
 
   // Grab some modelEval stuff from underlying model
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  // TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
-  //                    std::endl << "Error in Piro::NOXSolver " <<
-  //                    "Not Implemented for Np>1 : " << num_p << std::endl);
-  // TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
-  //                    std::endl << "Error in Piro::NOXSolver " <<
-  //                    "Not Implemented for Ng>1 : " << num_g << std::endl);
-
-  // Create the initial guess
-  RCP< ::Thyra::VectorBase<double> >
-    initial_guess = model->getNominalValues().get_x()->clone_v();
-
-  // Create the NOX::Thyra::Group
-  RCP<NOX::Thyra::Group> nox_group =
-    rcp(new NOX::Thyra::Group(*initial_guess, model));
-
-  // Create the status tests and then build the solver
-  NOX::Utils utils;
-
-  Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
-  RCP<NOX::StatusTest::Generic> statusTests =
-    NOX::StatusTest::buildStatusTests(statusParams, utils);
-
-  solver = NOX::Solver::buildSolver(nox_group, statusTests, noxParams);
+  solver = rcp(new Thyra::NOXNonlinearSolver);
+  solver->setParameterList(noxParams);
+  solver->setModel(model);
 }
 
 template <typename Scalar>
@@ -160,7 +139,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
- *out << "In eval Modle " << endl;
+  //*out << "In eval Modle " << endl;
 
   // Parse InArgs
 
@@ -174,17 +153,20 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   // Parse out-args for sensitivity calculation
 
-  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
-  if (solvStatus == NOX::StatusTest::Converged)
-    *out << "Test passed!" << std::endl;
+  ::Thyra::SolveCriteria<double> solve_criteria;
+  ::Thyra::SolveStatus<double> solve_status;
 
+  RCP< ::Thyra::VectorBase<double> >
+    initial_guess = model->getNominalValues().get_x()->clone_v();
 
-   // return the final solution as an additional g-vector, if requested
-  RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  const NOX::Thyra::Vector& nox_thyra_vector =
-     dynamic_cast<const NOX::Thyra::Vector&>(solver->getSolutionGroup().getX());
-  finalSolution = nox_thyra_vector.getThyraRCPVector();
+  solve_status = solver->solve(initial_guess.get(), &solve_criteria, NULL);
+
+  if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
+    std::cout << "Test passed!" << std::endl;
+
+  // return the final solution as an additional g-vector, if requested
+  RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
 
   if (gx_out != Teuchos::null)  Thyra::copy(*finalSolution, gx_out.ptr());
 

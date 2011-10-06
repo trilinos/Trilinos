@@ -121,54 +121,48 @@ namespace Belos {
   /// \author Mark Hoemmen
   /// \brief Raised by GmresBase::extendBasis() if can't extend basis
   ///
-  /// Implementations of GmresBase's extendBasis() method must raise
-  /// this exception if no more candidate basis vectors can be
-  /// generated.  The cause should not be due to the numerical values
-  /// in the candidate basis vector(s); the orthogonalization will
-  /// detect that.  The usual cause is that the allotted maximum
-  /// number of basis vectors has been reached.  Subclasses may choose
-  /// instead to increase this maximum number and attempt to
-  /// reallocate storage.
+  /// An implementation of GmresBase's extendBasis() method must raise
+  /// this exception if it cannot generate any more candidate basis
+  /// vectors.  If the generated candidate basis vectors do not form a
+  /// valid basis, the implementation should instead throw \c
+  /// GmresCantExtendBasis.
+  ///
+  /// The usual cause of a thrown GmresCantExtendBasis is that the
+  /// allotted maximum number of basis vectors has been reached.
+  /// Subclasses may choose, instead of throwing this exception, to
+  /// attempt to allocate more storage for basis vectors.
   ///
   /// \note BelosError is a subclass of std::logic_error.
-  /// GmresCantExtendBasis "is a" logic_error, because callers of
-  /// GmresBase::advance() should use the canAdvance() method rather
-  /// than a try/catch to limit the number of iterations.  GmresBase
-  /// is an implementation class (with the interface that I want).  It
-  /// will be wrapped by a subclass of Belos::Iteration (with the
-  /// interface I don't want but have to use for the sake of backwards
-  /// compatibility).  The Iteration subclass will use the status test
-  /// to control iteration and limit the number of iterations to the
-  /// maximum number accepted by GmresBase.  So, GmresCantExtendBasis
-  /// should never be thrown by correct code, thus it's a logic_error.
-  ///
-  /// \note Incidentally, Belos' exception hierarchy is a bit broken,
-  /// since BelosError inherits from std::logic_error.  Logic errors
-  /// are programmer bugs, and thus attempting to recover from them is
-  /// a bad idea.  However, one can imagine some iterative method
-  /// errors from which recovery is possible.  These should not be
-  /// considered logic errors.
-  ///
+  ///   GmresCantExtendBasis "is a" logic error, because callers of \c
+  ///   GmresBase::advance() should use \c GmresBase::canAdvance()
+  ///   method rather than a try/catch to limit the number of
+  ///   iterations.  GmresCantExtendBasis should never be thrown by
+  ///   correct code.
   class GmresCantExtendBasis : public BelosError {
   public:
-    GmresCantExtendBasis(const std::string& what_arg) : BelosError(what_arg) {}
+    GmresCantExtendBasis (const std::string& what_arg) : 
+      BelosError(what_arg) {}
   };
 
-  /// \brief Candidate "basis" isn't a basis
+  /// \class GmresRejectsCandidateBasis
+  /// \brief Thrown if GmresBase's current candidate "basis" isn't a basis.
+  /// \author Mark Hoemmen
   ///
-  /// Thrown by GmresBase::advance(), when it rejects the computed
-  /// candidate basis vector(s) due to (numerical) rank deficiency, 
-  /// and doesn't know how to recover.
+  /// This exception is thrown by GmresBase::advance(), if it rejected
+  /// the computed candidate basis vector(s) due to (numerical) rank
+  /// deficiency, and doesn't know how to recover.
   ///
   /// This usually means that after orthogonalizing the candidate
-  /// basis vector(s) from extendBasis(), they are not full rank.  In
-  /// the case of standard GMRES, this means the candidate basis
-  /// vector has zero norm.  For CA-GMRES, the vectors might have
-  /// nonzero norm, but are not full rank.  CA-GMRES may choose to
-  /// retry with a shorter candidate basis length, but if the
+  /// basis vector(s) returned by \c GmresBase::extendBasis(), the
+  /// candidate vectors are not full rank.  In the case of standard
+  /// GMRES (flexible or not), this means the candidate basis vector
+  /// has very small or zero norm.  For CA-GMRES, the vectors might
+  /// have nonzero norm, but are not full rank.  CA-GMRES may choose
+  /// to retry with a shorter candidate basis length, but if the
   /// candidate basis length is too short, it may opt to "give up."
   /// In that case, advance() throws this exception.  Restarting with
-  /// standard GMRES may be a good idea in that case.
+  /// standard GMRES or even a different iterative method may be a
+  /// good idea in that case.
   ///
   /// Applications may choose to recover from or deal with this error
   /// in one or more of the following ways: 
@@ -182,14 +176,16 @@ namespace Belos {
   /// It might be good to verify that the matrix (and preconditioner)
   /// are nonzero.
   ///
-  /// \note This may not necessarily be a "logic error" (i.e., coding
-  ///   bug), since it can result from a matrix which is nonsingular
-  ///   in exact arithmetic, but ill-conditioned.  However, this
-  ///   exception must inherit from BelosError, which is an
-  ///   std::logic_error.
+  /// \note This may not necessarily be a "logic error," since it may
+  ///   result from valid user input to correct code.  (For example,
+  ///   the input matrix \f$A\f$ may be nonsingular in exact
+  ///   arithmetic, but ill-conditioned in the given floating-point
+  ///   precision.)  However, this exception must inherit from \c
+  ///   BelosError, which is an std::logic_error.
   class GmresRejectsCandidateBasis : public BelosError {
   public:
-    GmresRejectsCandidateBasis(const std::string& what_arg) : BelosError(what_arg) {}
+    GmresRejectsCandidateBasis (const std::string& what_arg) : 
+      BelosError(what_arg) {}
   };
 
 
@@ -215,6 +211,13 @@ namespace Belos {
   /// - Saad, "A flexible inner-outer preconditioned GMRES algorithm",
   ///   SISC, vol. 14, pp. 461-469, 1993.
   ///
+  /// GmresBase is an implementation class.  The Belos solution
+  /// manager for new GMRES implementations will interact with it
+  /// mainly through a wrapper, which is a subclass of
+  /// Belos::Iteration.  Interaction with GMRES through an Iteration
+  /// subclass will allow GMRES implementations to use Belos' stopping
+  /// criteria (subclasses of \c StatusTest) and output methods
+  /// (subclasses of \c StatusTestOutput).
   template<class Scalar, class MV, class OP>
   class GmresBase {
   public:
@@ -366,7 +369,7 @@ namespace Belos {
     ///
     /// "Back out" iterations after, but not including, numIters.
     /// This is permanent, but relatively inexpensive.  The main cost
-    /// is \fn$O(m^2)\fn$ floating-point operations on small dense
+    /// is \f$O(m^2)\f$ floating-point operations on small dense
     /// matrices and vectors, where m = numIters().
     ///
     /// \param numIters [in] 0 <= numIters <= getNumIters().
@@ -402,14 +405,14 @@ namespace Belos {
     /// relation.  For a fixed preconditioner (nonflexible GMRES),
     /// we compute
     ///
-    /// \fn$\| \tilde{A} V_m - V_{m+1} \underline{H}_m \|_F\fn$,
+    /// \f$\| \tilde{A} V_m - V_{m+1} \underline{H}_m \|_F\f$,
     ///
-    /// where \fn$\tilde{A}\fn$ is the preconditioned matrix.  (We use
+    /// where \f$\tilde{A}\f$ is the preconditioned matrix.  (We use
     /// the Frobenius norm to minimize dependency on the factorization
     /// codes which would be necessary for computing the 2-norm.)  For
     /// a varying right preconditioner (Flexible GMRES), we compute
     ///
-    /// \fn$\| A Z_m - V_{m+1} \underline{H}_m \|_F\fn$.
+    /// \f$\| A Z_m - V_{m+1} \underline{H}_m \|_F\f$.
     ///
     /// In these expressions, "m" is the current iteration count, as
     /// returned by getNumIters().
@@ -542,20 +545,20 @@ namespace Belos {
     ///   basis
     ///
     /// \note For Flexible GMRES, it may be desirable to compute or
-    /// update a rank-revealing decomposition of the upper square
-    /// submatrix of H_.  This is because FGMRES only promises
-    /// convergence in exact arithmetic if this submatrix is full rank
-    /// _and_ the computed residual norm is zero.  Any decomposition
-    /// of H_ should _not_ be done in place; this is because \c
-    /// updateProjectedLeastSquaresProblem() depends on H_ being
-    /// intact.  That method does not itself modify H_, so
-    /// implementations of \c updateUpperHessenbergMatrix() can also
-    /// rely on H_ being intact.
+    ///   update a rank-revealing decomposition of the upper square
+    ///   submatrix of H_.  This is because FGMRES only promises
+    ///   convergence in exact arithmetic if this submatrix is full
+    ///   rank <i>and</i> the computed residual norm is zero.  Any
+    ///   decomposition of H_ should <i>not</i> be done in place; this
+    ///   is because \c updateProjectedLeastSquaresProblem() depends
+    ///   on H_ being intact.  That method does not itself modify H_,
+    ///   so implementations of \c updateUpperHessenbergMatrix() can
+    ///   also rely on H_ being intact.
     ///
     /// \note For an algorithm for updating a rank-revealing
-    /// decomposition, see e.g., G. W. Stewart, "Updating a
-    /// rank-revealing ULV decomposition", SIAM J. Matrix Anal. &
-    /// Appl., Volume 14, Issue 2, pp. 494-499 (April 1993).
+    ///   decomposition, see e.g., G. W. Stewart, "Updating a
+    ///   rank-revealing ULV decomposition", SIAM J. Matrix Anal. &
+    ///   Appl., Volume 14, Issue 2, pp. 494-499 (April 1993).
     virtual void 
     updateUpperHessenbergMatrix (const Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& C_V,
 				 const Teuchos::RCP<Teuchos::SerialDenseMatrix<int,Scalar> >& B_V,
@@ -602,14 +605,14 @@ namespace Belos {
     ///   methods.
     ///
     /// \warning Subclasses are responsible for invoking (or not
-    /// invoking) their parent class' hook implementation, and for
-    /// choosing when to do so.  Each child class need only invoke its
-    /// immediate parent's hook; recursion will take care of the rest.
-    /// However, if your class inherits from multiple classes that all
-    /// inherit from a subclass of GmresBase ("diamonds" in the class
-    /// hierarchy), you'll need to resolve the hooks manually.
-    /// (Otherwise, recursion will invoke the same hooks multiple
-    /// times.)
+    ///   invoking) their parent class' hook implementation, and for
+    ///   choosing when to do so.  Each child class need only invoke
+    ///   its immediate parent's hook; recursion will take care of the
+    ///   rest.  However, if your class inherits from multiple classes
+    ///   that all inherit from a subclass of GmresBase ("diamonds" in
+    ///   the class hierarchy), you'll need to resolve the hooks
+    ///   manually.  (Otherwise, recursion will invoke the same hooks
+    ///   multiple times.)
     //@{ 
 
     /// \brief Hook for subclass features before restarting.
@@ -621,8 +624,8 @@ namespace Belos {
     /// from the existing basis).
     ///
     /// \note Implementations of this method should not update the
-    /// linear problem; this happens immediately following the
-    /// invocation of preRestartHook().
+    ///   linear problem; this happens immediately following the
+    ///   invocation of preRestartHook().
     virtual void preRestartHook (const int maxIterCount) {}
 
     /// \brief Hook for subclass features after restarting.
@@ -634,31 +637,33 @@ namespace Belos {
     /// against the recycled subspace.
     ///
     /// \note The initial residual has already been set by restart()
-    /// before this method is called.
+    ///   before this method is called.
     virtual void postRestartHook() {}
 
-    /// \brief Hook for before orthogonalize()
+    /// \brief Hook to be invoked in \c advance() before \c orthogonalize().
     ///
-    /// Hook for before calling orthogonalize() on the given
-    /// newly generated basis vectors V_cur (of the V basis) and Z_cur
-    /// (of the Z basis).  The default implementation does nothing.
+    /// Hook called in \c advance() before calling \c orthogonalize()
+    /// on the given newly generated basis vectors V_cur (of the V
+    /// basis) and Z_cur (of the Z basis).  The default implementation
+    /// does nothing.
     /// 
     /// \note Subclasses that perform subspace recycling could use
-    /// implement orthogonalization against the recycled subspace
-    /// either here or in \c postOrthogonalizeHook().
+    ///   implement orthogonalization against the recycled subspace
+    ///   either here or in \c postOrthogonalizeHook().
     virtual void 
     preOrthogonalizeHook (const Teuchos::RCP<MV>& V_cur, 
 			  const Teuchos::RCP<MV>& Z_cur) {}
 
-    /// \brief Hook for after orthogonalize()
+    /// \brief Hook to be invoked in \c advance() after \c orthogonalize().
     ///
-    /// Hook for after calling orthogonalize() on the given
-    /// newly generated basis vectors V_cur (of the V basis) and Z_cur
-    /// (of the Z basis).  The default implementation does nothing.
+    /// Hook called in \c advance() after calling \c orthogonalize()
+    /// on the given newly generated basis vectors V_cur (of the V
+    /// basis) and Z_cur (of the Z basis).  The default implementation
+    /// does nothing.
     ///
     /// \note Subclasses that perform subspace recycling could use
-    /// implement orthogonalization against the recycled subspace
-    /// either here or in \c postOrthogonalizeHook().
+    ///   implement orthogonalization against the recycled subspace
+    ///   either here or in \c preOrthogonalizeHook().
     void
     postOrthogonalizeHook (const Teuchos::RCP<MV>& V_cur, 
 			   const Teuchos::RCP<mat_type>& C_V,
@@ -761,27 +766,29 @@ namespace Belos {
     //! Output manager
     Teuchos::RCP<OutputManager<Scalar> > outMan_;
 
-    /// \brief "Native" residual vector
-    ///
-    /// "Native" means computed using exact-arithmetic invariants of
-    /// the iterative method.  In this case, if m is the current
-    /// number of iterations and \fn$r_0 = A x_0 - b\fn$,
-    ///
-    /// \fn$A x_k - b = A (x_0 + Z(1:m) y(1:m)) - b 
-    ///               = r_0 + A Z(1:m) y(1:m) 
-    ///               = r_0 + V(1:m+1) H(1:m+1, 1:m) y(1:m)\fn$.
-    ///
-    /// Accuracy of the above formula depends only on the Arnoldi
-    /// relation, which in turn depends mainly on the residual error
-    /// of the orthogonalization being small.  This is true for just
-    /// about any orthogonalization method, so the above computation
-    /// should hold just about always.
-    ///
-    /// Storage for the native residual vector is allocated only on
-    /// demand.  The storage is cached and reallocated only when the
-    /// LinearProblem changes.  (This ensures that the dimensions and
-    /// data distribution are correct, i.e., are the same as the
-    /// initial residual vector in the linear problem).
+    /**
+     * \brief "Native" residual vector
+     *
+     * "Native" means computed using exact-arithmetic invariants of
+     * the iterative method.  In this case, if m is the current
+     * number of iterations and \f$r_0 = A x_0 - b\f$,
+     * \f{eqnarray*}{
+     *    A x_k - b &=& A (x_0 + Z(1:m) y(1:m)) - b \\
+     *              &=& r_0 + A Z(1:m) y(1:m) \\
+     *              &=& r_0 + V(1:m+1) H(1:m+1, 1:m) y(1:m). 
+     * \f}
+     * Accuracy of the above formula depends only on the Arnoldi
+     * relation, which in turn depends mainly on the residual error
+     * of the orthogonalization being small.  This is true for just
+     * about any orthogonalization method, so the above computation
+     * should hold just about always.
+     *
+     * Storage for the native residual vector is allocated only on
+     * demand.  The storage is cached and reallocated only when the
+     * LinearProblem changes.  (This ensures that the dimensions and
+     * data distribution are correct, i.e., are the same as the
+     * initial residual vector in the linear problem).
+     */
     Teuchos::RCP<MV> nativeResVec_;
 
     /// \brief Initial residual vector.
@@ -836,8 +843,8 @@ namespace Belos {
     /// \brief Current RHS of the projected least-squares problem
     ///
     /// The current right-hand side of the projected least-squares
-    /// problem \fn$\min_y \|\underline{H} y - \beta e_1\|_2\fn$.  z_
-    /// starts out as \fn$\beta e_1\fn$ (where \fn$\beta\fn$ is the
+    /// problem \f$\min_y \|\underline{H} y - \beta e_1\|_2\f$.  z_
+    /// starts out as \f$\beta e_1\f$ (where \f$\beta\f$ is the
     /// initial residual norm).  It is updated progressively along
     /// with the QR factorization of H_.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > z_;
@@ -850,7 +857,7 @@ namespace Belos {
     /// GMRES makes use of the initial residual norm for solving the
     /// projected least-squares problem for the solution update
     /// coefficients.  In that case, it is usually called
-    /// \fn$\beta\fn$.  For left-preconditioned GMRES, this is the
+    /// \f$\beta\f$.  For left-preconditioned GMRES, this is the
     /// preconditioned initial residual norm, else it's the
     /// unpreconditioned version.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType initialResidualNorm_;
@@ -886,20 +893,22 @@ namespace Belos {
     /// allocated separately on demand.)  
     int maxNumIters_;
 
-    /// \brief Whether we are running Flexible GMRES
+    /// \brief Whether we are running Flexible GMRES.
     ///
     /// Flexible GMRES (FGMRES) is a variant of standard GMRES that
     /// allows the preconditioner to change in every iteration.  It
     /// only works for right preconditioning.  FGMRES requires keeping
     /// two sets of Krylov basis vectors: one for the Krylov subspace
-    ///
-    /// \fn$\text{span}\{r_0, A M^{-1} r_0, \dots, (A M^{-1})^k r_0\}\fn$ 
-    ///
-    /// where \fn$r_0\fn$ is the unpreconditioned residual, and one
+    /// \f[
+    ///   \text{span}\{ r_0, A M^{-1} r_0, 
+    ///                 \dots, (A M^{-1})^k r_0 \},
+    /// \f]
+    /// where \f$r_0\f$ is the unpreconditioned residual, and one
     /// for the Krylov subspace
-    ///
-    /// \fn$\text{span}\{M^{-1} r_0, M^{-1} A M^{-1} r_0, \dots, M^{-1} (A M^{-1})^{k-1} r_0\}\fn$.
-    ///
+    /// \f[
+    ///   \text{span}\{ M^{-1} r_0, M^{-1} A M^{-1} r_0, 
+    ///                 \dots, M^{-1} (A M^{-1})^{k-1} r_0 \}.
+    /// \f]
     /// We store the basis for the first subspace in V_, and the basis
     /// for the second subspace in Z_.  If we are not running FGMRES,
     /// we let Z_ be Teuchos::null.  FGMRES reduces to standard GMRES
@@ -907,15 +916,12 @@ namespace Belos {
     /// null.
     ///
     /// \note In the original Flexible GMRES paper, Saad suggested
-    /// implementing FGMRES and GMRES in a single routine, with a
-    /// runtime switch to decide whether to keep the Z basis and
-    /// whether update the solution with the Q or Z basis.  This is in
-    /// fact what we do.  The differences between GMRES and FGMRES are
-    /// small enough that we can benefit from the reduced code
-    /// duplication.  We have smart algorithms people, but not many of
-    /// them (and they are very busy), so it's a more efficient use of
-    /// development effort to have less code that is slightly more
-    /// complicated.
+    ///   implementing FGMRES and GMRES in a single routine, with a
+    ///   runtime switch to decide whether to keep the Z basis and
+    ///   whether update the solution with the Q or Z basis.  This is
+    ///   in fact what we do.  The run-time cost per iteration is no
+    ///   more than that of checking this Boolean a small constant
+    ///   number of times.
     bool flexible_;
 
     //@}

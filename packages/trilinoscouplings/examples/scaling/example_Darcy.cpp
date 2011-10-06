@@ -148,7 +148,7 @@
 
 #define ABS(x) ((x)>0?(x):-(x))
 
-#define DUMP_DATA
+//#define DUMP_DATA
 
 using namespace std;
 using namespace Intrepid;
@@ -330,10 +330,10 @@ int main(int argc, char *argv[]) {
         refFaceToEdge(1,2)=5; refFaceToEdge(1,3)=9;
         refFaceToEdge(2,0)=2; refFaceToEdge(2,1)=11;
         refFaceToEdge(2,2)=6; refFaceToEdge(2,3)=10;
-        refFaceToEdge(3,0)=3; refFaceToEdge(3,1)=8;
-        refFaceToEdge(3,2)=7; refFaceToEdge(3,3)=11;
-        refFaceToEdge(4,0)=0; refFaceToEdge(4,1)=1;
-        refFaceToEdge(4,2)=2; refFaceToEdge(4,3)=3;
+        refFaceToEdge(3,0)=8; refFaceToEdge(3,1)=7;
+        refFaceToEdge(3,2)=11; refFaceToEdge(3,3)=3;
+        refFaceToEdge(4,0)=3; refFaceToEdge(4,1)=2;
+        refFaceToEdge(4,2)=1; refFaceToEdge(4,3)=0;
         refFaceToEdge(5,0)=4; refFaceToEdge(5,1)=5;
         refFaceToEdge(5,2)=6; refFaceToEdge(5,3)=7;
 
@@ -402,13 +402,13 @@ int main(int argc, char *argv[]) {
     }
 
    // Get mu value for each block of elements from parameter list
-    double  *mu = new double [numElemBlk];
+    /*    double  *mu = new double [numElemBlk];
     for(int b = 0; b < numElemBlk; b++){
        stringstream muBlock;
        muBlock.clear();
        muBlock << "mu" << b;
        mu[b] = inputList.get(muBlock.str(),1.0);
-    }
+       }*/
 
   // Get node-element connectivity and set element mu value
     int telct = 0;
@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) {
 	for (int j=0; j<numNodesPerElem; j++) {
 	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
 	}
-        muVal(telct) = mu[b];     
+	//    muVal(telct) = mu[b];     
 	telct ++;
       }
     }
@@ -710,9 +710,9 @@ int main(int argc, char *argv[]) {
     std::cout << "    Number of Edges: " << numEdgesGlobal << " \n";
     std::cout << "    Number of Faces: " << numFacesGlobal << " \n\n";
   }
-    char str[80];
-    sprintf(str,"file_%d.out",MyPID);
-    std::ofstream myout(str);
+  //    char str[80];
+  //    sprintf(str,"file_%d.out",MyPID);
+  //    std::ofstream myout(str);
     
     //some output for debugging
    /* myout << "mypid "<< MyPID << " globalMapJoint " << globalMapJoint << " \n";
@@ -896,7 +896,94 @@ int main(int argc, char *argv[]) {
      hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
      hexHGradBasis.getValues(hexGrads, cubPoints, OPERATOR_GRAD);
 
-// **************************** INHOMOGENEOUS BC *****************************
+   /**********************************************************************************/
+   /*************************BUILD INCIDENCE MATRIX***********************************/
+   /**********************************************************************************/
+   Epetra_FECrsMatrix DCurl(Copy, globalMapD, 4);
+   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);   
+
+   // Edge to node incidence matrix  
+   double vals[2];
+   vals[0]=-1.0; vals[1]=1.0;
+   for (int j=0; j<numEdges; j++){
+     if (edgeIsOwned[j]){
+       int rowNum = globalEdgeIds[j];
+       int colNum[2];
+       colNum[0] = globalNodeIds[edgeToNode(j,0)];
+       colNum[1] = globalNodeIds[edgeToNode(j,1)];
+       DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
+     }
+   }
+
+   DGrad.GlobalAssemble(false); 
+   DGrad.FillComplete(globalMapG,globalMapC); 
+   
+   // Edge to face incidence matrix
+   FieldContainer<bool> faceDone2(numFaces);
+   for (int i=0; i<numElems; i++){
+      for (int k=0; k<numFacesPerElem; k++){
+         int iface=elemToFace(i,k);
+         if (faceIsOwned[iface] && !faceDone2(iface)){
+             double vals[4];
+             int rowNum = globalFaceIds[iface];
+             int colNum[4];
+
+            for (int m=0; m<numEdgesPerFace; m++){
+              colNum[m] = globalEdgeIds[faceToEdge(iface,m)];
+              int indm = m+1;
+              if (indm >= numEdgesPerFace) indm=0;
+              if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
+                 edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
+                 vals[m]=1.0;}
+              else vals[m]=-1.0;
+
+            // This is a convoluted way to account for edge orientations that 
+            // may be incorrect on the local processor because the edge is
+            // not owned by the local processor.
+             int edgeIndex = -1;
+             if (!edgeIsOwned[faceToEdge(iface,m)]){
+                 for (int l=0; l<numEdgesPerElem; l++){
+                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
+                       edgeIndex=l;
+                }
+             }
+               if (edgeIndex != -1 && edgeIndex < 8){
+                 if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
+                   vals[m]=-1.0*vals[m];                 
+                 }
+                 else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
+                   vals[m]=-1.0*vals[m];
+                 }
+               }
+            } // end loop over face edges
+
+           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+           faceDone2(iface)=1;
+
+       } // end if face is owned and face not done
+    } // end loop over element faces
+  } // end loop over elements
+
+   DCurl.GlobalAssemble(false);
+   DCurl.FillComplete(globalMapC,globalMapD);
+
+
+   if(MyPID==0) {std::cout << "Building incidence matrices                 "
+			   << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+   
+
+   // Build Face-Node Incidence Matrix
+   Epetra_CrsMatrix DGrad1(DGrad);
+   Epetra_CrsMatrix DCurl1(DCurl);
+   Epetra_CrsMatrix FaceNode(Copy,globalMapD,0);
+   DGrad1.PutScalar(1.0);
+   DCurl1.PutScalar(1.0);
+   EpetraExt::MatrixMatrix::Multiply(DCurl1,false,DGrad1,false,FaceNode);
+   FaceNode.PutScalar(1.0);
+
+/**********************************************************************************/
+/******************** INHOMOGENEOUS BOUNDARY CONDITIONS ***************************/
+/**********************************************************************************/
 
     typedef CellTools<double>  CellTools;
     typedef FunctionSpaceTools fst;
@@ -1445,90 +1532,6 @@ int main(int argc, char *argv[]) {
    jointVectorGIDs.GlobalAssemble(); 
    
 
-   /**********************************************************************************/
-   /*************************BUILD INCIDENCE MATRIX***********************************/
-   /**********************************************************************************/
-   Epetra_FECrsMatrix DCurl(Copy, globalMapD, 4);
-   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);   
-
-   // Edge to node incidence matrix  
-   double vals[2];
-   vals[0]=-1.0; vals[1]=1.0;
-   for (int j=0; j<numEdges; j++){
-     if (edgeIsOwned[j]){
-       int rowNum = globalEdgeIds[j];
-       int colNum[2];
-       colNum[0] = globalNodeIds[edgeToNode(j,0)];
-       colNum[1] = globalNodeIds[edgeToNode(j,1)];
-       DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
-     }
-   }
-
-   DGrad.GlobalAssemble(false); 
-   DGrad.FillComplete(globalMapG,globalMapC); 
-   
-   // Edge to face incidence matrix
-   FieldContainer<bool> faceDone2(numFaces);
-   for (int i=0; i<numElems; i++){
-      for (int k=0; k<numFacesPerElem; k++){
-         int iface=elemToFace(i,k);
-         if (faceIsOwned[iface] && !faceDone2(iface)){
-             double vals[4];
-             int rowNum = globalFaceIds[iface];
-             int colNum[4];
-
-            for (int m=0; m<numEdgesPerFace; m++){
-              colNum[m] = globalEdgeIds[faceToEdge(iface,m)];
-              int indm = m+1;
-              if (indm >= numEdgesPerFace) indm=0;
-              if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
-                 edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
-                 vals[m]=1.0;}
-              else vals[m]=-1.0;
-
-            // This is a convoluted way to account for edge orientations that 
-            // may be incorrect on the local processor because the edge is
-            // not owned by the local processor.
-             int edgeIndex = -1;
-             if (!edgeIsOwned[faceToEdge(iface,m)]){
-                 for (int l=0; l<numEdgesPerElem; l++){
-                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
-                       edgeIndex=l;
-                }
-             }
-               if (edgeIndex != -1 && edgeIndex < 8){
-                 if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals[m]=-1.0*vals[m];                 
-                 }
-                 else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
-                   vals[m]=-1.0*vals[m];
-                 }
-               }
-            } // end loop over face edges
-
-           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
-           faceDone2(iface)=1;
-
-       } // end if face is owned and face not done
-    } // end loop over element faces
-  } // end loop over elements
-
-   DCurl.GlobalAssemble(false);
-   DCurl.FillComplete(globalMapC,globalMapD);
-
-
-   if(MyPID==0) {std::cout << "Building incidence matrices                 "
-			   << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
-   
-
-   // Build Face-Node Incidence Matrix
-   Epetra_CrsMatrix DGrad1(DGrad);
-   Epetra_CrsMatrix DCurl1(DCurl);
-   Epetra_CrsMatrix FaceNode(Copy,globalMapD,0);
-   DGrad1.PutScalar(1.0);
-   DCurl1.PutScalar(1.0);
-   EpetraExt::MatrixMatrix::Multiply(DCurl1,false,DGrad1,false,FaceNode);
-   FaceNode.PutScalar(1.0);
 
   // Adjust matrices and rhs due to boundary conditions
   //for this, we need number of structures on boundary
@@ -1650,24 +1653,13 @@ int main(int argc, char *argv[]) {
    for(int i=0;i<globalMapD.NumMyElements();i++)
      tvec[0][i]=globalMapD.GID(i);
    for(int i=0;i<globalMapG.NumMyElements();i++)
-     tvec[1][i]=globalMapG.GID(i);
+     tvec[1][i]=globalMapG.GID(i)+numFacesGlobal;
    RCP<Teko::Epetra::BlockedEpetraOperator> BlockOp=rcp(new Teko::Epetra::BlockedEpetraOperator(tvec,rcp(&jointMatrix,false)));   
    
    // Grab diagonal blocks
    RCP<const Epetra_CrsMatrix> A00=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(0,0));
    RCP<const Epetra_CrsMatrix> A11=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(1,1));
 
-#define USE_AMESOS_FOR_BLOCKS
-
-#ifdef USE_AMESOS_FOR_BLOCKS
-   // Do Amesos precond for both blocks
-   Teuchos::ParameterList ListA;
-   ListA.set("max levels",1);
-   ListA.set("coarse: type","Amesos-KLU");
-   ListA.set("ML output",10);
-   RCP<MultiLevelPreconditioner> Prec0=rcp(new MultiLevelPreconditioner(*A00,ListA));
-   RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListA));
-#else
    // Make H(Div)  preconditioner A00
    Teuchos::ParameterList ListHdiv, List_Coarse;
    List_Coarse.set("PDE equations",3);
@@ -1675,9 +1667,14 @@ int main(int argc, char *argv[]) {
    List_Coarse.set("y-coordinates",Ny.Values());
    List_Coarse.set("z-coordinates",Nz.Values());
    List_Coarse.set("ML output",10);
+   List_Coarse.set("smoother: type","Chebyshev");
+   List_Coarse.set("smoother: sweeps",4);
   
    Teuchos::ParameterList List11,List11c,List22,List22c;
    ML_Epetra::UpdateList(List_Coarse,List11,true); 
+   List11.set("smoother: type","do-nothing");
+   List11.set("smoother: sweeps",0);
+
    ML_Epetra::UpdateList(List_Coarse,List22,true); 
    ML_Epetra::UpdateList(List_Coarse,List11c,true); 
    ML_Epetra::UpdateList(List_Coarse,List22c,true); 
@@ -1686,44 +1683,35 @@ int main(int argc, char *argv[]) {
    ListHdiv.setName("graddiv list");
    ListHdiv.set("graddiv: 11list",List11);
    ListHdiv.set("graddiv: 22list",List22);
-   ListHdiv.set("smoother: sweeps",4);
+   ListHdiv.set("smoother: sweeps",2);
+   ListHdiv.set("ML output",10);
+   ListHdiv.set("smoother: type","Chebyshev");
 
-   SetDefaultsGradDiv(ListHdiv,false);
-   RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,*A11,ListHdiv));
+   ML_Epetra::SetDefaultsGradDiv(ListHdiv,false);
+
+
+   RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,StiffG,ListHdiv));
+
 
    // Make H(Grad) preconditioner A11 
    Teuchos::ParameterList ListHgrad;
    ML_Epetra::SetDefaults("SA",ListHgrad);
-   ListHgrad.set("smoother: sweeps",4);
+   ListHgrad.set("smoother: sweeps",2);
+   ListHgrad.set("smoother: type","Chebyshev");
    ListHgrad.set("coarse: type","Amesos-KLU");
    ListHgrad.set("ML output",10);
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));
-#endif
+
 
    // Build the linear ops with the Apply/ApplyInverse switcheroo
    RCP<const EpetraLinearOp> invD0=epetraLinearOp(Prec0, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
-   RCP<const EpetraLinearOp> invD1=epetraLinearOp(Prec1, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
-		  
+   RCP<const EpetraLinearOp> invD1=epetraLinearOp(Prec1, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);		  
 
    // Build the full preconditioner
    JacobiPreconditionerFactory precFact(rcp(new Teko::StaticInvDiagStrategy(invD0,invD1)));
    Teko::Epetra::EpetraBlockPreconditioner FullPrec(rcpFromRef(precFact)); 
    FullPrec.buildPreconditioner(BlockOp); 
 
-
-
-
-#ifdef OLD_CODE  
-  //set up some parameters
-  Teuchos::ParameterList MLList;
-
-  ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
-  
-  // Turn ML into a direct solver
-  MLList.set("coarse: type","Amesos-KLU");
-  MLList.set("max levels",1);
-  ML_Epetra::MultiLevelPreconditioner FullPrec(jointMatrix, MLList, true));
-#endif 
 
   //set up linear system
   Epetra_FEVector xx(globalMapJoint);
@@ -1774,11 +1762,13 @@ int main(int argc, char *argv[]) {
   
 
   //primitive max error check, no measures, just max of Error over all nodes
-  double maxerr=0;
+  double maxerr=0,maxerrGlobal=0;
    for (int i=numOwnedFaces; i<jointLocalVarSize; i++)
      maxerr=max(abs(exactSoln[i-numOwnedFaces]-globalSoln[0][i]),maxerr);
    
-   std::cout << "My PID = " << MyPID <<" Max Error over all nodes: "<<maxerr<<"\n";
+   Comm.SumAll(&maxerr,&maxerrGlobal,1);
+   if(!Comm.MyPID())
+     std::cout << "Max Error over all nodes: "<<maxerrGlobal<<endl;
 	
 #ifdef DUMP_DATA	
      EpetraExt::MultiVectorToMatrixMarketFile("solnVectorDarcy.dat",globalSoln,0,0,false);             
@@ -2142,12 +2132,12 @@ Scalar evalKappa(const Scalar& x, const Scalar& y, const Scalar& z){
   */ 
   
   
-  if((y>=0)&&(y<=.2)) kappa=16;
+  /*  if((y>=0)&&(y<=.2)) kappa=16;
   if((y>.2)&&(y<=.4)) kappa=6;  
   if((y>.4)&&(y<=.6)) kappa=1;
   if((y>.6)&&(y<=.8)) kappa=10;
   if((y>.8)&&(y<=1.0)) kappa=2;
-  
+  */
   
   return kappa;
 }

@@ -189,6 +189,12 @@
       <Email address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Trios">
+    <Dependency name="Teuchos" type="LR"/>
+    <EmailAddresses>
+      <Email address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Ifpack">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>

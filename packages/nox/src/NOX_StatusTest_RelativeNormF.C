@@ -46,12 +46,15 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
 NOX::StatusTest::RelativeNormF::
-RelativeNormF(double in_tolerance, const NOX::Utils* u) :
+RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length, 
+	      const NOX::Utils* u) :
   tolerance(in_tolerance),
   normF_0(0.0),
-  normF(0.0)
+  normF(0.0),
+  scale_norms_by_vector_length(in_scale_norms_by_vector_length)
 {
   if (u != NULL)
     utils = *u;
@@ -61,10 +64,14 @@ NOX::StatusTest::StatusType NOX::StatusTest::RelativeNormF::
 checkStatus(const NOX::Solver::Generic& problem,
 	    NOX::StatusTest::CheckType checkType)
 { 
+  // NOTE: This algorithm assumes a 2-norm!
 
   // On initial iteration, compute initial norm F
   if (problem.getNumIterations() == 0) {
-    normF_0 = problem.getSolutionGroup().getNormF();
+    normF_0 = problem.getSolutionGroup().getF().norm(NOX::Abstract::Vector::TwoNorm);
+
+    if (scale_norms_by_vector_length)
+      normF_0 /= std::sqrt(Teuchos::as<double>(problem.getSolutionGroup().getF().length()));
   }
 
   if (checkType == NOX::StatusTest::None)
@@ -73,9 +80,13 @@ checkStatus(const NOX::Solver::Generic& problem,
     status = Unevaluated;
   }
   else
-  {
-    normF = problem.getSolutionGroup().getNormF();
-    status = (normF < tolerance * normF_0) ? Converged : Unconverged;
+    {
+      normF = problem.getSolutionGroup().getF().norm(NOX::Abstract::Vector::TwoNorm);
+
+      if (scale_norms_by_vector_length)
+	normF /= std::sqrt(Teuchos::as<double>(problem.getSolutionGroup().getF().length()));
+
+      status = (normF < tolerance * normF_0) ? Converged : Unconverged;
   }
 
   return status;

@@ -97,7 +97,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/packages/rbgen
     ${Trilinos_SOURCE_DIR}/packages/WebTrilinos
     ${Trilinos_SOURCE_DIR}/packages/cmmlib
-    ${Trilinos_SOURCE_DIR}/packages/seacas
     ${Trilinos_SOURCE_DIR}/packages/meros
     ${Trilinos_SOURCE_DIR}/packages/phdmesh
     ${Trilinos_SOURCE_DIR}/demos/FEApp
@@ -163,12 +162,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
   SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
   SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${Trilinos_VERSION}")
-  SET(CPACK_PACKAGE_NAME "trilinos-${Trilinos_VERSION}")
-  IF (TPL_ENABLE_MPI)
-    SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-mpi")
-  ELSE ()
-    SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-serial")
-  ENDIF()
+  SET(CPACK_PACKAGE_NAME "trilinos")
   SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
   SET(CPACK_PACKAGE_VERSION "${Trilinos_VERSION}")
   SET(CPACK_RESOURCE_FILE_README "${Trilinos_README}")
@@ -193,6 +187,13 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
 
   
   IF(WIN32)
+    #Resetting the name to avoid overwriting registery keys when installing
+    SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-${Trilinos_VERSION}")
+    IF (TPL_ENABLE_MPI)
+      SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-mpi")
+    ELSE ()
+      SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-serial")
+    ENDIF()
     SET(CPACK_GENERATOR "NSIS")
     SET(CPACK_NSIS_MODIFY_PATH OFF)
   ENDIF()

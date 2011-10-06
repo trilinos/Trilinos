@@ -107,6 +107,11 @@ namespace Ioss {
       virtual bool internal_edges_available() const {return false;}
       virtual bool internal_faces_available() const {return false;}
 
+      // Information Records:
+      const std::vector<std::string> &get_information_records() const { return informationRecords;}
+      void add_information_records(const std::vector<std::string> &info);
+      void add_information_record(const std::string &info);
+      
       // The get_field and put_field functions are just a wrapper around the
       // pure virtual get_field_internal and put_field_internal functions,
       // but this lets me add some debug/checking/common code to the
@@ -273,6 +278,8 @@ namespace Ioss {
       //       assuming that the blocks exist in the model...
       std::vector<std::string> blockOmissions;  
 
+      std::vector<std::string> informationRecords;
+      
     private:
       void verify_and_log(const GroupingEntity *reg, const Field& field) const;
       

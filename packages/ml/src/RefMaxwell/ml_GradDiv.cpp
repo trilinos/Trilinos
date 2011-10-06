@@ -12,16 +12,14 @@
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_FaceMatrixFreePreconditioner.h"
 #include "ml_ValidateParameters.h"
-
 #include "EpetraExt_RowMatrixOut.h"
+#include "ml_ifpack_epetra_wrap.h"
+
 using namespace std;
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 
-#ifdef HAVE_ML_IFPACK
-#include "Ifpack.h"
-#endif
 
 // ================================================ ====== ==== ==== == = 
 extern double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
@@ -98,8 +96,6 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   int output_level=List_.get("ML output",0);
   output_level=List_.get("output",output_level);
   
-  Teuchos::ParameterList dummy;
-
   /* Validate List */
   Teuchos::ParameterList newList;
   ML_CreateSublists(List_,newList,0);
@@ -130,11 +126,14 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   BCfaces=FindLocalDiricheltRowsFromOnesAndZeros(*K2_Matrix_,numBCfaces);
   Epetra_IntVector* BCEdgeList=FindLocalDirichletColumnsFromRows(BCfaces,numBCfaces,*D1_Clean_Matrix_);
   ArrayRCP<int> BCfaces_(BCfaces,0,numBCfaces,true);
+  //  if(verbose_ && !Comm_->MyPID()) printf("GradDiv: %d dirichlet faces detected\n",numBCfaces);
 
   /* Do the Nuking for D1_Matrix_ */ 
   D1_Matrix_ = rcp(new Epetra_CrsMatrix(*D1_Clean_Matrix_));
-  Apply_BCsToMatrixRows(BCfaces,numBCfaces,*D1_Matrix_);
-  Apply_BCsToMatrixColumns(*BCEdgeList,*D1_Matrix_);   
+  if(numBCfaces>0){
+    Apply_BCsToMatrixRows(BCfaces,numBCfaces,*D1_Matrix_);
+    Apply_BCsToMatrixColumns(*BCEdgeList,*D1_Matrix_);   
+  }
   D1_Matrix_->OptimizeStorage();
 
   /* Setup Edge boundary conditions */
@@ -146,20 +145,23 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
     if((*BCEdgeList)[i]==1) BCedges[edgeid++]=i;
   delete BCEdgeList;
   ArrayRCP<int> BCedges_(BCedges,0,numBCedges,true);
+  //  if(verbose_ && !Comm_->MyPID()) printf("GradDiv: %d dirichlet edges detected\n",numBCedges);
 
   /* Do the Nuking for the D0 Matrix */
-  Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCedges,numBCedges,*D0_Clean_Matrix_);   
-  int Nn=BCnodes->MyLength();
-  int numBCnodes=0;
-  for(int i=0;i<Nn;i++){
-    if((*BCnodes)[i]) numBCnodes++;
-  }
   D0_Matrix_ = rcp(new Epetra_CrsMatrix(*D0_Clean_Matrix_));
-  Apply_BCsToMatrixRows(BCedges,numBCedges,*D0_Matrix_);
-  Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
+  if(numBCedges>0){
+    Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCedges,numBCedges,*D0_Clean_Matrix_);   
+    int Nn=BCnodes->MyLength();
+    int numBCnodes=0;
+    for(int i=0;i<Nn;i++){
+      if((*BCnodes)[i]) numBCnodes++;
+    }
+    
+    Apply_BCsToMatrixRows(BCedges,numBCedges,*D0_Matrix_);
+    Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
+    delete BCnodes;
+  }
   D0_Matrix_->OptimizeStorage();
-  delete BCnodes;
-
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[0]));
@@ -173,24 +175,29 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[1]));
 #endif
-  
-#ifdef HAVE_ML_IFPACK
-  /* Build smoother if needed */
-  string smoother=List_.get("smoother: type","IFPACK");
-  if(smoother=="IFPACK" || smoother=="Chebyshev") {
-    if(smoother=="IFPACK") smoother=List_.get("smoother: ifpack type","point relaxation stand-alone");
 
-    Ifpack Factory;
-    IfSmoother = Factory.Create(smoother,const_cast<Epetra_CrsMatrix*>(&*K2_Matrix_),0);
-    if(!IfSmoother) ML_CHK_ERR(-6);
-    IfSmoother->SetParameters(List_.sublist("smoother: ifpack list"));
-    ML_CHK_ERR(IfSmoother->Compute());
-    if(!Comm_->MyPID()) cout<<*IfSmoother<<endl;
-  }
+#ifdef HAVE_ML_EPETRAEXT
+  /* Fix the solver maps for ML / Epetra compatibility */
+  K1=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*K1_Matrix_,K1_Matrix_Trans_,"K1",(verbose_&&!Comm_->MyPID())));
+  if(K1!=&*K1_Matrix_) K1_Matrix_=rcp(K1);
+  Epetra_CrsMatrix* D0=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
+  if(D0!=&*D0_Matrix_) D0_Matrix_=rcp(D0);
+  K2_Matrix_ =dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*K2_Matrix_,K2_Matrix_Trans_,"K2",(verbose_&&!Comm_->MyPID()))); 
+  D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
+  TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID())));
+  FaceNode_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*FaceNode_Matrix_,FaceNode_Matrix_Trans_,"FN",(verbose_&&!Comm_->MyPID())));
 #endif
+  
+
+  /* Make Smoother, if needed */
+  int Sweeps=List_.get("smoother: sweeps",0);
+  if(Sweeps)
+    IfSmoother=ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*K2_Matrix_),0,List_,"GradDiv (level 0): ",verbose_);
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[2]));
 #endif
+
+
   /* Build the (1,1) Block Preconditioner */ 
   Teuchos::ParameterList & List11=List_.sublist("graddiv: 11list");
   if (List11.name() == "ANONYMOUS") List11.setName("graddiv: 11list");
@@ -205,7 +212,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   if (List22.name() == "ANONYMOUS") List11.setName("graddiv: 22list");
   EdgePC=new EdgeMatrixFreePreconditioner(K1_Matrix_,Teuchos::null,D0_Matrix_,rcp(D0_Clean_Matrix_,false),rcp(TMT_Matrix_,false),BCedges_,List22,true);
   if(print_hierarchy) EdgePC->Print();
-
+  
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[4]));
   /* Output */
@@ -308,14 +315,13 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
   Epetra_MultiVector TempE2(*EdgeMap_,NumVectors,true);
   Epetra_MultiVector Resid(B.Map(),NumVectors);
 
-
 #ifdef HAVE_ML_IFPACK
   /* Smooth if needed */
   if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
 #endif
 
   /* Build Residual */
-  ML_CHK_ERR(K2_Matrix_->Multiply(false,X,TempF1));
+  ML_CHK_ERR(K2_Matrix_->Apply(X,TempF1));
   ML_CHK_ERR(Resid.Update(-1.0,TempF1,1.0,B,0.0));  
 
   /* Precondition face block (additive)*/
@@ -333,6 +339,7 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
   /* Smooth if needed */
   if(IfSmoother) {ML_CHK_ERR(IfSmoother->ApplyInverse(B,X));}
 #endif
+
 
   /* Copy work vector to output */
   X_=X;

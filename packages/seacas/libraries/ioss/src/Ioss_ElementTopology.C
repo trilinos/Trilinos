@@ -101,8 +101,11 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, b
   }
 
   if (iter == registry().end()) {
-    if (!ok_to_fail)
-      IOSS_WARNING << "WARNING: The topology type '" << type << "' is not supported.\n";
+    if (!ok_to_fail) {
+      std::ostringstream errmsg;
+      errmsg << "The topology type '" << type << "' is not supported.";
+      IOSS_ERROR(errmsg);
+    }
   } else {
     inst = (*iter).second;
   }

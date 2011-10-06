@@ -47,6 +47,10 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
   typedef typename Kokkos::MDArrayView<int,device_type>    int_array_type ;
 
+  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+
+  typedef Scalar value_type;
+
   typedef Region<Scalar,device_type> MyRegion;
 
   const int_array_type elem_node_connectivity;
@@ -65,7 +69,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const array_type  elem_mass;
 	const array_type  elem_dilmod;
 	const array_type  elem_shrmod;
-	const array_type  elem_t_step;
+	//const array_type  elem_t_step;
 	const array_type  internal_energy;
 	const array_type  mid_vol;
 
@@ -82,7 +86,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	const Scalar     quad_bulk_visc;
 
 	const Scalar     user_dt;
-	const Scalar     dt;
+	const scalar     dt;
 
   const int        current_state;
   const int        previous_state;
@@ -107,7 +111,7 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       , elem_mass(region.elem_mass)
       , elem_dilmod(region.dilmod)
       , elem_shrmod(region.shrmod)
-      , elem_t_step(region.elem_t_step)
+      //, elem_t_step(region.elem_t_step)
       , internal_energy(region.internal_energy)
       , mid_vol(region.mid_vol)
       , hgop(region.hgop)
@@ -120,12 +124,20 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
       , lin_bulk_visc(region.lin_bulk_visc)
       , quad_bulk_visc(region.quad_bulk_visc)
 		  , user_dt( arg_user_dt )
-		  , dt( region.delta_t(arg_current_state) )
+      , dt( region.dt)
       , current_state(arg_current_state)
       , previous_state(arg_previous_state)
   {
-      //std::cout << "divergence dt: " << dt << std::endl;
-      //std::cout << "divergence user_dt: " << user_dt << std::endl;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init(value_type &update) {
+    update = 1.0e32;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join(volatile value_type &update, const volatile value_type & source) {
+    update = update < source ? update : source;
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -465,9 +477,9 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 
     //  NKC, does Presto Scalar need these spin rate terms?  Pronto appears to have dumped them....
-		const Scalar dwxy = dt * vorticity(ielem, 0);
-		const Scalar dwyz = dt * vorticity(ielem, 1);
-		const Scalar dwzx = dt * vorticity(ielem, 2);
+		const Scalar dwxy = *dt * vorticity(ielem, 0);
+		const Scalar dwyz = *dt * vorticity(ielem, 1);
+		const Scalar dwzx = *dt * vorticity(ielem, 2);
 
     //  Compute new hourglass resitance by the old rotated hourglass resitance plus a hourglass rate term
 		Scalar hg_resist_total[12];
@@ -610,20 +622,18 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
       const Scalar e = (rot_stretch(ielem,kxx)+rot_stretch(ielem,kyy)+rot_stretch(ielem,kzz))/3.0;
 
-      stress_new(ielem,kxx) += dt * (two_mu * (rot_stretch(ielem,kxx)-e)+3*bulk_modulus*e);
-      stress_new(ielem,kyy) += dt * (two_mu * (rot_stretch(ielem,kyy)-e)+3*bulk_modulus*e);
-      stress_new(ielem,kzz) += dt * (two_mu * (rot_stretch(ielem,kzz)-e)+3*bulk_modulus*e);
+      stress_new(ielem,kxx) += *dt * (two_mu * (rot_stretch(ielem,kxx)-e)+3*bulk_modulus*e);
+      stress_new(ielem,kyy) += *dt * (two_mu * (rot_stretch(ielem,kyy)-e)+3*bulk_modulus*e);
+      stress_new(ielem,kzz) += *dt * (two_mu * (rot_stretch(ielem,kzz)-e)+3*bulk_modulus*e);
 
-      stress_new(ielem,kxy) += dt * two_mu * rot_stretch(ielem,kxy);
-      stress_new(ielem,kyz) += dt * two_mu * rot_stretch(ielem,kyz);
-      stress_new(ielem,kzx) += dt * two_mu * rot_stretch(ielem,kzx);
+      stress_new(ielem,kxy) += *dt * two_mu * rot_stretch(ielem,kxy);
+      stress_new(ielem,kyz) += *dt * two_mu * rot_stretch(ielem,kyz);
+      stress_new(ielem,kzx) += *dt * two_mu * rot_stretch(ielem,kzx);
 
     }
 
 	KOKKOS_MACRO_DEVICE_FUNCTION
-    void operator()( int ielem )const {
-
-    std::cout << "Element: " << ielem << std::endl;
+    void operator()( int ielem, value_type & update )const {
 
     Scalar x[8], y[8], z[8];
     int nodes[8];
@@ -633,16 +643,12 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		comp_grad(ielem,nodes,x,y,z);
 		comp_hgop(ielem,x,y,z);
 
-		Scalar fac1_pre = dt * hg_stiffness * 0.0625;
+		Scalar fac1_pre = *dt * hg_stiffness * 0.0625;
 		Scalar shr = elem_shrmod(ielem) = two_mu;
 		Scalar dil = elem_dilmod(ielem) =  bulk_modulus + ((2.0*shr)/3.0);
 
-    std::cout << "dil: " << dil << std::endl;
-
 
 		Scalar aspect = comp_aspect(ielem);
-
-    std::cout << "aspect: " << aspect << std::endl;
 
 		Scalar inv_aspect = 1.0 / aspect;
 
@@ -651,21 +657,16 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
 		Scalar eps = traced < 0 ? (lin_bulk_visc - quad_bulk_visc * traced * dtrial) : lin_bulk_visc ;
 
-    std::cout << "eps: " << eps << std::endl;
-
 		Scalar bulkq = eps * dil * dtrial * traced;
 
 		Scalar cur_time_step = dtrial * ( sqrt( 1.0 + eps * eps) - eps);
 
-    std::cout << "time_step: " << cur_time_step << std::endl;
-
-    std::cout << std::endl;
-
     //force fix time step
     cur_time_step = user_dt > 0 ? user_dt : cur_time_step;
 
+    update = update < cur_time_step ? update : cur_time_step;
 
-		elem_t_step(ielem) = cur_time_step;
+		//elem_t_step(ielem) = cur_time_step;
 
     get_stress(ielem);
 
@@ -688,5 +689,33 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 	}
 
 };
+
+template<typename Scalar , class DeviceType>
+struct set_next_time_step;
+
+template<typename Scalar>
+struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
+
+  typedef KOKKOS_MACRO_DEVICE       device_type;
+  typedef device_type::size_type    size_type;
+
+  typedef Scalar value_type;
+
+  typedef Region<Scalar,device_type> MyRegion;
+
+    set_next_time_step( const MyRegion  & arg_region )
+       : region(arg_region)
+      {}
+
+
+    KOKKOS_MACRO_DEVICE_FUNCTION
+    void operator()(Scalar & result) const {
+      *(region.prev_dt) = *(region.dt);
+      *(region.dt) = result;
+    }
+
+    MyRegion   region;
+
+}; //minimum_stable_time_step
 
 #endif

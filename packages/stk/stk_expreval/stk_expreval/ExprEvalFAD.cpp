@@ -89,11 +89,8 @@ private:
   Node &operator=(const Node &);
 
 public:
-  ~Node() {
-    delete m_left;
-    delete m_right;
-    delete m_other;
-  }
+  ~Node()
+  {}
 
   FADDouble eval() const;
 
@@ -258,7 +255,7 @@ parseStatements(
   for (it = from; (*it).getToken() != TOKEN_SEMI && (*it).getToken() != TOKEN_END; ++it)
     ;
 
-  Node *statement = new Node(OPCODE_STATEMENT);
+  Node *statement = eval.newNode(OPCODE_STATEMENT);
   statement->m_left = parseStatement(eval, from, it);
 
   // Technically, there should be no check for TOKEN_END, but we allow a missing final TOKEN_SEMI
@@ -493,7 +490,7 @@ parseAssign(
   Node *assign;
 
   if ((*(from + 1)).getToken() == TOKEN_ASSIGN || (*(from + 1)).getToken() == TOKEN_LBRACK) {
-    assign = new Node(OPCODE_ASSIGN);
+    assign = eval.newNode(OPCODE_ASSIGN);
 
     assign->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
     assign->m_right = parseExpression(eval, assign_it + 1, to);
@@ -515,7 +512,7 @@ parseTerm(
   LexemVector::const_iterator	term_it,
   LexemVector::const_iterator	to)
 {
-  Node *term = new Node((*term_it).getToken() == TOKEN_PLUS ? OPCODE_ADD : OPCODE_SUBTRACT);
+  Node *term = eval.newNode((*term_it).getToken() == TOKEN_PLUS ? OPCODE_ADD : OPCODE_SUBTRACT);
 
   term->m_left = parseExpression(eval, from, term_it);
   term->m_right = parseExpression(eval, term_it + 1, to);
@@ -531,7 +528,7 @@ parseFactor(
   LexemVector::const_iterator	factor_it,
   LexemVector::const_iterator	to)
 {
-  Node *factor = new Node((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : OPCODE_DIVIDE);
+  Node *factor = eval.newNode((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : OPCODE_DIVIDE);
 
   factor->m_left = parseExpression(eval, from, factor_it);
   factor->m_right = parseExpression(eval, factor_it + 1, to);
@@ -578,7 +575,7 @@ parseRelation(
     break;
   }
 
-  Node *relation = new Node(relation_opcode);
+  Node *relation = eval.newNode(relation_opcode);
 
   relation->m_left = parseExpression(eval, from, relation_it);
   relation->m_right = parseExpression(eval, relation_it + 1, to);
@@ -594,7 +591,7 @@ parseLogical(
   LexemVector::const_iterator	logical_it,
   LexemVector::const_iterator	to)
 {
-  Node *logical = new Node(((*logical_it).getToken() == TOKEN_LOGICAL_AND ? OPCODE_LOGICAL_AND : OPCODE_LOGICAL_OR));
+  Node *logical = eval.newNode(((*logical_it).getToken() == TOKEN_LOGICAL_AND ? OPCODE_LOGICAL_AND : OPCODE_LOGICAL_OR));
 
   logical->m_left = parseExpression(eval, from, logical_it);
   logical->m_right = parseExpression(eval, logical_it + 1, to);
@@ -614,7 +611,7 @@ parseTiernary(
   if (question_it == to || colon_it == to)
     throw std::runtime_error("syntax error parsing ?: operator");
 
-  Node *tiernary = new Node(OPCODE_TIERNARY);
+  Node *tiernary = eval.newNode(OPCODE_TIERNARY);
 
   tiernary->m_left = parseExpression(eval, from, question_it);
   tiernary->m_right = parseExpression(eval, question_it + 1, colon_it);
@@ -635,12 +632,12 @@ parseUnary(
   if ((*unary_it).getToken() == TOKEN_PLUS)
     return parseExpression(eval, unary_it + 1, to);
   else if ((*unary_it).getToken() == TOKEN_MINUS) {
-    Node *unary = new Node(OPCODE_UNARY_MINUS);
+    Node *unary = eval.newNode(OPCODE_UNARY_MINUS);
     unary->m_right = parseExpression(eval, unary_it + 1, to);
     return unary;
   }
   else if ((*unary_it).getToken() == TOKEN_NOT) {
-    Node *unary = new Node(OPCODE_UNARY_NOT);
+    Node *unary = eval.newNode(OPCODE_UNARY_NOT);
     unary->m_right = parseExpression(eval, unary_it + 1, to);
     return unary;
   }
@@ -670,7 +667,7 @@ parseFunction(
 //   if (!c_function)
 //     throw std::runtime_error(std::string("Undefined function ") + function_name);
 
-  Node *function = new Node(OPCODE_FUNCTION);
+  Node *function = eval.newNode(OPCODE_FUNCTION);
   function->m_data.function.function = c_function;
 
   if (!c_function)
@@ -693,7 +690,7 @@ parseIndex(
   if ((*from).getToken() != TOKEN_IDENTIFIER)
     throw std::runtime_error("syntax error parsing array");
 
-  Node *index = new Node(OPCODE_RVALUE);
+  Node *index = eval.newNode(OPCODE_RVALUE);
   index->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
   index->m_left = parseExpression(eval, lbrack + 1, rbrack);
 
@@ -714,7 +711,7 @@ parseFunctionArg(
   for (it = from; it != to && (*it).getToken() != TOKEN_COMMA; ++it)
     ;
 
-  Node *argument = new Node(OPCODE_ARGUMENT);
+  Node *argument = eval.newNode(OPCODE_ARGUMENT);
   argument->m_left = parseExpression(eval, from, it);
   if (it != to)
     argument->m_right = parseFunctionArg(eval, it + 1, to);
@@ -736,14 +733,14 @@ parseRValue(
     {
       Eval::ConstantMap::iterator it = Eval::getConstantMap().find((*from).getString());
       if (it != Eval::getConstantMap().end()) {
-	Node *constant = new Node(OPCODE_CONSTANT);
+	Node *constant = eval.newNode(OPCODE_CONSTANT);
 	constant->m_data.constant.value = (*it).second;
 	return constant;
       }
 
       // Define a variable
       else {
-	Node *variable = new Node(OPCODE_RVALUE);
+	Node *variable = eval.newNode(OPCODE_RVALUE);
 	variable->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
 	return variable;
       }
@@ -752,7 +749,7 @@ parseRValue(
   case TOKEN_REAL_CONSTANT:
   case TOKEN_INTEGER_CONSTANT:
     {
-      Node *constant = new Node(OPCODE_CONSTANT);
+      Node *constant = eval.newNode(OPCODE_CONSTANT);
       constant->m_data.constant.value = (*from).getValue<double>();
       return constant;
     }
@@ -1153,14 +1150,23 @@ Eval::Eval(
     m_expression(expression),
     m_parseStatus(false),
     m_headNode(0)
+{}
+
+
+Eval::~Eval()
 {
-  if (!m_expression.empty())
-    parse();
+  for (std::vector<Node *>::iterator it = m_nodes.begin(); it != m_nodes.end(); ++it)
+    delete (*it);
 }
 
 
-Eval::~Eval() {
-  delete m_headNode;
+Node *
+Eval::newNode(
+  int           opcode)
+{
+  Node *new_node = new Node((Opcode) opcode);
+  m_nodes.push_back(new_node);
+  return new_node;
 }
 
 
@@ -1169,7 +1175,6 @@ Eval::syntax()
 {
   m_syntaxStatus = false;
   m_parseStatus = false;
-  delete m_headNode;
 
   try {
     /* Validate the characters */
@@ -1212,7 +1217,6 @@ Eval::parse()
   catch (std::runtime_error & /* x */) {
 //     x << " while parsing expression: " << m_expression;
 //     RuntimeDoomed() << x.what();
-    delete m_headNode;
     throw;
   }
 }

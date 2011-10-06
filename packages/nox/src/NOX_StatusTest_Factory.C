@@ -62,6 +62,7 @@
 #include "NOX_StatusTest_Divergence.H"
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_RelativeNormF.H"
+#include "NOX_StatusTest_NStep.H"
 
 using namespace Teuchos;
 
@@ -132,6 +133,8 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
     status_test = this->buildStagnationTest(p, u);
   else if (test_type == "RelativeNormF")
     status_test = this->buildRelativeNormFTest(p, u);
+  else if (test_type == "NStep")
+    status_test = this->buildNStepTest(p, u);
   else if (test_type == "User Defined")
     status_test = this->buildUserDefinedTest(p, u);
   else {
@@ -416,10 +419,30 @@ Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
   double tolerance = p.get("Tolerance", 1.0e-8);
+  bool scale_by_length = p.get("Scale Norms by Length", false);
 
   RCP<NOX::StatusTest::RelativeNormF> status_test;
 
-  status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance, &u));
+  status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance, 
+						       scale_by_length,
+						       &u));
+  
+  return status_test;
+}
+
+// ************************************************************************
+// ************************************************************************
+Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
+buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+{
+  int num_iters = p.get<int>("Number of Nonlinear Iterations", 1);
+  int num_ramping_steps = p.get<int>("Number of Initial Ramping Steps", 0);
+  int num_ramping_iters = p.get<int>("Number of Nonlinear Iterations in Ramping Phase", 10);
+
+  RCP<NOX::StatusTest::NStep> status_test;
+
+  status_test = rcp(new NOX::StatusTest::NStep(num_iters, num_ramping_steps,
+					       num_ramping_iters));
   
   return status_test;
 }

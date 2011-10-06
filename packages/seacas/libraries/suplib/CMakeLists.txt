@@ -16,8 +16,8 @@ INCLUDE_DIRECTORIES(
 
 SET(SOURCES
 	cpyrgt.f          dboelb.f          flush.f           locint.f          pltond.f
-	cpystr.f          dboess.f          f2kcli.F          gslibv.f          locrea.f          pltone.f
-	dberr.f           dboini.f          f2kcli.inc        help.F            locstr.f          prterr.f
+	cpystr.f          dboess.f          argparse.f        gslibv.f          locrea.f          pltone.f
+	dberr.f           dboini.f          help.F            locstr.f          prterr.f
 	dbieb1.f          dbomap.f          ffaddc.f          help.h            logerr.f          scanner.c
 	abrstr.f          dbielb.f          dbonam.f          ffaddi.f          help_c.c          lowstr.f          scneof.f
 	addlog.c          dbiess.f          dbonm1.f          ffaddo.f          idblnk.f          matstr.f          screrr.f
@@ -33,7 +33,8 @@ SET(SOURCES
 	cpuifc.f          dbitim.f          dbvini.f          ffreal.f          iowdsz.f          opnfil.f          zeroin.f
 	cpyint.f          dbiv0.f           do_help.c         ffrrng.f          ismax.f           packt.f
 	cpylog.f          dbixyz.f          engnot.f          ismin.f           pcklab.f 
-	cpyrea.f          dboeb1.f          engstr.f          ffvrng.f          lenstr.f          pckstr.f)
+	cpyrea.f          dboeb1.f          engstr.f          ffvrng.f          lenstr.f          pckstr.f
+	indexi.f          indexn.f          indexr.f          indexx.f          ran1.f            hunt.f)
 
 PACKAGE_ADD_LIBRARY(
 	suplib

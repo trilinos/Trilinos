@@ -72,8 +72,6 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #implicitly enabled.  Sundance depends on Stokhos.
 #SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
 
-# FIXME: add boost back to the build, path was:
-# "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/boost_1_46_1"
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
@@ -81,6 +79,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DNetcdf_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/netcdf/4.1.3/include"
   "-DNetcdf_LIBRARY_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/netcdf/4.1.3/lib"
+  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/boost/1.46.1/include"
   )
 
 #

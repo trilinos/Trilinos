@@ -591,9 +591,9 @@ C
      &              'JUST BEFOR INTERPOLATION LOOP',
      &              0,' ',0,' ',' ',1)
       END IF
-C
-c      write(nout,1010)
-c      write(ntpout,1010)
+
+      call inirea(nodesb*nvarnp, 0.0, a(nbsoln))
+
       CALL TRUTBL(IA(NMAP),IMP,IA(NAEB),IA(NBEB),IA(ITTA),IA(ITTB))
 C
 C *********************************************************************

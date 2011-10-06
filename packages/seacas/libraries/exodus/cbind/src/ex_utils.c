@@ -79,6 +79,48 @@ struct obj_stats*  exoII_nm = 0;
 static char ret_string[10*(MAX_VAR_NAME_LENGTH+1)];
 static char* cur_string = &ret_string[0];
 
+int ex_check_file_type(const char *path, int *type)
+{
+  /* Based on (stolen from?) NC_check_file_type from netcdf sources.
+     
+     Type is set to:
+     1 if this is a netcdf classic file,
+     2 if this is a netcdf 64-bit offset file,
+     5 if this is an hdf5 file
+  */
+  
+#define MAGIC_NUMBER_LEN 4
+
+   char magic[MAGIC_NUMBER_LEN];
+    
+   *type = 0; 
+
+   /* Get the 4-byte magic from the beginning of the file. */
+   {
+      FILE *fp;
+      int i;
+
+      if (!(fp = fopen(path, "r")))
+	 return errno;
+      i = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
+      fclose(fp);
+      if(i != 1)
+	 return errno;
+   }
+    
+   /* Ignore the first byte for HDF */
+   if (magic[1] == 'H' && magic[2] == 'D' && magic[3] == 'F')
+     *type = 5;
+   else if (magic[0] == 'C' && magic[1] == 'D' && magic[2] == 'F') 
+   {
+      if (magic[3] == '\001') 
+	*type = 1;
+      else if(magic[3] == '\002') 
+	*type = 2;
+   }
+   return EX_NOERR;
+}
+
 int ex_set_max_name_length(int exoid, int length)
 {
   char errmsg[MAX_ERR_LENGTH];

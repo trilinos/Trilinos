@@ -897,6 +897,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   ) const
 {
 
+  using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -973,12 +974,12 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
     RCP<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
-    V_StVpV( &*S_diff, Scalar(-coeff_x_dot_/coeff_x_), *S, *S_dot );
+    V_StVpV( S_diff.ptr(), as<Scalar>(-coeff_x_dot_/coeff_x_), *S, *S_dot );
     // F_sens = (1/coeff_x) * W_tilde * S
     Thyra::apply(
       *W_tilde_, Thyra::NOTRANS,
       *S, F_sens.ptr(),
-      Scalar(1.0/coeff_x_), ST::zero()
+      as<Scalar>(1.0/coeff_x_), ST::zero()
       );
     // F_sens += d(f)/d(x_dot) * S_diff
     Thyra::apply(
@@ -988,7 +989,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
       );
     // F_sens += d(f)/d(p)
     if (hasStateFuncParams())
-      Vp_V( &*F_sens, *DfDp_ );
+      Vp_V( F_sens.ptr(), *DfDp_ );
   }
   
   if(nonnull(W_sens)) {

@@ -293,6 +293,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     EpetraExt::RowMatrixToMatlabFile("d0_clean.dat",*D0_Clean_Matrix_);
     if(TMT_Matrix_) EpetraExt::RowMatrixToMatlabFile("tmt_matrix.dat",*TMT_Matrix_);
     EpetraExt::RowMatrixToMatlabFile("tmt_agg_matrix.dat",*TMT_Agg_Matrix_);
+
   }
 
   /* Cleanup from the Boundary Conditions */
@@ -304,7 +305,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
   D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
 #ifdef ENABLE_MS_MATRIX
-  Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
+  if(Ms_Matrix_!= M1_Matrix_) Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
 #endif
   M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
   M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));

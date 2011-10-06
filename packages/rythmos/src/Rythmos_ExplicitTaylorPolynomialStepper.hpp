@@ -528,7 +528,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
       eval_model_explicit<Scalar>(*model_,basePoint_,*x_vector_,t_+shadowed_dt,Teuchos::outArg(*f_vector_));
 
       // compute || xdot(t_+shadowed_dt) - f( x(t_+shadowed_dt), t_+shadowed_dt ) ||
-      Thyra::Vp_StV(x_dot_vector_.get(), -ST::one(),
+      Thyra::Vp_StV(x_dot_vector_.ptr(), -ST::one(),
         *f_vector_);
       local_error = norm_inf(*x_dot_vector_);
 
@@ -838,8 +838,8 @@ ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution_()
       
     // x[k] = f[k-1] / k
     tmp = x_poly_->getCoefficient(k);
-    copy(*(f_poly_->getCoefficient(k-1)), tmp.get());
-    scale(Scalar(1.0)/Scalar(k), tmp.get());
+    copy(*(f_poly_->getCoefficient(k-1)), tmp.ptr());
+    scale(Scalar(1.0)/Scalar(k), tmp.ptr());
   }
 
 }

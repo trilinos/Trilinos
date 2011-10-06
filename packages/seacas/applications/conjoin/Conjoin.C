@@ -116,15 +116,15 @@ typedef GlobalMap::iterator     GMapIter;
 typedef std::vector<std::pair<int, size_t> > GlobalElemMap;
 typedef GlobalElemMap::iterator GElemMapIter;
 
-#include <Internals.h>
-#include <ExodusFile.h>
-#include <ExodusEntity.h>
-#include <SystemInterface.h>
-#include <Version.h>
-#include <Variables.h>
-#include <ObjectType.h>
+#include "Internals.h"
+#include "ExodusFile.h"
+#include "ExodusEntity.h"
+#include "SystemInterface.h"
+#include "Version.h"
+#include "Variables.h"
+#include "ObjectType.h"
 
-#include <to_string.h>
+#include "to_string.h"
 #include <exodusII.h>
 
 #if EX_API_VERS_NODOT <= 467

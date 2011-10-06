@@ -51,7 +51,7 @@ C***********************************************************************
       CHARACTER*32 STRING
 
 C     Version Format: 'major.minor.bug_fix'
-      STRING = '1.1.0'
+      STRING = '1.2.0'
 
       RETURN
       END

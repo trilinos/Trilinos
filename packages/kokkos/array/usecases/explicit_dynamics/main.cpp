@@ -1,78 +1,39 @@
 #include <iostream>
-#include <iomanip>
-#include <sys/time.h>
-
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
-
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <explicit_dynamics_app.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-
-int main()
-{
-  std::cout << "Kokkos Host SM miniapp: " << std::endl;
-  const int x = 3;
-  const int y = 1;
-  const int z = 1;
-  const int num_elements = x * y * z;
-
-  double time = explicit_dynamics_app<double, Kokkos::DeviceHost>( x, y, z );
-  std::cout <<	std::setw(8) << num_elements << ", " <<
-    std::setw(8) << 1000 * time << ", " <<
-    std::setw(8) << 1000 * time / num_elements << std::endl;
-  return 0;
-}
-
-#if 0
-#include <iostream>
 #include <cstdlib>
 
 namespace test{
-
-  void test_Host(int b, int e, int r);
-  void test_TPI(int b, int e, int r, int t);
-  void test_Cuda(int b, int e, int r);
-
+  void test_Host(int beg, int end, int r);
+  void test_TPI (int beg, int end, int r, int t);
+  void test_TBB(int beg, int end, int r, int t);
+  void test_Cuda(int beg, int end, int r);
 }
 
-int main( int argc , char ** argv ){
+int main(int argc, char ** argv)
+{
+  int beg = 4 ;
+  int end = 12 ;
+  int runs = 3 ;
+  int threads = 8;
 
-  int threads, runs;
-  int beg = 22;
-  int end = 23;
+  if ( argc == 5) {
+    beg = atoi(argv[1]);
+    end = atoi(argv[2]);
+    runs = atoi(argv[3]);
+    threads = atoi(argv[4]);
+  }
 
-  if (argc > 1)
-    threads = atoi(argv[1]);
-  else
-    threads = 4;
-
-  if (argc > 2)
-    runs = atoi(argv[2]);
-  else
-    runs = 1;
-
-/************************************************************/
-/*  argument 1 specifies the number of threads used by     	*/
-/*  TPI and OpenMP; agrument 2 sets the number of runs    	*/
-/*  to be averaged for the output timings          			*/
-/*                             				 				*/
-/*  Ex: to run with 8 threads and average 10 runs(LINUX):  	*/
-/*  ./fe_test.exe 8 10                    					*/
-/************************************************************/
-
-  std::cout << std::endl << "\tStarting..." << std::endl;
-
+#ifdef TEST_KOKKOS_HOST
   test::test_Host(beg, end, runs);
-//  test::test_TPI (beg, end, runs, threads);
-//  test::test_Cuda(beg, end, runs);
-
-  return 0;
-
-}
+#endif
+#ifdef TEST_KOKKOS_TPI
+  test::test_TPI (beg, end, runs, threads);
+#endif
+#ifdef TEST_KOKKOS_TBB
+  test::test_TBB (beg, end, runs);
+#endif
+#ifdef TEST_KOKKOS_CUDA
+  test::test_Cuda(beg , end, runs);
 #endif
 
+  return 0;
+}

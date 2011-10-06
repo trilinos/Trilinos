@@ -159,6 +159,11 @@ INCLUDE(PrintVar)
 #     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  See the COMM
 #     argument in the script PACKAGE_ADD_TEST(...) for more details.
 #
+#   CATEGORIES <category1> <category2> ...
+#
+#     Gives the test categories this test will be added.  See
+#     PACKAGE_ADD_TEST(...) for more details.
+#
 # Each test command is either package-built test executable or some general
 # command executable and is defined as either:
 #
@@ -300,11 +305,13 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT"
      #options
      "FAIL_FAST"
      ${ARGN}
      )
+  # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
+  # advertise it!
   
   #
   # B) Add or don't add tests based on a number of criteria
@@ -599,6 +606,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
       SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${NUM_PROCS_USED}")
     ENDIF()
+
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
       SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
@@ -608,6 +616,10 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     ELSE()
       SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "OVERALL FINAL RESULT: TEST PASSED" )
+    ENDIF()
+
+    IF (PARSE_TIMEOUT)
+      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
     ENDIF()
 
   ENDIF()

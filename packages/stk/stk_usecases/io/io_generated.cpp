@@ -68,10 +68,9 @@ int main(int argc, char** argv)
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
   if (mesh.empty()) {
-    std::cout << "\nERROR: The --mesh option is required\n";
-    std::cout << "\nApplication " << desc << "\n";
-    std::cout << "STKUNIT_ALL_PASS" << std::endl;
-    return 0;
+    std::cerr << "\nERROR: The --mesh option is required\n";
+    std::cerr << "\nApplication " << desc << "\n";
+    std::exit(EXIT_FAILURE);
   }
 
   type = "exodusii";
@@ -104,6 +103,7 @@ namespace {
     std::string file = working_directory;
     file += filename;
     stk::io::create_input_mesh(type, file, comm, fem_meta_data, mesh_data);
+    stk::io::define_input_fields(mesh_data, fem_meta_data);
 
     fem_meta_data.commit();
     stk::mesh::BulkData bulk_data(meta_data , comm);
@@ -113,6 +113,14 @@ namespace {
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
     stk::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
-    std::cout << "STKUNIT_ALL_PASS" << std::endl;
+    stk::io::define_output_fields(mesh_data, fem_meta_data);
+
+    // Determine number of timesteps on input database...
+    int timestep_count = mesh_data.m_input_region->get_property("state_count").get_int();
+    for (int step=1; step <= timestep_count; step++) {
+      double time = mesh_data.m_input_region->get_state_time(step);
+      stk::io::process_input_request(mesh_data, bulk_data, step);
+      stk::io::process_output_request(mesh_data, bulk_data, time);
+    }
   }
 }

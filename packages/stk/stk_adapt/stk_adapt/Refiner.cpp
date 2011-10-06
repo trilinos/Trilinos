@@ -559,7 +559,7 @@ namespace stk {
     }
 
     void Refiner::
-    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
@@ -827,7 +827,7 @@ namespace stk {
             MPI_Barrier( MPI_COMM_WORLD );
             std::cout << "P["<< m_eMesh.getRank()
                       <<"] ========================================================================================================================" << std::endl;
-            m_nodeRegistry->checkDB();
+            m_nodeRegistry->checkDB("after registerNeedNewNode");
             check_db("after registerNeedNewNode");
             MPI_Barrier( MPI_COMM_WORLD );
             std::cout << "P["<< m_eMesh.getRank()
@@ -870,7 +870,7 @@ namespace stk {
               MPI_Barrier( MPI_COMM_WORLD );
               std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
-              m_nodeRegistry->checkDB();
+              m_nodeRegistry->checkDB("after checkForRemote");
               check_db("after checkForRemote");
               MPI_Barrier( MPI_COMM_WORLD );
               std::cout << "P["<< m_eMesh.getRank()
@@ -920,7 +920,7 @@ namespace stk {
               MPI_Barrier( MPI_COMM_WORLD );
               std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
-              m_nodeRegistry->checkDB();
+              m_nodeRegistry->checkDB("end getFromRemote");
               check_db("end getFromRemote");
               MPI_Barrier( MPI_COMM_WORLD );
               
@@ -934,6 +934,12 @@ namespace stk {
       // for each element type, in top-down rank order, do the rest of the refinement operations
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       bulkData.modification_begin();
+
+      if (CHECK_DEBUG)
+        {
+          m_nodeRegistry->checkDB("after mod begin() after end getFromRemote");
+        }
+
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
           EXCEPTWATCH;
@@ -981,6 +987,10 @@ namespace stk {
      
           }
           m_nodeRegistry->dumpDB("after endLocalMeshMods");
+          if (CHECK_DEBUG)
+            {
+              m_nodeRegistry->checkDB("after endLocalMeshMods");
+            }
 
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
           ///  Global element ops: here's where we e.g. connect the new elements by declaring new relations
@@ -1084,11 +1094,27 @@ namespace stk {
       // remove any elements that are empty (these can exist when doing local refinement)
       removeEmptyElements();
 
+      // remove nodes not referred to by elements
+      //removeDanglingNodes();
+
+      // remove pseudo elements
+      //m_nodeRegistry->removePseudoEntities();
+
       set_active_part();
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
       bulkData.modification_end();
       /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
+
+      // remove pseudo elements
+      if (0)
+        {
+          bulkData.modification_begin();
+          // FIXME  - remove only those that are not shared?
+          //removeNodesWithOnlyPseudoNodeRelations();
+          m_nodeRegistry->removePseudoEntities();
+          bulkData.modification_end();
+        }
 
       //std::cout << "tmp dumpElements 3" << std::endl;
       //m_eMesh.dumpElements();
@@ -1125,6 +1151,7 @@ namespace stk {
       m_nodeRegistry->dumpDB("after doBreak");
 #if CHECK_DEBUG
       check_db("after doBreak");
+      m_nodeRegistry->checkDB("after doBreak");
 #endif
 
     } // doBreak
@@ -1211,6 +1238,63 @@ namespace stk {
       //std::cout << "tmp removeElements(parents) " << std::endl;
       removeElements(list);
       //m_eMesh.getBulkData()->modification_end();
+
+    }
+
+    void Refiner::removeDanglingNodes()
+    {
+      SetOfEntities node_list;
+      SetOfEntities pseudos;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.node_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          stk::mesh::Bucket & bucket = **k ;
+
+          const unsigned num_nodes_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_nodes_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& node = bucket[iElement];
+              if (0 == node.relations().size())
+                {
+                  node_list.insert(&node);
+                }
+              else if (1 == node.relations().size() && node.relations()[0].entity()->entity_rank() == m_eMesh.element_rank() + PSEUDO_ELEMENT_RANK_SHIFT)
+              {
+                pseudos.insert( node.relations()[0].entity() );
+                node_list.insert(&node);
+              }
+            }
+        }
+
+      //std::cout << "P[" << m_eMesh.getRank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
+
+      if (1)
+        {
+          for (SetOfEntities::iterator itbd = pseudos.begin(); itbd != pseudos.end();  ++itbd)
+            {
+              stk::mesh::Entity *pseudo_p = *itbd;
+
+              if ( ! m_eMesh.getBulkData()->destroy_entity( pseudo_p ) )
+                {
+                  throw std::logic_error("Refiner::removeDanglingNodes couldn't remove pseudo");
+
+                }
+            }
+        }
+
+      for (SetOfEntities::iterator itbd = node_list.begin(); itbd != node_list.end();  ++itbd)
+        {
+          stk::mesh::Entity *node_p = *itbd;
+
+          if ( ! m_eMesh.getBulkData()->destroy_entity( node_p ) )
+            {
+              throw std::logic_error("Refiner::removeDanglingNodes couldn't remove node");
+
+            }
+        }
+
 
     }
 
@@ -1678,7 +1762,7 @@ namespace stk {
 
               if (!only_count && (doAllElements || elementIsGhost))
                 {
-                  apply(function, element, needed_entity_ranks);
+                  refineMethodApply(function, element, needed_entity_ranks);
                 }
 
               if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
@@ -1934,17 +2018,28 @@ namespace stk {
                   }
 
                 stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
+                nodeIds_onSE[0] = node1;
 
                 if (!node1)
                   {
-                    std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << "
+                    if (!m_nodeRegistry->getUseCustomGhosting())
+                    {
+                      static stk::mesh::PartVector empty_parts;
+                      node1 = & m_eMesh.getBulkData()->declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0], empty_parts);
+                    }
+
+                    if (!node1)
+                    {
+                      std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << "
                               << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] << " node1= " << node1
                               << " element= " << element
                               << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
                               << " iSubDimOrd = " << iSubDimOrd
                               <<  std::endl;
-                    throw std::logic_error("Refiner::createNewNeededNodeIds logic error #0");
+                      throw std::logic_error("Refiner::createNewNeededNodeIds logic error #0");
+                    }
                   }
+                
               }
 
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
@@ -1978,6 +2073,23 @@ namespace stk {
                             << " nodeIds_onSE.size() = " << nodeIds_onSE.size() << std::endl;
                   throw std::logic_error("Refiner::createNewNeededNodeIds logic err #3");
                 }
+
+              // FIXME FIXME TEMP
+              if (CHECK_DEBUG)
+                {
+                  static SubDimCellData empty_SubDimCellData;
+                  SubDimCell_SDSEntityType subDimEntity;
+                  m_nodeRegistry->getSubDimEntity(subDimEntity, element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
+
+                  SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);
+                  SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
+                  bool is_empty = nodeId_elementOwnderId_ptr == 0;
+                  VERIFY_OP_ON(is_empty, ==, false, "hmmm 33");
+                  //NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                  stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                  VERIFY_OP_ON(owning_elementId, !=, 0, "hmmm 34");
+                }
+
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
                   if (!nodeIds_onSE[i_new_node])
@@ -2006,11 +2118,35 @@ namespace stk {
 
                       if (!node1)
                         {
-                          throw std::logic_error("Refiner::createNewNeededNodeIds logic err #4");
+                          if (!m_nodeRegistry->getUseCustomGhosting())
+                          {
+                            static stk::mesh::PartVector empty_parts;
+                            node1 = & m_eMesh.getBulkData()->declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[i_new_node], empty_parts);
+                          }
+                          if (!node1)
+                          { 
+                            throw std::logic_error("Refiner::createNewNeededNodeIds logic err #4");
+                          }
                         }
                       nodeIds_onSE[i_new_node] = node1;
+                      VERIFY_OP_ON(node1->identifier(), ==, nodeIds_onSE.m_entity_id_vector[i_new_node], "Refiner::createNewNeededNodeIds logic err #4.1");
                     }
                   new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node]->identifier();
+
+#ifndef NDEBUG
+                  stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[i_new_node]->identifier() );
+                  if (!node2)
+                    {
+                      std::cout << "P[" << m_eMesh.getRank() << "] element is ghost = " << m_eMesh.isGhostElement(element)
+                                << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first << " iSubDimOrd= " << iSubDimOrd
+                                << " i_new_node= " << i_new_node 
+                                << " id= " << nodeIds_onSE[i_new_node]->identifier() 
+                                << " entity_vec_id= " << nodeIds_onSE.m_entity_id_vector[i_new_node] 
+                                << std::endl;
+                        
+                      VERIFY_OP_ON(node2, !=, 0, "Refiner::createNewNeededNodeIds logic err #6 - node2 is null");
+                    }
+#endif
 
                 }
             }

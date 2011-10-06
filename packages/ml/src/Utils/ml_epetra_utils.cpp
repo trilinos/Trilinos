@@ -3547,12 +3547,14 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
 
 
 // ============================================================================
+#ifdef HAVE_ML_TEUCHOS
 int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite){
   for(Teuchos::ParameterList::ConstIterator param=source.begin(); param!=source.end(); param++)
     if ( dest.isParameter(source.name(param)) == false || OverWrite )
       dest.setEntry(source.name(param),source.entry(param));
   return 0;
 }
+#endif
 
 // ============================================================================
 

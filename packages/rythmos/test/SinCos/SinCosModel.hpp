@@ -139,7 +139,7 @@ class SinCosModel
 private:
 
   /** \brief. */
-  void setupInOutArgs_();
+  void setupInOutArgs_() const;
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
@@ -166,10 +166,10 @@ private:
                     // true =>  F(\dot{x},x,t) = 0  W = alpha*dF/dxdot + beta*dF/dx
   bool haveIC_;     // false => no nominal values are provided (default=true)
   bool acceptModelParams_; // Changes inArgs to require parameters
-  bool isInitialized_;
-  ModelEvaluatorBase::InArgs<double> inArgs_;
-  ModelEvaluatorBase::OutArgs<double> outArgs_;
-  ModelEvaluatorBase::InArgs<double> nominalValues_;
+  mutable bool isInitialized_;
+  mutable ModelEvaluatorBase::InArgs<double> inArgs_;
+  mutable ModelEvaluatorBase::OutArgs<double> outArgs_;
+  mutable ModelEvaluatorBase::InArgs<double> nominalValues_;
   RCP<const Thyra::VectorSpaceBase<double> > x_space_;
   RCP<const Thyra::VectorSpaceBase<double> > f_space_;
   RCP<const Thyra::VectorSpaceBase<double> > p_space_;

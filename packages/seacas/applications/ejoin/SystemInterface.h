@@ -32,9 +32,9 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include <CodeTypes.h>
-#include <GetLongOpt.h>
-#include "Vector3.h"
+#include "CodeTypes.h"
+#include "GetLongOpt.h"
+#include "vector3d.h"
 
 #include <iosfwd>
 class SystemInterface
@@ -62,13 +62,14 @@ class SystemInterface
   int step_max() const {return stepMax_;}
   int step_interval() const {return stepInterval_;}
 
-  Vector3 offset() const {return offset_;}
-  std::vector<int> node_nodeset_conversions() const {return nodesetConvertParts_;}
-  StringIdVector global_var_names() const {return globalVarNames_;}
-  StringIdVector node_var_names() const {return nodeVarNames_;}
-  StringIdVector elem_var_names() const {return elemVarNames_;}
-  StringIdVector nset_var_names() const {return nsetVarNames_;}
-  StringIdVector sset_var_names() const {return ssetVarNames_;}
+  vector3d offset() const {return offset_;}
+  const std::vector<int>& node_nodeset_conversions() const {return nodesetConvertParts_;}
+  const std::vector<int>& information_record_parts() const {return infoRecordParts_;}
+  const StringIdVector& global_var_names() const {return globalVarNames_;}
+  const StringIdVector& node_var_names() const {return nodeVarNames_;}
+  const StringIdVector& elem_var_names() const {return elemVarNames_;}
+  const StringIdVector& nset_var_names() const {return nsetVarNames_;}
+  const StringIdVector& sset_var_names() const {return ssetVarNames_;}
 
   const Omissions &block_omissions() const {return blockOmissions_;}
   const Omissions &nset_omissions() const {return nsetOmissions_;}
@@ -122,7 +123,7 @@ class SystemInterface
   std::string elementStatusVariable_;
   std::string nodalStatusVariable_;
 
-  Vector3 offset_;
+  vector3d offset_;
   double tolerance_;
       
   Omissions blockOmissions_;
@@ -130,7 +131,8 @@ class SystemInterface
   Omissions ssetOmissions_;
 
   std::vector<int> nodesetConvertParts_;
-
+  std::vector<int> infoRecordParts_;
+  
   StringIdVector globalVarNames_;
   StringIdVector nodeVarNames_;
   StringIdVector elemVarNames_;

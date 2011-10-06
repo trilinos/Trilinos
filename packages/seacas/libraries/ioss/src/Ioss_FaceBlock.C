@@ -39,7 +39,7 @@
 
 #include <string>
 
-Ioss::FaceBlock::FaceBlock(const Ioss::DatabaseIO *io_database,
+Ioss::FaceBlock::FaceBlock(Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,
 			   const std::string& face_type,
 			   size_t number_faces)

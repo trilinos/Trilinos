@@ -285,18 +285,18 @@ C     area
       call excpus(time0)
       if (DELMAX .EQ. DELTAX) THEN
         imat = 1
-        call indexx(xn1, 1, 1, ix1, in1, .FALSE.)
-        call indexx(xn2, 1, 1, ix2, in2, .FALSE.)
+        call indexn(xn1, 1, 1, ix1, in1, .FALSE.)
+        call indexn(xn2, 1, 1, ix2, in2, .FALSE.)
         call prterr('CMDSPEC', 'Entering Sorting Phase, Sort on X')
       else if (delmax .eq. deltay) then
         imat = 2
-        call indexx(yn1, 1, 1, ix1, in1, .FALSE.)
-        call indexx(yn2, 1, 1, ix2, in2, .FALSE.)
+        call indexn(yn1, 1, 1, ix1, in1, .FALSE.)
+        call indexn(yn2, 1, 1, ix2, in2, .FALSE.)
         call prterr('CMDSPEC', 'Entering Sorting Phase, Sort on Y')
       else if (ndim .ge. 3 .and. delmax .eq. deltaz) then
         imat = 3
-        call indexx(zn1, 1, 1, ix1, in1, .FALSE.)
-        call indexx(zn2, 1, 1, ix2, in2, .FALSE.)
+        call indexn(zn1, 1, 1, ix1, in1, .FALSE.)
+        call indexn(zn2, 1, 1, ix2, in2, .FALSE.)
         call prterr('CMDSPEC', 'Entering Sorting Phase, Sort on Z')
       end if
       call prterr('CMDSPEC', 'Entering Comparison Phase')

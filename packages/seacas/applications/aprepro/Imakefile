@@ -62,7 +62,7 @@ LIBS=$(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm
 OBJS = \
 y.tab.o    builtin.o  main.o     stat.o    alloca.o  getopt.o  \
 getopt1.o  util.o     init.o     hash.o    liballoc.o  exodus.o \
-add_to_log.o  units.o  getline.o getdelim.o
+add_to_log.o  units.o  getline.o 
 
 DEFINES = $(ALLOCA_DEFINES)
 

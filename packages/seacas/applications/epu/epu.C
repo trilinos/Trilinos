@@ -65,13 +65,13 @@ typedef std::vector<std::string> StringVector;
 typedef std::vector<int>    GlobalMap;
 typedef GlobalMap::iterator GMapIter;
 
-#include <Internals.h>
-#include <ExodusFile.h>
-#include <ExodusEntity.h>
-#include <SystemInterface.h>
-#include <Version.h>
-#include <Variables.h>
-#include <ObjectType.h>
+#include "Internals.h"
+#include "ExodusFile.h"
+#include "ExodusEntity.h"
+#include "SystemInterface.h"
+#include "Version.h"
+#include "Variables.h"
+#include "ObjectType.h"
 
 #include <exodusII.h>
 
@@ -118,6 +118,15 @@ namespace {
     }
     delete [] names;
     names = NULL;
+  }
+
+  bool is_sequential(std::vector<int> &map)
+  {
+    for (size_t i=0; i < map.size(); i++) {
+      if (map[i] != (int)i+1)
+	return false;
+    }
+    return true;
   }
 }
 
@@ -533,22 +542,29 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	exit(EXIT_FAILURE);
       }
     } else {
+      global.needNodeMap = !is_sequential(global_node_map);
+      global.needElementMap = !is_sequential(global_element_map);
+
       exodus.write_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
 
       // Output bulk mesh data....
       put_nodesets(glob_nsets);
 
       // c.2.  Write Global Node Number Map
-      if (debug_level & 1)
-	std::cerr << time_stamp(tsFormat);
-      std::cerr << "Writing global node number map...\n";
-      error=ex_put_node_num_map(ExodusFile::output(),&global_node_map[0]);
+      if (global.needNodeMap) {
+	if (debug_level & 1)
+	  std::cerr << time_stamp(tsFormat);
+	std::cerr << "Writing global node number map...\n";
+	error=ex_put_node_num_map(ExodusFile::output(),&global_node_map[0]);
+      }
     
-      if (debug_level & 1)
-	std::cerr << time_stamp(tsFormat);
-      std::cerr << "Writing out master global elements information...\n";
-      if (global_element_map.size() > 0) {
-	ex_put_elem_num_map(ExodusFile::output(), &global_element_map[0]);
+      if (global.needElementMap) {
+	if (debug_level & 1)
+	  std::cerr << time_stamp(tsFormat);
+	std::cerr << "Writing out master global elements information...\n";
+	if (global_element_map.size() > 0) {
+	  ex_put_elem_num_map(ExodusFile::output(), &global_element_map[0]);
+	}
       }
 
       // Needed on glory writing to Lustre or we end up with empty maps...
@@ -737,7 +753,6 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   
   // Time steps for output file
   int time_step_out = 0;
-  int time_step_out_init = 0;
   double min_time_to_write = -1.0;
 
   if (interface.append()) {
@@ -749,7 +764,6 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     ex_get_time(ExodusFile::output(), nstep, &min_time_to_write);
 
     time_step_out = nstep;
-    time_step_out_init = nstep;
   }
 
   ts_max = ts_max < num_time_steps ? ts_max : num_time_steps;
@@ -2400,22 +2414,18 @@ namespace {
 
     std::string var_name = "";
     int out_position = -1;
-    int inp_position = -1;
     for (size_t i=0; i < variable_names.size(); i++) {
       if (variable_names[i].second > 0) {
 	if (var_name != variable_names[i].first) {
 	  var_name = variable_names[i].first;
 	  // Find which exodus variable matches this name
-	  inp_position = -1;
 	  out_position = -1;
 	  for (size_t j = 0; j < exo_names.size(); j++) {
 	    if (case_compare(exo_names[j], var_name) == 0) {
-	      inp_position = j;
 	      out_position = vars.index_[j]-1;
 	      break;
 	    }
 	  }
-	  SMART_ASSERT(inp_position >= 0);
 	  SMART_ASSERT(out_position >= 0);
 
 	  // Set all truth table entries for this variable to negative

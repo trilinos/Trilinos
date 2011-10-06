@@ -75,7 +75,7 @@ int ne_put_node_cmap(int  neid,
 
   int     map_idx, varid, dimid, status;
   size_t  start[1], count[1], ret_val;
-  size_t  varidx[2];
+  int64_t varidx[2];
   int     value;
 
   char    errmsg[MAX_ERR_LENGTH];
@@ -177,6 +177,7 @@ int ne_put_node_cmap(int  neid,
 
   status = nc_put_vara_int(neid, varid, start, count, node_ids);
   if (status != NC_NOERR) {
+    fprintf(stderr, "Start, Count = %zd\t%zd\n", start[0], count[0]);
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to output vector \"%s\" in file ID %d",

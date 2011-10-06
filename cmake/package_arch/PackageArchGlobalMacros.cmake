@@ -215,6 +215,12 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE BOOL
     "Determines if export makefiles will be create and installed."
     )
+  
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+    ON
+    CACHE BOOL
+    "Determines if *Config.cmake files are created or not."
+    )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
@@ -1537,7 +1543,7 @@ FUNCTION(PACKAGE_ARCH_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
 
     STRING(REGEX MATCH
       "${DEPS_FILES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
-      FOUND_AUTODEP_FILE ${GIT_STATUS_OUT})
+      FOUND_AUTODEP_FILE "${GIT_STATUS_OUT}")
 
     IF (FOUND_AUTODEP_FILE)
       

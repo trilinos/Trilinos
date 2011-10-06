@@ -557,7 +557,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
       ST::one(), ST::zero()
       );
     // F_sens += d(f)/d(p)
-    Vp_V( &*F_sens, *DfDp_ );
+    Vp_V( F_sens.ptr(), *DfDp_ );
   }
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();

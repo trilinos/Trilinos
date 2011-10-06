@@ -96,8 +96,8 @@ ENDIF()
 
 # LAPACK
 OPTION(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK
-  "Enables support for LAPACK implementation of Abstract Group and Vector classes.  Defaults to OFF"
-  OFF
+  "Enables support for LAPACK implementation of Abstract Group and Vector classes.  Defaults to ON if LAPACK is enabled, otherwise defaults to OFF."
+  ${NOX_ENABLE_LAPACK}
   )
 
 # Epetra

@@ -10,7 +10,7 @@ PACKAGE_ADD_ADVANCED_TEST( TestingFunctionMacro_UnitTests
       -DPACKAGE_ARCH_SOURCE_DIR="${PACKAGE_SOURCE_DIR}/package_arch"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/TestingFunctionMacro_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 104"
+      "Final UnitTests Result: num_run = 130"
       "Final UnitTests Result: PASSED"
   )
 

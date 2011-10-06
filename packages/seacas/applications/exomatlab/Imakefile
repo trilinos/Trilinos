@@ -1,14 +1,16 @@
-LIBS = $(IOSS) $(EXODUS) $(NEMESIS) $(NETCDF)  
-CXXEXTRA_DEFINES = -I$(INCDIR)/ioss -DNO_MPI 
+XCOMM $Id: Imakefile,v 1.6 2007/10/08 20:30:31 gdsjaar Exp $
 
-PROGS=exomatlab2
+CODE =	exomatlab
 
-SRCS = exomatlab.C GetLongOpt.C SystemInterface.C add_to_log.C
-OBJS = $(SRCS:.C=.o)
+SRCS =  exomatlab.f
 
-NormalCCTarget($(PROGS), $(OBJS), NullParameter, NullParameter, $(LIBS))
-InstallTarget(install,$(PROGS), $(INSTBINFLAGS),$(BINDIR))
+OBJS =  exomatlab.o
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS)) 
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+
 DependTarget()
-
-
 

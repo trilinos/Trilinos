@@ -34,13 +34,15 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	typedef KOKKOS_MACRO_DEVICE     device_type ;
 	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
 
+  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+
 	const array_type rotation;
 	const array_type vel_grad;
 	const array_type stretching_tensor;
 	const array_type stretch;
 	const array_type vorticity;
 	const array_type rot_stretch;
-	const Scalar     dt;
+	const scalar     dt_value;
   const int        current_state;
   const int        previous_state;
 
@@ -54,7 +56,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 		, stretch( region.stretch )
 		, vorticity( region.vorticity )
 		, rot_stretch( region.rot_stretch )
-		, dt( region.delta_t(arg_current_state) )
+    , dt_value( region.dt)
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
 		{
@@ -93,6 +95,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 	KOKKOS_MACRO_DEVICE_FUNCTION
 	void polar_decomp(int ielem, Scalar * v_gr, Scalar * str_ten, Scalar * str, Scalar * vort, Scalar * rot_old, Scalar * rot_new)const {
 
+    Scalar dt = *dt_value;
 
     //  Skew Symmetric part
 		vorticity(ielem, K_V_XY) = vort[K_V_XY] = 0.5*(v_gr[K_F_XY] - v_gr[K_F_YX]);

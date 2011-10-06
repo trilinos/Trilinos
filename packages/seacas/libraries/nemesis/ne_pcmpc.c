@@ -63,6 +63,10 @@
 #include <stdlib.h>
 
 #include <netcdf.h>
+#ifndef NC_INT64
+#define NC_INT64 NC_INT
+#endif
+
 
 #include <exodusII.h>
 #include <exodusII_int.h>
@@ -83,20 +87,38 @@ int ne_put_cmap_params_cc(int  neid,
 
   size_t  num_n_comm_maps, num_e_comm_maps, num_procs_in_file;
   int     status, icm, n_varid[2], e_varid[2], iproc;
-  int     varid, n_dimid[1], e_dimid[1], n_varid_idx, e_varid_idx;
+  int     varid, n_dimid[1], e_dimid[1];
+  int     n_varid_idx, e_varid_idx;
   int     num_icm;
   size_t start[1], count[1];
   size_t ecnt_cmap, ncnt_cmap;
+#if defined NC_NETCDF4
+  long long nl_ecnt_cmap, nl_ncnt_cmap;
+  long long *n_var_idx = NULL;
+  long long *e_var_idx = NULL;
+#else
   int  nl_ecnt_cmap, nl_ncnt_cmap;
   int *n_var_idx = NULL;
   int *e_var_idx = NULL;
+#endif
+
   int  nmstat;
 
   char    errmsg[MAX_ERR_LENGTH];
+  int     format;
+  int     index_type;
   /*-----------------------------Execution begins-----------------------------*/
 
   exerrval = 0; /* clear error code */
 
+  /* See if using NC_FORMAT_NETCDF4 format... */
+  nc_inq_format(neid, &format);
+  if (format == NC_FORMAT_NETCDF4) {
+    index_type = NC_INT64;
+  } else {
+    index_type = NC_INT;
+  }
+  
   /* Get the number of processors in the file */
   if ((status = nc_inq_dimid(neid, DIM_NUM_PROCS_F, &n_dimid[0])) != NC_NOERR) {
     exerrval = status;
@@ -150,7 +172,7 @@ file ID %d",
     }
 
     /* allocate space for the index variable */
-    n_var_idx = (int *) malloc((num_procs_in_file + 1) * sizeof(int));
+    n_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
     if (!n_var_idx) {
       exerrval = EX_MSG;
       sprintf(errmsg,
@@ -164,7 +186,12 @@ file ID %d",
     n_var_idx[0] = 0;
 
     /* get the communication map info index */
-    if ((status = nc_get_var_int(neid, n_varid_idx, &(n_var_idx[1]))) != NC_NOERR) {
+#if defined(NC_NETCDF4)
+    status = nc_get_var_longlong(neid, n_varid_idx, &(n_var_idx[1]));
+#else
+    status = nc_get_var_int(neid, n_varid_idx, &(n_var_idx[1]));
+#endif
+    if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to get variable \"%s\" from file ID %d",
@@ -202,7 +229,7 @@ file ID %d",
     }
 
     /* allocate space for the index variable */
-    e_var_idx = (int *) malloc((num_procs_in_file + 1) * sizeof(int));
+    e_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
     if (!e_var_idx) {
       exerrval = EX_MSG;
       sprintf(errmsg,
@@ -216,7 +243,12 @@ file ID %d",
     e_var_idx[0] = 0;
 
     /* get the communication map info index */
-    if ((status = nc_get_var_int(neid, e_varid_idx, &(e_var_idx[1]))) != NC_NOERR) {
+#if defined NC_NETCDF4
+    status = nc_get_var_longlong(neid, e_varid_idx, &(e_var_idx[1]));
+#else
+    status = nc_get_var_int(neid, e_varid_idx, &(e_var_idx[1]));
+#endif
+    if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to get variable \"%s\" from file ID %d",
@@ -241,7 +273,7 @@ file ID %d",
    */
   if (num_n_comm_maps > 0) {
     /* add the communications data index variable */
-    if ((status = nc_def_var(neid, VAR_N_COMM_DATA_IDX, NC_INT, 1,
+    if ((status = nc_def_var(neid, VAR_N_COMM_DATA_IDX, index_type, 1,
 			     n_dimid, &n_varid_idx)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -265,8 +297,8 @@ file ID %d",
     if ((status = nc_def_dim(neid, DIM_NCNT_CMAP, ncnt_cmap, &n_dimid[0])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to add dimension for \"%s\" in file ID %d",
-	      DIM_NCNT_CMAP, neid);
+	      "Error: failed to add dimension for \"%s\" of size %zd in file ID %d",
+	      DIM_NCNT_CMAP, ncnt_cmap, neid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ne_leavedef(neid, func_name);
@@ -307,7 +339,7 @@ file ID %d",
      */
   if (num_e_comm_maps > 0) {
     /* add the communications data index variable */
-    if ((status = nc_def_var(neid, VAR_E_COMM_DATA_IDX, NC_INT, 1,
+    if ((status = nc_def_var(neid, VAR_E_COMM_DATA_IDX, index_type, 1,
 			     e_dimid, &e_varid_idx)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -433,7 +465,12 @@ file ID %d",
 	nl_ncnt_cmap += node_cmap_node_cnts[node_proc_ptrs[iproc]+icm];
 
 	/* fill the data index variable */
-	if ((status = nc_put_var1_int(neid, n_varid_idx, start, &nl_ncnt_cmap)) != NC_NOERR) {
+#if defined NC_NETCDF4
+	status = nc_put_var1_longlong(neid, n_varid_idx, start, &nl_ncnt_cmap);
+#else
+	status = nc_put_var1_int(neid, n_varid_idx, start, &nl_ncnt_cmap);
+#endif
+	if (status != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
 		  "Error: failed to output int elem map index in file ID %d",
@@ -516,7 +553,12 @@ file ID %d",
 	nl_ecnt_cmap += elem_cmap_elem_cnts[elem_proc_ptrs[iproc]+icm];
 
 	/* fill the data index variable */
-	if ((status = nc_put_var1_int(neid, e_varid_idx, start, &nl_ecnt_cmap)) != NC_NOERR) {
+#if defined NC_NETCDF4
+	status = nc_put_var1_longlong(neid, e_varid_idx, start, &nl_ecnt_cmap);
+#else
+	status = nc_put_var1_int(neid, e_varid_idx, start, &nl_ecnt_cmap);
+#endif
+	if (status != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
 		  "Error: failed to output int elem map index in file ID %d",

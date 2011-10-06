@@ -351,6 +351,58 @@ public:
 
 
   //@}
+
+  //! @name Subcommunicator Operations
+  //@{
+
+  /**
+   * \brief Split a communicator into subcommunicators based on color
+   * and key.
+   *
+   * Generates a partition of this communicator into multiple disjoint
+   * groups.  There will be as many groups as there are globally many
+   * distinct values for the color parameter. Within each subset of
+   * the partition, the ranks will be ordered according to the key
+   * value each rank passed for the key parameter. If multiple ranks
+   * pass the same value for the key parameter, then they will be
+   * ordered according to their rank value in the original
+   * communicator. To return a valid communicator, this function
+   * requires a nonnegative value for color. If a negative value
+   * is passed for color, a null communicator will be
+   * returned.
+   *
+   * All members of this communicator must call this member if it is
+   * called at all.
+   *
+   * \param color [in] An integer representing the color for the local
+   * rank.  
+   *
+   * \param key [in] A key value to order processes of the same color.
+   *
+   * \return A partitioned communicator.
+   */
+  virtual RCP< Comm > split(const int color, const int key) const = 0;
+
+  /**
+   * \brief Create a subcommunicator containing the specified ranks of
+   * this one.
+   *
+   * Generates a subcommunicator of this communicator that consists of
+   * the specified ranks in the order in which they are listed in the
+   * input vector. Ranks that are not specified in the input vector
+   * will be given a null communicator.
+   *
+   * All members of this communicator must call this member if it is
+   * called at all.
+   *
+   * \param ranks A vector containing the ranks to include in the new
+   * communicator.
+   *
+   * \return A new communicator.
+   */
+  virtual RCP< Comm > createSubcommunicator(const std::vector<int>& ranks) const = 0;
+
+  //@}
 	
 }; // class Comm
 

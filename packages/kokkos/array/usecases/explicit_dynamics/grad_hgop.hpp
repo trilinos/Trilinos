@@ -32,6 +32,8 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
   typedef typename Kokkos::MDArrayView<int,device_type>    int_array_type ;
 
+  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+
   // Global arrays used by this functor.
 
   const int_array_type elem_node_connectivity;
@@ -42,7 +44,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   const array_type vel_grad;
   const array_type hgop;
 
-	const Scalar     dt;
+	const scalar     dt;
   const int        current_state;
   const int        previous_state;
 
@@ -59,11 +61,10 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     , velocity(region.velocity)
     , vel_grad(region.vel_grad)
     , hgop    (region.hgop)
-    , dt( region.delta_t(arg_current_state) )
+    , dt( region.dt)
     , current_state(arg_current_state)
     , previous_state(arg_previous_state)
     {
-      //std::cout << "grad_hgop dt: " << dt << std::endl;
     }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -87,7 +88,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
     {
 
 
-    Scalar dt_scale = -0.5 * dt;
+    Scalar dt_scale = -0.5 * *dt;
 
     //enum { X = 0, Y = 1, Z = 2 };
     const int X = 0;

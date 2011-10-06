@@ -411,23 +411,25 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
 
     // Define the node map here to avoid a later redefine call
-    int dims[1];
-    dims[0] = numnoddim;
-    status=nc_def_var(exodusFilePtr, VAR_NODE_NUM_MAP, NC_INT, 1, dims, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      if (status == NC_ENAMEINUSE) {
-	sprintf(errmsg,
-		"Error: node numbering map already exists in file id %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
-      } else {
-	sprintf(errmsg,
-		"Error: failed to create node numbering map array in file id %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
+    if (mesh.needNodeMap) {
+      int dims[1];
+      dims[0] = numnoddim;
+      status=nc_def_var(exodusFilePtr, VAR_NODE_NUM_MAP, NC_INT, 1, dims, &varid);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	if (status == NC_ENAMEINUSE) {
+	  sprintf(errmsg,
+		  "Error: node numbering map already exists in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	} else {
+	  sprintf(errmsg,
+		  "Error: failed to create node numbering map array in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	}
+	return (EX_FATAL);
       }
-      return (EX_FATAL);
     }
   }
 
@@ -442,24 +444,26 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
 
     // Define the element map here to avoid a later redefine call
-    int dims[1];
-    dims[0] = numelemdim;
-    varid = 0;
-    status=nc_def_var(exodusFilePtr, VAR_ELEM_NUM_MAP, NC_INT, 1, dims, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      if (status == NC_ENAMEINUSE) {
-	sprintf(errmsg,
-		"Error: element numbering map already exists in file id %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
-      } else {
-	sprintf(errmsg,
-		"Error: failed to create element numbering map in file id %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
+    if (mesh.needElementMap) {
+      int dims[1];
+      dims[0] = numelemdim;
+      varid = 0;
+      status=nc_def_var(exodusFilePtr, VAR_ELEM_NUM_MAP, NC_INT, 1, dims, &varid);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	if (status == NC_ENAMEINUSE) {
+	  sprintf(errmsg,
+		  "Error: element numbering map already exists in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	} else {
+	  sprintf(errmsg,
+		  "Error: failed to create element numbering map in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	}
+	return (EX_FATAL);
       }
-      return (EX_FATAL);
     }
   }
 
@@ -1220,22 +1224,6 @@ namespace {
     if (nodes > 0) {
       if (ex_large_model(exodusFilePtr) == 1) {
 	// node coordinate arrays -- separate storage...
-
-	/*
-	 * Check that storage required for coordinates  is less
-	 * than 2GB which is maximum size permitted by netcdf
-	 * (in large file mode). 1<<29 == max number of integer items.
-	 */
-	int shift = nc_flt_code(exodusFilePtr) == NC_DOUBLE ? 28 : 29;
-	if (nodes  > (1<<shift)) {
-	  status  = EX_BADPARAM;
-	  sprintf(errmsg,
-		  "Error: Size to store nodal coordinates exceeds 2GB in file id %d",
-		  exodusFilePtr);
-	  ex_err(routine,errmsg,status);
-	  return (EX_FATAL);
-	}
-
 	dim[0] = node_dim;
 	if (dimension > 0) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_X, nc_flt_code(exodusFilePtr), 1, dim, &varid);

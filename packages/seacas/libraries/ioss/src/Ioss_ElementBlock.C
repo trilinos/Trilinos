@@ -38,7 +38,7 @@
 
 #include <string>
 
-Ioss::ElementBlock::ElementBlock(const Ioss::DatabaseIO *io_database,
+Ioss::ElementBlock::ElementBlock(Ioss::DatabaseIO *io_database,
 				 const std::string& my_name,
 				 const std::string& element_type,
 				 size_t number_elements)

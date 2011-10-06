@@ -39,7 +39,7 @@
 
 #include <string>
 
-Ioss::EdgeBlock::EdgeBlock(const Ioss::DatabaseIO *io_database,
+Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,
 			   const std::string& edge_type,
 			   size_t number_edges)

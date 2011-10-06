@@ -32,7 +32,7 @@
 #include <cmath>
 #include <float.h>
 #include "match_xyz.h"
-#include "Vector3.h"
+#include "vector3d.h"
 #include "index_sort.h"
 #include "smart_assert.h"
 #include "mapping.h"
@@ -53,7 +53,7 @@ namespace {
     return max;
   }
   
-  void find_range(std::vector<double> &coord, Vector3 &min, Vector3 &max)
+  void find_range(std::vector<double> &coord, vector3d &min, vector3d &max)
   {
     if (!coord.empty()) {
       min.set(coord[0], coord[1], coord[2]);
@@ -73,7 +73,7 @@ namespace {
     }
   }
 
-  void find_in_range(std::vector<double> coord, Vector3 &min, Vector3 &max, IntVector &in_range)
+  void find_in_range(std::vector<double> coord, vector3d &min, vector3d &max, IntVector &in_range)
   {
     if (!coord.empty()) {
       for (size_t i=0; i < coord.size(); i+=3) {
@@ -121,8 +121,8 @@ void match_node_xyz(RegionVector &part_mesh,
 
   IntVector global_map();
   for (size_t ip=0; ip < part_count; ip++) {
-    Vector3 i_max;
-    Vector3 i_min;
+    vector3d i_max;
+    vector3d i_min;
     std::vector<double> i_coord;
     Ioss::NodeBlock *inb = part_mesh[ip]->get_node_blocks()[0];
     inb->get_field_data("mesh_model_coordinates", i_coord);
@@ -131,8 +131,8 @@ void match_node_xyz(RegionVector &part_mesh,
     int i_offset = part_mesh[ip]->get_property("node_offset").get_int();
 
     for (size_t jp=ip+1; jp < part_count; jp++) {
-      Vector3 j_max;
-      Vector3 j_min;
+      vector3d j_max;
+      vector3d j_min;
       std::vector<double> j_coord;
       Ioss::NodeBlock *jnb = part_mesh[jp]->get_node_blocks()[0];
       jnb->get_field_data("mesh_model_coordinates", j_coord);
@@ -141,8 +141,8 @@ void match_node_xyz(RegionVector &part_mesh,
       int j_offset = part_mesh[jp]->get_property("node_offset").get_int();
 
       // See if the ranges overlap...
-      Vector3 max;
-      Vector3 min;
+      vector3d max;
+      vector3d min;
       max.x = std::min(i_max.x, j_max.x);
       max.y = std::min(i_max.y, j_max.y);
       max.z = std::min(i_max.z, j_max.z);

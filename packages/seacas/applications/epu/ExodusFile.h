@@ -35,7 +35,7 @@
 #ifndef SEACAS_ExodusFile_H
 #define SEACAS_ExodusFile_H
 
-#include <CodeTypes.h>
+#include "CodeTypes.h"
 #include <string>
 #include <vector>
 

@@ -55,12 +55,10 @@ ENDIF()
 #
 
 PACKAGE_ADD_LIBRARY(
-  stk_util_parallel 
+  stk_util_parallel
   NOINSTALLHEADERS ${HEADERS}
   DEPLIBS stk_util_env
   SOURCES ${SOURCES}
-#srk  DEPLIBS stk_util_env
-#srk  STATIC
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION

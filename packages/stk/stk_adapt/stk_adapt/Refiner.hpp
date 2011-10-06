@@ -186,6 +186,9 @@ namespace stk {
       getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
 
 
+      void 
+      removeDeletedNodes(NodeSetType& deleted_nodes);
+
       void getChildrenToBeRemoved(ElementUnrefineCollection& elements_to_unref,
                                   SetOfEntities& children_to_be_removed, SetOfEntities& children_to_be_removed_with_ghosts, 
                                   SetOfEntities& copied_children_to_be_removed,
@@ -259,7 +262,7 @@ namespace stk {
        */
 
       virtual void
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end
@@ -277,6 +280,10 @@ namespace stk {
 
       void
       removeEmptyElements();
+
+      // empty nodes (nodes not referred to by any elements) are possibly created during refine, this method removes them
+      void
+      removeDanglingNodes();
 
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);

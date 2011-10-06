@@ -31,8 +31,6 @@ XCOMM  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 XCOMM  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 XCOMM  
 
-XCOMM   $Id: Imakefile,v 1.6 2005/11/15 22:56:03 gdsjaar Exp $
-
 CODE = gjoin
 
 #if NeedsDoubleEscape
@@ -45,7 +43,7 @@ F77DEBUGFLAGS = -g
 
 SRCS1 = \
 chgint.f comand.f dbmir1.f dbmirr.f dorot.f  expxyz.f \
-fixmap.f getall.f gjoin.f indexx.f inigen.f initin.f \
+fixmap.f getall.f gjoin.f  inigen.f initin.f \
 intcnt.f irennp.f matxyz.f mirss.f  movint.f movrea.f \
 munelb.f muness.f munnps.f munxyz.f offset.f \
 ordix.f  ordstr.f outlog.f \

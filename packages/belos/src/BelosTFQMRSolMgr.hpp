@@ -234,21 +234,6 @@ namespace Belos {
     
   private:
 
-    // Method to convert std::string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
-      if (scaleType == "Norm of Initial Residual") {
-	return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-	return Belos::NormOfPrecInitRes;
-      } else if (scaleType == "Norm of RHS") {
-	return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-	return Belos::None;
-      } else 
-	TEST_FOR_EXCEPTION( true ,std::logic_error,
-			    "Belos::TFQMRSolMgr(): Invalid residual scaling type.");
-    }
-
     // Method for checking current status test against defined linear problem.
     bool checkStatusTest();
     

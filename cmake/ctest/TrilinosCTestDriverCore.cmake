@@ -117,6 +117,7 @@ INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(PackageArchGlobalMacros)
 INCLUDE(PackageArchConstants)
+INCLUDE(${TRILINOS_CMAKE_DIR}/TrilinosVersion.cmake)
 
 INCLUDE(TrilinosFindPythonInterp)
 TRILINOS_FIND_PYTHON()
@@ -605,9 +606,17 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # If the test type is set to Experimental though the track is forced
   # to "Experimental" this is so that we can have experimental tests 
   # on branches.
-  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
+  IF(Trilinos_TESTING_TRACK)
+    SET(Trilinos_TRACK_DEFAULT ${Trilinos_TESTING_TRACK})
+  ELSE()  
+    SET(Trilinos_TRACK_DEFAULT "")
+  ENDIF()
+  print_var(Trilinos_TRACK_DEFAULT)
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "${Trilinos_TRACK_DEFAULT}")
   IF(CTEST_TEST_TYPE STREQUAL "Experimental" OR CTEST_TEST_TYPE STREQUAL "EXPERIMENTAL")
     SET(Trilinos_TRACK "Experimental")
+    MESSAGE("-- Test type is Experimental. Forcing Trilinos_TRACK to Experimental")
+    PRINT_VAR(Trilinos_TRACK)
   ENDIF()
  
   # The name of the site in the dashboard (almost never need to override this)
@@ -699,7 +708,14 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # EXTRA_CONFIGURE_OPTIONS (set in your driver script.
   SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
   
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "" )
+  IF(Trilinos_REPOSITORY_BRANCH)
+    SET(Trilinos_BRANCH_DEFAULT ${Trilinos_REPOSITORY_BRANCH})
+  ELSE()
+    SET(Trilinos_BRANCH_DEFAULT "")
+  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "${Trilinos_BRANCH_DEFAULT}" )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_DEVELOPMENT_MODE "${Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
 
   IF(CTEST_TEST_TYPE STREQUAL "Nightly")
     SET_DEFAULT_AND_FROM_ENV( Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/${CTEST_SOURCE_NAME}" )
@@ -741,7 +757,15 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
   # 'Nightly').  This is set by default to ${CTEST_TEST_TYPE} can be
   # overridden independent of ${CTEST_TEST_TYPE} also.
-  SET(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT ${CTEST_TEST_TYPE})
+  #
+  # If in release mode generally we do not want any external repositories
+  # even though the CTEST_TEST_TYPE is set to "Nightly" for most release
+  # builds.
+  IF(Trilinos_ENABLE_DEVELOPMENT_MODE)
+    SET(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT ${CTEST_TEST_TYPE})
+  ELSE()
+    SET(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT "None")
+  ENDIF()
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
      "${Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT}" )
 
@@ -915,7 +939,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
     SET(GIT_CHECKOUT_RETURN_VAL "0")
 
-    IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0")
+    IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
       MESSAGE("Doing switch to branch ${Trilinos_BRANCH}")
 
@@ -1300,9 +1324,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
    
           IF (CTEST_DO_MEMORY_TESTING)
             MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
-            CTEST_MEMCHECK(BUILD "${CTEST_BINARY_DIRECTORY}")
+            CTEST_MEMCHECK(
+              BUILD "${CTEST_BINARY_DIRECTORY}"
+              PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+              INCLUDE_LABEL "^${PACKAGE}$")
             IF (CTEST_DO_SUBMIT)
-              CTEST_SUBMIT( PARTS Memcheck )
+              CTEST_SUBMIT( PARTS MemCheck )
             ENDIF()
           ENDIF()
   

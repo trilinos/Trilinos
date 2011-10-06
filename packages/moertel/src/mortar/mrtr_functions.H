@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
+# Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -78,7 +78,7 @@ phi_2 = 1 <br>
 phi_1,xi = 0 <br>
 phi_2,xi = 0 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_Constant1D : public MOERTEL::Function 
@@ -137,7 +137,7 @@ phi_2 = 0.5*(1+xi) <br>
 phi_1,xi = -0.5 <br>
 phi_2,xi = 0.5 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_Linear1D : public MOERTEL::Function 
@@ -196,7 +196,7 @@ phi_2 = 1.5*xi+0.5 <br>
 phi_1,xi = -1.5 <br>
 phi_2,xi = 1.5 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_DualLinear1D : public MOERTEL::Function 
@@ -260,7 +260,7 @@ phi_2,xi_2 = 0 <br>
 phi_3,xi_1 = 0 <br>
 phi_3,xi_2 = 1 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_LinearTri : public MOERTEL::Function 
@@ -323,7 +323,7 @@ phi_2,xi_2 = 0 <br>
 phi_3,xi_1 = 0 <br>
 phi_3,xi_2 = 4 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_DualLinearTri : public MOERTEL::Function 
@@ -387,7 +387,7 @@ phi_2,xi_2 = 0 <br>
 phi_3,xi_1 = 0 <br>
 phi_3,xi_2 = 0 <br>
 
-\author Glen Hansen (Glen.Hansen@inl.gov)
+\author Glen Hansen (gahanse@sandia.gov)
 
 */
 class Function_ConstantTri : public MOERTEL::Function 

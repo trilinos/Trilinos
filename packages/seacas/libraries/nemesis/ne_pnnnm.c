@@ -54,6 +54,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include "ne_nemesisI.h"
+#include "ne_nemesisI_int.h"
 
 /*
  * writes out the node numbering map to the database; allows node numbers

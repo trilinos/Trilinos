@@ -343,20 +343,6 @@ namespace Belos {
     // Sort list of n floating-point numbers and return permutation vector
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
 
-    // Method to convert string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
-      if (scaleType == "Norm of Initial Residual") {
-	return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-	return Belos::NormOfPrecInitRes;
-      } else if (scaleType == "Norm of RHS") {
-	return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-	return Belos::None;
-      } else 
-	TEST_FOR_EXCEPTION( true ,std::logic_error,"Belos::GCRODRSolMgr(): Invalid residual scaling type.");
-    }
-
     // Lapack interface
     Teuchos::LAPACK<int,ScalarType> lapack;
 

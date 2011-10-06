@@ -152,6 +152,9 @@ namespace Iogn {
 	else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	}
+	else if (field.get_name() == "connectivity_raw") {
+	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	}
 	else {
 	  num_to_get = Ioss::Utils::field_warning(nb, field, "input");
 	}
@@ -379,7 +382,7 @@ namespace Iogn {
     size_t num_to_get = field.verify(data_size);
 
     if (num_to_get > 0) {
-      int entity_count = cs->get_property("entity_count").get_int();
+      size_t entity_count = cs->get_property("entity_count").get_int();
 
       // Return the <entity (node or face), processor> pair
       if (field.get_name() == "entity_processor") {
@@ -395,9 +398,9 @@ namespace Iogn {
 	  
 	  // and store in 'data' ...
 	  int* entity_proc = static_cast<int*>(data);
-
-	  int j=0;
-	  for (int i=0; i < entity_count; i++) {
+	  
+	  size_t j=0;
+	  for (size_t i=0; i < entity_count; i++) {
 	    entity_proc[j++] = entities[i];
 	    entity_proc[j++] = procs[i];
 	  }

@@ -91,7 +91,8 @@ ENDFUNCTION()
 
 
 #
-# Function that sorts a list of items according to a master list
+# Function that does an in-place sort of a list of items according to the
+# ordering in a master list
 #
 # NOTE: This function has wost-case N^2 complexity as the number of packages N
 # or TPLs increases.  It actually has N * n complexity where N is the total

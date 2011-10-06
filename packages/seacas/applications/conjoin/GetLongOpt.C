@@ -30,7 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-#include <GetLongOpt.h>
+
+#include "GetLongOpt.h"
 #include <string.h>
 
 Excn::GetLongOpt::GetLongOpt(const char optmark)

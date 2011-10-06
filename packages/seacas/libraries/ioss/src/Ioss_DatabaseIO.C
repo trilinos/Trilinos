@@ -148,6 +148,17 @@ void Ioss::DatabaseIO::set_common_side_topology() const
   }
 }
 
+void Ioss::DatabaseIO::add_information_records(const std::vector<std::string> &info)
+{
+  informationRecords.reserve(informationRecords.size()+info.size());
+  informationRecords.insert(informationRecords.end(), info.begin(), info.end());
+}
+
+void Ioss::DatabaseIO::add_information_record(const std::string &info)
+{
+  informationRecords.push_back(info);
+}
+
 void Ioss::DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
 {
   blockOmissions.assign(omissions.begin(), omissions.end());

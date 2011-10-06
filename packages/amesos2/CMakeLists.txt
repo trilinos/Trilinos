@@ -60,4 +60,8 @@ PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 # D) Do standard postprocessing
 #
 
+PACKAGE_ARCH_EXCLUDE_FILES(
+  src/SuiteSparse
+  )
+
 PACKAGE_POSTPROCESS()

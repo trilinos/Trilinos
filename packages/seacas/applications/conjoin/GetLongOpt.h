@@ -34,7 +34,7 @@
 #ifndef _GetLongOpt_h_
 #define _GetLongOpt_h_
 
-#include <CodeTypes.h>
+#include "CodeTypes.h"
 #include <iostream>
 
 namespace Excn {

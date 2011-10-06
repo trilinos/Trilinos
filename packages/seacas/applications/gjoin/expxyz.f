@@ -300,8 +300,8 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
          
          call excpus(time0)
          call prterr('CMDSPEC', 'Entering Sorting Phase')
-         call indexx(xn1, 1, 1, ix1, in1, .FALSE.)
-         call indexx(xn2, 1, 1, ix2, in2, .FALSE.)
+         call indexn(xn1, 1, 1, ix1, in1, .FALSE.)
+         call indexn(xn2, 1, 1, ix2, in2, .FALSE.)
          call prterr('CMDSPEC', 'Entering Comparison Phase')
          
          time2 = 0.0

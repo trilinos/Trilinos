@@ -71,28 +71,34 @@ namespace EpetraExt
 
 <P><B>Introduction</B>
 
-<P>Class HDF5 allows to read and write using the HDF5 parallel binary data
+<P>The HDF5 class reads and writes data using the HDF5 parallel binary data
 format. HDF5 has the following advantages:
-- the file format is binary and portable. Being binary, its size is very compact;
+- the file format is binary and portable. Being binary, its size is
+  very compact;
 - the file format can be read and written in parallel;
-- MATLAB contains a built-in HDF5 data reader, making it easy to interface Trilinos
-  application with MATLAB, and vice-versa;
-- the library is easy to build: just download the tarball from the official NCSA HDF5 
-  web page, configure/make/make install, and everything should work. While building
-  Trilinos, then you just have to specify the location of the header files using
-  --with-incdirs, the location of the library using --with-ldflags, and the HDF5 library 
-  using --with-libs. Note that you might need to add "-lz" to the list of libraries; 
-  this library is typically already installed on your system;
-- HDF5 are like a file system, and they can contain directories and files. This means
-  that more data can be stored in the same file. Besides, one can append new data to
-  an existing file, or read only one data set;
-- It is very easy to add "meta-data" to your data; for example a string containing
-  information about the machine where the code was executed, the parameter list used
-  for the preconditioner or the nonlinear solver, the convergence history, and so on;
-- The number of processors reading a given data does not have to coincide with that
-  used to write the data.
+- MATLAB contains a built-in HDF5 data reader, making it easy to
+  interface Trilinos applications with MATLAB and vice-versa;
+- the HDF5 library may already be installed on your system; otherwise,
+  it is easy to build from the source tarball on the official NCSA
+  HDF5 web page;
+- HDF5 objects are like a file system, and they can contain
+  directories and files. This means that more data can be stored in
+  the same file.  One can also append new data to an existing file, or
+  read only one data set;
+- It is very easy to add metadata to your data; for example a string
+  describing the machine where the code was executed, the parameter
+  list used for the preconditioner or the nonlinear solver, the
+  convergence history, and so on;
+- The number of processors reading a given object does not have to be
+  the same as the number used to write the object.
 
-The class supports I/O for the following distributed Epetra objects:
+In order to use HDF5, make sure to set the CMake Boolean option
+EpetraExt_USING_HDF5 when building Trilinos.  You may have to tell
+CMake where to find the HDF5 library and header files, if they are not
+installed in their default locations.
+
+The class supports input (I), output (O), or both (I/O) for the
+following distributed Epetra objects:
 - Epetra_Map (I/O);
 - Epetra_BlockMap (I/O);
 - Epetra_CrsGraph (I/O);
@@ -105,43 +111,53 @@ The class also supports some non-distributed types:
 - Teuchos::ParameterList (I/O);
 - basic data types like scalar int and double variables (I/O);
 - and arrays of arbitrary data type are supported (I/O).
-It is meant that the non-distributed data types have the same value on all processors.
 
-Some utility methods are provided:
+The HDF5 class assumes that non-distributed data types have the same
+value on all processors.
+
+This class also provides utility methods:
 - CreateGroup() creates the specified group in the file;
-- IsContained() returns \c true is the specified group is already contained in the file;
+- IsContained() returns \c true is the specified group is already
+  contained in the file;
 - WriteComment() allows to write any string as comment for a group;
-- a method to write and read a distributed array of arbitrary type is provided. 
+- a method to write and read a distributed array of arbitrary type.
 
-By using these methods, as well as the other methods to write non-distributed types, one 
-can read and write any serial or distributed object.
+By using these methods, as well as the other methods to write
+non-distributed types, one can read and write any serial or
+distributed object.
 
 <P><B>Data Model</B>
 
-The HDF5 library itself can be used to define very general data formats; this class, 
-instead, is only structured around the concept of \e groups. A \e group is an entity,
-like for example a scalar value, an Epetra_Map, or a Teuchos::ParameterList. Within each
-group, different datasets describe the content of the group. For example, an 
-Epetra_MultiVector is specified by datasets \c NumVectors and \c Values, which contain 
-the number of vectors, and the numerical values, respectively. The \c comment of each group 
-is a character string that must match the class name.
+The HDF5 library itself can be used to define very general data
+formats.  Our HDF5 class, instead, is structured around the concept of
+\e groups. A \e group is an entity, for example a scalar value, an
+Epetra_Map, or a Teuchos::ParameterList. Within each group, different
+datasets describe the content of the group. For example, an
+Epetra_MultiVector is specified by datasets \c NumVectors and \c
+Values, which contain the number of vectors and the numerical values,
+respectively. The \c comment of each group is a character string that
+must match the class name.
 
-The HDF5 class has the following limitations:
-- Objects stored in a file cannot be deleted; if you want to do that, you should read the 
-  content of the file, then create a new file and store on it the information to keep;
+Our HDF5 class has the following limitations:
+- Objects stored in a file cannot be deleted.  If you want to do that,
+  you should read the content of the file, then create a new file and
+  store in it the information to keep;
 - it is not possible to overwrite distributed objects.
 
 
 <P><B>Errors</B>
 
-When an error occurs, a EpetraExt::Exception is thrown. Method Print() of the Exception class
-gives a description of what went wrong.
+When an error occurs, a EpetraExt::Exception is thrown.  The Print()
+method of the Exception class returns a description of what went
+wrong.
 
 
 <P><B>Example of usage</B>
 
-First, one has to create an HDF5 class, then either Open() or Create() the file:
+First, one must create an HDF5 class, then either Open() or Create()
+the file:
 \code
+// Comm is an Epetra_Comm communicator wrapper object.
 EpetraExt::HDF5 HDF5(Comm);
 HDF5.Create("myfile.h5");
 \endcode
@@ -166,14 +182,16 @@ To write a Teuchos::ParameterList, simply do
 HDF5.Write("EpetraExtList", EpetraExtList);
 
 \endcode
-The file can contain meta-data as well. Each meta-data is defined by a group,
-and a dataset name. A group can contain more than one dataset, and can be a new group
-or an already existing group. For example, to specify the numerical quadrature formula
-used to assemble the matrix, one can do as follows:
+The file can contain metadata as well. Each metadatum is defined by a
+group and a dataset name. A group may contain more than one dataset,
+and may be a new group or an already existing group. For example, to
+specify the numerical quadrature formula used to assemble the matrix,
+do as follows:
 \code
 HDF5.Write("matrix", "quadrature order", 3);
 \endcode
-Alternatively, datasets can be assigned to a new group, let's say \c "my parameters":
+Alternatively, datasets may be assigned to a new group, let's say \c
+"my parameters":
 \code
 HDF5.Write("my parameters", "latitude", 12);
 HDF5.Write("my parameters", "longitude", 67);
@@ -188,12 +206,13 @@ darray[0] = 0.1, darray[1] = 1.1; darray[2] = 2.1;
 HDF5.Write("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &darray[0]);
 \endcode
 
-Note that all non-distributed datasets are supposed to have the same value
-on all processors.
+Note that all non-distributed datasets must have the same value on all
+processors.
 
-Reading data is a easy as writing. Let us consider how to read an Epetra_CrsMatrix, 
-other Epetra objects having a similar bejavior. Method ReadCrsMatrixProperties()
-can be used to query for some matrix properties, without reading the whole matrix:
+Reading data is as easy as writing. Let us consider how to read an
+Epetra_CrsMatrix.  Other Epetra objects having a similar behavior. The
+ReadCrsMatrixProperties() method can be used to query for some matrix
+properties without reading the whole matrix:
 \code
 int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
 int NumGlobalDiagonals, MaxNumEntries;
@@ -204,19 +223,20 @@ ReadCrsMatrixProperties(GroupName, NumGlobalRows, NumGlobalCols,
                         NormOne, NormInf);
 \endcode
 
-The above call is not required, and can be skipped. The actual reading is:
+The above call is not required, and can be skipped.  In order to read
+the Epetra_CrsMatrix, do as follows:
 \code
-Epetra_CrsMatrix* NewMatrix = 0;
+Epetra_CrsMatrix* NewMatrix = NULL;
 HDF5.Read("matrix", NewMatrix);
 \endcode
 
-In this case, \c NewMatrix is based on a linear map. If the DomainMap() and RangeMap() are
-known and non-trivial, one can use
+In this case, \c NewMatrix is based on a linear map. If the matrix's
+DomainMap() and RangeMap() are known and non-trivial, one can use
 \code
 HDF5.Read("matrix", DomainMap, RangeMap, NewMatrix);
 \endcode
 
-Reading meta-data looks like:
+Reading metadata looks like:
 \code
 HDF5.Read("my parameters", "latitude", new_latitude);
 HDF5.Read("my parameters", "longitude", new_longitude);
@@ -230,9 +250,10 @@ To analyze the content of the file, one can use
 
 <P><B>MATLAB Interface</B>
 
-Reading HDF5 files from MATLAB is very, since the built-in functions 
-\c hdf5read, \c hdf5write, \c hdf5info. For example, to read the above \c Matrix from
-MATLAB, one can do:
+MATLAB provides built-in functions to read, write, and query HDF5
+files: \c hdf5read, \c hdf5write, and \c hdf5info, respectively.  For
+example, to read the above \c Epetra_CrsMatrix into MATLAB as a sparse
+matrix, do as follows:
 \code
 NumGlobalRows = double(hdf5read('myfile.h5', '/matrix/NumGlobalRows/'));
 NumGlobalCols = double(hdf5read('myfile.h5', '/matrix/NumGlobalCols/'));
@@ -241,10 +262,11 @@ COL = double(hdf5read('myfile.h5', '/matrix/COL/'));
 VAL = hdf5read('myfile.h5', '/matrix/VAL/');
 A = sparse(ROW + 1, COL + 1, VAL, NumGlobalRows, NumGlobalCols);
 \endcode
-The use of \c double() is required by \c sparse, which does not accept \c int32 data.
+The use of \c double() is required by Matlab's \c sparse function,
+since it does not accept \c int32 data.
 
-To dump on file \c matlab.h5 a MATLAB matrix (in this case, \c A), one can proceed as 
-follows:
+To dump a MATLAB matrix (in this case, \c A) to the file \c matlab.h5,
+do as follows:
 \code
 n = 10;
 A = speye(n, n);
@@ -261,9 +283,9 @@ hdf5write('matlab.h5', '/speye/ROW', int32(ROW - 1), 'WriteMode', 'append');
 hdf5write('matlab.h5', '/speye/COL', int32(COL - 1), 'WriteMode', 'append');
 hdf5write('matlab.h5', '/speye/VAL', VAL,            'WriteMode', 'append');
 \endcode
-Note that \c __type__ specification, that must reflect the Epetra class name.
+Note that the \c __type__ specification must reflect the Epetra class name.
 
-To dump on file \c matlab.h5 a MATLAB dense array (in this case, \c x), one can proceed as follows:
+To dump a MATLAB dense array (in this case, \c x) to the file \c matlab.h5, do as follows:
 \code
 n = 10;
 x = [zeros(n,1), rand(n, 1)]';
@@ -274,7 +296,9 @@ hdf5write('matlab.h5', '/x/Values',      x,        'WriteMode', 'append');
 \endcode
 Note that MATLAB vectors must be stored as \e row vectors.  
 
-To write a Map from MATLAB follows a very similar pattern. The following example shows how to define a map that can be used with two processors:
+You can also write a Map from MATLAB for use by Epetra.  The following
+example shows how to define an Epetra_Map that distributes data over
+two processors:
 \code
 IndexBase = 0;
 NumMyElements = [5 5];
@@ -291,7 +315,7 @@ hdf5write('matlab.h5', '/map-2/MyGlobalElements',  int32(MyGlobalElements), 'Wri
 
 \author Marzio Sala, D-INFK/ETHZ
 
-\date Last updated on 16-Mar-06.
+\date Last updated on 16-Mar-06.  Documentation revised by Mark Hoemmen (05 Oct 2011) for spelling, grammar, and clarity.
 
 \todo 
 - all distributed objects are assumed in local state, this is not necessary (just easier)
@@ -302,10 +326,11 @@ class HDF5
 {
   public: 
     // @{ \name Constructor and destructor.
-    //! ctor
+
+    //! Constructor
     HDF5(const Epetra_Comm& Comm); 
 
-    //! dtor
+    //! Destructor
     ~HDF5() 
     {
       if (IsOpen())
@@ -315,13 +340,13 @@ class HDF5
     // @}
     // @{ \name Basic operations
     
-    //! Creates a new file.
+    //! Create a new file.
     void Create(const string FileName);
 
-    //! Opens specified file with given access type.
+    //! Open specified file with given access type.
     void Open(const string FileName, int AccessType = H5F_ACC_RDWR);
 
-    //! Closes the file.
+    //! Close the file.
     void Close()
     {
       H5Fclose(file_id_);
@@ -334,59 +359,59 @@ class HDF5
       H5Fflush(file_id_, H5F_SCOPE_GLOBAL);
     }
 
-    //! Returns \c true is a file has already been open using Open()/Create()
+    //! Return \c true if a file has already been opened using Open()/Create()
     bool IsOpen() const
     {
       return(IsOpen_);
     }
 
-    //! Creates group \c GroupName.
+    //! Create group \c GroupName.
     void CreateGroup(const string& GroupName)
     {
       hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Gclose(group_id);
     }
 
-    //! Returns \c true is \c Name is contained in the database.
+    //! Return \c true if \c Name is contained in the database.
     bool IsContained(const string Name);
 
     // @}
     // @{ \name basic non-distributed data types
     
-    //! Writes an integer in group \c GroupName using intentified \c DataSetName.
+    //! Write an integer in group \c GroupName using the given \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, int data);
 
-    //! Reads an integer from group \c /GroupName/DataSetName
+    //! Read an integer from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, int& data);
 
-    //! Writes a double in group \c GroupName using intentified \c DataSetName.
+    //! Write a double in group \c GroupName using the given \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, double data);
 
-    //! Reads a double from group \c /GroupName/DataSetName
+    //! Read a double from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, double& data);
 
-    //! Writes a string in group \c GroupName using intentified \c DataSetName.
+    //! Write a string in group \c GroupName using the given \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, const string& data);
 
-    //! Reads a string from group \c /GroupName/DataSetName
+    //! Read a string from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, string& data);
 
-    //! Reads serial array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
+    //! Read the serial array \c data, of type \c type, from group \c GroupName, using the dataset name \c DataSetName.
     void Read(const string& GroupName, const string& DataSetName,
               const int type, const int Length, void* data);
 
-    //! Writes serial array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    //! Write the serial array \c data, of type \c type, to group \c GroupName, using the dataset name \c DataSetName
     void Write(const string& GroupName, const string& DataSetName,
                          const int type, const int Length, 
                          void* data);
 
-    //! Associates string \c Comment with group \c GroupName.
+    //! Associate string \c Comment with group \c GroupName.
     void WriteComment(const string& GroupName, string Comment)
     {
       H5Gset_comment(file_id_, GroupName.c_str(), Comment.c_str());
     }
 
-    //! Reads the string associated with group \c GroupName.
+    //! Read the string associated with group \c GroupName.
     void ReadComment(const string& GroupName, string& Comment)
     {
       char comment[128];
@@ -397,10 +422,10 @@ class HDF5
     // @}
     // @{ \name Distributed arrays
     
-    //! Writes distributed array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    //! Write the distributed array \c data, of type \c type, to group \c GroupName, using dataset name \c DataSetName
     void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
 
-    //! Reads distributed array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
+    //! Read the distributed array \c data, of type \c type, from group \c GroupName, using dataset name \c DataSetName
     void Read(const string& GroupName, const string& DataSetName,
               int MySize, int GlobalSize,
               const int type, void* data);
@@ -408,25 +433,25 @@ class HDF5
     // @}
     // @{ \name Epetra_Map/Epetra_BlockMap
 
-    //! Writes a Map to group \c GroupName.
+    //! Write a Map to group \c GroupName.
     void Write(const string& GroupName, const Epetra_Map& Map);
 
-    //! Reads a map from \c GroupName.
+    //! Read a map from \c GroupName.
     void Read(const string& GroupName, Epetra_Map*& Map);
 
-    //! Reads basic properties of specified Epetra_Map.
+    //! Read basic properties of specified Epetra_Map.
     void ReadMapProperties(const string& GroupName, 
                            int& NumGlobalElements,
                            int& IndexBase,
                            int& NumProc);
 
-    //! Reads a block map from \c GroupName.
+    //! Read a block map from \c GroupName.
     void Read(const string& GroupName, Epetra_BlockMap*& Map);
 
-    //! Writes a block map to group \c GroupName.
+    //! Write a block map to group \c GroupName.
     void Write(const string& GroupName, const Epetra_BlockMap& Map);
 
-    //! Reads basic properties of specified Epetra_BlockMap.
+    //! Read basic properties of specified Epetra_BlockMap.
     void ReadBlockMapProperties(const string& GroupName, 
                                 int& NumGlobalElements,
                                 int& NumGlobalPoints,
@@ -436,17 +461,17 @@ class HDF5
     // @}
     // @{ \name Epetra_CrsGraph
 
-    //! Reads a vector from group \c GroupName, assumes linear distribution.
+    //! Read a vector from group \c GroupName, assuming linear distribution.
     void Read(const string& GroupName, Epetra_CrsGraph*& Graph);
 
-    //! Reads a vector from group \c GroupName using given map.
+    //! Read a vector from group \c GroupName using the given map.
     void Read(const string& GroupName, const Epetra_Map& DomainMap, 
               const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph);
 
-    //! Writes a distributed vector to group \c GroupName.
+    //! Write a distributed vector to group \c GroupName.
     void Write(const string& GroupName, const Epetra_CrsGraph& Graph);
 
-    //! Reads basic properties of specified Epetra_CrsGraph.
+    //! Read basic properties of specified Epetra_CrsGraph.
     void ReadCrsGraphProperties(const string& GroupName, 
                                 int& NumGlobalRows,
                                 int& NumGlobalCols,
@@ -457,33 +482,40 @@ class HDF5
     // @}
     // @{ \name Epetra_IntVector
 
-    //! Writes a distributed vector to group \c GroupName.
+    //! Write a distributed vector to group \c GroupName.
     void Write(const string& GroupName, const Epetra_IntVector& x);
 
-    //! Reads a vector from group \c GroupName, assumes linear distribution.
+    //! Read a vector from group \c GroupName, assuming linear distribution.
     void Read(const string& GroupName, Epetra_IntVector*& X);
 
-    //! Reads a vector from group \c GroupName using given map.
+    //! Read a vector from group \c GroupName using the given map.
     void Read(const string& GroupName, const Epetra_Map& Map, Epetra_IntVector*& X);
 
-    //! Reads basic properties of specified Epetra_IntVector.
+    //! Read basic properties of specified Epetra_IntVector.
     void ReadIntVectorProperties(const string& GroupName, int& GlobalLength);
 
     // @}
     // @{ \name Epetra_MultiVector
 
-    //! Writes a distributed vector to group \c GroupName, write transpose if writeTranspose set to true.
+    /// \brief Write a distributed vector (or its transpose) to group \c GroupName.  
+    ///
+    /// Write the transpose if writeTranspose is true.
     void Write(const string& GroupName, const Epetra_MultiVector& x, bool writeTranspose = false);
 
-    //! Reads a vector from group \c GroupName, assumes linear distribution. Read transpose if writeTranspose set to true.
+    /// \brief Read a vector (or its transpose) from group \c GroupName.
+    /// 
+    /// This method assumes a linear distribution.  Read the transpose
+    /// if writeTranspose is true.
     void Read(const string& GroupName, Epetra_MultiVector*& X,
               bool writeTranspose = false, const int& indexBase = 0);
 
-    //! Reads a vector from group \c GroupName using given map. Read transpose if writeTranspose set to true.
+    /// \brief Read a vector from group \c GroupName using the given map. 
+    ///
+    /// Read the transpose if writeTranspose is true.
     void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X,
               bool writeTranspose = false);
 
-    //! Reads basic properties of specified Epetra_MultiVector.
+    //! Read basic properties of specified Epetra_MultiVector.
     void ReadMultiVectorProperties(const string& GroupName, 
                                    int& GlobalLength,
                                    int& NumVectors);
@@ -491,19 +523,19 @@ class HDF5
     // @}
     // @{ \name Epetra_RowMatrix/Epetra_CrsMatrix
 
-    //! Writes a distributed RowMatrix to group \c GroupName.
+    //! Write a distributed RowMatrix to group \c GroupName.
     void Write(const string& GroupName, const Epetra_RowMatrix& Matrix);
 
-    //! Reads a square matrix from group \c GroupName, assumes linear distribution.
+    //! Read a square matrix from group \c GroupName, assuming linear distribution.
     void Read(const string& GroupName, Epetra_CrsMatrix*& A);
 
-    //! Reads a matrix from group \c GroupName with given range and domain maps.
+    //! Read a matrix from group \c GroupName with given range and domain maps.
     void Read(const string& GroupName, 
               const Epetra_Map& DomainMap, 
               const Epetra_Map& RangeMap, 
               Epetra_CrsMatrix*& A);
 
-    //! Reads basic properties of specified Epetra_CrsMatrix.
+    //! Read basic properties of specified Epetra_CrsMatrix.
     void ReadCrsMatrixProperties(const string& GroupName, 
                                  int& NumGlobalRows,
                                  int& NumGlobalCols,
@@ -516,25 +548,25 @@ class HDF5
     // @}
     // @{ \name Teuchos::ParameterList
 
-    //! Writes a parameter list to group \c GroupName.
+    //! Write a parameter list to group \c GroupName.
     void Write(const string& GroupName, const Teuchos::ParameterList& List);
 
-    //! Reads a parameter list from group \c GroupName.
+    //! Read a parameter list from group \c GroupName.
     void Read(const string& GroupName, Teuchos::ParameterList& List);
 
     // @}
     // @{ \name EpetraExt::DistArray<int>
 
-    //! Writes an EpetraExt::DistArray<int> to group \c GroupName.
+    //! Write an EpetraExt::DistArray<int> to group \c GroupName.
     void Write(const string& GroupName, const DistArray<int>& array);
 
-    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    //! Read an EpetraExt::DistArray<int> from group \c GroupName.
     void Read(const string& GroupName, DistArray<int>*& array);
 
-    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    //! Read an EpetraExt::DistArray<int> from group \c GroupName.
     void Read(const string& GroupName, const Epetra_Map& Map, DistArray<int>*& array);
 
-    //! Reads the global number of elements and type for a generic handle object
+    //! Read the global number of elements and type for a generic handle object
     void ReadIntDistArrayProperties(const string& GroupName, 
                                     int& GlobalLength,
                                     int& RowSize);
@@ -542,16 +574,16 @@ class HDF5
     // @}
     // @{ \name EpetraExt::DistArray<double>
 
-    //! Writes an EpetraExt::DistArray<int> to group \c GroupName.
+    //! Write an EpetraExt::DistArray<int> to group \c GroupName.
     void Write(const string& GroupName, const DistArray<double>& array);
 
-    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    //! Read an EpetraExt::DistArray<int> from group \c GroupName.
     void Read(const string& GroupName, DistArray<double>*& array);
 
-    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    //! Read an EpetraExt::DistArray<int> from group \c GroupName.
     void Read(const string& GroupName, const Epetra_Map& Map, DistArray<double>*& array);
 
-    //! Reads the global number of elements and type for a generic handle object
+    //! Read the global number of elements and type for a generic handle object
     void ReadDoubleDistArrayProperties(const string& GroupName, 
                                        int& GlobalLength,
                                        int& RowSize);
@@ -559,13 +591,13 @@ class HDF5
     // @}
     // @{ \name Generic distributed object
 
-    //! Writes an Epetra_DistObject to group \c GroupName.
+    //! Write an Epetra_DistObject to group \c GroupName.
     void Write(const string& GroupName, const Handle& List);
 
-    //! Reads an Epetra_DistObject from group \c GroupName.
+    //! Read an Epetra_DistObject from group \c GroupName.
     void Read(const string& GroupName, Handle& List);
 
-    //! Reads the global number of elements and type for a generic handle object
+    //! Read the global number of elements and type for a generic handle object
     void ReadHandleProperties(const string& GroupName, 
                               string& Type,
                               int& NumGlobalElements);
@@ -574,13 +606,13 @@ class HDF5
   private:
     // @{ \name Private Data
 
-    //! Returns a reference to the communicator of \c this object.
+    //! Returns a reference to this object's communicator.
     const Epetra_Comm& Comm() const
     {
       return(Comm_);
     }
 
-    //! Communicator of this object.
+    //! This object's communicator.
     const Epetra_Comm& Comm_; 
     //! FileName currently open.
     string FileName_;

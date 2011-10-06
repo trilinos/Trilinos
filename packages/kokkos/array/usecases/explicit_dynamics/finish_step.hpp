@@ -12,6 +12,8 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
 
   typedef Region<Scalar,device_type> MyRegion;
 
+  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+
 
     finish_step(const MyRegion  & region,
                 const Scalar    arg_x_bc,
@@ -26,14 +28,14 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
        , velocity(region.velocity)
        , displacement(region.displacement)
        , model_coords(region.model_coords)
-       , dt( region.delta_t(arg_current_state))
-       , dt_next( region.delta_t(arg_next_state))
+       , dt( region.dt)
+       , prev_dt( region.prev_dt)
        , x_bc(arg_x_bc)
        , current_state(arg_current_state)
        , next_state(arg_next_state)
       {
         //std::cout << "finish_step dt: " << dt << std::endl;
-        //std::cout << "finish_step dt_next: " << dt_next << std::endl;
+        //std::cout << "finish_step prev_dt: " << prev_dt << std::endl;
       }
 
 
@@ -83,13 +85,13 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
         acceleration(inode,2) = a_current[2] = 0;
       }
 
-      velocity(inode,0,next_state) = v_new[0] = velocity(inode,0,current_state) + (dt+dt_next)/2.0*a_current[0];
-      velocity(inode,1,next_state) = v_new[1] = velocity(inode,1,current_state) + (dt+dt_next)/2.0*a_current[1];
-      velocity(inode,2,next_state) = v_new[2] = velocity(inode,2,current_state) + (dt+dt_next)/2.0*a_current[2];
+      velocity(inode,0,next_state) = v_new[0] = velocity(inode,0,current_state) + (*prev_dt+*dt)/2.0*a_current[0];
+      velocity(inode,1,next_state) = v_new[1] = velocity(inode,1,current_state) + (*prev_dt+*dt)/2.0*a_current[1];
+      velocity(inode,2,next_state) = v_new[2] = velocity(inode,2,current_state) + (*prev_dt+*dt)/2.0*a_current[2];
 
-      displacement(inode,0,next_state) = displacement(inode,0,current_state) + dt_next*v_new[0];
-      displacement(inode,1,next_state) = displacement(inode,1,current_state) + dt_next*v_new[1];
-      displacement(inode,2,next_state) = displacement(inode,2,current_state) + dt_next*v_new[2];
+      displacement(inode,0,next_state) = displacement(inode,0,current_state) + *dt*v_new[0];
+      displacement(inode,1,next_state) = displacement(inode,1,current_state) + *dt*v_new[1];
+      displacement(inode,2,next_state) = displacement(inode,2,current_state) + *dt*v_new[2];
 
     }
 
@@ -104,8 +106,8 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
     const array_type      velocity;
     const array_type      displacement;
     const array_type      model_coords;
-    const Scalar          dt;
-    const Scalar          dt_next;
+    const scalar          dt;
+    const scalar          prev_dt;
     const Scalar          x_bc;
     const int             current_state;
     const int             next_state;

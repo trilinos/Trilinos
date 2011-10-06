@@ -105,7 +105,7 @@ int test_all_elements()
   test_aliases(elements);
 
   // Check that asking for invalid element returns NULL pointer.
-  Ioss::ElementTopology *invalid = Ioss::ElementTopology::factory("Greg");
+  Ioss::ElementTopology *invalid = Ioss::ElementTopology::factory("Greg",true);
   if (invalid == NULL) {
     OUTPUT << "Testing request for invalid element: "
 	 << std::setw(40) << "OK" << '\n';

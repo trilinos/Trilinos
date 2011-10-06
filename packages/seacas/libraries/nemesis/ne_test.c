@@ -112,6 +112,9 @@ int main(int argc, char *argv[])
   float	  version;
 
   /* Initialized local variables */
+  int    mode3 = EX_CLOBBER;
+  int    mode4 = EX_CLOBBER|EX_NETCDF4|EX_NOCLASSIC;
+
   char  *yo="main";
   int    io_ws=0, cpu_ws=0, t_pass=0, t_fail=0;
   int    debug_flag=0;
@@ -172,12 +175,25 @@ int main(int argc, char *argv[])
 
   /* Create the ExodusII/Nemesis file */
   printf("creating ExodusII file..."); fflush(stdout);
-  if ((ne_file_id=ex_create(file_name, EX_CLOBBER, &cpu_ws, &io_ws)) < 0) {
-    printf("FAILED\n");
-    t_fail++;
-    fprintf(stderr, "[%s]: ERROR, unable to create test file \"%s\"!\n",
-            yo, file_name);
-    exit(-1);
+
+  /* Attempt to create a netcdf4-format file; if it fails, then assume
+     that the netcdf library does not support that mode and fall back
+     to classic netcdf3 format.  If that fails, issue an error and
+     die.
+  */
+  if ((ne_file_id=ex_create(file_name, mode4, &cpu_ws, &io_ws)) < 0) {
+    /* netcdf4 create failed, try netcdf3 */
+    if ((ne_file_id=ex_create(file_name, mode3, &cpu_ws, &io_ws)) < 0) {
+      printf("FAILED\n");
+      t_fail++;
+      fprintf(stderr, "[%s]: ERROR, unable to create test file \"%s\"!\n",
+	      yo, file_name);
+      exit(-1);
+    } else {
+      printf(" (netcdf3 format) ");
+    }
+  } else {
+    printf(" (netcdf4 format) ");
   }
   printf("successful\n"); fflush(stdout);
   t_pass++;

@@ -207,42 +207,42 @@ namespace Ioss {
   {
     strm << "\n Database: " << get_database()->get_filename() << "\n";
     
-    strm << "\n Number of coordinates per node =" << std::setw(9)
+    strm << "\n Number of coordinates per node   =" << std::setw(12)
 	 << get_property("spatial_dimension").get_int() << "\n";
-    strm << " Number of nodes                  =" << std::setw(9)
+    strm << " Number of nodes                  =" << std::setw(12)
 	 << get_property("node_count").get_int() << "\n";
-    strm << " Number of edges                  =" << std::setw(9)
+    strm << " Number of edges                  =" << std::setw(12)
 	 << get_property("edge_count").get_int() << "\n";
-    strm << " Number of faces                  =" << std::setw(9)
+    strm << " Number of faces                  =" << std::setw(12)
 	 << get_property("face_count").get_int() << "\n";
-    strm << " Number of elements               =" << std::setw(9)
+    strm << " Number of elements               =" << std::setw(12)
 	 << get_property("element_count").get_int() << "\n";
-    strm << " Number of node blocks            =" << std::setw(9)
+    strm << " Number of node blocks            =" << std::setw(12)
 	 << get_property("node_block_count").get_int() << "\n";
-    strm << " Number of edge blocks            =" << std::setw(9)
+    strm << " Number of edge blocks            =" << std::setw(12)
 	 << get_property("edge_block_count").get_int() << "\n";
-    strm << " Number of face blocks            =" << std::setw(9)
+    strm << " Number of face blocks            =" << std::setw(12)
 	 << get_property("face_block_count").get_int() << "\n";
-    strm << " Number of element blocks         =" << std::setw(9)
+    strm << " Number of element blocks         =" << std::setw(12)
 	 << get_property("element_block_count").get_int() << "\n";
-    strm << " Number of node sets              =" << std::setw(9)
+    strm << " Number of node sets              =" << std::setw(12)
 	 << get_property("node_set_count").get_int() << "\n";
-    strm << " Number of edge sets              =" << std::setw(9)
+    strm << " Number of edge sets              =" << std::setw(12)
 	 << get_property("edge_set_count").get_int() << "\n";
-    strm << " Number of face sets              =" << std::setw(9)
+    strm << " Number of face sets              =" << std::setw(12)
 	 << get_property("face_set_count").get_int() << "\n";
-    strm << " Number of element sets           =" << std::setw(9)
+    strm << " Number of element sets           =" << std::setw(12)
 	 << get_property("element_set_count").get_int() << "\n";
-    strm << " Number of element side sets      =" << std::setw(9)
+    strm << " Number of element side sets      =" << std::setw(12)
 	 << get_property("side_set_count").get_int() << "\n\n";
 
     if (do_transient && get_property("state_count").get_int() > 0) {
-      strm << " Number of global variables     =" << std::setw(9)
+      strm <<   " Number of global variables       =" << std::setw(12)
 	   << field_count() << "\n";
       {
 	Ioss::NameList names;
 	nodeBlocks[0]->field_describe(Ioss::Field::TRANSIENT, &names);
-	strm << " Number of variables at each node     =" << std::setw(9)
+	strm << " Number of nodal variables        =" << std::setw(12)
 	     << names.size() << "\n";
       }
 
@@ -255,7 +255,7 @@ namespace Ioss {
 	  i++;
 	}
 	uniqify(names);
-	strm << " Number of variables at each element  =" << std::setw(9)
+	strm << " Number of element variables      =" << std::setw(12)
 	     << names.size() << "\n";
       }
 
@@ -268,7 +268,7 @@ namespace Ioss {
 	  i++;
 	}
 	uniqify(names);
-	strm << " Number of variables at each nodeset  =" << std::setw(9)
+	strm << " Number of nodeset variables      =" << std::setw(12)
 	     << names.size() << "\n";
       }
 
@@ -287,11 +287,11 @@ namespace Ioss {
 	}
 
 	uniqify(names);
-	strm << " Number of variables at each sideset  =" << std::setw(9)
+	strm << " Number of sideset variables      =" << std::setw(12)
 	     << names.size() << "\n";
       }
 
-      strm << "\n Number of time steps on the database =" << std::setw(9)
+      strm << "\n Number of database time steps    =" << std::setw(12)
 	   << get_property("state_count").get_int() << "\n";
     }
   }
