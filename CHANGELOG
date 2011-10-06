@@ -4,6 +4,20 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.8.2 October 7, 2011
+
+1. Epetra  - Fix a Matrix Matrix multiply bug caused by incorrectly importing
+             needed remotely owned rows.
+
+2. Epetra  - Fix a deallocation bug in CrsMatrix.
+
+3. TriKota - Fix issue where the Boost include dir was not being passed to the 
+             Dakota build. Dakota should now by default use the same Boost as
+             TriKota.
+
+
+-------------------------------------------------------------------------------
+
 Release update 10.8.1 October 3, 2011
 
 1. Epetra - Fix bug in FECrsMatrix related to non-square matrix contributions.
