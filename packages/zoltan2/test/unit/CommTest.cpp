@@ -11,44 +11,39 @@
 // Test the conversion of MPI communicators to Teuchos::MPIComm objects.
 // Test creation of sub-communicators.
 
-#include <iostream>
-#include <vector>
+#include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <Zoltan2_Util.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
 #include <Zoltan2_Environment.hpp>
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include <Teuchos_DefaultMpiComm.hpp>
-static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
+#include <iostream>
+#include <vector>
+
+static int call_zoltan2(const Teuchos::Comm<int>& callerComm)
 {
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MAX;
+
+  int rank = callerComm.getRank();
+  int size = callerComm.getSize();
+
   int fail=0, myFail=0;
+
   // We're mimicing the zoltan2 library here, and it will
   // work with a copy of the caller's communicator.
-  MPI_Comm comm;
-  MPI_Comm_dup(callerComm,&comm);
-  MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
+  Teuchos::RCP< Teuchos::Comm<int> > comm = callerComm.duplicate();
   Zoltan2::Environment env;
 
   // Just take whatever the default environment is.
   env.commitParameters();
 
-  // Get the Teuchos communicator that Zoltan will use.
-
-  Teuchos::RCP<Teuchos::MpiComm<int> > tcomm; 
-
-  try {
-    tcomm = Zoltan2::getTeuchosMpiComm<int>(comm);
-  }
-  catch (std::exception &e){
+  if ( !myFail && ((comm->getRank()!=callerComm.getRank()) ||
+                   (comm->getSize()!=callerComm.getSize()))) {
     myFail = 1;
   }
 
-  if ( !myFail && ((tcomm->getRank()!=rank) || (tcomm->getSize()!=size))){
-    myFail = 1;
-  }
-
-  MPI_Allreduce(&myFail, &fail, 1, MPI_INT, MPI_MAX, callerComm);
+  Teuchos::reduceAll<int, int>(callerComm, REDUCE_MAX, myFail, outArg(fail));
   if (fail){
     if (!rank)
       std::cerr << "Failure in Zoltan2::getTeuchosMpiComm" << std::endl;
@@ -67,10 +62,10 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
     ranks.push_back(i);
   }
 
-  Teuchos::RCP<Teuchos::MpiComm<int> > subComm;
+  Teuchos::RCP<Teuchos::Comm<int> > subComm;
 
   try{
-    subComm = Zoltan2::getTeuchosMpiSubComm(tcomm, ranks, env);
+    subComm = comm->createSubcommunicator(ranks);
   }
   catch (std::exception &e){
     myFail = 1;
@@ -81,7 +76,7 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
     myFail = 1;
   }
 
-  Teuchos::reduceAll<int, int>(*tcomm, Teuchos::REDUCE_MAX, 1, &myFail, &fail);
+  Teuchos::reduceAll<int, int>(*comm, REDUCE_MAX, myFail, outArg(fail));
   if (fail){
     if (!rank){
       std::cerr << "Failure in Zoltan2::getTeuchosMpiSubComm with list";
@@ -93,7 +88,7 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
   // Create a sub communicator by giving a color
 
   try{
-    subComm = Zoltan2::getTeuchosMpiSubComm(tcomm, subGroup, env);
+    subComm = comm->split(subGroup, 0);
   }
   catch (std::exception &e){
     myFail = 1;
@@ -104,7 +99,7 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
     myFail = 1;
   }
 
-  Teuchos::reduceAll<int, int>(*tcomm, Teuchos::REDUCE_MAX, 1, &myFail, &fail);
+  Teuchos::reduceAll<int, int>(*comm, REDUCE_MAX, myFail, outArg(fail));
   if (fail){
     if (!rank){
       std::cerr << "Failure in Zoltan2::getTeuchosMpiSubComm with color";
@@ -115,36 +110,27 @@ static int call_zoltan2(MPI_Comm callerComm, int rank, int size)
 
   return 0;
 }
-#endif
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
+  // Initialize MPI if necessary.
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
   int fail=0;
+  // Get a communicator, it will be the right kind regardless of whether we
+  // are using MPI or not.
+  Teuchos::RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  fail = call_zoltan2(*comm);
 
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  int rank, size;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-  fail = call_zoltan2(MPI_COMM_WORLD, rank, size);
-
-  if (!rank){
+  if (!comm->getRank()){
     if (!fail)
       std::cout << "PASS" << std::endl; 
     else
       std::cout << "FAIL" << std::endl; 
   }
-
-  MPI_Finalize();
   
-#else
-  std::cout << "NOTRUN" << std::endl; 
-#endif
-
   return fail;
 }
 
