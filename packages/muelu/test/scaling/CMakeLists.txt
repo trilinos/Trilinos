@@ -11,6 +11,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos
+  )
+
+ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
@@ -23,6 +27,8 @@ PACKAGE_ADD_EXECUTABLE(
 
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
+ IF (${PACKAGE_NAME}_ENABLE_Amesos)
+
   PACKAGE_ADD_TEST(
     ScalingTest
     NAME "ScalingTestEpetra"
@@ -39,10 +45,11 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     COMM mpi
     )
 
+ ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-   IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
    
   PACKAGE_ADD_TEST(
     ScalingTest
