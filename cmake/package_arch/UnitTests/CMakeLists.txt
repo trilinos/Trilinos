@@ -21,6 +21,6 @@ PACKAGE_ADD_ADVANCED_TEST( CompilerOptions_UnitTests
       -DPACKAGE_ARCH_SOURCE_DIR="${PACKAGE_SOURCE_DIR}/package_arch"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/CompilerOptions_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 129"
+      "Final UnitTests Result: num_run = 135"
       "Final UnitTests Result: PASSED"
   )
