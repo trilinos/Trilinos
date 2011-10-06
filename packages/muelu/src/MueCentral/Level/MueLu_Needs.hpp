@@ -93,12 +93,9 @@ namespace MueLu {
     } //Request
 
     //! Decrement the storage counter.
-    virtual void Release(const std::string& ename, const FactoryBase* factory)
-    {
+    virtual void Release(const std::string& ename, const FactoryBase* factory) {
       // test: we can only release data if the key 'ename' exists in countTable (and dataTable)
-      if (!countTable_.isKey(ename,factory) ||
-          !dataTable_.isKey(ename,factory)) // why releasing data that has never been stored?
-      {
+      if (!countTable_.isKey(ename,factory)) {
         std::string msg =  "Release: " + ename + " not found. You must first request " + ename;
         throw(Exceptions::RuntimeError(msg));
       }
@@ -110,10 +107,10 @@ namespace MueLu {
       int numReq = -2;
       countTable_.Get<int>(ename,numReq,factory);
       if(numReq==-2) throw(Exceptions::RuntimeError("Release: error reading countTable_(" + ename + ")"));
-      if (numReq == 0)
-      {
+      if (numReq == 0) {
         countTable_.Remove(ename,factory);
-        dataTable_.Remove(ename,factory);
+        if(dataTable_.isKey(ename, factory) )
+          dataTable_.Remove(ename,factory);
       }
     } //Release
 
@@ -207,6 +204,36 @@ namespace MueLu {
     virtual bool IsRequested(const std::string ename, const FactoryBase* factory) {
       return countTable_.isKey(ename,factory);
     }
+
+    //! Test whether a factory is generating factory of a requested variable in Needs
+	bool IsRequestedFactory(const FactoryBase* factory) {
+		std::vector<std::string> ekeys = RequestedKeys();
+		for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
+		{
+			std::vector<const MueLu::FactoryBase*> ehandles = RequestedHandles(*it);
+			for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+			{
+				if(*kt == factory)	// factory is generating factory of requested variable '*it'
+					return true;
+			}
+		}
+		return false;
+	}
+
+    //! Test whether a factory is among the generating factories of data that is already available
+	bool IsAvailableFactory(const FactoryBase* factory) {
+		std::vector<std::string> ekeys = AvailableKeys();
+		for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++)
+		{
+			std::vector<const MueLu::FactoryBase*> ehandles = AvailableHandles(*it);
+			for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+			{
+				if(*kt == factory)	// factory is generating factory of requested variable '*it'
+					return true;
+			}
+		}
+		return false;
+	}
 
     /*! @brief Return the number of outstanding requests for a need.
 
@@ -313,6 +340,7 @@ namespace MueLu {
     //! @name Helper functions
     //@{
 
+    //! returns a vector of strings containing all key names of requested variables
     std::vector<std::string> RequestedKeys()
 	{
     	return countTable_.keys();
@@ -321,6 +349,17 @@ namespace MueLu {
     std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string ename)
 	{
     	return countTable_.handles(ename);
+	}
+
+    //! returns a vector of strings containing all key names of available variables
+    std::vector<std::string> AvailableKeys()
+	{
+    	return dataTable_.keys();
+	}
+
+    std::vector<const MueLu::FactoryBase*> AvailableHandles(const std::string ename)
+	{
+    	return dataTable_.handles(ename);
 	}
 
     std::string GetDataType(const std::string ename, const FactoryBase* fac) const
