@@ -358,4 +358,10 @@ Teuchos::RCP<Epetra_CrsMatrix> EpetraLinearObjFactory<Traits,LocalOrdinalT>::get
    return Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
 }
 
+template <typename Traits,typename LocalOrdinalT>
+const Teuchos::RCP<const Epetra_Comm> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getEpetraComm() const
+{
+   return comm_;
+}
+
 }

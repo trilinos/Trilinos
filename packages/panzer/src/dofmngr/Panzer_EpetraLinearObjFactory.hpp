@@ -122,6 +122,9 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport() const;
 
+   //! get exporter for converting an overalapped object to a "normal" object
+   virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
+
 protected:
    Teuchos::RCP<Epetra_Vector> getGhostedEpetraVector() const;
    Teuchos::RCP<Epetra_Vector> getEpetraVector() const;
