@@ -328,6 +328,9 @@ int Epetra_CrsMatrix::Allocate() {
     if (Graph().StaticProfile() || Graph().StorageOptimized()) {
       int numMyNonzeros = Graph().NumMyEntries();
       if (numMyNonzeros>0) All_Values_ = new double[numMyNonzeros];
+      if(Graph().StorageOptimized()){
+        StorageOptimized_ = true;
+      }
     }
     double * all_values = All_Values_;
     for (i=0; i<NumMyRows_; i++) {
