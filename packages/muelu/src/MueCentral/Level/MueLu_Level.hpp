@@ -13,7 +13,7 @@
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_DefaultFactoryHandlerBase.hpp"
 
-#define HEAVY_DEBUG_OUTPUT
+#undef HEAVY_DEBUG_OUTPUT
 
 namespace MueLu {
 
