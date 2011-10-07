@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   //Pfact->SetDampingFactor(0.);
   RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
   //RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
