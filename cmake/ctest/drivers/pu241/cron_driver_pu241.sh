@@ -18,7 +18,7 @@ echo "CASL_VRI_DEV_ENV_BASE = '$CASL_VRI_DEV_ENV_BASE'"
 
 umask u=rwx,g=rwx,o=
 
-export TDD_PARALLEL_LEVEL=4
+export TDD_PARALLEL_LEVEL=6
 export TDD_CTEST_TEST_TYPE=Nightly
 
 # Submit the outer TDD tests to casl-dev always since these are CASL machines
