@@ -333,18 +333,18 @@ int Epetra_CrsMatrix::Allocate() {
     for (i=0; i<NumMyRows_; i++) {
       int NumAllocatedEntries = Graph().NumAllocatedMyIndices(i);
 
-      if (Graph().StaticProfile() || Graph().StorageOptimized()) {
-        Values_[i] = all_values;
-        all_values += NumAllocatedEntries;
-      }
-      else {
-        if (NumAllocatedEntries > 0) {
+      if (NumAllocatedEntries > 0) {
+        if (Graph().StaticProfile() || Graph().StorageOptimized()) {
+          Values_[i] = all_values;
+          all_values += NumAllocatedEntries;
+        }
+        else {
           Values_[i] = new double[NumAllocatedEntries];
           Values_alloc_lengths_[i] = NumAllocatedEntries;
         }
-        else 
-          Values_[i] = 0;
       }
+      else 
+        Values_[i] = 0;
 
       for(j=0; j< NumAllocatedEntries; j++) 
         Values_[i][j] = 0.0; // Fill values with zero
