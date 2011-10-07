@@ -51,6 +51,7 @@
 // Epetra_SerialComm.
 #include "Epetra_SerialComm.h"
 
+#include "EpetraExt_HDF5.h"
 #ifdef HAVE_MPI
 // The user could have passed in an Epetra_Comm that is-an
 // Epetra_MpiComm, EpetraMpiSmpComm, or even an Epetra_SerialComm.
@@ -58,6 +59,7 @@
 #  include "Epetra_MpiComm.h"
 #  include "Epetra_MpiSmpComm.h"
 #  include "mpi.h"
+#  include <H5FDmpio.h>
 #endif
 
 #include "Teuchos_ParameterList.hpp"
@@ -74,7 +76,6 @@
 #include "Epetra_Import.h"
 #include "EpetraExt_Exception.h"
 #include "EpetraExt_Utils.h"
-#include "EpetraExt_HDF5.h"
 #include "EpetraExt_DistArray.h"
 
 #define CHECK_HID(hid_t) \
