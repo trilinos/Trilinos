@@ -14,7 +14,6 @@
 #include <vector>
 #include <string>
 #include <Zoltan2_config.h>
-#include <Zoltan2_Util.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -45,6 +44,7 @@
 #include <Epetra_SerialComm.h>
 #include <Teuchos_DefaultComm.hpp>
 #ifdef HAVE_MPI
+#include <Zoltan2_Util.hpp>
 #include <Epetra_MpiComm.h>
 #endif
 
