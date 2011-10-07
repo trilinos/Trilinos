@@ -394,11 +394,22 @@ namespace Belos {
 	// the given panel width.
 	magnitude_type residualNormBlockGivens = STM::zero();
 	if (testBlockGivens) {
-	  for (int startCol = 0; startCol < numCols; startCol += panelWidth) {
-	    int endCol = std::min (startCol + panelWidth - 1, numCols - 1);
-	    residualNormBlockGivens = 
-	      updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
-				   blockCosines, blockSines, startCol, endCol);
+	  const bool testBlocksAtATime = true;
+	  if (testBlocksAtATime) {
+	    // Blocks of columns at a time.
+	    for (int startCol = 0; startCol < numCols; startCol += panelWidth) {
+	      int endCol = std::min (startCol + panelWidth - 1, numCols - 1);
+	      residualNormBlockGivens = 
+		updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
+				     blockCosines, blockSines, startCol, endCol);
+	    }
+	  } else {
+	    // One column at a time.
+	    for (int startCol = 0; startCol < numCols; ++startCol) {
+	      residualNormBlockGivens = 
+		updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
+				     blockCosines, blockSines, startCol, startCol);
+	    }
 	  }
 	}
 	// Update using LAPACK's least-squares solver.
@@ -513,12 +524,31 @@ namespace Belos {
 	out << "Solution error bound: " << solutionErrorBoundFactor 
 	    << " * eps = " << solutionErrorBound << endl;
 
-	if (givensSolutionError > solutionErrorBound)
-	  return false;
-	else if (testBlockGivens && blockGivensSolutionError > solutionErrorBound)
-	  return false;
-	else
-	  return true;
+	// Remember that NaN is not greater than, not less than, and
+	// not equal to any other number, including itself.  Some
+	// compilers will rudely optimize away the "x != x" test.
+	if (STM::isnaninf (solutionErrorBound)) {
+	  // Hm, the solution error bound is Inf or NaN.  This
+	  // probably means that the test problem was generated
+	  // incorrectly.  We should return false in this case.
+	  return false; 
+	} else { // solution error bound is finite.
+	  if (STM::isnaninf (givensSolutionError)) {
+	    return false; 
+	  } else if (givensSolutionError > solutionErrorBound) {
+	    return false;
+	  } else if (testBlockGivens) {
+	    if (STM::isnaninf (blockGivensSolutionError)) {
+	      return false; 
+	    } else if (blockGivensSolutionError > solutionErrorBound) {
+	      return false;
+	    } else { // Givens and Block Givens tests succeeded.
+	      return true;
+	    }
+	  } else { // Not testing block Givens; Givens test succeeded.
+	    return true;
+	  }
+	}
       }
 
     private:
@@ -887,7 +917,15 @@ namespace Belos {
 	// \sin^2 \theta + \cos^2 \theta = 1.
 	//
 	// The range of sine is [-1,1], so squaring it won't overflow.
-	const magnitude_type cosTheta = STM::squareroot (1 - sinTheta * sinTheta);
+	// We still have to check whether sinTheta > 1, though.  This
+	// is impossible in exact arithmetic, assuming that the
+	// least-squares solver worked (b-A*0 = b and x minimizes
+	// ||b-A*x||_2, so ||b-A*0||_2 >= ||b-A*x||_2).  However, it
+	// might just be possible in floating-point arithmetic.  We're
+	// just looking for an estimate, so if sinTheta > 1, we cap it
+	// at 1.
+	const magnitude_type cosTheta = (sinTheta > STM::one()) ? 
+	  STM::zero() : STM::squareroot (1 - sinTheta * sinTheta);
 
 	// This may result in Inf, if cosTheta is zero.  That's OK; in
 	// that case, the condition number of the (full-rank)
@@ -1088,32 +1126,6 @@ namespace Belos {
 	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
 	}
 
-#if 0
-	// 
-	// The BLAS' _TRSM overwrites the right-hand side with the
-	// solution, so first copy z into y.  We need to keep z, since
-	// each call to one of this class' update routines updates it.
-	{
-	  TEST_FOR_EXCEPTION(y.numCols() > z.numCols(), std::logic_error,
-			     "y.numCols() = " << y.numCols() 
-			     << " > z.numCols() = " << z.numCols() << ".");
-	  // If z has more columns than y, we ignore the remaining
-	  // columns of z when solving the upper triangular system.
-	  // They will get updated correctly, but they just won't be
-	  // counted in the solution.  Of course, z should always have
-	  // been initialized with the same number of columns as y,
-	  // but we relax this unnecessary restriction here.
-	  const mat_type z_view (Teuchos::View, z, numRows, y.numCols());
-	  mat_type y_view (Teuchos::View, y, numRows, y.numCols());
-	  y_view.assign (z_view);
-
-	  // Solve Ry = z.
-	  blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		    Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(), 
-		    STS::one(), R.values(), LDR, y.values(), y.stride());
-	}
-#endif // 0
-
 	if (extraDebug) {
 	  //mat_type R_after (Teuchos::View, R, numRows, numRows-1);
 	  //printMatrix<Scalar> (cerr, "R_after", R_after);
@@ -1211,11 +1223,11 @@ namespace Belos {
 
       /// \brief Update columns [startCol,endCol] of the projected least-squares problem.
       ///
-      /// This method implements a "left-looking panel QR factorization"
-      /// of the upper Hessenberg matrix in the projected least-squares
-      /// problem.  It's "left-looking" because we don't updating anything
-      /// to the right of columns [startCol, endCol], which is the
-      /// "panel."
+      /// This method implements a "left-looking panel QR
+      /// factorization" of the upper Hessenberg matrix in the
+      /// projected least-squares problem.  It's "left-looking"
+      /// because we don't updating anything to the right of columns
+      /// [startCol, endCol], which is the "panel."
       ///
       /// \return 2-norm of the absolute residual of the projected
       ///   least-squares problem.
@@ -1229,32 +1241,67 @@ namespace Belos {
 			   const int startCol,
 			   const int endCol) const
       {
+	TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
+			   "updateColumnGivens: startCol = " << startCol 
+			   << " > endCol = " << endCol << ".");
+	magnitude_type lastResult = STM::zero();
+	// [startCol, endCol] is an inclusive range.
+	for (int curCol = startCol; curCol <= endCol; ++curCol) {
+	  lastResult = updateColumnGivens (H, R, y, z, theCosines, theSines, curCol);
+	}
+	return lastResult;
+      }
+
+    private:
+      /// \brief Update columns [startCol,endCol] of the projected least-squares problem.
+      ///
+      /// This method implements a "left-looking panel QR factorization"
+      /// of the upper Hessenberg matrix in the projected least-squares
+      /// problem.  It's "left-looking" because we don't updating anything
+      /// to the right of columns [startCol, endCol], which is the
+      /// "panel."
+      ///
+      /// \return 2-norm of the absolute residual of the projected
+      ///   least-squares problem.
+      ///
+      /// \warning This method doesn't work!
+      magnitude_type
+      updateColumnsGivensBlock (const mat_type& H,
+				mat_type& R,
+				mat_type& y,
+				mat_type& z,
+				Teuchos::ArrayView<scalar_type> theCosines,
+				Teuchos::ArrayView<scalar_type> theSines,
+				const int startCol,
+				const int endCol) const
+      {
 	const int numRows = endCol + 2;
-	const int numCols = endCol - startCol + 1;
+	const int numColsToUpdate = endCol - startCol + 1;
 	const int LDR = R.stride();
 
 	// 1. Copy columns [startCol, endCol] from H into R, where they
 	//    will be modified.
 	{
-	  const mat_type H_view (Teuchos::View, H, numRows, numCols, 0, startCol);
-	  mat_type R_view (Teuchos::View, R, numRows, numCols, 0, startCol);
+	  const mat_type H_view (Teuchos::View, H, numRows, numColsToUpdate, 0, startCol);
+	  mat_type R_view (Teuchos::View, R, numRows, numColsToUpdate, 0, startCol);
 	  R_view.assign (H_view);
 	}
 
-	// 2. Apply all the previous Givens rotations, if any, to columns
-	//    [startCol, endCol] of the matrix.
+	// 2. Apply all the previous Givens rotations, if any, to
+	//    columns [startCol, endCol] of the matrix.  (Remember
+	//    that we're using a left-looking QR factorization
+	//    approach; we haven't yet touched those columns.)
 	blas_type blas;
 	for (int j = 0; j < startCol; ++j) {
-	  blas.ROT (numCols - j, 
+	  blas.ROT (numColsToUpdate,
 		    &R(j, startCol), LDR, &R(j+1, startCol), LDR, 
 		    &theCosines[j], &theSines[j]);
 	}
 
 	// 3. Update each column in turn of columns [startCol, endCol].
 	for (int curCol = startCol; curCol < endCol; ++curCol) {
-	  // a. Apply the previous Givens rotations computed in this loop
-	  //    (Step 3 of the current invocation of this method) to the
-	  //    current column of R.
+	  // a. Apply the Givens rotations computed in previous
+	  //    iterations of this loop to the current column of R.
 	  for (int j = startCol; j < curCol; ++j) {
 	    blas.ROT (1, &R(j, curCol), LDR, &R(j+1, curCol), LDR, 
 		      &theCosines[j], &theSines[j]);
@@ -1284,9 +1331,10 @@ namespace Belos {
 		    &theCosine, &theSine);
 	}
 
-	// 4. Now that we have the updated R factor of H, and the updated
-	//    right-hand side z, solve the least-squares problem by
-	//    solving the upper triangular linear system Ry=z for y.
+	// 4. Now that we have the updated R factor of H, and the
+	//    updated right-hand side z, solve the least-squares
+	//    problem by solving the upper triangular linear system
+	//    Ry=z for y.
 	{
 	  const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
 	  const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
@@ -1294,28 +1342,6 @@ namespace Belos {
 
 	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
 	}
-
-#if 0
-	// 
-	// The BLAS' _TRSM overwrites the right-hand side with the
-	// solution, so first copy z into y.  We need to keep z, since
-	// each call to one of this class' update routines updates it.
-	{
-	  // If z has more columns than y, we ignore the remaining columns
-	  // of z when solving the upper triangular system.  They will get
-	  // updated correctly, but they just won't be counted in the
-	  // solution.  Of course, z should always have been initialized
-	  // with the same number of columns as y, but we relax this
-	  // unnecessary restriction here.
-	  const mat_type z_view (Teuchos::View, z, numRows, y.numCols());
-	  mat_type y_view (Teuchos::View, y, numRows, y.numCols());
-	  y_view.assign (z_view);
-	}
-	// Solve Ry = z.
-	blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		  Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(),
-		  STS::one(), R.values(), LDR, y.values(), y.stride());
-#endif // 0
 
 	// The last entry of z is the nonzero part of the residual of the
 	// least-squares problem.  Its magnitude gives the residual 2-norm
