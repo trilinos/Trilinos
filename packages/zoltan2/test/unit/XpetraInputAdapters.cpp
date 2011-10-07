@@ -48,8 +48,6 @@ template <typename GraphAdapter, typename Graph>
   size_t ngRows = tpetraGraph->getGlobalNumRows();
   size_t nEntries = tpetraGraph->getNodeNumEntries();
   size_t ngEntries = tpetraGraph->getGlobalNumEntries();
-  size_t nColumns = tpetraGraph->getNodeNumCols();
-  size_t ngColumns = tpetraGraph->getGlobalNumCols();
 
   size_t num = input->getLocalNumVertices();
   TEST_FAIL_AND_EXIT(*comm, num==nRows, "input->getLocalNumVertices", 1);
@@ -83,8 +81,6 @@ template <typename MatrixAdapter, typename Matrix>
 
   size_t nRows = tpetraMatrix->getNodeNumRows();
   size_t ngRows = tpetraMatrix->getGlobalNumRows();
-  size_t nEntries = tpetraMatrix->getNodeNumEntries();
-  size_t ngEntries = tpetraMatrix->getGlobalNumEntries();
   size_t nColumns = tpetraMatrix->getNodeNumCols();
   size_t ngColumns = tpetraMatrix->getGlobalNumCols();
 
@@ -110,8 +106,11 @@ template <typename Scalar, typename LNO, typename GNO>
   std::string LNOName(OrdinalTraits<LNO>::name());
   std::string GNOName(OrdinalTraits<GNO>::name());
 
-  if (sizeof(GNO) >= 8)
-    include64BitIds = true;
+//
+//  64-bit global IDs need to wait for Tpetra problem to be resolved.
+//  if (sizeof(GNO) >= 8)
+//    include64BitIds = true;
+//
 
   typedef Zoltan2::default_node_t Node;
 

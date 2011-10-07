@@ -5,5 +5,12 @@ ADD_SUBDIRECTORIES(
   data
   unit
   util
-  partitioning
   )
+#
+#ADD_SUBDIRECTORIES(
+#  temp
+#  data
+#  unit
+#  util
+#  partitioning
+#  )
