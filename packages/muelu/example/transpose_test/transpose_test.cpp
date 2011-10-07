@@ -5,6 +5,7 @@
  *      Author: tobias
  */
 
+#include "MueLu_ConfigDefs.hpp"
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -17,12 +18,13 @@
 
 #include "Epetra_CrsMatrix.h"
 
+#ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_CrsMatrixIn.h"
+#endif
 
 #include "Epetra_RowMatrixTransposer.h"
 
 #include <Teuchos_RCP.hpp>
-
 
 #include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_Operator.hpp"
@@ -31,7 +33,6 @@
 #include "Xpetra_EpetraVector.hpp"
 
 #include "MueLu_Utilities.hpp"
-
 
 Epetra_CrsMatrix* TridiagMatrix(const Epetra_Map* Map, const double a, const double b, const double c)
 {
@@ -266,7 +267,3 @@ int main(int argc, char *argv[])
 
   return 0;
 }
-
-
-
-

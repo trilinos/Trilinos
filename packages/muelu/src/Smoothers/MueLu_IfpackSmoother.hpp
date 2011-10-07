@@ -5,7 +5,9 @@
 
 #ifdef HAVE_MUELU_IFPACK
 
-#include "Ifpack.h"
+#include <Ifpack.h>
+
+#include <Epetra_CrsMatrix.h>
 
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"

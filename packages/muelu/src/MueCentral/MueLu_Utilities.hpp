@@ -18,11 +18,14 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
 #include "Epetra_RowMatrixTransposer.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #endif
 
 #include "MueLu_MatrixFactory.hpp"
@@ -32,9 +35,6 @@
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -62,7 +62,7 @@
 
 namespace MueLu {
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA
   using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
   using Xpetra::EpetraMultiVector;
 #endif
@@ -90,7 +90,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 #include "MueLu_UseShortNames.hpp"
 
   public:
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA
     //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
     static RCP<const Epetra_MultiVector> MV2EpetraMV(RCP<MultiVector> const Vec) {
       //rcp<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
@@ -1213,7 +1213,7 @@ typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::S
 //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
 template<>
 inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
-   RCP<EpetraCrsMatrix> tmpC1 = rcp(new EpetraCrsMatrix(epAB));
+  RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
    RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
    RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
    return tmpC3;

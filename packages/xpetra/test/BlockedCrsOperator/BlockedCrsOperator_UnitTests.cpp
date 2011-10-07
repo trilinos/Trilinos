@@ -18,12 +18,14 @@
 #endif
 #  include "Epetra_SerialComm.h"
 
+#ifdef HAVE_XPETRA_EPETRAEXT
 // EpetraExt
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
+#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
@@ -569,7 +571,7 @@ TEUCHOS_STATIC_SETUP()
 /// simple test routine for the apply function of BlockedCrsOperator
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, GO, Node )
 {
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
 
 #ifdef HAVE_MPI
 
@@ -687,7 +689,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, 
 /// simple test for matrix-matrix multiplication for two 2x2 blocked matrices
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
 {
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_EPETRA_AND_EPETRA_EXT
 
 	RCP<Epetra_Comm> Comm;
 	if(testMpi)
@@ -863,7 +865,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, S
 /// simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult2x1, Scalar, LO, GO, Node)
 {
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
 	RCP<const Comm<int> > comm = getDefaultComm();
 
 	// build maps

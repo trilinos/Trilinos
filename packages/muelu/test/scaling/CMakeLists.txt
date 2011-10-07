@@ -25,7 +25,6 @@ PACKAGE_ADD_EXECUTABLE(
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )
 
-
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
  IF (${PACKAGE_NAME}_ENABLE_Amesos)
 
