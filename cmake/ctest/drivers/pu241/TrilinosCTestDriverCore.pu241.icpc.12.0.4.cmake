@@ -1,5 +1,6 @@
   
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-exclude-trilinos-packages.cmake")
 
 #
 # Platform/compiler specific options for godel using gcc
