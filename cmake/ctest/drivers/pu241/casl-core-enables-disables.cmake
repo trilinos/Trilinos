@@ -9,25 +9,25 @@
 
 # Must include first so that it defines Trilinos_EXCLUDE_PACKAGES
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-exclude-trilinos-packages.cmake)
-#PRINT_VAR(Trilinos_EXCLUDE_PACKAGES)
 
-# Put in hard disables 
+# Put in hard disables for excluded packages
 FOREACH(EXCLUDED_PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
   SET(${PROJECT_NAME}_ENABLE_${EXCLUDED_PACKAGE} OFF CACHE BOOL
     "Disabled in casl-core-enables-disables.cmake")
-  #SET(${PROJECT_NAME}_ENABLE_${EXCLUDED_PACKAGE} OFF)
-  #PRINT_VAR(${PROJECT_NAME}_ENABLE_${EXCLUDED_PACKAGE})
 ENDFOREACH()
 
 # Turn off float and complex testing because CASL does not need them
 SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "")
 SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "")
 
+# We don't want or need HDF5 support in EpetraExt
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
+
 # Turn off STK tests since they are constantly failing.  NOTE: Since CASL is
 # not developing on STK, only using it, this should not represent a big risk
 # for STK or CASL.
-SET(STK_ENABLE_TESTS OFF CACHE BOOL "")
-SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "")
+SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
+SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 
 # Turn on configure timing
 SET(Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
