@@ -258,6 +258,13 @@ int main(int argc, char *argv[]) {
       std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
+  // test some basic multigrid data
+  Finest->print(std::cout);
+  RCP<Level> coarseLevel = H->GetLevel(1);
+  coarseLevel->print(std::cout);
+  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(std::cout);
+
   return EXIT_SUCCESS;
 
 }
