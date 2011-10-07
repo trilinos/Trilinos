@@ -84,8 +84,6 @@ public:
   //@{
 
   void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    //coarseLevel.Request("P",initialPFact_.get());
-    //fineLevel.Request("A",AFact_.get());
     fineLevel.DeclareInput("A",AFact_.get());
     coarseLevel.DeclareInput("P",initialPFact_.get());
   };
@@ -102,7 +100,7 @@ public:
   void Build(Level& fineLevel, Level &coarseLevel) const {
     Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
     std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
+    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("PgPFactory::BuildP_"+buf.str()));
     timer->start(true);
 
     // Level Get
