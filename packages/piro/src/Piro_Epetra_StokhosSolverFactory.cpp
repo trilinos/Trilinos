@@ -61,7 +61,8 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   sgParams.validateParameters(*getValidSGParameters(),0);
 
   sgSolverParams = 
-    Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    // Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    Teuchos::rcp(new Teuchos::ParameterList(sgParams.sublist("SG Solver Parameters")));
 
   // Get SG expansion type
   std::string sg_type = sgParams.get("SG Method", "Direct");
