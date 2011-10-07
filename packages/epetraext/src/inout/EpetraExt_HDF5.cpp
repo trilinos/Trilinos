@@ -283,8 +283,73 @@ void EpetraExt::HDF5::Create(const std::string FileName)
   // Set up file access property list with parallel I/O access
   plist_id_ = H5Pcreate(H5P_FILE_ACCESS);
 #ifdef HAVE_MPI
-  // Create property list for collective dataset write.
-  H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL);
+  {
+    // Tell HDF5 what MPI communicator to use for parallel file access
+    // for the above property list.
+    //
+    // HAVE_MPI is defined, so we know that Trilinos was built with
+    // MPI.  However, we don't know whether Comm_ wraps an MPI
+    // communicator.  Comm_ could very well be a serial communicator.
+    // We have to use dynamic casts to figure this out.  There are two
+    // Epetra_Comm subclasses to test: Epetra_MpiComm and
+    // Epetra_MpiSmpComm.
+    MPI_Comm mpiComm = MPI_COMM_NULL; // Hopefully not for long
+
+    // Is Comm_ an Epetra_MpiComm?
+    const Epetra_MpiComm* mpiWapper = 
+      dynamic_cast<const Epetra_MpiComm*> (&Comm_);
+    if (mpiWrapper != NULL) {
+      mpiComm = mpiWrapper->Comm();
+    } else {
+      // Is Comm_ an Epetra_MpiSmpComm?
+      const Epetra_MpiSmpComm* mpiSmpWrapper = 
+	dynamic_cast<const Epetra_MpiSmpComm*> (&Comm_);
+      if (mpiSmpWrapper != NULL) {
+	mpiComm = mpiSmpWrapper->Comm();
+      } else {
+	// Is Comm_ an Epetra_SerialComm?
+	const Epetra_SerialComm* serialWrapper = 
+	  dynamic_cast<const Epetra_SerialComm*> (&Comm_);
+
+	if (serialWrapper != NULL) {
+	  // Comm_ is an Epetra_SerialComm.  This means that even though
+	  // Trilinos was built with MPI, the user who instantiated the
+	  // HDF5 class wants only the calling process to access HDF5.
+	  // The right communicator to use in that case is
+	  // MPI_COMM_SELF.
+	  mpiComm = MPI_COMM_SELF;
+	} else {
+	  // Comm_ must be some other subclass of Epetra_Comm.
+	  // We don't know how to get an MPI communicator out of it.
+	  const char* const errMsg = "EpetraExt::HDF5::Create: This HDF5 object"
+	    " was created with an Epetra_Comm instance which is not an "
+	    "Epetra_MpiComm, Epetra_MpiSmpComm, or Epetra_SerialComm.  As a "
+	    "result, we don't know how to get an MPI communicator from it.  Our "
+	    "HDF5 class only understands Epetra_Comm objects which are instances"
+	    " of one of these three subclasses.";
+	  throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
+	}
+      }
+    }
+
+    // By this point, mpiComm should be something other than
+    // MPI_COMM_NULL.  Otherwise, Comm_ wraps MPI_COMM_NULL.
+    if (mpiComm == MPI_COMM_NULL) {
+      const char* const errMsg = "EpetraExt::HDF5::Create: The Epetra_Comm "
+	"object with which this HDF5 instance was created wraps MPI_COMM_NULL, "
+	"which is an invalid MPI communicator.  HDF5 requires a valid MPI "
+	"communicator.";
+      throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
+    }
+
+    // Tell HDF5 what MPI communicator to use for parallel file access
+    // for the above property list.  For details, see e.g.,
+    //
+    // http://www.hdfgroup.org/HDF5/doc/UG/08_TheFile.html
+    //
+    // [last accessed 06 Oct 2011]
+    H5Pset_fapl_mpio(plist_id_, mpiComm, MPI_INFO_NULL);
+  }
 #endif
 
 #if 0
