@@ -38,6 +38,7 @@ struct xfer_args {
         int len;
         int io_method;
         std::string server_url;
+        std::string url_file;
         std::string io_method_name;
         log_level debug_level;
         std::string logfile;

@@ -57,11 +57,14 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "xfer_client.h"
 #include "xfer_debug.h"
 
+
 #include <mpi.h>
-#include <iostream>
-#include <ostream>
 #include <assert.h>
 #include <unistd.h>
+
+#include <iostream>
+#include <ostream>
+#include <fstream>
 
 
 // Prototypes for client and server codes
@@ -143,6 +146,7 @@ int main(int argc, char *argv[])
     args.num_reqs = 1;
     args.result_file_mode = "a";
     args.result_file = "";
+    args.url_file = "";
     args.logfile = "";
     args.client_flag = true;
     args.server_flag = true;
@@ -188,6 +192,7 @@ int main(int argc, char *argv[])
         parser.setOption("result-file", &args.result_file, "Where to store results");
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
+        parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
 
         // Set an enumeration command line option for the io_method
 
@@ -254,11 +259,13 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-
+    log_level debug_level = args.debug_level;
+    debug_level = LOG_ALL;
 
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
+    std::cout << rank << "/" << np << ": Starting Xfer_Service_Test" << std::endl;
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -268,7 +275,7 @@ int main(int argc, char *argv[])
      */
     if (args.client_flag && args.server_flag) {
         if (np < 2) {
-            log_error(args.debug_level, "Must use at least 2 MPI processes for client and server mode");
+            log_error(debug_level, "Must use at least 2 MPI processes for client and server mode");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
@@ -319,12 +326,42 @@ int main(int argc, char *argv[])
 
     else if (!args.server_flag && args.client_flag){
         if (args.server_url.empty()) {
-            log_error(args.debug_level, "Need to set --server-url=[ADDR]");
+
+            // check to see if we're supposed to get the URL from a file
+            if (!args.url_file.empty()) {
+                // Fetch the server URL from a file
+                sleep(1);
+                log_debug(debug_level, "Reading from file %s", args.url_file.c_str());
+                std::ifstream urlfile (args.url_file.c_str());
+                if (urlfile.is_open()) {
+                    if (urlfile.good())
+                        getline(urlfile, args.server_url);
+                }
+                else {
+                    log_error(debug_level, "Failed to open server_url_file=%s", args.url_file.c_str());
+                    exit(1);
+                }
+                urlfile.close();
+                log_debug(debug_level, "URL = %s", args.server_url.c_str());
+            }
+            else {
+                log_error(debug_level, "Need to set --server-url=[ADDR] or --server-url-file=[PATH]");
+            }
         }
     }
 
     else if (args.server_flag && !args.client_flag) {
         args.server_url = my_url;
+
+        // If the url_file value is set, write the url to a file
+        if (!args.url_file.empty()) {
+            std::ofstream urlfile (args.url_file.c_str());
+            if (urlfile.is_open()) {
+                urlfile << args.server_url.c_str() << std::endl;
+            }
+            urlfile.close();
+            log_debug(LOG_ALL, "Wrote url to file %s", args.url_file.c_str());
+        }
     }
 
 
@@ -343,7 +380,7 @@ int main(int argc, char *argv[])
      */
     if (args.server_flag && (rank == 0)) {
         rc = xfer_server_main(comm);
-        log_debug(xfer_debug_level, "Server is finished");
+        log_debug(debug_level, "Server is finished");
     }
 
     // ------------------------------------------------------------------------------
@@ -368,7 +405,7 @@ int main(int argc, char *argv[])
 
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
-                log_debug(xfer_debug_level, "Try #%d", i);
+                log_debug(debug_level, "Try to connect to server: attempt #%d", i);
                 rc=nssi_get_service(NSSI_DEFAULT_TRANSPORT, args.server_url.c_str(), args.timeout, &xfer_svc);
                 if (rc == NSSI_OK)
                     break;
@@ -383,13 +420,13 @@ int main(int argc, char *argv[])
         //MPI_Bcast(&rc, 1, MPI_INT, 0, comm);
 
         if (rc == NSSI_OK) {
-            if (client_rank == 0) log_debug(xfer_debug_level, "Connected to service on attempt %d\n", i);
+            if (client_rank == 0) log_debug(debug_level, "Connected to service on attempt %d\n", i);
 
             // Broadcast the service description to the other clients
             //log_debug(xfer_debug_level, "Bcasting svc to other clients");
             //MPI_Bcast(&xfer_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
 
-            log_debug(xfer_debug_level, "Starting client main");
+            log_debug(debug_level, "Starting client main");
             // Start the client code
             xfer_client_main(args, xfer_svc, comm);
 
@@ -398,14 +435,14 @@ int main(int argc, char *argv[])
 
             // Tell one of the clients to kill the server
             if (client_rank == 0) {
-                log_debug(xfer_debug_level, "%d: Halting xfer service", rank);
+                log_debug(debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
             }
         }
 
         else {
             if (client_rank == 0)
-                log_error(xfer_debug_level, "Failed to connect to service after %d attempts: ABORTING", i);
+                log_error(debug_level, "Failed to connect to service after %d attempts: ABORTING", i);
             success = false;
             //MPI_Abort(MPI_COMM_WORLD, -1);
         }
@@ -413,15 +450,15 @@ int main(int argc, char *argv[])
 
     }
 
-    log_debug(xfer_debug_level, "%d: clean up nssi", rank);
+    log_debug(debug_level, "%d: clean up nssi", rank);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Clean up nssi_rpc
     rc = nssi_rpc_fini(NSSI_DEFAULT_TRANSPORT);
     if (rc != NSSI_OK)
-        log_error(xfer_debug_level, "Error in nssi_rpc_fini");
+        log_error(debug_level, "Error in nssi_rpc_fini");
 
-    log_debug(xfer_debug_level, "%d: MPI_Finalize()", rank);
+    log_debug(debug_level, "%d: MPI_Finalize()", rank);
     MPI_Finalize();
 
 
