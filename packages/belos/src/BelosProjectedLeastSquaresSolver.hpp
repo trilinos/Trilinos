@@ -185,6 +185,30 @@ namespace Belos {
     /// \tparam Scalar The type of the matrix and vector entries in the
     ///   least-squares problem.
     ///
+    /// Expected use of this class:
+    /// 1. Use a ProjectedLeastSquaresProblem<scalar_type> struct
+    ///    instance to store the projected problem in your GMRES
+    ///    solver.
+    /// 2. Instantiate a ProjectedLeastSquaresSolver:
+    ///    <code>
+    ///    ProjectedLeastSquaresSolver<scalar_type> solver;
+    ///    </endcode>
+    /// 3. Update the current column(s) of the QR factorization 
+    ///    of GMRES' upper Hessenberg matrix:
+    ///    <code>
+    ///    magnitude_type resNorm = solver.updateColumn (problem, endCol);
+    ///    </endcode>
+    ///    or
+    ///    <code>
+    ///    magnitude_type resNorm = solver.updateColumns (problem, startCol, endCol);
+    ///    </endcode>
+    /// 4. Solve for the current GMRES solution update coefficients:
+    ///    <code>
+    ///    solver.solve (problem, endCol);
+    ///    </endcode>
+    /// You can defer Step 4 as long as you want.  Step 4 must always
+    /// follow Step 3.
+    ///
     /// Purposes of this class:
     /// 1. Isolate and factor out BLAS and LAPACK dependencies.  This
     ///    makes it easier to write custom replacements for routines
@@ -236,6 +260,12 @@ namespace Belos {
 
       /// \brief Update column curCol of the projected least-squares problem.
       ///
+      /// The upper Hessenberg matrix H is read but not touched.  The
+      /// R factor, the cosines and sines, and the right-hand side z
+      /// are updated.  This method does <i>not</i> compute the
+      /// solution of the least-squares problem; call \c solve() for
+      /// that.
+      ///
       /// \param problem [in/out] The projected least-squares problem.
       /// \param curCol [in] Zero-based index of the current column to update.
       ///
@@ -250,6 +280,12 @@ namespace Belos {
       }
 
       /// \brief Update columns [startCol,endCol] of the projected least-squares problem.
+      ///
+      /// The upper Hessenberg matrix H is read but not touched.  The
+      /// R factor, the cosines and sines, and the right-hand side z
+      /// are updated.  This method does <i>not</i> compute the
+      /// solution of the least-squares problem; call \c solve() for
+      /// that.
       ///
       /// \param problem [in/out] The projected least-squares problem.
       /// \param startCol [in] Zero-based index of the first column to update.
@@ -267,6 +303,26 @@ namespace Belos {
 				    startCol, endCol);
       }
 
+      /// \brief Solve the projected least-squares problem.
+      ///
+      /// Call this method only after calling \c updateColumn() or \c
+      /// updateColumns().  If you call \c updateColumn(), use the
+      /// same column index when calling this method.  If you call \c
+      /// updateColumns(), use the endCol argument as the column index
+      /// for calling this method.
+      ///
+      /// \param problem [in/out] The projected least-squares problem.
+      ///
+      /// \param curCol [in] Zero-based index of the most recently
+      ///   updated column of the least-squares problem.
+      void
+      solve (ProjectedLeastSquaresProblem<Scalar>& problem,
+	     const int curCol) const
+      {
+	solveGivens (problem.y, problem.R, problem.z, curCol);
+      }
+
+    public:
       /// \brief Test Givens rotations.
       ///
       /// This routine tests both computing Givens rotations (via \c
@@ -305,7 +361,7 @@ namespace Belos {
 	  return true;
       }
 
-      /// \brief Test \c updateColumnGivens() against \c updateColumnLapack().
+      /// \brief Test update and solve using Givens rotations.
       ///
       /// \param out [out] Output stream to which to print results.
       ///
@@ -319,19 +375,21 @@ namespace Belos {
       /// \param verbose [in] Whether to print verbose output (e.g.,
       ///   the test problem and results).
       ///
-      /// \return Whether the least-squares solution error is within the
-      ///   expected bound.
+      /// \return Whether the test succeeded, meaning that none of the
+      ///   solves reported failure and the least-squares solution
+      ///   error was within the expected bound.
       ///
-      /// We test updating the least-squares problem by generating a
-      /// random least-squares problem that looks like it comes from
-      /// GMRES.  The matrix is upper Hessenberg, and the right-hand side
-      /// starts out with the first entry being nonzero with nonnegative
-      /// real part and zero imaginary part, and all the other entries
-      /// being zero.  Then, we compare the results of \c
-      /// updateColumnGivens() (applied to each column in turn) with the
-      /// results of \c updateColumnLapack() (again, applied to each
-      /// column in turn).  We print out the results to the given output
-      /// stream.
+      /// Test updating and solving the least-squares problem using
+      /// Givens rotations by comparison against LAPACK's
+      /// least-squares solver.  First generate a random least-squares
+      /// problem that looks like it comes from GMRES.  The matrix is
+      /// upper Hessenberg, and the right-hand side starts out with
+      /// the first entry being nonzero with nonnegative real part and
+      /// zero imaginary part, and all the other entries being zero.
+      /// Then compare the results of \c updateColumnGivens() (applied
+      /// to each column in turn) and solveGivens() (applied at the
+      /// end) with the results of \c solveLapack() (applied at the
+      /// end).  Print out the results to the given output stream.
       bool
       testUpdateColumn (std::ostream& out, 
 			const int numCols,
@@ -390,6 +448,8 @@ namespace Belos {
 	  residualNormGivens = updateColumnGivens (H, R_givens, y_givens, z_givens, 
 						   theCosines, theSines, curCol);
 	}
+	solveGivens (y_givens, R_givens, z_givens, numCols-1);
+
 	// Update using the "panel left-looking" Givens approach, with
 	// the given panel width.
 	magnitude_type residualNormBlockGivens = STM::zero();
@@ -404,20 +464,25 @@ namespace Belos {
 				     blockCosines, blockSines, startCol, endCol);
 	    }
 	  } else {
-	    // One column at a time.
+	    // One column at a time.  This is good as a sanity check
+	    // to make sure updateColumnsGivens() with a single column
+	    // does the same thing as updateColumnGivens().
 	    for (int startCol = 0; startCol < numCols; ++startCol) {
 	      residualNormBlockGivens = 
 		updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
 				     blockCosines, blockSines, startCol, startCol);
 	    }
 	  }
+	  // The panel version of Givens should compute the same
+	  // cosines and sines as the non-panel version, and should
+	  // update the right-hand side z in the same way.  Thus, we
+	  // should be able to use the same triangular solver.
+	  solveGivens (y_blockGivens, R_blockGivens, z_blockGivens, numCols-1);
 	}
-	// Update using LAPACK's least-squares solver.
-	magnitude_type residualNormLapack = STM::zero();
-	for (int curCol = 0; curCol < numCols; ++curCol) {
-	  residualNormLapack = updateColumnLapack (H, R_lapack, y_lapack, z_lapack, 
-						   curCol);
-	}
+
+	// Solve using LAPACK's least-squares solver.
+	const magnitude_type residualNormLapack = 
+	  solveLapack (H, R_lapack, y_lapack, z_lapack, numCols-1);
 
 	// Compute the condition number of the least-squares problem.
 	// This requires a residual, so use the residual from the
@@ -552,6 +617,27 @@ namespace Belos {
       }
 
     private:
+
+      /// \brief Solve the projected least-squares problem, assuming Givens rotations updates.
+      ///
+      /// Call this method after invoking either updateColumnGivens()
+      /// with the same curCol, or updateColumnsGivens() with curCol =
+      /// endCol.
+      void
+      solveGivens (mat_type& y, mat_type& R, const mat_type& z, const int curCol) const
+      {
+	const int numRows = curCol + 2;
+
+	// Now that we have the updated R factor of H, and the updated
+	// right-hand side z, solve the least-squares problem by
+	// solving the upper triangular linear system Ry=z for y.
+	const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
+	const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
+	mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
+
+	(void) solveUpperTriangularSystem (y_view, R_view, z_view);
+      }
+
       //! Make a random projected least-squares problem.
       void
       makeRandomProblem (mat_type& H, mat_type& z) const
@@ -1114,18 +1200,6 @@ namespace Belos {
 		  &z(curCol,0), LDZ, &z(curCol+1,0), LDZ,
 		  &theCosine, &theSine);
 
-	// 6. Now that we have the updated R factor of H, and the
-	//    updated right-hand side z, solve the least-squares
-	//    problem by solving the upper triangular linear system
-	//    Ry=z for y.
-	{
-	  const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
-	  const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
-	  mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
-
-	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
-	}
-
 	if (extraDebug) {
 	  //mat_type R_after (Teuchos::View, R, numRows, numRows-1);
 	  //printMatrix<Scalar> (cerr, "R_after", R_after);
@@ -1139,16 +1213,15 @@ namespace Belos {
 	return STS::magnitude( z(numRows-1, 0) );
       }
 
-      /// \brief Update current column using LAPACK least-squares solver.
+      /// \brief Solve the least-squares problem using LAPACK's least-squares solver.
       ///
-      /// Update the current column of the projected least-squares
-      /// problem, using LAPACK's _GELS least-squares solver.  This is
-      /// inefficient, but useful for testing \c updateColumnGivens().
-      /// See that method's documentation for an explanation of the
-      /// arguments.
+      /// This method is inefficient, but useful for testing.
       magnitude_type
-      updateColumnLapack (const mat_type& H, mat_type& R, mat_type& y, 
-			  mat_type& z, const int curCol) const
+      solveLapack (const mat_type& H, 
+		   mat_type& R, 
+		   mat_type& y, 
+		   mat_type& z,
+		   const int curCol) const
       {
 	const int numRows = curCol + 2;
 	const int numCols = curCol + 1;
@@ -1329,18 +1402,6 @@ namespace Belos {
 	  blas.ROT (z.numCols(), 
 		    &z(curCol,0), LDZ, &z(curCol+1,0), LDZ,
 		    &theCosine, &theSine);
-	}
-
-	// 4. Now that we have the updated R factor of H, and the
-	//    updated right-hand side z, solve the least-squares
-	//    problem by solving the upper triangular linear system
-	//    Ry=z for y.
-	{
-	  const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
-	  const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
-	  mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
-
-	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
 	}
 
 	// The last entry of z is the nonzero part of the residual of the
