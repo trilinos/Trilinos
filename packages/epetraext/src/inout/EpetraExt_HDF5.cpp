@@ -46,12 +46,18 @@
 
 #ifdef HAVE_EPETRAEXT_HDF5
 
+// We need this in with an MPI and a non-MPI build, since even in an
+// MPI build, the user might have handed us an Epetra_Comm that is-an
+// Epetra_SerialComm.
+#include "Epetra_SerialComm.h"
 
 #ifdef HAVE_MPI
+// The user could have passed in an Epetra_Comm that is-an
+// Epetra_MpiComm, EpetraMpiSmpComm, or even an Epetra_SerialComm.
+// Thus, we need to include all the headers for these types.
 #  include "Epetra_MpiComm.h"
+#  include "Epetra_MpiSmpComm.h"
 #  include "mpi.h"
-#else
-#  include "Epetra_SerialComm.h"
 #endif
 
 #include "Teuchos_ParameterList.hpp"
@@ -296,7 +302,7 @@ void EpetraExt::HDF5::Create(const std::string FileName)
     MPI_Comm mpiComm = MPI_COMM_NULL; // Hopefully not for long
 
     // Is Comm_ an Epetra_MpiComm?
-    const Epetra_MpiComm* mpiWapper = 
+    const Epetra_MpiComm* mpiWrapper = 
       dynamic_cast<const Epetra_MpiComm*> (&Comm_);
     if (mpiWrapper != NULL) {
       mpiComm = mpiWrapper->Comm();
