@@ -182,8 +182,8 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
      // inArgs.setSupports(IN_ARG_x_dot_sg,true); NOT YET!
     
      // no parameter support yet!
-     // for (int i=0; i<number of prameters; i++)
-     //    inArgs.setSupports(IN_ARG_p_sg, i, true);
+     for (int i=0; i<p_map_.size(); i++)
+         inArgs.setSupports(IN_ARG_p_sg, i, true);
    
      inArgs.setSupports(IN_ARG_sg_basis,true);
      inArgs.setSupports(IN_ARG_sg_quadrature,true);
