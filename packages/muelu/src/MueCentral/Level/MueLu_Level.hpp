@@ -13,7 +13,7 @@
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_DefaultFactoryHandlerBase.hpp"
 
-#undef HEAVY_DEBUG_OUTPUT
+#define HEAVY_DEBUG_OUTPUT
 
 namespace MueLu {
 
@@ -317,6 +317,22 @@ public:
       Release(ename, factory);
     else
       TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareInput(): requestMode_ undefined.");
+  }
+
+  //! Callback from FactoryBase::callDeclareInput() and FactoryBase::DeclareInput() to declare factory dependencies
+  void DeclareDependencies(const FactoryBase* factory, bool bRequestOnly = false, bool bReleaseOnly = false) {
+    if (bRequestOnly && bReleaseOnly)
+      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareDependencies(): Both bReqeustOnly and bReleaseOnly set to true makes no sense.");
+    if (requestMode_ == REQUEST) {
+      if(bReleaseOnly == false)
+        Request(*factory);
+    }
+    else if (requestMode_ == RELEASE) {
+      if(bRequestOnly == false)
+        Release(*factory);
+    }
+    else
+      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareDependencies(): requestMode_ undefined.");
   }
 
   //! Indicate that an object is needed. This increments the storage counter.
