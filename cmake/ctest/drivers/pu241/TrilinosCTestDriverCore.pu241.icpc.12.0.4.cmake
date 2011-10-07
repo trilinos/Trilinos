@@ -1,60 +1,6 @@
-# @HEADER
-# ************************************************************************
-#
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
-#
-#
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
-# ************************************************************************
-# @HEADER
-
   
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-exclude-trilinos-packages.cmake")
 
 #
 # Platform/compiler specific options for godel using gcc
@@ -67,19 +13,23 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET( CTEST_BUILD_FLAGS "-j8 -i" )
-  SET( CTEST_PARALLEL_LEVEL 8 )
+  SET( CTEST_BUILD_FLAGS "-j6 -i" )
+  SET( CTEST_PARALLEL_LEVEL 6 )
 
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
-
-  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
-    PyTrilinos Mesquite Sundance Optika  # Don't need these for CASL
-    TriKota # Not building with Intel yet.
-    TrilinosFramework # Brings down tests with error
-    )
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.4")
+
+  SET_DEFAULT(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE Nightly)
+
+  IF (BUILD_TYPE STREQUAL DEBUG)
+    SET(BUILD_TYPE_OPTIONS_FILE intel-12.0.4-debug-options.cmake)
+  ELSEIF (BUILD_TYPE STREQUAL RELEASE)
+    SET(BUILD_TYPE_OPTIONS_FILE intel-12.0.4-release-options.cmake)
+  ELSE()
+    SET(BUILD_TYPE_OPTIONS_FILE)
+  ENDIF()
   
   IF (COMM_TYPE STREQUAL MPI)
 
@@ -88,16 +38,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/intel-12.0.4-options.cmake"
-      "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/intel-12.0.4-options.cmake,${CTEST_SCRIPT_DIRECTORY}/${BUILD_TYPE_OPTIONS_FILE}"
       "-DTPL_ENABLE_MPI:BOOL=OFF"
-      "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
-      "-DTrilinos_ENABLE_Mesquite:BOOL=OFF"
-      "-DTrilinos_ENABLE_Sundance:BOOL=OFF"
-    )
-
-  #   "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"
-  #   "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
+      ${EXTRA_CONFIGURE_OPTIONS}
+      )
   
   ENDIF()
 

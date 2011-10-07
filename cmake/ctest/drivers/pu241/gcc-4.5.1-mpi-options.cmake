@@ -1,77 +1,19 @@
-# @HEADER
-# ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+# Primary Stable options for MPI builds with hybrid GCC 4.5.1 C/C++ and Intel 12.0.4
+# Fortran
 #
-#
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
-# ************************************************************************
-# @HEADER
 
-# Primary Stable options for MPI builds with GCC 4.5.1
+# Included first ot define TRILINOS_TOOLSET_BASE and MKLROOT
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-base-options.cmake)
 
-# this path refers to the pure GNU OpenMPI installation
-# SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-gfortran" CACHE PATH "" FORCE)
-# SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/openmpi-gfortran/lib ${Trilinos_EXTRA_LINK_FLAGS}" CACHE STRING "")
-# SET(BLAS_INCLUDE_DIRS   ${MKLROOT}/include/gcc-4.5.1                     CACHE PATH     "Path to MKL BLAS Fortran modules compatible with GCC 4.5.1")
-# SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS}                             CACHE PATH     "Path to MKL LAPACK Fortran modules compatible with GCC 4.5.1")
-
-# this path refers to the GNU C/C++ and Intel Fortran OpenMPI installation
-SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4" CACHE PATH "" FORCE)
+# Point to OpenMPI build with GCC 4.5.1 C/C++ and Intel 12.0.4 Fortran
+SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4" CACHE PATH "")
 SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4/lib ${Trilinos_EXTRA_LINK_FLAGS}" CACHE STRING "")
-SET(BLAS_INCLUDE_DIRS   ${MKLROOT}/include/intel64/lp64          CACHE PATH     "Path to MKL BLAS Fortran modules compatible with GCC 4.5.1")
-SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS}                     CACHE PATH     "Path to MKL LAPACK Fortran modules compatible with GCC 4.5.1")
 
 # Used only when TriKota/Dakota are enabled with CMake
-SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL "" FORCE)
-SET(ENABLE_DAKOTA_TESTS OFF CACHE BOOL "" FORCE)
-SET(HAVE_ACRO OFF CACHE BOOL "" FORCE)
-SET(HAVE_AMPL OFF CACHE BOOL "" FORCE)
-SET(HAVE_X_GRAPHICS OFF CACHE BOOL "" FORCE)
-SET(HAVE_HOPSPACK OFF CACHE BOOL "" FORCE)
+SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL "")
+SET(ENABLE_DAKOTA_TESTS OFF CACHE BOOL "")
+SET(HAVE_ACRO OFF CACHE BOOL "")
+SET(HAVE_AMPL OFF CACHE BOOL "")
+SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")
+SET(HAVE_HOPSPACK OFF CACHE BOOL "")
