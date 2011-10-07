@@ -93,8 +93,11 @@ public:
    //! Look up an input physics block, throws an exception if it can be found.
    const InputPhysicsBlock & lookupInputPhysicsBlock(const std::string & eBlock) const;
 
-   //! Access, and construction of volume worksets
+   //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
+
+   //! Access, and construction of volume worksets
+   Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > getVolumeWorksets() const;
  
    //! Access, and construction of side worksets
    Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);

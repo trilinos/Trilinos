@@ -68,6 +68,19 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
 
    return worksetVector;
 }
+
+Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > 
+WorksetContainer::getVolumeWorksets() const
+{
+   Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > worksets =
+      Teuchos::rcp(new std::vector<Teuchos::RCP<std::vector<Workset> > >);
+
+   // fill vector with RCP pointers
+   for(VolumeMap::const_iterator itr=volWorksets_.begin();itr!=volWorksets_.end();itr++)
+      worksets->push_back(itr->second);
+ 
+   return worksets;
+}
  
 //! Access, and construction of side worksets
 Teuchos::RCP<std::map<unsigned,Workset> > 
@@ -85,8 +98,9 @@ WorksetContainer::getSideWorksets(const BC & bc)
       // store map for reuse in the future
       sideWorksets_[side] = worksetMap;
    }
-   else 
+   else { 
       worksetMap = itr->second;
+   }
 
    return worksetMap;
 }
@@ -129,8 +143,11 @@ void getSideWorksetsFromContainer(WorksetContainer & wc,
                                   const std::vector<BC> & bcs,
                                   std::map<BC,Teuchos::RCP<std::map<unsigned,Workset> >,LessBC> & sideWksts)
 {
-   for(std::size_t i=0;i<bcs.size();i++)
-      sideWksts[bcs[i]] = wc.getSideWorksets(bcs[i]);
+   for(std::size_t i=0;i<bcs.size();i++) {
+      Teuchos::RCP<std::map<unsigned,Workset> > wksts = wc.getSideWorksets(bcs[i]);
+      if(wksts!=Teuchos::null)
+         sideWksts[bcs[i]] = wksts;
+   }
 }
 
 }
