@@ -485,8 +485,6 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
   //
   // copy sg data structure into linear object container data structure
   {
-     std::cout << x_in->size() << " " << W_out->size() << std::endl;
-     std::cout << x_in->size() << " " << f_out->size() << std::endl;
      TEUCHOS_ASSERT(x_in->size()==sgGlobalContainer->size()); 
      TEUCHOS_ASSERT(x_in->size()==sgGhostedContainer->size()); 
      if(!Teuchos::is_null(W_out)) { TEUCHOS_ASSERT(x_in->size()==W_out->size()); }
