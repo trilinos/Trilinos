@@ -99,22 +99,16 @@ public:
         listed in the first list.  If localIds are omitted and
         haveConsecutiveLocalIds is true, it is assumed that the
         global Ids are in local Id order.
-      \param rowSize on return will point to the number of non-zeros
-        for each row.
+      \param offsets is an array of size numRows + 1.  The column Ids for
+          rowId[i] begin at colIds[offsets[i]].  The last element of offsets
+          is the size of the colIds array.
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
        \return The number of ids in the rowIds list.
    */
 
-  LNO getRowListView(GID *&rowIds, LID *&localIds, 
-    LNO *&rowSize, GID *& colIds) const
-  {
-    rowIds = NULL;
-    localIds = NULL;
-    rowSize = NULL;
-    colIds = NULL;
-    return 0;
-  }
+  virtual size_t getRowListView(const GID *&rowIds, const LID *&localIds, 
+    const LNO *&offsets, const GID *& colIds) const = 0;
 };
   
   
