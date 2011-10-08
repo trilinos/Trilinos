@@ -161,10 +161,10 @@ private:
   RCP<const Teuchos::Comm<int> > comm_;
   RCP<const Environment > env_;
 
-  ArrayRCP<GNO> gnos_;
-  ArrayRCP<GNO> edgeGnos_;
+  ArrayRCP<const GNO> gnos_;
+  ArrayRCP<const GNO> edgeGnos_;
   ArrayRCP<int> procIds_;
-  ArrayRCP<LNO> offsets_;
+  ArrayRCP<const LNO> offsets_;
 
   // Transpose is only required if vertices are columns.
   RCP<Tpetra::CrsMatrix< Scalar, LNO, GNO, Node> > input_Transpose;
@@ -184,8 +184,9 @@ public:
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
       input_Transpose(), numLocalEdges_(), numGlobalEdges_(0)
   {
-    GNO *vtxIds=NULL, *nborIds=NULL;
-    LNO *offsets=NULL, *lids=NULL, numVtx;
+    GNO const *vtxIds=NULL, *nborIds=NULL;
+    LNO const  *offsets=NULL, *lids=NULL; 
+    LNO numVtx;
     try{
       numVtx = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
@@ -193,14 +194,11 @@ public:
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
     gnos_ = arcp(vtxIds, 0, numVtx, false);   // non-owning ArrayRCPs
-    offsets_ = arcp(offsets, 0, numVtx, false);
+    offsets_ = arcp(offsets, 0, numVtx+1, false);
 
-    numLocalEdges_ = 0;
-    for (LNO i=0; i < offsets_.size(); i++){
-      numLocalEdges_ += offsets_[i];
-    }
+    numLocalEdges_ = offsets_[numVtx];
 
-    edgeGnos_ = arcp(nborIds, 0,numLocalEdges_, false);
+    edgeGnos_ = arcp(nborIds, 0, numLocalEdges_, false);
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
