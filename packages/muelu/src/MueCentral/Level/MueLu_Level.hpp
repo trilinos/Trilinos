@@ -122,7 +122,8 @@ public:
   //@{
   //! @name Set methods.
 
-
+  //! Set previous level object
+  //! @\param[in] const RCP<Level>& previousLevel
   void SetPreviousLevel(const RCP<Level> & previousLevel) {
     if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
       GetOStream(Warnings1, 0) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
@@ -162,9 +163,14 @@ public:
   //! @brief Get functions for accessing stored data
 
   //@{
-  /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
-  // Usage: Level->Get< RCP<Operator> >("A", factory)
-  // factory == NULL => use default factory
+  /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
+   *   Usage: Level->Get< RCP<Operator> >("A", factory)
+   *   if factory == NULL => use default factory
+   *
+   *  @param[in] const std::string& ename
+   *  @param[in] const FactoryBase* factory
+   *  @return data (templated)
+   * */
   template <class T>
   T & Get(const std::string& ename, const FactoryBase* factory)
   {
@@ -441,6 +447,7 @@ public:
     }
     return needs_->IsRequested(ename,fac);
   }
+
   //@}
 
   //! @name Default factory handler
