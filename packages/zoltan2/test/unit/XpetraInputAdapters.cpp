@@ -40,8 +40,6 @@ template <typename GraphAdapter, typename Graph>
 
   // TODO do we need to cast?
 
-  graphInput_t *g_in = static_cast<graphInput_t *>(input.get());
-
   const crsGraph_t *tpetraGraph = static_cast<const crsGraph_t *>(g.get());
 
   size_t nRows = tpetraGraph->getNodeNumRows();
@@ -148,15 +146,15 @@ template <typename Scalar, typename LNO, typename GNO>
   if (include64BitIds){
     // This matrix has ids that use the high order 4 bytes of
     // of the 8 byte ID.  true: delete the original M after making a new one.
-    RCP<tpetraM_t> tmi64 = input.getTpetraCrsMatrixInputAdapter64(true);
-    testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
+    //RCP<tpetraM_t> tmi64 = input.getTpetraCrsMatrixInputAdapter64(true);
+    //testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
   }
 
   if (!rank){
     std::cout << "Processed " << fname << ": ";
-    std::cout << "Scalar = " << ScalarName << std::endl;
-    std::cout << "LNO = " << LNOName << std::endl;
-    std::cout << "GNO = " << GNOName << std::endl;
+    std::cout << "Scalar = " << ScalarName;
+    std::cout << ", LNO = " << LNOName;
+    std::cout << ", GNO = " << GNOName << std::endl;
     if (include64BitIds)
       std::cout << "Including a Tpetra::CrsMatrix with 64-bit Ids." << std::endl;
     std::cout << std::endl;
@@ -172,14 +170,14 @@ int main(int argc, char *argv[])
   std::vector<std::string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
-  //mtxFiles.push_back("../data/cage10.mtx");
+  mtxFiles.push_back("../data/cage10.mtx");
 
   // To use this matrix we would need to pass a domain map
   // to FillComplete.  So we skip it for now.  TODO
   // mtxFiles.push_back("../data/diag500_4.mtx");
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-    //testInputAdapters<double, int, int>(mtxFiles[fileNum], comm, rank);
+    testInputAdapters<double, int, int>(mtxFiles[fileNum], comm, rank);
     testInputAdapters<double, int, long>(mtxFiles[fileNum], comm, rank);
   }
 
