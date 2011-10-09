@@ -562,6 +562,8 @@ evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArg
    TEUCHOS_ASSERT(false); // fail until implemented
 }
 
+#endif
+
 Teuchos::RCP<panzer::ModelEvaluator_Epetra> 
 panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
@@ -598,5 +600,3 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
    TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
 }
-
-#endif
