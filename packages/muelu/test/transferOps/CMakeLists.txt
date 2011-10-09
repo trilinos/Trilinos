@@ -1,0 +1,28 @@
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+
+# first ensure that these cmake boolean variables are defined
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos
+  )
+
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos2
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TransferOps
+    SOURCES TransferOpsTest.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+  )
+ENDIF()
