@@ -8,6 +8,8 @@
 #ifndef MUELU_PGPFACTORY_HPP_
 #define MUELU_PGPFACTORY_HPP_
 
+#include <Teuchos_TestForException.hpp>
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsOperator.hpp>
@@ -40,6 +42,14 @@ class PgPFactory : public PFactory {
 
 public:
 
+  /* Options defining how to pick-up the next root node in the local aggregation procedure */
+  enum MinimizationNorm {
+    ANORM = 0, /* A norm   */
+    L2NORM = 1, /* L2 norm */
+    DINVANORM  = 2, /* Dinv A norm */
+    ATDINVTPLUSDINVANORM = 3 /* most expensive variant */
+  };
+
   //! @name Constructors/Destructors.
   //@{
 
@@ -54,6 +64,8 @@ public:
       // use tentative P factory as default
       initialPFact_ = rcp(new TentativePFactory());
     }
+
+    min_norm_ = DINVANORM;
   }
 
   //! Destructor.
@@ -68,6 +80,9 @@ public:
   void SetDiagonalView(std::string const& diagView) {
     diagonalView_ = diagView;
   }
+
+  //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default, ATDINVTPLUSDINVANORM most expensive method)
+  inline void SetMinimizationMode(MinimizationNorm minnorm) { min_norm_ = minnorm; }
   //@}
 
   //! @name Get methods.
@@ -111,6 +126,8 @@ public:
     if(restrictionMode_)
       A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
 
+    Monitor m(*this, "prolongator smoothing (PG-AMG)");
+
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
     bool doFillComplete=true;
     bool optimizeStorage=false;
@@ -120,6 +137,8 @@ public:
     optimizeStorage=false;
     Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
     Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+
+    //GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
     /////////////////// calculate local damping factors omega
     //Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
@@ -163,87 +182,101 @@ public:
   {
     RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
 
-    if(colbasedomegamap->isDistributed() == true) std::cout << "colbasedomegamap is distributed" << std::endl; //throw("colbasedomegamap is distributed globally?");
+    TEST_FOR_EXCEPTION(colbasedomegamap->isDistributed(), Exceptions::RuntimeError, "Muelu::PgPFactory::ComputeRowBasedOmegas: colbasedomegamap is distributed. Error.");
     if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
     if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
     if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
 
+    RCP<Teuchos::Array<Scalar> > Numerator   = Teuchos::null;
+    RCP<Teuchos::Array<Scalar> > Denominator = Teuchos::null;
 
-#if 0 // MUEMAT mode (=paper)
-    // Minimize with respect to the (A)' A norm.
-    // Need to be smart here to avoid the construction of A' A
-    //
-    //                   diag( P0' (A' A) D^{-1} A P0)
-    //   omega =   ------------------------------------------
-    //             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
-    //
-    // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
+    switch (min_norm_)
+    {
+    case ANORM: {
+      // MUEMAT mode (=paper)
+      // Minimize with respect to the (A)' A norm.
+      // Need to be smart here to avoid the construction of A' A
+      //
+      //                   diag( P0' (A' A) D^{-1} A P0)
+      //   omega =   ------------------------------------------
+      //             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
+      //
+      // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
 
-    // calculate A * Ptent
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+      // calculate A * Ptent
+      bool doFillComplete=true;
+      bool optimizeStorage=false;
+      RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
 
-    // compute A * D^{-1} * A * P0
-    RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+      // compute A * D^{-1} * A * P0
+      RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
 
-    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(AP0, ADinvAP0, colbasedomegamap);
-    RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(ADinvAP0, colbasedomegamap);
-#elif 0
-    // ML mode 1 (cheapest)
-    // Minimize with respect to L2 norm
-    //                  diag( P0' D^{-1} A P0)
-    //   omega =   -----------------------------
-    //             diag( P0' A' D^{-1}' D^{-1} A P0)
-    //
+      Numerator = MultiplyAll(AP0, ADinvAP0, colbasedomegamap);
+      Denominator = MultiplySelfAll(ADinvAP0, colbasedomegamap);
+      }
+      break;
+    case L2NORM: {
+      // ML mode 1 (cheapest)
+      // Minimize with respect to L2 norm
+      //                  diag( P0' D^{-1} A P0)
+      //   omega =   -----------------------------
+      //             diag( P0' A' D^{-1}' D^{-1} A P0)
+      //
 
-    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(Ptent, DinvAPtent, colbasedomegamap);
-    RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(DinvAPtent, colbasedomegamap);
-#elif 1
-    // ML mode 2
-    // Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
-    // Need to be smart here to avoid the construction of A' A
-    //
-    //                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-    //   omega =   --------------------------------------------------------
-    //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-    //
+      Numerator = MultiplyAll(Ptent, DinvAPtent, colbasedomegamap);
+      Denominator = MultiplySelfAll(DinvAPtent, colbasedomegamap);
+      }
+      break;
+    case DINVANORM: {
+      // ML mode 2
+      // Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
+      // Need to be smart here to avoid the construction of A' A
+      //
+      //                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+      //   omega =   --------------------------------------------------------
+      //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
+      //
 
-    // compute D^{-1} * A * D^{-1} * A * P0
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
-    Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+      // compute D^{-1} * A * D^{-1} * A * P0
+      bool doFillComplete=true;
+      bool optimizeStorage=false;
+      RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+      Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, colbasedomegamap);
-    RCP<Teuchos::Array<Scalar> > Denominator = MultiplySelfAll(DinvADinvAP0, colbasedomegamap);
-#elif 0
-    // ML mode 3 (most expensive)
-    //             diag( P0' ( A'D' + DA) D A P0)
-    //   omega =   -----------------------------
-    //             diag( P0'A'D' ( A'D' + DA) D A P0)
-    //
-    //             diag( DinvAP0'DinvAP0 + P0'DinvADinvAP0)
-    //         =   -----------------------------
-    //                2*diag( DinvADinvAP0'DinvAP0)
-    //
-    //
+      Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, colbasedomegamap);
+      Denominator = MultiplySelfAll(DinvADinvAP0, colbasedomegamap);
+      }
+      break;
+    case ATDINVTPLUSDINVANORM: {
+      // ML mode 3 (most expensive)
+      //             diag( P0' ( A'D' + DA) D A P0)
+      //   omega =   -----------------------------
+      //             diag( P0'A'D' ( A'D' + DA) D A P0)
+      //
+      //             diag( DinvAP0'DinvAP0 + P0'DinvADinvAP0)
+      //         =   -----------------------------
+      //                2*diag( DinvADinvAP0'DinvAP0)
+      //
+      //
 
-    // compute D^{-1} * A * D^{-1} * A * P0
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
-    Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+      // compute D^{-1} * A * D^{-1} * A * P0
+      bool doFillComplete=true;
+      bool optimizeStorage=false;
+      RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
+      Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-    RCP<Teuchos::Array<Scalar> > Numerator = MultiplyAll(Ptent, DinvADinvAP0, colbasedomegamap);
-    RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, colbasedomegamap);
-    if(Numerator->size() != Numerator2->size()) std::cout << "Error: size of Numerator and Numerator2 different. Error" << std::endl;
-    for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
-      (*Numerator)[i] += (*Numerator2)[i];
-    RCP<Teuchos::Array<Scalar> > Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, colbasedomegamap);
-    for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
-      (*Denominator)[i] *= 2.;
-#endif
+      Numerator = MultiplyAll(Ptent, DinvADinvAP0, colbasedomegamap);
+      RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, colbasedomegamap);
+      TEST_FOR_EXCEPTION(Numerator->size() != Numerator2->size(), Exceptions::RuntimeError, "PgPFactory::ComputeRowBasedOmegas: size of Numerator and Numerator2 different. Error");
+      for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
+        (*Numerator)[i] += (*Numerator2)[i];
+      Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, colbasedomegamap);
+      for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
+        (*Denominator)[i] *= 2.;
+
+      }
+      break;
+    }
 
     /////////////////// DEBUG: check for zeros in denominator
     size_t zeros_in_denominator = 0;
@@ -251,7 +284,8 @@ public:
     {
       if((*Denominator)[i] == Teuchos::ScalarTraits<Scalar>::zero()) zeros_in_denominator ++;
     }
-    if(zeros_in_denominator>Teuchos::ScalarTraits<Scalar>::zero()) std::cout << "There are " << zeros_in_denominator<< " zeros in Denominator. very suspicious!" << std::endl;
+    if(zeros_in_denominator>Teuchos::ScalarTraits<Scalar>::zero())
+      GetOStream(Warnings0, 0) << "Found " << zeros_in_denominator<< " zeros in Denominator. very suspicious!" << std::endl;
 
     /////////////////// build ColBasedOmegas
     RCP<Teuchos::ArrayRCP<Scalar> > ColBasedOmegas = Teuchos::rcp(new Teuchos::ArrayRCP<Scalar>(Numerator->size(),Teuchos::ScalarTraits<Scalar>::zero()));
@@ -290,7 +324,7 @@ public:
         Teuchos::ArrayView<const Scalar> vals;
         Op->getLocalRowView(row, indices, vals);
 
-        if(Teuchos::as<size_t>(indices.size()) != nnz) std::cout << "number of nonzeros not equal to number of indices?" << std::endl;
+        TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: number of nonzeros not equal to number of indices? Error.");
 
         if(nnz == 0)
         {
@@ -337,7 +371,7 @@ public:
         Teuchos::ArrayView<const Scalar> vals;
         Op->getLocalRowView(row, indices, vals);
 
-        if(Teuchos::as<size_t>(indices.size()) != nnz) std::cout << "number of nonzeros not equal to number of indices?" << std::endl;
+        TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: number of nonzeros not equal to number of indices? Error.");
 
         if(nnz == 0)
         {
@@ -414,10 +448,9 @@ public:
   RCP<Teuchos::Array<Scalar> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
   {
 
-    if(!left->getDomainMap()->isSameAs(*right->getDomainMap()))
-      std::cout << "domain maps of left and right do not match" << std::endl;
-    if(!left->getRowMap()->isSameAs(*right->getRowMap()))
-      std::cout << "row maps of left and right do not match" << std::endl;
+
+    TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
+    TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
 
     // test
     /*Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
@@ -505,7 +538,6 @@ private:
 
   int FindMyPos(size_t nummyelements, const Teuchos::Comm<int>& comm) const
   {
-    std::cout << "begin FindMyPos" << std::endl;
     const int myrank = comm.getRank();
     const int numproc = comm.getSize();
 
@@ -513,9 +545,7 @@ private:
     std::vector<size_t> rnum (numproc);   // gobal vector of no of elements on proc
     snum[myrank] = nummyelements;
 
-    std::cout << "FindMyPose::reduce all" << std::endl;
     Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, numproc, &snum[0], &rnum[0]);
-    std::cout << "FindMyPos:: after reduce all" << std::endl;
 
     return std::accumulate(&rnum[0], &rnum[myrank], 0);
   }
@@ -531,9 +561,7 @@ private:
 
     rredundant.resize(map.getGlobalNumElements());
     GlobalOrdinal numEle = map.getGlobalNumElements();
-    std::cout << "reduce All in XpetraMap" << std::endl;
     Teuchos::reduceAll(*(map.getComm()),Teuchos::REDUCE_SUM, numEle ,&sredundant[0], &rredundant[0]);
-    std::cout << "after reduce All in XpetraMap" << std::endl;
   }
 
   //@}
@@ -547,6 +575,9 @@ private:
 
   //! Factory parameters
   std::string diagonalView_;
+
+  //! minimization norm
+  MinimizationNorm min_norm_;
 };
 
 //! Friend print function.
