@@ -40,37 +40,37 @@ class Environment{
 private:
   /*! The user's parameters
    */
-  ParameterList _params;
+  ParameterList params_;
 
   /*! The parameters, their defaults, their validators,
    *  and their documentation
    */
-  ParameterList _validParams;
+  ParameterList validParams_;
 
 public:
   /*! Values needed for quick access
    */
-  int  _myRank;
-  int  _numProcs;
-  bool _printDebugMessages; // true if this proc prints
-  bool _printProfilingMessages;// true if this proc prints
-  int  _errorCheckLevel;    // how vigilant are we with assertions
-  int  _debugDepthLevel;    // how much info do we write out
-  int  _profilingIndicator;    // how much profiling (should really be
+  int  myRank_;
+  int  numProcs_;
+  bool printDebugMessages_; // true if this proc prints
+  bool printProfilingMessages_;// true if this proc prints
+  int  errorCheckLevel_;    // how vigilant are we with assertions
+  int  debugDepthLevel_;    // how much info do we write out
+  int  profilingIndicator_;    // how much profiling (should really be
                            // "what are we profiling", not a level)
-  bool _committed;
-  RCP<const Comm<int> > _comm;
+  bool committed_;
+  RCP<const Comm<int> > comm_;
 
 #if 0
   /*! The node description is not yet implemented.
    */
-  Kokkos::CUDANodeMemoryModel     _gpuNode;
-  Kokkos::StandardNodeMemoryModel _standardNode;
+  Kokkos::CUDANodeMemoryModel     gpuNode_;
+  Kokkos::StandardNodeMemoryModel standardNode_;
   
   /*! The machine model is not yet implemented.  It will
       not necessarily be implemented as a ParameterList.
    */
-  ParameterList _machine;
+  ParameterList machine_;
 #endif
 
   /*! Constructor 
@@ -111,7 +111,7 @@ public:
   const ParameterList &getParameters() const;
 
   /*! The debug manager, used by debug statements */
-  RCP<Zoltan2::DebugManager> _dbg;
+  RCP<Zoltan2::DebugManager> dbg_;
 
   // TODO: some kind of a manager for profiling, with
   //   labels, hierarchy, and so on.

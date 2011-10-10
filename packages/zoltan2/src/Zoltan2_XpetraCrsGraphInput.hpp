@@ -37,44 +37,47 @@ private:
 
   typedef Xpetra::CrsGraph<LNO, GNO, Node> xgraphType;
 
-  RCP<const xgraphType > _graph;
-  RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
-  RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
-  std::vector<int> _edgeOffsets; 
-  int _base;
+  RCP<const xgraphType > graph_;
+  RCP<const Xpetra::Map<LID, GID, Node> > rowMap_;
+  RCP<const Xpetra::Map<LID, GID, Node> > colMap_;
+  std::vector<int> edgeOffsets_; 
+  int base_;
 
-  int _vtxWeightDim;
-  int _edgeWeightDim;
-  int _coordinateDim;
-  std::vector<double> _edgeWgt;
-  std::vector<double> _vertexWgt;
-  std::vector<double> _xyz;
+  int vtxWeightDim_;
+  int edgeWeightDim_;
+  int coordinateDim_;
+  std::vector<double> edgeWgt_;
+  std::vector<double> vertexWgt_;
+  std::vector<double> xyz_;
 
   void makeOffsets()
   {
-    _rowMap = _graph->getRowMap();
-    _colMap = _graph->getColMap();
-    _base = _rowMap->getMinLocalIndex();
-    int numV = _rowMap->getNodeNumElements();
-    _edgeOffsets.resize(numV+1, 0);
+    rowMap_ = graph_->getRowMap();
+    colMap_ = graph_->getColMap();
+    base_ = rowMap_->getMinLocalIndex();
+    int numV = rowMap_->getNodeNumElements();
+    edgeOffsets_.resize(numV+1, 0);
     for (int i=0; i < numV; i++){
-      _edgeOffsets[i+1] = _edgeOffsets[i] + _graph->getNumEntriesInLocalRow(i);
+      edgeOffsets_[i+1] = edgeOffsets_[i] + graph_->getNumEntriesInLocalRow(i);
     }
   }
 
 public:
 
-  // TODO: should this be part of InputAdapter interface?
+  /*! Name of input adapter type
+   */
   std::string inputAdapterName()const {return std::string("XpetraCrsGraph");}
 
+  /*! Destructor
+   */
   ~XpetraCrsGraphInput() { }
 
   /*! Constructor with a Xpetra::CrsGraph
    */
   XpetraCrsGraphInput(const RCP<const xgraphType> graph):
-    _graph(graph), _rowMap(), _colMap(), _edgeOffsets(),
-    _vtxWeightDim(0), _edgeWeightDim(0), _coordinateDim(0),
-    _edgeWgt(), _vertexWgt(), _xyz()
+    graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
+    vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
+    edgeWgt_(), vertexWgt_(), xyz_()
   {
     makeOffsets();
   }
@@ -94,29 +97,29 @@ public:
     if (numIds * dim != veclen)
       throw std::runtime_error("invalid number of coordinates");
 
-    if (_coordinateDim){
-      if (dim != _coordinateDim)
+    if (coordinateDim_){
+      if (dim != coordinateDim_)
         throw std::runtime_error("inconsistent number of coordinates");
     }
     else{
       if (dim > 3)
         throw std::runtime_error("coordinates exceed 3");
-      _coordinateDim = dim;
-      _xyz.clear();
-      _xyz.resize(veclen,0);  // TODO need an "unset" value
+      coordinateDim_ = dim;
+      xyz_.clear();
+      xyz_.resize(veclen,0);  // TODO need an "unset" value
     }
 
     // TODO - they're always consecutive, right?
-    LID min = _rowMap->getMinLocalIndex();
-    LID max = _rowMap->getMaxLocalIndex();
+    LID min = rowMap_->getMinLocalIndex();
+    LID max = rowMap_->getMaxLocalIndex();
 
     for (size_t i = 0; i < numIds; i++){
       if ( (lid[i] < min) || (lid[i] > max))
         throw std::runtime_error("invalid vertex local id");
-      LID to_pos = _coordinateDim * (lid[i] - min);
-      LID from_pos = _coordinateDim * i;
-      for (int j=0; j < _coordinateDim; j++){
-        _xyz[to_pos++] = xyz[from_pos++];
+      LID to_pos = coordinateDim_ * (lid[i] - min);
+      LID from_pos = coordinateDim_ * i;
+      for (int j=0; j < coordinateDim_; j++){
+        xyz_[to_pos++] = xyz[from_pos++];
       }
     }
   }
@@ -136,27 +139,27 @@ public:
     if (numIds * dim != veclen)
       throw std::runtime_error("invalid number of weights");
 
-    if (_vtxWeightDim){
-      if (dim != _vtxWeightDim)
+    if (vtxWeightDim_){
+      if (dim != vtxWeightDim_)
         throw std::runtime_error("inconsistent number of weights");
     }
     else{
-      _vtxWeightDim = dim;
-      _vertexWgt.clear();
-      _vertexWgt.resize(veclen,0);
+      vtxWeightDim_ = dim;
+      vertexWgt_.clear();
+      vertexWgt_.resize(veclen,0);
     }
 
     // TODO - they're always consecutive, right?
-    LID min = _rowMap->getMinLocalIndex();
-    LID max = _rowMap->getMaxLocalIndex();
+    LID min = rowMap_->getMinLocalIndex();
+    LID max = rowMap_->getMaxLocalIndex();
 
     for (size_t i = 0; i < numIds; i++){
       if ( (lid[i] < min) || (lid[i] > max))
         throw std::runtime_error("invalid vertex local id");
-      LID to_pos = _vtxWeightDim * (lid[i] - min);
-      LID from_pos = _vtxWeightDim * i;
-      for (int j=0; j < _vtxWeightDim; j++){
-        _vertexWgt[to_pos++] = wgts[from_pos++];
+      LID to_pos = vtxWeightDim_ * (lid[i] - min);
+      LID from_pos = vtxWeightDim_ * i;
+      for (int j=0; j < vtxWeightDim_; j++){
+        vertexWgt_[to_pos++] = wgts[from_pos++];
       }
     }
   }
@@ -177,13 +180,13 @@ public:
     if ((nvtx==0) || (nborGid.size()==0) || (wgts.size()==0))
       return;
 
-    if (_edgeWeightDim == 0){
-      _edgeWeightDim = wgts.size() / nborGid.size();
-      if (_edgeWeightDim * nborGid.size() != wgts.size())
+    if (edgeWeightDim_ == 0){
+      edgeWeightDim_ = wgts.size() / nborGid.size();
+      if (edgeWeightDim_ * nborGid.size() != wgts.size())
         throw std::runtime_error("Invalid number of edge weights");
-      _edgeWgt.resize(_edgeWeightDim * getLocalNumEdges(), double(1));
+      edgeWgt_.resize(edgeWeightDim_ * getLocalNumEdges(), double(1));
     }
-    else if ((nborGid.size() * _edgeWeightDim) != wgts.size()){
+    else if ((nborGid.size() * edgeWeightDim_) != wgts.size()){
       throw std::runtime_error("Invalid number of edge weights");
     }
 
@@ -196,7 +199,7 @@ public:
         continue;
 
       LID lid = vertexLid[v];
-      GID gid = _rowMap->getGlobalElement(lid);
+      GID gid = rowMap_->getGlobalElement(lid);
       std::vector<GID> edges;
       std::vector<double> ewgts;
       getVertexEdgeCopy(gid, lid, edges, ewgts); 
@@ -222,12 +225,12 @@ public:
       }
 
       for (int i=0; i < nnbors; i++){
-        int toOffset = (_edgeOffsets[lid-_base] + idx[i]) * _edgeWeightDim;
-        int fromOffset = nextWgt + (i * _edgeWeightDim);
-        for (int j=0; j < _edgeWeightDim; j++)
-          _edgeWgt[toOffset+j] = wgts[fromOffset+j];
+        int toOffset = (edgeOffsets_[lid-base_] + idx[i]) * edgeWeightDim_;
+        int fromOffset = nextWgt + (i * edgeWeightDim_);
+        for (int j=0; j < edgeWeightDim_; j++)
+          edgeWgt_[toOffset+j] = wgts[fromOffset+j];
       }
-      nextWgt += nnbors * _edgeWeightDim;
+      nextWgt += nnbors * edgeWeightDim_;
     }
   }
 
@@ -238,13 +241,13 @@ public:
   /*! Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { 
-    return _rowMap->getNodeNumElements(); 
+    return rowMap_->getNodeNumElements(); 
   }
 
   /*! Returns the number vertices in the entire graph.
    */
   global_size_t getGlobalNumVertices() const { 
-    return _rowMap->getGlobalNumElements(); 
+    return rowMap_->getGlobalNumElements(); 
   }
 
   /*! Return whether input adapter wants to use local IDs.
@@ -257,39 +260,39 @@ public:
 
   bool haveConsecutiveLocalIds (size_t &base) const
   {
-    base = static_cast<size_t>(_base);
+    base = static_cast<size_t>(base_);
     return true;
   }
 
   /*! Returns the number edges on this process.
    */
   size_t getLocalNumEdges() const { 
-    return _graph->getNodeNumEntries();
+    return graph_->getNodeNumEntries();
   }
 
   /*! Returns the number edges on this entire graph.
    *    what about directional edges, count twice?
    */
   global_size_t getGlobalNumEdges() const { 
-    return _graph->getGlobalNumEntries();
+    return graph_->getGlobalNumEntries();
   }
 
   /*! Returns the number weights supplied for each vertex.
    */
   int getVertexWeightDim() const { 
-    return _vtxWeightDim;
+    return vtxWeightDim_;
   }
 
   /*! Returns the number weights supplied for each edge.
    */
   int getEdgeWeightDim() const { 
-    return _edgeWeightDim;
+    return edgeWeightDim_;
   }
 
   /*! Returns the number of coordinates per vertex
    */
   int getCoordinateDim() const { 
-    return _coordinateDim;
+    return coordinateDim_;
   }
 
   /*! Get the list of vertex IDs and their weights.
@@ -305,26 +308,26 @@ public:
     localIDs.clear();
 
     size_t numVtx = this->getLocalNumVertices();
-    int nweights = _vtxWeightDim * numVtx;
+    int nweights = vtxWeightDim_ * numVtx;
     wgt.resize(nweights); 
 
     if (nweights){
       double *wTo = &wgt[0];
-      const double *wFrom = &_vertexWgt[0];
+      const double *wFrom = &vertexWgt_[0];
       memcpy(wTo, wFrom, sizeof(double) * nweights);
     }
 
     ids.resize(numVtx);
-    for (unsigned i=0; i < _rowMap->getNodeNumElements(); i++){
-      ids[i] =  _rowMap->getGlobalElement(i);
+    for (unsigned i=0; i < rowMap_->getNodeNumElements(); i++){
+      ids[i] =  rowMap_->getGlobalElement(i);
     }
 
-    int ncoords = _coordinateDim * numVtx;
+    int ncoords = coordinateDim_ * numVtx;
     xyz.resize(ncoords);
 
     if (ncoords){
       double *cTo = &xyz[0];
-      const double *cFrom = &_xyz[0];
+      const double *cFrom = &xyz_[0];
       memcpy(cTo, cFrom, sizeof(double) * ncoords);
     }
   }
@@ -337,10 +340,10 @@ public:
     // TODO we need to verify that gids are actually stored
     //   in lid order
     int nvtx = this->getLocalNumVertices();
-    ids = _rowMap->getNodeElementList().getRawPtr();
+    ids = rowMap_->getNodeElementList().getRawPtr();
     localIDs = NULL;   // because haveConsecutiveLocalIds() == true
-    xyz = &_xyz[0];
-    wgts = &_vertexWgt[0];
+    xyz = &xyz_[0];
+    wgts = &vertexWgt_[0];
     return nvtx;
   }
 
@@ -351,28 +354,28 @@ public:
   {
     size_t nvtx = this->getLocalNumVertices();
 
-    if (localId < _base || localId >= _base+nvtx)
+    if (localId < base_ || localId >= base_+nvtx)
       throw std::runtime_error("invalid local vertex ID");
 
     edgeId.clear();
     wgts.clear();
 
     ArrayView<const LNO> nbors;
-    _graph->getLocalRowView(localId, nbors);
+    graph_->getLocalRowView(localId, nbors);
     size_t nedges = nbors.size();
 
     if (nedges > 0){
       edgeId.resize(nedges);
       for (unsigned i=0; i < nedges; i++){
-        edgeId[i] = _colMap->getGlobalElement(nbors[i]);
+        edgeId[i] = colMap_->getGlobalElement(nbors[i]);
       }
 
-      if (_edgeWeightDim > 0){
-        int offset = _edgeOffsets[localId-_base] * _edgeWeightDim;
-        const double *fromWgt = &_edgeWgt[offset];
-        wgts.resize(_edgeWeightDim * nedges);
+      if (edgeWeightDim_ > 0){
+        int offset = edgeOffsets_[localId-base_] * edgeWeightDim_;
+        const double *fromWgt = &edgeWgt_[offset];
+        wgts.resize(edgeWeightDim_ * nedges);
         double *toWgt = &wgts[0];
-        memcpy(toWgt, fromWgt, sizeof(double) * _edgeWeightDim * nedges);
+        memcpy(toWgt, fromWgt, sizeof(double) * edgeWeightDim_ * nedges);
       }
       else{
         wgts.clear();
@@ -385,7 +388,7 @@ public:
    
   RCP<const xgraphType> getGraph() const
   {
-    return _graph;
+    return graph_;
   }
 
 

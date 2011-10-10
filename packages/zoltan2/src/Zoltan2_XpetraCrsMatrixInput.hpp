@@ -36,47 +36,51 @@ private:
 
   typedef Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> xmatrixType;
 
-  RCP<const xmatrixType > _matrix;
-  RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
-  RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
-  LID _base;
-  ArrayRCP<LNO> _offsets;
-  ArrayRCP<GNO> _columnIds;
+  RCP<const xmatrixType > matrix_;
+  RCP<const Xpetra::Map<LID, GID, Node> > rowMap_;
+  RCP<const Xpetra::Map<LID, GID, Node> > colMap_;
+  LID base_;
+  ArrayRCP<LNO> offset_;
+  ArrayRCP<GNO> columnIds_;
 
 public:
 
+  /*! Name of input adapter type
+   */
   std::string inputAdapterName()const {return std::string("XpetraCrsMatrix");}
 
+  /*! Destructor
+   */
   ~XpetraCrsMatrixInput() { }
 
-  /*! Constructor with an Xpetra::CrsMatrix
+  /*! Constructor 
    */
   XpetraCrsMatrixInput(const RCP<const xmatrixType > matrix):
-    _matrix(), _rowMap(), _colMap(), _base(), _offsets(), _columnIds()
+    matrix_(), rowMap_(), colMap_(), base_(), offset_(), columnIds_()
   {
-   _matrix = matrix;
-   _rowMap = _matrix->getRowMap();
-   _colMap = _matrix->getColMap();
-   _base = _rowMap->getIndexBase();
+   matrix_ = matrix;
+   rowMap_ = matrix_->getRowMap();
+   colMap_ = matrix_->getColMap();
+   base_ = rowMap_->getIndexBase();
 
-   size_t nrows = _matrix->getNodeNumRows();
-   size_t nnz = _matrix->getNodeNumEntries();
+   size_t nrows = matrix_->getNodeNumRows();
+   size_t nnz = matrix_->getNodeNumEntries();
 
-    _offsets.resize(nrows+1, LNO(0));
-    _columnIds.resize(nnz);
+    offset_.resize(nrows+1, LNO(0));
+    columnIds_.resize(nnz);
     ArrayView<const LNO> indices;
     ArrayView<const Scalar> nzs;
     LNO next = 0;
     for (unsigned i=0; i < nrows; i++){
-      LNO row = i + _base;
-      LNO nnz = _matrix->getNumEntriesInLocalRow(row);
-      _matrix->getLocalRowView(row, indices, nzs);
+      LNO row = i + base_;
+      LNO nnz = matrix_->getNumEntriesInLocalRow(row);
+      matrix_->getLocalRowView(row, indices, nzs);
       for (LNO j=0; j < nnz; j++){
         // TODO - this will be slow
         //   Is it possible that global columns ids might be stored in order?
-        _columnIds[next++] = _colMap->getGlobalElement(indices[j]);
+        columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
       }
-      _offsets[i+1] = _offsets[i] + nnz;
+      offset_[i+1] = offset_[i] + nnz;
     }
   }
 
@@ -87,13 +91,13 @@ public:
   /*! Returns the number rows on this process.
    */
   size_t getLocalNumRows() const { 
-    return _matrix->getNodeNumRows();
+    return matrix_->getNodeNumRows();
   }
 
   /*! Returns the number rows in the entire matrix.
    */
   global_size_t getGlobalNumRows() const { 
-    return _matrix->getGlobalNumRows();
+    return matrix_->getGlobalNumRows();
   }
 
   /*! Return whether input adapter wants to use local IDs.
@@ -106,21 +110,21 @@ public:
 
   bool haveConsecutiveLocalIds (size_t &base) const
   {
-    base = static_cast<size_t>(_base);
+    base = static_cast<size_t>(base_);
     return true;
   }
 
   /*! Returns the number columns on this process.
    */
   size_t getLocalNumColumns() const { 
-    return _matrix->getNodeNumCols();
+    return matrix_->getNodeNumCols();
   }
 
   /*! Returns the number columns on this entire matrix.
    *    what about directional columns, count twice?
    */
   global_size_t getGlobalNumColumns() const { 
-    return _matrix->getGlobalNumCols();
+    return matrix_->getGlobalNumCols();
   }
 
   /*! Get copy of matrix entries on local process
@@ -130,8 +134,8 @@ public:
     std::vector<GID> &colIds) const
   {
     size_t nrows = getLocalNumRows();
-    size_t nnz = _matrix->getNodeNumEntries();
-    size_t maxrow = _matrix->getNodeMaxNumRowEntries();
+    size_t nnz = matrix_->getNodeNumEntries();
+    size_t maxrow = matrix_->getNodeMaxNumRowEntries();
     size_t next = 0;
 
     rowIds.resize(nrows);
@@ -145,14 +149,14 @@ public:
     offsets[0] = 0;
 
     for (unsigned i=0; i < nrows; i++){
-      LNO row = i + _base;
-      LNO nnz = _matrix->getNumEntriesInLocalRow(row);
+      LNO row = i + base_;
+      LNO nnz = matrix_->getNumEntriesInLocalRow(row);
       size_t n;
-      _matrix->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
+      matrix_->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
       for (LNO j=0; j < nnz; j++){
-        colIds[next++] = _colMap->getGlobalElement(indices[j]);
+        colIds[next++] = colMap_->getGlobalElement(indices[j]);
       }
-      rowIds[i] = _rowMap->getGlobalElement(row);
+      rowIds[i] = rowMap_->getGlobalElement(row);
       offsets[i+1] = offsets[i] + nnz;
     }
   } 
@@ -162,7 +166,7 @@ public:
 
   RCP<const xmatrixType> getMatrix() const
   {
-    return _matrix;
+    return matrix_;
   }
 
 
@@ -186,13 +190,13 @@ public:
   {
     size_t nrows = getLocalNumRows();
 
-    ArrayView<const GID> rowView = _rowMap->getNodeElementList();
+    ArrayView<const GID> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
    
     localIds = NULL;   // Implies consecutive integers
 
-    offsets = _offsets.getRawPtr();
-    colIds = _columnIds.getRawPtr();
+    offsets = offset_.getRawPtr();
+    colIds = columnIds_.getRawPtr();
     return nrows;
   }
 };

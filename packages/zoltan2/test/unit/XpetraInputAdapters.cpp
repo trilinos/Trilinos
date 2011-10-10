@@ -155,8 +155,15 @@ template <typename Scalar, typename LNO, typename GNO>
     //testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
   }
 
+  delete input;
+
   if (!rank){
-    std::cout << "Processed " << fname << ": ";
+    if (fname.size())
+      std::cout << "Processed " << fname << ": ";
+    else{
+      std::cout << "Created input adapter for matrix/graph of size ";
+      std::cout << xdim << " x " << ydim << " x " << zdim << std::endl;
+    }
     std::cout << "Scalar = " << ScalarName;
     std::cout << ", LNO = " << LNOName;
     std::cout << ", GNO = " << GNOName << std::endl;
@@ -190,6 +197,8 @@ int main(int argc, char *argv[])
 
   testInputAdapters<double, int, long>(10, 20, 10, nullString, comm, rank);
 
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
 
   return 0;
 }

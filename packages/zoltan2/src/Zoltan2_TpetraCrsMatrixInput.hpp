@@ -29,11 +29,15 @@ class TpetraCrsMatrixInput :
 private:
 
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix;
-  RCP<const crsMatrix > _inmatrix;
+  RCP<const crsMatrix > inmatrix_;
 
 public:
+  /*! Name of input adapter type.
+   */
   std::string inputAdapterName()const {return std::string("TpetraCrsMatrix");}
 
+  /*! Destructor
+   */
   ~TpetraCrsMatrixInput() { }
 
   /*! Constructor 
@@ -44,15 +48,14 @@ public:
         Teuchos::rcp_const_cast<crsMatrix>(matrix))))
     
   {
-    _inmatrix = matrix;
+    inmatrix_ = matrix;
   }
 
   /*! Access to matrix that instantiated adapter
    */
-
   RCP<const crsMatrix> getMatrix() const
   { 
-    return _inmatrix;
+    return inmatrix_;
   }
 };
 } // namespace

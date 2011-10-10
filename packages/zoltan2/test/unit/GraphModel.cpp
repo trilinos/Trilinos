@@ -250,5 +250,8 @@ int main(int argc, char *argv[])
       double, int, long, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
   }
 
+  if (comm->getRank() == 0)
+    std::cout << "PASS" << std::endl;
+
   return 0;
 }

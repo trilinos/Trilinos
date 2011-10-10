@@ -31,7 +31,6 @@
 #include <ostream>
 #include <iostream>
 #include <exception>
-#include <Teuchos_GlobalMPISession.hpp> // So we don't have to #ifdef HAVE_MPI
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -55,17 +54,16 @@ template< typename T1, typename T2>
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  int nprocs = session.getNProc();
-  int rank = session.getRank();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+    Teuchos::DefaultComm<int>::getComm();
+  int nprocs = comm->getSize();
+  int rank = comm->getRank();
   int errcode = 0;
 
   long numLocalObjects = nobjects /  nprocs;
   long leftOver = nobjects % nprocs;
 
   if (rank < leftOver) numLocalObjects++;
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
 
   Teuchos::ParameterList params; 
   params.set(std::string("ERROR_CHECK_LEVEL"), 1);
@@ -145,12 +143,17 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (errcode){
-    std::cerr << rank << ") gno array is wrong" << std::endl;
-    std::cout << "FAIL" << std::endl;
-  }
-  else{
-    std::cout << rank << ") PASS" << std::endl;
+  int globalcode=0;
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1, 
+     &errcode, &globalcode);
+
+  if (rank == 0){
+    if (globalcode){
+      std::cout << "FAIL" << std::endl;
+    }
+    else{
+      std::cout << "PASS" << std::endl;
+    }
   }
 
   return errcode;

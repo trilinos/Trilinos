@@ -27,23 +27,11 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
-#include <Epetra_CrsGraph.h>
 #include <Zoltan2_EpetraCrsGraphInput.hpp>
-
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
 #include <Zoltan2_TpetraCrsGraphInput.hpp>
-
-#include <Epetra_CrsMatrix.h>
 #include <Zoltan2_EpetraCrsMatrixInput.hpp>
-
-#include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_TpetraCrsMatrixInput.hpp>
-
-#include <Xpetra_CrsMatrix.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
-
-#include <Xpetra_CrsGraph.hpp>
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 
 #include <Epetra_SerialComm.h>

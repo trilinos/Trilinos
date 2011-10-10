@@ -53,8 +53,9 @@ public:
   // User should not rewrite this function.
   enum InputAdapterType inputAdapterType() {return GraphAdapterType;}
 
-  // TODO - what to do with destructor
-  //virtual ~GraphInput();
+  /*! Pure virtual destructor
+   */
+  virtual ~GraphInput() {};
 
   /*! Returns the number vertices on this process.
    */

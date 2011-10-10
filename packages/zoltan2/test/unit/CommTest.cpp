@@ -115,13 +115,11 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  // Initialize MPI if necessary.
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  int fail=0;
   // Get a communicator, it will be the right kind regardless of whether we
   // are using MPI or not.
+  Teuchos::GlobalMPISession session(&argc, &argv);
   Teuchos::RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int fail=0;
   fail = call_zoltan2(*comm);
 
   if (!comm->getRank()){

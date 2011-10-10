@@ -54,8 +54,9 @@ public:
   // User should not rewrite this function.
   enum InputAdapterType inputAdapterType() {return MatrixAdapterType;}
 
-  // TODO - what to do with destructor
-  //virtual ~MatrixInput();
+  /*! Pure virtual Destructor
+   */
+  virtual ~MatrixInput(){};
 
   /*! Returns the number rows on this process.
    */
