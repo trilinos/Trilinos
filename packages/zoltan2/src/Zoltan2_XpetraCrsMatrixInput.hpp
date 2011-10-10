@@ -185,7 +185,6 @@ public:
     const LNO *&offsets, const GID *& colIds) const
   {
     size_t nrows = getLocalNumRows();
-    size_t nnz = _matrix->getNodeNumEntries();
 
     ArrayView<const GID> rowView = _rowMap->getNodeElementList();
     rowIds = rowView.getRawPtr();

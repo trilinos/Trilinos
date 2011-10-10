@@ -95,7 +95,7 @@ template <typename MatrixAdapter, typename Matrix>
 
 
 template <typename Scalar, typename LNO, typename GNO>
-  void testInputAdapters(
+  void testInputAdapters(GNO xdim, GNO ydim, GNO zdim,
     std::string &fname, RCP<const Comm<int> > &comm, int rank)
 {
   bool include64BitIds = false;
@@ -121,32 +121,37 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Create some input adapters for xpetra objects
 
-  TestAdapters<Scalar,LNO,GNO> input(fname);
+  TestAdapters<Scalar,LNO,GNO> *input = NULL;
+
+  if (fname.size() > 0)
+    input = new TestAdapters<Scalar,LNO,GNO>(fname);
+  else
+    input = new TestAdapters<Scalar,LNO,GNO>(xdim, ydim, zdim);
 
 #ifdef HAVE_MPI
-  input.setMpiCommunicator(MPI_COMM_WORLD);
+  input->setMpiCommunicator(MPI_COMM_WORLD);
 #endif
 
   // Get the original matrix in order to compare answers to it.
-  Teuchos::RCP<crsM_t > M = input.getMatrix();
+  Teuchos::RCP<crsM_t > M = input->getMatrix();
   Teuchos::RCP<const crsG_t> G = M->getCrsGraph();
 
-  RCP<tpetraM_t> tmi = input.getTpetraCrsMatrixInputAdapter();
+  RCP<tpetraM_t> tmi = input->getTpetraCrsMatrixInputAdapter();
   testMatrixAdapter<tpetraM_t, crsM_t>(tmi, M, comm);
 
-  RCP<tpetraG_t> tgi = input.getTpetraCrsGraphInputAdapter();
+  RCP<tpetraG_t> tgi = input->getTpetraCrsGraphInputAdapter();
   testGraphAdapter<tpetraG_t, crsG_t>(tgi, G, comm);
 
-  RCP<xpetraM_t> xmi = input.getXpetraCrsMatrixInputAdapter();
+  RCP<xpetraM_t> xmi = input->getXpetraCrsMatrixInputAdapter();
   testMatrixAdapter<xpetraM_t, crsM_t>(xmi, M, comm);
 
-  RCP<xpetraG_t> xgi = input.getXpetraCrsGraphInputAdapter();
+  RCP<xpetraG_t> xgi = input->getXpetraCrsGraphInputAdapter();
   testGraphAdapter<xpetraG_t, crsG_t>(xgi, G, comm);
 
   if (include64BitIds){
     // This matrix has ids that use the high order 4 bytes of
     // of the 8 byte ID.  true: delete the original M after making a new one.
-    //RCP<tpetraM_t> tmi64 = input.getTpetraCrsMatrixInputAdapter64(true);
+    //RCP<tpetraM_t> tmi64 = input->getTpetraCrsMatrixInputAdapter64(true);
     //testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
   }
 
@@ -177,9 +182,13 @@ int main(int argc, char *argv[])
   // mtxFiles.push_back("../data/diag500_4.mtx");
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-    testInputAdapters<double, int, int>(mtxFiles[fileNum], comm, rank);
-    testInputAdapters<double, int, long>(mtxFiles[fileNum], comm, rank);
+    testInputAdapters<double, int, int>(0,0,0,mtxFiles[fileNum], comm, rank);
+    testInputAdapters<double, int, long>(0,0,0,mtxFiles[fileNum],comm, rank);
   }
+
+  std::string nullString;
+
+  testInputAdapters<double, int, long>(10, 20, 10, nullString, comm, rank);
 
 
   return 0;
