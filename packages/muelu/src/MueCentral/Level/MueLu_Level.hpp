@@ -36,8 +36,9 @@ namespace MueLu {
 class Level : public BaseClass {
 
 private:
+  
   mutable int levelID_; // id number associated with level
-  RCP<DefaultFactoryHandlerBase> defaultFactoryHandler_;
+  RCP<const DefaultFactoryHandlerBase> defaultFactoryHandler_;
   RCP<Level> previousLevel_;  // linked list of Level
 
   RCP<Needs> needs_;
@@ -71,7 +72,7 @@ public:
   //! Builds a new Level object.
   RCP<Level> Build() {
     // todo copy keep status of variables.
-    RCP<Level> newLevel = rcp( new Level(defaultFactoryHandler_) );
+    RCP<Level> newLevel = rcp( new Level() );
 
     // copy keep status of variables
     std::vector<std::string> ekeys = needs_->RequestedKeys();
@@ -92,6 +93,7 @@ public:
 
     return newLevel;
   }
+
   //@}
 
   //! Destructor
@@ -454,7 +456,7 @@ public:
   //@{
   //! Set default factories (used internally by Hierarchy::SetLevel()).
   // Users should not use this method.
-  void SetDefaultFactoryHandler(RCP<DefaultFactoryHandlerBase> defaultFactoryHandler) {
+  void SetDefaultFactoryHandler(RCP<const DefaultFactoryHandlerBase> defaultFactoryHandler) {
     defaultFactoryHandler_ = defaultFactoryHandler;
   }
 
@@ -538,6 +540,7 @@ public:
         outputter.nextRow();
       }
     }
+
     return os;
   }
 

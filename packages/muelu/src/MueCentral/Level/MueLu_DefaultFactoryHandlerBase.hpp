@@ -27,7 +27,7 @@ namespace MueLu {
     //! Get
     // Return ref because user also give ref to the Hierarchy.
     // Factory freed at the end of FillHierarchy() //->TODO
-    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) {
+    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) const {
       // TODO: try/catch + better exception msg if not found
       return *factoryTable_.get(varName);
     }    
@@ -35,24 +35,24 @@ namespace MueLu {
     //! GetDefaultFactoryRCP
     // Returns RCP of default factory handler
     // Factory freed at the end of FillHierarchy() //->TODO
-    virtual RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string & varName) {
+    virtual RCP<const FactoryBase> GetDefaultFactoryRCP(const std::string & varName)  const {
       // TODO: try/catch + better exception msg if not found
       return factoryTable_.get(varName);
     }
 
-    void SetDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
+    void SetDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const { //TODO: remove const, remame SetFactory()
       // TODO: if (varName already exist) ...
       factoryTable_.put(varName, factory);
     }
 
-    bool IsAvailable(const std::string & varName) {
+    bool IsAvailable(const std::string & varName) const {
       return factoryTable_.containsKey(varName);
     }
 
     //@}
 
   protected:
-    Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_; //TODO: use std lib hashtable instead (Teuchos::Hashtable is deprecated).
+    mutable Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_; //TODO: use std lib hashtable instead (Teuchos::Hashtable is deprecated).
         
   }; // class DefaultFactoryHandlerBase
 

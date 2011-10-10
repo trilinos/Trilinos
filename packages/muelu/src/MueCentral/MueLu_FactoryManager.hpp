@@ -9,16 +9,27 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_NoFactory.hpp"
+#include "MueLu_NoFactory.hpp" //TODO: remove
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#include "MueLu_DefaultFactoryHandler.hpp"
+#include "MueLu_DefaultFactoryHandlerBase.hpp"
+
+// Headers for factories used by default:
+#include "MueLu_SaPFactory.hpp"
+//#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_ReUseFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class FactoryManager  { // inherit from FactoryHandlerBase
+  class FactoryManager : public DefaultFactoryHandlerBase {
 #include "MueLu_UseShortNames.hpp"
       
   public:
@@ -27,7 +38,7 @@ namespace MueLu {
 
     //!
     FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null)
-      : PFact_(PFact), RFact_(RFact), AcFact_(AcFact), factoryManager_(rcp(new DefaultFactoryHandler()))
+      : PFact_(PFact), RFact_(RFact), AcFact_(AcFact)
     { }
     
     //! Destructor.
@@ -52,9 +63,42 @@ namespace MueLu {
     RCP<const FactoryBase> GetSmootherFactory() const { return smootherFact_; }
     RCP<const FactoryBase> GetCoarsestSolverFactory() const { return coarsestSolverFact_; }
 
-    RCP<DefaultFactoryHandlerBase> GetFactoryManager() const { return factoryManager_; }
+    //@}
+
+    //@{ Get/Set functions.
+
+    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) const {
+      if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
+
+        if (varName == "A")            return *NoFactory::get();
+        if (varName == "P")            return *NoFactory::get();
+        if (varName == "R")            return *NoFactory::get();
+
+    	if (varName == "Nullspace")    return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+
+        TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+      }
+
+      return DefaultFactoryHandlerBase::GetDefaultFactory(varName);
+    }
 
     //@}
+    
+  private:
+
+    //! helper
+    const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) const {
+
+      GetOStream(Warnings0, 0)  << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
+      GetOStream(Warnings00, 0) << "         using default factory: ";
+      { Teuchos::OSTab tab(getOStream(), 8); factory->describe(GetOStream(Warnings00), getVerbLevel()); }
+
+      DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
+      return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //TODO: replace by: return factory;
+    }
+
 
   private:
 
@@ -65,8 +109,6 @@ namespace MueLu {
     RCP<const FactoryBase> smootherFact_;
     RCP<const FactoryBase> coarsestSolverFact_;
     
-    mutable RCP<DefaultFactoryHandlerBase> factoryManager_;
-
   }; // class
 
 } //namespace MueLu

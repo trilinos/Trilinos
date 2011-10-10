@@ -99,7 +99,7 @@ namespace MueLuTests {
     }
 
     // build test-specific default factory handler
-    RCP<DefaultFactoryHandlerBase> defHandler = rcp(new DefaultFactoryHandlerBase());
+    RCP<MueLu::DefaultFactoryHandlerBase> defHandler = rcp(new MueLu::DefaultFactoryHandlerBase());
     defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent

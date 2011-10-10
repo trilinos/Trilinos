@@ -159,12 +159,12 @@ public:
   }
   // FillHierarchy
 
-  Teuchos::ParameterList Setup(const FactoryManager & manager,
-      const int &startLevel = 0, const int &numDesiredLevels = 10) {
+  Teuchos::ParameterList Setup(const FactoryManager & manager, const int &startLevel = 0, const int &numDesiredLevels = 10) {
+    RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
 
-    TopRAPFactory<SC,LO,GO,NO>      rapFactory           (manager.GetFactoryManager(), manager.GetPFact(), manager.GetRFact(), manager.GetAcFact());
-    TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (manager.GetFactoryManager(), manager.GetSmootherFactory());
-    TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(manager.GetFactoryManager(), manager.GetCoarsestSolverFactory());
+    TopRAPFactory<SC,LO,GO,NO>      rapFactory           (rcpManager, manager.GetPFact(), manager.GetRFact(), manager.GetAcFact());
+    TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (rcpManager, manager.GetSmootherFactory());
+    TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(rcpManager, manager.GetCoarsestSolverFactory());
 
     Monitor h(*this, "Setup");
     Xpetra::global_size_t sumCoarseNnz = 0;
@@ -283,7 +283,7 @@ public:
 
   void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
     Level & level = *Levels_[LastLevelID()];
-    RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+    RCP<const DefaultFactoryHandlerBase> manager = rcp(new FactoryManager());
     SetFactoryManager SFM(level, manager);
 
     level.Request(smooFact);

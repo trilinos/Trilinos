@@ -14,7 +14,7 @@ namespace MueLu {
     //@{
 
     //!
-    SetFactoryManager(Level & level, RCP<DefaultFactoryHandlerBase> & factoryManager)
+    SetFactoryManager(Level & level, RCP<const DefaultFactoryHandlerBase> & factoryManager)
       :  level_(level) 
     {
       level.SetDefaultFactoryHandler(factoryManager);
@@ -37,7 +37,7 @@ namespace MueLu {
 
   public:
 
-    TopRAPFactory(RCP<DefaultFactoryHandlerBase> parentFactoryManager, const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null)
+    TopRAPFactory(RCP<const DefaultFactoryHandlerBase> parentFactoryManager, const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null)
       : parentFactoryManager_(parentFactoryManager), PFact_(PFact), RFact_(RFact), AcFact_(AcFact)
     { }
     
@@ -73,7 +73,7 @@ namespace MueLu {
     }
     
   private:
-    mutable RCP<DefaultFactoryHandlerBase> parentFactoryManager_;
+    mutable RCP<const DefaultFactoryHandlerBase> parentFactoryManager_;
     RCP<const FactoryBase> PFact_;
     RCP<const FactoryBase> RFact_;
     RCP<const FactoryBase> AcFact_;
@@ -85,7 +85,7 @@ namespace MueLu {
 
   public:
 
-    TopSmootherFactory(RCP<DefaultFactoryHandlerBase> parentFactoryManager, RCP<const FactoryBase> smootherFact)
+    TopSmootherFactory(RCP<const DefaultFactoryHandlerBase> parentFactoryManager, RCP<const FactoryBase> smootherFact)
       : parentFactoryManager_(parentFactoryManager), smootherFact_(smootherFact)
     { }
 
@@ -119,7 +119,7 @@ namespace MueLu {
     }
 
   private:
-    mutable RCP<DefaultFactoryHandlerBase> parentFactoryManager_;
+    mutable RCP<const DefaultFactoryHandlerBase> parentFactoryManager_;
     RCP<const FactoryBase> smootherFact_;
   };
 

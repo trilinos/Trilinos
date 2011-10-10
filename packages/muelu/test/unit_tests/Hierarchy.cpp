@@ -2,6 +2,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include "MueLu_DefaultFactoryHandlerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
@@ -172,7 +173,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   RCP<Level> levelOne = H.GetLevel();
   
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  RCP<MueLu::DefaultFactoryHandlerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetDefaultFactoryHandler(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
@@ -214,7 +215,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   RCP<Level> levelOne = H.GetLevel();
 
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  RCP<MueLu::DefaultFactoryHandlerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetDefaultFactoryHandler(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
@@ -255,7 +256,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   RCP<Level> levelOne = H.GetLevel();
   
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<DefaultFactoryHandlerBase> manager = rcp(new DefaultFactoryHandler());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
+  RCP<MueLu::DefaultFactoryHandlerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetDefaultFactoryHandler(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
