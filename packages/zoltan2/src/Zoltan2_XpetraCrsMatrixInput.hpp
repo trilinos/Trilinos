@@ -30,18 +30,17 @@ namespace Zoltan2 {
 
 */
 
-template <Z2CLASS_TEMPLATE>
-class XpetraCrsMatrixInput : public MatrixInput<Z2PARAM_TEMPLATE> {
-private:
-
-  typedef Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> xmatrixType;
-
-  RCP<const xmatrixType > _matrix;
-  RCP<const Xpetra::Map<LID, GID, Node> > _rowMap;
-  RCP<const Xpetra::Map<LID, GID, Node> > _colMap;
-  LID _base;
-
+template <User>
+class XpetraCrsMatrixInput : public MatrixInput<User> {
 public:
+
+  // Adapter must define these types for Zoltan2.
+  typedef typename User::Scalar        scalar_t;
+  typedef typename User::GlobalOrdinal gno_t;
+  typedef typename User::LocalOrdinal  lno_t;
+  typedef typename User::Node          node_t;
+  typedef typename gno_t gid_t;   // GNO and GID are same in Xpetra.
+  typedef typename lno_t lid_t;   // LNO and LID are same in Xpetra.
 
   std::string inputAdapterName()const {return std::string("XpetraCrsMatrix");}
 
@@ -103,9 +102,9 @@ public:
 
   /*! Get copy of matrix entries on local process
    */
-  void getRowListCopy(std::vector<GID> &rowIds,
-    std::vector<LID> &localIds, std::vector<LNO> &rowSize,
-    std::vector<GID> &colIds) const
+  void getRowListCopy(std::vector<gid_t> &rowIds,
+    std::vector<lid_t> &localIds, std::vector<lno_t> &rowSize,
+    std::vector<gid_t> &colIds) const
   {
     size_t nrows = getLocalNumRows();
     size_t nnz = _matrix->getNodeNumEntries();
@@ -117,15 +116,15 @@ public:
     colIds.resize(nnz);
     localIds.clear();   // consecutive IDs implied
 
-    Teuchos::Array<LNO> indices(maxrow);
+    Teuchos::Array<lno_t> indices(maxrow);
     Teuchos::Array<Scalar> nzs(maxrow);
 
     for (unsigned i=0; i < nrows; i++){
-      LNO row = i + _base;
-      LNO nnz = _matrix->getNumEntriesInLocalRow(row);
+      lno_t row = i + _base;
+      lno_t nnz = _matrix->getNumEntriesInLocalRow(row);
       size_t n;
       _matrix->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
-      for (LNO j=0; j < nnz; j++){
+      for (lno_t j=0; j < nnz; j++){
         colIds[next++] = _colMap->getGlobalElement(indices[j]);
       }
       rowIds[i] = _rowMap->getGlobalElement(row);
@@ -146,8 +145,17 @@ public:
   /*! Return a read only view of the data.
       We don't have a view of global data, only of local data.
    */
-  //LNO getRowListView(GID *&rowIds, LID *&localIds,
-  //  LNO *&rowSize, GID *& colIds) const
+  //lno_t getRowListView(gid_t *&rowIds, lid_t *&localIds,
+  //  lno_t *&rowSize, gid_t *& colIds) const
+
+private:
+
+  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrixType;
+
+  RCP<const xmatrixType > _matrix;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > _rowMap;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > _colMap;
+  lno_t _base;
 
 
 };

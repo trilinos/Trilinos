@@ -19,7 +19,7 @@ namespace Zoltan2{
 //! \class AlgScotch
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-template<Z2CLASS_TEMPLATE>
+template<User>
 class AlgScotch {
 public:
   AlgScotch(RCP<Model<Z2PARAM_TEMPLATE> >, //TODO Should be GraphModel, but don't know how to do the Adapter template

@@ -15,24 +15,33 @@
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-template<Z2CLASS_TEMPLATE>
-class PartitioningProblem : public Problem<Z2PARAM_TEMPLATE>
+template<User>
+class PartitioningProblem : public Problem<User>
 {
 protected:
   void createPartitioningProblem();
 
-  RCP<PartitioningSolution<Z2PARAM_TEMPLATE> > solution_;
+  RCP<PartitioningSolution<User> > solution_;
 
 public:
 
   // Destructor
   virtual ~PartitioningProblem() {}
 
+#if 0  // KDDKDD Don't know how to use shortcut with User template
   //! Constructor with Tpetra Matrix interface.
-  PartitioningProblem(
-    Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
+  PartitioningProblem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
     ParameterList &p
-  ) : Problem<Z2PARAM_TEMPLATE>(A, p) 
+  ) : Problem<User>(A, p) 
+  {
+    HELLO;
+    createPartitioningProblem();
+  }
+#endif
+
+  //! Constructor with InputAdapter Interface
+  PartitioningProblem(InputAdapter<User> &A ParameterList &p) 
+                      : Problem<User>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
@@ -45,20 +54,20 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::solve()
+template <User>
+void PartitioningProblem<User>::solve()
 {
   HELLO;
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  AlgScotch<Z2PARAM_TEMPLATE> alg(this->model_, this->solution_, this->params_);
+  AlgScotch<User> alg(this->model_, this->solution_, this->params_);
 }
 
 ////////////////////////////////////////////////////////////////////////
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::redistribute()
+template <User>
+void PartitioningProblem<User>::redistribute()
 {
   HELLO;
 }
@@ -69,8 +78,8 @@ void PartitioningProblem<Z2PARAM_TEMPLATE>::redistribute()
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
 
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
+template <User>
+void PartitioningProblem<User>::createPartitioningProblem()
 {
   HELLO;
   cout << __func__ << " input adapter type " 
@@ -96,8 +105,8 @@ void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
     switch (adapterType) {
     case MatrixAdapterType:
       cout << __func__ << " Matrix adapter switch" << endl;
-      //TODO model_ = 
-      //TODO    new GraphModel<MatrixInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
+      model_ = 
+         new GraphModel<MatrixInput<User> >(this->inputAdapter_);
       break;
     case GraphAdapterType:
       cout << __func__ << " Graph adapter switch" << endl;

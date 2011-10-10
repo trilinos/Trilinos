@@ -50,6 +50,7 @@ enum InputAdapterType {
   IdAdapterType
 };
 
+template <typename User>
 class InputAdapter {
 private:
 public:

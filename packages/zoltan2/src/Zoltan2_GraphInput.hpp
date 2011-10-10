@@ -35,18 +35,18 @@ namespace Zoltan2 {
       problem's number of objects.
 */
 
-template <typename LNO, typename GNO, typename LID=LNO, typename GID=GNO,
-  typename Node=Kokkos::DefaultNode::DefaultNodeType>
-  class GraphInput : public InputAdapter {
+template <typename User>
+  class GraphInput : public InputAdapter<User> {
 private:
 
 public:
 
-  typedef LID lidType;
-  typedef GID gidType;
-  typedef LNO lnoType;
-  typedef GNO gnoType;
-  typedef Node  nodeType;
+  // User must define these typenames; these are defaults for now.
+  typedef typename int lid_t;
+  typedef typename int gid_t;
+  typedef typename int lno_t;
+  typedef typename int gno_t;
+  typedef typename Kokkos::DefaultNode::DefaultNodeType node_t;
 
   // adapterType == GraphAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
@@ -123,7 +123,7 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  LNO getVertexListView(GID *&Ids, LID *&localIds,
+  lno_t getVertexListView(gid_t *&Ids, lid_t *&localIds,
      double *&xyz, double *&wgts)
   {
     Ids = NULL;
@@ -153,7 +153,7 @@ public:
          edges. Weights are listed by edge by weight component.
       \return The number of ids in the edgeID list.
    */
-  LNO getVertexEdgeView(GID ID, LID localID, GID *&edgeID,
+  lno_t getVertexEdgeView(gid_t ID, lid_t localID, gid_t *&edgeID,
     double * &wgts) const
   {
     edgeID = NULL;

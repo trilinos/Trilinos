@@ -23,15 +23,16 @@ namespace Zoltan2{
 //! \class Problem
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-template<Z2CLASS_TEMPLATE>
+template<typename User>
 class Problem {
 public:
+  
   // Constructors (there will be several to support novice interface)
   // Each will make sure the InputAdapter, parameters, etc. are set 
   // correctly before calling a common problem construction function.
-  Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
-  Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  Problem(InputAdapter &);
+  //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
+  //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
+  Problem(InputAdapter<User> &);
 
   // Destructor
   virtual ~Problem() {};
@@ -41,8 +42,8 @@ public:
   virtual void redistribute() = 0;
 
 protected:
-  RCP<InputAdapter> inputAdapter_;
-  RCP<Model<Z2PARAM_TEMPLATE> > model_;  
+  RCP<InputAdapter<User> > inputAdapter_;
+  RCP<Model<InputAdapter<User> > > model_;  
   RCP<Teuchos::ParameterList> params_;
 
 private:
@@ -50,11 +51,12 @@ private:
 };
 
 
+#if 0 // KDDKDD How does simple interface work with User template??
 ////////////////////////////////////////////////////////////////////////
 //! Problem class constructor:  Tpetra matrix input must be converted
 //! to XpetraMatrixAdapter.
-template <Z2FN_TEMPLATE>
-Problem<Z2PARAM_TEMPLATE>::Problem(
+template <typename User>
+Problem<User>::Problem(
   Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> &A,
   Teuchos::ParameterList &p
 ) 
@@ -64,6 +66,22 @@ Problem<Z2PARAM_TEMPLATE>::Problem(
                                 (rcpFromRef(A)));
   params_ = rcpFromRef(p);
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() << " " << inputAdapter_->inputAdapterName() << endl;
+}
+#endif
+
+template <typename User>
+Problem<User>::Problem(
+  InputAdapter<User> &input,
+  Teuchos::ParameterList &params
+)
+{
+  HELLO;
+  inputAdapter_ = rcp(input);
+  params_ = rcpFromRef(p);
+  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
+       << " " << inputAdapter_->inputAdapterName() << endl;
+}
+
 }
 
 }

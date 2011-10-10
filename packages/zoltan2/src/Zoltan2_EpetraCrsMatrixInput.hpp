@@ -29,6 +29,14 @@ private:
     RCP<const Epetra_CrsMatrix> _inmatrix;
 public:
 
+  // KDDKDD This may not be right.  May need to specify double, int, int.
+  typedef typename double scalar_t;
+  typedef typename int gno_t;
+  typedef typename int lno_t;
+  typedef typename gno_t gid_t;
+  typedef typename lno_t lid_t;
+  typedef typename node_t;
+
   std::string inputAdapterName()const {return std::string("EpetraCrsMatrix");}
 
   ~EpetraCrsMatrixInput() { }
