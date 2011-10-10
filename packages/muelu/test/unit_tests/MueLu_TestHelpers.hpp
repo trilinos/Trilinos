@@ -147,7 +147,7 @@ namespace MueLuTests {
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        currentLevel.SetDefaultFactoryHandler(factoryHandler);
+        currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(1);
       }
@@ -156,8 +156,8 @@ namespace MueLuTests {
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        fineLevel.SetDefaultFactoryHandler(factoryHandler);
-        coarseLevel.SetDefaultFactoryHandler(factoryHandler);
+        fineLevel.SetFactoryManager(factoryHandler);
+        coarseLevel.SetFactoryManager(factoryHandler);
 
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 

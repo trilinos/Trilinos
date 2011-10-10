@@ -141,7 +141,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     else if(fac == MueLu::NoFactory::get())
     {
@@ -179,7 +179,7 @@ public:
     // if no generating factory given, use FactoryManager
     if (factory == NULL)
     {
-      const FactoryBase* defaultFactory = GetDefaultFactoryPtr(ename);
+      const FactoryBase* defaultFactory = GetFactoryPtr(ename);
 
       /*if( defaultFactory == NULL)
             {
@@ -248,7 +248,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     needs_->Keep(ename,fac);
   }
@@ -272,7 +272,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     return needs_->isKept(ename,fac);
   }
@@ -283,7 +283,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     needs_->Delete(ename,fac);
   }
@@ -355,7 +355,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
 #if defined(HEAVY_DEBUG_OUTPUT)
       std::cout << "call Request(" << ename << "," << fac << ") [->default factory]" << std::endl;
 #endif
@@ -399,7 +399,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
 #if defined(HEAVY_DEBUG_OUTPUT)
       std::cout << "call Release(" << ename << "," << fac << ") [->default factory]" << std::endl;
 #endif
@@ -427,7 +427,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     return needs_->IsAvailable(ename,fac);
   }
@@ -443,7 +443,7 @@ public:
     const FactoryBase* fac = factory;
     if (factory == NULL)
     {
-      fac = GetDefaultFactoryPtr(ename);
+      fac = GetFactoryPtr(ename);
     }
     return needs_->IsRequested(ename,fac);
   }
@@ -454,7 +454,7 @@ public:
   //@{
   //! Set default factories (used internally by Hierarchy::SetLevel()).
   // Users should not use this method.
-  void SetDefaultFactoryHandler(RCP<const FactoryManagerBase> factoryManager) {
+  void SetFactoryManager(const RCP<const FactoryManagerBase> & factoryManager) {
     factoryManager_ = factoryManager;
   }
 
@@ -484,7 +484,7 @@ public:
         outputter.outputField(*it);   // variable name
         outputter.outputField(*kt);   // factory ptr
 
-        if(factoryManager_ != Teuchos::null && factoryManager_->IsAvailable(*it) && GetDefaultFactoryPtr(*it)==*kt)
+        if(factoryManager_ != Teuchos::null && factoryManager_->IsAvailable(*it) && GetFactoryPtr(*it)==*kt)
           outputter.outputField("def"); // factory ptr (deault factory)
         else if (*kt == MueLu::NoFactory::get())
           outputter.outputField("user"); // factory ptr (user generated)
@@ -547,19 +547,18 @@ public:
 private:
 
   //! Get ptr to default factory.
-  const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) const
+  const FactoryBase* GetFactoryPtr(const std::string& varname) const
   {
-    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no FactoryManager");
-    return &(factoryManager_->GetDefaultFactory(varname));
+    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): no FactoryManager");
+    return &(factoryManager_->GetFactory(varname));
   }
 
 
   //! Get default factory.
-  const FactoryBase & GetDefaultFactory(const std::string& varname) {
-    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no FactoryManager");
-    return factoryManager_->GetDefaultFactory(varname);
+  const FactoryBase & GetFactory(const std::string& varname) {
+    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): no FactoryManager");
+    return factoryManager_->GetFactory(varname);
   }
-
 
   enum RequestMode { REQUEST, RELEASE, UNDEF };
   static RequestMode requestMode_;
@@ -572,4 +571,3 @@ std::ostream& operator<<(std::ostream& os, Level const &level);
 
 #define MUELU_LEVEL_SHORT
 #endif //ifndef MUELU_LEVEL_HPP
-

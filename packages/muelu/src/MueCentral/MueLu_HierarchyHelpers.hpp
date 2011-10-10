@@ -7,7 +7,7 @@
 
 namespace MueLu {
 
-  //! An exception safe way to call the method 'Level::SetDefaultFactoryHandler()'
+  //! An exception safe way to call the method 'Level::SetFactoryManager()'
   class SetFactoryManager {
   public:
 
@@ -17,12 +17,12 @@ namespace MueLu {
     SetFactoryManager(Level & level, RCP<const FactoryManagerBase> & factoryManager)
       :  level_(level) 
     {
-      level.SetDefaultFactoryHandler(factoryManager);
+      level.SetFactoryManager(factoryManager);
     }
     
     //! Destructor.
     virtual ~SetFactoryManager() { 
-      level_.SetDefaultFactoryHandler(Teuchos::null);
+      level_.SetFactoryManager(Teuchos::null);
     }
 
     //@}

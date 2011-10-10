@@ -27,12 +27,12 @@ namespace MueLu {
     //! Get
     // Return ref because user also give ref to the Hierarchy.
     // Factory freed at the end of FillHierarchy() //->TODO
-    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) const {
+    virtual const FactoryBase & GetFactory(const std::string & varName) const {
       // TODO: try/catch + better exception msg if not found
       return *factoryTable_.get(varName);
     }    
 
-    void SetDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const { //TODO: remove const, remame SetFactory()
+    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const { //TODO: remove const, remame SetFactory()
       // TODO: if (varName already exist) ...
       factoryTable_.put(varName, factory);
     }

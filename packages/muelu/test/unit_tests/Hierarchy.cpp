@@ -174,13 +174,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
   
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetDefaultFactoryHandler(manager);
+  levelOne->SetFactoryManager(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
   //JG FIXME
-  levelOne->SetDefaultFactoryHandler(Teuchos::null);
+  levelOne->SetFactoryManager(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory);
 
@@ -216,13 +216,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
 
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetDefaultFactoryHandler(manager);
+  levelOne->SetFactoryManager(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
   //JG FIXME
-  levelOne->SetDefaultFactoryHandler(Teuchos::null);
+  levelOne->SetFactoryManager(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
 
@@ -257,13 +257,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetDefaultFactoryHandler(manager);
+  levelOne->SetFactoryManager(manager);
  
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
   //JG FIXME
-  levelOne->SetDefaultFactoryHandler(Teuchos::null);
+  levelOne->SetFactoryManager(Teuchos::null);
 
   H.SetCoarsestSolver(SmooFactory,MueLu::POST);
 

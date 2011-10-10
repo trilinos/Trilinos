@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   Level Finest;
   Finest.Set("A", A);
   
-  Finest.SetDefaultFactoryHandler( rcp( new FactoryManager() ));
+  Finest.SetFactoryManager( rcp( new FactoryManager() ));
 
   UCAggregationFactory UCAggFact;
   Finest.Request(UCAggFact);

@@ -67,7 +67,7 @@ namespace MueLu {
 
     //@{ Get/Set functions.
 
-    virtual const FactoryBase & GetDefaultFactory(const std::string & varName) const {
+    virtual const FactoryBase & GetFactory(const std::string & varName) const {
       if (! FactoryManagerBase::IsAvailable(varName)) {
 
         if (varName == "A")            return *NoFactory::get();
@@ -78,10 +78,10 @@ namespace MueLu {
         if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
-        TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+        TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "FactoryManager::GetFactory(): No default factory available for building '"+varName+"'.");
       }
 
-      return FactoryManagerBase::GetDefaultFactory(varName);
+      return FactoryManagerBase::GetFactory(varName);
     }
 
     //@}
@@ -95,8 +95,8 @@ namespace MueLu {
       GetOStream(Warnings00, 0) << "         using default factory: ";
       { Teuchos::OSTab tab(getOStream(), 8); factory->describe(GetOStream(Warnings00), getVerbLevel()); }
 
-      FactoryManagerBase::SetDefaultFactory(varName, factory);
-      return FactoryManagerBase::GetDefaultFactory(varName); //TODO: replace by: return factory;
+      FactoryManagerBase::SetFactory(varName, factory);
+      return FactoryManagerBase::GetFactory(varName); //TODO: replace by: return factory;
     }
 
 
