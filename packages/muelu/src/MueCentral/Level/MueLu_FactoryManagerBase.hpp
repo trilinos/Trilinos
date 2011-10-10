@@ -1,5 +1,5 @@
-#ifndef MUELU_DEFAULTFACTORYHANDLERBASE_HPP
-#define MUELU_DEFAULTFACTORYHANDLERBASE_HPP
+#ifndef MUELU_FACTORYMANAGERBASE_HPP
+#define MUELU_FACTORYMANAGERBASE_HPP
 
 #include <string>
 #include <Teuchos_Hashtable.hpp>
@@ -50,8 +50,8 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_DEFAULTFACTORYHANDLERBASE_SHORT
-#endif //ifndef MUELU_DEFAULTFACTORYHANDLERBASE_HPP
+#define MUELU_FACTORYMANAGERBASE_SHORT
+#endif //ifndef MUELU_FACTORYMANAGERBASE_HPP
 
 //TODO: factoryTable_ must be cleaned at the end of hierarchy Populate() (because Hierarchy is not holding any factories after construction)
 

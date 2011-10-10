@@ -98,19 +98,19 @@ namespace MueLuTests {
       return;
     }
 
-    // build test-specific default factory handler
-    RCP<MueLu::FactoryManagerBase> defHandler = rcp(new MueLu::FactoryManagerBase());
-    defHandler->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
-    defHandler->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
-    defHandler->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defHandler->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+    // build test-specific default factory manager
+    RCP<MueLu::FactoryManagerBase> defManager = rcp(new MueLu::FactoryManagerBase());
+    defManager->SetDefaultFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
+    defManager->SetDefaultFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
+    defManager->SetDefaultFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
+    defManager->SetDefaultFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    // overwrite default factory handler...
-    fineLevel.SetDefaultFactoryHandler(defHandler);
-    coarseLevel.SetDefaultFactoryHandler(defHandler);
+    // overwrite default factory manager
+    fineLevel.SetDefaultFactoryHandler(defManager);
+    coarseLevel.SetDefaultFactoryHandler(defManager);
 
     RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);

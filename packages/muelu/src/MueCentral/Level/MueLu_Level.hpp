@@ -30,7 +30,7 @@ namespace MueLu {
     the data can be accessed.
 
     If no pointer to the generating factory is provided (or it is NULL) then the Level class
-    uses the information from a default factory handler, which stores default factories for different
+    uses the information from a factory manager, which stores default factories for different
     variable names.
  */
 class Level : public BaseClass {
@@ -38,7 +38,7 @@ class Level : public BaseClass {
 private:
   
   mutable int levelID_; // id number associated with level
-  RCP<const FactoryManagerBase> defaultFactoryHandler_;
+  RCP<const FactoryManagerBase> factoryManager_;
   RCP<Level> previousLevel_;  // linked list of Level
 
   RCP<Needs> needs_;
@@ -52,14 +52,14 @@ public:
   }
 
   //! Constructor
-  Level(RCP<FactoryManagerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler) {
+  Level(RCP<FactoryManagerBase> & factoryManager) : levelID_(-1), factoryManager_(factoryManager) {
     needs_ = rcp(new Needs());
   }
 
   //! Copy constructor.
   explicit Level(const Level& source) {
     levelID_ = source.levelID_;
-    defaultFactoryHandler_ = source.defaultFactoryHandler_;
+    factoryManager_ = source.factoryManager_;
     previousLevel_ = source.previousLevel_;
     needs_ = source.needs_; // TODO: deep copy
     // TODO factorize with Build()
@@ -176,9 +176,7 @@ public:
   template <class T>
   T & Get(const std::string& ename, const FactoryBase* factory)
   {
-
-
-    // if no generating factory given, use DefaultFactoryHandler
+    // if no generating factory given, use FactoryManager
     if (factory == NULL)
     {
       const FactoryBase* defaultFactory = GetDefaultFactoryPtr(ename);
@@ -452,12 +450,12 @@ public:
 
   //@}
 
-  //! @name Default factory handler
+  //! @name Set factory manager
   //@{
   //! Set default factories (used internally by Hierarchy::SetLevel()).
   // Users should not use this method.
-  void SetDefaultFactoryHandler(RCP<const FactoryManagerBase> defaultFactoryHandler) {
-    defaultFactoryHandler_ = defaultFactoryHandler;
+  void SetDefaultFactoryHandler(RCP<const FactoryManagerBase> factoryManager) {
+    factoryManager_ = factoryManager;
   }
 
   //@}
@@ -486,7 +484,7 @@ public:
         outputter.outputField(*it);   // variable name
         outputter.outputField(*kt);   // factory ptr
 
-        if(defaultFactoryHandler_ != Teuchos::null && defaultFactoryHandler_->IsAvailable(*it) && GetDefaultFactoryPtr(*it)==*kt)
+        if(factoryManager_ != Teuchos::null && factoryManager_->IsAvailable(*it) && GetDefaultFactoryPtr(*it)==*kt)
           outputter.outputField("def"); // factory ptr (deault factory)
         else if (*kt == MueLu::NoFactory::get())
           outputter.outputField("user"); // factory ptr (user generated)
@@ -551,15 +549,15 @@ private:
   //! Get ptr to default factory.
   const FactoryBase* GetDefaultFactoryPtr(const std::string& varname) const
   {
-    TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
-    return &(defaultFactoryHandler_->GetDefaultFactory(varname));
+    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no FactoryManager");
+    return &(factoryManager_->GetDefaultFactory(varname));
   }
 
 
   //! Get default factory.
   const FactoryBase & GetDefaultFactory(const std::string& varname) {
-    TEST_FOR_EXCEPTION(defaultFactoryHandler_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no DefaultFactoryHandler.");
-    return defaultFactoryHandler_->GetDefaultFactory(varname);
+    TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetDefaultFactory(): no FactoryManager");
+    return factoryManager_->GetDefaultFactory(varname);
   }
 
 
