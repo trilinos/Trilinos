@@ -618,6 +618,208 @@ namespace Belos {
 
     private:
 
+      /// \brief Update CA-GMRES' upper Hessenberg matrix.
+      ///
+      /// The R input argument is a different R than the R factor of
+      /// the upper Hessenberg matrix.  This R stores the
+      /// orthogonalization coefficients of the Krylov basis.  (Thus,
+      /// it's the R factor in the QR factorization of the Krylov
+      /// basis, rather than the R factor in the QR factorization of
+      /// H.)
+      ///
+      /// After calling this method, the upper Hessenberg matrix is
+      /// ready for updateColumnsGivens().
+      ///
+      /// Notation: S = endCol-startCol+1 is the number of "new"
+      ///   Krylov basis vectors generated in this round of CA-GMRES,
+      ///   not counting the starting vector of the matrix powers
+      ///   kernel invocation.
+      ///
+      /// \param H [in/out] The upper Hessenberg matrix.
+      /// \param R [in/out] The upper triangular orthogonalization
+      ///   coefficients of the Krylov basis.
+      /// \param B [in] The S+1 by S change-of-basis matrix.
+      /// \param startCol [in] [startCol, endCol] is an inclusive
+      ///   zero-based index range of columns of H to update.
+      /// \param endCol [in] [startCol, endCol] is an inclusive
+      ///   zero-based index range of columns of H to update.
+      void
+      caGmresUpdateUpperHessenbergImpl (mat_type& H, 
+					const mat_type& R, 
+					const mat_type& B, 
+					const int startCol, 
+					const int endCol) const
+      {
+	using Teuchos::Copy;
+	using Teuchos::View;
+
+	TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
+			   "startCol = " << startCol << " < 0.");
+	TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument, 
+			   "startCol = " << startCol << " > endCol = " 
+			   << endCol << ".");
+	if (startCol == 0) {
+	  const int numCols = endCol - startCol + 1;
+
+	  const mat_type R_underline (View, R, numCols+1, numCols+1);
+	  const mat_type B_view (View, B, numCols+1, numCols);
+	  const mat_type R_view (View, R, numCols, numCols);
+	  mat_type H_view (View, H, numCols+1, numCols);
+
+	  // H_view := R_underline * B_view.
+	  matMatMult (STS::zero(), H_view, STS::alpha(), R_underline, B_view);
+
+	  // H_view : = H_view / R_view.
+	  rightUpperTriSolve (H_view, R_view);
+	} else {
+	  const int M = startCol+1;
+	  // The new basis vectors don't include the starting vector
+	  // for the matrix powers kernel.
+	  const int S = endCol - startCol + 1;
+
+	  const mat_type R_km1k_underline (View, R, M, S+1, 0, startCol-1);
+	  const mat_type R_km1k (View, R, M, S, 0, startCol-1);	  
+	  const mat_type R_k_underline (View, R, S+1, S+1, M, startCol-1);
+	  const mat_type R_k (View, R, S, S, M, startCol-1);
+
+	  const mat_type B_k_underline (View, B, S+1, S);
+	  const mat_type H_km1 (View, H, M, M, 0, 0);
+	  mat_type H_km1k (View, H, M, S, 0, startCol);
+	  mat_type H_k_underline (View, H, S+1, S, M, startCol);
+
+	  // We need R_km1k / R_k (which is M x S) for two different
+	  // things.  Let's precompute it, storing the result in
+	  // temporary storage.
+	  mat_type temp (M, S);
+	  temp.assign (R_km1k); // the solve overwrites its input
+	  rightUpperTriSolve (temp, R_k);
+
+	  // Keep a copy of the last row of (R_km1k / R_k).
+	  mat_type lastRow (Copy, temp, 1, S, M-1, 0);
+
+	  // H_km1k :=
+	  // R_km1k_underline * B_k_underline / R_k - H_km1 * (R_km1k / R_k).
+	  //
+	  // H_km1k := -H_km1 * (R_km1k / R_k).
+	  matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, temp);
+	  // temp := R_km1k_underline * B_k_underline.
+	  matMatMult (STS::zero(), temp, R_km1k_underline, B_k_underline);
+	  // temp := temp / R_k.
+	  rightUpperTriSolve (temp, R_k);
+	  // H_km1k := H_km1k + temp.
+	  matAdd (H_km1k, H_km1k, temp);
+
+	  // H_k_underline := R_k_underline * B_k_underline / R_k -
+	  //   h_km1 * e_1 * lastRow.
+	  //
+	  matMatMult (H_k_underline, R_k_underline, B_k_underline);
+	  rightUpperTriSolve (H_k_underline, R_k);
+	  matScale (lastRow, H(M+1,M));
+	  mat_type H_k_view (View, H_k_underline, 1, S+1);
+	  matSub (H_k_view, lastRow);
+	}
+      }
+
+      //! A := alpha * A.
+      void
+      matScale (mat_type& A, const scalar_type& alpha) const
+      {
+	const int LDA = A.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] *= alpha;
+	    }
+	  }
+	}
+      }
+
+      //! A := A + B.
+      void 
+      matAdd (mat_type& A, const mat_type& B) const
+      {
+	const int LDA = A.stride();
+	const int LDB = B.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+	    const scalar_type* const B_j = &B(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] += B_j[i];
+	    }
+	  }
+	}
+      }
+
+      //! A := A - B.
+      void 
+      matSub (mat_type& A, const mat_type& B) const
+      {
+	const int LDA = A.stride();
+	const int LDB = B.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+	    const scalar_type* const B_j = &B(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] -= B_j[i];
+	    }
+	  }
+	}
+      }
+
+      //! In Matlab notation: B = B / R.
+      void
+      rightUpperTriSolve (mat_type& B,
+			  const mat_type& R) const
+      {
+	blas_type blas;
+	blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, 
+		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 
+		   R.numCols(), B.numCols(), 
+		   STS::one(), R.values(), R.stride(), 
+		   B.values(), B.stride());
+      }
+
+      /// \brief C := A*B.  
+      /// 
+      /// C is NOT allowed to alias A or B.  We don't check for aliasing.
+      void
+      matMatMult (const scalar_type& beta,
+		  mat_type& C, 
+		  const scalar_type& alpha,
+		  const mat_type& A, 
+		  const mat_type& B) const
+      {
+	using Teuchos::NO_TRANS;
+	blas_type blas;
+
+	blas.GEMM (NO_TRANS, NO_TRANS, C.numRows(), C.numCols(), A.numCols(), 
+		   alpha, A.values(), A.stride(), B.values(), B.stride(),
+		   beta, C.values(), C.stride());
+      }
+
+
+
       /// \brief Solve the projected least-squares problem, assuming Givens rotations updates.
       ///
       /// Call this method after invoking either updateColumnGivens()
