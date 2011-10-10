@@ -3,7 +3,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_DefaultFactoryHandler.hpp"
+#include "MueLu_DefaultFactoryHandlerBase.hpp"
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"

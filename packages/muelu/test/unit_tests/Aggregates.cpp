@@ -3,7 +3,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_DefaultFactoryHandler.hpp"
+#include "MueLu_DefaultFactoryHandlerBase.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
