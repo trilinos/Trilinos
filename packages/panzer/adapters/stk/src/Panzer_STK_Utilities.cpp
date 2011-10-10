@@ -17,12 +17,12 @@ void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int
 static void build_local_ids(const panzer_stk::STK_Interface & mesh,
                             std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
 
-void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x)
+void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0));
 }
 
-void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x)
+void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & postfix)
 {
    typedef Intrepid::FieldContainer<double> FieldContainer;
 
@@ -44,7 +44,7 @@ void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk:
       // write out to stk mesh
       std::map<std::string,FieldContainer>::iterator dataItr;
       for(dataItr=data.begin();dataItr!=data.end();++dataItr) 
-         mesh.setSolutionFieldData(dataItr->first,blockId,localCellIds,dataItr->second);
+         mesh.setSolutionFieldData(dataItr->first+postfix,blockId,localCellIds,dataItr->second);
    }
 }
 
