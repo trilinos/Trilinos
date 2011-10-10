@@ -169,13 +169,16 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
+  // matrix parameters
+  GO numGlobalElements = 100;
   LO maxLevels = 10;
   LO its=10;
-  std::string smooType="sgs";
+  std::string smooType="gs";
+  Scalar smooDamping = 0.7;
+  std::string transferOpType = "PA-AMG";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
-  int useExplicitR=0;
   int sweeps=1;
   int maxCoarseSize=1;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
@@ -184,20 +187,27 @@ int main(int argc, char *argv[]) {
   int minPerAgg=2;
   int maxNbrAlreadySelected=0;
 
+  clp.setOption("numEle",&numGlobalElements,"number of elements (= dimension of problem - 1)");
+
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
+
+  clp.setOption("transferOps",&transferOpType,"type of transfer operators (PA-AMG, SA-AMG, PG-AMG)");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
-  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
-  clp.setOption("sweeps",&sweeps,"sweeps to be used in SGS (or Chebyshev degree)");
+
   clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
   clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
+
+  // level smoother settings
+  clp.setOption("smooType",&smooType,"smoother type ('jacobi', 'gs', 'sgs', 'cheby')");
+  clp.setOption("damping",&smooDamping,"damping factor for level smoothers");
+  clp.setOption("sweeps",&sweeps,"sweeps to be used in level smoother (or Chebyshev degree)");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -219,9 +229,6 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
-  // matrix parameters
-  GO numGlobalElements = 100;
-
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
@@ -230,7 +237,6 @@ int main(int argc, char *argv[]) {
   const RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
   RCP<Operator> Op = TriDiag<SC,LO,GO>(map,0, 1.0, 0.0, -1.0);
   Op->fillComplete();
-  Op->describe(*out,Teuchos::VERB_EXTREME);
   mtime.back()->stop();
 
   // build RHS
@@ -248,15 +254,11 @@ int main(int argc, char *argv[]) {
     rhs_data[NumMyElements-1] = 0.0;
 
 
-  //rhs->describe(*out,Teuchos::VERB_EXTREME);
-
   /**********************************************************************************/
   /* BUILD MG HIERARCHY                                                             */
   /**********************************************************************************/
 
   // build nullspace
-  //RCP<Vector> nullSpace = VectorFactory::Build(map);
-  //nullSpace->putScalar( (SC) 1.0);
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
@@ -294,16 +296,26 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<PFactory> Pfact = Teuchos::null;
+  RCP<RFactory> Rfact = Teuchos::null;
 
-  *out << " afer TentativePFactory " << std::endl;
-  //RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
-  //RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact));
-  //RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  //RCP<RFactory>         Rfact = rcp( new TransPFactory(Pfact));
-  RCP<PgPFactory>       Pfact = rcp( new PgPFactory(TentPFact) );
-  RCP<RFactory>         Rfact = rcp( new GenericRFactory(Pfact));
+  if (transferOpType == "PA-AMG") {
+    Pfact = rcp(new TentativePFactory(UCAggFact));
+    Rfact = rcp( new TransPFactory(Pfact));
+  }
+  else if(transferOpType == "SA-AMG") {
+    // build transfer operators
+    RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+    Pfact = rcp( new SaPFactory(TentPFact) );
+    Rfact = rcp( new TransPFactory(Pfact));
+  }
+  else if(transferOpType == "PG-AMG") {
+    // build transfer operators
+    RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+    Pfact = rcp( new PgPFactory(TentPFact) );
+    Rfact = rcp( new GenericRFactory(Pfact));
+  }
+
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -315,14 +327,17 @@ int main(int argc, char *argv[]) {
   std::string ifpackType;
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) sweeps);
-  ifpackList.set("relaxation: damping factor", (SC) 0.7); // 0.7
-  /*if (smooType == "sgs") {
+  ifpackList.set("relaxation: damping factor", (SC) smooDamping); // 0.7
+  if (smooType == "sgs") {
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  } else if (smooType == "gs") {*/
+  } else if (smooType == "gs") {
+    ifpackType = "RELAXATION";
+    ifpackList.set("relaxation: type", "Gauss-Seidel");
+  } else if (smooType == "jacobi") {
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Jacobi");
-  /*}
+  }
   else if (smooType == "cheby") {
     ifpackType = "CHEBYSHEV";
     ifpackList.set("chebyshev: degree", (LO) sweeps);
@@ -330,7 +345,7 @@ int main(int argc, char *argv[]) {
     ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
     ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
     ifpackList.set("chebyshev: zero starting solution", true);
-  }*/
+  }
 
   smooProto = rcp( new TrilinosSmoother(lib, ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;
@@ -360,7 +375,7 @@ int main(int argc, char *argv[]) {
 
     H->Iterate(*rhs,its,*x);
 
-    x->describe(*out,Teuchos::VERB_EXTREME);
+    //x->describe(*out,Teuchos::VERB_EXTREME);
   }
 
   // Final summaries - this eats memory like a hot dog eating contest
