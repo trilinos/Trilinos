@@ -332,7 +332,7 @@ PyObject* methodName(PyObject* partialObj)
     for (int i=0; i<argc; ++i)
     {
       PyObject * item = PySequence_GetItem(args, i);
-      if (!PyString_Check(item))
+      if (!PyUnicode_Check(item))
       {
 	PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
 	goto fail;
