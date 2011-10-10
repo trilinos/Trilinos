@@ -34,15 +34,15 @@ namespace Zoltan2 {
 class EpetraCrsGraphInput : public XpetraCrsGraphInput<int, int>{
 private:
 
-  RCP<const Epetra_CrsGraph> _ingraph;
+  RCP<const Epetra_CrsGraph> ingraph_;
 
 #if 0
-  int _vtxWeightDim;
-  int _edgeWeightDim;
-  int _coordinateDim;
-  std::vector<double> _edgeWgt;
-  std::vector<double> _vertexWgt;
-  std::vector<double> _xyz;
+  int vtxWeightDim_;
+  int edgeWeightDim_;
+  int coordinateDim_;
+  std::vector<double> edgeWgt_;
+  std::vector<double> vertexWgt_;
+  std::vector<double> xyz_;
 #endif
 
 public:
@@ -59,7 +59,7 @@ public:
       Teuchos::rcp(new Xpetra::EpetraCrsGraph(
         Teuchos::rcp_const_cast<Epetra_CrsGraph>(graph))))
   {
-    _ingraph = graph;
+    ingraph_ = graph;
   }
 
 #if 0
@@ -80,7 +80,7 @@ public:
    */
   RCP<const Epetra_CrsGraph> getGraph() const 
   { 
-    return _ingraph;
+    return ingraph_;
   }
 };
 

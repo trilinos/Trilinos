@@ -73,9 +73,10 @@ int main(int argc, char *argv[])
     check_traits(lui, lui_other);
     check_traits(lli, lli_other);
     check_traits(pairVals, pairVals_other);
+
+    std::cout << "PASS" << std::endl;
   }
 
-  std::cout << "PASS" << std::endl;
   return 0;
 }
 

@@ -53,8 +53,6 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   size_t ngRows = M->getGlobalNumRows();
   size_t nEntries = M->getNodeNumEntries();
   size_t ngEntries = M->getGlobalNumEntries();
-  size_t nColumns = M->getNodeNumCols();
-  size_t ngColumns = M->getGlobalNumCols();
 
   int fail = 0;
 
@@ -251,6 +249,9 @@ int main(int argc, char *argv[])
     testGraphFromXpetraMatrix<
       double, int, long, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
   }
+
+  if (comm->getRank() == 0)
+    std::cout << "PASS" << std::endl;
 
   return 0;
 }

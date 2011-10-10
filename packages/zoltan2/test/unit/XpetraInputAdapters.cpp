@@ -40,16 +40,12 @@ template <typename GraphAdapter, typename Graph>
 
   // TODO do we need to cast?
 
-  graphInput_t *g_in = static_cast<graphInput_t *>(input.get());
-
   const crsGraph_t *tpetraGraph = static_cast<const crsGraph_t *>(g.get());
 
   size_t nRows = tpetraGraph->getNodeNumRows();
   size_t ngRows = tpetraGraph->getGlobalNumRows();
   size_t nEntries = tpetraGraph->getNodeNumEntries();
   size_t ngEntries = tpetraGraph->getGlobalNumEntries();
-  size_t nColumns = tpetraGraph->getNodeNumCols();
-  size_t ngColumns = tpetraGraph->getGlobalNumCols();
 
   size_t num = input->getLocalNumVertices();
   TEST_FAIL_AND_EXIT(*comm, num==nRows, "input->getLocalNumVertices", 1);
@@ -83,8 +79,6 @@ template <typename MatrixAdapter, typename Matrix>
 
   size_t nRows = tpetraMatrix->getNodeNumRows();
   size_t ngRows = tpetraMatrix->getGlobalNumRows();
-  size_t nEntries = tpetraMatrix->getNodeNumEntries();
-  size_t ngEntries = tpetraMatrix->getGlobalNumEntries();
   size_t nColumns = tpetraMatrix->getNodeNumCols();
   size_t ngColumns = tpetraMatrix->getGlobalNumCols();
 
@@ -101,7 +95,7 @@ template <typename MatrixAdapter, typename Matrix>
 
 
 template <typename Scalar, typename LNO, typename GNO>
-  void testInputAdapters(
+  void testInputAdapters(GNO xdim, GNO ydim, GNO zdim,
     std::string &fname, RCP<const Comm<int> > &comm, int rank)
 {
   bool include64BitIds = false;
@@ -110,8 +104,11 @@ template <typename Scalar, typename LNO, typename GNO>
   std::string LNOName(OrdinalTraits<LNO>::name());
   std::string GNOName(OrdinalTraits<GNO>::name());
 
-  if (sizeof(GNO) >= 8)
-    include64BitIds = true;
+//
+//  64-bit global IDs need to wait for Tpetra problem to be resolved.
+//  if (sizeof(GNO) >= 8)
+//    include64BitIds = true;
+//
 
   typedef Zoltan2::default_node_t Node;
 
@@ -124,40 +121,52 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Create some input adapters for xpetra objects
 
-  TestAdapters<Scalar,LNO,GNO> input(fname);
+  TestAdapters<Scalar,LNO,GNO> *input = NULL;
+
+  if (fname.size() > 0)
+    input = new TestAdapters<Scalar,LNO,GNO>(fname);
+  else
+    input = new TestAdapters<Scalar,LNO,GNO>(xdim, ydim, zdim);
 
 #ifdef HAVE_MPI
-  input.setMpiCommunicator(MPI_COMM_WORLD);
+  input->setMpiCommunicator(MPI_COMM_WORLD);
 #endif
 
   // Get the original matrix in order to compare answers to it.
-  Teuchos::RCP<crsM_t > M = input.getMatrix();
+  Teuchos::RCP<crsM_t > M = input->getMatrix();
   Teuchos::RCP<const crsG_t> G = M->getCrsGraph();
 
-  RCP<tpetraM_t> tmi = input.getTpetraCrsMatrixInputAdapter();
+  RCP<tpetraM_t> tmi = input->getTpetraCrsMatrixInputAdapter();
   testMatrixAdapter<tpetraM_t, crsM_t>(tmi, M, comm);
 
-  RCP<tpetraG_t> tgi = input.getTpetraCrsGraphInputAdapter();
+  RCP<tpetraG_t> tgi = input->getTpetraCrsGraphInputAdapter();
   testGraphAdapter<tpetraG_t, crsG_t>(tgi, G, comm);
 
-  RCP<xpetraM_t> xmi = input.getXpetraCrsMatrixInputAdapter();
+  RCP<xpetraM_t> xmi = input->getXpetraCrsMatrixInputAdapter();
   testMatrixAdapter<xpetraM_t, crsM_t>(xmi, M, comm);
 
-  RCP<xpetraG_t> xgi = input.getXpetraCrsGraphInputAdapter();
+  RCP<xpetraG_t> xgi = input->getXpetraCrsGraphInputAdapter();
   testGraphAdapter<xpetraG_t, crsG_t>(xgi, G, comm);
 
   if (include64BitIds){
     // This matrix has ids that use the high order 4 bytes of
     // of the 8 byte ID.  true: delete the original M after making a new one.
-    RCP<tpetraM_t> tmi64 = input.getTpetraCrsMatrixInputAdapter64(true);
-    testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
+    //RCP<tpetraM_t> tmi64 = input->getTpetraCrsMatrixInputAdapter64(true);
+    //testMatrixAdapter<tpetraM_t, crsM_t>(tmi64, M, comm);
   }
 
+  delete input;
+
   if (!rank){
-    std::cout << "Processed " << fname << ": ";
-    std::cout << "Scalar = " << ScalarName << std::endl;
-    std::cout << "LNO = " << LNOName << std::endl;
-    std::cout << "GNO = " << GNOName << std::endl;
+    if (fname.size())
+      std::cout << "Processed " << fname << ": ";
+    else{
+      std::cout << "Created input adapter for matrix/graph of size ";
+      std::cout << xdim << " x " << ydim << " x " << zdim << std::endl;
+    }
+    std::cout << "Scalar = " << ScalarName;
+    std::cout << ", LNO = " << LNOName;
+    std::cout << ", GNO = " << GNOName << std::endl;
     if (include64BitIds)
       std::cout << "Including a Tpetra::CrsMatrix with 64-bit Ids." << std::endl;
     std::cout << std::endl;
@@ -173,17 +182,23 @@ int main(int argc, char *argv[])
   std::vector<std::string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
-  //mtxFiles.push_back("../data/cage10.mtx");
+  mtxFiles.push_back("../data/cage10.mtx");
 
   // To use this matrix we would need to pass a domain map
   // to FillComplete.  So we skip it for now.  TODO
   // mtxFiles.push_back("../data/diag500_4.mtx");
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-    //testInputAdapters<double, int, int>(mtxFiles[fileNum], comm, rank);
-    testInputAdapters<double, int, long>(mtxFiles[fileNum], comm, rank);
+    testInputAdapters<double, int, int>(0,0,0,mtxFiles[fileNum], comm, rank);
+    testInputAdapters<double, int, long>(0,0,0,mtxFiles[fileNum],comm, rank);
   }
 
+  std::string nullString;
+
+  testInputAdapters<double, int, long>(10, 20, 10, nullString, comm, rank);
+
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
 
   return 0;
 }

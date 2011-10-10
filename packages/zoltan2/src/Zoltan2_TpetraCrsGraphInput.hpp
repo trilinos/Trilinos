@@ -38,27 +38,33 @@ class TpetraCrsGraphInput :
   public XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>{
 private:
   typedef Tpetra::CrsGraph<LNO, GNO, Node> crsGraph;
-  RCP<const crsGraph > _ingraph;
+  RCP<const crsGraph > ingraph_;
 
 public:
+  /*! Name of input adapter type.
+   */
   std::string inputAdapterName()const {return std::string("TpetraCrsGraph");}
 
-  //~TpetraCrsGraphInput() { }
+  /*! Destructor
+   */
+  ~TpetraCrsGraphInput() { }
 
+  /*! Constructor
+   */
   TpetraCrsGraphInput(const RCP<const crsGraph> graph): 
       XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>(
         Teuchos::rcp(new Xpetra::TpetraCrsGraph<LNO, GNO, Node>(
           Teuchos::rcp_const_cast<crsGraph>(graph)))) 
   {
-    _ingraph = graph;
+    ingraph_ = graph;
   }
 
 
-  /*! Access to graph that instantiated adapter
+  /*! Access to the graph that instantiated the adapter
    */
   RCP<const crsGraph> getGraph()
   { 
-    return _ingraph;
+    return ingraph_;
   }
 };
 

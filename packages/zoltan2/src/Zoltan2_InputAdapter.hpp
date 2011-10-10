@@ -61,6 +61,10 @@ public:
   // as long as they inherit from one of the subclasses (which they must).
   virtual enum InputAdapterType inputAdapterType() = 0;
 
+  /*! Pure virtual destructor
+   */
+  virtual ~InputAdapter() {};
+
   /*! Return a name that identifies the concrete adapter.
    *  Useful for debugging.
    */

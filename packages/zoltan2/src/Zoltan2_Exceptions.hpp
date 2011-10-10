@@ -51,22 +51,22 @@
 #else
 
 #define Z2_LOCAL_INPUT_ASSERTION(comm, env, s, assertion, level) { \
-  if (level <= (env)._errorCheckLevel) { \
+  if (level <= (env).errorCheckLevel_) { \
     if (!(assertion)){ \
       std::ostringstream oss; \
       oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      (env)._dbg->error(oss.str()); \
+      (env).dbg_->error(oss.str()); \
       throw std::runtime_error(oss.str()); \
     } \
   } \
 }
 
 #define Z2_LOCAL_BUG_ASSERTION( comm, env, s, assertion, level) { \
-  if (level <= (env)._errorCheckLevel) { \
+  if (level <= (env).errorCheckLevel_) { \
     if (!(assertion)){ \
       std::ostringstream oss; \
       oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      (env)._dbg->error(oss.str()); \
+      (env).dbg_->error(oss.str()); \
       throw std::logic_error(oss.str()); \
     } \
   } \
@@ -79,13 +79,13 @@
   if (!(assertion)){ \
     std::ostringstream _msg; \
     _msg << __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
-    (env)._dbg->error(_msg.str()); \
+    (env).dbg_->error(_msg.str()); \
     throw std::bad_alloc(); \
   } \
 }
 
 #define Z2_GLOBAL_INPUT_ASSERTION( comm, env, s, assertion, level) { \
-  if (level <= (env)._errorCheckLevel) {  \
+  if (level <= (env).errorCheckLevel_) {  \
     int fail = 0, gfail=0;  \
     if (!(assertion)) fail = 1;  \
     Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
@@ -93,7 +93,7 @@
       std::ostringstream _msg; \
       if (fail > 0){ \
         _msg << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-        (env)._dbg->error(_msg.str()); \
+        (env).dbg_->error(_msg.str()); \
       } \
       throw std::runtime_error(_msg.str()); \
     } \
@@ -101,7 +101,7 @@
 }
 
 #define Z2_GLOBAL_BUG_ASSERTION( comm, env, s, assertion, level) { \
-  if (level <= (env)._errorCheckLevel) {  \
+  if (level <= (env).errorCheckLevel_) {  \
     int fail = 0, gfail=0;  \
     if (!(assertion)) fail = 1;  \
     Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
@@ -109,7 +109,7 @@
       std::ostringstream _msg; \
       if (fail > 0){ \
         _msg <<  __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-        (env)._dbg->error(_msg.str()); \
+        (env).dbg_->error(_msg.str()); \
       } \
       throw std::logic_error(_msg.str()); \
     } \
@@ -127,7 +127,7 @@
     if (fail > 0){ \
       std::ostringstream _msg; \
       _msg <<  __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
-      (env)._dbg->error(_msg.str()); \
+      (env).dbg_->error(_msg.str()); \
     } \
     throw std::bad_alloc(); \
   } \
@@ -140,7 +140,7 @@
 #define Z2_THROW_OUTSIDE_ERROR(env, e) { \
    std::ostringstream oss; \
    oss << __FILE__ << ":" << __LINE__ << " " << e.what() << std::endl; \
-   (env)._dbg->error(oss.str()); \
+   (env).dbg_->error(oss.str()); \
   throw e; \
 }
 

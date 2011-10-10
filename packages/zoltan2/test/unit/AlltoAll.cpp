@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <Teuchos_GlobalMPISession.hpp>   
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
 #include <Teuchos_Comm.hpp>   
@@ -33,13 +32,12 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  
-  int rank = session.getRank();
-  int nprocs = session.getNProc();
-  int errcode = 0;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
+
+  int rank = comm->getRank();
+  int nprocs = comm->getSize();
 
   Teuchos::ParameterList params;
   params.set(std::string("ERROR_CHECK_LEVEL"), 1);
@@ -50,6 +48,7 @@ int main(int argc, char *argv[])
 
   // In this test, our local IDs are ints and our global IDs are longs.
 
+  int errcode = 0;
   if (!errcode){
 
     // test of Zoltan2::AlltoAll using a Scalar type (ints)
@@ -224,10 +223,12 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (errcode)
-    std::cout << "FAIL" << std::endl;
-  else
-    std::cout << "PASS" << std::endl;
+  if (rank == 0){
+    if (errcode)
+      std::cout << "FAIL" << std::endl;
+    else
+      std::cout << "PASS" << std::endl;
+  }
 
   return errcode;
 }

@@ -34,7 +34,11 @@ enum ModelType {
 template <Z2CLASS_TEMPLATE>
   class Model
 {
+  /*! Pure virtual destructor
+   */
+  virtual ~Model() {};
 };
+
 
 }
 

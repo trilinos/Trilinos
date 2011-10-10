@@ -56,7 +56,7 @@ namespace Zoltan2{
     if (fail > 0){ \
       std::ostringstream _msg;  \
       _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-      (env)._dbg->error(_msg.str()); \
+      (env).dbg_->error(_msg.str()); \
     } \
     throw std::bad_alloc(); \
   } \
@@ -72,7 +72,7 @@ namespace Zoltan2{
     if (!ptrname) { \
       std::ostringstream _msg;  \
       _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-      (env)._dbg->error(_msg.str()); \
+      (env).dbg_->error(_msg.str()); \
       throw std::bad_alloc(); \
     } \
   } \

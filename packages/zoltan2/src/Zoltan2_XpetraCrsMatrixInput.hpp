@@ -42,19 +42,44 @@ public:
   typedef typename gno_t gid_t;   // GNO and GID are same in Xpetra.
   typedef typename lno_t lid_t;   // LNO and LID are same in Xpetra.
 
+
+  /*! Name of input adapter type
+   */
   std::string inputAdapterName()const {return std::string("XpetraCrsMatrix");}
 
+  /*! Destructor
+   */
   ~XpetraCrsMatrixInput() { }
 
-  /*! Constructor with an Xpetra::CrsMatrix
+  /*! Constructor 
    */
   XpetraCrsMatrixInput(const RCP<const xmatrixType > matrix):
-    _matrix(), _rowMap(), _colMap(), _base()
+    matrix_(), rowMap_(), colMap_(), base_(), offset_(), columnIds_()
   {
-   _matrix = matrix;
-   _rowMap = _matrix->getRowMap();
-   _colMap = _matrix->getColMap();
-   _base = _rowMap->getIndexBase();
+   matrix_ = matrix;
+   rowMap_ = matrix_->getRowMap();
+   colMap_ = matrix_->getColMap();
+   base_ = rowMap_->getIndexBase();
+
+   size_t nrows = matrix_->getNodeNumRows();
+   size_t nnz = matrix_->getNodeNumEntries();
+
+    offset_.resize(nrows+1, LNO(0));
+    columnIds_.resize(nnz);
+    ArrayView<const LNO> indices;
+    ArrayView<const Scalar> nzs;
+    LNO next = 0;
+    for (unsigned i=0; i < nrows; i++){
+      LNO row = i + base_;
+      LNO nnz = matrix_->getNumEntriesInLocalRow(row);
+      matrix_->getLocalRowView(row, indices, nzs);
+      for (LNO j=0; j < nnz; j++){
+        // TODO - this will be slow
+        //   Is it possible that global columns ids might be stored in order?
+        columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
+      }
+      offset_[i+1] = offset_[i] + nnz;
+    }
   }
 
   ////////////////////////////////////////////////////
@@ -64,13 +89,13 @@ public:
   /*! Returns the number rows on this process.
    */
   size_t getLocalNumRows() const { 
-    return _matrix->getNodeNumRows();
+    return matrix_->getNodeNumRows();
   }
 
   /*! Returns the number rows in the entire matrix.
    */
   global_size_t getGlobalNumRows() const { 
-    return _matrix->getGlobalNumRows();
+    return matrix_->getGlobalNumRows();
   }
 
   /*! Return whether input adapter wants to use local IDs.
@@ -83,52 +108,54 @@ public:
 
   bool haveConsecutiveLocalIds (size_t &base) const
   {
-    base = static_cast<size_t>(_base);
+    base = static_cast<size_t>(base_);
     return true;
   }
 
   /*! Returns the number columns on this process.
    */
   size_t getLocalNumColumns() const { 
-    return _matrix->getNodeNumCols();
+    return matrix_->getNodeNumCols();
   }
 
   /*! Returns the number columns on this entire matrix.
    *    what about directional columns, count twice?
    */
   global_size_t getGlobalNumColumns() const { 
-    return _matrix->getGlobalNumCols();
+    return matrix_->getGlobalNumCols();
   }
 
   /*! Get copy of matrix entries on local process
    */
   void getRowListCopy(std::vector<gid_t> &rowIds,
-    std::vector<lid_t> &localIds, std::vector<lno_t> &rowSize,
+    std::vector<lid_t> &localIds, std::vector<lno_t> &offsets,
     std::vector<gid_t> &colIds) const
   {
     size_t nrows = getLocalNumRows();
-    size_t nnz = _matrix->getNodeNumEntries();
-    size_t maxrow = _matrix->getNodeMaxNumRowEntries();
+    size_t nnz = matrix_->getNodeNumEntries();
+    size_t maxrow = matrix_->getNodeMaxNumRowEntries();
     size_t next = 0;
 
     rowIds.resize(nrows);
-    rowSize.resize(nrows);
+    offsets.resize(nrows+1);
     colIds.resize(nnz);
-    localIds.clear();   // consecutive IDs implied
+    localIds.clear();   // consecutive integer IDs implied
 
     Teuchos::Array<lno_t> indices(maxrow);
     Teuchos::Array<Scalar> nzs(maxrow);
 
+    offsets[0] = 0;
+
     for (unsigned i=0; i < nrows; i++){
-      lno_t row = i + _base;
-      lno_t nnz = _matrix->getNumEntriesInLocalRow(row);
+      lno_t row = i + base_;
+      lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
       size_t n;
-      _matrix->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
+      matrix_->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
       for (lno_t j=0; j < nnz; j++){
-        colIds[next++] = _colMap->getGlobalElement(indices[j]);
+        colIds[next++] = colMap_->getGlobalElement(indices[j]);
       }
-      rowIds[i] = _rowMap->getGlobalElement(row);
-      rowSize[i] = nnz;
+      rowIds[i] = rowMap_->getGlobalElement(row);
+      offsets[i+1] = offsets[i] + nnz;
     }
   } 
 
@@ -137,27 +164,52 @@ public:
 
   RCP<const xmatrixType> getMatrix() const
   {
-    return _matrix;
+    return matrix_;
   }
 
 
 
   /*! Return a read only view of the data.
-      We don't have a view of global data, only of local data.
+     \param rowIds  Global row ids.  The memory for the global 
+          row IDs persists until the underlying Xpetra::CrsMatrix is deleted.
+     \param localIds on return is NULL, signifying that local IDs are
+           contiguous integers starting at 0.
+     \param offsets The columns for rowIds[i] begin at colIds[offsets[i]].  There are
+           numRows+1 offsets.  The last offset is the length of the colIds array.
+           The memory pointed to by offsets persists in the GraphModel is deleted.
+     \param colIds The global column Ids. The memory pointed to by colIds 
+          persists until the GraphModel is deleted.
+
+     \return  The number rows in the rowIds list is returned.
    */
   //lno_t getRowListView(gid_t *&rowIds, lid_t *&localIds,
   //  lno_t *&rowSize, gid_t *& colIds) const
+
+  size_t getRowListView(const GID *&rowIds, const LID *&localIds,
+    const LNO *&offsets, const GID *& colIds) const
+  {
+    size_t nrows = getLocalNumRows();
+
+    ArrayView<const GID> rowView = rowMap_->getNodeElementList();
+    rowIds = rowView.getRawPtr();
+   
+    localIds = NULL;   // Implies consecutive integers
+
+    offsets = offset_.getRawPtr();
+    colIds = columnIds_.getRawPtr();
+    return nrows;
+  }
 
 private:
 
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrixType;
 
-  RCP<const xmatrixType > _matrix;
-  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > _rowMap;
-  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > _colMap;
-  lno_t _base;
-
-
+  RCP<const xmatrixType > matrix_;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
+  lno_t base_;
+  ArrayRCP<lno_t> offset_;
+  ArrayRCP<gno_t> columnIds_;
 };
   
 }  //namespace Zoltan2

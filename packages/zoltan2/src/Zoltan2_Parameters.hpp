@@ -40,12 +40,12 @@ template <typename Integral>
   class IntegerRangeListValidator : public Teuchos::ParameterEntryValidator
 {
 private:
-  Integral _min;
-  Integral _max;
+  Integral min_;
+  Integral max_;
 
-  static const std::string _listDelim;
-  static const std::string _rangeDelim;
-  static const std::string _allText;
+  static const std::string listDelim_;
+  static const std::string rangeDelim_;
+  static const std::string allText_;
 
   static void checkValid(char c); 
   static bool listSaysAll(std::string &l);
@@ -137,13 +137,13 @@ enum ProfilingLevels{  // TODO - specifiers would be better
   NUM_PROFILING_LEVELS};
   
 template <typename Integral>
-const std::string IntegerRangeListValidator<Integral>::_listDelim(",");
+const std::string IntegerRangeListValidator<Integral>::listDelim_(",");
 
 template <typename Integral>
-const std::string IntegerRangeListValidator<Integral>::_rangeDelim("-");
+const std::string IntegerRangeListValidator<Integral>::rangeDelim_("-");
 
 template <typename Integral>
-const std::string IntegerRangeListValidator<Integral>::_allText("all");
+const std::string IntegerRangeListValidator<Integral>::allText_("all");
 
 template <typename Integral>
   void IntegerRangeListValidator<Integral>::checkValid(char c)
@@ -158,7 +158,7 @@ template <typename Integral>
   bool IntegerRangeListValidator<Integral>::listSaysAll(std::string &l)
 {
   std::transform(l.begin(), l.end(), l.begin(), tolower);
-  if (l.find(_allText) != std::string::npos)
+  if (l.find(allText_) != std::string::npos)
     return true;  // "all" is in the string
   else
     return false;
@@ -170,7 +170,7 @@ template <typename Integral>
 {
   from.clear();
   to.clear();
-  std::string::size_type loc = range.find(_rangeDelim);
+  std::string::size_type loc = range.find(rangeDelim_);
   if (loc == std::string::npos){
     from = range;
   }
@@ -194,16 +194,16 @@ template <typename Integral>
 
 template <typename Integral>
   IntegerRangeListValidator<Integral>::IntegerRangeListValidator(): 
-    _min(1), _max(0)
+    min_(1), max_(0)
 {
 }
 
 template <typename Integral>
   IntegerRangeListValidator<Integral>::IntegerRangeListValidator(
     Integral validMin, Integral validMax) :
-      _min(validMin), _max(validMax)
+      min_(validMin), max_(validMax)
 {
-  if (_min < _max) std::swap(_min,_max);
+  if (min_ < max_) std::swap(min_,max_);
 }
 
   // Implementation of ParameterEntryValidator interface
@@ -227,9 +227,9 @@ template <typename Integral>
   out << "#\t\ta list of integer ranges separated by commas.\n";
   out << "#\tA range is one value, or two values separated by a dash.\n";
   out << "#\tExample: \"all\" or \"1-10\" or \"3, 10-12\" or \"25\"\n";
-  if (_max >= _min){
+  if (max_ >= min_){
     out << "#\tThe range of valid integers is [";
-    out << _min << "," << _max << "]\n";
+    out << min_ << "," << max_ << "]\n";
   }
 }
 
@@ -257,13 +257,13 @@ template <typename Integral>
   // throw error if invalid integer range list
   std::for_each(inValue.begin(), inValue.end(), checkValid);
 
-  if (_max >= _min){
+  if (max_ >= min_){
     std::string::const_iterator rangeBegin = inValue.begin();
     std::string::const_iterator valueEnd = inValue.end();
 
     while (rangeBegin != valueEnd){
       std::string::const_iterator rangeEnd = std::search(
-        rangeBegin, valueEnd, _listDelim.begin(), _listDelim.end());
+        rangeBegin, valueEnd, listDelim_.begin(), listDelim_.end());
       std::string range(rangeBegin, rangeEnd);
       std::string aHalf, bHalf;
       int count = breakRange(range, aHalf, bHalf);
@@ -278,10 +278,10 @@ template <typename Integral>
       else
         b = a;
 
-      if ((a < _min) || (b > _max)){
+      if ((a < min_) || (b > max_)){
         std::ostringstream oss;
         oss << "input range [" << a << "," << b << "] ";
-        oss << "exceeds valid range [" << _min << "," << _max << "] ";
+        oss << "exceeds valid range [" << min_ << "," << max_ << "] ";
         throw std::runtime_error(oss.str());
       }
       if (rangeEnd == valueEnd)
@@ -320,7 +320,7 @@ template <typename Integral>
 
     while (rangeBegin != valueEnd){
       std::string::const_iterator rangeEnd = std::search(rangeBegin,
-        valueEnd, _listDelim.begin(), _listDelim.end());
+        valueEnd, listDelim_.begin(), listDelim_.end());
       std::string range(rangeBegin, rangeEnd);
       std::string aHalf, bHalf;
       int count = breakRange(range, aHalf, bHalf);
@@ -335,10 +335,10 @@ template <typename Integral>
       else
         b = a;
 
-      if ((_max >= _min) && ((a < _min) || (b > _max))){
+      if ((max_ >= min_) && ((a < min_) || (b > max_))){
         std::ostringstream oss;
         oss << "input range [" << a << "," << b << "] ";
-        oss << "exceeds valid range [" << _min << "," << _max << "] ";
+        oss << "exceeds valid range [" << min_ << "," << max_ << "] ";
         throw std::runtime_error(oss.str());
       }
       for (Integral i=a; i <=b; i++)
@@ -367,8 +367,8 @@ template <typename Integral>
     if (valueList.size() == 0){
       flag = RANGE_IS_EMPTY;
     }
-    else if (_max >= _min){
-      Integral allSize = _max - _min + 1;
+    else if (max_ >= min_){
+      Integral allSize = max_ - min_ + 1;
       if (valueList.size() == allSize){
         flag = RANGE_INCLUDES_ALL;
         valueList.clear();

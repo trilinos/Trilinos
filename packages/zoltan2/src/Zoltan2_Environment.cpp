@@ -25,26 +25,26 @@ namespace Zoltan2 {
 
 Environment::Environment( ParameterList &problemParams,
   RCP<const Comm<int> > &comm):
-  _params(problemParams), _validParams(), 
-  _myRank(0), _numProcs(0),
-  _printDebugMessages(false), _printProfilingMessages(false),
-  _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
-  _committed(false), _comm(comm), _dbg()
+  params_(problemParams), validParams_(), 
+  myRank_(0), numProcs_(0),
+  printDebugMessages_(false), printProfilingMessages_(false),
+  errorCheckLevel_(), debugDepthLevel_(), profilingIndicator_(),
+  committed_(false), comm_(comm), dbg_()
 {
-  _myRank = comm->getRank();
-  _numProcs = comm->getSize();
+  myRank_ = comm->getRank();
+  numProcs_ = comm->getSize();
 }
 
 Environment::Environment():
-  _params(), _validParams(), 
-  _myRank(0), _numProcs(0),
-  _printDebugMessages(false), _printProfilingMessages(false),
-  _errorCheckLevel(), _debugDepthLevel(), _profilingIndicator(),
-  _committed(false), _dbg()
+  params_(), validParams_(), 
+  myRank_(0), numProcs_(0),
+  printDebugMessages_(false), printProfilingMessages_(false),
+  errorCheckLevel_(), debugDepthLevel_(), profilingIndicator_(),
+  committed_(false), dbg_()
 {
-  _comm = DefaultComm<int>::getComm();
-  _myRank = _comm->getRank();
-  _numProcs = _comm->getSize();
+  comm_ = DefaultComm<int>::getComm();
+  myRank_ = comm_->getRank();
+  numProcs_ = comm_->getSize();
 }
 
 Environment::~Environment()
@@ -53,29 +53,29 @@ Environment::~Environment()
 
 Environment::Environment(const Environment &env)
 {
-  _params = env._params;
-  _validParams = env._validParams;
-  _printDebugMessages = env._printDebugMessages;
-  _printProfilingMessages = env._printProfilingMessages;
-  _errorCheckLevel = env._errorCheckLevel;
-  _debugDepthLevel = env._debugDepthLevel;
-  _profilingIndicator = env._profilingIndicator;
-  _comm = env._comm;
-  _dbg = env._dbg;
+  params_ = env.params_;
+  validParams_ = env.validParams_;
+  printDebugMessages_ = env.printDebugMessages_;
+  printProfilingMessages_ = env.printProfilingMessages_;
+  errorCheckLevel_ = env.errorCheckLevel_;
+  debugDepthLevel_ = env.debugDepthLevel_;
+  profilingIndicator_ = env.profilingIndicator_;
+  comm_ = env.comm_;
+  dbg_ = env.dbg_;
 }
 
 Environment &Environment::operator=(const Environment &env)
 {
   if (this == &env) return *this;
-  this->_params = env._params;
-  this->_validParams = env._validParams;
-  this->_printDebugMessages = env._printDebugMessages;
-  this->_printProfilingMessages = env._printProfilingMessages;
-  this->_errorCheckLevel = env._errorCheckLevel;
-  this->_debugDepthLevel = env._debugDepthLevel;
-  this->_profilingIndicator = env._profilingIndicator;
-  this->_dbg = env._dbg;
-  this->_comm = env._comm;
+  this->params_ = env.params_;
+  this->validParams_ = env.validParams_;
+  this->printDebugMessages_ = env.printDebugMessages_;
+  this->printProfilingMessages_ = env.printProfilingMessages_;
+  this->errorCheckLevel_ = env.errorCheckLevel_;
+  this->debugDepthLevel_ = env.debugDepthLevel_;
+  this->profilingIndicator_ = env.profilingIndicator_;
+  this->dbg_ = env.dbg_;
+  this->comm_ = env.comm_;
   return *this;
 }
 
@@ -83,55 +83,55 @@ void Environment::setCommunicator(RCP<const Comm<int> > &comm)
 {
   Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
     "parameters are already committed",
-    !_committed, BASIC_ASSERTION);
+    !committed_, BASIC_ASSERTION);
 
-  _comm = comm;
-  _myRank = _comm->getRank();
-  _numProcs = _comm->getSize();
+  comm_ = comm;
+  myRank_ = comm_->getRank();
+  numProcs_ = comm_->getSize();
 }
 
 void Environment::setParameters(ParameterList &params)
 {
-  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+  Z2_LOCAL_INPUT_ASSERTION(*comm_, *this, 
     "parameters are already committed",
-    !_committed, BASIC_ASSERTION);
+    !committed_, BASIC_ASSERTION);
 
-  _params = params;
+  params_ = params;
 }
 
 void Environment::addParameters(ParameterList &params)
 {
-  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+  Z2_LOCAL_INPUT_ASSERTION(*comm_, *this, 
     "parameters are already committed",
-    !_committed, BASIC_ASSERTION);
+    !committed_, BASIC_ASSERTION);
 
-  _params.setParameters(params);
+  params_.setParameters(params);
 }
 
 void Environment::commitParameters()
 {
-  Z2_LOCAL_INPUT_ASSERTION(*_comm, *this, 
+  Z2_LOCAL_INPUT_ASSERTION(*comm_, *this, 
     "Can not commit parameters because setCommunicator has not been called.",
-    _numProcs > 0, BASIC_ASSERTION);
+    numProcs_ > 0, BASIC_ASSERTION);
 
-  createValidParameterList(_validParams);
-  _params.validateParametersAndSetDefaults(_validParams);
+  createValidParameterList(validParams_);
+  params_.validateParametersAndSetDefaults(validParams_);
 
   Array<int> reporters = 
-    _params.get<Array<int> >(std::string("debug_procs"));
+    params_.get<Array<int> >(std::string("debug_procs"));
 
-  _printDebugMessages = IsInRangeList(_myRank, reporters);
+  printDebugMessages_ = IsInRangeList(myRank_, reporters);
 
   reporters = 
-    _params.get<Array<int> >(std::string("profiling_procs")); 
+    params_.get<Array<int> >(std::string("profiling_procs")); 
 
-  _printProfilingMessages = IsInRangeList(_myRank, reporters);
+  printProfilingMessages_ = IsInRangeList(myRank_, reporters);
 
-  _errorCheckLevel = _params.get<int>(std::string("error_check_level"));
-  _debugDepthLevel = _params.get<int>(std::string("debug_level"));
-  _profilingIndicator = _params.get<int>(std::string("profiling_level"));
+  errorCheckLevel_ = params_.get<int>(std::string("error_check_level"));
+  debugDepthLevel_ = params_.get<int>(std::string("debug_level"));
+  profilingIndicator_ = params_.get<int>(std::string("profiling_level"));
 
-  std::string &fname = _params.get<std::string>(std::string("debug_output_file"));
+  std::string &fname = params_.get<std::string>(std::string("debug_output_file"));
   std::ofstream dbgFile;
   if (fname.size() > 0){
     try{
@@ -141,22 +141,22 @@ void Environment::commitParameters()
       // TODO
     }
     // TODO DebugManager destructor should close dbgFile if necessary
-    _dbg = rcp(new DebugManager(
-      _myRank, _printDebugMessages,  dbgFile, _debugDepthLevel));
+    dbg_ = rcp(new DebugManager(
+      myRank_, printDebugMessages_,  dbgFile, debugDepthLevel_));
   }
   else{
-    std::string &osname = _params.get<std::string>(std::string("debug_output_stream"));
+    std::string &osname = params_.get<std::string>(std::string("debug_output_stream"));
     if (osname == std::string("std::cout"))
-      _dbg = rcp(new DebugManager(
-        _myRank, _printDebugMessages,  std::cout, _debugDepthLevel));
+      dbg_ = rcp(new DebugManager(
+        myRank_, printDebugMessages_,  std::cout, debugDepthLevel_));
     else if (osname == std::string("std::cerr"))
-      _dbg = rcp(new DebugManager(
-        _myRank, _printDebugMessages,  std::cerr, _debugDepthLevel));
+      dbg_ = rcp(new DebugManager(
+        myRank_, printDebugMessages_,  std::cerr, debugDepthLevel_));
   }
 
   // TODO - do the same thing for profiling message data.
 
-  _committed = true;
+  committed_ = true;
 }
   
 }  //namespace Zoltan2

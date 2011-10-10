@@ -54,8 +54,9 @@ public:
   // User should not rewrite this function.
   enum InputAdapterType inputAdapterType() {return MatrixAdapterType;}
 
-  // TODO - what to do with destructor
-  //virtual ~MatrixInput();
+  /*! Pure virtual Destructor
+   */
+  virtual ~MatrixInput(){};
 
   /*! Returns the number rows on this process.
    */
@@ -99,22 +100,16 @@ public:
         listed in the first list.  If localIds are omitted and
         haveConsecutiveLocalIds is true, it is assumed that the
         global Ids are in local Id order.
-      \param rowSize on return will point to the number of non-zeros
-        for each row.
+      \param offsets is an array of size numRows + 1.  The column Ids for
+          rowId[i] begin at colIds[offsets[i]].  The last element of offsets
+          is the size of the colIds array.
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
        \return The number of ids in the rowIds list.
    */
 
-  lno_t getRowListView(gid_t *&rowIds, lid_t *&localIds, 
-    lno_t *&rowSize, gid_t *& colIds) const
-  {
-    rowIds = NULL;
-    localIds = NULL;
-    rowSize = NULL;
-    colIds = NULL;
-    return 0;
-  }
+  virtual size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds, 
+    const lno_t *&offsets, const gid_t *& colIds) const = 0;
 };
   
   
