@@ -30,7 +30,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Zoltan2_EpetraCrsGraphInput.hpp>
 
-#include <TpetraM_ap.hpp>
+#include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Zoltan2_TpetraCrsGraphInput.hpp>
 
@@ -50,10 +50,11 @@
 #include <Teuchos_DefaultComm.hpp>
 #ifdef HAVE_MPI
 #include <Zoltan2_Util.hpp>
-#include <EpetraM_piComm.h>
+#include <Epetra_MpiComm.h>
 #endif
 
 #include <MueLu_MatrixFactory.hpp>
+#include <MueLu_GalleryParameters.hpp>
 
 
 #define TEST_FAIL_AND_THROW(comm, ok, s){ \
@@ -118,19 +119,19 @@ private:
 
     void buildCrsMatrix()
     {
-      MueLu::Gallery::Parameters<GNO> params(
-         Teuchos::CommandLineProcessor(),
+      Teuchos::CommandLineProcessor tclp;
+      MueLu::Gallery::Parameters<GNO> params(tclp,
          xdim_, ydim_, zdim_, std::string("Laplace3D"));
  
       Teuchos::RCP<const Tpetra::Map<LNO, GNO> > map =
         Teuchos::rcp(new Tpetra::Map<LNO, GNO>(
-          params.GetNumGlobalElements(), 0, tcomm_);
+          params.GetNumGlobalElements(), 0, tcomm_));
 
       try{
         // Note: MueLu::Gallery creats a matrix using the default node.
-        _M = MueLu::Gallery::CreateCrsMatrix<Scalar, LNO, GNO, 
+        M_ = MueLu::Gallery::CreateCrsMatrix<Scalar, LNO, GNO, 
           Tpetra::Map<LNO, GNO>, Tpetra::CrsMatrix<Scalar, LNO, GNO> >(
-            params.GetMatrixType(), map, matrixParameters.GetParameterList()); 
+            params.GetMatrixType(), map, params.GetParameterList()); 
       }
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
@@ -139,7 +140,7 @@ private:
 
     void createMatrix()
     {
-      if (_M.is_null()){
+      if (M_.is_null()){
         if (xdim_ > 0){
           buildCrsMatrix();
         }
@@ -330,12 +331,12 @@ private:
     typedef Tpetra::CrsGraph<int,int,nodeType> crsGraph_t;
     typedef Tpetra::Map<int,int,nodeType> map_t;
 
-    GNO xdim_, ydim_, zdim_;
+    int xdim_, ydim_, zdim_;
 
     std::string fname_;
     Teuchos::RCP<Teuchos::Comm<int> > tcomm_;
 #ifdef HAVE_MPI
-    EpetraM_piComm *ecomm_;
+    Epetra_MpiComm *ecomm_;
 #else
     Epetra_SerialComm *ecomm_;
 #endif
@@ -364,19 +365,19 @@ private:
 
     void buildCrsMatrix()
     {
-      MueLu::Gallery::Parameters<GNO> params(
-         Teuchos::CommandLineProcessor(),
+      Teuchos::CommandLineProcessor tclp;
+      MueLu::Gallery::Parameters<int> params(tclp,
          xdim_, ydim_, zdim_, std::string("Laplace3D"));
 
-      Teuchos::RCP<const Tpetra::Map<LNO, GNO> > map =
-        Teuchos::rcp(new Tpetra::Map<LNO, GNO>(
-          params.GetNumGlobalElements(), 0, tcomm_);
+      Teuchos::RCP<const Tpetra::Map<int, int> > map =
+        Teuchos::rcp(new Tpetra::Map<int, int>(
+          params.GetNumGlobalElements(), 0, tcomm_));
 
       try{
         // Note: MueLu::Gallery creats a matrix using the default node.
-        _M = MueLu::Gallery::CreateCrsMatrix<Scalar, LNO, GNO,
-          Tpetra::Map<LNO, GNO>, Tpetra::CrsMatrix<Scalar, LNO, GNO> >(
-            params.GetMatrixType(), map, matrixParameters.GetParameterList());
+        M_ = MueLu::Gallery::CreateCrsMatrix<double, int, int,
+          Tpetra::Map<int, int>, Tpetra::CrsMatrix<double, int, int> >(
+            params.GetMatrixType(), map, params.GetParameterList());
       }
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
@@ -385,7 +386,7 @@ private:
 
     void createMatrix()
     {
-      if (_M.is_null()){
+      if (M_.is_null()){
         if (xdim_ > 0){
           buildCrsMatrix();
         }
@@ -407,10 +408,10 @@ public:
     TestAdapters(std::string s): xdim_(0), ydim_(0), zdim_(0),
        fname_(s), tcomm_(), ecomm_(NULL), 
        node_(Kokkos::DefaultNode::getDefaultNode()), M_(),
-        egi_(), emi(), tgi_(), tmi_(), tmi_64_(), xgi_(), xmi_() 
+        egi_(), emi_(), tgi_(), tmi_(), xgi_(), xmi_() 
     {
 #ifdef HAVE_MPI
-      ecomm_ = new EpetraM_piComm(MPI_COMM_WORLD);
+      ecomm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
       tcomm_ = Zoltan2::getTeuchosMpiComm<int>(MPI_COMM_WORLD);
 #else
       ecomm_ = new Epetra_SerialComm;
@@ -421,13 +422,13 @@ public:
     // Constructor for an InputAdapter created in memory using
     // a MueLue::Gallery factory.
 
-    TestAdapters(GNO x, GNO y, GNO z): xdim_(x), ydim_(y), zdim_(z),
+    TestAdapters(int x, int y, int z): xdim_(x), ydim_(y), zdim_(z),
        fname_(), tcomm_(), ecomm_(NULL), 
        node_(Kokkos::DefaultNode::getDefaultNode()), M_(),
-        egi_(), emi(), tgi_(), tmi_(), tmi_64_(), xgi_(), xmi_() 
+        egi_(), emi_(), tgi_(), tmi_(), xgi_(), xmi_() 
     {
 #ifdef HAVE_MPI
-      ecomm_ = new EpetraM_piComm(MPI_COMM_WORLD);
+      ecomm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
       tcomm_ = Zoltan2::getTeuchosMpiComm<int>(MPI_COMM_WORLD);
 #else
       ecomm_ = new Epetra_SerialComm;
@@ -441,7 +442,7 @@ public:
     {
       tcomm_ = Zoltan2::getTeuchosMpiComm<int>(comm);
       delete ecomm_;
-      ecomm_ = new EpetraM_piComm(comm);
+      ecomm_ = new Epetra_MpiComm(comm);
     }
 #endif
 
