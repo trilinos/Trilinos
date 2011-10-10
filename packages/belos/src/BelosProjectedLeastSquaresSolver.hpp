@@ -177,6 +177,135 @@ namespace Belos {
 	theSines (maxNumIterations+1)
       {}
     };
+
+
+    /// \class LocalDenseMatrixOps
+    /// \brief Low-level operations on non-distributed dense matrices.
+    /// \author Mark Hoemmen
+    ///
+    /// This class provides a convenient wrapper around some BLAS
+    /// operations, operating on non-distributed (hence "local") dense
+    /// matrices.
+    template<class Scalar>
+    class LocalDenseMatrixOps {
+    public:
+      /// \typedef scalar_type
+      /// \brief The template parameter of this class.
+      typedef Scalar scalar_type;
+      /// \typedef magnitude_type
+      /// \brief The type of the magnitude of a \c scalar_type value.
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      /// \typedef mat_type
+      /// \brief The type of a dense matrix (or vector) of \c scalar_type.
+      typedef Teuchos::SerialDenseMatrix<int,Scalar> mat_type;
+
+    private:
+      typedef Teuchos::ScalarTraits<scalar_type> STS;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
+      typedef Teuchos::BLAS<int, scalar_type> blas_type;
+      typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
+      
+    public:
+      //! A := alpha * A.
+      void
+      matScale (mat_type& A, const scalar_type& alpha) const
+      {
+	const int LDA = A.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] *= alpha;
+	    }
+	  }
+	}
+      }
+
+      //! A := A + B.
+      void 
+      matAdd (mat_type& A, const mat_type& B) const
+      {
+	const int LDA = A.stride();
+	const int LDB = B.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+	    const scalar_type* const B_j = &B(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] += B_j[i];
+	    }
+	  }
+	}
+      }
+
+      //! A := A - B.
+      void 
+      matSub (mat_type& A, const mat_type& B) const
+      {
+	const int LDA = A.stride();
+	const int LDB = B.stride();
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	if (numRows == 0 || numCols == 0) {
+	  return;
+	} else {
+	  for (int j = 0; j < numCols; ++j) {
+	    scalar_type* const A_j = &A(0,j);
+	    const scalar_type* const B_j = &B(0,j);
+
+	    for (int i = 0; i < numRows; ++i) {
+	      A_j[i] -= B_j[i];
+	    }
+	  }
+	}
+      }
+
+      //! In Matlab notation: B = B / R, where R is upper triangular.
+      void
+      rightUpperTriSolve (mat_type& B,
+			  const mat_type& R) const
+      {
+	blas_type blas;
+	blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, 
+		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 
+		   R.numCols(), B.numCols(), 
+		   STS::one(), R.values(), R.stride(), 
+		   B.values(), B.stride());
+      }
+
+      /// \brief C := beta*C + alpha*A*B.
+      /// 
+      /// This method is a thin wrapper around the BLAS' _GEMM
+      /// routine.  The matrix C is NOT allowed to alias the matrices
+      /// A or B.  This method makes no effort to check for aliasing.
+      void
+      matMatMult (const scalar_type& beta,
+		  mat_type& C, 
+		  const scalar_type& alpha,
+		  const mat_type& A, 
+		  const mat_type& B) const
+      {
+	using Teuchos::NO_TRANS;
+	blas_type blas;
+
+	blas.GEMM (NO_TRANS, NO_TRANS, C.numRows(), C.numCols(), A.numCols(), 
+		   alpha, A.values(), A.stride(), B.values(), B.stride(),
+		   beta, C.values(), C.stride());
+      }
+    };
     
     /// \class ProjectedLeastSquaresSolver
     /// \brief Methods for solving GMRES' projected least-squares problem.
@@ -652,6 +781,7 @@ namespace Belos {
       {
 	using Teuchos::Copy;
 	using Teuchos::View;
+	LocalDenseMatrixOps<Scalar> ops;
 
 	TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
 			   "startCol = " << startCol << " < 0.");
@@ -667,10 +797,10 @@ namespace Belos {
 	  mat_type H_view (View, H, numCols+1, numCols);
 
 	  // H_view := R_underline * B_view.
-	  matMatMult (STS::zero(), H_view, STS::alpha(), R_underline, B_view);
+	  ops.matMatMult (STS::zero(), H_view, STS::alpha(), R_underline, B_view);
 
 	  // H_view : = H_view / R_view.
-	  rightUpperTriSolve (H_view, R_view);
+	  ops.rightUpperTriSolve (H_view, R_view);
 	} else {
 	  const int M = startCol+1;
 	  // The new basis vectors don't include the starting vector
@@ -692,7 +822,7 @@ namespace Belos {
 	  // temporary storage.
 	  mat_type temp (M, S);
 	  temp.assign (R_km1k); // the solve overwrites its input
-	  rightUpperTriSolve (temp, R_k);
+	  ops.rightUpperTriSolve (temp, R_k);
 
 	  // Keep a copy of the last row of (R_km1k / R_k).
 	  mat_type lastRow (Copy, temp, 1, S, M-1, 0);
@@ -701,124 +831,24 @@ namespace Belos {
 	  // R_km1k_underline * B_k_underline / R_k - H_km1 * (R_km1k / R_k).
 	  //
 	  // H_km1k := -H_km1 * (R_km1k / R_k).
-	  matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, temp);
+	  ops.matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, temp);
 	  // temp := R_km1k_underline * B_k_underline.
-	  matMatMult (STS::zero(), temp, R_km1k_underline, B_k_underline);
+	  ops.matMatMult (STS::zero(), temp, R_km1k_underline, B_k_underline);
 	  // temp := temp / R_k.
-	  rightUpperTriSolve (temp, R_k);
+	  ops.rightUpperTriSolve (temp, R_k);
 	  // H_km1k := H_km1k + temp.
-	  matAdd (H_km1k, H_km1k, temp);
+	  ops.matAdd (H_km1k, H_km1k, temp);
 
 	  // H_k_underline := R_k_underline * B_k_underline / R_k -
 	  //   h_km1 * e_1 * lastRow.
 	  //
-	  matMatMult (H_k_underline, R_k_underline, B_k_underline);
-	  rightUpperTriSolve (H_k_underline, R_k);
-	  matScale (lastRow, H(M+1,M));
+	  ops.matMatMult (H_k_underline, R_k_underline, B_k_underline);
+	  ops.rightUpperTriSolve (H_k_underline, R_k);
+	  ops.matScale (lastRow, H(M+1,M));
 	  mat_type H_k_view (View, H_k_underline, 1, S+1);
-	  matSub (H_k_view, lastRow);
+	  ops.matSub (H_k_view, lastRow);
 	}
       }
-
-      //! A := alpha * A.
-      void
-      matScale (mat_type& A, const scalar_type& alpha) const
-      {
-	const int LDA = A.stride();
-	const int numRows = A.numRows();
-	const int numCols = A.numCols();
-
-	if (numRows == 0 || numCols == 0) {
-	  return;
-	} else {
-	  for (int j = 0; j < numCols; ++j) {
-	    scalar_type* const A_j = &A(0,j);
-
-	    for (int i = 0; i < numRows; ++i) {
-	      A_j[i] *= alpha;
-	    }
-	  }
-	}
-      }
-
-      //! A := A + B.
-      void 
-      matAdd (mat_type& A, const mat_type& B) const
-      {
-	const int LDA = A.stride();
-	const int LDB = B.stride();
-	const int numRows = A.numRows();
-	const int numCols = A.numCols();
-
-	if (numRows == 0 || numCols == 0) {
-	  return;
-	} else {
-	  for (int j = 0; j < numCols; ++j) {
-	    scalar_type* const A_j = &A(0,j);
-	    const scalar_type* const B_j = &B(0,j);
-
-	    for (int i = 0; i < numRows; ++i) {
-	      A_j[i] += B_j[i];
-	    }
-	  }
-	}
-      }
-
-      //! A := A - B.
-      void 
-      matSub (mat_type& A, const mat_type& B) const
-      {
-	const int LDA = A.stride();
-	const int LDB = B.stride();
-	const int numRows = A.numRows();
-	const int numCols = A.numCols();
-
-	if (numRows == 0 || numCols == 0) {
-	  return;
-	} else {
-	  for (int j = 0; j < numCols; ++j) {
-	    scalar_type* const A_j = &A(0,j);
-	    const scalar_type* const B_j = &B(0,j);
-
-	    for (int i = 0; i < numRows; ++i) {
-	      A_j[i] -= B_j[i];
-	    }
-	  }
-	}
-      }
-
-      //! In Matlab notation: B = B / R.
-      void
-      rightUpperTriSolve (mat_type& B,
-			  const mat_type& R) const
-      {
-	blas_type blas;
-	blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, 
-		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 
-		   R.numCols(), B.numCols(), 
-		   STS::one(), R.values(), R.stride(), 
-		   B.values(), B.stride());
-      }
-
-      /// \brief C := A*B.  
-      /// 
-      /// C is NOT allowed to alias A or B.  We don't check for aliasing.
-      void
-      matMatMult (const scalar_type& beta,
-		  mat_type& C, 
-		  const scalar_type& alpha,
-		  const mat_type& A, 
-		  const mat_type& B) const
-      {
-	using Teuchos::NO_TRANS;
-	blas_type blas;
-
-	blas.GEMM (NO_TRANS, NO_TRANS, C.numRows(), C.numCols(), A.numCols(), 
-		   alpha, A.values(), A.stride(), B.values(), B.stride(),
-		   beta, C.values(), C.stride());
-      }
-
-
 
       /// \brief Solve the projected least-squares problem, assuming Givens rotations updates.
       ///
@@ -1234,11 +1264,8 @@ namespace Belos {
 
 	// r := b - A*x
 	r.assign (b);
-	blas_type blas;
-	blas.GEMM (Teuchos::NO_TRANS, Teuchos::NO_TRANS, 
-		   b.numRows(), b.numCols(), A.numCols(),
-		   -STS::one(), A.values(), A.stride(), x.values(), x.stride(),
-		   STS::one(), r.values(), r.stride());
+	LocalDenseMatrixOps<Scalar> ops;
+	ops.matMatMult (STS::one(), r, -STS::one(), A, x);
 	return r.normFrobenius ();
       }
 
