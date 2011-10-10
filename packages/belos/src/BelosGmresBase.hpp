@@ -49,6 +49,7 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosOrthoManager.hpp>
 #include <BelosMultiVecTraits.hpp>
+#include <BelosProjectedLeastSquaresSolver.hpp>
 
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
@@ -822,35 +823,32 @@ namespace Belos {
     /// coefficients are computed for this basis.
     Teuchos::RCP<MV> Z_;
 
-    /// \brief The Arnoldi/GMRES upper Hessenberg matrix
+
+    /// \brief The projected least-squares problem.
     ///
-    /// H_[0:curNumIters_, 0:curNumIters_-1] (inclusive index ranges,
-    /// not exclusive like SciPy's) is always valid and is the upper
-    /// Hessenberg matrix for the first curNumIters_ iterations of
-    /// Arnoldi/GMRES.  
+    /// GMRES computes the solution update's coefficients by solving a
+    /// small dense least-squares problem.  The latter is the
+    /// projection of the full residual norm minimization problem onto
+    /// the Krylov search space.
+    Teuchos::RCP<details::ProjectedLeastSquaresProblem<Scalar> > projectedProblem_;
+
+    /// \brief The Arnoldi/GMRES upper Hessenberg matrix.
+    ///
+    /// H_[0:curNumIters_, 0:curNumIters_-1] (inclusive index ranges)
+    /// is the upper Hessenberg matrix for the first curNumIters_
+    /// iterations of Arnoldi/GMRES.  curNumIters_ starts counting
+    /// iterations at zero.
     ///
     /// \note We do not overwrite H_ when computing its QR
     ///   factorization; new H_ data is copied into R_ and updated in
     ///   place there.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > H_;
 
-    //! The R factor in the QR factorization of H_
+    //! The R factor in the QR factorization of H_.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > R_;
 
-    //! Current solution of the projected least-squares problem
+    //! Current solution of the projected least-squares problem.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > y_;
-
-    /// \brief Current RHS of the projected least-squares problem
-    ///
-    /// The current right-hand side of the projected least-squares
-    /// problem \f$\min_y \|\underline{H} y - \beta e_1\|_2\f$.  z_
-    /// starts out as \f$\beta e_1\f$ (where \f$\beta\f$ is the
-    /// initial residual norm).  It is updated progressively along
-    /// with the QR factorization of H_.
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > z_;
-
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> theCosines_;
-    Teuchos::Array<Scalar> theSines_;
 
     /// \brief The initial residual norm
     ///
@@ -1237,12 +1235,9 @@ namespace Belos {
     // right-hand side into the solution vector on input to _GELS.
     y_ = rcp (new mat_type (maxIterCount+1, 1));
 
-    // These cosines and sines encode the Q factor in the QR
-    // factorization of the upper Hessenberg matrix H_.  We compute
-    // this by computing H_ into R_ and operating on R_ in place; H_
-    // itself is left alone.
-    theCosines_.resize (maxIterCount);
-    theSines_.resize (maxIterCount);
+    // Initialize the projected least-squares problem.
+    projectedProblem_ = 
+      rcp (new details::ProjectedLeastSquaresProblem<Scalar> (maxIterCount));
   }
 
   template<class Scalar, class MV, class OP>
@@ -1423,7 +1418,7 @@ namespace Belos {
     mat_type& H = *H_;
     mat_type& R = *R_;
     mat_type& y = *y_;
-    mat_type& z = *z_;
+    mat_type& z = projectedProblem_->z;
 
     // FIXME (mfh 24 Feb 2011) 
     //
@@ -1475,8 +1470,8 @@ namespace Belos {
 	// pointers for the sine and cosine arguments to ROT().  They
 	// should be const, since ROT doesn't change them (???).  Fix
 	// this in Teuchos.
-	magnitude_type theCosine = theCosines_[j];
-	scalar_type theSine = theSines_[j];
+	scalar_type theCosine = projectedProblem_->theCosines_[j];
+	scalar_type theSine = projectedProblem_->theSines_[j];
 	blas.ROT (numCols, &R(j,j), LDR, &R(j+1,j), LDR, 
 		  &theCosine, &theSine);
       }
@@ -1486,8 +1481,8 @@ namespace Belos {
 	magnitude_type theCosine;
 	scalar_type theSine;
 	blas.ROTG (&R(j,j), &R(j+1,j), &theCosine, &theSine);
-	theCosines_[j] = theCosine;
-	theSines_[j] = theSine;
+	projectedProblem_->theCosines_[j] = theCosine;
+	projectedProblem_->theSines_[j] = theSine;
 	// Clear the subdiagonal element R(j+1,j)
 	R(j+1,j) = zero;
 	// Update the "trailing matrix."  The "if" check is not
@@ -1504,7 +1499,7 @@ namespace Belos {
 
     // The absolute value of the last element of z gives the current
     // "native" residual norm.
-    nativeResidualNorm_ = STS::magnitude ((*z_)(m,0));
+    nativeResidualNorm_ = STS::magnitude (projectedProblem_->z(m,0));
 
     // Now that we have the updated R factor of H, and the updated
     // right-hand side z, solve the least-squares problem by solving
@@ -1514,7 +1509,7 @@ namespace Belos {
     // copy z into y.
     {
       mat_type y_view (Teuchos::View, *y_, m, 1);
-      mat_type z_view (Teuchos::View, *z_, m, 1);
+      mat_type z_view (Teuchos::View, projectedProblem_->z, m, 1);
       y_view.assign (z_view);
     }
     // Solve Ry = z for y.
@@ -1843,12 +1838,14 @@ namespace Belos {
     // z_ is the right-hand side of the projected least-squares
     // problem.  If we reallocated z_, we have to reset it by setting
     // its first entry to the initial residual norm.
-    if (z_.is_null() || z_->numRows() != maxIterCount+1)
-      z_ = rcp (new mat_type (maxIterCount+1, 1));
+    if (projectedProblem_->z.numRows() != maxIterCount+1 ||
+	projectedProblem_->z.numCols() != 1)
+      projectedProblem_->z.reshape (maxIterCount+1, 1);
     else
-      (void) z_->putScalar (STS::zero());
+      (void) projectedProblem_->z.putScalar (STS::zero());
+
     // The residual norm is a magnitude_type; promote to Scalar.
-    (*z_)(0,0) = Scalar (initialResidualNorm_);
+    projectedProblem_->z(0,0) = Scalar (initialResidualNorm_);
 
     // Copy the initial residual vector into the first column of V_,
     // and scale the vector by its norm.
@@ -1880,8 +1877,8 @@ namespace Belos {
     (void) R_->putScalar(zero); // zero out below-diagonal entries
     *R_ = *H_; // deep copy
     (void) y_->putScalar(zero);
-    (void) z_->putScalar(zero);
-    (*z_)(0,0) = Scalar (initialResidualNorm_);
+    (void) projectedProblem_->z.putScalar(zero);
+    projectedProblem_->z(0,0) = Scalar (initialResidualNorm_);
 
     // Replay the first numIters-1 Givens rotations.
     lastUpdatedCol_ = -1;

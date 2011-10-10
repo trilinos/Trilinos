@@ -184,7 +184,7 @@ namespace Belos {
 	B_Z = null;
       // Help C++'s type inference by referring to the "this" pointer.
       mat_type& H = *(this->H_);
-      mat_type& z = *(this->z_);
+      mat_type& z = this->projectedProblem_->z;
       const int k = this->getNumIters();
 
       // Flexible standard GMRES only needs to orthogonalize the new V

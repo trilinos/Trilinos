@@ -142,9 +142,9 @@ namespace Belos {
       ///
       /// The vector (one-column matrix) z has the same number of rows
       /// as H.  It stores the current right-hand side of the
-      /// projected least-squares problem, which may be updated
-      /// either progressively (if a Givens rotation method is used)
-      /// or all at once (if an LAPACK factorization method is
+      /// projected least-squares problem.  The z_ vector may be
+      /// updated either progressively (if a Givens rotation method is
+      /// used) or all at once (if an LAPACK factorization method is
       /// used).
       Teuchos::SerialDenseMatrix<int,Scalar> z;
 
@@ -176,6 +176,59 @@ namespace Belos {
 	theCosines (maxNumIterations+1),
 	theSines (maxNumIterations+1)
       {}
+
+      void 
+      reset (const typename Teuchos::ScalarTraits<Scalar>::magnitudeType beta,
+	     const int maxNumIterations) 
+      {
+	typedef Teuchos::ScalarTraits<Scalar> STS;
+	typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+	typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+	TEST_FOR_EXCEPTION(beta < STM::zero(), std::invalid_argument,
+			   "ProjectedLeastSquaresProblem::reset: initial "
+			   "residual beta = " << beta << " < 0.");
+	TEST_FOR_EXCEPTION(maxNumIterations <= 0, std::invalid_argument,
+			   "ProjectedLeastSquaresProblem::reset: maximum number "
+			   "of iterations " << maxNumIterations << " <= 0.");
+
+	if (H.numRows() < maxNumIterations+1 || H.numCols() < maxNumIterations) {
+	  const int errcode = H.reshape (maxNumIterations+1, maxNumIterations);
+	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+			     "Failed to reshape H into a " << (maxNumIterations+1) 
+			     << " x " << maxNumIterations << " matrix.");
+	}
+	(void) H.putScalar (STS::zero());
+
+	if (R.numRows() < maxNumIterations+1 || R.numCols() < maxNumIterations) {
+	  const int errcode = R.reshape (maxNumIterations+1, maxNumIterations);
+	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+			     "Failed to reshape R into a " << (maxNumIterations+1) 
+			     << " x " << maxNumIterations << " matrix.");
+	}
+	(void) R.putScalar (STS::zero());
+
+	if (y.numRows() < maxNumIterations+1 || y.numCols() < 1) {
+	  const int errcode = y.reshape (maxNumIterations+1, 1);
+	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+			     "Failed to reshape y into a " << (maxNumIterations+1) 
+			     << " x " << 1 << " matrix.");
+	}
+	(void) y.putScalar (STS::zero());
+
+	if (z.numRows() < maxNumIterations+1 || z.numCols() < 1) {
+	  const int errcode = z.reshape (maxNumIterations+1, 1);
+	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+			     "Failed to reshape z into a " << (maxNumIterations+1) 
+			     << " x " << 1 << " matrix.");
+	}
+	(void) z.putScalar (STS::zero());
+
+	// Promote the initial residual norm from a magnitude type to
+	// a scalar type.
+	const Scalar initialResidualNorm (beta);
+	z(0,0) = initialResidualNorm;
+      }
     };
 
 
