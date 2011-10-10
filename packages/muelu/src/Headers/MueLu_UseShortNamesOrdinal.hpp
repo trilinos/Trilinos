@@ -31,7 +31,7 @@ typedef MueLu::Level Level;
 #endif
 
 #ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
-typedef MueLu::DefaultFactoryHandlerBase DefaultFactoryHandlerBase;
+typedef MueLu::FactoryManagerBase FactoryManagerBase;
 #endif
 
 #ifdef MUELU_TWOLEVELFACTORY_SHORT

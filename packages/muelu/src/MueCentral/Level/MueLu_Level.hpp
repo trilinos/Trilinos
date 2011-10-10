@@ -11,7 +11,7 @@
 #include "MueLu_Needs.hpp"
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_NoFactory.hpp"
-#include "MueLu_DefaultFactoryHandlerBase.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #undef HEAVY_DEBUG_OUTPUT
 
@@ -38,7 +38,7 @@ class Level : public BaseClass {
 private:
   
   mutable int levelID_; // id number associated with level
-  RCP<const DefaultFactoryHandlerBase> defaultFactoryHandler_;
+  RCP<const FactoryManagerBase> defaultFactoryHandler_;
   RCP<Level> previousLevel_;  // linked list of Level
 
   RCP<Needs> needs_;
@@ -52,7 +52,7 @@ public:
   }
 
   //! Constructor
-  Level(RCP<DefaultFactoryHandlerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler) {
+  Level(RCP<FactoryManagerBase> & defaultFactoryHandler) : levelID_(-1), defaultFactoryHandler_(defaultFactoryHandler) {
     needs_ = rcp(new Needs());
   }
 
@@ -456,7 +456,7 @@ public:
   //@{
   //! Set default factories (used internally by Hierarchy::SetLevel()).
   // Users should not use this method.
-  void SetDefaultFactoryHandler(RCP<const DefaultFactoryHandlerBase> defaultFactoryHandler) {
+  void SetDefaultFactoryHandler(RCP<const FactoryManagerBase> defaultFactoryHandler) {
     defaultFactoryHandler_ = defaultFactoryHandler;
   }
 

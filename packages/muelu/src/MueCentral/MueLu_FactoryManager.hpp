@@ -13,7 +13,7 @@
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#include "MueLu_DefaultFactoryHandlerBase.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 // Headers for factories used by default:
 #include "MueLu_SaPFactory.hpp"
@@ -29,7 +29,7 @@
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class FactoryManager : public DefaultFactoryHandlerBase {
+  class FactoryManager : public FactoryManagerBase {
 #include "MueLu_UseShortNames.hpp"
       
   public:
@@ -68,7 +68,7 @@ namespace MueLu {
     //@{ Get/Set functions.
 
     virtual const FactoryBase & GetDefaultFactory(const std::string & varName) const {
-      if (! DefaultFactoryHandlerBase::IsAvailable(varName)) {
+      if (! FactoryManagerBase::IsAvailable(varName)) {
 
         if (varName == "A")            return *NoFactory::get();
         if (varName == "P")            return *NoFactory::get();
@@ -81,7 +81,7 @@ namespace MueLu {
         TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }
 
-      return DefaultFactoryHandlerBase::GetDefaultFactory(varName);
+      return FactoryManagerBase::GetDefaultFactory(varName);
     }
 
     //@}
@@ -95,8 +95,8 @@ namespace MueLu {
       GetOStream(Warnings00, 0) << "         using default factory: ";
       { Teuchos::OSTab tab(getOStream(), 8); factory->describe(GetOStream(Warnings00), getVerbLevel()); }
 
-      DefaultFactoryHandlerBase::SetDefaultFactory(varName, factory);
-      return DefaultFactoryHandlerBase::GetDefaultFactory(varName); //TODO: replace by: return factory;
+      FactoryManagerBase::SetDefaultFactory(varName, factory);
+      return FactoryManagerBase::GetDefaultFactory(varName); //TODO: replace by: return factory;
     }
 
 

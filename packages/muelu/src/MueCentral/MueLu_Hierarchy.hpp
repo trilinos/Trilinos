@@ -3,7 +3,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_DefaultFactoryHandlerBase.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -283,7 +283,7 @@ public:
 
   void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
     Level & level = *Levels_[LastLevelID()];
-    RCP<const DefaultFactoryHandlerBase> manager = rcp(new FactoryManager());
+    RCP<const FactoryManagerBase> manager = rcp(new FactoryManager());
     SetFactoryManager SFM(level, manager);
 
     level.Request(smooFact);

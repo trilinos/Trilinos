@@ -3,7 +3,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_DefaultFactoryHandlerBase.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 namespace MueLu {
 
@@ -14,7 +14,7 @@ namespace MueLu {
     //@{
 
     //!
-    SetFactoryManager(Level & level, RCP<const DefaultFactoryHandlerBase> & factoryManager)
+    SetFactoryManager(Level & level, RCP<const FactoryManagerBase> & factoryManager)
       :  level_(level) 
     {
       level.SetDefaultFactoryHandler(factoryManager);
@@ -37,7 +37,7 @@ namespace MueLu {
 
   public:
 
-    TopRAPFactory(RCP<const DefaultFactoryHandlerBase> parentFactoryManager, const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null)
+    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager, const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null)
       : parentFactoryManager_(parentFactoryManager), PFact_(PFact), RFact_(RFact), AcFact_(AcFact)
     { }
     
@@ -73,7 +73,7 @@ namespace MueLu {
     }
     
   private:
-    mutable RCP<const DefaultFactoryHandlerBase> parentFactoryManager_;
+    mutable RCP<const FactoryManagerBase> parentFactoryManager_;
     RCP<const FactoryBase> PFact_;
     RCP<const FactoryBase> RFact_;
     RCP<const FactoryBase> AcFact_;
@@ -85,7 +85,7 @@ namespace MueLu {
 
   public:
 
-    TopSmootherFactory(RCP<const DefaultFactoryHandlerBase> parentFactoryManager, RCP<const FactoryBase> smootherFact)
+    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, RCP<const FactoryBase> smootherFact)
       : parentFactoryManager_(parentFactoryManager), smootherFact_(smootherFact)
     { }
 
@@ -119,7 +119,7 @@ namespace MueLu {
     }
 
   private:
-    mutable RCP<const DefaultFactoryHandlerBase> parentFactoryManager_;
+    mutable RCP<const FactoryManagerBase> parentFactoryManager_;
     RCP<const FactoryBase> smootherFact_;
   };
 

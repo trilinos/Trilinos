@@ -19,7 +19,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_DefaultFactoryHandlerBase.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 #include "MueLu_IfpackSmoother.hpp"
 
@@ -146,7 +146,7 @@ namespace MueLuTests {
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
-        RCP<MueLu::DefaultFactoryHandlerBase> factoryHandler = rcp(new FactoryManager());
+        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
         currentLevel.SetDefaultFactoryHandler(factoryHandler);
 
         currentLevel.SetLevelID(1);
@@ -155,7 +155,7 @@ namespace MueLuTests {
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
-        RCP<MueLu::DefaultFactoryHandlerBase> factoryHandler = rcp(new FactoryManager());
+        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
         fineLevel.SetDefaultFactoryHandler(factoryHandler);
         coarseLevel.SetDefaultFactoryHandler(factoryHandler);
 

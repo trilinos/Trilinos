@@ -12,13 +12,13 @@ namespace MueLu {
   class FactoryBase;
 
   //! Class that provides default factories within Needs class.
-  class DefaultFactoryHandlerBase : public BaseClass {
+  class FactoryManagerBase : public BaseClass {
 
   public:
     //@{ Constructors/Destructors.
 
     //! Destructor.
-    virtual ~DefaultFactoryHandlerBase() { }
+    virtual ~FactoryManagerBase() { }
 
     //@}
 
@@ -46,7 +46,7 @@ namespace MueLu {
   protected:
     mutable Teuchos::Hashtable<std::string, RCP<const FactoryBase> > factoryTable_; //TODO: use std lib hashtable instead (Teuchos::Hashtable is deprecated).
         
-  }; // class DefaultFactoryHandlerBase
+  }; // class FactoryManagerBase
 
 } // namespace MueLu
 
