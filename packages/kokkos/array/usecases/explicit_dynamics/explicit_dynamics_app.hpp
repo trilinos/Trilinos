@@ -49,7 +49,11 @@ struct PerformanceData {
 };
 
 template<typename Scalar, class device_type>
-double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez, PerformanceData & perf )
+void explicit_dynamics_app( const size_t ex,
+                            const size_t ey,
+                            const size_t ez,
+                            const size_t steps ,
+                            PerformanceData & perf )
 {
   typedef typename Kokkos::MDArrayView<Scalar,device_type>::HostView  scalar_array_h;
   typedef typename Kokkos::MDArrayView<int,device_type>::HostView     int_array_h;
@@ -149,7 +153,7 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
   int previous_state = 0;
   int next_state = 0;
 
-  const int total_num_steps = 10000;
+  const int total_num_steps = steps ;
 
   perf.number_of_steps = total_num_steps ;
 
@@ -226,8 +230,6 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 
 
   }
-
-  return 0;
 }
 
 
@@ -260,6 +262,8 @@ static void driver( const char * label , int beg , int end , int runs )
 
   std::cout << std::endl;
 
+  const int steps = 1000 ;
+
   for(int i = beg ; i < end; ++i )
   {
     int two_to_the_i = 1 << i;
@@ -274,7 +278,7 @@ static void driver( const char * label , int beg , int end , int runs )
 
     for(int j = 0; j < runs; j++){
 
-     explicit_dynamics_app<Scalar,Device>(ix,iy,iz,perf);
+     explicit_dynamics_app<Scalar,Device>(ix,iy,iz,steps,perf);
 
      if( j == 0 ) {
        best = perf ;

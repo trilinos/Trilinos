@@ -38,7 +38,6 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
   const array_type rotation;
   const array_type vel_grad;
-  const array_type stretching_tensor;
   const array_type stretch;
   const array_type vorticity;
   const array_type rot_stretch;
