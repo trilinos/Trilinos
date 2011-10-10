@@ -16,7 +16,9 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
+#if defined HAVE_AMESOS2_KLU2 || defined HAVE_AMESOS2_SUPERLU
         testApplyNoSetup(Amesos2Smoother(), out, success);
+#endif
       }
   }
 
