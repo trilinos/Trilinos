@@ -183,7 +183,7 @@ namespace Belos {
       if (! B_Z.is_null())
 	B_Z = null;
       // Help C++'s type inference by referring to the "this" pointer.
-      mat_type& H = *(this->H_);
+      mat_type& H = this->projectedProblem_->H;
       mat_type& z = this->projectedProblem_->z;
       const int k = this->getNumIters();
 
@@ -215,12 +215,10 @@ namespace Belos {
     virtual bool 
     acceptedCandidateBasis () const 
     {
-      mat_type& H = *(this->H_);
-
-      // OK, because we haven't accepted the candidate basis yet,
-      // so the number of iterations hasn't yet been incremented.
+      // We haven't accepted the candidate basis yet, so the number of
+      // iterations hasn't yet been incremented.
       const int k = this->getNumIters();
-      const Scalar H_kp1k = H(k+1, k);
+      const Scalar H_kp1k = this->projectedProblem_->H(k+1, k);
       
       // NOTE (mfh {15,16} Jan 2011) This test should perhaps be more
       // sophisticated.  However, perhaps the right place for such a

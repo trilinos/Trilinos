@@ -105,12 +105,16 @@ namespace Belos {
       }
     } // namespace (anonymous)
 
-    /// \struct ProjectedLeastSquaresProblem
+    /// \class ProjectedLeastSquaresProblem
     /// \brief "Container" for the data representing the projected least-squares problem.
     /// \author Mark Hoemmen
     ///
     template<class Scalar>
-    struct ProjectedLeastSquaresProblem {
+    class ProjectedLeastSquaresProblem {
+    public:
+      typedef Scalar scalar_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
       /// \brief The upper Hessenberg matrix from GMRES.  
       ///
       /// This matrix's number of rows is one more than its number of
@@ -127,6 +131,10 @@ namespace Belos {
       /// triangular factor from the QR factorization of H.  R must
       /// have the same dimensions as H (the number of rows is one
       /// more than the number of columns).
+      ///
+      /// H[0:k, 0:k-1] (inclusive zero-based index ranges) is the
+      /// upper Hessenberg matrix for the first k iterations of GMRES
+      /// (where k = 0, 1, 2, ...).
       Teuchos::SerialDenseMatrix<int,Scalar> R;
 
       /// \brief Current solution of the projected least-squares problem.
@@ -136,6 +144,9 @@ namespace Belos {
       /// projected least-squares problem at each step.  The vector
       /// should have one more entry than necessary for the solution,
       /// because of the way we solve the least-squares problem.
+      /// (Most of the methods require copying the right-hand side
+      /// vector into y, and the right-hand side has one more entry
+      /// than the solution.)
       Teuchos::SerialDenseMatrix<int,Scalar> y;
 
       /// \brief Current right-hand side of the projected least-squares problem.
@@ -177,12 +188,51 @@ namespace Belos {
 	theSines (maxNumIterations+1)
       {}
 
+      /// \brief Reset the projected least-squares problem.
+      /// 
+      /// "Reset" means that the right-hand side is restored to
+      /// \f$\beta e_1\f$.  None of the matrices or vectors are
+      /// reallocated or resized.  The application is responsible for
+      /// doing everything else.  Since this class keeps the original
+      /// upper Hessenberg matrix, the application can recompute its
+      /// QR factorization up to the desired point and apply the
+      /// resulting Givens rotations to the right-hand size z
+      /// resulting from this reset operation.
+      ///
+      /// \param beta [in] The initial residual norm of the
+      ///   (non-projected) linear system \f$Ax=b\f$.
       void 
-      reset (const typename Teuchos::ScalarTraits<Scalar>::magnitudeType beta,
-	     const int maxNumIterations) 
+      reset (const typename Teuchos::ScalarTraits<Scalar>::magnitudeType beta)
       {
 	typedef Teuchos::ScalarTraits<Scalar> STS;
-	typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+	// Zero out the right-hand side of the least-squares problem.
+	z.putScalar (STS::zero());
+
+	// Promote the initial residual norm from a magnitude type to
+	// a scalar type, so we can assign it to the first entry of z.
+	const Scalar initialResidualNorm (beta);
+	z(0,0) = initialResidualNorm;
+      }
+
+      /// \brief (Re)allocate and reset the projected least-squares problem.
+      ///
+      /// "(Re)allocate" means to (re)size H, R, y, and z to their
+      /// appropriate maximum dimensions, given the maximum number of
+      /// iterations that GMRES may execute.  "Reset" means to do what
+      /// the \c reset() method does.  Reallocation happens first,
+      /// then reset.
+      ///
+      /// \param beta [in] The initial residual norm of the
+      ///   (non-projected) linear system \f$Ax=b\f$.
+      ///
+      /// \param maxNumIterations [in] The maximum number of
+      ///   iterations that GMRES may execute.
+      void 
+      reallocateAndReset (const typename Teuchos::ScalarTraits<Scalar>::magnitudeType beta,
+			  const int maxNumIterations) 
+      {
+	typedef Teuchos::ScalarTraits<Scalar> STS;
 	typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
 	TEST_FOR_EXCEPTION(beta < STM::zero(), std::invalid_argument,
@@ -222,13 +272,9 @@ namespace Belos {
 			     "Failed to reshape z into a " << (maxNumIterations+1) 
 			     << " x " << 1 << " matrix.");
 	}
-	(void) z.putScalar (STS::zero());
-
-	// Promote the initial residual norm from a magnitude type to
-	// a scalar type.
-	const Scalar initialResidualNorm (beta);
-	z(0,0) = initialResidualNorm;
+	reset (beta);
       }
+
     };
 
 
