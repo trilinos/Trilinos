@@ -27,6 +27,7 @@ struct PerformanceData {
   double internal_force_time;
   double central_diff;
   double copy_to_host_time;
+  size_t number_of_steps ;
 
   PerformanceData()
   : mesh_time(0)
@@ -34,6 +35,7 @@ struct PerformanceData {
   , internal_force_time(0)
   , central_diff(0)
   , copy_to_host_time(0)
+  , number_of_steps(0)
   {}
 
   void best( const PerformanceData & rhs )
@@ -149,6 +151,8 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 
   const int total_num_steps = 10000;
 
+  perf.number_of_steps = total_num_steps ;
+
   for (int step = 0; step < total_num_steps; ++step) {
 
     //rotate the states
@@ -230,12 +234,12 @@ double explicit_dynamics_app( const size_t ex, const size_t ey, const size_t ez,
 template <typename Scalar, typename Device>
 static void driver( const char * label , int beg , int end , int runs )
 {
-
   int shift = 20;
 
   std::cout << std::endl ;
   std::cout << "\"MiniExplicitDynamics with Kokkos " << label << "\"" << std::endl;
   std::cout << std::left << std::setw(shift) << "\"Size\" , ";
+  std::cout << std::left << std::setw(shift) << "\"Time Steps\" , ";
   std::cout << std::left << std::setw(shift) << "\"Setup\" , ";
   std::cout << std::left << std::setw(shift) << "\"Initialize\" , ";
   std::cout << std::left << std::setw(shift) << "\"InternalForce\" , ";
@@ -246,12 +250,13 @@ static void driver( const char * label , int beg , int end , int runs )
   std::cout << std::endl;
 
   std::cout << std::left << std::setw(shift) << "\"elements\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec\" , ";
-  std::cout << std::left << std::setw(shift) << "\"millisec/element\"";
+  std::cout << std::left << std::setw(shift) << "\"iterations\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec\" , ";
+  std::cout << std::left << std::setw(shift) << "\"microsec/element\"";
 
   std::cout << std::endl;
 
@@ -278,18 +283,18 @@ static void driver( const char * label , int beg , int end , int runs )
        best.best( perf );
      }
    }
-   double time_per_element = (best.internal_force_time + best.central_diff)/n;
 
-
-
+   double time_per_element = (best.internal_force_time + best.central_diff)/
+           ( n * perf.number_of_steps );
 
    std::cout << std::setw(shift-3) << n << " , "
-             << std::setw(shift-3) << best.mesh_time * 1000 << " , "
-             << std::setw(shift-3) << best.init_time * 1000 << " , "
-             << std::setw(shift-3) << best.internal_force_time * 1000 << " , "
-             << std::setw(shift-3) << best.central_diff * 1000 << " , "
-             << std::setw(shift-3) << best.copy_to_host_time * 1000 << " , "
-             << std::setw(shift) << time_per_element * 1000
+             << std::setw(shift-3) << best.number_of_steps << " , "
+             << std::setw(shift-3) << best.mesh_time * 1000000 << " , "
+             << std::setw(shift-3) << best.init_time * 1000000 << " , "
+             << std::setw(shift-3) << ( best.internal_force_time * 1000000 ) / best.number_of_steps << " , "
+             << std::setw(shift-3) << ( best.central_diff * 1000000 ) / best.number_of_steps << " , "
+             << std::setw(shift-3) << best.copy_to_host_time * 1000000 << " , "
+             << std::setw(shift) << time_per_element * 1000000
              << std::endl ;
   }
 }
