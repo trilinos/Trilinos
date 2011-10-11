@@ -133,7 +133,7 @@ public:
     //       and the FactoryManager is deleted at the end of this function.
 
     FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
-    manager.SetSmootherFactory(rcpFromRef(SmooFact));
+    manager.SetFactory("Smoother", rcpFromRef(SmooFact));
 
     return Setup(manager, startLevel, numDesiredLevels);
   }
@@ -162,9 +162,9 @@ public:
   Teuchos::ParameterList Setup(const FactoryManager & manager, const int &startLevel = 0, const int &numDesiredLevels = 10) {
     RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
 
-    TopRAPFactory<SC,LO,GO,NO>      rapFactory           (rcpManager, manager.GetPFact(), manager.GetRFact(), manager.GetAcFact());
-    TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (rcpManager, manager.GetSmootherFactory());
-    TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(rcpManager, manager.GetCoarsestSolverFactory());
+    TopRAPFactory<SC,LO,GO,NO>      rapFactory           (rcpManager); //TODO: remove SC,LO,GO,NO
+    TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (rcpManager, "Smoother");
+    TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(rcpManager, "CoarseSolver");
 
     Monitor h(*this, "Setup");
     Xpetra::global_size_t sumCoarseNnz = 0;
@@ -331,7 +331,7 @@ public:
     }
 
     FactoryManager manager;
-    manager.SetSmootherFactory(rcpFromRef(smooFact));
+    manager.SetFactory("Smoother", rcpFromRef(smooFact));
     manager.SetFactory("P", Teuchos::null);
     manager.SetFactory("R", Teuchos::null);
     manager.SetFactory("A", Teuchos::null);

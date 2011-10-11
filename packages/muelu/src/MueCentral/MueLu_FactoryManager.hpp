@@ -23,7 +23,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-
+ 
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -40,8 +40,7 @@ namespace MueLu {
       if (RFact  != Teuchos::null) SetFactory("R", RFact);
       if (AcFact != Teuchos::null) SetFactory("A", AcFact);
 
-      SetFactory("PreSmoother",  Teuchos::null);
-      SetFactory("PostSmoother", Teuchos::null);
+      SetFactory("Smoother",     Teuchos::null); //?
       SetFactory("CoarseSolver", Teuchos::null);
     }
     
@@ -52,14 +51,6 @@ namespace MueLu {
 
     //@{ Get/Set functions.
 
-    //! Get Factory
-    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const {
-      if (FactoryManager::IsAvailable(varName, factoryTable_))
-	return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
-      else 
-	return GetDefaultFactory(varName);
-    }
-
     //! Set Factory
     void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
       if (IsAvailable(varName, factoryTable_)) // TODO: too much warnings (for smoothers)
@@ -68,30 +59,15 @@ namespace MueLu {
       factoryTable_[varName] = factory;
     }
 
-    //@}
-
-    void Clean() const { defaultFactoryTable_.clear(); }
-
-    //@{
-
-    void SetSmootherFactory(const RCP<const FactoryBase> & smootherFact) {
-      SetFactory("PreSmoother", smootherFact);
-      SetFactory("PostSmoother", smootherFact);
-    }
-  
-    void SetCoarsestSolverFactory(const RCP<const FactoryBase> & coarsestSolver) {
-      SetFactory("CoarseSolver", coarsestSolver);
+    //! Get Factory
+    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const {
+      if (FactoryManager::IsAvailable(varName, factoryTable_))
+	return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
+      else 
+	return GetDefaultFactory(varName);
     }
 
-    RCP<const FactoryBase> GetPFact()  const { return GetFactory("P"); }
-    RCP<const FactoryBase> GetRFact()  const { return GetFactory("R"); }
-    RCP<const FactoryBase> GetAcFact() const { return GetFactory("A"); }
-
-    RCP<const FactoryBase> GetSmootherFactory() const { return GetFactory("PreSmoother"); }
-    RCP<const FactoryBase> GetCoarsestSolverFactory() const { return GetFactory("CoarseSolver"); }
-
-    //@}
-
+    //!
     const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const {
       if (IsAvailable(varName, defaultFactoryTable_)) {
 
@@ -99,22 +75,28 @@ namespace MueLu {
 
       }	else {
 	  
-        if (varName == "A")            return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-	if (varName == "P")            return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-        if (varName == "R")            return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+        if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+	if (varName == "P")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+        if (varName == "R")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 
-    	if (varName == "Nullspace")    return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
-        if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-        if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+    	if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
-	// if (varName == "PreSmoother")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(Teuchos::null))); // TODO: check if IsAvailable("PostSmoother")
-	// if (varName == "CoarseSolver") return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver(Xpetra::UseTpetra)), Teuchos::null))); //TODO: UseTpetra
+	if (varName == "PreSmoother")   return GetFactory("Smoother");
+	if (varName == "PostSmoother")  return GetFactory("Smoother");
+
+	// if (varName == "Smoother")      return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp Teuchos::null)));
+	// if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver(xxx)), Teuchos::null)));
 
         TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
-
       }
       
     }
+
+    //@}
+
+    void Clean() const { defaultFactoryTable_.clear(); }
 
   private:
     
@@ -161,6 +143,7 @@ namespace MueLu {
 #define MUELU_FACTORYMANAGER_SHORT
 #endif // ifndef MUELU_FACTORYMANAGER_HPP
 
+//TODO: add operator[]
 //TODO: should we use a parameterList instead of a std::map? It might be useful to tag which factory have been used and report unused factory.
 //TODO: add an option 'NoDefault' to check if we are using any default factory.
 //TODO: use Teuchos::ConstNonConstObjectContainer to allow user to modify factories after a GetFactory()
