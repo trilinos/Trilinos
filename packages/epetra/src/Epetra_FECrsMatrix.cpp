@@ -527,7 +527,7 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode)
 {
-  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete), combineMode );
+  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete, combineMode ));
 }
 
 //----------------------------------------------------------------------------

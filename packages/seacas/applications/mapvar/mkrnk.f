@@ -54,7 +54,7 @@ C
       DIMENSION IRNK(N,NDIM),IRNK2(N,NDIM,*)
 C
        DO 11 IDM = 1, NDIM
-         CALL INDEXX(N,X(1,IDM),IND(1,IDM),N)
+         CALL INDEXX(X(1,IDM),IND(1,IDM),N,.true.)
          CALL RANK(N,IND(1,IDM),IRNK(1,IDM),N)
  11    CONTINUE
 C

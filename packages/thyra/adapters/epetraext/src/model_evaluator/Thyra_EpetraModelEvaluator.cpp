@@ -478,21 +478,6 @@ EpetraModelEvaluator::getUpperBounds() const
 }
 
 
-RCP<LinearOpWithSolveBase<double> >
-EpetraModelEvaluator::create_W() const
-{
-  TEST_FOR_EXCEPTION(
-    W_factory_.get()==NULL, std::logic_error
-    ,"Thyra::EpetraModelEvaluator::create_W(): "
-    "Error, the client did not set a LinearOpWithSolveFactoryBase"
-    " object for W!"
-    );
-  W_factory_->setOStream(this->getOStream());
-  W_factory_->setVerbLevel(this->getVerbLevel());
-  return W_factory_->createOp();
-}
-
-
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_W_op() const
 {
@@ -662,9 +647,7 @@ void EpetraModelEvaluator::evalModelImpl(
 
   // Various objects that are needed later (see documentation in
   // the function convertOutArgsFromThyraToEpetra(...)
-  RCP<LinearOpWithSolveBase<double> > W;
   RCP<LinearOpBase<double> > W_op;
-  RCP<const LinearOpBase<double> > fwdW;
   RCP<EpetraLinearOp> efwdW;
   RCP<Epetra_Operator> eW;
   
@@ -673,7 +656,7 @@ void EpetraModelEvaluator::evalModelImpl(
   convertOutArgsFromThyraToEpetra(
     outArgs,
     &epetraUnscaledOutArgs,
-    &W, &W_op, &fwdW, &efwdW, &eW
+    &W_op, &efwdW, &eW
     );
 
   //
@@ -767,7 +750,7 @@ void EpetraModelEvaluator::evalModelImpl(
   timer.start(true);
 
   finishConvertingOutArgsFromEpetraToThyra(
-    epetraOutArgs, W, W_op, fwdW, efwdW, eW,
+    epetraOutArgs, W_op, efwdW, eW,
     outArgs
     );
 
@@ -905,9 +888,7 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   const ModelEvaluatorBase::OutArgs<double> &outArgs,
   EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs_inout,
-  RCP<LinearOpWithSolveBase<double> > *W_out,
   RCP<LinearOpBase<double> > *W_op_out,
-  RCP<const LinearOpBase<double> > *fwdW_out,
   RCP<EpetraLinearOp> *efwdW_out,
   RCP<Epetra_Operator> *eW_out
   ) const
@@ -924,18 +905,14 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   // Assert input
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT(epetraUnscaledOutArgs_inout);
-  TEUCHOS_ASSERT(W_out);
   TEUCHOS_ASSERT(W_op_out);
-  TEUCHOS_ASSERT(fwdW_out);
   TEUCHOS_ASSERT(efwdW_out);
   TEUCHOS_ASSERT(eW_out);
 #endif
 
   // Create easy to use references
   EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs = *epetraUnscaledOutArgs_inout;
-  RCP<LinearOpWithSolveBase<double> > &W = *W_out;
   RCP<LinearOpBase<double> > &W_op = *W_op_out;
-  RCP<const LinearOpBase<double> > &fwdW = *fwdW_out;
   RCP<EpetraLinearOp> &efwdW = *efwdW_out;
   RCP<Epetra_Operator> &eW = *eW_out;
 
@@ -955,26 +932,17 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
   }
   
-  // W and W_op
+  // W_op
   {
 
-    if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-      Thyra::uninitializeOp<double>(*W_factory_, W.ptr(), Teuchos::outArg(fwdW));
-      if(fwdW.get()) {
+    if (outArgs.supports(OUT_ARG_W_op) && nonnull(W_op = outArgs.get_W_op())) {
+      if (nonnull(W_op) && is_null(efwdW)) {
         efwdW = rcp_const_cast<EpetraLinearOp>(
-          rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
-      }
-      else {
-        efwdW = this->create_epetra_W_op();
-        fwdW = efwdW;
+          rcp_dynamic_cast<const EpetraLinearOp>(W_op, true));
       }
     }
-    if( outArgs.supports(OUT_ARG_W_op) && (W_op = outArgs.get_W_op()).get() ) {
-      if( W_op.get() && !efwdW.get() )
-        efwdW = rcp_const_cast<EpetraLinearOp>(
-          rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
-    }
-    if(efwdW.get()) {
+    
+    if (nonnull(efwdW)) {
       // By the time we get here, if we have an object in efwdW, then it
       // should already be embeadded with an underlying Epetra_Operator object
       // that was allocated by the EpetraExt::ModelEvaluator object.
@@ -982,18 +950,6 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
       eW = efwdW->epetra_op();
       epetraUnscaledOutArgs.set_W(eW);
     }
-    // NOTE: Above, if both W and W_op are set and have been through at least
-    // one prior evaluation (and therefore have Epetra_Operator objects embedded
-    // in them), then we will use the Epetra_Operator embedded in W to pass to
-    // the EpetraExt::ModelEvaluator object and ignore the Epetra_Operator
-    // object in W_op.  In the standard use case, these will be the same
-    // Epetra_Operator objects.  However, it is possible that the client could
-    // use this interface in such a way that these would have different
-    // Epetra_Operator objects embedded in them.  In this (very unlikely) case,
-    // the Epetra_Operator embedded in W_op will be discarded!  This might be
-    // surprising to a client but it is very unlikely that this will ever be a
-    // problem, but the issue is duly noted here!  Only dangerous programming
-    // use of this interface would cause any problem.
     
     // Note: The following derivative objects update in place!
 
@@ -1200,9 +1156,7 @@ void EpetraModelEvaluator::postEvalScalingSetup(
 
 void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
-  RCP<LinearOpWithSolveBase<double> > &W,
   RCP<LinearOpBase<double> > &W_op,
-  RCP<const LinearOpBase<double> > &fwdW,
   RCP<EpetraLinearOp> &efwdW,
   RCP<Epetra_Operator> &eW,
   const ModelEvaluatorBase::OutArgs<double> &outArgs
@@ -1212,25 +1166,20 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   using Teuchos::rcp_dynamic_cast;
   typedef EpetraExt::ModelEvaluator EME;
 
-  if(efwdW.get()) {
+  if (nonnull(efwdW)) {
     efwdW->setFullyInitialized(true); 
     // NOTE: Above will directly update W_op also if W.get()==NULL!
   }
-  
-  if( W.get() ) {
-    Thyra::initializeOp<double>(*W_factory_, fwdW, W.ptr());
-    W->setOStream(this->getOStream());
-  }
 
-  if( W_op.get() ) {
-    if( W_op.shares_resource(efwdW) ) {
+  if (nonnull(W_op)) {
+    if (W_op.shares_resource(efwdW)) {
       // W_op was already updated above since *efwdW is the same object as *W_op
     }
     else {
-      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->setFullyInitialized(true);
+      rcp_dynamic_cast<EpetraLinearOp>(W_op, true)->setFullyInitialized(true);
     }
   }
-
+  
 }
 
 
@@ -1347,9 +1296,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   // f
   outArgs.setSupports(OUT_ARG_f, epetraOutArgs.supports(EME::OUT_ARG_f));
   if (outArgs.supports(OUT_ARG_f)) {
-    // W
-    outArgs.setSupports(
-      OUT_ARG_W, epetraOutArgs.supports(EME::OUT_ARG_W)&&!is_null(W_factory_));
+    // W_op
     outArgs.setSupports(OUT_ARG_W_op,  epetraOutArgs.supports(EME::OUT_ARG_W));
     outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
     // DfDp

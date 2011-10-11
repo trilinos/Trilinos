@@ -68,7 +68,7 @@ LOCA::Thyra::Group::Group(
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
   RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     params.getDoubleArrayPointer(),1);
+				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
     model_->get_p_space(param_index);
   param_thyra_vec = ::Thyra::createMemberView(ps,pv);
@@ -77,7 +77,7 @@ LOCA::Thyra::Group::Group(
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
     model_->get_x_space();
   x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.get());
+  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
 }
 
 LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
@@ -93,7 +93,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
   RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     params.getDoubleArrayPointer(),1);
+				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
     model_->get_p_space(param_index);
   param_thyra_vec = ::Thyra::createMemberView(ps,pv);
@@ -102,7 +102,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
     model_->get_x_space();
   x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.get());
+  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
 }
 
 LOCA::Thyra::Group::~Group() 
@@ -416,7 +416,7 @@ LOCA::Thyra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
     dynamic_cast<NOX::Thyra::Vector&>(result);
 
   ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
-		 thyra_input.getThyraVector(), &thyra_result.getThyraVector());
+		 thyra_input.getThyraVector(), thyra_result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -434,7 +434,7 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
   ::Thyra::apply(*lop_, 
 		 ::Thyra::NOTRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }

@@ -71,9 +71,9 @@ xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
   rowIndex(0), 
   precPrintParams(precPrintParams_), 
   precLSParams(precLSParams_),
+  savedSplitMassForFloquet(0),
   isCrsMatrix(true),
   floquetFillFlag(false),
-  savedSplitMassForFloquet(0),
   dt(dt_)
 {
    if (precLSParams)
