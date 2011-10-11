@@ -24,13 +24,14 @@ namespace MueLu {
 
     //! Get
     // Return ref because user also give ref to the Hierarchy.
-    // Factory freed at the end of FillHierarchy() //->TODO
     virtual const FactoryBase & GetFactory(const std::string & varName) const = 0;
 
-    //    virtual bool IsAvailable(const std::string & varName) const = 0;
-
     //@}
-        
+
+    // Free temporarily hold data at the end of Hierarchy::Setup()
+    // This method is const because the clean concerns only mutable data.
+    virtual void Clean() const { }
+
   }; // class FactoryManagerBase
 
 } // namespace MueLu

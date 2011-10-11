@@ -255,6 +255,9 @@ public:
     // Crop
     Levels_.resize(iLevel + 1);
 
+    // TODO: not exception safe: manager will still hold default factories if you exit this function with an exception
+    manager.Clean();
+
     // Gather statistics
     Xpetra::global_size_t fineNnz = Levels_[startLevel]->Get< RCP<Operator> >("A")->getGlobalNumEntries();
     Xpetra::global_size_t totalNnz = fineNnz + sumCoarseNnz;

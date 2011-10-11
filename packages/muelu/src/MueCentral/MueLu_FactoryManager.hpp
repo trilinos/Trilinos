@@ -7,9 +7,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_NoFactory.hpp" //TODO: remove
+#include "MueLu_NoFactory.hpp"
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherBase.hpp"
 
@@ -17,7 +15,6 @@
 
 // Headers for factories used by default:
 #include "MueLu_SaPFactory.hpp"
-//#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_ReUseFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
@@ -49,19 +46,25 @@ namespace MueLu {
     //@{ Get/Set functions.
 
     //! Get
-    // Return ref because user also give ref to the Hierarchy.
-    // Factory freed at the end of FillHierarchy() //->TODO
-    virtual const FactoryBase & GetFactory2(const std::string & varName) const {
-      // TODO: try/catch + better exception msg if not found
-      return *factoryTable_[varName];
+    const FactoryBase & GetFactory(const std::string & varName) const {
+      if (FactoryManager::IsAvailable(varName, factoryTable_))
+	return *factoryTable_.find(varName)->second; // == factoryTable_[varName] but operator std::map[] is not const :(
+      else 
+	return GetDefaultFactory(varName);
     }
 
-    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const { //TODO: remove const, remame SetFactory()
-      // TODO: if (varName already exist) ...
+    //TODO: an RCP version of GetFactory might be useful!
+
+    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
+      if (IsAvailable(varName, factoryTable_)) 
+	GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for " << varName << std::endl;
+
       factoryTable_[varName] = factory;
     }
 
     //@}
+
+    void Clean() const { defaultFactoryTable_.clear(); }
 
     //@{
 
@@ -84,48 +87,64 @@ namespace MueLu {
 
     //@{ Get/Set functions.
 
-    virtual const FactoryBase & GetFactory(const std::string & varName) const {
-      if (! IsAvailable(varName)) {
+    //@}
 
-        if (varName == "A")            return *NoFactory::get();
-        if (varName == "P")            return *NoFactory::get();
-        if (varName == "R")            return *NoFactory::get();
+    const FactoryBase & GetDefaultFactory(const std::string & varName) const {
+      if (IsAvailable(varName, defaultFactoryTable_)) {
 
-    	if (varName == "Nullspace")    return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
-        if (varName == "Graph")        return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-        if (varName == "Aggregates")   return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+	return *defaultFactoryTable_[varName];
 
-        TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "FactoryManager::GetFactory(): No default factory available for building '"+varName+"'.");
+      }	else {
+	  
+        if (varName == "A")          return *NoFactory::get();
+        if (varName == "P")          return *NoFactory::get();
+        if (varName == "R")          return *NoFactory::get();
+
+    	if (varName == "Nullspace")  return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Graph")      return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+        if (varName == "Aggregates") return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+
+        TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+
       }
-
-      return GetFactory2(varName);
+      
     }
 
-    //@}
-    
   private:
+    
+    //
+    // Helper functions
+    //
 
-    //! helper
-    const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> factory) const {
+    //! Add a factory to the default factory list and return it. This helper function is used by GetDefaultFactory()
+    const FactoryBase & SetAndReturnDefaultFactory(const std::string & varName, const RCP<FactoryBase> & factory) const {
 
       GetOStream(Warnings0, 0)  << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
       GetOStream(Warnings00, 0) << "         using default factory: ";
       { Teuchos::OSTab tab(getOStream(), 8); factory->describe(GetOStream(Warnings00), getVerbLevel()); }
 
-      SetFactory(varName, factory);
-      return GetFactory(varName); //TODO: replace by: return factory;
+      defaultFactoryTable_[varName] = factory;
+
+      factory->setObjectLabel("Default " + varName + "Factory");
+
+      return *factory;
     }
 
-
-  private:
-
-    bool IsAvailable(const std::string & varName) const { //TODO: it's wrong if we have two map
-      return factoryTable_.find(varName) != factoryTable_.end();
+    //! Test if factoryTable_[varName] exists
+    static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable) {
+      return factoryTable.find(varName) != factoryTable.end();
     }
 
-    //    mutable Teuchos::Hashtable<std::string, > factoryTable_; //TODO: use std lib hashtable instead (Teuchos::Hashtable is deprecated)
-    mutable std::map<std::string, RCP<const FactoryBase> > factoryTable_;
+    //
+    // Data structures
+    //
 
+    // Note: we distinguish 'user defined factory' and 'default factory' to allow the desallocation of default factories separatly.
+
+    std::map<std::string, RCP<const FactoryBase> > factoryTable_;        // User defined factories
+
+    mutable 
+    std::map<std::string, RCP<const FactoryBase> > defaultFactoryTable_; // Default factories
 
     RCP<const FactoryBase> PFact_;
     RCP<const FactoryBase> RFact_;
@@ -136,10 +155,9 @@ namespace MueLu {
     
   }; // class
 
-} //namespace MueLu
+} // namespace MueLu
 
 #define MUELU_FACTORYMANAGER_SHORT
 #endif // ifndef MUELU_FACTORYMANAGER_HPP
 
-//TODO: clean up factory created at the end
-//TODO: factoryTable_ must be cleaned at the end of hierarchy Populate() (because Hierarchy is not holding any factories after construction)
+//TODO: call  CleanDefaultFactory() at the end of Hierarchy::Setup() or we do not care?
