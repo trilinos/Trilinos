@@ -27,7 +27,7 @@ namespace MueLu {
     // Factory freed at the end of FillHierarchy() //->TODO
     virtual const FactoryBase & GetFactory(const std::string & varName) const = 0;
 
-    virtual bool IsAvailable(const std::string & varName) const = 0;
+    //    virtual bool IsAvailable(const std::string & varName) const = 0;
 
     //@}
         

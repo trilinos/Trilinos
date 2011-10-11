@@ -484,12 +484,12 @@ public:
         outputter.outputField(*it);   // variable name
         outputter.outputField(*kt);   // factory ptr
 
-        if(factoryManager_ != Teuchos::null && factoryManager_->IsAvailable(*it) && GetFactoryPtr(*it)==*kt)
-          outputter.outputField("def"); // factory ptr (deault factory)
-        else if (*kt == MueLu::NoFactory::get())
-          outputter.outputField("user"); // factory ptr (user generated)
-        else
-          outputter.outputField(" ");
+//         if(factoryManager_ != Teuchos::null && factoryManager_->IsAvailable(*it) && GetFactoryPtr(*it)==*kt)
+//           outputter.outputField("def"); // factory ptr (default factory)
+//         else if (*kt == MueLu::NoFactory::get())
+//           outputter.outputField("user"); // factory ptr (user generated)
+//         else
+//           outputter.outputField(" ");
 
         int reqcount = 0;             // request counter
         reqcount = needs_->NumRequests(*it, *kt);
