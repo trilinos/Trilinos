@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(
 SET(HEADERS "")
 SET(SOURCES prtelb.F prtess.F prtnps.F
    chgint.f dbmirr.f expxyz.f initin.f matxyz.f movrea.f munnps.f ordix.f  rdgen.f  rotxyz.f wrgen.f  zmmap.f
-   comand.f dbpini.f fixmap.f indexx.f intcnt.f mirss.f  munelb.f munxyz.f ordstr.f renelb.f setitl.f zmess.f  zmnps.f
+   comand.f dbpini.f fixmap.f intcnt.f mirss.f  munelb.f munxyz.f ordstr.f renelb.f setitl.f zmess.f  zmnps.f
    dbmir1.f dorot.f  getall.f inigen.f irennp.f movint.f muness.f offset.f outlog.f renix.f  setsta.f zmfixd.f zmxyz.f)
 
 PACKAGE_ADD_LIBRARY(gjoin_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)

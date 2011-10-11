@@ -87,24 +87,6 @@ void sort3_int_int_int(
   );
 
 extern
-void sort4_iiii(
-  int  count,
-  int *array1,
-  int *array2,
-  int *array3,
-  int *array4
-  );
-
-extern
-void qsort4(
-  int *v1,
-  int *v2,
-  int *v3,
-  int *v4,
-  int N
-  );
-
-extern
 void find_first_last(
   int  value,
   int  vecsize,

@@ -1,27 +1,42 @@
-/* This software was developed by Bruce Hendrickson and Robert Leland   *
- * at Sandia National Laboratories under US Department of Energy        *
- * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
+#define SWAP(type, r,s)  do{type t=r; r=s; s=t; } while(0)
 
+static void siftDown( double *a, int start, int count);
 
-/* Sort a double array using Shell's method. Modified algorithm
-   from p. 245, Numerical Recipies (changed float to double). */
+void sort_double(int count, double ra[])
+{
+  int start, end;
+ 
+  /* heapify */
+  for (start = (count-2)/2; start >=0; start--) {
+    siftDown( ra, start, count);
+  }
+ 
+  for (end=count-1; end > 0; end--) {
+    SWAP(double, ra[end],ra[0]);
+    siftDown(ra, 0, end);
+  }
+}
+ 
+static void siftDown( double *a, int start, int end)
+{
+  int root = start;
+ 
+  while ( root*2+1 < end ) {
+    int child = 2*root + 1;
+    if ((child + 1 < end) && (a[child] < a[child+1])) {
+      child += 1;
+    }
+    if (a[root] < a[child]) {
+      SWAP(double, a[child], a[root] );
+      root = child;
+    }
+    else
+      return;
+  }
+}
 
 void      shell_sort(int n, double *arr)
 {
-    int       nn, m, j, i;
-    double    t;
-
-    m = n;
-    for (nn = 1; nn <= n; nn <<= 1) {
-	m >>= 1;
-	for (j = m + 1; j <= n; j++) {
-	    i = j - m;
-	    t = arr[j];
-	    while (i >= 1 && arr[i] > t) {
-		arr[i + m] = arr[i];
-		i -= m;
-	    }
-	    arr[i + m] = t;
-	}
-    }
+  sort_double(n, arr);
 }
+

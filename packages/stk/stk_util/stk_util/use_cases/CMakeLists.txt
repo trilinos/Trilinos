@@ -46,11 +46,7 @@ PACKAGE_ADD_LIBRARY(
   stk_util_use_cases
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS stk_util_parallel stk_util_env stk_util_diag 
   )
-### this is temporary -- Don't check in!!! ###
-#srk TARGET_LINK_LIBRARIES(stk_util_use_cases ${BoostLib_program_options_LIBRARY}) 
-TARGET_LINK_LIBRARIES(stk_util_use_cases )
 
 #INSTALL(FILES ${HEADERS} DESTINATION
 #    ${CMAKE_INSTALL_PREFIX}/include/stk_util/use_cases/)

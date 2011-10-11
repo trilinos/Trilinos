@@ -42,6 +42,7 @@ syntax(
   std::cout << "Syntax " << expr << " ... ";
   try {
     stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "fail, " << x.what() << std::endl;
@@ -59,6 +60,7 @@ fail_syntax(
   std::cout << "Invalid syntax " << expr << " ...  ";
   try {
     stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "pass" << std::endl;
@@ -75,6 +77,7 @@ vectest(
   std::cout << " syntax " << expr << " ...  ";
   try {
     stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "pass" << std::endl;
@@ -95,6 +98,7 @@ test(
   std::cout << "Evaluate " << expr << " ... ";
   std::string by_expr = std::string("by=") + expr + ";";
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  expr_eval.parse();
 
   double x, y, by, result = 0.0;
   double v[2];

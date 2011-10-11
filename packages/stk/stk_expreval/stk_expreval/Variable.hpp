@@ -403,7 +403,7 @@ public:
    * Destroys a <b>VariableMap</b> instance.  All variables are destroyed.
    *
    */
-  ~VariableMap() {
+  virtual ~VariableMap() {
     std::for_each(begin(), end(), &delete_variable);
   }
 

@@ -86,10 +86,11 @@ INCLUDE(TimingUtils)
 
 MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
 
-
   SET( ${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE "" CACHE FILEPATH
-    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls."
+    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls.  NOTE: paths can be separated by commas instead of semicolons but paths cannot contain commas."
     )
+
+  SPLIT("${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE}"  "," ${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
 
   FOREACH (CONFIG_OPTS_FILE ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
     MESSAGE("-- " "Reading in configuration options from ${CONFIG_OPTS_FILE} ...")

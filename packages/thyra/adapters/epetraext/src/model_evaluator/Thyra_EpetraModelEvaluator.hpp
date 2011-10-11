@@ -300,8 +300,6 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
   /** \brief . */
-  RCP<LinearOpWithSolveBase<double> > create_W() const;
-  /** \brief . */
   RCP<LinearOpBase<double> > create_W_op() const;
   /** \breif . */
   RCP<const LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
@@ -423,11 +421,8 @@ private:
     const ModelEvaluatorBase::OutArgs<double> &outArgs,
     // Epetra form of the unscaled output arguments 
     EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs,
-    // The passed-in form(s) of W
-    RCP<LinearOpWithSolveBase<double> > *W,
+    // The passed-in form of W
     RCP<LinearOpBase<double> > *W_op,
-    // The wrapped Thyra forward operators
-    RCP<const LinearOpBase<double> > *fwdW,
     RCP<EpetraLinearOp> *efwdW,
     // The actual Epetra object passed to the underylying EpetraExt::ModelEvaluator
     RCP<Epetra_Operator> *eW
@@ -451,9 +446,7 @@ private:
   /** \brief . */
   void finishConvertingOutArgsFromEpetraToThyra(
     const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
-    RCP<LinearOpWithSolveBase<double> > &W,
     RCP<LinearOpBase<double> > &W_op,
-    RCP<const LinearOpBase<double> > &fwdW,
     RCP<EpetraLinearOp> &efwdW,
     RCP<Epetra_Operator> &eW,
     const ModelEvaluatorBase::OutArgs<double> &outArgs // Output!

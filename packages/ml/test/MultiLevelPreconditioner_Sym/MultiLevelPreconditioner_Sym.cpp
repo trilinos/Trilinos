@@ -68,7 +68,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   AztecOO solver(Problem);
   
-  MLList.set("ML output", 0);
+  MLList.set("ML output", 10);
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
@@ -209,6 +209,49 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
+
+
+
+  // =========================== //
+  // Specifying Ifpack coarse lists correctly
+  // =========================== //
+#ifdef HAVE_ML_IFPACK
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);  
+
+  MLList.set("ML print initial list",1);
+  MLList.set("ML print final list",1);
+
+  MLList.set("smoother: type","ILU");
+  MLList.set("coarse: type","ILU");
+  ParameterList &fList = MLList.sublist("smoother: ifpack list");
+  fList.set("fact: level-of-fill",1);
+  ParameterList &cList = MLList.sublist("coarse: ifpack list");
+  cList.set("fact: level-of-fill",2);
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
+#endif
+
+
+  // =========================== //
+  // Specifying level sublists
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ParameterList LevelList;
+  ML_Epetra::SetDefaults("SA",LevelList);  
+  ParameterList &smList = LevelList.sublist("smoother: list (level 0)");
+  smList.set("smoother: type","Jacobi");
+  smList.set("smoother: sweeps",5);
+  ParameterList &smList2 = LevelList.sublist("smoother: list (level 1)");
+  smList2.set("smoother: type","symmetric Gauss-Seidel");
+  smList2.set("smoother: sweeps",3);
+  ParameterList &coarseList = LevelList.sublist("coarse: list");
+  coarseList.set("smoother: type","symmetric Gauss-Seidel");
+  TestMultiLevelPreconditioner(mystring, LevelList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
+
+
+
 
   // ===================== //
   // print out total error //

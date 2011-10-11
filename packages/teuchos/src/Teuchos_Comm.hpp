@@ -356,6 +356,17 @@ public:
   //@{
 
   /**
+   * \brief Duplicate this communicator.
+   *
+   * Make a copy of this communicator with a duplicate communication space.
+   * Note that the returned communicator has the same properties as this
+   * communicator, but is distinct from the original.
+   *
+   * \return A new communicator.
+   */
+  virtual RCP< Comm > duplicate() const = 0;
+
+  /**
    * \brief Split a communicator into subcommunicators based on color
    * and key.
    *

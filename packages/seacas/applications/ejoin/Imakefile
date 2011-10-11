@@ -45,7 +45,7 @@ LOCAL_LDFLAGS = -LANG:std
 LIBS = $(IOSS) $(NEMESIS) $(EXODUS) $(NETCDF) -lm
 
 SRCS =	EJoin.C adler.C GetLongOpt.C smart_assert.C SystemInterface.C to_string.C add_to_log.C \
-	match_xyz.C index_sort.C Vector3.C tokenize.C mapping.C
+	match_xyz.C index_sort.C vector3d.C tokenize.C mapping.C
 
 OBJS = $(SRCS:.C=.o)
 

@@ -1019,7 +1019,7 @@ int myMain(int argc, char** argv)
 
   std::string mesh = "";
   run_environment.clp.setOption("mesh",         &mesh, "mesh file" );
-  run_environment.processCommandLine(&argc, &argv);
+  run_environment.processCommandLine();
 
   //----------------------------------
 

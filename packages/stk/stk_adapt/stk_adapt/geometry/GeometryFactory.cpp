@@ -14,7 +14,13 @@ GeometryFactory::GeometryFactory(GeometryKernel* kernel, MeshGeometry* geometry)
 
 GeometryFactory::~GeometryFactory()
 {
-
+#if 1
+  const std::vector<GeometryEvaluator*>& evaluators = geomDatabase->getGeomEvaluators();
+  for (unsigned i = 0; i < evaluators.size(); i++)
+    {
+      delete evaluators[i];
+    }
+#endif
 }
 
 bool GeometryFactory::read_file(const std::string& filename, PerceptMesh* mesh_data)

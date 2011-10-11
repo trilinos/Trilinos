@@ -212,7 +212,7 @@ ApplyInverse(const Epetra_MultiVector& input,
     NOX::Epetra::Vector result_NEV(Teuchos::rcp(result(0), false), NOX::Epetra::Vector::CreateView);
     
     // apply preconditioner as specified in lsParams
-    bool stat = linSys[0]->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
+    linSys[0]->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
 
     //    return (stat) ? 0 : 1;
   }    
@@ -255,7 +255,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 	  
 	  // solve the problem, and put solution into slution vector
           splitVec->PutScalar(0.0);
-	  bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+	  linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
 	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
 	}
       }
@@ -287,7 +287,7 @@ ApplyInverse(const Epetra_MultiVector& input,
   
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
-      bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
    
@@ -309,7 +309,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
-      bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
    
@@ -371,7 +371,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
-      bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
    
@@ -413,7 +413,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 	  
 	  // solve the problem, and put solution into last solution vector on this domain
           splitVec->PutScalar(0.0);
-	  bool stat = linSys[N]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+	  linSys[N]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
 	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(N-1));
 	}
     }
@@ -448,7 +448,7 @@ cout << "In Parareal, OFFSET  " << offsetToPrevSolution << " for time domain " <
   
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
-      bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
 
@@ -571,7 +571,7 @@ computePreconditioner(const Epetra_Vector& x,
 	   if (j<0) j=0; // Jac is from previous block, but don't go off proc to get it
           (*jacobianBlock[j]).ExtractDiagonalCopy(*splitVec);
           (*massBlock[i]).ExtractDiagonalCopy(*splitRes);
-	  int ierr = (*diagBlockSubdiag[i]).ReciprocalMultiply(1.0, *splitVec, *splitRes, 0.0);
+	  (*diagBlockSubdiag[i]).ReciprocalMultiply(1.0, *splitVec, *splitRes, 0.0);
 	}
       }
     }

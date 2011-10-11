@@ -55,23 +55,16 @@ int bin_search_min(int list[], int num, int value);
 
        NAME            		        TYPE
 ----------------------------------------------------------------------
-	sortN_int_int		        void
-        sortN_int_float			void
-        sortN_int_floatlist		void
-        sortN_int_double		void
-        sortN_int_doublelist		void
-	sort_int_ptr		        void
-	sort_int_int_ptr	        void
-	sort_int_int_int	        void
-	sort_int			void
+	sort_int_int		        void
+        sort_int_float			void
+        sort_int_double			void
+
         find_max			void
 	find_min			int
 	find_inter			int
 	find_inter_pos			int
 	exchange_pointers		void
         in_list_mono                    int
-        iindexx				void
-        sort3				void
         bin_search2                     int
         find_range                      int
         bin_search_min                  int
@@ -80,733 +73,125 @@ int bin_search_min(int list[], int num, int value);
 
 ******************************************************************************/
 
-/******************* PROTOTYPES FOR STATIC FUNCTIONS *************************/
-
-static void ICOPY (int *i1, int *i2, int m);
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#ifdef __STDC__
+#define SWAP(type, r,s)  do{type t=r; r=s; s=t; } while(0)
 
-void sortN_int_int(int nval, int ra[], int narr, ...)
+static void siftDown( int *a, int *b, int start, int count);
 
-#else
-
-void
-sortN_int_int (va_alist)
-va_dcl
-
-#endif
-/*****************************************************************************/
-
-/*
-*	Numerical Recipies in C source code
-*	modified to have first argument an integer array (JS)
-*
-*	Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*	heapsort algorityhm, while making the corresponding rearrangement
-*	of narr arrays rb[0,..,(nval-1)], rc[0,..,(nval-1)], ...
-*/
-
+void sort_int_int(int count, int ra[], int rb[])
 {
-#ifndef __STDC__
-  int     nval, *ra, narr;
-#endif
-  va_list va;          /* Current pointer in the argument list */
-
-  int   **rb;
-  int     l, j, ir, i, k;
-  int     rra;
-  int    *rrb;
-
-
-
-#ifdef __STDC__
-  va_start(va, narr);
-#else
-  va_start(va);
-  nval = va_arg(va, int);
-  ra   = va_arg(va, int *);
-  narr = va_arg(va, int);
-#endif
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  rb = (int **) array_alloc(__FILE__, __LINE__, 1, narr, sizeof(int *));
-  rrb = (int *) array_alloc(__FILE__, __LINE__, 1, nval, sizeof(int));
-  /* get the other arrays */
-  for (i = 0; i < narr; i++)
-    rb[i] = va_arg(va, int *);
-  va_end(va);
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][l];
-    } else {
-      rra=ra[ir];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][ir];
-      ra[ir]=ra[0];
-      for (k=0; k<narr; k++)
-        rb[k][ir]=rb[k][0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        for (k=0; k<narr; k++)
-          rb[k][0]=rrb[k];
-        safe_free((void **) &rb);
-        safe_free((void **) &rrb);
-        return;
-      }
+  int start, end;
+ 
+  /* heapify */
+  for (start = (count-2)/2; start >=0; start--) {
+    siftDown( ra, rb, start, count);
+  }
+ 
+  for (end=count-1; end > 0; end--) {
+    SWAP(int, ra[end],ra[0]);
+    SWAP(int, rb[end],rb[0]);
+    siftDown(ra, rb, 0, end);
+  }
+}
+ 
+static void siftDown( int *a, int *b, int start, int end)
+{
+  int root = start;
+ 
+  while ( root*2+1 < end ) {
+    int child = 2*root + 1;
+    if ((child + 1 < end) && (a[child] < a[child+1])) {
+      child += 1;
     }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        for (k=0; k<narr; k++)
-          rb[k][i]=rb[k][j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
+    if (a[root] < a[child]) {
+      SWAP(int, a[child], a[root] );
+      SWAP(int, b[child], b[root] );
+      root = child;
     }
-    ra[i]=rra;
-    for (k=0; k<narr; k++)
-      rb[k][i]=rrb[k];
+    else
+      return;
   }
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#ifdef __STDC__
+static void siftDown_if( int *a, float *b, int start, int count);
 
-void sortN_int_float(int nval, int ra[], int narr, ...)
-
-#else
-
-void
-sortN_int_float (va_alist)
-va_dcl
-
-#endif
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of narr arrays rb[0,..,(nval-1)], rc[0,..,(nval-1)].
-*/
-
+void sort_int_float(int count, int ra[], float rb[])
 {
-#ifndef __STDC__
-  int     nval, *ra, narr;
-#endif
-  va_list va;          /* Current pointer in the argument list */
-
-  float **rb;
-  int     l, j, ir, i, k;
-  int     rra;
-  float  *rrb;
-
-
-
-#ifdef __STDC__
-  va_start(va, narr);
-#else
-  va_start(va);
-  nval = va_arg(va, int);
-  ra   = va_arg(va, int *);
-  narr = va_arg(va, int);
-#endif
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  rb = (float **) array_alloc(__FILE__, __LINE__, 1, narr, sizeof(float *));
-  rrb = (float *) array_alloc(__FILE__, __LINE__, 1, nval, sizeof(float));
-  /* get the other arrays */
-  for (i = 0; i < narr; i++)
-    rb[i] = va_arg(va, float *);
-  va_end(va);
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][l];
-    } else {
-      rra=ra[ir];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][ir];
-      ra[ir]=ra[0];
-      for (k=0; k<narr; k++)
-        rb[k][ir]=rb[k][0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        for (k=0; k<narr; k++)
-          rb[k][0]=rrb[k];
-        safe_free((void **) &rb);
-        safe_free((void **) &rrb);
-        return;
-      }
+  int start, end;
+ 
+  /* heapify */
+  for (start = (count-2)/2; start >=0; start--) {
+    siftDown_if( ra, rb, start, count);
+  }
+ 
+  for (end=count-1; end > 0; end--) {
+    SWAP(int,   ra[end],ra[0]);
+    SWAP(float, rb[end],rb[0]);
+    siftDown_if(ra, rb, 0, end);
+  }
+}
+ 
+static void siftDown_if( int *a, float *b, int start, int end)
+{
+  int root = start;
+ 
+  while ( root*2+1 < end ) {
+    int child = 2*root + 1;
+    if ((child + 1 < end) && (a[child] < a[child+1])) {
+      child += 1;
     }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        for (k=0; k<narr; k++)
-          rb[k][i]=rb[k][j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
+    if (a[root] < a[child]) {
+      SWAP(int,   a[child], a[root] );
+      SWAP(float, b[child], b[root] );
+      root = child;
     }
-    ra[i]=rra;
-    for (k=0; k<narr; k++)
-      rb[k][i]=rrb[k];
+    else
+      return;
   }
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void sortN_int_floatlist(int nval, int ra[], int narr, float *rb[])
+static void siftDown_id( int *a, double *b, int start, int count);
 
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of narr arrays rb[0][0,..,(nval-1)], rb[1][0,..,(nval-1)], ...
-*/
-
+void sort_int_double(int count, int ra[], double rb[])
 {
-  int     l, j, ir, i, k;
-  int     rra;
-  float  *rrb;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  /* allocate temp space to hold other values */
-  rrb = (float *) array_alloc(__FILE__, __LINE__, 1, nval, sizeof(float));
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][l];
-    } else {
-      rra=ra[ir];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][ir];
-      ra[ir]=ra[0];
-      for (k=0; k<narr; k++)
-        rb[k][ir]=rb[k][0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        for (k=0; k<narr; k++)
-          rb[k][0]=rrb[k];
-        safe_free((void **) &rrb);
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        for (k=0; k<narr; k++)
-          rb[k][i]=rb[k][j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    for (k=0; k<narr; k++)
-      rb[k][i]=rrb[k];
+  int start, end;
+ 
+  /* heapify */
+  for (start = (count-2)/2; start >=0; start--) {
+    siftDown_id( ra, rb, start, count);
+  }
+ 
+  for (end=count-1; end > 0; end--) {
+    SWAP(int,   ra[end],ra[0]);
+    SWAP(double, rb[end],rb[0]);
+    siftDown_id(ra, rb, 0, end);
   }
 }
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-#ifdef __STDC__
-
-void sortN_int_double(int nval, int ra[], int narr, ...)
-
-#else
-
-void
-sortN_int_double (va_alist)
-va_dcl
-
-#endif
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,nval] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of narr arrays rb[0,..,(nval-1)], rc[0,..,(nval-1)].
-*/
-
+ 
+static void siftDown_id( int *a, double *b, int start, int end)
 {
-#ifndef __STDC__
-  int      nval, *ra, narr;
-#endif
-  va_list  va;          /* Current pointer in the argument list */
-
-  double **rb;
-  int      l, j, ir, i, k;
-  int      rra;
-  double  *rrb;
-
-
-
-#ifdef __STDC__
-  va_start(va, narr);
-#else
-  va_start(va);
-  nval = va_arg(va, int);
-  ra   = va_arg(va, int *);
-  narr = va_arg(va, int);
-#endif
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  rb = (double **) array_alloc(__FILE__, __LINE__, 1, narr, sizeof(double *));
-  rrb = (double *) array_alloc(__FILE__, __LINE__, 1, nval, sizeof(double));
-  /* get the other arrays */
-  for (i = 0; i < narr; i++)
-    rb[i] = va_arg(va, double *);
-  va_end(va);
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][l];
-    } else {
-      rra=ra[ir];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][ir];
-      ra[ir]=ra[0];
-      for (k=0; k<narr; k++)
-        rb[k][ir]=rb[k][0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        for (k=0; k<narr; k++)
-          rb[k][0]=rrb[k];
-        safe_free((void **) &rb);
-        safe_free((void **) &rrb);
-        return;
-      }
+  int root = start;
+ 
+  while ( root*2+1 < end ) {
+    int child = 2*root + 1;
+    if ((child + 1 < end) && (a[child] < a[child+1])) {
+      child += 1;
     }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        for (k=0; k<narr; k++)
-          rb[k][i]=rb[k][j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
+    if (a[root] < a[child]) {
+      SWAP(int,   a[child], a[root] );
+      SWAP(double, b[child], b[root] );
+      root = child;
     }
-    ra[i]=rra;
-    for (k=0; k<narr; k++)
-      rb[k][i]=rrb[k];
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sortN_int_doublelist(int nval, int ra[], int narr, double *rb[])
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of narr arrays rb[0][0,..,(nval-1)], rb[0][0,..,(nval-1)], ...
-*/
-
-{
-  int      l, j, ir, i, k;
-  int      rra;
-  double  *rrb;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  rrb = (double *) array_alloc(__FILE__, __LINE__, 1, nval, sizeof(double));
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][l];
-    } else {
-      rra=ra[ir];
-      for (k=0; k<narr; k++)
-        rrb[k]=rb[k][ir];
-      ra[ir]=ra[0];
-      for (k=0; k<narr; k++)
-        rb[k][ir]=rb[k][0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        for (k=0; k<narr; k++)
-          rb[k][0]=rrb[k];
-        safe_free((void **) &rrb);
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        for (k=0; k<narr; k++)
-          rb[k][i]=rb[k][j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    for (k=0; k<narr; k++)
-      rb[k][i]=rrb[k];
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_int_ptr(int nval, int ra[], char *rb[])
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of array rb[0,..,(nval-1)].
-*/
-
-{
-  int     l, j, ir, i;
-  int     rra;
-  char   *rrb;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      rrb=rb[l];
-    } else {
-      rra=ra[ir];
-      rrb=rb[ir];
-      ra[ir]=ra[0];
-      rb[ir]=rb[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        rb[0]=rrb;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        rb[i]=rb[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    rb[i]=rrb;
-  }
-}
-
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_int_int_ptr(int nval, int ra[], int rb[], char *rc[])
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of arrays rb[0,..,(nval-1)] & rc[0,..,(nval-1)].
-*/
-
-{
-  int     l, j, ir, i;
-  int     rra, rrb;
-  char   *rrc;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      rrb=rb[l];
-      rrc=rc[l];
-    } else {
-      rra=ra[ir];
-      rrb=rb[ir];
-      rrc=rc[ir];
-      ra[ir]=ra[0];
-      rb[ir]=rb[0];
-      rc[ir]=rc[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        rb[0]=rrb;
-        rc[0]=rrc;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        rb[i]=rb[j];
-        rc[i]=rc[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    rb[i]=rrb;
-    rc[i]=rrc;
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_int_int_int(int nval, int ra[], int rb[], int rc[])
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of arrays rb[0,..,(nval-1)] & rc[0,..,(nval-1)].
-*/
-
-{
-  int     l, j, ir, i;
-  int     rra, rrb, rrc;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      rrb=rb[l];
-      rrc=rc[l];
-    } else {
-      rra=ra[ir];
-      rrb=rb[ir];
-      rrc=rc[ir];
-      ra[ir]=ra[0];
-      rb[ir]=rb[0];
-      rc[ir]=rc[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        rb[0]=rrb;
-        rc[0]=rrc;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        rb[i]=rb[j];
-        rc[i]=rc[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    rb[i]=rrb;
-    rc[i]=rrc;
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_int_int(int nval, int ra[], int rb[])
-/*****************************************************************************/
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array (JS)
-*
-*       Sorts the array ra[0,..,(nval-1)] in ascending numerical order using
-*       heapsort algorityhm, while making the corresponding rearrangement
-*       of array rb[0,..,(nval-1)] 
-*/
-
-{
-  int     l, j, ir, i;
-  int     rra, rrb;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (nval <= 1) return;
-
-  l=nval >> 1;
-  ir=nval-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[--l];
-      rrb=rb[l];
-    } else {
-      rra=ra[ir];
-      rrb=rb[ir];
-      ra[ir]=ra[0];
-      rb[ir]=rb[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        rb[0]=rrb;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        rb[i]=rb[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-    rb[i]=rrb;
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_int(int n, int ra[])
-
-/*
-*	Numerical Recipies in C source code
-*	modified to have first argument an integer array
-*
-*	Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-*	heapsort algorithm.
-*
-*/
-
-{
-  int   l, j, ir, i;
-  int   rra;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0)
-      rra=ra[--l];
-    else {
-      rra=ra[ir];
-      ra[ir]=ra[0];
-      if (--ir == 0) {
-	ra[0]=rra;
-	return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-	ra[i]=ra[j];
-	j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
+    else
+      return;
   }
 }
 
@@ -1101,167 +486,6 @@ int in_list_mono(int ivalue, int *ibegin, int iend, int ivector[])
 
 /*****************************************************************************/
 /*****************************************************************************/
-
-#define SWAP(a,b) itemp=(a);(a)=(b);(b)=itemp;
-#define M 7
-#define NSTACK 50
-
-void iindexx (unsigned int n, int arr[], unsigned int indx[])
-/*
- *  Numerical Recipes routine to create an index vector for
- *  sorting
- *  - works on arr[1], ..., arr[n]
- *  - returns values in indx[1], ..., indx[n]
- *  - Values returned in indx[] range from 1 to n.
- *
- */
-{
-	unsigned int i,indxt,ir=n,itemp,j,k,l=1;
-	int jstack=0, *istack;
-	int a;
-
-	istack= (int *) array_alloc (__FILE__, __LINE__, 1, (1 + NSTACK),
-                                     sizeof(int));
-	for (j=1;j<=n;j++) indx[j]=j;
-	for (;;) {
-		if (ir-l < M) {
-			for (j=l+1;j<=ir;j++) {
-				indxt=indx[j];
-				a=arr[indxt];
-				for (i=j-1;i>=1;i--) {
-					if (arr[indx[i]] <= a) break;
-					indx[i+1]=indx[i];
-				}
-				indx[i+1]=indxt;
-			}
-			if (jstack == 0) break;
-			ir=istack[jstack--];
-			l=istack[jstack--];
-		} else {
-			k=(l+ir) >> 1;
-			SWAP(indx[k],indx[l+1]);
-			if (arr[indx[l+1]] > arr[indx[ir]]) {
-				SWAP(indx[l+1],indx[ir])
-			}
-			if (arr[indx[l]] > arr[indx[ir]]) {
-				SWAP(indx[l],indx[ir])
-			}
-			if (arr[indx[l+1]] > arr[indx[l]]) {
-				SWAP(indx[l+1],indx[l])
-			}
-			i=l+1;
-			j=ir;
-			indxt=indx[l];
-			a=arr[indxt];
-			for (;;) {
-				do i++; while (arr[indx[i]] < a);
-				do j--; while (arr[indx[j]] > a);
-				if (j < i) break;
-				SWAP(indx[i],indx[j])
-			}
-			indx[l]=indx[j];
-			indx[j]=indxt;
-			jstack += 2;
-			if (jstack > NSTACK) {
-                          fprintf(stderr, "NSTACK too small in iindexx.\n");
-                          exit (1);
-                        }
-			if (ir-i+1 >= j-l) {
-				istack[jstack]=ir;
-				istack[jstack-1]=i;
-				ir=j-1;
-			} else {
-				istack[jstack]=j-1;
-				istack[jstack-1]=l;
-				l=i;
-			}
-		}
-	}
-	safe_free ((void **) &istack);
-}
-#undef M
-#undef NSTACK
-#undef SWAP
-/* (C) Copr. 1986-92 Numerical Recipes Software #,V4+!5,. */
-
-/*****************************************************************************/
-/*****************************************************************************/
-
-void sort3(int n, int ra[], int rb[], int m)
-
-/*
-*	Numerical Recipies in C source code
-*	modified to have first argument an integer array (JS)
-*
-*	Sorts the array ra[1,..,n] in ascending numerical order using quicksort
-*	algorithm, while making the corresponding rearrangement of the
-*	matrix rb[1,..,n*m].
-*       rb is structured so that the first m entries correspond to ra[1].
-*       These entries are not sorted amongst themselves.
-*
-*         ra[1]    -    rb[1],           rb[2],         ..., rb[m]
-*         ra[2]    -    rb[m*(2-1)+1],   rb[m*(2-1)+1], ..., rb[m*(2-1)+m]
-*         ...                              ...
-*         ra[n]    -    rb[m*(n-1)+1],   rb[m*(n-1)+1], ..., rb[m*(n-1)+m]
-*
-*/
-
-{
-  extern void   iindexx (unsigned int n, int arr[],
-			 unsigned int indx[]);
-  unsigned int           j, *iwksp;
-  int                   *wksp;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  iwksp = (unsigned int *) array_alloc (__FILE__, __LINE__, 1, n+1,
-                                        sizeof(unsigned int));
-  wksp  = (int *)           array_alloc (__FILE__, __LINE__, 1, (n*m),
-                                         sizeof(int));
-  iindexx (n, (int *) &ra[-1], iwksp-1);
-
-  for (j=0; j<n; j++) wksp[j] = ra[j];
-  for (j=0; j<n; j++) ra[j]   = wksp[iwksp[j]-1];
-
-  for (j=0; j<(n*m); j++) wksp[j]=rb[j];
-
-  switch (m) {
-  case 2:
-    for (j=0; j<n; j++) {
-      rb[j*2  ] = wksp[(iwksp[j])*2 - 2];
-      rb[j*2+1] = wksp[(iwksp[j])*2 - 1];
-    }
-    break;
-  case 4:
-    for (j=0; j<n; j++) {
-      rb[j*4  ] = wksp[(iwksp[j])*4 - 4];
-      rb[j*4+1] = wksp[(iwksp[j])*4 - 3];
-      rb[j*4+2] = wksp[(iwksp[j])*4 - 2];
-      rb[j*4+3] = wksp[(iwksp[j])*4 - 1];
-    }
-    break;
-  default:
-    for (j=0; j<n; j++) ICOPY (&rb[j*m], &wksp[(iwksp[j]-1)*m], m);
-  }
-  safe_free ((void **) &iwksp);
-  safe_free ((void **)  &wksp);
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-static void ICOPY (int *i1, int *i2, int m)
-
-{
-  int i; for (i = 0; i < m; i++) *i1++ = *i2++;
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
 /*****************************************************************************/
 
 int bin_search2 (int value, int num, int List[])
@@ -1296,81 +520,6 @@ int bin_search2 (int value, int num, int List[])
  return -1;
 
 } /* bin_search2 */
-
-/*************************************************************************/
-/*************************************************************************/
-/*************************************************************************/
-
-int find_range (int start_value, int end_value, int list[], int num,
-                int *start_pos, int *end_pos)
-
-/*
- * find_range:
- *
- *      This routine searches a monotonically increasing list for the range
- * of values which fall between two given values, i.e.,
- *
- *  start_value <= list[i] <= end_value, for all i in the range
- *
- * The number of values which fall in the given range is returned.
- * The lowest value of i such that the above is true is returned in
- * start_pos, while the highest value of i is returned in end_pos
- *   If there is no overlap, find_range is set to 0, and *start_pos and
- * *end_pos will have unspecified values.
- *
- *   Input
- * ----------
- *  start_value = Lower value of the range sought
- *  end_value   = Upper value of the range sought
- *  list        = Vector of integer values to be searched
- *                (must be a monotonically increasing function)
- *                i.e., {list[0], ..., list[num-1]}
- *  num         = Length of the vector, list
- *
- *   Output
- * ----------
- *  (return)    =  Number of values in the vector list, which are in the
- *                 designated range.
- *  start_pos   =  Address of the value of the starting position within list[]
- *                 which is in the designated range.
- *   end_pos    =  Address of the value of the ending position within list[]
- *                 which is in the designated range.
- *
- */
-
-{
-
-  /* Local Variables: */
-
-  int        start, end;
-
-  /* Error check the argument list */
-
-  if (end_value < start_value) return (0);
-  if (num <= 0)                return (0);
-
-  /* Check for Obvious Limits -saves doing a lot of special cases below */
-
-  if (start_value > list[num - 1]) return (0);
-  if (  end_value < list[0])       return (0);
-
-  /* Find starting position in list */
-
-  start = bin_search_min (list, num, start_value);
-
-  /* Find ending position in list */
-
-  end   = bin_search_min (&list[start], num - start, end_value);
-  end  += start;
-
-  if (list[start] < start_value) start++;
-  if (start > end) return (0);
-
-  *start_pos = start;
-  *end_pos   = end;
-  return (end - start + 1);
-
-}
 
 /*************************************************************************/
 /*************************************************************************/

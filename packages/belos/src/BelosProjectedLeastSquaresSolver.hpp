@@ -185,11 +185,43 @@ namespace Belos {
     /// \tparam Scalar The type of the matrix and vector entries in the
     ///   least-squares problem.
     ///
+    /// Purposes of this class:
+    /// 1. Isolate and factor out BLAS and LAPACK dependencies.  This
+    ///    makes it easier to write custom replacements for routines
+    ///    for which no Scalar specialization is available.
+    /// 2. Encapsulate common functionality of many GMRES-like
+    ///    solvers.  Avoid duplicated code and simplify debugging,
+    ///    testing, and implementation of new GMRES-like solvers.
+    /// 3. Provide an option for more robust implementations of
+    ///    solvers for the projected least-squares problem.
+    ///
+    /// "Robust" here means regularizing the least-squares solve, so
+    /// that the solution is well-defined even if the problem is
+    /// ill-conditioned.  Many distributed-memory iterative solvers,
+    /// including Belos, currently solve the projected least-squares
+    /// problem redundantly on different processes.  If those
+    /// processes are heterogeneous or implement the BLAS and LAPACK
+    /// themselves in parallel (via multithreading, for example), then
+    /// different BLAS or LAPACK calls on different processes may
+    /// result in different answers.  The answers may be significantly
+    /// different if the projected problem is singular or
+    /// ill-conditioned.  This is bad because GMRES variants use the
+    /// projected problem's solution as the coefficients for the
+    /// solution update.  The solution update coefficients must be
+    /// (almost nearly) the same on all processes.  Regularizing the
+    /// projected problem is one way to ensure that different
+    /// processes compute (almost) the same solution.
     template<class Scalar>
     class ProjectedLeastSquaresSolver {
     public:
+      /// \typedef scalar_type
+      /// \brief The template parameter of this class.
       typedef Scalar scalar_type;
+      /// \typedef magnitude_type
+      /// \brief The type of the magnitude of a \c scalar_type value.
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      /// \typedef mat_type
+      /// \brief The type of a dense matrix (or vector) of \c scalar_type.
       typedef Teuchos::SerialDenseMatrix<int,Scalar> mat_type;
 
     private:
@@ -199,9 +231,8 @@ namespace Belos {
       typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
 
     public:
-      ProjectedLeastSquaresSolver (std::ostream& debugStream) :
-	dbg_ (debugStream)
-      {}
+      //! Constructor.
+      ProjectedLeastSquaresSolver () {}
 
       /// \brief Update column curCol of the projected least-squares problem.
       ///
@@ -236,8 +267,15 @@ namespace Belos {
 				    startCol, endCol);
       }
 
-      //! Test Givens rotations.
-      void
+      /// \brief Test Givens rotations.
+      ///
+      /// This routine tests both computing Givens rotations (via \c
+      /// computeGivensRotation()) and applying them.
+      ///
+      /// \param out [out] Stream to which to write test output.
+      ///
+      /// \return true if the test succeeded, else false.
+      bool
       testGivensRotations (std::ostream& out)
       {
 	using std::endl;
@@ -259,6 +297,12 @@ namespace Belos {
 	out << "-- After applying rotation:" << endl;
 	out << "---- cos,sin = " << theCosine << "," << theSine << endl;
 	out << "---- x = " << x << ", y = " << y << endl;
+
+	// Allow only a tiny bit of wiggle room for zeroing-out of y.
+	if (STS::magnitude(y) > 2*STS::eps())
+	  return false;
+	else 
+	  return true;
       }
 
       /// \brief Test \c updateColumnGivens() against \c updateColumnLapack().
@@ -268,6 +312,9 @@ namespace Belos {
       /// \param numCols [in] Number of columns in the projected
       ///   least-squares problem to test.  (The number of rows is one
       ///   plus the number of columns.)
+      ///
+      /// \param testBlockGivens [in] Whether to test the "block"
+      ///   (i.e., panel) version of the Givens rotations update.
       ///
       /// \param verbose [in] Whether to print verbose output (e.g.,
       ///   the test problem and results).
@@ -288,11 +335,11 @@ namespace Belos {
       bool
       testUpdateColumn (std::ostream& out, 
 			const int numCols,
+			const bool testBlockGivens=false,
 			const bool verbose=false) const
       {
 	using Teuchos::Array;
 	using std::endl;
-	const bool testBlockGivens = false;
 	
 	TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
 			   "numCols = " << numCols << " <= 0.");
@@ -348,7 +395,7 @@ namespace Belos {
 	magnitude_type residualNormBlockGivens = STM::zero();
 	if (testBlockGivens) {
 	  for (int startCol = 0; startCol < numCols; startCol += panelWidth) {
-	    int endCol = std::min (startCol + panelWidth, numCols - 1);
+	    int endCol = std::min (startCol + panelWidth - 1, numCols - 1);
 	    residualNormBlockGivens = 
 	      updateColumnsGivens (H, R_blockGivens, y_blockGivens, z_blockGivens, 
 				   blockCosines, blockSines, startCol, endCol);
@@ -375,10 +422,16 @@ namespace Belos {
 	// number, but it's the best we can do, since we don't know
 	// the exact solution and don't have an extended-precision
 	// solver.
+
+	// The solution lives only in y[0 .. numCols-1].
+	mat_type y_givens_view (Teuchos::View, y_givens, numCols, 1);
+	mat_type y_blockGivens_view (Teuchos::View, y_blockGivens, numCols, 1);
+	mat_type y_lapack_view (Teuchos::View, y_lapack, numCols, 1);
+
 	const magnitude_type givensSolutionError = 
-	  solutionError (y_givens, y_lapack);
+	  solutionError (y_givens_view, y_lapack_view);
 	const magnitude_type blockGivensSolutionError = testBlockGivens ?
-	  solutionError (y_blockGivens, y_lapack) : 
+	  solutionError (y_blockGivens_view, y_lapack_view) : 
 	  STM::zero();
 
 	// If printing out the matrices, copy out the upper triangular
@@ -400,17 +453,17 @@ namespace Belos {
 	  }
 
 	  printMatrix<Scalar> (out, "R_givens", R_factorFromGivens);
-	  printMatrix<Scalar> (out, "y_givens", y_givens);
+	  printMatrix<Scalar> (out, "y_givens", y_givens_view);
 	  printMatrix<Scalar> (out, "z_givens", z_givens);
-
+	    
 	  if (testBlockGivens) {
 	    printMatrix<Scalar> (out, "R_blockGivens", R_factorFromBlockGivens);
-	    printMatrix<Scalar> (out, "y_blockGivens", y_blockGivens);
+	    printMatrix<Scalar> (out, "y_blockGivens", y_blockGivens_view);
 	    printMatrix<Scalar> (out, "z_blockGivens", z_blockGivens);
 	  }
-
+	    
 	  printMatrix<Scalar> (out, "R_lapack", R_factorFromLapack);
-	  printMatrix<Scalar> (out, "y_lapack", y_lapack);
+	  printMatrix<Scalar> (out, "y_lapack", y_lapack_view);
 	  printMatrix<Scalar> (out, "z_lapack", z_lapack);
 	}
 
@@ -420,13 +473,13 @@ namespace Belos {
 	out << "||H||_F = " << H_norm << endl;
 
 	out << "||H y_givens - z||_2 / ||H||_F = " 
-	    << leastSquaresResidualNorm (H, y_givens, z) / H_norm << endl;
+	    << leastSquaresResidualNorm (H, y_givens_view, z) / H_norm << endl;
 	if (testBlockGivens) {
 	  out << "||H y_blockGivens - z||_2 / ||H||_F = " 
-	      << leastSquaresResidualNorm (H, y_blockGivens, z) / H_norm << endl;
+	      << leastSquaresResidualNorm (H, y_blockGivens_view, z) / H_norm << endl;
 	}
 	out << "||H y_lapack - z||_2 / ||H||_F = " 
-	    << leastSquaresResidualNorm (H, y_lapack, z) / H_norm << endl;
+	    << leastSquaresResidualNorm (H, y_lapack_view, z) / H_norm << endl;
 
 	out << "||y_givens - y_lapack||_2 / ||y_lapack||_2 = " 
 	    << givensSolutionError << endl;
@@ -469,10 +522,7 @@ namespace Belos {
       }
 
     private:
-      //! Debug output stream.
-      std::ostream& dbg_;
-
-      //! Make a random least-squares problem.
+      //! Make a random projected least-squares problem.
       void
       makeRandomProblem (mat_type& H, mat_type& z) const
       {
@@ -546,6 +596,60 @@ namespace Belos {
 	}
       }
 
+      //! Compute the singular values of A.  Store them in the sigmas array.
+      void
+      singularValues (const mat_type& A, 
+		      Teuchos::ArrayView<magnitude_type> sigmas) const
+      {
+	using Teuchos::Array;
+	using Teuchos::ArrayView;
+
+	const int numRows = A.numRows();
+	const int numCols = A.numCols();
+	TEST_FOR_EXCEPTION(sigmas.size() < std::min (numRows, numCols),
+			   std::invalid_argument,
+			   "The sigmas array is only of length " << sigmas.size()
+			   << ", but must be of length at least "
+			   << std::min (numRows, numCols)
+			   << " in order to hold all the singular values of the "
+			   "matrix A.");
+
+	// Compute the condition number of the matrix A, using a singular
+	// value decomposition (SVD).  LAPACK's SVD routine overwrites the
+	// input matrix, so make a copy.
+	mat_type A_copy (numRows, numCols);
+	A_copy.assign (A);
+
+	// Workspace query.
+	lapack_type lapack;
+	int info = 0;
+	Scalar lworkScalar = STS::zero();
+	Array<magnitude_type> rwork (std::max (std::min (numRows, numCols) - 1, 1));
+	lapack.GESVD ('N', 'N', numRows, numCols, 
+		      A_copy.values(), A_copy.stride(), &sigmas[0], 
+		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
+		      &lworkScalar, -1, &rwork[0], &info);
+
+	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			   "LAPACK _GESVD workspace query failed with INFO = " 
+			   << info << ".");
+	const int lwork = static_cast<int> (STS::real (lworkScalar));
+	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			   "LAPACK _GESVD workspace query returned LWORK = " 
+			   << lwork << " < 0.");
+	// Make sure that the workspace array always has positive
+	// length, so that &work[0] makes sense.
+	Teuchos::Array<Scalar> work (std::max (1, lwork));
+
+	// Compute the singular values of A.
+	lapack.GESVD ('N', 'N', numRows, numCols, 
+		      A_copy.values(), A_copy.stride(), &sigmas[0], 
+		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
+		      &work[0], lwork, &rwork[0], &info);
+	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			   "LAPACK _GESVD failed with INFO = " << info << ".");
+      }
+
       /// \brief The (largest, smallest) singular values of the given matrix.
       ///
       /// We use these for computing the 2-norm condition number of the
@@ -561,45 +665,188 @@ namespace Belos {
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
 
-	// Compute the condition number of the matrix A, using a singular
-	// value decomposition (SVD).  LAPACK's SVD routine overwrites the
-	// input matrix, so make a copy.
-	mat_type A_copy (numRows, numCols);
-	A_copy.assign (A);
+	Array<magnitude_type> sigmas (std::min (numRows, numCols));
+	singularValues (A, sigmas);
+	return std::make_pair (sigmas[0], sigmas[std::min(numRows, numCols) - 1]);
+      }
 
-	// Workspace query.
+      
+      /// \brief Solve the square upper triangular linear system \f$Rx = b\f$.
+      ///
+      /// This method uses the number of columns of R as the dimension
+      /// of the linear system, so R may have more rows than columns;
+      /// we just won't use the "extra" rows in the solve.
+      ///
+      /// \return (detectedRank, foundRankDeficiency).
+      std::pair<int, bool>
+      solveUpperTriangularSystem (mat_type& x,
+				  const mat_type& R,
+				  const mat_type& b,
+				  const int robustness=0) const
+      {
+	using Teuchos::Array;
+
+	const int M = R.numRows();
+	const int N = R.numCols();
+	const int LDR = R.stride();
+	const int NRHS = x.numCols();
+	const int LDX = x.stride();
+
+	// If b has more columns than x, we ignore the remaining
+	// columns of b when solving the upper triangular system.  If
+	// b has _fewer_ columns than x, we can't solve for all the
+	// columns of x, so we throw an exception.
+	TEST_FOR_EXCEPTION(NRHS > b.numCols(), std::invalid_argument,
+			   "The solution vector x has more columns than the "
+			   "right-hand side vector b.  x has " << x.numCols() 
+			   << " columns and b has " << b.numCols() 
+			   << " columns.");
+	TEST_FOR_EXCEPTION(b.numRows() < N, std::invalid_argument,
+			   "The right-hand side vector b has only " 
+			   << b.numRows() << " rows, but needs at least " 
+			   << N << " rows to match the matrix.");
+	TEST_FOR_EXCEPTION(x.numRows() < N, std::invalid_argument,
+			   "The solution vector x has only " << x.numRows() 
+			   << " rows, but needs at least " << N 
+			   << " rows to match the matrix.");
+	TEST_FOR_EXCEPTION(M < N, std::invalid_argument,
+			   "R is " << M << " x " << N << ", but "
+			   "solveUpperTriangularSystem needs R to have at "
+			   "least as many rows as columns.");
+	TEST_FOR_EXCEPTION(M < N, std::invalid_argument,
+			   "R is " << M << " x " << N << ", but "
+			   "solveUpperTriangularSystem needs R to have at "
+			   "least as many rows as columns.");
+	TEST_FOR_EXCEPTION(robustness < 0 || robustness > 2, 
+			   std::invalid_argument,
+			   "Invalid robustness value " << robustness << ".");
 	lapack_type lapack;
-	int info = 0;
-	Scalar lworkScalar = STS::zero();
-	Array<magnitude_type> singularValues (numCols);
-	Array<magnitude_type> rwork (std::max (std::min (numRows, numCols) - 1, 1));
-	lapack.GESVD ('N', 'N', numRows, numCols, 
-		      A_copy.values(), A_copy.stride(), 
-		      &singularValues[0], 
-		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
-		      &lworkScalar, -1, &rwork[0], &info);
+	blas_type blas;
+	int detectedRank = N;
+	bool foundRankDeficiency = false;
 
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			   "LAPACK _GESVD workspace query failed with INFO = " 
-			   << info << ".");
-	// Make sure that lwork always has positive length, so that
-	// &work[0] makes sense.
-	const int lwork = 
-	  std::max (static_cast<int> (STS::real (lworkScalar)), 1);
-	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			   "LAPACK _GESVD workspace query returned LWORK = " 
-			   << lwork << " < 0.");
-	Teuchos::Array<Scalar> work (lwork);
+	// Both the BLAS' _TRSM and LAPACK's _LATRS overwrite the
+	// right-hand side with the solution, so first copy b into x.
+	if (x.numCols() == b.numCols()) {
+	  x.assign (b);
+	} else {
+	  mat_type b_view (Teuchos::View, b, b.numRows(), NRHS);
+	  x.assign (b_view);
+	}
 
-	// Compute the singular values of A.
-	lapack.GESVD ('N', 'N', numRows, numCols, 
-		      A_copy.values(), A_copy.stride(),
-		      &singularValues[0], 
-		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
-		      &work[0], lwork, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			   "LAPACK _GESVD failed with INFO = " << info << ".");
-	return std::make_pair (singularValues[0], singularValues[numCols-1]);
+	// Solve Rx = b.
+	if (robustness == 0) 
+	  { // Fast BLAS triangular solve.  No rank checks.
+	    blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+		      Teuchos::NON_UNIT_DIAG, N, NRHS, STS::one(), R.values(),
+		      LDR, x.values(), LDX);
+	  }
+	else if (robustness == 1) 
+	  { // Robust triangular solve using LAPACK's LATRS routine.
+	    // Rudimentary rank detection, using diagonal entries of R
+	    // and the norms of the off-diagonal entries of each
+	    // column as computed by LATRS.
+	    Array<magnitude_type> cnorm (N);
+	    magnitude_type scaleFactor = STM::one();
+	    char NORMIN = 'N';
+	    int info = 0;
+
+	    for (int j = 0; j < x.numCols(); ++j) {
+	      // _LATRS only solves from the left side, and only one
+	      // column at a time.
+	      lapack.LATRS ('U', 'N', 'N', NORMIN, N, R.values(), LDR,
+			    &x(0,j), &scaleFactor, &cnorm[0], &info);
+	      TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+				 "LAPACK's _LATRS routine returned INFO = " 
+				 << info << " != 0.");
+	      // LATRS computes cnorm if NORMIN='N'.  We don't need to
+	      // compute them again, so tell LATRS to reuse cnorm the
+	      // next time around.
+	      NORMIN = 'Y'; 
+
+	      if (scaleFactor == STM::zero()) {
+		// LATRS doesn't tell us the actual rank, just that the
+		// matrix is either rank-deficient or badly scaled.
+		foundRankDeficiency = true;
+	      }
+	    }
+	    // However, _LATRS _does_ return the 1-norms of the
+	    // off-diagonal parts of the columns of R (in the cnorm
+	    // array).  We can at least use this to detect zero
+	    // columns of R.
+	    int rank = N;
+	    for (int j = 0; j < N; ++j) {
+	      if (R(j,j) == STS::zero() && (j == 0 || cnorm[j] == STM::zero())) {
+		--rank;
+	      }
+	    }
+	    if (rank < N) {
+	      foundRankDeficiency = true;
+	    }
+	    detectedRank = rank;
+	  } 
+	else if (robustness == 2) 
+	  { // Find the minimum-norm solution to the least-squares
+	    // problem $\min_x \|Rx-b\|_2$, using the singular value
+	    // decomposition (SVD).
+	    //
+	    // _GELSS overwrites its matrix input, so make a copy.
+	    mat_type R_copy (Teuchos::Copy, R, N, N);
+	    Array<magnitude_type> singularValues (N);
+	    int rank = N; // to be set by _GELSS
+
+	    // Use Scalar's machine precision for the rank tolerance,
+	    // not magnitude_type's machine precision.
+	    const magnitude_type rankTolerance = STS::eps();
+
+	    // Extra workspace.  This is only used if Scalar is
+	    // complex, by CGELSS or ZGELSS.  Teuchos::LAPACK presents
+	    // a unified interface to _GELSS that always includes the
+	    // RWORK argument, even though SGELSS and DGELSS don't
+	    // have the RWORK argument.  We always allocate at least
+	    // one entry so that &rwork[0] makes sense.
+	    Array<magnitude_type> rwork (1);
+	    if (STS::isComplex) {
+	      rwork.resize (std::max (1, 5 * N));
+	    }
+
+	    //
+	    // Workspace query
+	    //
+	    Scalar lworkScalar = STS::one(); // To be set by workspace query
+	    int info = 0;
+	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, x.values(), LDX,
+			  &singularValues[0], rankTolerance, &rank, 
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			       "_GELSS workspace query returned INFO = " 
+			       << info << " != 0.");
+	    const int lwork = static_cast<int> (STS::real (lworkScalar));
+	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			       "_GELSS workspace query returned LWORK = " 
+			       << lwork << " < 0.");
+	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
+	    Array<Scalar> work (std::max (1, lwork));
+	    // Solve the least-squares problem.
+	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, x.values(), LDX,
+			  &singularValues[0], rankTolerance, &rank,
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+			       "_GELSS returned INFO = " << info << " != 0.");
+	    if (rank < N) {
+	      foundRankDeficiency = true;
+	    }
+	    detectedRank = rank;
+	  }
+	else 
+	  {
+	    TEST_FOR_EXCEPTION(true, std::logic_error, 
+			       "Should never get here!  Invalid robustness value " 
+			       << robustness << ".  Please report this bug to the "
+			       "Belos developers.");
+	  }
+
+	return std::make_pair (detectedRank, foundRankDeficiency);
       }
 
       /// \brief Normwise 2-norm condition number of the least-squares problem.
@@ -696,7 +943,18 @@ namespace Belos {
       /// \brief Update current column using Givens rotations.
       ///
       /// Update the current column of the projected least-squares
-      /// problem, using Givens rotations.
+      /// problem, using Givens rotations.  This updates the QR
+      /// factorization of the upper Hessenberg matrix H.  The
+      /// resulting R factor is stored in the matrix R.  The Q factor
+      /// is stored implicitly in the list of cosines and sines,
+      /// representing the Givens rotations applied to the problem.
+      /// These Givens rotations are also applied to the right-hand
+      /// side z.
+      ///
+      /// Return the residual of the resulting least-squares problem,
+      /// assuming that the upper triangular system Ry=z can be solved
+      /// exactly (with zero residual).  (This may not be the case if
+      /// R is singular and the system Ry=z is inconsistent.)
       ///
       /// \param H [in] The upper Hessenberg matrix from GMRES.  We only
       ///   view H( 1:curCol+2, 1:curCol+1 ).  It's copied and not
@@ -736,6 +994,7 @@ namespace Belos {
 			  Teuchos::ArrayView<scalar_type> theSines,
 			  const int curCol) const
       {
+	using std::cerr;
 	using std::endl;
 
 	const int numRows = curCol + 2; // curCol is zero-based
@@ -743,7 +1002,7 @@ namespace Belos {
 	const bool extraDebug = false;
 
 	if (extraDebug) {
-	  dbg_ << "updateColumnGivens: curCol = " << curCol << endl;
+	  cerr << "updateColumnGivens: curCol = " << curCol << endl;
 	}
 
 	// View of H( 1:curCol+1, curCol ) (in Matlab notation, if
@@ -760,7 +1019,7 @@ namespace Belos {
 	R_col.assign (H_col);
 
 	if (extraDebug) {
-	  printMatrix<Scalar> (dbg_, "R_col before ", R_col);
+	  printMatrix<Scalar> (cerr, "R_col before ", R_col);
 	}
 
 	// 2. Apply all the previous Givens rotations, if any, to the
@@ -773,14 +1032,14 @@ namespace Belos {
 	  Scalar theSine = theSines[j];
 	  
 	  if (extraDebug) {
-	    dbg_ << "  j = " << j << ": (cos,sin) = " 
+	    cerr << "  j = " << j << ": (cos,sin) = " 
 		 << theCosines[j] << "," << theSines[j] << endl;
 	  }
 	  blas.ROT (1, &R_col(j,0), LDR, &R_col(j+1,0), LDR,
 		    &theCosine, &theSine);
 	}
 	if (extraDebug && curCol > 0) {
-	  printMatrix<Scalar> (dbg_, "R_col after applying previous "
+	  printMatrix<Scalar> (cerr, "R_col after applying previous "
 			       "Givens rotations", R_col);
 	}
 
@@ -793,7 +1052,7 @@ namespace Belos {
 	theSines[curCol] = theSine;
 
 	if (extraDebug) {
-	  dbg_ << "  New cos,sin = " << theCosine << "," << theSine << endl;
+	  cerr << "  New cos,sin = " << theCosine << "," << theSine << endl;
 	}
 
 	// 4. _Apply_ the new Givens rotation.  We don't need to
@@ -803,7 +1062,7 @@ namespace Belos {
 	R_col(curCol+1, 0) = STS::zero();
 
 	if (extraDebug) {
-	  printMatrix<Scalar> (dbg_, "R_col after applying current "
+	  printMatrix<Scalar> (cerr, "R_col after applying current "
 			       "Givens rotation", R_col);
 	}
 
@@ -817,9 +1076,19 @@ namespace Belos {
 		  &z(curCol,0), LDZ, &z(curCol+1,0), LDZ,
 		  &theCosine, &theSine);
 
-	// Now that we have the updated R factor of H, and the updated
-	// right-hand side z, solve the least-squares problem by solving
-	// the upper triangular linear system Ry=z for y.
+	// 6. Now that we have the updated R factor of H, and the
+	//    updated right-hand side z, solve the least-squares
+	//    problem by solving the upper triangular linear system
+	//    Ry=z for y.
+	{
+	  const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
+	  const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
+	  mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
+
+	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
+	}
+
+#if 0
 	// 
 	// The BLAS' _TRSM overwrites the right-hand side with the
 	// solution, so first copy z into y.  We need to keep z, since
@@ -843,12 +1112,13 @@ namespace Belos {
 		    Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(), 
 		    STS::one(), R.values(), LDR, y.values(), y.stride());
 	}
+#endif // 0
 
 	if (extraDebug) {
 	  //mat_type R_after (Teuchos::View, R, numRows, numRows-1);
-	  //printMatrix<Scalar> (dbg_, "R_after", R_after);
+	  //printMatrix<Scalar> (cerr, "R_after", R_after);
 	  //mat_type z_after (Teuchos::View, z, numRows, z.numCols());
-	  printMatrix<Scalar> (dbg_, "z_after", z);
+	  printMatrix<Scalar> (cerr, "z_after", z);
 	}
 
 	// The last entry of z is the nonzero part of the residual of the
@@ -1017,6 +1287,15 @@ namespace Belos {
 	// 4. Now that we have the updated R factor of H, and the updated
 	//    right-hand side z, solve the least-squares problem by
 	//    solving the upper triangular linear system Ry=z for y.
+	{
+	  const mat_type R_view (Teuchos::View, R, numRows-1, numRows-1);
+	  const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
+	  mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
+
+	  (void) solveUpperTriangularSystem (y_view, R_view, z_view);
+	}
+
+#if 0
 	// 
 	// The BLAS' _TRSM overwrites the right-hand side with the
 	// solution, so first copy z into y.  We need to keep z, since
@@ -1036,6 +1315,7 @@ namespace Belos {
 	blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 		  Teuchos::NON_UNIT_DIAG, numRows - 1, y.numCols(),
 		  STS::one(), R.values(), LDR, y.values(), y.stride());
+#endif // 0
 
 	// The last entry of z is the nonzero part of the residual of the
 	// least-squares problem.  Its magnitude gives the residual 2-norm

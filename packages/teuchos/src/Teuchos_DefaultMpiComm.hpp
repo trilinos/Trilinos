@@ -148,6 +148,24 @@ public:
     const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
 
+  /**
+   * \brief Construct a communicator with a new context with the same properties
+   * as the original.
+   *
+   * The newly constructed communicator will have a duplicate communication
+   * space that has the same properties (e.g. processes, attributes,
+   * topologies) as the input communicator.
+   *
+   * \param other The communicator to copy from.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>
+   * other.getRawMpiComm().get() != NULL && *other.getRawMpiComm() != NULL
+   * </tt></li>
+   * </ul>
+   */
+  MpiComm(const MpiComm<Ordinal>& other);
+
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
   RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
   {return rawMpiComm_;}
@@ -220,6 +238,8 @@ public:
     const Ptr<RCP<CommRequest> > &request
     ) const;
   /** \brief . */
+  virtual RCP< Comm<Ordinal> > duplicate() const;
+  /** \brief . */
   virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int>& ranks) const;
@@ -240,6 +260,8 @@ public:
 
 private:
 
+  // Set internal data members once the rawMpiComm_ data member is valid.
+  void setupMembersFromComm();
   static int tagCounter_;
 
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
@@ -302,13 +324,29 @@ MpiComm<Ordinal>::MpiComm(
   TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
   TEST_FOR_EXCEPT( *rawMpiComm == MPI_COMM_NULL );
   rawMpiComm_ = rawMpiComm;
-  MPI_Comm_size(*rawMpiComm_,&size_);
-  MPI_Comm_rank(*rawMpiComm_,&rank_);
+  setupMembersFromComm();
+}
+
+template<typename Ordinal>
+MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
+{
+  TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
+  TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
+  MPI_Comm newComm;
+  MPI_Comm_dup(*other.getRawMpiComm(), &newComm);
+  rawMpiComm_ = opaqueWrapper(newComm);
+  setupMembersFromComm();
+}
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::setupMembersFromComm()
+{
+  MPI_Comm_size(*rawMpiComm_, &size_);
+  MPI_Comm_rank(*rawMpiComm_, &rank_);
   if(tagCounter_ > maxTag_)
     tagCounter_ = minTag_;
   tag_ = tagCounter_++;
 }
-
 
 // Overridden from Comm
 
@@ -661,6 +699,13 @@ void MpiComm<Ordinal>::wait(
 
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::duplicate() const
+{
+  return rcp(new MpiComm<Ordinal>(*this));
+}
+
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::split(const int color, const int key) const
 {
   MPI_Comm newComm;
@@ -677,6 +722,9 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
+    MPI_Errhandler errorHandler;
+    MPI_Comm_get_errhandler(*rawMpiComm_, &errorHandler);
+    MPI_Comm_set_errhandler(newComm, errorHandler);
     return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
   }
 }
@@ -706,6 +754,9 @@ MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
+    MPI_Errhandler errorHandler;
+    MPI_Comm_get_errhandler(*rawMpiComm_, &errorHandler);
+    MPI_Comm_set_errhandler(newComm, errorHandler);
     return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
   }
 }

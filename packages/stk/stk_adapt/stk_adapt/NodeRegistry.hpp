@@ -72,7 +72,7 @@
 #define NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE 0
 
 /// current best is STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1, DO_REHASH 1
-#define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 1
+#define STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO 0
 #define STK_ADAPT_NODEREGISTRY_DO_REHASH 1
 
 #if NODE_REGISTRY_MAP_TYPE_BOOST
@@ -94,6 +94,11 @@
 #include <google/sparse_hash_map>
 #include <google/dense_hash_map>
 #endif
+
+// set to maximum number of procs
+#define PSEUDO_ELEMENT_MAGIC_NUMBER 1000000
+// set to skip over the FAMILY_TREE_RANK (which is 1 + element rank)
+#define PSEUDO_ELEMENT_RANK_SHIFT 2
 
 
 namespace stk {
@@ -340,22 +345,28 @@ namespace stk {
       static const unsigned NR_MARK = 2u;
 
     public:
+      typedef std::set<stk::mesh::Entity *> SetOfEntities;
+
       //========================================================================================================================
       // high-level interface
       //NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), m_comm_all(eMesh.getBulkData()->parallel()), m_gee_cnt(0), m_gen_cnt(0),
       //m_entity_repo(stk::mesh::stk::percept::EntityRankEnd)
 
-      NodeRegistry(percept::PerceptMesh& eMesh) : m_eMesh(eMesh), 
+      NodeRegistry(percept::PerceptMesh& eMesh, bool useCustomGhosting = false) : m_eMesh(eMesh), 
                                                   //m_comm_all(0),
                                                   m_comm_all( new stk::CommAll(eMesh.getBulkData()->parallel()) ),
                                                   //m_comm_all(eMesh.getBulkData()->parallel()),
                                                   // why does this cause failures? 
                                                   //m_cell_2_data_map(eMesh.getNumberElements()*8u),
+                                                  m_useCustomGhosting(useCustomGhosting),
                                                   m_gee_cnt(0), m_gen_cnt(0),
                                                   m_entity_repo(stk::percept::EntityRankEnd),
                                                   m_debug(false),
                                                   m_state(NRS_NONE)
       {
+#if !PERCEPT_USE_PSEUDO_ELEMENTS
+        m_useCustomGhosting = true;
+#endif
         //m_comm_all( new stk::CommAll(eMesh.getBulkData()->parallel()) ),
 
 #if NODE_REGISTRY_MAP_TYPE_GOOGLE
@@ -401,6 +412,7 @@ namespace stk {
       beginRegistration()
       {
         m_nodes_to_ghost.resize(0);
+        m_pseudo_entities.clear();
         m_state = NRS_START_REGISTER_NODE;
         if (m_debug)
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::beginRegistration" << std::endl;
@@ -492,7 +504,9 @@ namespace stk {
         failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
+        if (m_useCustomGhosting)
         {
+          //std::cout << "m_useCustomGhosting= " << m_useCustomGhosting << std::endl;
           stk::mesh::Ghosting & ghosting = m_eMesh.getBulkData()->create_ghosting( std::string("new_nodes") );
 
           vector<stk::mesh::Entity*> receive;
@@ -507,9 +521,20 @@ namespace stk {
         failed = 0;
         stk::all_reduce( pm, stk::ReduceSum<1>( &failed ) );
 
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+        if (!m_useCustomGhosting) setAllReceivedNodeData();
+#endif
+
         m_eMesh.getBulkData()->modification_end();
 
-        setAllReceivedNodeData();
+        if (m_useCustomGhosting) setAllReceivedNodeData();
+
+        if (0 && !m_useCustomGhosting)
+          {
+            m_eMesh.getBulkData()->modification_begin();
+            removePseudoEntities();
+            m_eMesh.getBulkData()->modification_end();
+          }
 
         if (m_debug)
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::endGetFromRemote end " << std::endl;
@@ -517,10 +542,23 @@ namespace stk {
         m_state = NRS_END_GET_FROM_REMOTE;
       }
 
+      void removePseudoEntities()
+      {
+        
+        for (SetOfEntities::iterator it = m_pseudo_entities.begin(); it != m_pseudo_entities.end(); ++it)
+          {
+            stk::mesh::Entity *pseudo_elem = *it;
+            bool did_destroy = m_eMesh.getBulkData()->destroy_entity(pseudo_elem);
+            VERIFY_OP_ON(did_destroy, ==, true, "NodeRegistry::removePseudoEntities couldn't destroy");
+          }
+      }
+
       void setAllReceivedNodeData()
       {
         EXCEPTWATCH;
+        //m_eMesh.getBulkData()->modification_begin();
         SubDimCellToDataMap::iterator iter;
+        stk::mesh::PartVector empty_parts;
 
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
@@ -548,12 +586,29 @@ namespace stk {
                     stk::mesh::Entity *node = get_entity_node_I(*m_eMesh.getBulkData(), stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[ii]);  // FIXME
                     if (!node)
                       {
-                        throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3");
+                        if (m_useCustomGhosting)
+                          {
+                            throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3");
+                          }
+                        else
+                          {
+                            //std::cout << "tmp P[" << m_eMesh.getRank() << "] NodeRegistry::setAllReceivedNodeData id= " << nodeIds_onSE.m_entity_id_vector[ii] << std::endl;
+                            node = & m_eMesh.getBulkData()->declare_entity(m_eMesh.node_rank(), nodeIds_onSE.m_entity_id_vector[ii], empty_parts);
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+                            stk::mesh::Entity *elem = & m_eMesh.getBulkData()->declare_entity(m_eMesh.element_rank()+PSEUDO_ELEMENT_RANK_SHIFT, 
+                                                                                              nodeIds_onSE.m_entity_id_vector[ii]*PSEUDO_ELEMENT_MAGIC_NUMBER+m_eMesh.getRank(), 
+                                                                                              empty_parts);
+                            m_pseudo_entities.insert(elem);
+                            m_eMesh.getBulkData()->declare_relation(*elem, *node, 0);
+#endif
+                            if (!node) throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3.1");
+                          }
                       }
                     nodeIds_onSE[ii] = node;
                   }
               }
           }
+        //m_eMesh.getBulkData()->modification_end();
       }
 
       /// when a sub-dim entity is visited during node registration but is flagged as not being marked, and thus not requiring 
@@ -1805,7 +1860,7 @@ namespace stk {
       // FIXME
       bool isParallelRun(unsigned size) { return true; }
 
-      void checkDB()
+      void checkDB(std::string msg="")
       {
         if (0)
           {
@@ -1828,6 +1883,73 @@ namespace stk {
                   std::cout << "P[" << m_eMesh.getRank() << "] owning_elementId = "  << owning_elementId << " isGhostElement = " << isGhost
                             << " nodeId = " << nodeIds_onSE << std::endl;
               }
+          }
+        if (1)
+          {
+            std::cout << "NodeRegistry::checkDB start msg= " << msg << std::endl;
+            for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
+              {
+                //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                SubDimCellData&            subDimCellData      = (*cell_iter).second;
+                //stk::mesh::EntityId        owning_elementId    = stk::mesh::entity_id(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                //stk::mesh::EntityRank      owning_element_rank = stk::mesh::entity_rank(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                NodeIdsOnSubDimEntityType& nodeIds_onSE        = subDimCellData.get<SDC_DATA_GLOBAL_NODE_IDS>();
+
+                    for (unsigned i=0; i < nodeIds_onSE.size(); i++)
+                      {
+                        stk::mesh::Entity *node = nodeIds_onSE[i];
+                        stk::mesh::EntityId nodeId = nodeIds_onSE.m_entity_id_vector[i];
+                        if (node)
+                          {
+                            VERIFY_OP_ON(node, !=, 0, "checkDB #11.1");
+                            VERIFY_OP_ON(nodeId, !=, 0, "checkDB #11.1.1");
+                            VERIFY_OP_ON(node->identifier(), ==, nodeId, "checkDB #11.2");
+                            stk::mesh::Entity *node_0 = m_eMesh.getBulkData()->get_entity(0, nodeId);
+                    
+                            VERIFY_OP_ON(node, ==, node_0, "checkDB #11.3");
+                            VERIFY_OP_ON(node_0->identifier(), ==, nodeId, "checkDB #11.4");
+                          }
+                      }
+                  }
+            std::cout << "NodeRegistry::checkDB end msg= " << msg << std::endl;
+          }
+
+        if (0)
+          {
+            std::cout << "NodeRegistry::checkDB start 1 msg= " << msg << std::endl;
+            for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
+              {
+                //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                SubDimCellData&            subDimCellData      = (*cell_iter).second;
+                stk::mesh::EntityId        owning_elementId    = stk::mesh::entity_id(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                stk::mesh::EntityRank      owning_element_rank = stk::mesh::entity_rank(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                NodeIdsOnSubDimEntityType& nodeIds_onSE        = subDimCellData.get<SDC_DATA_GLOBAL_NODE_IDS>();
+
+                if (owning_elementId == 0) continue;
+                stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(owning_element_rank, owning_elementId);
+                if (!owning_element)
+                  throw std::logic_error("logic: checkDB hmmm #11.0");
+                //bool isGhost = m_eMesh.isGhostElement(*owning_element);
+                if (!m_eMesh.isGhostElement(*owning_element))
+                  {
+                    for (unsigned i=0; i < nodeIds_onSE.size(); i++)
+                      {
+                        stk::mesh::Entity *node = nodeIds_onSE[i];
+                        stk::mesh::EntityId nodeId = nodeIds_onSE.m_entity_id_vector[i];
+                        VERIFY_OP_ON(node, !=, 0, "checkDB #11.1");
+                        VERIFY_OP_ON(nodeId, !=, 0, "checkDB #11.1.1");
+                        VERIFY_OP_ON(node->identifier(), ==, nodeId, "checkDB #11.2");
+                        stk::mesh::Entity *node_0 = m_eMesh.getBulkData()->get_entity(0, nodeId);
+                    
+                        VERIFY_OP_ON(node, ==, node_0, "checkDB #11.3");
+                        VERIFY_OP_ON(node_0->identifier(), ==, nodeId, "checkDB #11.4");
+                        unsigned owner_rank = node->owner_rank();
+                        VERIFY_OP_ON(owner_rank, ==, owning_element->owner_rank(), "checkDB #11.6");
+                      }
+                  }
+              }
+            std::cout << "NodeRegistry::checkDB end 1 msg= " << msg << std::endl;
+
           }
 
       }
@@ -1955,13 +2077,51 @@ namespace stk {
       /// after registering all needed nodes, this method is used to request new nodes on this processor
       void createNewNodesInParallel()
       {
+        static int num_times_called = 0;
+        ++num_times_called;
+
         unsigned num_nodes_needed = local_size();
 
         // FIXME
         // assert( bulk data is in modifiable mode)
         // create new entities on this proc
         vector<stk::mesh::Entity *> new_nodes;
-        m_eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, num_nodes_needed, new_nodes);
+
+        if (m_useCustomGhosting)
+          m_eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, num_nodes_needed, new_nodes);
+
+        std::vector<stk::mesh::EntityId> ids(num_nodes_needed);
+
+        if (!m_useCustomGhosting)
+          {
+#define NR_GEN_OWN_IDS 0
+#if NR_GEN_OWN_IDS
+            new_nodes.resize(num_nodes_needed);
+#else
+            m_eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, num_nodes_needed, new_nodes);
+#endif
+
+            // bogus, but just for testing - we delete the just-created entities and re-declare them without ownership info
+            //   so that modification_end takes care of assigning ownership
+            stk::mesh::PartVector empty_parts;
+            for (unsigned i=0; i < num_nodes_needed; i++)
+              {
+#if NR_GEN_OWN_IDS
+                ids[i] = (num_times_called*100000) + i + (num_times_called*100000)*1000*m_eMesh.getParallelRank();
+#else
+                ids[i] = new_nodes[i]->identifier();
+                bool did_destroy = m_eMesh.getBulkData()->destroy_entity(new_nodes[i]);
+                VERIFY_OP_ON(did_destroy, ==, true, "createNewNodesInParallel couldn't destroy");
+#endif
+                new_nodes[i] = & m_eMesh.getBulkData()->declare_entity(m_eMesh.node_rank(), ids[i], empty_parts);
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+                unsigned proc_rank = m_eMesh.getRank();
+                stk::mesh::Entity *elem = & m_eMesh.getBulkData()->declare_entity(m_eMesh.element_rank()+PSEUDO_ELEMENT_RANK_SHIFT, ids[i]*PSEUDO_ELEMENT_MAGIC_NUMBER+proc_rank, empty_parts);
+                m_pseudo_entities.insert(elem);
+                m_eMesh.getBulkData()->declare_relation(*elem, *new_nodes[i], 0);
+#endif
+              }
+          }
         
         stk::mesh::Part* new_nodes_part = m_eMesh.getNonConstPart("refine_new_nodes_part");
         if (new_nodes_part)
@@ -2110,6 +2270,7 @@ namespace stk {
 
     public:
       SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
+      bool getUseCustomGhosting() { return m_useCustomGhosting; }
 
       // remove any sub-dim entities from the map that have a node in deleted_nodes
       void cleanDeletedNodes(std::set<stk::mesh::Entity *>& deleted_nodes, bool debug=false)
@@ -2345,6 +2506,8 @@ namespace stk {
       SubDimCellToDataMap m_cell_2_data_map;
 
       vector<stk::mesh::EntityProc> m_nodes_to_ghost;
+      SetOfEntities m_pseudo_entities;
+      bool m_useCustomGhosting;
 
     public:
       int m_gee_cnt;

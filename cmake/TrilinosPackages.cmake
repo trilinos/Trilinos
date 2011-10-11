@@ -129,6 +129,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Amesos                amesos                         PS
   Pamgen                pamgen                         PS
   SEACAS                seacas                         SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  Trios                 trios                          EX #temporary
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
   ML                    ml                             PS
@@ -191,3 +192,4 @@ PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Mesquite AIX)
+PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)

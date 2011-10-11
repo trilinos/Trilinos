@@ -350,7 +350,8 @@ NOX::Thyra::Group::applyJacobian(const Vector& input, Vector& result) const
 		       "Call computeJacobian before calling applyJacobian!");
   }
   
-  ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
+  //::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
+  ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
 		 input.getThyraVector(), result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
@@ -372,7 +373,7 @@ NOX::Thyra::Group::applyJacobianMultiVector(
   NOX::Thyra::MultiVector& nt_result = 
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), 
+  ::Thyra::apply(*lop_, 
 		 ::Thyra::NOTRANS,
 		 *nt_input.getThyraMultiVector(), 
 		 nt_result.getThyraMultiVector().ptr());
@@ -399,7 +400,7 @@ NOX::Thyra::Group::applyJacobianTranspose(const NOX::Thyra::Vector& input,
 		       "Call computeJacobian before calling applyJacobian!");
   }
 
-  if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
+  if ( ::Thyra::opSupported(*lop_, ::Thyra::TRANS) ) {
     ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::TRANS,
 		   input.getThyraVector(), result.getThyraRCPVector().ptr());
     return NOX::Abstract::Group::Ok;
@@ -426,7 +427,7 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
   NOX::Thyra::MultiVector& nt_result = 
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), 
+  ::Thyra::apply(*lop_, 
 		 ::Thyra::TRANS,
 		 *nt_input.getThyraMultiVector(), 
 		 nt_result.getThyraMultiVector().ptr());

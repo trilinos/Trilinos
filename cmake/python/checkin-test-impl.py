@@ -564,7 +564,7 @@ reguardless of their categorization.
 A few use cases might help better demonstrate the behavior.  Consider
 the following input arguments specifying extra builds:
 
-  --ss-extra-packages=MPI_DEBUG_SS --extra-packages=INTEL_DEBUG
+  --ss-extra-builds=MPI_DEBUG_SS --extra-builds=INTEL_DEBUG
 
 and the packages Techos, Phalanx, and Meros where Teuchos is PS,
 Phalanx is SS, and Meros is EX.
@@ -603,7 +603,7 @@ E) --enable-packages=Teuchos,Phalanx,Meros:
    MPI_DEBUG_SS:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
 
-Above, the --ss-enable-builds=MPI_DEBUG_SS build was skipped in use
+Above, the --ss-extra-builds=MPI_DEBUG_SS build was skipped in use
 case 'A' because it did not contain any SS packages beyond what was in
 the set of PS packages.  However, the --extra-builds=INTEL_DEBUG build
 is always performed with all of the enabled packages.  This logic

@@ -55,7 +55,7 @@ C     simple check.  Instead, we do an indexed sort and check for no
 C     duplicate adjacent values. 
 
       nerr = 0
-      CALL INDEXX (MAP, 1, 1, INDX, ICNT, .TRUE.)
+      CALL INDEXX (MAP, INDX, ICNT, .TRUE.)
 
       ILAST = MAP(INDX(1))
       DO 100 IEL = 2, ICNT

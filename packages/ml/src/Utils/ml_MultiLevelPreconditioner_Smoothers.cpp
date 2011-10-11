@@ -34,6 +34,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "ml_epetra.h"
+#include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Preconditioner.h"
@@ -147,6 +148,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // Ifpack-specific
   string IfpackType = List_.get("smoother: ifpack type", "Amesos");
   int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
+  ParameterList & IfpackList = List_.sublist("smoother: ifpack list");
   // note: lof has different meanings for IC and ICT.  For IC and ILU, we
   // will cast it to an integer later.
   double IfpackLOF=List_.get("smoother: ifpack level-of-fill",0.);
@@ -242,6 +244,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       cerr << ErrorMsg_ << "smoother not recognized (" << MyPreOrPostSmoother << ")\n";
     
     string MySmoother = smList.get("smoother: type",Smoother);
+
+    // If we don't have a level-specific ifpack list, copy the global one
+    if(!smList.isSublist("smoother: ifpack list") && List_.isSublist("smoother: ifpack list"))
+      ML_Epetra::UpdateList(List_.sublist("smoother: ifpack list"),smList.sublist("smoother: ifpack list"),true);    
 
     char msg[80];
     double AddToDiag = smList.get("smoother: add to diag", 1e-12);
@@ -619,7 +625,6 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       // ====== //
 
 #ifdef HAVE_ML_IFPACK
-      double lof = -1.0;
       string MyIfpackType;
       if (MySmoother == "IFPACK")
       {
@@ -631,59 +636,45 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
         // MS // Just a shortcut because sublists are not supported by
         // MS // the web interface.
         MyIfpackType = MySmoother;
-        lof = List_.get("smoother: ifpack level-of-fill", IfpackLOF);
-      }
+      }      
 
+      double MyLOF=smList.get("smoother: ifpack level-of-fill",IfpackLOF);
       int MyIfpackOverlap = smList.get("smoother: ifpack overlap", IfpackOverlap);
       double MyIfpackRT = smList.get("smoother: ifpack relative threshold", IfpackRelThreshold);
       double MyIfpackAT = smList.get("smoother: ifpack absolute threshold", IfpackAbsThreshold);
 
-/*
-      if( verbose_ ) {
-        cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
-             << msg << MyPreOrPostSmoother
-             << ",overlap=" << MyIfpackOverlap << endl;
-        if (MyIfpackType != "Amesos") {
-          if (MyIfpackType == "ILU" || MyIfpackType == "IC")
-            cout << msg << "level-of-fill=" << (int)lof;
-          else
-            cout << msg << "level-of-fill=" << lof;
-          cout << ",rel. threshold=" << MyIfpackRT
-               << ",abs. threshold=" << MyIfpackAT << endl;
-        }
-      }
-*/
-
-      Teuchos::ParameterList& IfpackList=List_.sublist("smoother: ifpack list");
+      Teuchos::ParameterList& MyIfpackList=smList.sublist("smoother: ifpack list");
       int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
       int* AggrMap = 0;
       ML_CHK_ERR(ML_Aggregate_Get_AggrMap(agg_,level,&AggrMap));
-      IfpackList.set("ILU: sweeps", Mynum_smoother_steps);
+      MyIfpackList.set("ILU: sweeps", Mynum_smoother_steps);
 
       // set these in the case the user wants "partitioner: type" = "user"
       // (if not, these values are ignored).
-      if (IfpackList.get("partitioner: type", "user") == "user")
-        IfpackList.set("partitioner: local parts", NumAggr);
-      IfpackList.set("partitioner: map", AggrMap);
+      if (MyIfpackList.get("partitioner: type", "user") == "user")
+        MyIfpackList.set("partitioner: local parts", NumAggr);
+      MyIfpackList.set("partitioner: map", AggrMap);
 
-      if (lof != -1.0) {
-        IfpackList.set("fact: level-of-fill", (int) lof);
-        IfpackList.set("fact: ict level-of-fill", lof);
-        IfpackList.set("fact: ilut level-of-fill", lof);
-      }
-      IfpackList.set("fact: relative threshold", MyIfpackRT);
-      IfpackList.set("fact: absolute threshold", MyIfpackAT);
+      // Set the fact: LOF options, but only if they're not set already...
+      MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
+      MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
+      MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
+
+      MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
+
+      MyIfpackList.set("fact: relative threshold", MyIfpackRT);
+      MyIfpackList.set("fact: absolute threshold", MyIfpackAT);
 
       if( verbose_ ) {
 	// SORa needs special handling
 	if(MyIfpackType == "SORa"){
-	  cout << msg << "IFPACK/SORa("<<IfpackList.get("sora: alpha",1.5)<<","<<IfpackList.get("sora: gamma",1.0)<<")"
-	       << ", sweeps = " <<IfpackList.get("sora: sweeps",1)<<endl;
-	  if(IfpackList.get("sora: oaz boundaries",false))
+	  cout << msg << "IFPACK/SORa("<<MyIfpackList.get("sora: alpha",1.5)<<","<<MyIfpackList.get("sora: gamma",1.0)<<")"
+	       << ", sweeps = " <<MyIfpackList.get("sora: sweeps",1)<<endl;
+	  if(MyIfpackList.get("sora: oaz boundaries",false))
 	    cout << msg << "oaz boundary handling enabled"<<endl;
-	  if(IfpackList.get("sora: use interproc damping",false))
+	  if(MyIfpackList.get("sora: use interproc damping",false))
 	    cout << msg << "interproc damping enabled"<<endl;
-	  if(IfpackList.get("sora: use global damping",false))
+	  if(MyIfpackList.get("sora: use global damping",false))
 	    cout << msg << "global damping enabled"<<endl;
 	}
 	else{
@@ -692,12 +683,10 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
 	       << ",overlap=" << MyIfpackOverlap << endl;
 	  if (MyIfpackType != "Amesos") {
 	    if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
-	      int myLof = IfpackList.get("fact: level-of-fill", (int) lof);
-	      cout << msg << "level-of-fill=" << myLof;
+	      cout << msg << "level-of-fill=" << MyLOF;
 	    }
 	    else {
-            double myLof = IfpackList.get("fact: level-of-fill", (int) lof);
-            cout << msg << "level-of-fill=" << myLof;
+            cout << msg << "level-of-fill=" << MyLOF;
 	    }
 	    cout << ",rel. threshold=" << MyIfpackRT
 		 << ",abs. threshold=" << MyIfpackAT << endl;
@@ -706,7 +695,7 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       }
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,
-                             (void*)&IfpackList,(void*)Comm_);
+                             (void*)&MyIfpackList,(void*)Comm_);
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
@@ -814,11 +803,11 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
              << MyPreOrPostSmoother << ")" << endl;
       }
 
-      Teuchos::ParameterList IfpackList;
-      Teuchos::ParameterList& SelfList = IfpackList.sublist("ML list");
+      Teuchos::ParameterList MyIfpackList;
+      Teuchos::ParameterList& SelfList = MyIfpackList.sublist("ML list");
       Teuchos::ParameterList& tmpList = List_.sublist("smoother: self list");
       SelfList.setParameters(tmpList);
-      IfpackList.set( "ML node id",List_.get("ML node id",-1) );
+      MyIfpackList.set( "ML node id",List_.get("ML node id",-1) );
       char procLabel[30];
       sprintf(procLabel,"node id %d",List_.get("ML node id",-1));
       SelfList.set("ML label",procLabel);
@@ -834,7 +823,7 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
         cout << msg << "*** * Start of self-smoother generation * ***" << endl;
       int currentPrintLevel = ML_Get_PrintLevel();
       ML_Gen_Smoother_Self(ml_, MyIfpackOverlap, currentLevel, pre_or_post,
-                           Mynum_smoother_steps, IfpackList,*Comm_);
+                           Mynum_smoother_steps, MyIfpackList,*Comm_);
       ML_Set_PrintLevel(currentPrintLevel);
       if (verbose_ && SelfList.get("ML output",0) > 0)
         cout << msg << "*** * End of self-smoother generation * ***" << endl;

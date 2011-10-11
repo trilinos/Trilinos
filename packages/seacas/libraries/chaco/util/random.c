@@ -2,7 +2,7 @@
  *    rand_por[t].c
  *  see
  *    L'Ecuyer - Comm. of the ACM, Oct. 1990, vol. 33.
- *    Numerical Recipes in C, 2nd edition, pp. 278-86
+ *    Numerical Recipes in C, 2nd edition, pp. 278-86 (NO CODE IS FROM HERE)
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43

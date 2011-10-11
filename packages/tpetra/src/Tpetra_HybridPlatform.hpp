@@ -41,6 +41,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include <Kokkos_TPINode.hpp>
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include <Kokkos_OpenMPNode.hpp>
+#endif
 #ifdef HAVE_KOKKOS_THRUST
 #include <Kokkos_ThrustGPUNode.hpp>
 #endif
@@ -96,6 +99,9 @@ namespace Tpetra {
 #ifdef HAVE_KOKKOS_THREADPOOL
       Teuchos::RCP<Kokkos::TPINode>       tpiNode_;
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+      Teuchos::RCP<Kokkos::OpenMPNode>    ompNode_;
+#endif
 #ifdef HAVE_KOKKOS_THRUST
       Teuchos::RCP<Kokkos::ThrustGPUNode> thrustNode_;
 #endif
@@ -107,6 +113,9 @@ namespace Tpetra {
 #endif        
 #ifdef HAVE_KOKKOS_THREADPOOL
         , TPINODE
+#endif        
+#ifdef HAVE_KOKKOS_OPENMP
+        , OMPNODE
 #endif        
 #ifdef HAVE_KOKKOS_THRUST
         , THRUSTGPUNODE
@@ -205,6 +214,11 @@ namespace Tpetra {
             nodeType_ = TBBNODE;
           }
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+          else if (desigNode == "Kokkos::OpenMPNode") {
+            nodeType_ = OMPNODE;
+          }
+#endif
 #ifdef HAVE_KOKKOS_THRUST
           else if (desigNode == "Kokkos::ThrustGPUNode") {
             nodeType_ = THRUSTGPUNODE;
@@ -246,6 +260,11 @@ namespace Tpetra {
         tbbNode_ = rcp(new Kokkos::TBBNode(instList_));
         break;
 #endif        
+#ifdef HAVE_KOKKOS_OPENMP
+      case OMPNODE:
+        ompNode_ = rcp(new Kokkos::OpenMPNode(instList_));
+        break;
+#endif        
 #ifdef HAVE_KOKKOS_THREADPOOL
       case TPINODE:
         tpiNode_  = rcp(new Kokkos::TPINode(instList_));
@@ -275,6 +294,11 @@ namespace Tpetra {
         codeobj.template run<Kokkos::TBBNode>(instList_,comm_, tbbNode_);
         break;
 #endif        
+#ifdef HAVE_KOKKOS_OPENMP
+      case OMPNODE:
+        codeobj.template run<Kokkos::OpenMPNode>(instList_,comm_, ompNode_);
+        break;
+#endif        
 #ifdef HAVE_KOKKOS_THREADPOOL
       case TPINODE:
         codeobj.template run<Kokkos::TPINode>(instList_,comm_, tpiNode_);
@@ -301,6 +325,11 @@ namespace Tpetra {
 #ifdef HAVE_KOKKOS_TBB
       case TBBNODE:
         UserCode<Kokkos::TBBNode>::run(instList_,comm_, tbbNode_);
+        break;
+#endif        
+#ifdef HAVE_KOKKOS_OPENMP
+      case OMPNODE:
+        UserCode<Kokkos::OpenMPNode>::run(instList_,comm_, ompNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOS_THREADPOOL

@@ -42,6 +42,9 @@
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
@@ -114,6 +117,23 @@ namespace Kokkos {
 #ifndef KOKKOS_DONT_BLOCK_TPI_GEMM
         TPI_Unblock();
 #endif
+      }
+  };
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <typename Scalar> 
+  struct NodeGEMM<Scalar,OpenMPNode> {
+    public:
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,OpenMPNode> &A, const MultiVector<Scalar,OpenMPNode> &B, Scalar beta, MultiVector<Scalar,OpenMPNode> &C) {
+        Teuchos::BLAS<int,Scalar> blas;
+        const int m = Teuchos::as<int>(C.getNumRows()),
+                  n = Teuchos::as<int>(C.getNumCols()),
+                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
+                  lda = Teuchos::as<int>(A.getStride()),
+                  ldb = Teuchos::as<int>(B.getStride()),
+                  ldc = Teuchos::as<int>(C.getStride());
+        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
 #endif

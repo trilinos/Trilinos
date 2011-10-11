@@ -71,14 +71,23 @@ main (int argc, char *argv[])
 #endif // 0
   
   // Command-line arguments
+  bool testBlockGivens = false;
+  bool testGivensRotations = false;
   bool verbose = false;
   int testProblemSize = 10;
 
   // Parse command-line arguments
   CommandLineProcessor cmdp (false,true);
+  cmdp.setOption ("testGivensRotations", "dontTestGivensRotations", 
+		  &testGivensRotations, 
+		  "Test the implementation of Givens rotations.");
+  cmdp.setOption ("testBlockGivens", "dontTestBlockGivens", &testBlockGivens,
+		  "Test the panel version of the Givens rotations - based "
+		  "update.");
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("testProblemSize", &testProblemSize, 
-		  "Number of columns in the projected least-squares test problem.");
+		  "Number of columns in the projected least-squares test "
+		  "problem.");
   if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     if (myRank == 0) {
       std::cout << "End Result: TEST FAILED" << std::endl;
@@ -89,10 +98,15 @@ main (int argc, char *argv[])
   std::ostream& out = (myRank == 0 && verbose) ? std::cout : blackHole;
 
   bool success = true;
+  Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
+
+  if (testGivensRotations) {
+    solver.testGivensRotations (out);
+  }
   if (testProblemSize > 0) {
     // Test the projected least-squares solver.
-    Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver (out);
-    success = solver.testUpdateColumn (out, testProblemSize, verbose);
+    success = success && solver.testUpdateColumn (out, testProblemSize, 
+						  testBlockGivens, verbose);
   }
   
   if (success) {

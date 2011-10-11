@@ -16,6 +16,9 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+#if defined(HAVE_KOKKOS_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
 
 namespace Tpetra {
 
@@ -28,6 +31,9 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THRUST)
     TPETRA_BLOCKCRSGRAPH_INSTANT(int,int,Kokkos::ThrustGPUNode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKCRSGRAPH_INSTANT(int,int,Kokkos::OpenMPNode)
 #endif
 
 } // namespace Tpetra

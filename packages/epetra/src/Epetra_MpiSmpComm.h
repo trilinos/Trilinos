@@ -56,9 +56,10 @@ class Epetra_Distributor;
   shared memory threads.
   \warning This is an experimental class that marginally supported nested share memory parallelism within
   MPI processes.
+  \warning This class has been deprecated.
 */
 
-class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
+class EPETRA_DEPRECATED Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
     
   public:
 

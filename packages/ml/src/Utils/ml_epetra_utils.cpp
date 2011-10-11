@@ -3594,7 +3594,7 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
     */
     if (pname.find("coarse:",0) == 0) {
       ParameterList &coarseList = newList.sublist("coarse: list");
-      if (pnameIsList) {
+      if (pnameIsList && pname=="coarse: list") {
         ParameterList &sublist = List.sublist(pname);
         for (ParameterList::ConstIterator param=sublist.begin(); param!=sublist.end() ; param++) {
           ParameterList &coarseList = newList.sublist("coarse: list");
@@ -3657,7 +3657,8 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
             exit(EXIT_FAILURE);
           }
         }
-    } else {
+    } 
+    else{
       // Copy general (not level-specific) options and sublists to new list.
       // Don't copy coarse sublist, since its entries were already copied.
       if (pname.find("coarse: ",0) == string::npos ) {
