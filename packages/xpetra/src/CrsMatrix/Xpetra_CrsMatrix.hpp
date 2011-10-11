@@ -70,9 +70,6 @@ namespace Xpetra {
     //! Returns the number of matrix rows owned on the calling node.
     virtual size_t getNodeNumRows() const = 0;
 
-    //! Returns the number of matrix columns owned on the calling node.
-    virtual size_t getNodeNumCols() const = 0;
-
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const = 0;
 
@@ -94,17 +91,14 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     virtual bool isLocallyIndexed() const = 0;
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
     virtual bool isGloballyIndexed() const = 0;
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     virtual bool isFillComplete() const = 0;
-
-    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
@@ -141,6 +135,14 @@ namespace Xpetra {
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}
+    //  Adding these functions by hand, as they're in the skip list.
+
+    //! Returns the number of matrix columns owned on the calling node.
+        virtual size_t getNodeNumCols() const = 0;
+
+    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+        virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
+
 
   }; // CrsMatrix class
 
