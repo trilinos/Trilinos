@@ -186,9 +186,9 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
-   std::vector<int> LIDs;
+   std::vector<int> cLIDs, rLIDs;
    std::vector<double> jacRow;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
@@ -210,9 +210,12 @@ evaluateFields(typename Traits::EvalData workset)
       globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
 
       // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = Jac->RowMap().LID(GIDs[i]);
+      rLIDs.resize(GIDs.size());
+      cLIDs.resize(GIDs.size());
+      for(std::size_t i=0;i<GIDs.size();i++) {
+         rLIDs[i] = Jac->RowMap().LID(GIDs[i]);
+         cLIDs[i] = Jac->ColMap().LID(GIDs[i]);
+      }
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -223,7 +226,7 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
-            int row = LIDs[rowOffset];
+            int row = rLIDs[rowOffset];
     
             // Sum residual
             if(r!=Teuchos::null)
@@ -237,7 +240,7 @@ evaluateFields(typename Traits::EvalData workset)
             // TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
     
             // Sum Jacobian
-            int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&LIDs[0]);
+            int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&cLIDs[0]);
             TEUCHOS_ASSERT_EQUALITY(err,0);
          } // end rowBasisNum
       } // end fieldIndex

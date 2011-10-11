@@ -186,7 +186,7 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
-   std::vector<int> LIDs;
+   std::vector<int> rLIDs, cLIDs;
    std::vector<double> jacRow;
  
    // for convenience pull out some objects from workset
@@ -196,7 +196,8 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->A;
-   const Epetra_BlockMap & map = Jac_template->RowMap();
+   const Epetra_BlockMap & rMap = Jac_template->RowMap();
+   const Epetra_BlockMap & cMap = Jac_template->ColMap();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the
@@ -210,9 +211,12 @@ evaluateFields(typename Traits::EvalData workset)
       globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
 
       // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = map.LID(GIDs[i]);
+      rLIDs.resize(GIDs.size());
+      cLIDs.resize(GIDs.size());
+      for(std::size_t i=0;i<GIDs.size();i++) {
+         rLIDs[i] = rMap.LID(GIDs[i]);
+         cLIDs[i] = cMap.LID(GIDs[i]);
+      }
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -223,7 +227,7 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
-            int row = LIDs[rowOffset];
+            int row = rLIDs[rowOffset];
 
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
@@ -241,10 +245,10 @@ evaluateFields(typename Traits::EvalData workset)
                
                for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                   jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).coeff(stochIndex);
-               TEUCHOS_ASSERT(scatterField.size()==(int) LIDs.size());
+               // TEUCHOS_ASSERT(scatterField.size()==(int) LIDs.size());
        
                // Sum SGJacobian
-               int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&LIDs[0]);
+               int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&cLIDs[0]);
                TEUCHOS_ASSERT_EQUALITY(err,0);
             }
          } // end rowBasisNum
