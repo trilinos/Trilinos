@@ -2038,7 +2038,7 @@ namespace Tpetra {
             // scope, so (if necessary) it will be written back to X
             // at this time.
             ArrayRCP<S> X_view = X->get1dViewNonConst ();
-            TEST_FOR_EXCEPTION(X_view.size() < numRows * numCols,
+            TEST_FOR_EXCEPTION(static_cast<global_size_t> (X_view.size()) < numRows * numCols,
                                std::logic_error,
                                "The view of X has size " << X_view 
                                << " which is not enough to accommodate the "
@@ -2054,7 +2054,7 @@ namespace Tpetra {
             // allow dense matrices to be pattern matrices, so dims[2] ==
             // 0 or 1.  We've already checked for this above.
             const bool isComplex = (dims[2] == 1);
-            size_t count = 0, curRow = 0, curCol = 0;
+            typename ArrayRCP<S>::size_type count = 0, curRow = 0, curCol = 0;
 
             std::string line;
             while (getline(in, line))
@@ -2197,7 +2197,8 @@ namespace Tpetra {
                     ++count;
                   }
               }
-            TEST_FOR_EXCEPTION(! tolerant && count < numRows * numCols,
+            TEST_FOR_EXCEPTION(! tolerant && 
+			       static_cast<global_size_t> (count) < numRows * numCols,
                                std::runtime_error,
                                "The Matrix Market metadata reports that the "
                                "dense matrix is " << numRows <<  " x " 
