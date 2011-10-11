@@ -42,6 +42,7 @@
 #ifndef __MatrixMarket_util_hpp
 #define __MatrixMarket_util_hpp
 
+#include <Teuchos_as.hpp>
 #include <string>
 
 namespace Tpetra {
@@ -94,23 +95,26 @@ namespace Tpetra {
 	  // values back in.
 	  //
 	  // There is actually an algorithm, due to Guy Steele (yes,
-	  // _that_ Guy Steele) et al., for idempotent printing of
+	  // Java's Guy Steele) et al., for idempotent printing of
 	  // finite-length floating-point values.  We should actually
 	  // implement that algorithm, but I don't have time for that
 	  // now.  Currently, I just print no more than (one decimal
 	  // digit more than (the number of decimal digits justified
 	  // by the precision of magnitude_type)).
+	  //
+	  // We need to use STM's log10() rather than (say) std::log10
+	  // here, because STM::base() returns a magnitude_type, not
+	  // one of C++'s standard integer types.
+	  const magnitude_type numDecDigits = STM::t() * STM::log10 (STM::base());
 
-	  // FIXME (mfh 06 Apr 2011) This will only work if
-	  // std::log10() is defined for magnitude_type inputs.
-	  // Teuchos::ScalarTraits does not currently have an log10()
-	  // class method.
-	  const magnitude_type numDecDigits = STM::t() * std::log10 (STM::base());
-
-	  // Round and add one. Hopefully this doesn't overflow...
+	  // Round and add one.  The cast to int should not overflow
+	  // unless STM::t() is _extremely_ large, so we don't need to
+	  // check for that case here.
 	  const magnitude_type one = STM::one();
 	  const magnitude_type two = one + one;
-	  const int prec = 1 + static_cast<int> ((two*numDecDigits + one) / two);
+          // Cast from magnitude_type to int, since std::ostream's
+          // precision() method expects an int input.
+	  const int prec = 1 + Teuchos::as<int> ((two*numDecDigits + one) / two);
 	  
 	  // Set the number of (decimal) digits after the decimal
 	  // point to print.
