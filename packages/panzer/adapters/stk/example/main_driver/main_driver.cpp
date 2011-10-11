@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
       Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> rof = 
 	Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra);
       input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
-      Teuchos::RCP<const panzer_stk::NOXObserverFactory_Epetra> nof = 
+      Teuchos::RCP<const panzer_stk::NOXObserverFactory> nof = 
 	Teuchos::rcp(new user_app::NOXObserverFactory_Epetra);
       input_params->sublist("Solver Factories").set("NOX Observer Factory", nof);
     }

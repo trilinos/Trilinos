@@ -27,7 +27,7 @@
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
-#include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
+#include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include <vector>
@@ -388,9 +388,9 @@ namespace panzer_stk {
     RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
     RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {
-      Teuchos::RCP<const panzer_stk::NOXObserverFactory_Epetra> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory_Epetra> >("NOX Observer Factory");
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
+      Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
+	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof,Teuchos::ParameterList());
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }

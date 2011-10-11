@@ -7,22 +7,23 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
 
 namespace panzer_stk {
 
-  class NOXObserverFactory_Epetra {
+  class NOXObserverFactory {
 
   public:
     
-    virtual ~NOXObserverFactory_Epetra() {}
+    virtual ~NOXObserverFactory() {}
 
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-		     const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
-		     const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) const = 0;
+		     const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+		     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+                     const Teuchos::ParameterList & pl) const = 0;
   };
 
 }
