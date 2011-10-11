@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
   ParameterList &fList = MLList.sublist("smoother: ifpack list");
   fList.set("fact: level-of-fill",1);
   ParameterList &cList = MLList.sublist("coarse: ifpack list");
-  cList.set("fact: level-of-fill",1e-2);
+  cList.set("fact: ilut level-of-fill",1e-2);
   TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 #endif

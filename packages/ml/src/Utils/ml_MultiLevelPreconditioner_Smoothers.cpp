@@ -661,15 +661,14 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
       // is an int for ILU and a double for ILUT.  Lovely.
       if(MyIfpackType=="ILUT" || MyIfpackType=="ICT"){
 	MyIfpackList.set("fact: level-of-fill", MyIfpackList.get("fact: level-of-fill",MyLOF));
+	MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
+	MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
 	MyLOF=MyIfpackList.get("fact: level-of-fill",MyLOF);
       }
       else{
 	MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
 	MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
       }
-
-      MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
-      MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
 
       MyIfpackList.set("fact: relative threshold", MyIfpackRT);
       MyIfpackList.set("fact: absolute threshold", MyIfpackAT);
