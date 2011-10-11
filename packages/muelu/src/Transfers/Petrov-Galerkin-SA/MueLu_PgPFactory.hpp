@@ -168,7 +168,6 @@ public:
         RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
     }
-
   }
 
   void BuildP(Level &fineLevel, Level &coarseLevel) const {

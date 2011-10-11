@@ -170,17 +170,17 @@ int main(int argc, char *argv[]) {
 
   // custom parameters
   // matrix parameters
-  GO numGlobalElements = 100;
-  LO maxLevels = 10;
+  GO numGlobalElements = 1000;
+  LO maxLevels = 5;
   LO its=10;
   std::string smooType="gs";
   Scalar smooDamping = 0.7;
-  std::string transferOpType = "PA-AMG";
+  std::string transferOpType = "PG-AMG";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
   int sweeps=1;
-  int maxCoarseSize=1;  //FIXME clp doesn't like long long int
+  int maxCoarseSize=100;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
   std::string aggOrdering = "natural";
