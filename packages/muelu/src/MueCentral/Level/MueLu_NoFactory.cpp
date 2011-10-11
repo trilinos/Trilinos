@@ -5,19 +5,10 @@
  *      Author: wiesner
  */
 
-
 #include "MueLu_NoFactory.hpp"
 
-// static variables
-namespace MueLu
-{
-RCP<NoFactory> NoFactory::UserDefined = Teuchos::null;
+namespace MueLu {
 
-NoFactory::ptrGetInstance UserDefinedVariable = NoFactory::get;
+  RCP<const NoFactory> NoFactory::noFactory_ = Teuchos::null;
+
 }
-
-//MueLu::NoFactory::~NoFactory()
-
-
-//static const MueLu::NoFactory* MueLu::NoFactory::get()
-

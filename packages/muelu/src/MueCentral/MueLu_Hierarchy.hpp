@@ -78,7 +78,7 @@ public:
 
     if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
       GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << endl
-      << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
+			       << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
 
     Levels_.push_back(level);
     level->SetLevelID(levelID);
@@ -179,17 +179,13 @@ public:
     // Check coarse levels
     // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
 
-    //
-    //
-    //
-
     Levels_[startLevel]->Request(smootherFactory);
     // Levels_[startLevel]->Request(coarsestSolverFactory);
 
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
     int iLevel;
-    std::cout << "Setup(): startLevel=" << startLevel << ", lastLevel=" << lastLevel << ", numDesiredLevels=" << numDesiredLevels << std::endl;
+    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (numLevels=" << numDesiredLevels << ")" << std::endl;
 
     for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
       SubMonitor m(*this, "Level " + Teuchos::toString(iLevel));
@@ -252,7 +248,7 @@ public:
 
     } // for loop
 
-    // Crop
+    // Crop. TODO: add a warning
     Levels_.resize(iLevel + 1);
 
     // TODO: not exception safe: manager will still hold default factories if you exit this function with an exception
@@ -319,7 +315,7 @@ public:
     Monitor h(*this, "SetSmoothers");
 
     if (numDesiredLevels == -1)
-      numDesiredLevels = GetNumLevels()-startLevel-1;
+      numDesiredLevels = GetNumLevels() - startLevel - 1;
     LO lastLevel = startLevel + numDesiredLevels - 1;
 
     //checks
@@ -331,13 +327,16 @@ public:
 
     if (lastLevel >= GetNumLevels() - 1) {
       lastLevel = GetNumLevels() - 2;
-      GetOStream(Warnings0, 0) << "Warning: coarsest level will have a direct solve!" << std::endl;
+      GetOStream(Warnings0, 0) << "Warning: coarsest level solver will not be changed!" << std::endl;
     }
 
     FactoryManager manager;
     manager.SetSmootherFactory(rcpFromRef(smooFact));
+    manager.SetFactory("P", Teuchos::null);
+    manager.SetFactory("R", Teuchos::null);
+    manager.SetFactory("A", Teuchos::null);
 
-    lastLevel++; // hack: nothing will be done on the last level in Setup() because coarse solver of manager == Teuchos::null
+    lastLevel++; // hack: nothing will be done on the last level in Setup() because coarse solver of manager == Teuchos::null. TODO: print() of Setup() will be confusing
     numDesiredLevels = lastLevel - startLevel + 1;
 
     // std::cout << "startLevel=" << startLevel << ", nummDesiredLevels=" << numDesiredLevels << std::endl;
@@ -371,11 +370,11 @@ public:
 
       if (startLevel == 0 && IsPrint(Statistics1)) {
         GetOStream(Statistics1, 0) << "iter:    "
-            << std::setiosflags(std::ios::left)
-        << std::setprecision(3) << i
-        << "           residual = "
-        << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")),X,B)
-        << std::endl;
+				   << std::setiosflags(std::ios::left)
+				   << std::setprecision(3) << i
+				   << "           residual = "
+				   << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")),X,B)
+				   << std::endl;
       }
 
       //X.norm2(norms);
@@ -408,7 +407,7 @@ public:
           emptySolve=false;
         }
         if (emptySolve==true)
-          GetOStream(Warnings0, 0) << "WARNING:  no coarse grid solver" << std::endl;
+          GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
       } else {
         //on an intermediate level
         RCP<Level> Coarse = Levels_[startLevel+1];
@@ -418,7 +417,7 @@ public:
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
         } else {
-          GetOStream(Errors, 0) << "Error: Fine = " <<  startLevel << ": No Smoother!" << std::endl;
+          GetOStream(Errors, 0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
         }
 
         RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
@@ -456,7 +455,7 @@ public:
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
           postSmoo->Apply(X, B, false);
         } else {
-          GetOStream(Errors,0) << "Error: Fine = " <<  startLevel << ": No Smoother!" << std::endl;
+          GetOStream(Errors,0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
         }
       }
       zeroGuess=false;
@@ -483,5 +482,5 @@ private:
 #define MUELU_HIERARCHY_SHORT
 
 #endif //ifndef MUELU_HIERARCHY_HPP
-// TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
 
+// TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).

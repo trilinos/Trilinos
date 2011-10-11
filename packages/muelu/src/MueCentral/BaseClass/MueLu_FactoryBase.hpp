@@ -54,3 +54,5 @@ namespace MueLu {
 
 #define MUELU_FACTORYBASE_SHORT
 #endif //ifndef MUELU_FACTORYBASE_HPP
+
+//TODO: use unique ID instead of ptr in Level

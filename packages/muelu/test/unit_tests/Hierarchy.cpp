@@ -114,21 +114,22 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   Hierarchy H;
   RCP<Level> levelOne = H.GetLevel();
-  levelOne->Set("A",A);
+  levelOne->Set("A", A);
 
-  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  RCP<TransPFactory>  RFact = rcp(new TransPFactory(PFact));
-  RAPFactory    AcFact(PFact, RFact);
+  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
+  RCP<TransPFactory> RFact = rcp(new TransPFactory(PFact));
+  RAPFactory         AcFact(PFact, RFact);
 
   out << "Providing both factories to FillHierarchy." << std::endl;
+
   H.FillHierarchy(*PFact,*RFact, AcFact);
+
 } //FillHierarchy_BothFactories
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
-
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -140,17 +141,18 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   RCP<Level> levelTwo = rcp(new Level());
   H.AddLevel(levelTwo);
 
-//   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
-//   TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
-
+  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
+  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
+  
 #ifdef HAVE_MUELU_IFPACK
 
   RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
-  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto) );
-  H.SetSmoothers(*smooFactory);
-  //JGTODO  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
-  //JGTODO  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
+  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto));
+  H.SetSmoothers(*smooFactory, 0, 1);
+  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
+  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
 #endif
+
     }
 } //SetSmoothers
 

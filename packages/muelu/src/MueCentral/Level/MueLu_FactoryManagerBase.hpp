@@ -24,8 +24,7 @@ namespace MueLu {
 
     //! Get
     // Return ref because user also give ref to the Hierarchy.
-    virtual const FactoryBase & GetFactory(const std::string & varName) const = 0;
-
+    const virtual RCP<const FactoryBase> & GetFactory(const std::string & varName) const = 0;
     //@}
 
     // Free temporarily hold data at the end of Hierarchy::Setup()

@@ -16,6 +16,7 @@ namespace MueLu {
   class TwoLevelFactoryBase : public FactoryBase {
 
   public:
+
     //@{ Constructors/Destructors.
 
     //! Constructor.
@@ -23,6 +24,7 @@ namespace MueLu {
 
     //! Destructor.
     virtual ~TwoLevelFactoryBase() {}
+
     //@}
 
     //! Input
@@ -30,24 +32,25 @@ namespace MueLu {
 
     virtual void DeclareInput(Level &fineLevel, Level &coarseLevel) const = 0;
 
+    //!
+    virtual void callDeclareInput(Level & requestedLevel) const {
+      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
+      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+    }
+
     //@}
 
     //@{
+
     //! @name Build methods.
 
     //! Build an object with this factory.
     virtual void Build(Level & fineLevel, Level & coarseLevel) const = 0;
 
     //!
-    virtual void NewBuild(Level & requestedLevel) const {
-      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "");
+    virtual void NewBuild(Level & requestedLevel) const { //TODO: rename callBuild
+      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
-    }
-
-    //!
-    virtual void callDeclareInput(Level & requestedLevel) const {
-      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "");
-      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //@}

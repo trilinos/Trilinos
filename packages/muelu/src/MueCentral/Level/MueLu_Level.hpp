@@ -176,6 +176,8 @@ public:
   template <class T>
   T & Get(const std::string& ename, const FactoryBase* factory)
   {
+    //std::cout << "Level::Get(): " << ename << std::endl;
+
     // if no generating factory given, use FactoryManager
     if (factory == NULL)
     {
@@ -550,14 +552,14 @@ private:
   const FactoryBase* GetFactoryPtr(const std::string& varname) const
   {
     TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): no FactoryManager");
-    return &(factoryManager_->GetFactory(varname));
+    return factoryManager_->GetFactory(varname).get();
   }
 
 
   //! Get default factory.
   const FactoryBase & GetFactory(const std::string& varname) {
     TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): no FactoryManager");
-    return factoryManager_->GetFactory(varname);
+    return *factoryManager_->GetFactory(varname);
   }
 
   enum RequestMode { REQUEST, RELEASE, UNDEF };

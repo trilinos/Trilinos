@@ -1,79 +1,67 @@
-/*
- * MueLu_NoFactory.hpp
- *
- *  Created on: Sep 13, 2011
- *      Author: wiesner
- */
-
-#ifndef MUELU_NOFACTORY_HPP_
-#define MUELU_NOFACTORY_HPP_
+#ifndef MUELU_NOFACTORY_HPP
+#define MUELU_NOFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_FactoryBase.hpp"
 
-namespace MueLu
-{
-class Level;
+namespace MueLu {
 
-/*!
-      @class NoFactory class.
-      @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
- */
-class NoFactory : public SingleLevelFactoryBase {
-private:
-  static RCP<NoFactory> UserDefined; // static NoFactory instance for user defined "factories"
+  class Level;
+  
+  /*!
+    @class NoFactory class.
+    @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
 
-  //! Constructor.
-  NoFactory() {}
+    Use Singleton pattern.
+  */
+  class NoFactory : public FactoryBase {
 
-public:
-  //@{ Destructor.
+    //! Constructor.
+    NoFactory() { }
 
+  public:
 
-  //! Destructor.
-  virtual ~NoFactory() { /*NoFactory::UserDefined = Teuchos::null;*/ }
-  //@}
+    //! Destructor.
+    virtual ~NoFactory() { }
 
-  //! Input
-  //@{
-
-  void DeclareInput(Level &currentLevel) const { }
-
-  //@}
-
-  //@{
-  //! @name Build methods.
-
-  //! Build. The NoFactory has no support for a Build routine. throw error
-  void Build(Level & currentLevel) const
-  {
-    TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "NoFactory::Build(): the Build method of NoFactory cannot be called.");
-  }
-
-  //!
-  void NewBuild(Level & requestedLevel) const {
-    return Build(requestedLevel);
-  }
-
-  //!
-  void callDeclareInput(Level & requestedLevel) const {
-    DeclareInput(requestedLevel); }
-
-  static const MueLu::NoFactory* get() {
-    if(NoFactory::UserDefined == Teuchos::null)
-    {
-      NoFactory::UserDefined = rcp(new NoFactory());
-      return NoFactory::UserDefined.get();
+    //! Implementation of FactoryBase interface
+    //{@
+    
+    //!
+    void NewBuild(Level & requestedLevel) const {  
+      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
     }
-    else
-      return MueLu::NoFactory::UserDefined.get();
-  }
 
-  typedef const NoFactory* (*ptrGetInstance)();
+    //!
+    void callDeclareInput(Level & requestedLevel) const {  }
 
-}; // end NoFactory
+    //@}
+    
+    //! Static Get() functions
+    //{@
+    
+    //! 
+    static const RCP<const NoFactory> getRCP() {
+      if(noFactory_ == Teuchos::null) {
+	noFactory_ = rcp(new NoFactory());
+      }
 
-} // end namespace MueLu
+      return noFactory_;
+    }
+
+    //! 
+    static const NoFactory* get() {
+      return getRCP().get();
+    }
+
+    //@}
+
+  private:
+    static RCP<const NoFactory> noFactory_; // static NoFactory instance for user defined "factories"
+
+  }; // class NoFactory
+
+} // namespace MueLu
 
 #endif
