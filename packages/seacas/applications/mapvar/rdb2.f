@@ -77,7 +77,7 @@ c Only check element types.
 c
       IF (TYP(1:3) .NE. TYPA(1:3))CALL ERROR('RDB2','ELEMENT TYPE 
      &  MISMATCH - MESH-B DOES NOT MATCH MESH-A','ELEMENT BLOCK',
-     &  IDBLKA,' ',0,' ',' ',1)
+     &  IDBLKA,' ',0,'NOTE: THIS IS ONLY A WARNING',' ',0)
 C
 C
       CALL EXGELC(NTP3EX,IDBLKB,ICONB(1,1),IERR)
