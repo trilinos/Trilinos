@@ -8,6 +8,8 @@
 #ifndef MUELU_PGPFACTORY_HPP_
 #define MUELU_PGPFACTORY_HPP_
 
+#undef OLD
+
 #include <Teuchos_TestForException.hpp>
 
 #include <Xpetra_Map.hpp>
@@ -137,8 +139,6 @@ public:
     optimizeStorage=false;
     Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
     Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
-
-    //GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
     /////////////////// calculate local damping factors omega
     //Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
@@ -297,7 +297,6 @@ public:
     }
 
     /////////////////// transform ColBasedOmegas to row based omegas (local ids)
-    //Teuchos::ArrayRCP< Scalar > RowBasedOmegas = Teuchos::null;
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
         TransformCol2RowBasedOmegas(ColBasedOmegas, colbasedomegamap, DinvAPtent);
 
@@ -413,8 +412,6 @@ public:
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
 
-    //RowBasedOmega_data_ret = RowBasedOmega_data;
-    //return RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
     return RowBasedOmegas;
   }
 
@@ -536,7 +533,7 @@ private:
   //! @name helper function for allreducing a Xpetra::Map
   //@{
 
-  int FindMyPos(size_t nummyelements, const Teuchos::Comm<int>& comm) const
+  GlobalOrdinal FindMyPos(size_t nummyelements, const Teuchos::Comm<int>& comm) const
   {
     const int myrank = comm.getRank();
     const int numproc = comm.getSize();
@@ -552,7 +549,7 @@ private:
 
   void reduceAllXpetraMap(Teuchos::Array<GlobalOrdinal>& rredundant, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
-    const int mynodepos = FindMyPos(map.getNodeNumElements(), *(map.getComm()));
+    const GlobalOrdinal mynodepos = FindMyPos(map.getNodeNumElements(), *(map.getComm()));
 
     std::vector<GlobalOrdinal> sredundant(map.getGlobalNumElements(),0);
 
