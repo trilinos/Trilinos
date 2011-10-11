@@ -5,6 +5,7 @@ import os
 from string import Template
 from ConfigParser import SafeConfigParser
 from XpetraLib import *
+from XpetraLibConfig import *
 
 
 def buildFuncLineInterface( functionNode ):
@@ -48,7 +49,7 @@ def buildFuncLineInterface( functionNode ):
     return descStr + declStr + "\n" + "\n"
 ####
 
-xml_dir = '../../../../packages/tpetra/doc/xml/'
+xml_dir = trilinosRoot_dir + '/packages/tpetra/doc/xml/'
 conf_dir = 'interfaces/conf/'
 tmpl_dir = 'interfaces/tmpl/'
 out_dir = '../src/'
