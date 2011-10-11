@@ -29,6 +29,12 @@ class IntegrationControlStrategyBase
 {
 public:
 
+  /** \brief Return if this object can handle and repond to failed time steps.
+   *
+   * Default implementation returns false.
+   */
+  virtual bool handlesFailedTimeSteps() const { return false; }
+
   /** \brief Clone this integration control object if supported .
    *
    * Here, the cloned object just has to have the control information copied,
@@ -86,6 +92,34 @@ public:
     const StepControlInfo<Scalar> &stepCtrlInfoLast,
     const int timeStepIter
     ) = 0;
+
+  /** \brief Inform of a failed time step.
+   *
+   * \param stepper [in] The stepper object after the failed time step.
+   *
+   * \param stepCtrlInfoLast [in] Same as passed into last call to
+   * getNextStepControlInfo().
+   *
+   * \param timeStepIter [in] Same as passed into last call to
+   * getNextStepControlInfo().
+   *
+   * \param stepControlInfo [in] Value returned from last call to
+   * getNextStepControlInfo().
+   *
+   * \returns true if a new timestep can be suggested, false if not.
+   *
+   * \precondition this->handlesFailedTimeSteps()==true
+   *
+   * Default implementation is to ignore this.
+   */
+  virtual bool resetForFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfoLast,
+    const int timeStepIter,
+    const StepControlInfo<Scalar> &stepCtrlInfo
+    )
+    { return false; }
+
 
 };
 

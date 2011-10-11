@@ -647,9 +647,12 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       break; // Exit the loop immediately!
     }
 
-    if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
+    if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) ) {
       *out << "\nTake step:  current_stepper_t = " << currStepperTimeRange.upper()
            << ", currTimeStepIndex = " << currTimeStepIndex_ << endl;
+    }
+
+    OSTab tab(out);
 
     //
     // A) Reinitialize if a hard breakpoint was reached on the last time step
@@ -671,166 +674,218 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
     }
 
     //
-    // B) Get the trial step control info
+    // B) Find an acceptable time step in a loop
+    //
+    // NOTE: Look for continue statements to iterate the loop!
     //
 
-    StepControlInfo<Scalar> trialStepCtrlInfo;
-    {
+    bool foundAcceptableTimeStep = false;
+    StepControlInfo<Scalar> stepCtrlInfo;
+
+    // \todo Limit the maximum number of trial time steps to avoid an infinite
+    // loop!
+
+    while (!foundAcceptableTimeStep) {
+
+      //
+      // B.1) Get the trial step control info
+      //
+
+      StepControlInfo<Scalar> trialStepCtrlInfo;
+      {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
+        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
 #endif
-      if (!is_null(integrationControlStrategy_)) {
-        // Let an external strategy object determine the step size and type.
-        // Note that any breakpoint info is also related through this call.
-        trialStepCtrlInfo = integrationControlStrategy_->getNextStepControlInfo(
-          *stepper_, stepCtrlInfoLast_, currTimeStepIndex_
-          );
-      }
-      else {
-        // Take a variable step if we have no control strategy
-        trialStepCtrlInfo.stepType = STEP_TYPE_VARIABLE;
-        trialStepCtrlInfo.stepSize = NL::max();
-      }
-    }
-
-    // Print the initial trial step
-    if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-      *out << "\nTrial step:\n";
-      OSTab tab(out);
-      *out << trialStepCtrlInfo;
-    }
-
-    // Halt immediately if we where told to do so
-    if (trialStepCtrlInfo.stepSize < ST::zero()) {
-      if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
-        *out
-          << "\n***"
-          << "\n*** NOTICE: The IntegrationControlStrategy object return stepSize < 0.0, halting time integration!"
-          << "\n***\n";
-      return_val = false;
-      break; // Exit the loop immediately!
-    }
-
-    // Make sure we don't step past the final time if asked not to
-    bool updatedTrialStepCtrlInfo = false;
-    {
-      const Scalar finalTime = integrationTimeDomain_.upper();
-      if (landOnFinalTime_ && trialStepCtrlInfo.stepSize + currStepperTimeRange.upper() > finalTime) {
-        if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-          *out << "\nCutting trial step to avoid stepping past final time ...\n";
-        trialStepCtrlInfo.stepSize = finalTime - currStepperTimeRange.upper();
-        updatedTrialStepCtrlInfo = true;
-      }
-    }
-    
-    // Print the modified trial step
-    if ( updatedTrialStepCtrlInfo
-      && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
-    {
-      *out << "\nUpdated trial step:\n";
-      OSTab tab(out);
-      *out << trialStepCtrlInfo;
-    }
-
-    //
-    // C) Take the step
-    //
-
-    // Print step type and size
-    if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-      if (trialStepCtrlInfo.stepType == STEP_TYPE_VARIABLE)
-        *out << "\nTaking a variable time step with max step size = "
-             << trialStepCtrlInfo.stepSize << " ....\n";
-      else
-        *out << "\nTaking a fixed time step of size = "
-             << trialStepCtrlInfo.stepSize << " ....\n";
-    }
-
-    // Take step
-    Scalar stepSizeTaken;
-    {
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
-#endif
-      stepSizeTaken = stepper_->takeStep(
-        trialStepCtrlInfo.stepSize, trialStepCtrlInfo.stepType
-        );
-    }
-
-    // Validate step taken
-    if (trialStepCtrlInfo.stepType == STEP_TYPE_VARIABLE) {
-      TEST_FOR_EXCEPTION(
-        stepSizeTaken < ST::zero(), std::logic_error,
-        "Error, stepper took negative step of dt = " << stepSizeTaken << "!\n"
-        );
-      TEST_FOR_EXCEPTION(
-        stepSizeTaken > trialStepCtrlInfo.stepSize, std::logic_error,
-        "Error, stepper took step of dt = " << stepSizeTaken
-        << " > max step size of = " << trialStepCtrlInfo.stepSize << "!\n"
-        );
-    }
-    else { // STEP_TYPE_FIXED
-      TEST_FOR_EXCEPTION(
-        stepSizeTaken != trialStepCtrlInfo.stepSize, std::logic_error,
-        "Error, stepper took step of dt = " << stepSizeTaken 
-        << " when asked to take step of dt = " << trialStepCtrlInfo.stepSize << "\n"
-        );
-    }
-
-    // Update info about this step
-    currStepperTimeRange = stepper_->getTimeRange();
-    const StepControlInfo<Scalar> stepCtrlInfo =
-      stepCtrlInfoTaken(trialStepCtrlInfo,stepSizeTaken);
-
-    // Print the step actually taken 
-    if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-      *out << "\nStep actually taken:\n";
-      OSTab tab(out);
-      *out << stepCtrlInfo;
-    }
-
-    // Append the trailing interpolation buffer (if defined)
-    if (!is_null(trailingInterpBuffer_)) {
-      interpBufferAppender_->append(*stepper_,currStepperTimeRange,
-        trailingInterpBuffer_.ptr() );
-    }
-
-    //
-    // D) Output info about step
-    //
-
-    {
-
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
-#endif
-      
-      // Print our own brief output
-      if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-        StepStatus<Scalar> stepStatus = stepper_->getStepStatus();
-        *out << "\nTime point reached = " << stepStatus.time << endl;
-        *out << "\nstepStatus:\n" << stepStatus;
-        if ( includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME) ) {
-          RCP<const Thyra::VectorBase<Scalar> >
-            solution = stepStatus.solution,
-            solutionDot = stepStatus.solutionDot;
-          if (!is_null(solution))
-            *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
-          if (!is_null(solutionDot))
-            *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
+        if (!is_null(integrationControlStrategy_)) {
+          // Let an external strategy object determine the step size and type.
+          // Note that any breakpoint info is also related through this call.
+          trialStepCtrlInfo = integrationControlStrategy_->getNextStepControlInfo(
+            *stepper_, stepCtrlInfoLast_, currTimeStepIndex_
+            );
+        }
+        else {
+          // Take a variable step if we have no control strategy
+          trialStepCtrlInfo.stepType = STEP_TYPE_VARIABLE;
+          trialStepCtrlInfo.stepSize = NL::max();
         }
       }
-      
-      // Output to the observer
-      if (!is_null(integrationObserver_))
-        integrationObserver_->observeCompletedTimeStep(
-          *stepper_, stepCtrlInfo, currTimeStepIndex_
-          );
 
-    }
+      // Print the initial trial step
+      if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+        *out << "\nTrial step:\n";
+        OSTab tab2(out);
+        *out << trialStepCtrlInfo;
+      }
+
+      // Halt immediately if we where told to do so
+      if (trialStepCtrlInfo.stepSize < ST::zero()) {
+        if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
+          *out
+            << "\n***"
+            << "\n*** NOTICE: The IntegrationControlStrategy object return stepSize < 0.0, halting time integration!"
+            << "\n***\n";
+        return_val = false;
+        break; // Exit the loop immediately!
+      }
+
+      // Make sure we don't step past the final time if asked not to
+      bool updatedTrialStepCtrlInfo = false;
+      {
+        const Scalar finalTime = integrationTimeDomain_.upper();
+        if (landOnFinalTime_ && trialStepCtrlInfo.stepSize + currStepperTimeRange.upper() > finalTime) {
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
+            *out << "\nCutting trial step to avoid stepping past final time ...\n";
+          trialStepCtrlInfo.stepSize = finalTime - currStepperTimeRange.upper();
+          updatedTrialStepCtrlInfo = true;
+        }
+      }
+    
+      // Print the modified trial step
+      if ( updatedTrialStepCtrlInfo
+        && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
+      {
+        *out << "\nUpdated trial step:\n";
+        OSTab tab2(out);
+        *out << trialStepCtrlInfo;
+      }
+
+      //
+      // B.2) Take the step
+      //
+
+      // Print step type and size
+      if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+        if (trialStepCtrlInfo.stepType == STEP_TYPE_VARIABLE)
+          *out << "\nTaking a variable time step with max step size = "
+               << trialStepCtrlInfo.stepSize << " ....\n";
+        else
+          *out << "\nTaking a fixed time step of size = "
+               << trialStepCtrlInfo.stepSize << " ....\n";
+      }
+
+      // Take step
+      Scalar stepSizeTaken;
+      {
+#ifdef ENABLE_RYTHMOS_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
+#endif
+        stepSizeTaken = stepper_->takeStep(
+          trialStepCtrlInfo.stepSize, trialStepCtrlInfo.stepType
+          );
+      }
+
+      // Update info about this step
+      currStepperTimeRange = stepper_->getTimeRange();
+      stepCtrlInfo = stepCtrlInfoTaken(trialStepCtrlInfo,stepSizeTaken);
+
+      // Print the step actually taken 
+      if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+        *out << "\nStep actually taken:\n";
+        OSTab tab2(out);
+        *out << stepCtrlInfo;
+      }
+
+      // Determine if the timestep failed
+      const bool timeStepFailed = (stepCtrlInfo.stepSize <= ST::zero());
+      if (timeStepFailed && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
+        *out << "\nWARNING: timeStep = "<<trialStepCtrlInfo.stepSize<<" failed!\n";
+      }
+
+      // Allow the IntegrationControlStrategy object to suggest another
+      // timestep when a timestep fails.
+      if (timeStepFailed && integrationControlStrategy_->handlesFailedTimeSteps())
+      {
+        // See if a new timestep can be suggested
+        if (integrationControlStrategy_->resetForFailedTimeStep(
+              *stepper_, stepCtrlInfoLast_, currTimeStepIndex_, trialStepCtrlInfo)
+          )
+        {
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+            *out << "\nThe IntegrationControlStrategy object indicated that"
+                 << " it would like to suggest another timestep!\n";
+          }
+          // Skip the rest of the code in the loop and back to the top to try
+          // another timestep!  Note: By doing this we skip the statement that
+          // sets
+          continue;
+        }
+        else
+        {
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+            *out << "\nThe IntegrationControlStrategy object could not suggest"
+                 << " a better time step!  Allowing to fail the time step!\n";
+          }
+          // Fall through to the failure checking!
+        }
+      }
+
+      // Validate step taken
+      if (trialStepCtrlInfo.stepType == STEP_TYPE_VARIABLE) {
+        TEST_FOR_EXCEPTION(
+          stepSizeTaken < ST::zero(), std::logic_error,
+          "Error, stepper took negative step of dt = " << stepSizeTaken << "!\n"
+          );
+        TEST_FOR_EXCEPTION(
+          stepSizeTaken > trialStepCtrlInfo.stepSize, std::logic_error,
+          "Error, stepper took step of dt = " << stepSizeTaken
+          << " > max step size of = " << trialStepCtrlInfo.stepSize << "!\n"
+          );
+      }
+      else { // STEP_TYPE_FIXED
+        TEST_FOR_EXCEPTION(
+          stepSizeTaken != trialStepCtrlInfo.stepSize, std::logic_error,
+          "Error, stepper took step of dt = " << stepSizeTaken 
+          << " when asked to take step of dt = " << trialStepCtrlInfo.stepSize << "\n"
+          );
+      }
+
+      // If we get here, the timestep is fine and is accepted!
+      foundAcceptableTimeStep = true;
+
+      // Append the trailing interpolation buffer (if defined)
+      if (!is_null(trailingInterpBuffer_)) {
+        interpBufferAppender_->append(*stepper_,currStepperTimeRange,
+          trailingInterpBuffer_.ptr() );
+      }
+
+      //
+      // B.3) Output info about step
+      //
+
+      {
+
+#ifdef ENABLE_RYTHMOS_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
+#endif
+      
+        // Print our own brief output
+        if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+          StepStatus<Scalar> stepStatus = stepper_->getStepStatus();
+          *out << "\nTime point reached = " << stepStatus.time << endl;
+          *out << "\nstepStatus:\n" << stepStatus;
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME) ) {
+            RCP<const Thyra::VectorBase<Scalar> >
+              solution = stepStatus.solution,
+              solutionDot = stepStatus.solutionDot;
+            if (!is_null(solution))
+              *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
+            if (!is_null(solutionDot))
+              *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
+          }
+        }
+      
+        // Output to the observer
+        if (!is_null(integrationObserver_))
+          integrationObserver_->observeCompletedTimeStep(
+            *stepper_, stepCtrlInfo, currTimeStepIndex_
+            );
+
+      }
+
+    } // end loop to find a valid time step
 
     //
-    // E) Update info for next time step
+    // C) Update info for next time step
     //
 
     stepCtrlInfoLast_ = stepCtrlInfo;

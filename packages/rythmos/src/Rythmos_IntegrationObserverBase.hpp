@@ -51,6 +51,12 @@ public:
     // ToDo: Pass in the initial condition to the observer
     ) = 0;
 
+  // ToDo: add observeStartTimeIntegration(stepper)
+
+  // ToDo: add observeEndTimeIntegration(stepper)
+
+  // ToDo: add observeStartTimeStep(stepper, ...)
+
   /** \brief Observer an integration step.
    *
    * \param stepper [in] The stepper object that was just stepped forward once
@@ -87,6 +93,8 @@ public:
     const StepControlInfo<Scalar> &stepCtrlInfo,
     const int timeStepIter
     ) = 0;
+
+  // ToDo: add observeFailedTimeStep(stepper, ...)
 
 };
 
