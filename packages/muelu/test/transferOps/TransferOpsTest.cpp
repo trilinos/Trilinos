@@ -41,6 +41,15 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 
+// Belos stuff
+#ifdef HAVE_MUELU_BELOS
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#endif
+
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
@@ -141,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //out->setOutputToRootOnly(0);
+  out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   // Timing
@@ -263,6 +272,9 @@ int main(int argc, char *argv[]) {
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
 
+  // MueLu setup
+  mtime.push_back(M.getNewTimer("MueLu Setup"));
+  mtime.back()->start(); // start time measurement
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize((GO) maxCoarseSize);;
@@ -356,7 +368,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
-
+  mtime.back()->stop(); // stop time measurement for MueLu setup
   H->SetCoarsestSolver(*SmooFact,MueLu::PRE);
 
   mtime.back()->stop();
@@ -367,16 +379,104 @@ int main(int argc, char *argv[]) {
   /* SOLVE PROBLEM                                                                  */
   /**********************************************************************************/
 
-  RCP<MultiVector> x = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
 
   // Use AMG directly as an iterative method
   {
-    x->putScalar( (SC) 0.0);
+    X->putScalar( (SC) 0.0);
 
-    H->Iterate(*rhs,its,*x);
+    H->Iterate(*rhs,its,*X);
 
     //x->describe(*out,Teuchos::VERB_EXTREME);
   }
+
+  // use MueLu as preconditioner within Belos
+  if(amgAsPrecond && lib == Xpetra::UseTpetra)   // TODO: MueLu as preconditioner in Belos only works with Tpetra!
+  {
+#if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
+    X->putScalar( (SC) 0.0);
+
+    int numrhs = 1;
+    RCP<MultiVector> resid = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(map,numrhs);
+
+    typedef ST::magnitudeType         MT;
+    typedef Tpetra::MultiVector<SC>   MV;
+    typedef Belos::OperatorT<MV>      OP;
+
+    // Vectors
+    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(X);
+    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(rhs);
+    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
+
+    // construct Belos LinearProblem
+    RCP<OP> belosOp      = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );   // Xpetra::Op -> Belos::Op
+    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H)); // Hierarchy  -> prec
+
+    RCP<Belos::LinearProblem<double,MV,OP> > problem = Teuchos::rcp( new Belos::LinearProblem<double,MV,OP>(belosOp, belosX, belosRHS) );
+    problem->setLeftPrec( belosPrec );
+
+    bool set = problem->setProblem();
+    if (set == false) {
+      std::cout << std::endl << "ERROR: Belos::LinearProblem failed to set up correctly!" << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    // create an iterative solver manager
+    int maxiters = 100;
+    double tol = 1e-4;
+    Teuchos::ParameterList belosList;
+    belosList.set("Maximum Iterations", maxiters);
+    belosList.set("Convergence Tolerance", tol);
+    belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+
+    RCP< Belos::SolverManager<double,MV,OP> > solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double, MV, OP>(problem, rcp(&belosList,false)));
+
+    // perform solve
+    Belos::ReturnType ret;
+    bool badRes = false;
+
+    try{
+      // Perform solve
+      mtime.push_back(M.getNewTimer("Belos Solve"));
+      mtime.back()->start();
+      ret = solver->solve();
+      mtime.back()->stop();
+
+      // Get the number of iterations for this solve.
+      int numIters = solver->getNumIters();
+      *out << "Number of iterations performed for this solve: " << numIters << std::endl;
+
+      // Compute actual residuals.
+      std::vector<double> actual_resids( numrhs ); //TODO: double?
+      std::vector<double> rhs_norm( numrhs );
+
+      typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
+      typedef Belos::MultiVecTraits<SC,MV>     MVT;
+
+      OPT::Apply( *belosOp, *belosX, *belosResid );
+      MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
+      MVT::MvNorm( *belosResid, actual_resids );
+      MVT::MvNorm( *belosRHS, rhs_norm );
+      *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+      for ( int i=0; i<numrhs; i++) {
+        double actRes = actual_resids[i]/rhs_norm[i];
+        *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+        if (actRes > tol) { badRes = true; }
+      }
+    } //try
+    catch(...) {
+      *out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+    }
+
+    // Check convergence
+    if (ret!=Belos::Converged || badRes) {
+      *out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    } else
+      *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+
+#endif
+  }
+
 
   // Final summaries - this eats memory like a hot dog eating contest
   // M.summarize();
