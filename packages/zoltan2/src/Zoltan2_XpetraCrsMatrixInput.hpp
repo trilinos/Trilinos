@@ -20,6 +20,21 @@
 
 namespace Zoltan2 {
 
+// Specialization of InputTraits for Xpetra matrices.
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+};
+
 /*! Zoltan2::XpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
 
@@ -30,20 +45,20 @@ namespace Zoltan2 {
 
 */
 
-template <Z2CLASS_TEMPLATE>
-class XpetraCrsMatrixInput : public MatrixInput<Z2PARAM_TEMPLATE> {
-private:
-
-  typedef Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> xmatrixType;
-
-  RCP<const xmatrixType > matrix_;
-  RCP<const Xpetra::Map<LID, GID, Node> > rowMap_;
-  RCP<const Xpetra::Map<LID, GID, Node> > colMap_;
-  LID base_;
-  ArrayRCP<LNO> offset_;
-  ArrayRCP<GNO> columnIds_;
-
+template <typename User>
+class XpetraCrsMatrixInput : public MatrixInput<User> {
 public:
+
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
+
+  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrixType;
+
+  enum InputAdapterType inputAdapterType() {return XpetraCrsMatrixAdapterType;}
 
   /*! Name of input adapter type
    */
@@ -66,16 +81,16 @@ public:
    size_t nrows = matrix_->getNodeNumRows();
    size_t nnz = matrix_->getNodeNumEntries();
 
-    offset_.resize(nrows+1, LNO(0));
+    offset_.resize(nrows+1, lid_t(0));
     columnIds_.resize(nnz);
-    ArrayView<const LNO> indices;
-    ArrayView<const Scalar> nzs;
-    LNO next = 0;
-    for (unsigned i=0; i < nrows; i++){
-      LNO row = i + base_;
-      LNO nnz = matrix_->getNumEntriesInLocalRow(row);
+    ArrayView<const lid_t> indices;
+    ArrayView<const scalar_t> nzs;
+    lid_t next = 0;
+    for (size_t i=0; i < nrows; i++){
+      lid_t row = i + base_;
+      lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
       matrix_->getLocalRowView(row, indices, nzs);
-      for (LNO j=0; j < nnz; j++){
+      for (lid_t j=0; j < nnz; j++){
         // TODO - this will be slow
         //   Is it possible that global columns ids might be stored in order?
         columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
@@ -129,9 +144,9 @@ public:
 
   /*! Get copy of matrix entries on local process
    */
-  void getRowListCopy(std::vector<GID> &rowIds,
-    std::vector<LID> &localIds, std::vector<LNO> &offsets,
-    std::vector<GID> &colIds) const
+  void getRowListCopy(std::vector<gid_t> &rowIds,
+    std::vector<lid_t> &localIds, std::vector<lno_t> &offsets,
+    std::vector<gid_t> &colIds) const
   {
     size_t nrows = getLocalNumRows();
     size_t nnz = matrix_->getNodeNumEntries();
@@ -143,17 +158,17 @@ public:
     colIds.resize(nnz);
     localIds.clear();   // consecutive integer IDs implied
 
-    Teuchos::Array<LNO> indices(maxrow);
-    Teuchos::Array<Scalar> nzs(maxrow);
+    Teuchos::Array<lno_t> indices(maxrow);
+    Teuchos::Array<scalar_t> nzs(maxrow);
 
     offsets[0] = 0;
 
-    for (unsigned i=0; i < nrows; i++){
-      LNO row = i + base_;
-      LNO nnz = matrix_->getNumEntriesInLocalRow(row);
+    for (size_t i=0; i < nrows; i++){
+      lno_t row = i + base_;
+      lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
       size_t n;
       matrix_->getLocalRowCopy(row, indices.view(0,nnz), nzs.view(0,nnz), n);
-      for (LNO j=0; j < nnz; j++){
+      for (lno_t j=0; j < nnz; j++){
         colIds[next++] = colMap_->getGlobalElement(indices[j]);
       }
       rowIds[i] = rowMap_->getGlobalElement(row);
@@ -184,13 +199,15 @@ public:
 
      \return  The number rows in the rowIds list is returned.
    */
+  //lno_t getRowListView(gid_t *&rowIds, lid_t *&localIds,
+  //  lno_t *&rowSize, gid_t *& colIds) const
 
-  size_t getRowListView(const GID *&rowIds, const LID *&localIds,
-    const LNO *&offsets, const GID *& colIds) const
+  size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds,
+    const lid_t *&offsets, const gid_t *& colIds) const
   {
     size_t nrows = getLocalNumRows();
 
-    ArrayView<const GID> rowView = rowMap_->getNodeElementList();
+    ArrayView<const gid_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
    
     localIds = NULL;   // Implies consecutive integers
@@ -199,6 +216,15 @@ public:
     colIds = columnIds_.getRawPtr();
     return nrows;
   }
+
+private:
+
+  RCP<const xmatrixType > matrix_;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
+  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
+  lno_t base_;
+  ArrayRCP<lno_t> offset_;
+  ArrayRCP<gno_t> columnIds_;
 };
   
 }  //namespace Zoltan2

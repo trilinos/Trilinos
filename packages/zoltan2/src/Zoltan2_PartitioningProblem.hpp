@@ -3,8 +3,10 @@
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
-#include <Zoltan2_PartitioningAlgorithms.hpp>
+// #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+
+#include <Zoltan2_GraphModel.hpp>
 
 /*! \file Zoltan2_PartitioningProblem.hpp
 
@@ -12,31 +14,42 @@
   the Problem class.
 */
 
+using Teuchos::rcp_dynamic_cast;
+
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-template<Z2CLASS_TEMPLATE>
-class PartitioningProblem : public Problem<Z2PARAM_TEMPLATE>
+template<typename User>
+class PartitioningProblem : public Problem<User>
 {
 protected:
   void createPartitioningProblem();
 
-  RCP<PartitioningSolution<Z2PARAM_TEMPLATE> > solution_;
+  RCP<PartitioningSolution<User> > solution_;
 
 public:
 
   // Destructor
-  virtual ~PartitioningProblem() {}
+  virtual ~PartitioningProblem() {};
 
+#if 0  // KDDKDD Don't know how to use shortcut with User template
   //! Constructor with Tpetra Matrix interface.
-  PartitioningProblem(
-    Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
+  PartitioningProblem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
     ParameterList &p
-  ) : Problem<Z2PARAM_TEMPLATE>(A, p) 
+  ) : Problem<User>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
   }
+#endif
+
+  //! Constructor with InputAdapter Interface
+  PartitioningProblem(InputAdapter<User> &A, Teuchos::ParameterList &p) 
+                      : Problem<User>(A, p) 
+  {
+    HELLO;
+    createPartitioningProblem();
+  };
 
   // Other methods
   virtual void solve();
@@ -45,20 +58,20 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::solve()
+template <typename User>
+void PartitioningProblem<User>::solve()
 {
   HELLO;
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  AlgScotch<Z2PARAM_TEMPLATE> alg(this->model_, this->solution_, this->params_);
+  // AlgScotch<User> alg(this->model_, this->solution_, this->params_);
 }
 
 ////////////////////////////////////////////////////////////////////////
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::redistribute()
+template <typename User>
+void PartitioningProblem<User>::redistribute()
 {
   HELLO;
 }
@@ -69,8 +82,8 @@ void PartitioningProblem<Z2PARAM_TEMPLATE>::redistribute()
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
 
-template <Z2FN_TEMPLATE>
-void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
+template <typename User>
+void PartitioningProblem<User>::createPartitioningProblem()
 {
   HELLO;
   cout << __func__ << " input adapter type " 
@@ -88,22 +101,49 @@ void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
   // TODO: I will need help from Lee Ann understanding how to use the parameter
   // functionality in Zoltan2.  For now, I will set a few parameters and
   // continue computing.
-  ModelType model = GraphModelType;
+  ModelType modelType = GraphModelType;
 
   // Select Model based on parameters and InputAdapter type
-  switch (model) {
+  switch (modelType) {
+
   case GraphModelType:
+
     switch (adapterType) {
-    case MatrixAdapterType:
+
+    case XpetraCrsMatrixAdapterType: {
+      cout << __func__ << "Xpetra matrix adapter switch" << endl;
+
+      GraphModel<XpetraCrsMatrixInput<User> > *model =
+         new GraphModel<XpetraCrsMatrixInput<User> >(
+                        rcp_dynamic_cast<const XpetraCrsMatrixInput<User> >
+                                        (this->inputAdapter_, true),
+                        this->comm_,
+                        this->env_);
+
+      //KDDKDD NOT WORKING YET RCP<GraphModel<XpetraCrsMatrixInput<User> > > rcpmodel = rcp(model);
+
+      //KDDKDD NOT WORKING YET this->model_ = rcp_dynamic_cast<GraphModel<InputAdapter<User> > >(rcpmodel, true);
+                       
+      // KDDKDD Question:  Not clear on use of RCPs here; compiler complains
+      // KDDKDD that it cannot do conversions when I use GraphModel and 
+      // KDDKDD XpetraCrsMatrixInput.
+      break;
+    }
+
+    case MatrixAdapterType: {
       cout << __func__ << " Matrix adapter switch" << endl;
-      //TODO model_ = 
-      //TODO    new GraphModel<MatrixInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
+      GraphModel<MatrixInput<User> > *model = 
+           new GraphModel<MatrixInput<User> >(//KDD No GraphModel 
+                                              //KDD constructor yet.
+                                              //KDD this->inputAdapter_,
+                                              //KDD this->comm_,
+                                              //KDD this->env_
+                                              );
+      //KDDKDD NOT WORKING YET this->model_ = RCP<GraphModel<MatrixInput<User> > >(model);
       break;
+    }
+
     case GraphAdapterType:
-      cout << __func__ << " Graph adapter switch" << endl;
-      //TODO model_ = 
-      //TODO    new GraphModel<GraphInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
-      break;
     case MeshAdapterType:
     case CoordAdapterType:
     case IdAdapterType:
@@ -111,20 +151,24 @@ void PartitioningProblem<Z2PARAM_TEMPLATE>::createPartitioningProblem()
            << " PartitioningProblem not yet implemented for this input adapter "
            << this->inputAdapter_->inputAdapterName() << endl;
       break;
+
     default:
       cout << "Invalid adapter type; this condition should never happen." 
            << endl;
       break;
     }
+
     break;
+
   case HypergraphModelType:
   case GeometryModelType:
   case IdModelType:
-    cout << __func__ << " Model type " << model << " not yet supported." 
+    cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
+
   default:
-    cout << __func__ << " Invalid model" << model << endl;
+    cout << __func__ << " Invalid model" << modelType << endl;
     break;
   }
 }

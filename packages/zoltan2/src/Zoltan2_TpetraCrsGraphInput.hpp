@@ -20,6 +20,19 @@
 
 namespace Zoltan2 {
 
+template <typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef float         scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+};
+
 /*! Zoltan2::TpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Tpetra::CrsGraph data plus weights.
 
@@ -32,15 +45,19 @@ namespace Zoltan2 {
     The template parameter is the weight type.
 */
 
-template<typename LNO, typename GNO, typename LID=LNO, typename GID=GNO, 
-  typename Node=Kokkos::DefaultNode::DefaultNodeType>
-class TpetraCrsGraphInput : 
-  public XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>{
-private:
-  typedef Tpetra::CrsGraph<LNO, GNO, Node> crsGraph;
-  RCP<const crsGraph > ingraph_;
-
+template<typename User>
+class TpetraCrsGraphInput : public XpetraCrsGraphInput<User>
+{
 public:
+
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
+
+  typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> crsGraph;
   /*! Name of input adapter type.
    */
   std::string inputAdapterName()const {return std::string("TpetraCrsGraph");}
@@ -52,8 +69,8 @@ public:
   /*! Constructor
    */
   TpetraCrsGraphInput(const RCP<const crsGraph> graph): 
-      XpetraCrsGraphInput<LNO, GNO, LID, GID, Node>(
-        Teuchos::rcp(new Xpetra::TpetraCrsGraph<LNO, GNO, Node>(
+      XpetraCrsGraphInput<User>(
+        Teuchos::rcp(new Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t>(
           Teuchos::rcp_const_cast<crsGraph>(graph)))) 
   {
     ingraph_ = graph;
@@ -66,6 +83,10 @@ public:
   { 
     return ingraph_;
   }
+
+private:
+  RCP<const crsGraph > ingraph_;
+
 };
 
 } // namespace

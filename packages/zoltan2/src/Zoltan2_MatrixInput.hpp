@@ -27,27 +27,27 @@ namespace Zoltan2 {
     The Matrix accessor methods defined here mimic those of 
     Tpetra::CrsMatrix and Tpetra::Map.
 
-    Scalar: This data type is used for matrix non-zeros
-    LID: the type for the application's local Ids
-    GID: the type for the application's global Ids
-    LNO: the integral type that Zoltan2 will use for local counters.
-    GNO: the integral type that Zoltan2 will use for the global 
-      counts and identifiers.  It needs to be large enough for the
-      problem's number of objects.
+    scalar_t: This data type is used for matrix non-zeros
+    lid_t: the type for the application's local Ids
+    gid_t: the type for the application's global Ids
+    lno_t: the integral type that Zoltan2 will use for local counters.
+    gno_t: the integral type that Zoltan2 will use for the global 
+           counts and identifiers.  It needs to be large enough for the
+           problem's number of objects.
 */
 
-template <Z2CLASS_TEMPLATE>
-  class MatrixInput : public InputAdapter {
+template <typename User>
+  class MatrixInput : public InputAdapter<User> {
 private:
 
 public:
 
-  typedef Scalar scalarType;
-  typedef LID lidType;
-  typedef GID gidType;
-  typedef LNO lnoType;
-  typedef GNO gnoType;
-  typedef Node  nodeType;
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
 
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
@@ -87,9 +87,9 @@ public:
          the non-zeros for each row.
    */
 
-  virtual void getRowListCopy(std::vector<GID> &rowIds, 
-    std::vector<LID> &localIds, std::vector<LNO> &rowSize,
-    std::vector<GID> &colIds) const = 0;
+  virtual void getRowListCopy(std::vector<gid_t> &rowIds, 
+    std::vector<lid_t> &localIds, std::vector<lno_t> &rowSize,
+    std::vector<gid_t> &colIds) const = 0;
 
   /*! Sets pointers to this process' matrix entries.
       If this optional call is defined in the adapter, it can save a memory
@@ -108,8 +108,8 @@ public:
        \return The number of ids in the rowIds list.
    */
 
-  virtual size_t getRowListView(const GID *&rowIds, const LID *&localIds, 
-    const LNO *&offsets, const GID *& colIds) const = 0;
+  virtual size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds, 
+    const lno_t *&offsets, const gid_t *& colIds) const = 0;
 };
   
   

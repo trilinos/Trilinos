@@ -8,6 +8,7 @@
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_TpetraCrsMatrixInput.hpp>
 
 using Teuchos::RCP;
 using namespace std;
@@ -85,9 +86,11 @@ int main(int narg, char** arg)
   params.set("METHOD", "GRAPH");
   params.set("GRAPH_PACKAGE", "PTSCOTCH");
 
+  ////// Create an input adapter for the Tpetra matrix.
+  Zoltan2::TpetraCrsMatrixInput<SparseMatrix> adapter(origMatrix);
+
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<Scalar,z2TestLO,z2TestGO,z2TestLO,z2TestGO,Node>
-                               problem(*origMatrix, params);
+  Zoltan2::PartitioningProblem<SparseMatrix> problem(adapter, params);
   problem.solve();
   problem.redistribute();
 
@@ -104,5 +107,8 @@ int main(int narg, char** arg)
   if (me == 0)
     cout << "Norm of Original matvec prod:  " << origNorm << endl;
 
-  return testReturn;
+  if (testReturn)
+    std::cout << "FAIL" << std::endl;
+  else
+    std::cout << "PASS" << std::endl;
 }

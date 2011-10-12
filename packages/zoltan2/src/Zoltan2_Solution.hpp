@@ -23,7 +23,7 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <Z2CLASS_TEMPLATE>
+template <typename User>
   class Solution
 {
 };
