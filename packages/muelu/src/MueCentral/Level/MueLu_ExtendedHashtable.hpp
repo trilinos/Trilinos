@@ -21,10 +21,11 @@
 // - use factory ID instead of pointer to distinghuish factories
 //
 // QUESTIONS:
-// - can we use an std::map<Tuple<const std::string, const MueLu::FactoryBase*> > instead of the following?
+// - can we use an std::map<Tuple<const std::string, const MueLu::FactoryBase*>, ... > instead?
 // - Teuchos::any vs. Teuchos::ParameterEntry?
 // - Teuchos::map deprecated?? vs. std::map
 // - Teuchos::ConstNonconstObjectContainer?
+// - Can we use an std::map<... , Tuple<counter,factory*> >  instead?
 
 namespace MueLu {
   namespace UTILS {
