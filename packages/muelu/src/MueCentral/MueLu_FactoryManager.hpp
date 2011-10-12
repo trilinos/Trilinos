@@ -39,9 +39,6 @@ namespace MueLu {
       if (PFact  != Teuchos::null) SetFactory("P", PFact);
       if (RFact  != Teuchos::null) SetFactory("R", RFact);
       if (AcFact != Teuchos::null) SetFactory("A", AcFact);
-
-      SetFactory("Smoother",     Teuchos::null); //?
-      SetFactory("CoarseSolver", Teuchos::null);
     }
     
     //! Destructor.
@@ -75,9 +72,10 @@ namespace MueLu {
 
       }	else {
 	  
-        if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-	if (varName == "P")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-        if (varName == "R")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+	//if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
+	if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+ 	if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+	if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 
     	if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
@@ -85,9 +83,6 @@ namespace MueLu {
 
 	if (varName == "PreSmoother")   return GetFactory("Smoother");
 	if (varName == "PostSmoother")  return GetFactory("Smoother");
-
-	// if (varName == "Smoother")      return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp Teuchos::null)));
-	// if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver(xxx)), Teuchos::null)));
 
         TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }

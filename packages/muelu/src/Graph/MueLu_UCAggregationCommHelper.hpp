@@ -58,7 +58,9 @@ namespace MueLu {
       myPID_ = uniqueMap->getComm()->getRank();
     }
 
-    ~UCAggregationCommHelper() { if (!myPID_) std::cout << "ArbitrateAndCommunicate has been called " << numCalls_ << " times" << std::endl;}
+    ~UCAggregationCommHelper() { 
+      // if (!myPID_) std::cout << "ArbitrateAndCommunicate has been called " << numCalls_ << " times" << std::endl;
+    }
 
     inline void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const
     {

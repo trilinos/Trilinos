@@ -16,9 +16,9 @@ namespace MueLuTests {
   {
     Level level;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
-    level.Set("A",A);
+    level.Set("A", A);
 
-    // setup aggregation factory (use default factory for graph)
+    // Setup aggregation factory (use default factory for graph)
     UCAggregationFactory aggFact;
     aggFact.SetMinNodesPerAggregate(3);
     aggFact.SetMaxNeighAlreadySelected(0);
@@ -32,7 +32,7 @@ namespace MueLuTests {
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",&aggFact); // fix me
     level.Release("Aggregates", &aggFact);
     return aggregates;
-  }  //gimmeAggregates
+  }  // gimmeAggregates
 
   TEUCHOS_UNIT_TEST(Aggregates, JustAggregation)
   {

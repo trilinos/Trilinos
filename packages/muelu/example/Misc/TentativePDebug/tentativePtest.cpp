@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
   }
 
   SmootherFactory coarseSolveFact(coarseProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  H->SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);

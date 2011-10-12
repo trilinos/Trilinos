@@ -724,9 +724,9 @@ namespace MueLu {
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         // All tentatively assigned vertices are now definitive
       }
-
-      if (graph.GetComm()->getRank()==0)
-        std::cout << "#calls to Arb&Comm=" << ncalls << std::endl;
+      
+      //       if (graph.GetComm()->getRank()==0)
+      //         std::cout << "#calls to Arb&Comm=" << ncalls << std::endl;
       }
 
       // Phase 6: Aggregate remain unaggregated vertices and try at all costs

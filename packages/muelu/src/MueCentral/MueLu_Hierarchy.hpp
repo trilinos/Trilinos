@@ -133,6 +133,7 @@ public:
     //       and the FactoryManager is deleted at the end of this function.
 
     FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
+    manager.SetFactory("CoarseSolver", Teuchos::null);
     manager.SetFactory("Smoother", rcpFromRef(SmooFact));
 
     return Setup(manager, startLevel, numDesiredLevels);
@@ -153,6 +154,8 @@ public:
       const int startLevel = 0, const int numDesiredLevels = 10) {
 
     FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
+    manager.SetFactory("Smoother",     Teuchos::null); //? TODO remove
+    manager.SetFactory("CoarseSolver", Teuchos::null);
 
     return Setup(manager, startLevel, numDesiredLevels);
 
@@ -178,14 +181,13 @@ public:
 
     // Check coarse levels
     // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
-
     Levels_[startLevel]->Request(smootherFactory);
     Levels_[startLevel]->Request(coarsestSolverFactory);
 
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
     int iLevel;
-    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (numLevels=" << numDesiredLevels << ")" << std::endl;
+    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels=" << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
     for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
       SubMonitor m(*this, "Level " + Teuchos::toString(iLevel));
@@ -195,7 +197,7 @@ public:
       if (nextCoarseLevelID <= lastLevel) {
         if (nextCoarseLevelID > LastLevelID()) { AddNewLevel(); }
 
-        std::cout << "Level " << nextCoarseLevelID << ": Request RAP" << std::endl; std::cout.flush();
+        //std::cout << "Level " << nextCoarseLevelID << ": Request RAP" << std::endl; std::cout.flush();
         Levels_[nextCoarseLevelID]->Request(rapFactory);
         Levels_[nextCoarseLevelID]->Request(smootherFactory); //TODO: skip if lastLevel
         Levels_[nextCoarseLevelID]->Request(coarsestSolverFactory);
@@ -209,7 +211,7 @@ public:
         TEST_FOR_EXCEPTION(level.GetPreviousLevel() != Levels_[iLevel-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
 
         rapFactory.Build(*level.GetPreviousLevel(), level);
-        std::cout << "Level " << iLevel << ": Release RAP" << std::endl; std::cout.flush();
+        //std::cout << "Level " << iLevel << ": Release RAP" << std::endl; std::cout.flush();
         level.Release(rapFactory);
       }
       //
@@ -224,22 +226,22 @@ public:
 
       if (iLevel == lastLevel || (Ac != Teuchos::null && Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
         if (nextCoarseLevelID <= lastLevel) {
-          std::cout << "Level " << nextCoarseLevelID << ": Release RAP" << std::endl; std::cout.flush();
+          //std::cout << "Level " << nextCoarseLevelID << ": Release RAP" << std::endl; std::cout.flush();
           Levels_[nextCoarseLevelID]->Release(rapFactory);
           Levels_[nextCoarseLevelID]->Release(smootherFactory);
 	  Levels_[nextCoarseLevelID]->Release(coarsestSolverFactory);
         }
 
-        std::cout << "BUILD COARSE" << std::endl; std::cout.flush();
+        //std::cout << "BUILD COARSE" << std::endl; std::cout.flush();
         coarsestSolverFactory.Build(level); //TODO: PRE?POST
-        // level.Release(smootherFactory);
+	level.Release(smootherFactory);
         level.Release(coarsestSolverFactory);
 
         break;
 
       } else {
 
-        std::cout << "BUILD SMOO" << std::endl; std::cout.flush();
+        //std::cout << "BUILD SMOO" << std::endl; std::cout.flush();
         smootherFactory.Build(level);
         level.Release(smootherFactory);
 	level.Release(coarsestSolverFactory);
@@ -282,7 +284,10 @@ public:
 
   void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) {
     Level & level = *Levels_[LastLevelID()];
-    RCP<const FactoryManagerBase> manager = rcp(new FactoryManager());
+    RCP<FactoryManager> manager = rcp(new FactoryManager());
+    manager->SetFactory("Smoother",     Teuchos::null); //? TODO remove
+    manager->SetFactory("CoarseSolver", Teuchos::null);
+
     SetFactoryManager SFM(level, manager);
 
     level.Request(smooFact);
@@ -332,6 +337,7 @@ public:
 
     FactoryManager manager;
     manager.SetFactory("Smoother", rcpFromRef(smooFact));
+    manager.SetFactory("CoarseSolver", Teuchos::null);
     manager.SetFactory("P", Teuchos::null);
     manager.SetFactory("R", Teuchos::null);
     manager.SetFactory("A", Teuchos::null);

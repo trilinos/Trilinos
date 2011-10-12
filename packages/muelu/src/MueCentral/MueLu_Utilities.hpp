@@ -850,20 +850,20 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
      RES->norm2(norms);
      return norms;
    }
-
-   static RCP<MultiVector> Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
-   {
-     SC one = 1.0;
-     SC negone = -1.0;
-     //if (X.getNumVectors() != RHS.getNumVectors())
-     //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
-     //const size_t numVecs = X.getNumVectors();
-     const size_t numVecs = 1;
-     RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(),numVecs);
-     Op.apply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-     RES->update(one,RHS,negone);
-     return RES;
-   }
+    
+    static RCP<MultiVector> Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+    {
+      SC one = 1.0;
+      SC negone = -1.0;
+      //if (X.getNumVectors() != RHS.getNumVectors())
+      //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
+      //const size_t numVecs = X.getNumVectors();
+      const size_t numVecs = 1;
+      RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(),numVecs);
+      Op.apply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+      RES->update(one,RHS,negone);
+      return RES;
+    }
 
    /*! @brief Save matrix to file in Matrix Market format.
 

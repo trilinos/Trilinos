@@ -41,7 +41,7 @@ namespace MueLu {
 
     //!
     InternalFactoryManager(RCP<const FactoryManagerBase> & parentFactoryManager)
-      : factoryManager_(parentFactoryManager), AFact_(NoFactory::getRCP())
+      : factoryManager_(parentFactoryManager), noFact_(NoFactory::getRCP())
     { }
     
     //! Destructor.
@@ -49,10 +49,13 @@ namespace MueLu {
 
     //! GetFactory
     const RCP<const FactoryBase> & GetFactory(const std::string & varName) const {
-      if (varName == "A")
-	return AFact_;
-      else
-	return factoryManager_->GetFactory(varName);
+      if (varName == "A") return noFact_;
+      // if (varName == "P") return noFact_;
+      // if (varName == "R") return noFact_;
+      // if (varName == "PreSmoother")  return noFact_;
+      // if (varName == "PostSmoother") return noFact_;
+      
+      return factoryManager_->GetFactory(varName);
     }
     
     //! Clean
@@ -60,7 +63,7 @@ namespace MueLu {
 
   private:
     RCP<const FactoryManagerBase> factoryManager_;
-    const RCP<const FactoryBase> AFact_; //TODO: remove that.
+    RCP<const FactoryBase> noFact_; //TODO: remove
   };
 
 
