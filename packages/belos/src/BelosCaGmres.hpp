@@ -53,20 +53,23 @@ namespace Belos {
   //! @name CaGmres Exceptions
   //@{
   
-  /// Raised when CaGmres::updateUpperHessenberg() fails.  There's no
-  /// good way to recover from such a failure: it means that even
-  /// though the previous upper Hessenberg matrix _and_ the new basis
-  /// are both full rank, somehow the update resulted in a singular
-  /// matrix.
+  /// \brief Raised when CaGmres::updateUpperHessenberg() fails.  
+  ///
+  /// This error means that even though the previous upper Hessenberg
+  /// matrix <i>and</i> the new basis are both full rank, somehow the
+  /// update resulted in a singular matrix.  A solver could recover
+  /// from this by backing out one or more iterations, or even
+  /// restarting.
   class CaGmresUpdateFailure : public BelosError {
   public:
     CaGmresUpdateFailure(const std::string& what_arg) : 
       BelosError(what_arg) {}
   };
 
-  
-  /// CaGmresOrthoFailure is thrown when the CaGmres object is unable
-  /// to compute at least two independent vectors in the advance()
+  /// \brief Raised when CaGmres cannot compute at least two independent vectors.
+  ///
+  /// This exception is thrown when the CaGmres instance is unable to
+  /// compute at least two independent vectors in the advance()
   /// routine.
   class CaGmresOrthoFailure : public BelosError {
   public:
@@ -78,7 +81,20 @@ namespace Belos {
       numBasisVectors_ (theNumBasisVectors)
       candidateBasisLength_ (theCandidateBasisLength),
       rank_ (theRank)
-    {}
+    {
+      // This may throw an exception if there isn't enough memory with
+      // which to allocate a string.  std::exception subclass
+      // constructors really should not throw exceptions.  Howver, if
+      // there isn't enough memory left to allocate a short string,
+      // then the program is likely in deep trouble anyway.
+      std::ostringstream os;
+      os << "CA-GMRES: After constructing " << numBasisVectors_ 
+	 << " successfully, outer iteration" << (curOuterIter_+1) 
+	 << " failed: the candidate basis of length " 
+	 << candidateBasisLength_ << " only has rank " 
+	 << rank_ << ".";
+      what_ = os.str();
+    }
 
     //! Current outer iteration
     int curOuterIter() const { return curOuterIter_; }
@@ -93,28 +109,7 @@ namespace Belos {
     int rank() const { return rank_; }
 
     //! Return a human-readable, informative error message
-    const char* const 
-    what()
-    {
-      // Lazy initialization via an std::string avoids memory leaks,
-      // if we decide to catch the exception and handle it (rather
-      // than pass it on up the call chain).  It's likely that we may
-      // want to handle the exception directly, perhaps by decreasing
-      // the basis length and retrying the outer iteration, so
-      // avoiding memory leaks matters in this case.
-      if (what_ == "")
-	{
-	  // This may throw an exception if there isn't enough memory
-	  // with which to allocate a string, but then the program is
-	  // likely in deep trouble anyway.
-	  std::ostringstream os;
-	  os << "CA-GMRES: After constructing " << numBasisVectors_ 
-	     << " successfully, outer iteration" << (curOuterIter_+1) 
-	     << " failed: the candidate basis of length " 
-	     << candidateBasisLength_ << " only has rank " 
-	     << rank_ << ".";
-	  what_ = os.str();
-	}
+    const char* const what() { 
       return what_.c_str();
     }
 
@@ -232,8 +227,6 @@ namespace Belos {
     /// sublist.  Else, ask the given matrix powers kernel factory for
     /// a default list of matrix powers kernel parameters, and return
     /// the result.
-    ///
-    /// \param akxFactory [in]
     ///
     /// \return Valid, nonnull list of matrix powers kernel parameters.
     static Teuchos::RCP<const Teuchos::ParameterList>

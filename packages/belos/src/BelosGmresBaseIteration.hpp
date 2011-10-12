@@ -100,22 +100,9 @@ namespace Belos {
       // iterations allowed (for storage of the basis vectors).  The
       // status test will also perform intermediate output via the
       // OutputManager object.
-      //
-      // FIXME (mfh 14 Jan 2011): The owning solver manager object
-      // really should set up this Iteration so that the status test
-      // doesn't allow the GmresBase subclass to advance beyond its
-      // capacity to advance.  For example, the status test should set
-      // the maximum number of iterations no bigger than the amount of
-      // vector storage that the GmresBase subclass allocates.  Thus,
-      // the additional "status test" should be unnecessary.
-      while (stest_->checkStatus(this) != Passed)
-	{ 
-	  if (! impl_->canAdvance())
-	    throw std::logic_error("Attempt to advance iteration when it is "
-				   "no longer possible to advance!");
-	  impl_->advance();
-	}
-      
+      while (stest_->checkStatus(this) != Passed && impl_->canAdvance()) {
+	impl_->advance();
+      }
     }
 
     /// Initialize the solver

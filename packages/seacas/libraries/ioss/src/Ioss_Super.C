@@ -69,24 +69,7 @@ void Ioss::Super::make_super(const std::string &type)
   // Decode name to determine number of nodes...
   std::string node_count_str = type.substr(5);
   int node_count = std::atoi(node_count_str.c_str());
-  Ioss::Super *superelementTopology = new Ioss::Super(type, node_count);
-  Ioss::Super::store_topology_pointer(superelementTopology);
-}
-
-std::vector<Ioss::Super *> Ioss::Super::topologyPointers;
-
-void Ioss::Super::store_topology_pointer(Ioss::Super *superelementTopology)
-{
-    topologyPointers.push_back(superelementTopology);
-}
-void Ioss::Super::delete_topology_pointers()
-{
-    for(unsigned int i=0; i<topologyPointers.size(); i++)
-    {
-        delete topologyPointers[i];
-        topologyPointers[i] = 0;
-    }
-    topologyPointers.clear();
+  new Ioss::Super(type, node_count);
 }
 
 int Ioss::Super::parametric_dimension() const {return  3;}

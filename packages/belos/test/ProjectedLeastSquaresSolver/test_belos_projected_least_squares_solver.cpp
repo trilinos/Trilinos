@@ -56,23 +56,18 @@ main (int argc, char *argv[])
   typedef double scalar_type;
 
   Teuchos::oblackholestream blackHole;
-  // MPI is crashing on my machine for some reason, but this test
-  // doesn't depend on MPI.
-#if 0
   // Initialize MPI using Teuchos wrappers, if Trilinos was built with
   // MPI support.  Otherwise, initialize a communicator with one
   // process.
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
-  //const int numProcs = comm->getSize();
-#else
-  const int myRank = 0;
-#endif // 0
+  const int myRank = mpiSession.getRank();
+  // Output stream only prints on MPI Proc 0.
+  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
   
   // Command-line arguments
   bool testBlockGivens = false;
   bool testGivensRotations = false;
+  bool verbose = false;
   bool verbose = false;
   int testProblemSize = 10;
 
@@ -85,39 +80,37 @@ main (int argc, char *argv[])
 		  "Test the panel version of the Givens rotations - based "
 		  "update.");
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("debug", "release", &debug, "Print copious debug output.");
   cmdp.setOption ("testProblemSize", &testProblemSize, 
 		  "Number of columns in the projected least-squares test "
 		  "problem.");
   if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    if (myRank == 0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    }
+    out << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
-  // Output stream only prints on MPI Proc 0, and only in verbose mode.
-  std::ostream& out = (myRank == 0 && verbose) ? std::cout : blackHole;
+  // Verbose output stream only prints on MPI Proc 0, and only in
+  // verbose mode.
+  std::ostream& verboseOut = verbose ? out : blackHole;
 
   bool success = true;
   Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
 
   if (testGivensRotations) {
-    solver.testGivensRotations (out);
+    solver.testGivensRotations (verboseOut);
   }
   if (testProblemSize > 0) {
     // Test the projected least-squares solver.
-    success = success && solver.testUpdateColumn (out, testProblemSize, 
-						  testBlockGivens, verbose);
+    const bool extraVerbose = debug;
+    success = success && 
+      solver.testUpdateColumn (verboseOut, testProblemSize, 
+			       testBlockGivens, extraVerbose);
   }
   
   if (success) {
-    if (myRank == 0) {
-      std::cout << "End Result: TEST PASSED" << std::endl;  
-    } 
+    out << "End Result: TEST PASSED" << endl;  
     return EXIT_SUCCESS;
   } else {
-    if (myRank == 0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    }
+    out << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 }

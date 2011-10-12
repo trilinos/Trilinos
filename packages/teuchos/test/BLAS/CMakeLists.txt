@@ -18,3 +18,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  BLAS_ROTG_test
+  SOURCES default_blas_rot.cpp
+  ARGS "--verbose"
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
