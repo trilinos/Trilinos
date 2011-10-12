@@ -1332,6 +1332,7 @@ namespace Belos {
 
     // [startCol, endCol] is a zero-based inclusive index range.
     const int startCol = (lastUpdatedCol_ < 0) ? 0 : lastUpdatedCol_ + 1;
+    // getNumIters() returns the number of _completed_ iterations.
     const int endCol = getNumIters() - 1;
 
     const char prefix[] = "Belos::GmresBase::updateProjectedLeastSquaresProblem: ";
@@ -1343,13 +1344,13 @@ namespace Belos {
 		       "factorization of the upper Hessenberg matrix past the "
 		       "last updated column, which was " << lastUpdatedCol_ 
 		       << ". The rightmost column to update is " << endCol 
-		       << ".  This is likely a bug in GmresBase.");
+		       << ".  Please report this bug to the Belos developers.");
     if (endCol < 0) {
-      dbg << "Nothing to do: # iters = 0" << endl;
+      dbg << "------ Nothing to do: # iters = 0" << endl;
       // Assign here, just in case we haven't done this yet.
       nativeResidualNorm_ = initialResidualNorm_; 
     } else if (startCol == endCol+1) { // Nothing to do
-      dbg << "Nothing to do: No columns to update (startCol == endCol+1 "
+      dbg << "------ Nothing to do: No columns to update (startCol == endCol+1 "
 	"== " << startCol << ")" << endl;
     } else {
       dbg << endl;
@@ -1374,7 +1375,7 @@ namespace Belos {
     // Return the "native" residual norm (which is the absolute
     // residual error from solving the projected least-squares
     // problem).
-    dbg << "Native residual norm: " << nativeResidualNorm_ << endl;
+    dbg << "------ Native residual norm: " << nativeResidualNorm_ << endl;
     return nativeResidualNorm_;
   }
 
