@@ -85,6 +85,8 @@ static FILE *log_file = NULL;
 int logger_init(const log_level debug_level,  const char *logfile)  {
     int rc = 0;
 
+    nthread_mutex_init(&logger_mutex, NTHREAD_MUTEX_RECURSIVE);
+
     /* initialize the default debug level */
     if (debug_level == 0)
         logger_set_default_level(LOG_OFF);
