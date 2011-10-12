@@ -1,6 +1,4 @@
 
-INCLUDE(PackageLibraryMacros)
-
 #
 # A) Package-specific configuration options
 #
@@ -10,6 +8,22 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(CURRENT_PACKAGE ZOLTAN2)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_MALLINFO)
+SET(HAVE_MALLINFO ${${PACKAGE_NAME}_HAVE_MALLINFO})
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_METIS)
+SET(HAVE_METIS ${${PACKAGE_NAME}_ENABLE_METIS})
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ParMETIS)
+SET(HAVE_PARMETIS ${${PACKAGE_NAME}_ENABLE_ParMETIS})
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_PaToH)
+SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
+SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
+
 
 #
 # B) Define the header and source files (and include directories)
@@ -69,6 +83,7 @@ APPEND_SET(HEADERS
       algorithms/partition/Zoltan2_PartitioningAlgorithms.hpp
       algorithms/partition/Zoltan2_AlgScotch.hpp
   )
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
 
 
@@ -98,6 +113,13 @@ APPEND_SET(SOURCES
   Zoltan2_Parameters.cpp
   Zoltan2_Version.cpp
   )
+
+
+IF(${PACKAGE_NAME}_HAVE_MALLINFO)
+APPEND_SET(SOURCES
+  Zoltan2_Mallinfo.cpp
+ )
+ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   zoltan2

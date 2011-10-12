@@ -94,8 +94,15 @@ private:
     Teuchos::RCP<XpetraCrsGraphInput > xgi_;
     Teuchos::RCP<XpetraCrsMatrixInput > xmi_;
 
+#ifdef HAVE_MALLINFO
+    size_t mBytes_;
+#endif
+
     void readMatrixMarketFile()
     {
+#ifdef HAVE_MALLINFO
+        mBytes_ = Zoltan2::getAllocatedMemory();
+#endif
       try{
         M_ = Tpetra::MatrixMarket::Reader<crsMatrix_t>::readSparseFile(
                  fname_, tcomm_, node_);
@@ -103,10 +110,16 @@ private:
       catch (std::exception &e) {
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
+#ifdef HAVE_MALLINFO
+        mBytes_ = Zoltan2::getAllocatedMemory() - mBytes_;
+#endif
     }
 
     void buildCrsMatrix()
     {
+#ifdef HAVE_MALLINFO
+        mBytes_ = Zoltan2::getAllocatedMemory();
+#endif
       Teuchos::CommandLineProcessor tclp;
       MueLu::Gallery::Parameters<GNO> params(tclp,
          xdim_, ydim_, zdim_, std::string("Laplace3D"));
@@ -124,6 +137,9 @@ private:
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
+#ifdef HAVE_MALLINFO
+        mBytes_ = Zoltan2::getAllocatedMemory() - mBytes_;
+#endif
     }
 
     void createMatrix()
@@ -176,6 +192,17 @@ public:
        createMatrix();
       return M_;
     }
+
+#ifdef HAVE_MALLINFO
+    // A count of memory bytes should be a size_t, but
+    // mallinfo() predates size_t.
+    int getMatrixSize()
+    {
+      if (M_.is_null())
+       createMatrix();
+      return mBytes_;
+    }
+#endif
 
     Teuchos::RCP<EpetraCrsGraphInput > getEpetraCrsGraphInputAdapter()
     {
