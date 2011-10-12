@@ -44,7 +44,7 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(InputAdapter<User> &A, Teuchos::ParameterList &p) 
+  PartitioningProblem(InputAdapter<User> *A, Teuchos::ParameterList *p) 
                       : Problem<User>(A, p) 
   {
     HELLO;
