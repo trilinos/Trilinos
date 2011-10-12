@@ -600,8 +600,8 @@ namespace Belos {
       /// \param testBlockGivens [in] Whether to test the "block"
       ///   (i.e., panel) version of the Givens rotations update.
       ///
-      /// \param verbose [in] Whether to print verbose output (e.g.,
-      ///   the test problem and results).
+      /// \param extraVerbose [in] Whether to print extra-verbose
+      ///   output (e.g., the test problem and results).  
       ///
       /// \return Whether the test succeeded, meaning that none of the
       ///   solves reported failure and the least-squares solution

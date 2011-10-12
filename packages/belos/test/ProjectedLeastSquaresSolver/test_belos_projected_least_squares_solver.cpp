@@ -63,8 +63,7 @@ main (int argc, char *argv[])
   // MPI support.  Otherwise, initialize a communicator with one
   // process.
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
+  const int myRank = mpiSession.getRank();
   //const int numProcs = comm->getSize();
 #else
   const int myRank = 0;
