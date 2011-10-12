@@ -19,11 +19,13 @@ namespace Zoltan2{
 //! \class AlgScotch
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-template<User>
+template<typename Adapter>
 class AlgScotch {
 public:
-  AlgScotch(RCP<Model<Z2PARAM_TEMPLATE> >, //TODO Should be GraphModel, but don't know how to do the Adapter template
-            RCP<PartitioningSolution<Z2PARAM_TEMPLATE> >,
+  typedef Adapter::user_t user_t;
+
+  AlgScotch(RCP<GraphModel<Adapter<user_t> >, 
+            RCP<PartitioningSolution<user_t> >,
             RCP<Teuchos::ParameterList>);
 
   // Destructor
@@ -36,12 +38,10 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////
-//! Problem class constructor:  Tpetra matrix input must be converted
-//! to XpetraMatrixAdapter.
-template <Z2FN_TEMPLATE>
-AlgScotch<Z2PARAM_TEMPLATE>::AlgScotch(
-  RCP<Model<Z2PARAM_TEMPLATE> > model,  //TODO Should be GraphModel, but don't know how to do the adapter template
-  RCP<PartitioningSolution<Z2PARAM_TEMPLATE> > solution,
+template <typename Adapter>
+AlgScotch<Adapter>::AlgScotch(
+  RCP<GraphModel<Adapter> > model, 
+  RCP<PartitioningSolution<user_t> > solution,
   RCP<Teuchos::ParameterList> pl
 ) 
 {

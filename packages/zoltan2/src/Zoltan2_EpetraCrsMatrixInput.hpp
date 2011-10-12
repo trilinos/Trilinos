@@ -19,23 +19,34 @@
 
 namespace Zoltan2 {
 
+template < >
+struct InputTraits<Epetra_CrsMatrix>
+{
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef int lid_t;
+  typedef int gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+};
+
 /*! Zoltan2::EpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Epetra_CrsMatrix data.
 */
 
-class EpetraCrsMatrixInput : public XpetraCrsMatrixInput<double, int, int>{
+template <typename User>
+class EpetraCrsMatrixInput : public XpetraCrsMatrixInput<User>{
 private:
 
     RCP<const Epetra_CrsMatrix> inmatrix_;
 public:
 
-  // KDDKDD This may not be right.  May need to specify double, int, int.
-  typedef typename double scalar_t;
-  typedef typename int gno_t;
-  typedef typename int lno_t;
-  typedef typename gno_t gid_t;
-  typedef typename lno_t lid_t;
-  typedef typename node_t;
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
 
   std::string inputAdapterName()const {return std::string("EpetraCrsMatrix");}
 
@@ -44,7 +55,7 @@ public:
   /*! Constructor
    */
   EpetraCrsMatrixInput(const RCP<const Epetra_CrsMatrix> matrix):
-    XpetraCrsMatrixInput<double, int, int> (
+    XpetraCrsMatrixInput<User> (
       Teuchos::rcp(new Xpetra::EpetraCrsMatrix(
         Teuchos::rcp_const_cast<Epetra_CrsMatrix>(matrix)))) 
   {

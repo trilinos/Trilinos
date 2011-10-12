@@ -31,14 +31,20 @@ namespace Zoltan2 {
     all processes in the application to call it.  The rest of the
     method should be local methods.
 */
-template <Z2FN_TEMPLATE,  
-  template <typename, typename, typename, typename, typename, typename> 
-    class AdapterType>
-      class GraphModel : public Model<Z2PARAM_TEMPLATE>
+template <typename Adapter>
+class GraphModel : public Model<Adapter>
 {
 private:
 
 public:
+
+  typedef typename Adapter::scalar_t  scalar_t;
+  typedef typename Adapter::gno_t     gno_t;
+  typedef typename Adapter::lno_t     lno_t;
+  typedef typename Adapter::gid_t     gid_t;
+  typedef typename Adapter::lid_t     lid_t;
+  typedef typename Adapter::node_t    node_t;
+  typedef typename Adapter::user_t    user_t;
 
   /*! Returns the number vertices on this process.
    */
@@ -80,8 +86,8 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  size_t getVertexList( ArrayView<const GNO> &Ids,
-    ArrayView<const Scalar> &xyz, ArrayView<const Scalar> &wgts) const {
+  size_t getVertexList( ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const {
       return 0; }
 
   /*! Sets pointers to this process' edge (neighbor) global Ids.
@@ -97,9 +103,9 @@ public:
        \return The number of ids in the edgeIds list.
    */
 
-  size_t getEdgeList( ArrayView<const GNO> &edgeIds,
-    ArrayView<const int> &procIds, ArrayView<const LNO> &offsets,
-    ArrayView<const Scalar> &wgts) const { return 0; }
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
 
   /*! Obtain a view of the edge Ids of the input vertex.
       \param Id  is the global Id for a vertex on this process.
@@ -115,9 +121,9 @@ public:
       many times in a loop, due to the construction and destruction of
       ArrayViews.  Call getEdgeList instead.
    */
-  size_t getVertexGlobalEdge( GNO Id, 
-    ArrayView<const GNO> &edgeIds, ArrayView<const int> &procIds,
-    ArrayView<const Scalar> *&wgts) const { return 0; }
+  size_t getVertexGlobalEdge( gno_t Id, 
+    ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
+    ArrayView<const scalar_t> *&wgts) const { return 0; }
    
   /*! Obtain a view of the edge Ids of the input vertex.
       \param localRef  is the local id associated with vertex.  Local ids
@@ -136,9 +142,9 @@ public:
       many times in a loop, due to the construction and destruction of
       ArrayViews.  Call getEdgeList instead.
    */
-  size_t getVertexLocalEdge( LNO localRef,
-    ArrayView<const GNO> &edgeIds, ArrayView<const int> &procIds,
-    ArrayView<const Scalar> &wgts) const { return 0; }
+  size_t getVertexLocalEdge( lno_t localRef,
+    ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
 };
 
 ////////////////////////////////////////////////////////////////
@@ -151,42 +157,31 @@ public:
            for a Zoltan2::XpetraCrsMatrixInput object.
 */
 
-template <typename Scalar,typename LNO, typename GNO, typename Node>
-  class GraphModel<Z2PARAM_ID_EQ_NO, XpetraCrsMatrixInput>
+template <typename User>
+class GraphModel<XpetraCrsMatrixInput<User> >
 {
-
-private:
-
-  RCP<const XpetraCrsMatrixInput<Scalar, LNO, GNO, LNO, GNO, Node> > input_;
-  RCP<const Teuchos::Comm<int> > comm_;
-  RCP<const Environment > env_;
-
-  ArrayRCP<const GNO> gnos_;
-  ArrayRCP<const GNO> edgeGnos_;
-  ArrayRCP<int> procIds_;
-  ArrayRCP<const LNO> offsets_;
-
-  // Transpose is only required if vertices are columns.
-  RCP<Tpetra::CrsMatrix< Scalar, LNO, GNO, Node> > input_Transpose;
-
-  global_size_t numLocalEdges_;
-  global_size_t numGlobalEdges_;
-
 public:
+
+  typedef typename XpetraCrsMatrixInput<User>::scalar_t  scalar_t;
+  typedef typename XpetraCrsMatrixInput<User>::gno_t     gno_t;
+  typedef typename XpetraCrsMatrixInput<User>::lno_t     lno_t;
+  typedef typename XpetraCrsMatrixInput<User>::gid_t     gid_t;
+  typedef typename XpetraCrsMatrixInput<User>::lid_t     lid_t;
+  typedef typename XpetraCrsMatrixInput<User>::node_t    node_t;
 
   /*! Constructor
    *  All processes in the communicator must call the constructor.
    */
   GraphModel(
-    RCP<const XpetraCrsMatrixInput<Scalar, LNO, GNO, LNO, GNO, Node> > inputAdapter,
-    RCP<const Comm<int> > comm, RCP<const Environment> env) :
+    const RCP<const XpetraCrsMatrixInput<User> > inputAdapter,
+    const RCP<const Comm<int> > comm, const RCP<const Environment> env) :
       input_(inputAdapter), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      input_Transpose(), numLocalEdges_(), numGlobalEdges_(0)
+      numLocalEdges_(), numGlobalEdges_(0)
   {
-    GNO const *vtxIds=NULL, *nborIds=NULL;
-    LNO const  *offsets=NULL, *lids=NULL; 
-    LNO numVtx;
+    gno_t const *vtxIds=NULL, *nborIds=NULL;
+    lno_t const  *offsets=NULL, *lids=NULL; 
+    lno_t numVtx;
     try{
       numVtx = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
@@ -205,7 +200,7 @@ public:
 
     procIds_ = arcp<int>(numLocalEdges_);
 
-    RCP<const Xpetra::CrsMatrix<Scalar, LNO, GNO, Node> > xmatrix =
+    RCP<const Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > xmatrix =
       input_->getMatrix();
 
     xmatrix->getRowMap()->getRemoteIndexList(edgeGnos_(), procIds_());
@@ -250,16 +245,16 @@ public:
     return 0;   // TODO
   } 
 
-  size_t getVertexList( ArrayView<const GNO> &Ids,
-    ArrayView<const Scalar> &xyz, ArrayView<const Scalar> &wgts) const
+  size_t getVertexList( ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
     Ids = gnos_();    // () operator - an ArrayView
     return gnos_.size();
   }
 
-  size_t getEdgeList( ArrayView<const GNO> &edgeIds, 
-    ArrayView<const int> &procIds, ArrayView<const LNO> &offsets,
-    ArrayView<const Scalar> &wgts) const
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds, 
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const
   {
     edgeIds = edgeGnos_();
     procIds = procIds_();
@@ -268,29 +263,48 @@ public:
     return numLocalEdges_;
   }
 
-  size_t getVertexGlobalEdge( GNO Id, ArrayView<const GNO> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const Scalar> *&wgts) const
+  size_t getVertexGlobalEdge( gno_t Id, ArrayView<const gno_t> &edgeId,
+    ArrayView<const int> &procId, ArrayView<const scalar_t> *&wgts) const
   {
-    LNO lno(0);
+    lno_t lno(0);
     // TODO map lno to gno
     throw std::runtime_error("not implemented");
     return getVertexLocalEdge(lno, edgeId, procId, wgts);
   }
 
-  size_t getVertexLocalEdge( LNO lno, ArrayView<const GNO> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const Scalar> *&wgts) const
+  size_t getVertexLocalEdge( lno_t lno, ArrayView<const gno_t> &edgeId,
+    ArrayView<const int> &procId, ArrayView<const scalar_t> *&wgts) const
   { 
     Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, "invalid local id",
       lno >= 0 && lno < gnos_.size(), BASIC_ASSERTION);
 
-    LNO thisVtx =  offsets_[lno];
-    LNO nextVtx = (lno < gnos_.size()-1) ? offsets_[lno+1] : numLocalEdges_;
+    lno_t thisVtx =  offsets_[lno];
+    lno_t nextVtx = (lno < gnos_.size()-1) ? offsets_[lno+1] : numLocalEdges_;
     size_t nEdges = nextVtx - thisVtx;
 
     edgeId = edgeGnos_.view(thisVtx, nEdges);
     procId = procIds_.view(thisVtx, nEdges);
     return nEdges;
   }
+
+private:
+
+  RCP<const XpetraCrsMatrixInput<User> > input_;
+  RCP<const Teuchos::Comm<int> > comm_;
+  RCP<const Environment > env_;
+
+  ArrayRCP<const gno_t> gnos_;
+  ArrayRCP<const gno_t> edgeGnos_;
+  ArrayRCP<int> procIds_;
+  ArrayRCP<const lno_t> offsets_;
+
+  // Transpose is required only if vertices are columns.
+  // KDDKDD ??  We won't form an actual transpose, will we?
+  // KDDKDD RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > inputTranspose;
+
+  global_size_t numLocalEdges_;
+  global_size_t numGlobalEdges_;
+
 };
 
 

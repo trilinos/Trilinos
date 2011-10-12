@@ -37,10 +37,8 @@ using Teuchos::ArrayView;
 //using Zoltan2::IdentifierTraits;
 
 
-template <typename Scalar, typename LNO, typename GNO, typename Node>
-  void checkGraph(
-    Zoltan2::GraphModel<Z2PARAM_ID_EQ_NO, Zoltan2::XpetraCrsMatrixInput>
-      &graph,
+template <typename Model, typename Scalar, typename LNO, typename GNO, typename Node>
+  void checkGraph(Model &graph,
     RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > M, std::string errMsg)
 {
   const RCP<const Comm<int> > &comm = M->getComm();
@@ -131,9 +129,9 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   // Create some matrix input adapters
 
-  typedef Zoltan2::EpetraCrsMatrixInput epetraMatrix_t;
-  typedef Zoltan2::TpetraCrsMatrixInput<Z2PARAM_ID_EQ_NO> tpetraMatrix_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<Z2PARAM_ID_EQ_NO> xpetraMatrix_t;
+  typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> epetraMatrix_t;
+  typedef Zoltan2::TpetraCrsMatrixInput<Tpetra::CrsMatrix<Scalar, LNO, GNO> > tpetraMatrix_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<Tpetra::CrsMatrix<Scalar, LNO, GNO> > xpetraMatrix_t;
 
   RCP<epetraMatrix_t> emi;
   RCP<tpetraMatrix_t> tmi;
@@ -158,8 +156,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   // Create a graph model with each and test it.
 
-  typedef Zoltan2::GraphModel<Z2PARAM_ID_EQ_NO, 
-    Zoltan2::XpetraCrsMatrixInput> xGraphModel_t;
+  typedef Zoltan2::GraphModel<xpetraMatrix_t> xGraphModel_t;
 
   int fail = 0;
   if (includeEpetra){
@@ -179,7 +176,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
     }
     TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating epetra graph model", 1)
 
-    checkGraph(*graph, M, " (epetra matrix input)");
+    checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*graph, M, 
+                                                      " (epetra matrix input)");
 
     delete graph;
   }
@@ -198,7 +196,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating tpetra graph model", 1)
 
-  checkGraph(*tgraph, M, " (tpetra matrix input)");
+  checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*tgraph, M,
+                                                    " (tpetra matrix input)");
 
   delete tgraph;
 
@@ -214,7 +213,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating xpetra graph model", 1)
 
-  checkGraph(*xgraph, M, " (xpetra matrix input)");
+  checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*xgraph, M,
+                                                    " (xpetra matrix input)");
 
   delete xgraph;
 

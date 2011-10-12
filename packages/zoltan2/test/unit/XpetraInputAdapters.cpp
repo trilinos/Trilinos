@@ -28,15 +28,15 @@ template <typename GraphAdapter, typename Graph>
   void testGraphAdapter(RCP<GraphAdapter> input, RCP<const Graph> g, 
     RCP<const Comm<int> > comm)
 {
-  typedef typename GraphAdapter::lidType LID;
-  typedef typename GraphAdapter::gidType GID;
-  typedef typename GraphAdapter::lnoType LNO;
-  typedef typename GraphAdapter::gnoType GNO;
-  typedef typename GraphAdapter::nodeType Node;
-
-  typedef Zoltan2::GraphInput<LNO, GNO, LID, GID, Node> graphInput_t; 
+  typedef typename GraphAdapter::lid_t LID;
+  typedef typename GraphAdapter::gid_t GID;
+  typedef typename GraphAdapter::lno_t LNO;
+  typedef typename GraphAdapter::gno_t GNO;
+  typedef typename GraphAdapter::node_t Node;
 
   typedef Tpetra::CrsGraph<LNO, GNO, Node> crsGraph_t;
+
+  typedef Zoltan2::GraphInput<crsGraph_t> graphInput_t; 
 
   // TODO do we need to cast?
 
@@ -60,16 +60,16 @@ template <typename GraphAdapter, typename Graph>
 template <typename MatrixAdapter, typename Matrix>
   void testMatrixAdapter(RCP<MatrixAdapter> input, RCP<Matrix> m, RCP<const Comm<int> >&comm)
 {
-  typedef typename MatrixAdapter::scalarType Scalar;
-  typedef typename MatrixAdapter::lidType LID;
-  typedef typename MatrixAdapter::gidType GID;
-  typedef typename MatrixAdapter::lnoType LNO;
-  typedef typename MatrixAdapter::gnoType GNO;
-  typedef typename MatrixAdapter::nodeType Node;
-
-  typedef Zoltan2::MatrixInput<Scalar, LNO, GNO, LID, GID, Node> matrixInput_t; 
+  typedef typename MatrixAdapter::scalar_t Scalar;
+  typedef typename MatrixAdapter::lid_t LID;
+  typedef typename MatrixAdapter::gid_t GID;
+  typedef typename MatrixAdapter::lno_t LNO;
+  typedef typename MatrixAdapter::gno_t GNO;
+  typedef typename MatrixAdapter::node_t Node;
 
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix_t;
+
+  typedef Zoltan2::MatrixInput<crsMatrix_t> matrixInput_t; 
 
   // TODO do we need to cast?
 
@@ -114,10 +114,10 @@ template <typename Scalar, typename LNO, typename GNO>
 
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsM_t;
   typedef Tpetra::CrsGraph<LNO, GNO, Node> crsG_t;
-  typedef Zoltan2::TpetraCrsMatrixInput<Scalar,LNO,GNO,LNO,GNO,Node> tpetraM_t;
-  typedef Zoltan2::TpetraCrsGraphInput< LNO,GNO,LNO,GNO,Node>  tpetraG_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<Scalar,LNO,GNO,LNO,GNO,Node> xpetraM_t;
-  typedef Zoltan2::XpetraCrsGraphInput< LNO,GNO,LNO,GNO,Node>  xpetraG_t;
+  typedef Zoltan2::TpetraCrsMatrixInput<crsM_t> tpetraM_t;
+  typedef Zoltan2::TpetraCrsGraphInput<crsG_t>  tpetraG_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<crsM_t> xpetraM_t;
+  typedef Zoltan2::XpetraCrsGraphInput<crsG_t>  xpetraG_t;
 
   // Create some input adapters for xpetra objects
 

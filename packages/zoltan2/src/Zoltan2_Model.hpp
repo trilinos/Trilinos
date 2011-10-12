@@ -31,14 +31,15 @@ enum ModelType {
 };
 
 
-template <Z2CLASS_TEMPLATE>
-  class Model
+template <typename Adapter>
+class Model
 {
   /*! Pure virtual destructor
    */
+public:
+
   virtual ~Model() {};
 };
-
 
 }
 

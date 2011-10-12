@@ -3,8 +3,10 @@
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
-#include <Zoltan2_PartitioningAlgorithms.hpp>
+// #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+
+#include <Zoltan2_GraphModel.hpp>
 
 /*! \file Zoltan2_PartitioningProblem.hpp
 
@@ -12,10 +14,12 @@
   the Problem class.
 */
 
+using Teuchos::rcp_dynamic_cast;
+
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-template<User>
+template<typename User>
 class PartitioningProblem : public Problem<User>
 {
 protected:
@@ -26,7 +30,7 @@ protected:
 public:
 
   // Destructor
-  virtual ~PartitioningProblem() {}
+  virtual ~PartitioningProblem() {};
 
 #if 0  // KDDKDD Don't know how to use shortcut with User template
   //! Constructor with Tpetra Matrix interface.
@@ -40,12 +44,12 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(InputAdapter<User> &A ParameterList &p) 
+  PartitioningProblem(InputAdapter<User> &A, Teuchos::ParameterList &p) 
                       : Problem<User>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
-  }
+  };
 
   // Other methods
   virtual void solve();
@@ -54,7 +58,7 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-template <User>
+template <typename User>
 void PartitioningProblem<User>::solve()
 {
   HELLO;
@@ -62,11 +66,11 @@ void PartitioningProblem<User>::solve()
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  AlgScotch<User> alg(this->model_, this->solution_, this->params_);
+  // AlgScotch<User> alg(this->model_, this->solution_, this->params_);
 }
 
 ////////////////////////////////////////////////////////////////////////
-template <User>
+template <typename User>
 void PartitioningProblem<User>::redistribute()
 {
   HELLO;
@@ -78,7 +82,7 @@ void PartitioningProblem<User>::redistribute()
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
 
-template <User>
+template <typename User>
 void PartitioningProblem<User>::createPartitioningProblem()
 {
   HELLO;
@@ -97,22 +101,49 @@ void PartitioningProblem<User>::createPartitioningProblem()
   // TODO: I will need help from Lee Ann understanding how to use the parameter
   // functionality in Zoltan2.  For now, I will set a few parameters and
   // continue computing.
-  ModelType model = GraphModelType;
+  ModelType modelType = GraphModelType;
 
   // Select Model based on parameters and InputAdapter type
-  switch (model) {
+  switch (modelType) {
+
   case GraphModelType:
+
     switch (adapterType) {
-    case MatrixAdapterType:
+
+    case XpetraCrsMatrixAdapterType: {
+      cout << __func__ << "Xpetra matrix adapter switch" << endl;
+
+      GraphModel<XpetraCrsMatrixInput<User> > *model =
+         new GraphModel<XpetraCrsMatrixInput<User> >(
+                        rcp_dynamic_cast<const XpetraCrsMatrixInput<User> >
+                                        (this->inputAdapter_, true),
+                        this->comm_,
+                        this->env_);
+
+      //KDDKDD NOT WORKING YET RCP<GraphModel<XpetraCrsMatrixInput<User> > > rcpmodel = rcp(model);
+
+      //KDDKDD NOT WORKING YET this->model_ = rcp_dynamic_cast<GraphModel<InputAdapter<User> > >(rcpmodel, true);
+                       
+      // KDDKDD Question:  Not clear on use of RCPs here; compiler complains
+      // KDDKDD that it cannot do conversions when I use GraphModel and 
+      // KDDKDD XpetraCrsMatrixInput.
+      break;
+    }
+
+    case MatrixAdapterType: {
       cout << __func__ << " Matrix adapter switch" << endl;
-      model_ = 
-         new GraphModel<MatrixInput<User> >(this->inputAdapter_);
+      GraphModel<MatrixInput<User> > *model = 
+           new GraphModel<MatrixInput<User> >(//KDD No GraphModel 
+                                              //KDD constructor yet.
+                                              //KDD this->inputAdapter_,
+                                              //KDD this->comm_,
+                                              //KDD this->env_
+                                              );
+      //KDDKDD NOT WORKING YET this->model_ = RCP<GraphModel<MatrixInput<User> > >(model);
       break;
+    }
+
     case GraphAdapterType:
-      cout << __func__ << " Graph adapter switch" << endl;
-      //TODO model_ = 
-      //TODO    new GraphModel<GraphInput, Z2PARAM_TEMPLATE>(this->inputAdapter_);
-      break;
     case MeshAdapterType:
     case CoordAdapterType:
     case IdAdapterType:
@@ -120,20 +151,24 @@ void PartitioningProblem<User>::createPartitioningProblem()
            << " PartitioningProblem not yet implemented for this input adapter "
            << this->inputAdapter_->inputAdapterName() << endl;
       break;
+
     default:
       cout << "Invalid adapter type; this condition should never happen." 
            << endl;
       break;
     }
+
     break;
+
   case HypergraphModelType:
   case GeometryModelType:
   case IdModelType:
-    cout << __func__ << " Model type " << model << " not yet supported." 
+    cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
+
   default:
-    cout << __func__ << " Invalid model" << model << endl;
+    cout << __func__ << " Invalid model" << modelType << endl;
     break;
   }
 }

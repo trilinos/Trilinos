@@ -41,12 +41,12 @@ private:
 
 public:
 
-  // User must define these typenames; these are defaults for now.
-  typedef typename int lid_t;
-  typedef typename int gid_t;
-  typedef typename int lno_t;
-  typedef typename int gno_t;
-  typedef typename Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
 
   // adapterType == GraphAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
@@ -100,10 +100,10 @@ public:
          are listed by vertex by weight component.  
    */
 
-  virtual void getVertexListCopy(std::vector<GID> &Ids, 
-    std::vector<LID> &localIds,
-    std::vector<double> &xyz,
-    std::vector<double> &wgts) const = 0;
+  virtual void getVertexListCopy(std::vector<gid_t> &Ids, 
+    std::vector<lid_t> &localIds,
+    std::vector<scalar_t> &xyz,
+    std::vector<scalar_t> &wgts) const = 0;
 
   /*! Sets pointers to this process' vertex Ids and their weights.
       If this optional call is defined in the adapter, it can save a memory
@@ -125,7 +125,7 @@ public:
    */
 
   lno_t getVertexListView(gid_t *&Ids, lid_t *&localIds,
-     double *&xyz, double *&wgts)
+     scalar_t *&xyz, scalar_t *&wgts)
   {
     Ids = NULL;
     localIds = NULL;
@@ -141,8 +141,8 @@ public:
       \param wgts on return contains the weights, if any associated with the
          edges. Weights are listed by edge by weight component.
    */
-  virtual void getVertexEdgeCopy(GID ID, LID localID,
-    std::vector<GID> &edgeID, std::vector<double> &wgts) const = 0;
+  virtual void getVertexEdgeCopy(gid_t ID, lid_t localID,
+    std::vector<gid_t> &edgeID, std::vector<scalar_t> &wgts) const = 0;
 
   /*! Obtain a read-only view, if possible, of the edge Ids of the 
       input vertex.
@@ -155,7 +155,7 @@ public:
       \return The number of ids in the edgeID list.
    */
   lno_t getVertexEdgeView(gid_t ID, lid_t localID, gid_t *&edgeID,
-    double * &wgts) const
+    scalar_t * &wgts) const
   {
     edgeID = NULL;
     return 0;

@@ -42,12 +42,12 @@ private:
 
 public:
 
-  typename scalar_t;
-  typename gno_t;
-  typename lno_t;
-  typename gid_t;
-  typename lid_t;
-  typename node_t;
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
 
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter

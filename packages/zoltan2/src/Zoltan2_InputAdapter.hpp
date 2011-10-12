@@ -47,13 +47,48 @@ enum InputAdapterType {
   MeshAdapterType,
   GraphAdapterType,
   CoordAdapterType,
-  IdAdapterType
+  IdAdapterType,
+  XpetraCrsMatrixAdapterType  // Special case for performance with Epetra/Tpetra
+};
+
+template <typename User>
+struct InputTraits {
+  // Input Adapter implementations must provide the following typedefs
+  // for use in Zoltan2:
+  //   scalar_t :  weights and coordinates
+  //   lno_t    :  ordinal (e.g., int, long, int64_t) that can represent
+  //               the number of local data items.
+  //   gno_t    :  ordinal (e.g., int, long, int64_t) that can represent
+  //               the number of global data items.
+  //   lid_t    :  user type that represents a locally unique identifier 
+  //               for data items.
+  //   gid_t    :  user type that represents a globally unique identifier 
+  //               for data items.
+  //   node_t   :  Kokkos node.
+  //
+  // Default typedefs are included here. If a specialization of User is
+  // not provided, these types will be used.
+  typedef float scalar_t;
+  typedef int   lno_t;
+  typedef long  gno_t;
+  typedef int   lid_t;
+  typedef long  gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 };
 
 template <typename User>
 class InputAdapter {
 private:
 public:
+
+  typedef User user_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
+
   // Return enumerated InputAdapterType for the input adapter.
   // This function is implemented in the MatrixAdapter, GraphAdapter,
   // MeshAdapter, CoordAdapter and IdAdapter subclasses.
