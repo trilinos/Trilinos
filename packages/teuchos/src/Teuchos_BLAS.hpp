@@ -314,7 +314,7 @@ namespace Teuchos
       /// real-arithmetic specialization of GivensRotator.  Complex
       /// numbers don't have a sign; they have an angle.
       ScalarType SIGN (ScalarType x, ScalarType y) {
-	typedef ScalarTraits<Scalar> STS;
+	typedef ScalarTraits<ScalarType> STS;
 
 	if (y > STS::zero()) {
 	  return STS::magnitude (x);
@@ -354,7 +354,7 @@ namespace Teuchos
 	  typename ScalarTraits<ScalarType>::magnitudeType* c,
 	  ScalarType* s) const
     {
-      typedef ScalarTraits<Scalar> STS;
+      typedef ScalarTraits<ScalarType> STS;
       typedef typename STS::magnitudeType MagnitudeType;
       typedef ScalarTraits<MagnitudeType> STM;
 
@@ -409,7 +409,7 @@ namespace Teuchos
 	  ScalarType* c, 
 	  ScalarType* s) const
     {
-      typedef ScalarTraits<Scalar> STS;
+      typedef ScalarTraits<ScalarType> STS;
 
       // This is a straightforward translation into C++ of the
       // reference BLAS' implementation of DROTG.  You can get
