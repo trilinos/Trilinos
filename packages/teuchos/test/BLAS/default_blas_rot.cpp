@@ -44,9 +44,12 @@
 /// \author Mark Hoemmen
 ///
 /// This program tests Teuchos::DefaultBLASImpl::ROTG against
-/// Teuchos::BLAS::ROTG for ScalarType=double and
-/// std::complex<double>.  This is a reasonable correctness test,
-/// assuming that Teuchos::BLAS invokes the BLAS library.
+/// Teuchos::BLAS::ROTG for ScalarType=double.  This is a reasonable
+/// correctness test, assuming that Teuchos::BLAS invokes the BLAS
+/// library.
+///
+/// TODO: Test for ScalarType=std::complex<double>.  This would
+/// require constructing some complex-valued tests.
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_BLAS.hpp>
