@@ -180,7 +180,7 @@ public:
     // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
 
     Levels_[startLevel]->Request(smootherFactory);
-    // Levels_[startLevel]->Request(coarsestSolverFactory);
+    Levels_[startLevel]->Request(coarsestSolverFactory);
 
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
@@ -198,7 +198,7 @@ public:
         std::cout << "Level " << nextCoarseLevelID << ": Request RAP" << std::endl; std::cout.flush();
         Levels_[nextCoarseLevelID]->Request(rapFactory);
         Levels_[nextCoarseLevelID]->Request(smootherFactory); //TODO: skip if lastLevel
-        // Levels_[nextCoarseLevelID]->Request(coarsestSolverFactory);
+        Levels_[nextCoarseLevelID]->Request(coarsestSolverFactory);
       }
 
       Level & level = *Levels_[iLevel];
@@ -225,9 +225,9 @@ public:
       if (iLevel == lastLevel || (Ac != Teuchos::null && Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
         if (nextCoarseLevelID <= lastLevel) {
           std::cout << "Level " << nextCoarseLevelID << ": Release RAP" << std::endl; std::cout.flush();
-          // Levels_[nextCoarseLevelID]->Release(rapFactory);
-          // Levels_[nextCoarseLevelID]->Release(smootherFactory);
-          // Levels_[nextCoarseLevelID]->Release(coarsestSolverFactory);
+          Levels_[nextCoarseLevelID]->Release(rapFactory);
+          Levels_[nextCoarseLevelID]->Release(smootherFactory);
+	  Levels_[nextCoarseLevelID]->Release(coarsestSolverFactory);
         }
 
         std::cout << "BUILD COARSE" << std::endl; std::cout.flush();
@@ -242,7 +242,7 @@ public:
         std::cout << "BUILD SMOO" << std::endl; std::cout.flush();
         smootherFactory.Build(level);
         level.Release(smootherFactory);
-        // level.Release(coarsestSolverFactory);
+	level.Release(coarsestSolverFactory);
 
       }
 
