@@ -140,7 +140,7 @@ namespace MueLu {
       SetFactoryManager SFM(level, factoryManager_);
 
       if (smootherFact_ != Teuchos::null) {
-        smootherFact_->NewBuild(level);
+        smootherFact_->CallBuild(level);
           
         if (level.IsAvailable("PreSmoother", smootherFact_.get())) {
           RCP<SmootherBase> Pre  = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact_.get());

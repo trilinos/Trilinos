@@ -25,8 +25,8 @@ namespace MueLu {
 
     A reference counter keeps track of the storage and automatically frees the memory if
     the data is not needed any more. In the standard mode, the data first has to be requested
-    by calling the Request function. Then the data can be set by calling SetData.
-    With GetData the user can fetch data when needed. Release decrements the reference counter
+    by calling the Request function. Then the data can be set by calling Set.
+    With Get the user can fetch data when needed. Release decrements the reference counter
     for the given variable.
   */
   class Needs : public BaseClass {
@@ -60,14 +60,13 @@ namespace MueLu {
     virtual ~Needs() {}
     //@}
 
-    //! @name SetData
+    //! @name Set
     //! @brief functions for setting data in data storage
     //@{
 
     //! Store need label and its associated data. This does not increment the storage counter.
-    //TODO: rename SetData -> Set
     template <class T>
-    void SetData(const std::string& ename, const T &entry, const FactoryBase* factory) {
+    void Set(const std::string& ename, const T &entry, const FactoryBase* factory) {
         // check if data is requested
         if(countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0)
         {
@@ -124,14 +123,14 @@ namespace MueLu {
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     // Usage: Level->Get< RCP<Operator> >("A", A, factoryPtr)
     template <class T>
-    void GetData(const std::string& ename, T &value, const FactoryBase* factory) {
+    void Get(const std::string& ename, T &value, const FactoryBase* factory) const {
         dataTable_.Get<T>(ename,value,factory);
     }
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
-    T & GetData(const std::string& ename, const FactoryBase* factory)
+    T & Get(const std::string& ename, const FactoryBase* factory)
     {
       if (dataTable_.isKey(ename,factory))
       {
@@ -242,7 +241,7 @@ namespace MueLu {
     Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
     hasn't been saved.
     */
-    int NumRequests(const std::string ename, const FactoryBase* factory) {
+    int NumRequests(const std::string ename, const FactoryBase* factory) const {
       //FIXME should we return 0 instead of throwing an exception?
 
       if (!countTable_.isKey(ename,factory))
@@ -343,15 +342,13 @@ namespace MueLu {
     //@{
 
     //! returns a vector of strings containing all key names of requested variables
-    std::vector<std::string> RequestedKeys()
-	{
-    	return countTable_.keys();
-	}
+    std::vector<std::string> RequestedKeys() const {
+      return countTable_.keys();
+    }
 
-    std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string ename)
-	{
-    	return countTable_.handles(ename);
-	}
+    std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string ename) const {
+      return countTable_.handles(ename);
+    }
 
     //! returns a vector of strings containing all key names of available variables
     std::vector<std::string> AvailableKeys()
@@ -364,7 +361,7 @@ namespace MueLu {
     	return dataTable_.handles(ename);
 	}
 
-    std::string GetDataType(const std::string ename, const FactoryBase* fac) const
+    std::string GetType(const std::string ename, const FactoryBase* fac) const
     {
     	return dataTable_.GetType(ename,fac);
     }

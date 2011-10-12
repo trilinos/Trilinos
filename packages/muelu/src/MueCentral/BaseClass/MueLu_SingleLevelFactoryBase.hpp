@@ -37,12 +37,12 @@ namespace MueLu {
     virtual void Build(Level & currentLevel) const = 0;
 
     //!
-    virtual void NewBuild(Level & requestedLevel) const {
+    virtual void CallBuild(Level & requestedLevel) const {
       Build(requestedLevel);
     }
 
     //!
-    virtual void callDeclareInput(Level & requestedLevel) const {
+    virtual void CallDeclareInput(Level & requestedLevel) const {
       DeclareInput(requestedLevel);
     }
  //@}

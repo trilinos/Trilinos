@@ -44,13 +44,13 @@ namespace MueLu {
     //@{
 
     /*! @brief Build aggregates. */
-    virtual void NewBuild(Level & requestedLevel) const {
+    virtual void CallBuild(Level & requestedLevel) const {
       // TODO: add some tests here, ie throw exception if reuse not possible and option ReBuild=false
       // or, better, call currentLevel->Get(string_,factory_); to transfer data to "this"
 
     }
 
-    virtual void callDeclareInput(Level & requestedLevel) const {
+    virtual void CallDeclareInput(Level & requestedLevel) const {
       return;
     }
 

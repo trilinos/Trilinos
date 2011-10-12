@@ -29,12 +29,12 @@ namespace MueLu {
     //{@
     
     //!
-    void NewBuild(Level & requestedLevel) const {  
+    void CallBuild(Level & requestedLevel) const {  
       TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
     }
 
     //!
-    void callDeclareInput(Level & requestedLevel) const {  }
+    void CallDeclareInput(Level & requestedLevel) const {  }
 
     //@}
     

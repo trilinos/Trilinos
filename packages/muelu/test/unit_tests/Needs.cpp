@@ -12,7 +12,7 @@ namespace MueLuTests {
   using MueLu::Needs;
 
   //this macro declares the unit-test-class:
-  TEUCHOS_UNIT_TEST(Needs, Constructor)
+  TEUCHOS_UNIT_TEST(Needs, Constructor) 
   {
     //we are now in a class method declared by the above macro, and
     //that method has these input arguments:
@@ -39,7 +39,7 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), false);
     needs.Request(aNeed,NULL);
-    needs.SetData(aNeed,42,NULL);
+    needs.Set(aNeed,42,NULL);
     TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), true);
   }
 
@@ -65,7 +65,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs = Needs();
     double value=0;
-    TEST_THROW( needs.GetData("nonExistentNeed",value,NULL), std::logic_error );
+    TEST_THROW( needs.Get("nonExistentNeed",value,NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, SetAndGet)
@@ -75,9 +75,9 @@ namespace MueLuTests {
     std::string aNeed = "knockNeed";
     double trueValue = 42;
     needs.Request(aNeed,NULL);
-    needs.SetData(aNeed,trueValue,NULL);
+    needs.Set(aNeed,trueValue,NULL);
     double expectedValue = 0;
-    needs.GetData(aNeed,expectedValue,NULL);
+    needs.Get(aNeed,expectedValue,NULL);
     TEST_EQUALITY(trueValue,expectedValue);
   }
 
@@ -94,9 +94,9 @@ namespace MueLuTests {
     Needs needs = Needs();
     std::string aNeed = "knockNeed";
     double trueValue = 42;
-    needs.SetData(aNeed,trueValue,NULL);
+    needs.Set(aNeed,trueValue,NULL);
     double expectedValue = 0;
-    TEST_THROW( expectedValue = needs.GetData<double>(aNeed,NULL), MueLu::Exceptions::RuntimeError );
+    TEST_THROW( expectedValue = needs.Get<double>(aNeed,NULL), MueLu::Exceptions::RuntimeError );
     TEST_THROW( needs.Release(aNeed,NULL), MueLu::Exceptions::RuntimeError );
 
 	//    RCP<MueLu::TentativePFactory> fac = rcp(new MueLu::TentativePFactory() );
@@ -114,14 +114,14 @@ namespace MueLuTests {
     double trueValue = 42;
     needs.Request(aNeed,NULL);         // TODO: write new test
     needs.Request(aNeed,NULL);
-    needs.SetData(aNeed,trueValue,NULL);
+    needs.Set(aNeed,trueValue,NULL);
     double value = 0;
-    needs.GetData(aNeed,value,NULL);
+    needs.Get(aNeed,value,NULL);
     needs.Release(aNeed,NULL);
     TEST_EQUALITY(trueValue,value);
     TEST_EQUALITY(needs.NumRequests(aNeed,NULL),1);
     value = 0;
-    needs.GetData(aNeed,value,NULL);
+    needs.Get(aNeed,value,NULL);
     needs.Release(aNeed,NULL);
     //try to get the need one too many times
     //JG TODO, disable for the moment    TEST_THROW( needs.Get(aNeed,value), std::logic_error );
@@ -139,10 +139,10 @@ namespace MueLuTests {
     Needs needs = Needs();
     RCP<foobarClass> trueValue = rcp(new foobarClass);
     needs.Request("foobar",NULL);
-    needs.SetData("foobar",trueValue,NULL);
+    needs.Set("foobar",trueValue,NULL);
     RCP<foobarClass> value;
-    needs.GetData("foobar",value,NULL);
+    needs.Get("foobar",value,NULL);
     TEST_EQUALITY(trueValue,value);
   }
 
-}//namespace MueLuTests
+} // namespace MueLuTests
