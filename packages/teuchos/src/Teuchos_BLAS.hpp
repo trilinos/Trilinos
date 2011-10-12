@@ -313,7 +313,7 @@ namespace Teuchos
       /// We provide this method on purpose only for the
       /// real-arithmetic specialization of GivensRotator.  Complex
       /// numbers don't have a sign; they have an angle.
-      ScalarType SIGN (ScalarType x, ScalarType y) {
+      ScalarType SIGN (ScalarType x, ScalarType y) const {
 	typedef ScalarTraits<ScalarType> STS;
 
 	if (y > STS::zero()) {
@@ -377,7 +377,7 @@ namespace Teuchos
       ScalarType alpha;
       MagnitudeType norm, scale;
 
-      if (STM::magnitude (ca) == STM::zero()) {
+      if (STS::magnitude (*ca) == STM::zero()) {
 	*c = STM::zero();
 	*s = STS::one();
 	*ca = *cb;
