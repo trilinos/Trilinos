@@ -179,17 +179,9 @@ public:
   //Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
   {
-#ifdef OLD
-    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent);
-#else
-    std::map<GlobalOrdinal, GlobalOrdinal> GID2localgid;
-    RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > colbasedomegamap = BuildLocalReplicatedColMap(DinvAPtent,GID2localgid);
-#endif
 
-    TEST_FOR_EXCEPTION(colbasedomegamap->isDistributed(), Exceptions::RuntimeError, "Muelu::PgPFactory::ComputeRowBasedOmegas: colbasedomegamap is distributed. Error.");
-    if(colbasedomegamap->getMinAllGlobalIndex() != DinvAPtent->getDomainMap()->getMinAllGlobalIndex()) std::cout << "MinAllGID does not match" << std::endl; //throw("MinAllGID does not match");
-    if(colbasedomegamap->getMaxAllGlobalIndex() != DinvAPtent->getDomainMap()->getMaxAllGlobalIndex()) std::cout << "MaxAllGID does not match" << std::endl; //throw("MaxAllGID does not match");
-    if(colbasedomegamap->getGlobalNumElements() != DinvAPtent->getDomainMap()->getGlobalNumElements()) std::cout << "NumGlobalElements do not match" << std::endl; //throw("NumGlobalElements do not match");
+    std::map<GlobalOrdinal, GlobalOrdinal> GID2localgid;
+    BuildLocalReplicatedColMap(DinvAPtent,GID2localgid);
 
     RCP<Teuchos::Array<Scalar> > Numerator   = Teuchos::null;
     RCP<Teuchos::Array<Scalar> > Denominator = Teuchos::null;
@@ -215,13 +207,8 @@ public:
       // compute A * D^{-1} * A * P0
       RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
 
-#ifdef OLD
-      Numerator = MultiplyAll(AP0, ADinvAP0, colbasedomegamap);
-      Denominator = MultiplySelfAll(ADinvAP0, colbasedomegamap);
-#else
       Numerator = MultiplyAll(AP0, ADinvAP0, GID2localgid);
       Denominator = MultiplySelfAll(ADinvAP0, GID2localgid);
-#endif
       }
       break;
     case L2NORM: {
@@ -231,13 +218,8 @@ public:
       //   omega =   -----------------------------
       //             diag( P0' A' D^{-1}' D^{-1} A P0)
       //
-#ifdef OLD
-      Numerator = MultiplyAll(Ptent, DinvAPtent, colbasedomegamap);
-      Denominator = MultiplySelfAll(DinvAPtent, colbasedomegamap);
-#else
       Numerator = MultiplyAll(Ptent, DinvAPtent, GID2localgid);
       Denominator = MultiplySelfAll(DinvAPtent, GID2localgid);
-#endif
       }
       break;
     case DINVANORM: {
@@ -256,13 +238,8 @@ public:
       RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
       Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-#ifdef OLD
-      Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, colbasedomegamap);
-      Denominator = MultiplySelfAll(DinvADinvAP0, colbasedomegamap);
-#else
       Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
       Denominator = MultiplySelfAll(DinvADinvAP0, GID2localgid);
-#endif
       }
       break;
     case ATDINVTPLUSDINVANORM: {
@@ -283,21 +260,12 @@ public:
       RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAPtent,false,doFillComplete,optimizeStorage);
       Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-#ifdef OLD
-      Numerator = MultiplyAll(Ptent, DinvADinvAP0, colbasedomegamap);
-      RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, colbasedomegamap);
-#else
       Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);
       RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, GID2localgid);
-#endif
       TEST_FOR_EXCEPTION(Numerator->size() != Numerator2->size(), Exceptions::RuntimeError, "PgPFactory::ComputeRowBasedOmegas: size of Numerator and Numerator2 different. Error");
       for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
         (*Numerator)[i] += (*Numerator2)[i];
-#ifdef OLD
-      Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, colbasedomegamap);
-#else
       Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, GID2localgid);
-#endif
       for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
         (*Denominator)[i] *= 2.;
 
@@ -324,23 +292,14 @@ public:
     }
 
     /////////////////// transform ColBasedOmegas to row based omegas (local ids)
-#ifdef OLD
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
-        TransformCol2RowBasedOmegas(ColBasedOmegas, colbasedomegamap, DinvAPtent);
-#else
-    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
-        TransformCol2RowBasedOmegas(ColBasedOmegas, colbasedomegamap, GID2localgid, DinvAPtent);
-#endif
+        TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent);
 
     return RowBasedOmegas;
   }
 
   // This routine still has Epetra/Tpetra specific code
-#ifdef OLD
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const RCP<const Operator>& Op) const
-#else
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas,const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& colbasedomegamap, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
-#endif
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
   {
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
 
@@ -374,17 +333,9 @@ public:
         {
           for(size_t j=0; j<nnz; j++)
           {
-#ifdef OLD
-            GlobalOrdinal col_gid = indices[j]; // local id = global id
-            LocalOrdinal col_omega_lid = colbasedomegamap->getLocalElement(col_gid);
-            Scalar omega = (*ColBasedOmegas)[col_omega_lid];
-#else
             GlobalOrdinal col_gid = Op->getColMap()->getGlobalElement(indices[j]);
             GlobalOrdinal localgid = GID2localgid.at(col_gid);
-            //LocalOrdinal col_omega_lid = colbasedomegamap->getLocalElement(localgid);
-            //Scalar omega = (*ColBasedOmegas)[col_omega_lid];
             Scalar omega = (*ColBasedOmegas)[localgid];
-#endif
             Epetra_Vector* eeRowBasedOmegas = eRowBasedOmegas->getEpetra_Vector();
             if((*eeRowBasedOmegas)[row] == -666.0)
               eeRowBasedOmegas->ReplaceMyValue(row,0,omega);
@@ -429,18 +380,10 @@ public:
         {
           for(size_t j=0; j<nnz; j++)
           {
-#ifdef OLD
-            GlobalOrdinal col_gid = indices[j]; // local id = global id
-            LocalOrdinal col_omega_lid = colbasedomegamap->getLocalElement(col_gid);
-            Scalar omega = (*ColBasedOmegas)[col_omega_lid];
-#else
             GlobalOrdinal col_gid = Op->getColMap()->getGlobalElement(indices[j]);
-            //GlobalOrdinal localgid = GID2localgid[col_gid];
             GlobalOrdinal localgid = GID2localgid.at(col_gid);
-            //LocalOrdinal col_omega_lid = colbasedomegamap->getLocalElement(localgid);
-            //Scalar omega = (*ColBasedOmegas)[col_omega_lid];
             Scalar omega = (*ColBasedOmegas)[localgid];
-#endif
+
             RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ttRowBasedOmegas = tRowBasedOmegas->getTpetra_Vector();
             Teuchos::ArrayRCP<const Scalar> localRowData = ttRowBasedOmegas->getData(0);
             if(localRowData[row] == -666.0)
@@ -468,17 +411,9 @@ public:
     return RowBasedOmegas;
   }
 
-#ifdef OLD
-  RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
-#else
   RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
-#endif
   {
-#ifdef OLD
-    Teuchos::Array<Scalar> InnerProd_local(InnerProdMap->getMaxAllGlobalIndex()+1,Teuchos::ScalarTraits<Scalar>::zero());
-#else
     Teuchos::Array<Scalar> InnerProd_local(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero());
-#endif
 
     for(size_t n=0; n<Op->getNodeNumRows(); n++)
     {
@@ -489,19 +424,12 @@ public:
       for(size_t i=0; i<Teuchos::as<size_t>(lindices.size()); i++)
       {
         GlobalOrdinal gid = Op->getColMap()->getGlobalElement(lindices[i]);
-#ifdef OLD
-        InnerProd_local[gid] += lvals[i]*lvals[i];
-#else
         GlobalOrdinal localgid = GID2localgid.at(gid);
         InnerProd_local[localgid] += lvals[i]*lvals[i];
-#endif
       }
     }
-#ifdef OLD
-    RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(InnerProdMap->getMaxAllGlobalIndex()+1,Teuchos::ScalarTraits<Scalar>::zero()));
-#else
     RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero()));
-#endif
+
     /////////////// sum up all values to global
     Teuchos::reduceAll(*(Op->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<const GlobalOrdinal>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
 
@@ -509,11 +437,7 @@ public:
   }
 
 
-#ifdef OLD
-  RCP<Teuchos::Array<Scalar> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& InnerProdMap) const
-#else
   RCP<Teuchos::Array<Scalar> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
-#endif
   {
 
 
@@ -526,11 +450,7 @@ public:
     Teuchos::RCP<Xpetra::Operator<double> > leftTright = MueLu::Utils<double>::TwoMatrixMultiply(leftT,false,right,false);
     leftTright->describe(*fos,Teuchos::VERB_EXTREME);*/
 
-#ifdef OLD
-    Teuchos::Array<Scalar> InnerProd_local(InnerProdMap->getMaxAllGlobalIndex()+1,Teuchos::ScalarTraits<Scalar>::zero());
-#else
     Teuchos::Array<Scalar> InnerProd_local(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero());
-#endif
 
     for(size_t n=0; n<left->getNodeNumRows(); n++)
     {
@@ -550,23 +470,15 @@ public:
           GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
           if(left_gid == right_gid)
           {
-#ifdef OLD
-            InnerProd_local[left_gid] += lvals_left[i]*lvals_right[j];
-#else
             GlobalOrdinal left_localgid = GID2localgid.at(left_gid);
             InnerProd_local[left_localgid] += lvals_left[i]*lvals_right[j];
-#endif
             break; // skip remaining gids of right operator
           }
         }
       }
     }
 
-#ifdef OLD
-    RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(InnerProdMap->getMaxAllGlobalIndex()+1,Teuchos::ScalarTraits<Scalar>::zero()));
-#else
     RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero()));
-#endif
 
     /////////////// sum up all values to global
     Teuchos::reduceAll(*(left->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<const GlobalOrdinal>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
@@ -575,11 +487,8 @@ public:
   }
 
 
-#ifdef OLD
-  Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0) const
-#else
-  Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0,std::map<GlobalOrdinal, GlobalOrdinal>& GID2localgid) const
-#endif
+  /*Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >*/
+  void BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0,std::map<GlobalOrdinal, GlobalOrdinal>& GID2localgid) const
   {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
     Teuchos::RCP< const Teuchos::Comm< int > > comm = DinvAP0->getRangeMap()->getComm();
@@ -588,12 +497,8 @@ public:
     Teuchos::Array<GlobalOrdinal> localreplicatedcolgids;
     reduceAllXpetraMap(localreplicatedcolgids,*(DinvAP0->getDomainMap()));
 
-#ifdef OLD
-#else
     // map GID -> localgid
-    //std::map<GlobalOrdinal, GlobalOrdinal> GID2localgid;
     GlobalOrdinal curLocalGid = 0;
-
 
     for (size_t i = 0; i<Teuchos::as<size_t>(localreplicatedcolgids.size()); i++)
     {
@@ -601,32 +506,7 @@ public:
       //std::cout << "GID " << localreplicatedcolgids[i] << " localgid " << GID2localgid[localreplicatedcolgids[i]] << std::endl;
       curLocalGid++;
     }
-#endif
 
-    // Epetra-specific code
-    if (DinvAP0->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-      Teuchos::RCP<Epetra_Map> epetra_locreplicatedomegagids = Teuchos::rcp(new Epetra_Map(localreplicatedcolgids.size(),localreplicatedcolgids.size(),&localreplicatedcolgids[0],0,*Xpetra::toEpetra(comm)));
-      const RCP< const Xpetra::EpetraMap> xpetra_locreplicatedomegagids = Teuchos::rcp(new Xpetra::EpetraMap(epetra_locreplicatedomegagids));
-      return xpetra_locreplicatedomegagids;
-#else
-      throw("HAVE_MUELU_EPETRA_AND_EPETRAEXT not set. Compile MueLu with Epetra and EpetraExt enabled.");
-#endif
-    }
-    // Tpetra-specific code
-    else if(DinvAP0->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      Teuchos::RCP<Teuchos::ArrayView<const GlobalOrdinal> > arView = Teuchos::rcp(new Teuchos::ArrayView<const GlobalOrdinal>(&localreplicatedcolgids[0],localreplicatedcolgids.size()));
-      //Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetra_locreplicatedomegagids = Tpetra::createNonContigMap<GlobalOrdinal,LocalOrdinal>(*arView, comm);
-      Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetra_locreplicatedomegagids = Tpetra::createLocalMap<GlobalOrdinal,LocalOrdinal>(Teuchos::as<size_t>(DinvAP0->getColMap()->getMaxAllGlobalIndex()+1), comm); // create local map
-      const RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > xpetra_locreplicatedomegagids = Xpetra::toXpetra(tpetra_locreplicatedomegagids);
-      return xpetra_locreplicatedomegagids;
-#else
-      throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.");
-#endif
-    }
-
-    return Teuchos::null;
   }
 
 
