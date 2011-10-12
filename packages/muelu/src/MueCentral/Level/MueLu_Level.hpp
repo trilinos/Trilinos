@@ -118,7 +118,8 @@ namespace MueLu {
     void Set(const std::string ename, const T &entry, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = factory;
       if (factory == NULL) { fac = GetFactoryPtr(ename); }
-      else if (fac == NoFactory::get())	{
+      
+      if (fac == NoFactory::get())	{
 	// user defined data
 	// keep data
 	Keep(ename,NoFactory::get());
