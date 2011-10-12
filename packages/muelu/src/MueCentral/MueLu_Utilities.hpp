@@ -1220,6 +1220,13 @@ inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMa
 }
 #endif
 
+//! Little helper function to convert non-string types to strings
+template<class T>
+std::string toString(T const &what) {
+  std::ostringstream buf; buf << what;
+  return buf.str();
+}
+
 //RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB) {
 
 /*
@@ -1378,6 +1385,7 @@ public:
      
    } //Transpose
   }; //specialization to Scalar=double
+
 
 } //namespace MueLu
 #define MUELU_UTILITIES_SHORT

@@ -39,27 +39,6 @@ namespace Xpetra {
     //! Initialize all values in a multi-vector with specified value.
     virtual void putScalar(const Scalar &value)= 0;
 
-    //! Set multi-vector values to random numbers.
-    virtual void randomize(bool bUseXpetraImplementation = false)= 0;
-
-    //! Set multi-vector values to random numbers. XPetra implementation
-    virtual void Xpetra_randomize()
-    {
-        typedef Teuchos::ScalarTraits<Scalar> SCT;
-
-        const size_t numVectors = getNumVectors();
-        for (size_t i = 0; i < numVectors; i++)
-        {
-            Teuchos::ArrayRCP< Scalar > datai = getDataNonConst(i);
-
-            const size_t myLength = getLocalLength();
-            for(size_t j=0; j<myLength; j++)
-            {
-                datai[j] = SCT::random();
-            }
-        }
-    }
-
     //@}
 
     //! @name Data Copy and View get methods
@@ -147,6 +126,28 @@ namespace Xpetra {
  
     //! Set seed for Random function.
     virtual void setSeed(unsigned int seed)= 0;
+
+
+    virtual void randomize(bool bUseXpetraImplementation = false)= 0;
+
+    //! Set multi-vector values to random numbers. XPetra implementation
+    virtual void Xpetra_randomize()
+    {
+        typedef Teuchos::ScalarTraits<Scalar> SCT;
+
+        const size_t numVectors = getNumVectors();
+        for (size_t i = 0; i < numVectors; i++)
+        {
+            Teuchos::ArrayRCP< Scalar > datai = getDataNonConst(i);
+
+            const size_t myLength = getLocalLength();
+            for(size_t j=0; j<myLength; j++)
+            {
+                datai[j] = SCT::random();
+            }
+        }
+    }
+
 
     //@}
 

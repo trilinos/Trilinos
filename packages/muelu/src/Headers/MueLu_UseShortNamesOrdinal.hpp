@@ -65,3 +65,7 @@ typedef MueLu::AmesosSmoother AmesosSmoother;
 #ifdef MUELU_IFPACK_SMOOTHER_SHORT
 typedef MueLu::IfpackSmoother IfpackSmoother;
 #endif
+
+#ifdef MUELU_ZOLTANINTERFACE_SHORT
+typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
+#endif

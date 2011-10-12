@@ -100,7 +100,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Misc.
+    //! @name 
     //@{
 
     //! Get the Comm object for this Map.
@@ -111,14 +111,14 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Implements Teuchos::Describable
+    //! @name 
     //@{
 
     //! Return a simple one-line description of this object.
     virtual std::string description() const = 0;
 
     //! Print the object with some verbosity level to a FancyOStream object.
-    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=verbLevel_default) const = 0;
 
     //@}
 

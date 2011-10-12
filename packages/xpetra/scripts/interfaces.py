@@ -5,6 +5,7 @@ import os
 from string import Template
 from ConfigParser import SafeConfigParser
 from XpetraLib import *
+from XpetraLibConfig import *
 
 
 def buildFuncLineInterface( functionNode ):
@@ -34,7 +35,7 @@ def buildFuncLineInterface( functionNode ):
 #    declStr = declStr.rstrip()
 
     if 'TPETRA_DEPRECATED' in type: return ''
-    if "const =0" in argsstring: return '' #hack for CrsMatrix
+#    if "const =0" in argsstring: return '' #hack for CrsMatrix  #JJH commenting this out, otherwise Tpetra::RowGraph is empty
 
     # hack for MultiVector
     if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
@@ -44,11 +45,12 @@ def buildFuncLineInterface( functionNode ):
         
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"
     declStr = "    virtual " + declStr + "= 0;"
+    declStr = declStr.replace('=0= 0', '= 0')    #there may be repeated =0's, so fix that here
 
     return descStr + declStr + "\n" + "\n"
 ####
 
-xml_dir = '../../../../packages/tpetra/doc/xml/'
+xml_dir = trilinosRoot_dir + '/packages/tpetra/doc/xml/'
 conf_dir = 'interfaces/conf/'
 tmpl_dir = 'interfaces/tmpl/'
 out_dir = '../src/'

@@ -1,5 +1,13 @@
 
+#cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
 #cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_MUELU_AMESOS
+
+#cmakedefine HAVE_MUELU_AMESOS2
+
+#cmakedefine HAVE_MUELU_BELOS
 
 #cmakedefine HAVE_MUELU_DEBUG
 
@@ -9,20 +17,14 @@
 
 #cmakedefine HAVE_MUELU_EPETRA_AND_EPETRAEXT
 
-#cmakedefine HAVE_MUELU_TPETRA
-
 #cmakedefine HAVE_MUELU_IFPACK
 
 #cmakedefine HAVE_MUELU_IFPACK2
 
-#cmakedefine HAVE_MUELU_AMESOS
-
-#cmakedefine HAVE_MUELU_AMESOS2
-
-#cmakedefine HAVE_MUELU_BELOS
+#cmakedefine HAVE_MUELU_ML
 
 #cmakedefine HAVE_MUELU_PROFILING
 
-#cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#cmakedefine HAVE_MUELU_TPETRA
 
-#cmakedefine HAVE_MUELU_ML
+#cmakedefine HAVE_MUELU_ZOLTAN
