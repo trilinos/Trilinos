@@ -215,6 +215,27 @@ typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t
 static nthread_mutex_t request_args_map_mutex=NTHREAD_MUTEX_INITIALIZER;
 static nthread_cond_t  request_args_map_cond =NTHREAD_COND_INITIALIZER;
 
+
+static void print_raw_buf(void *buf, uint32_t size)
+{
+    if (logging_debug(rpc_debug_level)) {
+        FILE* f=logger_get_file();
+        u_int64_t print_limit=(size<96) ? size : 96;
+        fprintf(f, "\nbuf (%p)\n", buf);
+        fflush(f);
+        if (buf != NULL) {
+            int l=0;
+            for (l=0;l<print_limit;l++) {
+                if (l%32 == 0) fprintf(f, "\nbuf (%lu) (offset(%d)) => ", buf, l);
+                fprintf(f, "%02hhX", ((char *)buf)[l]);
+            }
+            fprintf(f, "\n");
+        }
+    }
+}
+
+
+
 void request_args_add(const NNTI_peer_t *caller, const unsigned long reqid, request_args_t *request_args)
 {
     caller_reqid cr(caller, reqid);
@@ -465,6 +486,7 @@ static int fetch_args(
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed registering long args: %s",
                 nnti_err_str(rc));
+        goto cleanup;
     }
 
     assert(header->fetch_args);
@@ -493,8 +515,8 @@ static int fetch_args(
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for long args: %s",
                 nnti_err_str(rc));
+        goto cleanup;
     }
-
 
     /* decode the arguments */
     log_debug(rpc_debug_level,"thread_id(%d): decoding args, size=%d",
@@ -511,6 +533,10 @@ static int fetch_args(
     trios_start_timer(call_time);
     if (!xdr_decode_args(&xdrs, args)) {
         log_fatal(rpc_debug_level,"could not decode args");
+        fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
+//        print_raw_buf(NNTI_BUFFER_C_POINTER(&encoded_args_hdl),
+//                NNTI_BUFFER_SIZE(&encoded_args_hdl));
+//        fflush(logger_get_file());
         rc = NSSI_EDECODE;
         goto cleanup;
     }
@@ -519,15 +545,16 @@ static int fetch_args(
 cleanup:
     /* if we had to fetch the args, we need to free the buffer */
     if (buf) {
-        rc=NNTI_unregister_memory(&encoded_args_hdl);
-        if (rc != NNTI_OK) {
+        int cleanup_rc;
+        cleanup_rc=NNTI_unregister_memory(&encoded_args_hdl);
+        if (cleanup_rc != NNTI_OK) {
             log_error(rpc_debug_level, "failed unregistering long args: %s",
-                    nnti_err_str(rc));
+                    nnti_err_str(cleanup_rc));
         }
         free(buf);
     }
 
-    return NSSI_OK;
+    return rc;
 }
 
 /**
