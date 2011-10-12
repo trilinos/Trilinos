@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.8.3 October 12, 2011
+
+1. Epetra - Fix a bug in FECrsMatrix GlobalAssemble.
+
+-------------------------------------------------------------------------------
+
 Release update 10.8.2 October 7, 2011
 
 1. Epetra  - Fix a Matrix Matrix multiply bug caused by incorrectly importing
