@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   Hierarchy H(A);
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  // AMG Setup phase
-  H->Setup();
+  // AMG Setup phase using default parameters
+  H.Setup();
 
   //
   // Solve Ax = b
