@@ -121,7 +121,7 @@ namespace MueLu {
     //! - If factory is not specified, mark data as user-defined
     //! - If factory == NULL, use defaultFactory (if available).
     template <class T>
-    void Set(const std::string ename, const T &entry, const FactoryBase* factory = NoFactory::get()) {
+    void Set(const std::string & ename, const T &entry, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = GetFactory(ename, factory);
       
       if (fac == NoFactory::get()) {
@@ -275,12 +275,12 @@ namespace MueLu {
     //@{
 
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string ename, const FactoryBase* factory = NoFactory::get()) {
+    bool IsAvailable(const std::string & ename, const FactoryBase* factory = NoFactory::get()) {
       return needs_.IsAvailable(ename, GetFactory(ename, factory));
     }
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string ename, const FactoryBase* factory = NoFactory::get()) {
+    bool IsRequested(const std::string & ename, const FactoryBase* factory = NoFactory::get()) {
       return needs_.IsRequested(ename, GetFactory(ename, factory));
     }
 

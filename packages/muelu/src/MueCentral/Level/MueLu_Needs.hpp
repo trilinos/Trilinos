@@ -197,12 +197,12 @@ namespace MueLu {
     //@{
 
     //! Test whether a need's value has been saved.
-    virtual bool IsAvailable(const std::string ename, const FactoryBase* factory) {
+    virtual bool IsAvailable(const std::string & ename, const FactoryBase* factory) {
       return dataTable_.isKey(ename,factory);
     }
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    virtual bool IsRequested(const std::string ename, const FactoryBase* factory) {
+    virtual bool IsRequested(const std::string & ename, const FactoryBase* factory) {
       return countTable_.isKey(ename,factory);
     }
 
@@ -241,7 +241,7 @@ namespace MueLu {
     Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
     hasn't been saved.
     */
-    int NumRequests(const std::string ename, const FactoryBase* factory) const {
+    int NumRequests(const std::string & ename, const FactoryBase* factory) const {
       //FIXME should we return 0 instead of throwing an exception?
 
       if (!countTable_.isKey(ename,factory))
@@ -346,7 +346,7 @@ namespace MueLu {
       return countTable_.keys();
     }
 
-    std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string ename) const {
+    std::vector<const MueLu::FactoryBase*> RequestedHandles(const std::string & ename) const {
       return countTable_.handles(ename);
     }
 
@@ -356,12 +356,12 @@ namespace MueLu {
     	return dataTable_.keys();
 	}
 
-    std::vector<const MueLu::FactoryBase*> AvailableHandles(const std::string ename)
+    std::vector<const MueLu::FactoryBase*> AvailableHandles(const std::string & ename)
 	{
     	return dataTable_.handles(ename);
 	}
 
-    std::string GetType(const std::string ename, const FactoryBase* fac) const
+    std::string GetType(const std::string & ename, const FactoryBase* fac) const
     {
     	return dataTable_.GetType(ename,fac);
     }
