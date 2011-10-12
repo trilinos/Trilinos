@@ -115,6 +115,46 @@ NNTI_result_t nnti_url_get_memdesc(const char *url, char *outstr, const int maxl
     return(NNTI_OK);
 }
 
+NNTI_result_t nnti_url_get_params(const char *url, char *outstr, const int maxlen)
+{
+    int plen=0;
+    char *sep=NULL;
+    char *params=NULL;
+
+    sep=strstr(url, "://");
+    if (sep == NULL) {
+        /* invalid URL */
+        return(NNTI_EINVAL);
+    } else {
+        char *address=sep+3;
+        sep=strchr(address, '?');
+        if (sep == NULL) {
+            /* no question mark, so no parameters */
+            outstr[0]='\0';
+            return(NNTI_OK);
+        } else {
+            params=sep+1;
+            plen=strlen(params);
+        }
+    }
+    if (plen == 0) {
+        /* nothing after question mark, so no params */
+        outstr[0]='\0';
+        return(NNTI_OK);
+    }
+
+    if (plen >= maxlen) {
+        /*  */
+        memcpy(outstr, params, maxlen-1);
+        outstr[maxlen-1]='\0';
+    } else {
+        memcpy(outstr, params, plen);
+        outstr[plen]='\0';
+    }
+
+    return(NNTI_OK);
+}
+
 NNTI_result_t nnti_sleep(const uint64_t msec)
 {
     int rc=0;
@@ -131,4 +171,6 @@ NNTI_result_t nnti_sleep(const uint64_t msec)
 
     rc=nanosleep(&ts, &rmtp);
     if (rc!=0) log_error(nnti_debug_level, "nanosleep failed: %s\n", strerror(errno));
+
+    return(rc);
 }
