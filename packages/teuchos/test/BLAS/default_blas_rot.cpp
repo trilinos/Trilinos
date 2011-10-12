@@ -226,8 +226,8 @@ namespace {
 
       // Test a range of other values.
       {
-	const ScalarType incr = one / as<ScalarType> (25);
-	for (int k = -100; k < 100; ++k) {
+	const ScalarType incr = one / as<ScalarType> (10);
+	for (int k = -30; k < 30; ++k) {
 	  const ScalarType a = as<ScalarType> (k) * incr;
 	  const ScalarType b = one - as<ScalarType> (k) * incr;
 	  success = success && compare (a, b);
