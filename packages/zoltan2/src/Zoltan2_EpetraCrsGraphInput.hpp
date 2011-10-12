@@ -19,6 +19,17 @@
 
 namespace Zoltan2 {
 
+template < >
+struct InputTraits<Epetra_CrsGraph>
+{
+  typedef float scalar_t;
+  typedef int   lno_t;
+  typedef int   gno_t;
+  typedef int   lid_t;
+  typedef int   gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+};
+
 /*! Zoltan2::EpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Epetra_CrsGraph data and weights.
 
@@ -31,7 +42,8 @@ namespace Zoltan2 {
     are ints.
 */
 
-class EpetraCrsGraphInput : public XpetraCrsGraphInput<int, int>{
+template <typename User>
+class EpetraCrsGraphInput : public XpetraCrsGraphInput<User>{
 private:
 
   RCP<const Epetra_CrsGraph> ingraph_;
@@ -47,6 +59,13 @@ private:
 
 public:
 
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
+
   std::string inputAdapterName()const {return std::string("EpetraCrsGraph");}
 
   //~EpetraCrsGraphInput() { }
@@ -55,7 +74,7 @@ public:
       \param graph  the graph represented by this input adapter
    */
   EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> graph):
-    XpetraCrsGraphInput<int, int> (
+    XpetraCrsGraphInput<User> (
       Teuchos::rcp(new Xpetra::EpetraCrsGraph(
         Teuchos::rcp_const_cast<Epetra_CrsGraph>(graph))))
   {

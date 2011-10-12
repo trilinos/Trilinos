@@ -19,19 +19,38 @@
 
 namespace Zoltan2 {
 
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+};
+
 /*! Zoltan2::TpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Tpetra::CrsMatrix data. 
 */
 
-template <Z2CLASS_TEMPLATE>
-class TpetraCrsMatrixInput : 
-  public XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>{
-private:
-
-  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> crsMatrix;
-  RCP<const crsMatrix > inmatrix_;
+template <typename User>
+class TpetraCrsMatrixInput : public XpetraCrsMatrixInput<User>{
 
 public:
+
+  typedef typename InputAdapter<User>::scalar_t scalar_t;
+  typedef typename InputAdapter<User>::lno_t    lno_t;
+  typedef typename InputAdapter<User>::gno_t    gno_t;
+  typedef typename InputAdapter<User>::lid_t    lid_t;
+  typedef typename InputAdapter<User>::gid_t    gid_t;
+  typedef typename InputAdapter<User>::node_t   node_t;
+
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> crsMatrix;
+
   /*! Name of input adapter type.
    */
   std::string inputAdapterName()const {return std::string("TpetraCrsMatrix");}
@@ -43,8 +62,8 @@ public:
   /*! Constructor 
    */
   TpetraCrsMatrixInput(const RCP<const crsMatrix> matrix):
-    XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>(
-      Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO, Node>(
+    XpetraCrsMatrixInput<User>(
+      Teuchos::rcp(new Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t>(
         Teuchos::rcp_const_cast<crsMatrix>(matrix))))
     
   {
@@ -57,6 +76,10 @@ public:
   { 
     return inmatrix_;
   }
+
+private:
+
+  RCP<const crsMatrix > inmatrix_;
 };
 } // namespace
 

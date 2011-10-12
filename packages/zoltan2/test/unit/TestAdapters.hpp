@@ -67,18 +67,16 @@ template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 
 private:
-    typedef Zoltan2::EpetraCrsGraphInput EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput EpetraCrsMatrixInput;
-    typedef Zoltan2::TpetraCrsGraphInput<LNO, GNO, LID, GID> 
-      TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<Z2PARAM_TEMPLATE> 
-      TpetraCrsMatrixInput;
-    typedef Zoltan2::XpetraCrsGraphInput<LNO, GNO, LID, GID> 
-      XpetraCrsGraphInput;
-    typedef Zoltan2::XpetraCrsMatrixInput<Z2PARAM_TEMPLATE> 
-      XpetraCrsMatrixInput;
-    typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> crsMatrix_t;
+    typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
+    typedef Tpetra::CrsGraph<LNO, GNO> tcrsGraph_t;
     typedef Tpetra::Map<LNO, GNO> map_t;
+
+    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
+    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
+    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> XpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> XpetraCrsMatrixInput;
 
     GNO xdim_, ydim_, zdim_;
 
@@ -86,7 +84,7 @@ private:
     Teuchos::RCP<Teuchos::Comm<int> > tcomm_; 
     Teuchos::RCP<Zoltan2::default_node_t> node_;
 
-    Teuchos::RCP<crsMatrix_t> M_; 
+    Teuchos::RCP<tcrsMatrix_t> M_; 
 
     Teuchos::RCP<TpetraCrsGraphInput > tgi_;
     Teuchos::RCP<TpetraCrsMatrixInput > tmi_;
@@ -104,7 +102,7 @@ private:
         mBytes_ = Zoltan2::getAllocatedMemory();
 #endif
       try{
-        M_ = Tpetra::MatrixMarket::Reader<crsMatrix_t>::readSparseFile(
+        M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
                  fname_, tcomm_, node_);
       }
       catch (std::exception &e) {
@@ -186,7 +184,7 @@ public:
 
     void setNode(Teuchos::RCP<Node> n) { node_ = n; }
 
-    Teuchos::RCP<crsMatrix_t> getMatrix() 
+    Teuchos::RCP<tcrsMatrix_t> getMatrix() 
     { 
       if (M_.is_null())
        createMatrix();
@@ -276,8 +274,8 @@ public:
         Teuchos::RCP<map_t > newMap = 
           Teuchos::rcp(new map_t(ngrows, newRowGNOs, base, tcomm_));
 
-        Teuchos::RCP<crsMatrix_t > newM64 =
-          Teuchos::rcp(new crsMatrix_t(newMap, entriesPerRow, 
+        Teuchos::RCP<tcrsMatrix_t > newM64 =
+          Teuchos::rcp(new tcrsMatrix_t(newMap, entriesPerRow, 
             Tpetra::StaticProfile));
  
         Teuchos::ArrayView<const LNO> lids;
@@ -336,14 +334,16 @@ class TestAdapters<double,int,int,int,int,Kokkos::DefaultNode::DefaultNodeType>
 {
 private:
     typedef Kokkos::DefaultNode::DefaultNodeType nodeType;
-    typedef Zoltan2::EpetraCrsGraphInput EpetraCrsGraphInput;   
-    typedef Zoltan2::EpetraCrsMatrixInput EpetraCrsMatrixInput;  
-    typedef Zoltan2::TpetraCrsGraphInput<int,int> TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<double,int,int> TpetraCrsMatrixInput;
-    typedef Zoltan2::XpetraCrsGraphInput<int,int> XpetraCrsGraphInput;
-    typedef Zoltan2::XpetraCrsMatrixInput<double,int,int> XpetraCrsMatrixInput;
-    typedef Tpetra::CrsMatrix<double,int,int,nodeType> crsMatrix_t;
-    typedef Tpetra::CrsGraph<int,int,nodeType> crsGraph_t;
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Tpetra::CrsMatrix<double,int,int,nodeType> tcrsMatrix_t;
+    typedef Tpetra::CrsGraph<int,int,nodeType> tcrsGraph_t;
+
+    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;   
+    typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;  
+    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<Tpetra::CrsGraph<int,int,nodeType> > XpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> XpetraCrsMatrixInput;
     typedef Tpetra::Map<int,int,nodeType> map_t;
 
     int xdim_, ydim_, zdim_;
@@ -358,7 +358,7 @@ private:
 
     Teuchos::RCP<Zoltan2::default_node_t> node_;
 
-    Teuchos::RCP<crsMatrix_t> M_; 
+    Teuchos::RCP<tcrsMatrix_t> M_; 
 
     Teuchos::RCP<EpetraCrsGraphInput > egi_;
     Teuchos::RCP<EpetraCrsMatrixInput > emi_;
@@ -370,7 +370,7 @@ private:
     void readMatrixMarketFile()
     {
       try{
-        M_ = Tpetra::MatrixMarket::Reader<crsMatrix_t>::readSparseFile(
+        M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
                  fname_, tcomm_, node_);
       }
       catch (std::exception &e) {
@@ -461,7 +461,7 @@ public:
     }
 #endif
 
-    Teuchos::RCP<crsMatrix_t> getMatrix() 
+    Teuchos::RCP<tcrsMatrix_t> getMatrix() 
     { 
       if (M_.is_null())
        createMatrix();
@@ -473,7 +473,7 @@ public:
       if (egi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        Teuchos::RCP<const crsGraph_t> tgraph = M_->getCrsGraph();
+        Teuchos::RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
         Teuchos::RCP<const map_t > trowMap = tgraph->getRowMap();
         Teuchos::RCP<const map_t > tcolMap = tgraph->getColMap();
 
@@ -552,7 +552,7 @@ public:
       if (tgi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        Teuchos::RCP<const crsGraph_t> graph = M_->getCrsGraph();
+        Teuchos::RCP<const tcrsGraph_t> graph = M_->getCrsGraph();
         tgi_ = Teuchos::rcp(new TpetraCrsGraphInput(graph));
       }
       return tgi_;
@@ -571,10 +571,12 @@ public:
     Teuchos::RCP<XpetraCrsMatrixInput > getXpetraCrsMatrixInputAdapter()
     {
       if (xmi_.is_null()){
-        Teuchos::RCP<TpetraCrsMatrixInput> tmatrix = 
-          getTpetraCrsMatrixInputAdapter();
-
-        xmi_ = Teuchos::rcp_implicit_cast<XpetraCrsMatrixInput>(tmatrix);
+        if (M_.is_null())
+          createMatrix();
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<double,int,int> > xM = 
+          Teuchos::rcp(new Xpetra::TpetraCrsMatrix<double,int,int>(
+                                   Teuchos::rcp_const_cast<tcrsMatrix_t>(M_)));
+        xmi_ = Teuchos::rcp(new XpetraCrsMatrixInput(xM));
       }
       return xmi_;
     }
@@ -582,10 +584,15 @@ public:
     Teuchos::RCP<XpetraCrsGraphInput > getXpetraCrsGraphInputAdapter()
     {
       if (xgi_.is_null()){
-        Teuchos::RCP<TpetraCrsGraphInput> tgraph = 
-          getTpetraCrsGraphInputAdapter();
+        if (M_.is_null())
+          createMatrix();
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<double,int,int> > xM = 
+          Teuchos::rcp(new Xpetra::TpetraCrsMatrix<double,int,int>(
+                                   Teuchos::rcp_const_cast<tcrsMatrix_t>(M_)));
+        Teuchos::RCP<const Xpetra::CrsGraph<int,int> > graph = 
+          xM->getCrsGraph();
 
-        xgi_ = Teuchos::rcp_implicit_cast<XpetraCrsGraphInput>(tgraph);
+        xgi_ = Teuchos::rcp(new XpetraCrsGraphInput(graph));
       }
       return xgi_;
     }

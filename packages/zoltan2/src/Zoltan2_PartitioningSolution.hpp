@@ -24,8 +24,8 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <Z2CLASS_TEMPLATE>
-  class PartitioningSolution : public Solution<Z2PARAM_TEMPLATE>
+template <typename User>
+  class PartitioningSolution : public Solution<User>
 {
 };
 
