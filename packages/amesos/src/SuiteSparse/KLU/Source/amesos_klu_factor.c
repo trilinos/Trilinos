@@ -397,6 +397,9 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     Int *R ;
     KLU_numeric *Numeric ;
     size_t n1, nzoff1, s, b6, n3 ;
+#ifdef KLU_ENABLE_OPENMP
+    int num_threads;
+#endif
 
     if (Common == NULL)
     {
@@ -494,9 +497,18 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
      * uses an Xwork of size 2n.  Total size is:
      *
      *    n*sizeof(Entry) + max (6*maxblock*sizeof(Int), 3*n*sizeof(Entry))
+     *
+     * If OpenMP is enabled the solve uses an Xwork of size num_threads * 4n.
      */
+#ifdef KLU_ENABLE_OPENMP
+#pragma omp parallel
+    num_threads = omp_get_num_threads();
+    s = KLU_mult_size_t (n, num_threads * sizeof (Entry), &ok) ;
+    n3 = KLU_mult_size_t (n, 3 * num_threads * sizeof (Entry), &ok) ;
+#else
     s = KLU_mult_size_t (n, sizeof (Entry), &ok) ;
     n3 = KLU_mult_size_t (n, 3 * sizeof (Entry), &ok) ;
+#endif
     b6 = KLU_mult_size_t (maxblock, 6 * sizeof (Int), &ok) ;
     Numeric->worksize = KLU_add_size_t (s, MAX (n3, b6), &ok) ;
     Numeric->Work = KLU_malloc (Numeric->worksize, 1, Common) ;
