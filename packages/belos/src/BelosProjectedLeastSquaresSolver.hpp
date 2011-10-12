@@ -622,7 +622,7 @@ namespace Belos {
       testUpdateColumn (std::ostream& out, 
 			const int numCols,
 			const bool testBlockGivens=false,
-			const bool verbose=false) const
+			const bool extraVerbose=false) const
       {
 	using Teuchos::Array;
 	using std::endl;
@@ -653,7 +653,7 @@ namespace Belos {
 
 	// Make a random least-squares problem.  
 	makeRandomProblem (H, z);
-	if (verbose) {
+	if (extraVerbose) {
 	  printMatrix<Scalar> (out, "H", H);
 	  printMatrix<Scalar> (out, "z", z);
 	}
@@ -741,7 +741,7 @@ namespace Belos {
 	// If printing out the matrices, copy out the upper triangular
 	// factors for printing.  (Both methods are free to leave data
 	// below the lower triangle.)
-	if (verbose) {
+	if (extraVerbose) {
 	  mat_type R_factorFromGivens (numCols, numCols);
 	  mat_type R_factorFromBlockGivens (numCols, numCols);
 	  mat_type R_factorFromLapack (numCols, numCols);
