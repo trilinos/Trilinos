@@ -48,14 +48,16 @@ void CommaSeperatedEntryValidator::validate(const Teuchos::ParameterEntry & entr
   std::vector<std::string> tokens;
   split(value,",",tokens);  
 
-  const std::string errorStr = "The value for \"string-list\" type parameter in sublist \""+sublistName+"\" named \""+paramName+"\" "
-                               "is incorrectly formatted. The expected format is\n"
-                               "   \"<string>[, <string>]*\" "
-                               "your value is \""+value+"\"";
+  if(!allowEmpty_) {
+     const std::string errorStr = "The value for \"string-list\" type parameter in sublist \""+sublistName+"\" named \""+paramName+"\" "
+                                  "is incorrectly formatted. The expected format is\n"
+                                  "   \"<string>[, <string>]*\" "
+                                  "your value is \""+value+"\"";
 
-  // verify that their is a response type and a evaluation type
-  TEST_FOR_EXCEPTION(tokens.size()==0,
-     Teuchos::Exceptions::InvalidParameterValue,errorStr);
+     // verify that their is a response type and an evaluation type
+     TEST_FOR_EXCEPTION(tokens.size()==0,
+        Teuchos::Exceptions::InvalidParameterValue,errorStr);
+  }
 }
 
 

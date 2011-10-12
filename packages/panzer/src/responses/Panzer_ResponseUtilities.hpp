@@ -25,7 +25,10 @@ namespace panzer {
   */
 class CommaSeperatedEntryValidator : public Teuchos::ParameterEntryValidator {
 public:
-  CommaSeperatedEntryValidator() {}
+  /** A basic constructor. If <code>allowEmpty</code> is true then the 
+    * empty string is a valid entry.
+    */
+  CommaSeperatedEntryValidator(bool allowEmpty=false) : allowEmpty_(allowEmpty) {}
 
   ValidStringsList validStringValues() const
   { return Teuchos::null; }
@@ -43,6 +46,9 @@ public:
   static void split(const std::string & str,
                     const std::string & delim,
                     std::vector<std::string> & tokens);
+private:
+
+  bool allowEmpty_; //! Is an empty string valid?
 };
 
 /** Given a parameter list, loop over all the entries
