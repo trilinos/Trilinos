@@ -84,9 +84,14 @@ namespace {
     MagnitudeType norm2 (const ScalarType a, const ScalarType& b)
     {
       const MagnitudeType scale = STS::magnitude(a) + STS::magnitude(b);
-      const ScalarType a_scaled = a / scale;
-      const ScalarType b_scaled = b / scale;
-      return scale * STM::squareroot (a_scaled*a_scaled + b_scaled*b_scaled);
+
+      if (scale == STM::zero()) {
+	return STM::zero();
+      } else {
+	const ScalarType a_scaled = a / scale;
+	const ScalarType b_scaled = b / scale;
+	return scale * STM::squareroot (a_scaled*a_scaled + b_scaled*b_scaled);
+      }
     }
 
     /// \brief Maximum allowed absolute difference between two
@@ -221,7 +226,7 @@ namespace {
 
       // Test a range of other values.
       {
-	const ScalarType incr = one / as<ScalarType> (10);
+	const ScalarType incr = one / as<ScalarType> (25);
 	for (int k = -100; k < 100; ++k) {
 	  const ScalarType a = as<ScalarType> (k) * incr;
 	  const ScalarType b = one - as<ScalarType> (k) * incr;
