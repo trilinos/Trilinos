@@ -38,18 +38,14 @@
 #define USE_RDMA_EVENTS
 #undef USE_RDMA_EVENTS
 
-//#define USE_FMA
+#define USE_FMA
 //#define USE_RDMA
-#define USE_MIXED
+//#define USE_MIXED
 
-/* mode 1: client uses GNI params from ALPS to create a Communication Domain
- * and attach to it.
- */
-#define USE_GLOBAL_CDM
-/* mode 2: client uses a mix of GNI params from ALPS and the server
- * (cookie/pTag) to create a communication domain and attach to it.
- */
-//#undef USE_GLOBAL_CDM
+/* mode 1 - client uses GNI params from ALPS to create a Commumnication Domain and attach to it */
+//#define USE_ALPS_PTAG
+/* mode 2 - client uses a mix of GNI params from ALPS and the server (cookie/pTag) to create a Commumnication Domain and attach to it */
+#undef USE_ALPS_PTAG
 
 
 #define NIC_ADDR_BITS    22
@@ -201,6 +197,8 @@ typedef struct {
     char             *peer_name;
     NNTI_ip_addr      peer_addr;
     NNTI_tcp_port     peer_port;
+    uint32_t          peer_cookie;
+    uint32_t          peer_ptag;
     NNTI_instance_id  peer_instance;
 
     alpsAppGni_t      peer_alps_info;
@@ -274,6 +272,8 @@ typedef struct {
 } gni_request_queue_handle;
 
 typedef struct {
+    uint16_t delivery_mode;
+
     gni_cdm_handle_t     cdm_hdl;
     gni_nic_handle_t     nic_hdl;
     NNTI_instance_id     instance;
@@ -318,6 +318,8 @@ static void create_peer(NNTI_peer_t *peer,
         char *name,
         NNTI_ip_addr addr,
         NNTI_tcp_port port,
+        uint32_t ptag,
+        uint32_t cookie,
         NNTI_instance_id instance);
 static void copy_peer(
         NNTI_peer_t *src,
@@ -365,6 +367,13 @@ static gni_connection *del_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *del_conn_instance(const NNTI_instance_id instance);
 static void close_all_conn(void);
 //static void print_put_buf(void *buf, uint32_t size);
+static void print_raw_buf(void *buf, uint32_t size);
+
+static int set_rdma_type(
+        gni_post_descriptor_t *pd);
+static uint16_t get_dlvr_mode_from_env();
+static int set_dlvr_mode(
+        gni_post_descriptor_t *pd);
 
 static int server_req_queue_init(
         gni_request_queue_handle *q,
@@ -576,6 +585,9 @@ NNTI_result_t NNTI_gni_init (
         strcpy(transport_global_data.listen_name, hostname);
 
 
+        transport_global_data.delivery_mode = get_dlvr_mode_from_env();
+
+
         log_debug(nnti_debug_level, "initializing Gemini");
 
 //        /* register trace groups (let someone else enable) */
@@ -605,7 +617,8 @@ NNTI_result_t NNTI_gni_init (
         trios_stop_timer("get_cpunum", call_time);
 
         transport_global_data.instance=GNI_INSTID(nic_addr, cpu_num, thread_num);
-        log_debug(nnti_debug_level, "nic_addr(%llu), cpu_num(%llu), thread_num(%llu), inst_id(%llu), derived.nic_addr(%llu), derived.cpu_num(%llu), derived.thread_num(%llu)",
+        log_debug(nnti_debug_level, "nic_addr(%llu), cpu_num(%llu), thread_num(%llu), inst_id(%llu), "
+                "derived.nic_addr(%llu), derived.cpu_num(%llu), derived.thread_num(%llu)",
                 (uint64_t)nic_addr, (uint64_t)cpu_num, (uint64_t)thread_num,
                 (uint64_t)transport_global_data.instance,
                 (uint64_t)GNI_NIC_ADDRESS(transport_global_data.instance),
@@ -642,7 +655,7 @@ NNTI_result_t NNTI_gni_init (
         trios_start_timer(call_time);
         rc=GNI_CdmAttach (transport_global_data.cdm_hdl,
                 transport_global_data.alps_info.device_id,
-                (uint32_t *)&transport_global_data.alps_info.local_addr,
+                (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &transport_global_data.nic_hdl);
         trios_stop_timer("CdmAttach", call_time);
         if (rc!=GNI_RC_SUCCESS) {
@@ -674,6 +687,8 @@ NNTI_result_t NNTI_gni_init (
                 transport_global_data.listen_name,
                 transport_global_data.listen_addr,
                 transport_global_data.listen_port,
+                transport_global_data.alps_info.ptag,
+                transport_global_data.alps_info.cookie,
                 transport_global_data.instance);
         trios_stop_timer("create_peer", call_time);
 
@@ -740,18 +755,22 @@ NNTI_result_t NNTI_gni_connect (
         const int               timeout,
         NNTI_peer_t            *peer_hdl)
 {
-    NNTI_result_t rc=NNTI_OK;
+    int rc=NNTI_OK;
 
     double call_time;
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
+    char params[NNTI_URL_LEN];
     char *sep;
 
     char          hostname[NNTI_HOSTNAME_LEN];
     char          port_str[NNTI_HOSTNAME_LEN];
     NNTI_tcp_port port;
+
+    char     *cookie_str;
+    char     *ptag_str;
+
     int s;
     struct hostent *host_entry;
     struct sockaddr_in skin;
@@ -769,7 +788,15 @@ NNTI_result_t NNTI_gni_connect (
     assert(trans_hdl);
     assert(peer_hdl);
 
-    log_debug(nnti_ee_debug_level, "enter");
+    log_debug(nnti_ee_debug_level, "enter (url=%s)", url);
+
+    conn = (gni_connection *)calloc(1, sizeof(gni_connection));
+    log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
+    if (conn == NULL) {
+        log_error(nnti_debug_level, "calloc returned NULL.  out of memory?: %s", strerror(errno));
+        rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
 
     if (url != NULL) {
         if ((rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
@@ -782,32 +809,91 @@ NNTI_result_t NNTI_gni_connect (
         }
 
         if ((rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
+            /* the peer described by 'url' is not an Gemini peer */
+            rc=NNTI_EINVAL;
             goto cleanup;
         }
 
-//        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//            return(rc);
-//        }
+        if ((rc=nnti_url_get_params(url, params, NNTI_URL_LEN)) != NNTI_OK) {
+            /* the peer described by 'url' is not an Gemini peer */
+            rc=NNTI_EINVAL;
+            goto cleanup;
+        }
 
         sep=strchr(address, ':');
         strncpy(hostname, address, sep-address);
         hostname[sep-address]='\0';
         strcpy(port_str, sep+1);
         port=strtol(port_str, NULL, 0);
+
+        log_debug(nnti_ee_debug_level, "params=%s", params);
+
+        ptag_str=strstr(params, "ptag=");
+        sep=strchr(ptag_str, '&');
+        *sep='\0';
+        log_debug(nnti_ee_debug_level, "ptag_str=%s", ptag_str+5);
+        conn->peer_ptag=strtol(ptag_str+5, NULL, 10);
+        *sep='&';
+
+        cookie_str=strstr(params, "cookie=");
+        log_debug(nnti_ee_debug_level, "cookie_str=%s", cookie_str+7);
+        conn->peer_cookie=strtoull(cookie_str+7, NULL, 10);
+
+        log_debug(nnti_ee_debug_level, "url=%s", url);
+
     } else {
         /*  */
         rc=NNTI_EINVAL;
         goto cleanup;
     }
 
+#ifdef USE_ALPS_PTAG
+    conn->cdm_hdl = transport_global_data.cdm_hdl;
+    conn->nic_hdl = transport_global_data.nic_hdl;
+#else
+    log_debug(nnti_ee_debug_level, "conn_nic_hdl - host(%s) device_id(%llu) local_addr(%lld) cookie(%llu) ptag(%llu) "
+                "apid(%llu) inst_id(%llu) gni_nic_addr(%llu) linux_cpu_num(%llu) omp_thread_num(%llu)",
+                transport_global_data.listen_name,
+                (unsigned long long)transport_global_data.alps_info.device_id,
+                (long long)transport_global_data.alps_info.local_addr,
+                (unsigned long long)conn->peer_cookie,
+                (unsigned long long)conn->peer_ptag,
+                (unsigned long long)transport_global_data.apid,
+                (unsigned long long)transport_global_data.instance,
+                (uint64_t)GNI_NIC_ADDRESS(transport_global_data.instance),
+                (uint64_t)GNI_CPU_NUMBER(transport_global_data.instance),
+                (uint64_t)GNI_THREAD_NUMBER(transport_global_data.instance));
 
-
-    s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0) {
-        log_warn(nnti_debug_level, "failed to create tcp socket: errno=%d (%s)", errno, strerror(errno));
-        rc=NNTI_EIO;
+    trios_start_timer(call_time);
+    rc=GNI_CdmCreate(transport_global_data.instance,
+            conn->peer_ptag,
+            conn->peer_cookie,
+            GNI_CDM_MODE_ERR_ALL_KILL,
+            &conn->cdm_hdl);
+    trios_stop_timer("CdmCreate", call_time);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "CdmCreate() failed: %d", rc);
+        rc=NNTI_EINVAL;
         goto cleanup;
     }
+
+    trios_start_timer(call_time);
+    rc=GNI_CdmAttach(conn->cdm_hdl,
+            transport_global_data.alps_info.device_id,
+            (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
+            &conn->nic_hdl);
+    trios_stop_timer("CdmAttach", call_time);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "CdmAttach() failed: %d", rc);
+        if (rc==GNI_RC_PERMISSION_ERROR)
+            rc=NNTI_EPERM;
+        else
+            rc=NNTI_EINVAL;
+        goto cleanup;
+    }
+#endif
+
+
 
     host_entry = gethostbyname(hostname);
     if (!host_entry) {
@@ -827,10 +913,19 @@ NNTI_result_t NNTI_gni_connect (
 //    else
 //        timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
 
+
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s < 0) {
+        log_warn(nnti_debug_level, "failed to create tcp socket: errno=%d (%s)", errno, strerror(errno));
+        rc=NNTI_EIO;
+        goto cleanup;
+    }
     trios_start_timer(call_time);
     start_time=trios_get_time();
     while((timeout==-1) || (elapsed_time < timeout)) {
+        log_debug(nnti_debug_level, "calling connect");
         if (connect(s, (struct sockaddr *)&skin, skin_size) == 0) {
+            log_debug(nnti_debug_level, "connected");
             break;
         }
         elapsed_time=(uint64_t)((trios_get_time()-start_time)*1000.0);
@@ -856,6 +951,8 @@ NNTI_result_t NNTI_gni_connect (
             hostname,
             skin.sin_addr.s_addr,
             skin.sin_port,
+            conn->peer_ptag,
+            conn->peer_cookie,
             conn->peer_instance);
 
     key=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
@@ -876,8 +973,12 @@ NNTI_result_t NNTI_gni_connect (
     }
 
 cleanup:
+    if (rc != NNTI_OK) {
+        if (conn!=NULL) free(conn);
+    }
     log_debug(nnti_ee_debug_level, "exit");
-    return(rc);
+
+    return((NNTI_result_t)rc);
 }
 
 
@@ -1259,8 +1360,9 @@ NNTI_result_t NNTI_gni_put (
 #else
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
-    gni_mem_hdl->post_desc.dlvr_mode             =GNI_DLVMODE_PERFORMANCE;
-//    gni_mem_hdl->post_desc.dlvr_mode             =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&gni_mem_hdl->post_desc);
+
     gni_mem_hdl->post_desc.local_addr            =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+src_offset;
     gni_mem_hdl->post_desc.local_mem_hndl.qword1 =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
     gni_mem_hdl->post_desc.local_mem_hndl.qword2 =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
@@ -1365,8 +1467,9 @@ NNTI_result_t NNTI_gni_get (
 #else
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
-    gni_mem_hdl->post_desc.dlvr_mode             =GNI_DLVMODE_PERFORMANCE;
-//    gni_mem_hdl->post_desc.dlvr_mode             =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&gni_mem_hdl->post_desc);
+
     gni_mem_hdl->post_desc.local_addr            =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+dest_offset;
     gni_mem_hdl->post_desc.local_mem_hndl.qword1 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
     gni_mem_hdl->post_desc.local_mem_hndl.qword2 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
@@ -1600,6 +1703,9 @@ retry:
     }
 
     print_wc(&wc);
+    if (nnti_rc == NNTI_OK) {
+        print_raw_buf((char *)reg_buf->payload+wc.byte_offset, wc.byte_len);
+    }
 
     memset(status, 0, sizeof(NNTI_status_t));
     status->op     = remote_op;
@@ -1612,16 +1718,40 @@ retry:
             case GNI_OP_PUT_INITIATOR:
             case GNI_OP_GET_TARGET:
             case GNI_OP_SEND:
-                create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, transport_global_data.instance);
-                create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port, conn->peer_instance);
+                create_peer(&status->src,
+                        transport_global_data.listen_name,
+                        transport_global_data.listen_addr,
+                        transport_global_data.listen_port,
+                        transport_global_data.alps_info.ptag,
+                        transport_global_data.alps_info.cookie,
+                        transport_global_data.instance);
+                create_peer(&status->dest,
+                        conn->peer_name,
+                        conn->peer_addr,
+                        conn->peer_port,
+                        conn->peer_ptag,
+                        conn->peer_cookie,
+                        conn->peer_instance);
                 break;
             case GNI_OP_GET_INITIATOR:
             case GNI_OP_PUT_TARGET:
             case GNI_OP_NEW_REQUEST:
             case GNI_OP_RESULT:
             case GNI_OP_RECEIVE:
-                create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port, conn->peer_instance);
-                create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, transport_global_data.instance);
+                create_peer(&status->src,
+                        conn->peer_name,
+                        conn->peer_addr,
+                        conn->peer_port,
+                        conn->peer_ptag,
+                        conn->peer_cookie,
+                        conn->peer_instance);
+                create_peer(&status->dest,
+                        transport_global_data.listen_name,
+                        transport_global_data.listen_addr,
+                        transport_global_data.listen_port,
+                        transport_global_data.alps_info.ptag,
+                        transport_global_data.alps_info.cookie,
+                        transport_global_data.instance);
                 break;
             }
     }
@@ -1895,8 +2025,9 @@ static void send_ack (
 #else
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
-    gni_mem_hdl->wc_post_desc.dlvr_mode      =GNI_DLVMODE_PERFORMANCE;
-//    gni_mem_hdl->wc_post_desc.dlvr_mode             =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&gni_mem_hdl->post_desc);
+
     gni_mem_hdl->wc_post_desc.local_addr     =(uint64_t)&gni_mem_hdl->wc;
     gni_mem_hdl->wc_post_desc.local_mem_hndl =gni_mem_hdl->wc_mem_hdl;
     gni_mem_hdl->wc_post_desc.remote_addr    =gni_mem_hdl->wc_dest_addr;
@@ -2593,11 +2724,11 @@ static int8_t is_buf_op_complete(
     return(rc);
 }
 
-static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_tcp_port port, NNTI_instance_id instance)
+static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_tcp_port port, uint32_t ptag, uint32_t cookie, NNTI_instance_id instance)
 {
     log_debug(nnti_ee_debug_level, "enter");
 
-    sprintf(peer->url, "gni://%s:%u/", name, ntohs(port));
+    sprintf(peer->url, "gni://%s:%u/?ptag=%llu&cookie=%llu", name, ntohs(port), (uint64_t)ptag, (uint64_t)cookie);
 
     peer->peer.transport_id                       =NNTI_TRANSPORT_GEMINI;
     peer->peer.NNTI_remote_process_t_u.gni.addr   =addr;
@@ -2822,19 +2953,22 @@ static int new_client_connection(
      */
     struct {
         NNTI_instance_id instance;
+        alpsAppGni_t     alps_info;
     } instance_in, instance_out;
     struct {
         nnti_gni_server_queue_attrs server_attrs;
-    } sa_in, sa_out;
+    } sa_in;
     struct {
         nnti_gni_client_queue_attrs client_attrs;
-    } ca_in, ca_out;
+    } ca_out;
 
     double call_time;
 
     c->connection_type=CLIENT_CONNECTION;
 
-    instance_out.instance = htonl(transport_global_data.instance);
+    instance_out.instance  = htonl(transport_global_data.instance);
+    instance_out.alps_info = transport_global_data.alps_info;
+
     trios_start_timer(call_time);
     rc = exchange_data(sock, 0, &instance_in, &instance_out, sizeof(instance_in));
     trios_stop_timer("exch data", call_time);
@@ -2842,65 +2976,18 @@ static int new_client_connection(
         goto out;
 
     c->peer_instance = ntohl(instance_in.instance);
+    c->peer_instance  = ntohl(instance_in.instance);
+    c->peer_alps_info = instance_in.alps_info;
 
-    trios_start_timer(call_time);
-    rc = exchange_data(sock, 0, &c->peer_alps_info, &transport_global_data.alps_info, sizeof(alpsAppGni_t));
-    trios_stop_timer("exch data", call_time);
-    if (rc)
-        goto out;
-
-#ifdef USE_GLOBAL_CDM
-    c->cdm_hdl = transport_global_data.cdm_hdl;
-    c->nic_hdl = transport_global_data.nic_hdl;
-#else
-    log_debug(nnti_debug_level, "conn_nic_hdl - host(%s) device_id(%llu) local_addr(%lld) cookie(%llu) ptag(%llu) "
-                "apid(%llu) inst_id(%llu) gni_nic_addr(%llu) linux_cpu_num(%llu) omp_thread_num(%llu)",
-                transport_global_data.listen_name,
-                (unsigned long long)transport_global_data.alps_info.device_id,
-                (long long)transport_global_data.alps_info.local_addr,
-                (unsigned long long)c->peer_alps_info.cookie,
-                (unsigned long long)c->peer_alps_info.ptag,
-                (unsigned long long)transport_global_data.apid,
-                (unsigned long long)transport_global_data.instance,
-                (uint64_t)GNI_NIC_ADDRESS(transport_global_data.instance),
-                (uint64_t)GNI_CPU_NUMBER(transport_global_data.instance),
-                (uint64_t)GNI_THREAD_NUMBER(transport_global_data.instance));
-
-    trios_start_timer(call_time);
-    rc=GNI_CdmCreate(transport_global_data.instance,
-            c->peer_alps_info.ptag,
-            c->peer_alps_info.cookie,
-            GNI_CDM_MODE_ERR_ALL_KILL,
-            &c->cdm_hdl);
-    trios_stop_timer("CdmCreate", call_time);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "CdmCreate() failed: %d", rc);
-        rc=NNTI_EINVAL;
-        goto out;
-    }
-
-    trios_start_timer(call_time);
-    rc=GNI_CdmAttach (c->cdm_hdl,
-            transport_global_data.alps_info.device_id,
-            (uint32_t *)&transport_global_data.alps_info.local_addr,
-            &c->nic_hdl);
-    trios_stop_timer("CdmAttach", call_time);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "CdmAttach() failed: %d", rc);
-        if (rc==GNI_RC_PERMISSION_ERROR)
-            rc=NNTI_EPERM;
-        else
-            rc=NNTI_EINVAL;
-        goto out;
-    }
-#endif
 
     memset(&sa_in, 0, sizeof(sa_in));
-    memset(&sa_out, 0, sizeof(sa_out));
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 0, &sa_in, &sa_out, sizeof(sa_in));
-    trios_stop_timer("exch data", call_time);
+    rc = read_full(sock, &sa_in, sizeof(sa_in));
+    trios_stop_timer("read server queue attrs", call_time);
+    if (rc == sizeof(sa_in)) {
+        rc=0;
+    }
     if (rc)
         goto out;
 
@@ -2908,15 +2995,17 @@ static int new_client_connection(
 
     client_req_queue_init(c);
 
-    memset(&ca_in, 0, sizeof(ca_in));
     memset(&ca_out, 0, sizeof(ca_out));
 
     ca_out.client_attrs.unblock_buffer_addr=c->queue_local_attrs.unblock_buffer_addr;
     ca_out.client_attrs.unblock_mem_hdl    =c->queue_local_attrs.unblock_mem_hdl;
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 0, &ca_in, &ca_out, sizeof(ca_in));
-    trios_stop_timer("exch data", call_time);
+    rc = write_full(sock, &ca_out, sizeof(ca_out));
+    trios_stop_timer("write client queue attrs", call_time);
+    if (rc == sizeof(ca_out)) {
+        rc=0;
+    }
     if (rc)
         goto out;
 
@@ -2937,13 +3026,14 @@ static int new_server_connection(
      */
     struct {
         NNTI_instance_id instance;
+        alpsAppGni_t     alps_info;
     } instance_in, instance_out;
     struct {
         nnti_gni_server_queue_attrs server_attrs;
-    } sa_in, sa_out;
+    } sa_out;
     struct {
         nnti_gni_client_queue_attrs client_attrs;
-    } ca_in, ca_out;
+    } ca_in;
 
     double call_time;
 
@@ -2954,7 +3044,8 @@ static int new_server_connection(
 
     c->connection_type=SERVER_CONNECTION;
 
-    instance_out.instance = htonl(transport_global_data.instance);
+    instance_out.instance  = htonl(transport_global_data.instance);
+    instance_out.alps_info = transport_global_data.alps_info;
 
     trios_start_timer(call_time);
     rc = exchange_data(sock, 1, &instance_in, &instance_out, sizeof(instance_in));
@@ -2962,18 +3053,13 @@ static int new_server_connection(
     if (rc)
         goto out;
 
-    c->peer_instance = ntohl(instance_in.instance);
-
-    trios_start_timer(call_time);
-    rc = exchange_data(sock, 1, &c->peer_alps_info, &transport_global_data.alps_info, sizeof(alpsAppGni_t));
-    trios_stop_timer("exch data", call_time);
-    if (rc)
-        goto out;
-
+    c->peer_instance  = ntohl(instance_in.instance);
+    c->peer_alps_info = instance_in.alps_info;
+    c->peer_ptag      = instance_in.alps_info.ptag;
+    c->peer_cookie    = instance_in.alps_info.cookie;
     c->cdm_hdl = transport_global_data.cdm_hdl;
     c->nic_hdl = transport_global_data.nic_hdl;
 
-    memset(&sa_in, 0, sizeof(sa_in));
     memset(&sa_out, 0, sizeof(sa_out));
 
     sa_out.server_attrs.req_index_addr   =transport_global_data.req_queue.req_index_addr;
@@ -2986,17 +3072,22 @@ static int new_server_connection(
     sa_out.server_attrs.wc_mem_hdl       =transport_global_data.req_queue.wc_mem_hdl;
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 1, &sa_in, &sa_out, sizeof(sa_in));
-    trios_stop_timer("exch data", call_time);
+    rc = write_full(sock, &sa_out, sizeof(sa_out));
+    trios_stop_timer("write server queue attrs", call_time);
+    if (rc == sizeof(sa_out)) {
+        rc=0;
+    }
     if (rc)
         goto out;
 
     memset(&ca_in, 0, sizeof(ca_in));
-    memset(&ca_out, 0, sizeof(ca_out));
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 1, &ca_in, &ca_out, sizeof(ca_in));
-    trios_stop_timer("exch data", call_time);
+    rc = read_full(sock, &ca_in, sizeof(ca_in));
+    trios_stop_timer("read client queue attrs", call_time);
+    if (rc == sizeof(ca_in)) {
+        rc=0;
+    }
     if (rc)
         goto out;
 
@@ -3222,38 +3313,25 @@ static NNTI_result_t init_connection(
 
     double call_time;
 
-    gni_connection *c=NULL;
-
     log_debug(nnti_debug_level, "initializing gni connection");
 
-    c = (gni_connection *)calloc(1, sizeof(gni_connection));
-    log_debug(nnti_debug_level, "calloc returned c=%p.", c);
-    if (c == NULL) {
-        log_error(nnti_debug_level, "calloc returned NULL.  out of memory?: %s", strerror(errno));
-        rc=NNTI_ENOMEM;
-        goto out;
-    }
-
-    c->peer_name = strdup(peername);
-    c->peer_addr = addr;
-    c->peer_port = htons(port);
+    (*conn)->peer_name = strdup(peername);
+    (*conn)->peer_addr = addr;
+    (*conn)->peer_port = htons(port);
 
     trios_start_timer(call_time);
     if (is_server) {
-        rc = new_server_connection(c, sock);
+        rc = new_server_connection(*conn, sock);
     } else {
-        rc = new_client_connection(c, sock);
+        rc = new_client_connection(*conn, sock);
     }
     trios_stop_timer("new connection", call_time);
     if (rc) {
-        close_connection(c);
-        c = NULL;
+        close_connection(*conn);
         goto out;
     }
 
-    print_gni_conn(c);
-
-    *conn=c;
+    print_gni_conn(*conn);
 
 out:
     return((NNTI_result_t)rc);
@@ -3318,6 +3396,20 @@ static int check_listen_socket_for_new_connections()
         NNTI_tcp_port peer_port  = ntohs(ssin.sin_port);
 
         peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
+        log_debug(nnti_debug_level, "malloc returned peer=%p.", peer);
+        if (peer == NULL) {
+            log_error(nnti_debug_level, "malloc returned NULL.  out of memory?: %s", strerror(errno));
+            rc=NNTI_ENOMEM;
+            goto cleanup;
+        }
+
+        conn = (gni_connection *)calloc(1, sizeof(gni_connection));
+        log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
+        if (conn == NULL) {
+            log_error(nnti_debug_level, "calloc returned NULL.  out of memory?: %s", strerror(errno));
+            rc=NNTI_ENOMEM;
+            goto cleanup;
+        }
 
 //        nthread_lock(&nnti_gni_lock);
         rc=init_connection(&conn, s, peer_hostname, peer_addr, peer_port, 1);
@@ -3329,6 +3421,8 @@ static int check_listen_socket_for_new_connections()
                 peer_hostname,
                 ssin.sin_addr.s_addr,
                 ssin.sin_port,
+                conn->peer_ptag,
+                conn->peer_cookie,
                 conn->peer_instance);
         insert_conn_instance(conn->peer_instance, conn);
         insert_conn_peer(peer, conn);
@@ -3351,6 +3445,10 @@ static int check_listen_socket_for_new_connections()
     }
 
 cleanup:
+    if (rc != NNTI_OK) {
+        if (peer!=NULL) free(peer);
+        if (conn!=NULL) free(conn);
+    }
     return rc;
 }
 
@@ -3460,12 +3558,15 @@ static uint32_t get_cpunum(void)
 static void get_alps_info(
         alpsAppGni_t *alps_info)
 {
-    int alps_rc;
-    int req_rc;
-    size_t rep_size;
+    int alps_rc=0;
+    int req_rc=0;
+    size_t rep_size=0;
 
-    uint64_t apid;
-    alpsAppLLIGni_t alps_info_list;
+    uint64_t apid=0;
+    alpsAppLLIGni_t *alps_info_list;
+    char buf[1024];
+
+    alps_info_list=(alpsAppLLIGni_t *)&buf[0];
 
     alps_app_lli_lock();
 
@@ -3478,7 +3579,7 @@ static void get_alps_info(
     if (req_rc != 0) log_debug(nnti_debug_level, "alps_app_lli_get_response failed: req_rc=%d", req_rc);
     if (rep_size != 0) {
         log_debug(nnti_debug_level, "waiting for ALPS reply bytes (%d) ; sizeof(alps_info)==%d ; sizeof(alps_info_list)==%d", rep_size, sizeof(alps_info), sizeof(alps_info_list));
-        alps_rc = alps_app_lli_get_response_bytes(&alps_info_list, rep_size);
+        alps_rc = alps_app_lli_get_response_bytes(alps_info_list, rep_size);
         if (alps_rc != 0) log_debug(nnti_debug_level, "alps_app_lli_get_response_bytes failed: %d", alps_rc);
     }
 
@@ -3497,7 +3598,7 @@ static void get_alps_info(
 
     alps_app_lli_unlock();
 
-    memcpy(alps_info, (alpsAppGni_t*)alps_info_list.u.buf, sizeof(alpsAppGni_t));
+    memcpy(alps_info, (alpsAppGni_t*)alps_info_list->u.buf, sizeof(alpsAppGni_t));
     transport_global_data.apid=apid;
 
     log_debug(nnti_debug_level, "apid                 =%llu", (unsigned long long)apid);
@@ -3505,6 +3606,14 @@ static void get_alps_info(
     log_debug(nnti_debug_level, "alps_info->local_addr=%lld", (long long)alps_info->local_addr);
     log_debug(nnti_debug_level, "alps_info->cookie    =%llu", (unsigned long long)alps_info->cookie);
     log_debug(nnti_debug_level, "alps_info->ptag      =%llu", (unsigned long long)alps_info->ptag);
+
+    log_debug(nnti_debug_level, "ALPS response - apid(%llu) alps_info->device_id(%llu) alps_info->local_addr(%llu) "
+            "alps_info->cookie(%llu) alps_info->ptag(%llu)",
+            (unsigned long long)apid,
+            (unsigned long long)alps_info->device_id,
+            (long long)alps_info->local_addr,
+            (unsigned long long)alps_info->cookie,
+            (unsigned long long)alps_info->ptag);
 
     return;
 }
@@ -3624,6 +3733,56 @@ static void print_gni_conn(gni_connection *c)
 //
 //}
 
+static void print_raw_buf(void *buf, uint32_t size)
+{
+    if (logging_debug(nnti_debug_level)) {
+        FILE* f=logger_get_file();
+        u_int64_t print_limit=(size<90) ? size : 90;
+        fprintf(f, "\nbuf (%p)\n", buf);
+        fflush(f);
+        if (buf != NULL) {
+            int l=0;
+            for (l=0;l<print_limit;l++) {
+                if (l%30 == 0) fprintf(f, "\nbuf (%lu) (offset(%d)) => ", buf, l);
+                fprintf(f, "%02hhX", ((char *)buf)[l]);
+            }
+            fprintf(f, "\n");
+        }
+    }
+}
+
+static uint16_t get_dlvr_mode_from_env()
+{
+    char *mode=getenv("NSSI_GNI_DELIVERY_MODE");
+
+    log_debug(nnti_debug_level, "NSSI_GNI_DELIVERY_MODE=%s", mode);
+    if ((mode==NULL) || !strcmp(mode, "GNI_DLVMODE_PERFORMANCE")) {
+        log_debug(nnti_debug_level, "setting delivery mode to GNI_DLVMODE_PERFORMANCE");
+        return GNI_DLVMODE_PERFORMANCE;
+    } else if (!strcmp(mode, "GNI_DLVMODE_IN_ORDER")) {
+        log_debug(nnti_debug_level, "setting delivery mode to GNI_DLVMODE_IN_ORDER");
+        return GNI_DLVMODE_IN_ORDER;
+    } else if (!strcmp(mode, "GNI_DLVMODE_NO_ADAPT")) {
+        log_debug(nnti_debug_level, "setting delivery mode to GNI_DLVMODE_NO_ADAPT");
+        return GNI_DLVMODE_NO_ADAPT;
+    } else if (!strcmp(mode, "GNI_DLVMODE_NO_HASH")) {
+        log_debug(nnti_debug_level, "setting delivery mode to GNI_DLVMODE_NO_HASH");
+        return GNI_DLVMODE_NO_HASH;
+    } else if (!strcmp(mode, "GNI_DLVMODE_NO_RADAPT")) {
+        log_debug(nnti_debug_level, "setting delivery mode to GNI_DLVMODE_NO_RADAPT");
+        return GNI_DLVMODE_NO_RADAPT;
+    } else {
+        log_debug(nnti_debug_level, "defaulting delivery mode to GNI_DLVMODE_PERFORMANCE");
+        return GNI_DLVMODE_PERFORMANCE;
+    }
+}
+static int set_dlvr_mode(
+        gni_post_descriptor_t *pd)
+{
+    pd->dlvr_mode=transport_global_data.delivery_mode;
+//    log_debug(LOG_ALL, "pd->dlvr_mode=%X", pd->dlvr_mode);
+}
+
 
 static int post_wait(
         gni_cq_handle_t cq_hdl,
@@ -3695,8 +3854,9 @@ static int reset_req_index(
     memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
     post_desc.type           =GNI_POST_AMO;
     post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
-    post_desc.dlvr_mode      =GNI_DLVMODE_PERFORMANCE;
-//    post_desc.dlvr_mode      =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&post_desc);
+
     post_desc.local_addr     =value_before_reset_addr;
     post_desc.local_mem_hndl =value_before_reset_mem_hdl;
     post_desc.remote_addr    =req_queue_attrs->req_index_addr;
@@ -3757,8 +3917,9 @@ static int fetch_add_buffer_offset(
     memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
     post_desc.type           =GNI_POST_AMO;
     post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
-    post_desc.dlvr_mode      =GNI_DLVMODE_PERFORMANCE;
-//    post_desc.dlvr_mode             =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&post_desc);
+
     post_desc.local_addr     =local_req_queue_attrs->req_index_addr;
     post_desc.local_mem_hndl =local_req_queue_attrs->req_index_mem_hdl;
     post_desc.remote_addr    =remote_req_queue_attrs->req_index_addr;
@@ -3865,14 +4026,17 @@ static int send_req(
 #else
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
-    post_desc.dlvr_mode            =GNI_DLVMODE_PERFORMANCE;
-//    post_desc.dlvr_mode             =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&post_desc);
+
     post_desc.local_addr           =reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf;
     post_desc.local_mem_hndl.qword1=reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
     post_desc.local_mem_hndl.qword2=reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
     post_desc.remote_addr          =remote_req_queue_attrs->req_buffer_addr+offset;
     post_desc.remote_mem_hndl      =remote_req_queue_attrs->req_mem_hdl;
     post_desc.length               =reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.size;
+
+    print_raw_buf((void *)post_desc.local_addr, post_desc.length);
 
 #if defined(USE_FMA) || defined(USE_MIXED)
     log_debug(nnti_debug_level, "calling PostFma(send req ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
@@ -3925,13 +4089,16 @@ static int send_wc(
 #else
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
-    gni_mem_hdl->post_desc.dlvr_mode      =GNI_DLVMODE_PERFORMANCE;
-//    gni_mem_hdl->post_desc.dlvr_mode      =GNI_DLVMODE_IN_ORDER;
+
+    set_dlvr_mode(&gni_mem_hdl->post_desc);
+
     gni_mem_hdl->post_desc.local_addr     =(uint64_t)&gni_mem_hdl->wc;
     gni_mem_hdl->post_desc.local_mem_hndl =gni_mem_hdl->wc_mem_hdl;
     gni_mem_hdl->post_desc.remote_addr    =remote_req_queue_attrs->wc_buffer_addr+offset;
     gni_mem_hdl->post_desc.remote_mem_hndl=remote_req_queue_attrs->wc_mem_hdl;
     gni_mem_hdl->post_desc.length         =sizeof(nnti_gni_work_completion);
+
+    print_raw_buf((void *)gni_mem_hdl->post_desc.local_addr, gni_mem_hdl->post_desc.length);
 
     GNI_EpSetEventData(gni_mem_hdl->wc_ep_hdl, offset/sizeof(nnti_gni_work_completion), offset/sizeof(nnti_gni_work_completion));
 
@@ -4033,8 +4200,9 @@ static int send_unblock(
         memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
         post_desc.type           =GNI_POST_CQWRITE;
         post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
-        post_desc.dlvr_mode      =GNI_DLVMODE_PERFORMANCE;
-//        post_desc.dlvr_mode      =GNI_DLVMODE_IN_ORDER;
+
+        set_dlvr_mode(&post_desc);
+
         post_desc.remote_mem_hndl=conn->queue_remote_attrs.client.unblock_mem_hdl;
         ptr32=(uint32_t*)&post_desc.cqwrite_value;
         ptr32++;
