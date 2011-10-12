@@ -39,7 +39,9 @@
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
+
 namespace Rythmos {
+
 
 /** \brief Concrete momento class for the BackwardEulerStepper.
  * 
@@ -399,6 +401,9 @@ public:
     ) const;
 
   //@}
+
+  /** \name Momento functions. */
+  //@{
   
   /** \brief Get momento object for use in restarts
   *
@@ -406,13 +411,14 @@ public:
   RCP<const MomentoBase<Scalar> > getMomento() const;
 
   /** \brief Set momento object for use in restarts
-  *
   */
   void setMomento(
       const Ptr<const MomentoBase<Scalar> >& momentoPtr,
       const RCP<Thyra::ModelEvaluator<Scalar> >& model,
       const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
       );
+
+  //@}
 
 
 private:
@@ -452,6 +458,16 @@ private:
 
 };
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates BackwardEulerStepper
+ */
+template<class Scalar>
+RCP<BackwardEulerStepper<Scalar> >
+backwardEulerStepper();
+
+
 /** \brief Nonmember constructor.
  *
  * \relates BackwardEulerStepper
@@ -459,15 +475,12 @@ private:
 template<class Scalar>
 RCP<BackwardEulerStepper<Scalar> >
 backwardEulerStepper(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
-    );
-
-template<class Scalar>
-RCP<BackwardEulerStepper<Scalar> >
-backwardEulerStepper();
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+  );
 
 
 } // namespace Rythmos
+
 
 #endif //Rythmos_BACKWARD_EULER_STEPPER_DECL_H

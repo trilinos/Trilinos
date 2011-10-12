@@ -69,6 +69,7 @@ namespace Ioss {
 	Ioss::IOFactory::clean();
 	// Put code here that should run after sierra is finished
 	// executing...
+	Ioss::Initializer::clean();
       } catch (...) {}
     }
   }

@@ -41,12 +41,22 @@
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Rythmos_RampingIntegrationControlStrategy.hpp"
+
+#include "Rythmos_MockStepperDecorator.hpp"
+
 #include "Thyra_DetachedVectorView.hpp"
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 namespace Rythmos {
 
+
+using Teuchos::getParametersFromXmlString;
 using Thyra::VectorBase;
+
 
 // Test the ERK stepper through the integrator
 TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
@@ -224,6 +234,38 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, momento ) {
   }
 }
 */
+
+
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, failRampingTimestep )
+{
+  const RCP<SinCosModel> model = sinCosModel(true);
+  const RCP<TimeStepNonlinearSolver<double> > nonlinearSolver =
+    timeStepNonlinearSolver<double>();
+  const RCP<BackwardEulerStepper<double> > beStepper =
+    backwardEulerStepper<double>(model, nonlinearSolver);
+  const RCP<MockStepperDecorator<double> > stepper =
+    createMockStepperDecorator<double>(beStepper);
+  stepper->setFailOnStepId(3);
+  stepper->setInitialCondition(model->getNominalValues());
+  const RCP<DefaultIntegrator<double> > integrator =
+    defaultIntegrator<double>();
+  integrator->setIntegrationControlStrategy(
+    rampingIntegrationControlStrategy<double>(
+      getParametersFromXmlString(
+        "<ParameterList name=\"Ramping\">"
+        "  <Parameter name=\"Initial dt\" type=\"double\" value=\"0.2\"/>"
+        "</ParameterList>"
+        ) ) );
+  const double finalTime = 1.0;
+  integrator->setStepper(stepper, finalTime);
+  integrator->setVerbLevel(Teuchos::VERB_EXTREME);
+  integrator->setOStream(Teuchos::rcpFromRef(out));
+  const RCP<const Thyra::VectorBase<double> > x_final =
+    get_fwd_x<double>(*integrator, finalTime);
+
+  
+}
+
 
 } // namespace Rythmos
 
