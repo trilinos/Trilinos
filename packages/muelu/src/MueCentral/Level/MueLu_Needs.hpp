@@ -55,7 +55,7 @@ namespace MueLu {
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string & ename, const T & entry, const FactoryBase* factory) {
-      // check if data is requested
+      // Check if data is requested
       if(countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0) {
 	if(!countTable_.isKey(ename, factory))
 	  countTable_.Set(ename, 0, factory);    // make sure that 'ename' is counted
@@ -71,26 +71,23 @@ namespace MueLu {
 
     //! Indicate that an object is needed. This increments the storage counter.
     void Request(const std::string & ename, const FactoryBase* factory) {
-      // if it's the first request for 'ename', create a new key in the hashtable
+      // If it's the first request for 'ename', create a new key in the hashtable
       if(!countTable_.isKey(ename, factory))
         countTable_.Set(ename, 0, factory);
 
-      // increment counter
+      // Increment counter
       IncrementCounter(ename, factory);
     } //Request
 
     //! Decrement the storage counter.
     void Release(const std::string & ename, const FactoryBase* factory) {
-      // test: we can only release data if the key 'ename' exists in countTable (and dataTable)
-      if (!countTable_.isKey(ename, factory)) {
-        std::string msg =  "Release: " + ename + " not found. You must first request " + ename;
-        throw(Exceptions::RuntimeError(msg));
-      }
+      // We can only release data if the key 'ename' exists in countTable (and dataTable)
+      TEST_FOR_EXCEPTION(!countTable_.isKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Release(): " + ename + " not found. Do a request first.");
 
-      // decrement reference counter
+      // Decrement reference counter
       DecrementCounter(ename, factory);
 
-      // desallocation if counter gets zero
+      // Desallocation if counter gets zero
       int numReq = -2;
       countTable_.Get<int>(ename, numReq, factory);
       if(numReq==-2) throw(Exceptions::RuntimeError("Release: error reading countTable_(" + ename + ")"));
@@ -117,9 +114,8 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
     T & Get(const std::string & ename, const FactoryBase* factory) {
-      if (dataTable_.isKey(ename, factory)) {
-	return dataTable_.Get<T>(ename, factory);
-      } else throw(Exceptions::RuntimeError("Get: " + ename + " not found in dataTable_"));
+      TEST_FOR_EXCEPTION(!dataTable_.isKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      return dataTable_.Get<T>(ename, factory);
     }
 
     //@}
@@ -186,7 +182,7 @@ namespace MueLu {
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
 	std::vector<const FactoryBase*> ehandles = RequestedHandles(*it);
 	for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-	  if(*kt == factory)	// factory is generating factory of requested variable '*it'
+	  if(*kt == factory) // factory is generating factory of requested variable '*it'
 	    return true;
 	}
       }
@@ -199,7 +195,7 @@ namespace MueLu {
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
 	std::vector<const FactoryBase*> ehandles = AvailableHandles(*it);
 	for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-	  if(*kt == factory)	// factory is generating factory of requested variable '*it'
+	  if(*kt == factory) // factory is generating factory of requested variable '*it'
 	    return true;
 	}
       }
@@ -210,11 +206,7 @@ namespace MueLu {
     //!  Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or hasn't been saved.
     int NumRequests(const std::string & ename, const FactoryBase* factory) const {
       //FIXME should we return 0 instead of throwing an exception?
-
-      if (!countTable_.isKey(ename, factory)) {
-	std::string msg =  "NumRequests: " + ename + " not found in countTable_";
-	throw(Exceptions::RuntimeError(msg));
-      }
+      TEST_FOR_EXCEPTION(!countTable_.isKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found in countTable_");
 
       int numReq = -2;
       countTable_.Get<int>(ename, numReq, factory);
@@ -225,7 +217,7 @@ namespace MueLu {
     //! @name Helper functions
     //@{
 
-    //! returns a vector of strings containing all key names of requested variables
+    //! Returns a vector of strings containing all key names of requested variables
     std::vector<std::string> RequestedKeys() const {
       return countTable_.keys();
     }
@@ -234,7 +226,7 @@ namespace MueLu {
       return countTable_.handles(ename);
     }
 
-    //! returns a vector of strings containing all key names of available variables
+    //! Returns a vector of strings containing all key names of available variables
     std::vector<std::string> AvailableKeys() {
       return dataTable_.keys();
     }
@@ -308,7 +300,7 @@ namespace MueLu {
     //! @name Helper functions
     //@{
 
-    //! @brief increments counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
+    //! @brief Increments counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
     void IncrementCounter(const std::string & ename, const FactoryBase* factory) {
       int currentCount = -2;
       countTable_.Get<int>(ename, currentCount, factory);
@@ -318,7 +310,7 @@ namespace MueLu {
       }
     }
 
-    //! @brief decrements counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
+    //! @brief Decrements counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
     void DecrementCounter(const std::string & ename, const FactoryBase* factory) {
       int currentCount = -2;
       countTable_.Get<int>(ename, currentCount, factory);
@@ -332,7 +324,7 @@ namespace MueLu {
 
   private:
 
-    //! copy constructor
+    //! Copy constructor
     Needs(const Needs & source) { }
 
   }; //class Needs
