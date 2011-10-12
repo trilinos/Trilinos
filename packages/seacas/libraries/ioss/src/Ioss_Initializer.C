@@ -122,8 +122,3 @@ Ioss::Initializer::Initializer()
 
   Ioss::Super::factory();
 }
-
-void Ioss::Initializer::clean()
-{
-    Ioss::Super::delete_topology_pointers();
-}

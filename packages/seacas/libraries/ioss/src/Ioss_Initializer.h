@@ -35,7 +35,6 @@ namespace Ioss {
     {
     public:
       Initializer();
-      static void clean();
       // Assignment operator
       // Copy constructor
     };
