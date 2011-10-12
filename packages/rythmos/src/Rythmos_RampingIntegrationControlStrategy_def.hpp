@@ -136,7 +136,7 @@ void RampingIntegrationControlStrategy<Scalar>::setParameterList(
   using Teuchos::get;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT(is_null(paramList));
-  paramList->validateParameters(*getValidParameters());
+  paramList->validateParametersAndSetDefaults(*getValidParameters());
   this->setMyParamList(paramList);
 
   num_ramping_steps_ = paramList->get<int>(num_ramping_steps_name_);
@@ -171,6 +171,13 @@ RampingIntegrationControlStrategy<Scalar>::getValidParameters() const
 
 
 // Overridden from IntegrationControlStrategyBase
+
+
+template<class Scalar>
+bool RampingIntegrationControlStrategy<Scalar>::handlesFailedTimeSteps() const
+{
+  return true;
+}
 
 
 template<class Scalar>
@@ -244,6 +251,23 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
   return trialStepCtrlInfo;
   
 }
+
+
+template<class Scalar>
+bool RampingIntegrationControlStrategy<Scalar>::resetForFailedTimeStep(
+  const StepperBase<Scalar> &stepper,
+  const StepControlInfo<Scalar> &stepCtrlInfoLast,
+  const int timeStepIter,
+  const StepControlInfo<Scalar> &stepCtrlInfo
+  )
+{
+  // \todo Implement more control over this in the PL
+  current_dt_ /= ramping_factor_;
+  // \todo Put in a max number of attempted time steps (otherwise infinite
+  // loop)
+  return true;
+}
+
 
 // 
 // Explicit Instantiation macro

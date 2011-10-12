@@ -151,7 +151,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   ParameterList & IfpackList = List_.sublist("smoother: ifpack list");
   // note: lof has different meanings for IC and ICT.  For IC and ILU, we
   // will cast it to an integer later.
-  double IfpackLOF=List_.get("smoother: ifpack level-of-fill",0.);
+  double IfpackLOF=0.0;
+  if(IfpackType=="ILUT" || IfpackType=="ICT") List_.get("smoother: ifpack level-of-fill",0.);
+  else List_.get("smoother: ifpack level-of-fill",1.);
   double IfpackRelThreshold=List_.get("smoother: ifpack relative threshold",1.);
   double IfpackAbsThreshold=List_.get("smoother: ifpack absolute threshold",0.);
 
@@ -655,12 +657,19 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
         MyIfpackList.set("partitioner: local parts", NumAggr);
       MyIfpackList.set("partitioner: map", AggrMap);
 
-      // Set the fact: LOF options, but only if they're not set already...
-      MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
+      // Set the fact: LOF options, but only if they're not set already... All this sorcery is because level-of-fill
+      // is an int for ILU and a double for ILUT.  Lovely.
+      if(MyIfpackType=="ILUT" || MyIfpackType=="ICT"){
+	MyIfpackList.set("fact: level-of-fill", MyIfpackList.get("fact: level-of-fill",MyLOF));
+	MyLOF=MyIfpackList.get("fact: level-of-fill",MyLOF);
+      }
+      else{
+	MyIfpackList.set("fact: level-of-fill", (int) MyIfpackList.get("fact: level-of-fill",(int)MyLOF));
+	MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
+      }
+
       MyIfpackList.set("fact: ict level-of-fill", MyIfpackList.get("fact: ict level-of-fill",MyLOF));
       MyIfpackList.set("fact: ilut level-of-fill", MyIfpackList.get("fact: ilut level-of-fill",MyLOF));
-
-      MyLOF=MyIfpackList.get("fact: level-of-fill",(int)MyLOF);
 
       MyIfpackList.set("fact: relative threshold", MyIfpackRT);
       MyIfpackList.set("fact: absolute threshold", MyIfpackAT);
