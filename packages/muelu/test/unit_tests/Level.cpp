@@ -56,7 +56,6 @@ namespace MueLuTests {
 
   }
 
-#ifdef FOR_TOBIAS
   TEUCHOS_UNIT_TEST(Level, RequestRelease)
   {
     Level l;
@@ -64,10 +63,13 @@ namespace MueLuTests {
     RCP<FactoryBase> factory = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
     
     l.Request("Graph", factory.get());
+    TEST_EQUALITY(l.IsRequested("Graph", factory.get()), true);
+    TEST_EQUALITY(l.IsAvailable("Graph", factory.get()), false);
     l.Release("Graph", factory.get());
-    
+    TEST_EQUALITY(l.IsRequested("Graph", factory.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph", factory.get()), false);
+
   }
-#endif
 
 } // namespace MueLuTests
 
