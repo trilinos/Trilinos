@@ -104,7 +104,7 @@ extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 static int client_init(void)
 #else
 
-static int 
+static int
 client_init ()
 #endif
 {
@@ -1219,6 +1219,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 //        rc = process_result(NNTI_BUFFER_C_POINTER(&req->short_result_hdl), req);
         if (rc != NSSI_OK) {
             log_fatal(debug_level,"unable to process result");
+            fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
             return rc;
         }
         break;
