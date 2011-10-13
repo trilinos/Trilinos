@@ -146,7 +146,8 @@ public:
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
     Teuchos::ArrayRCP<Scalar> RowBasedOmega = RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
 #else
-    Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
+    Teuchos::ArrayRCP<Scalar> RowBasedOmega( DinvAP0->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one() );
+    ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag,RowBasedOmega);
 #endif
 
     /////////////////// prolongator smoothing using local damping parameters omega
@@ -183,7 +184,7 @@ public:
 #ifdef OLD
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
 #else
-  Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+  void ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const
 #endif
   {
 
@@ -304,9 +305,9 @@ public:
         TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent);
     return RowBasedOmegas;
 #else
-    Teuchos::ArrayRCP<Scalar> RowBasedOmegas =
-        TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent);
-    return RowBasedOmegas;
+    //Teuchos::ArrayRCP<Scalar> RowBasedOmegas =
+    TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent, RowBasedOmegas);
+    //return RowBasedOmegas;
 #endif
   }
 
@@ -314,7 +315,7 @@ public:
 #ifdef OLD
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
 #else
-  Teuchos::ArrayRCP<Scalar> TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
+  void TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const
 #endif
   {
     // build RowBasedOmegas
@@ -418,7 +419,10 @@ public:
     }
 #else
 
-    Teuchos::ArrayRCP<Scalar> RowBasedOmegas( Op->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one() );
+    //Teuchos::ArrayRCP<Scalar> RowBasedOmegas( Op->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one() );
+    RowBasedOmegas.assign(Op->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one());
+    //TEST_FOR_EXCEPTION(RowBasedOmegas.size() != Teuchos::as<size_t>(Op->getNodeNumRows()), Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: initial assignement of RowBasedOmegas failed. Error.");
+
     for(size_t row=0; row<Op->getNodeNumRows(); row++)
     {
       size_t nnz = Op->getNumEntriesInLocalRow(row);
@@ -431,7 +435,6 @@ public:
 
       if(nnz == 0)
       {
-        //eRowBasedOmegas->getEpetra_Vector()->ReplaceMyValue(row,0,Teuchos::ScalarTraits<Scalar>::zero());
         RowBasedOmegas[row] = Teuchos::ScalarTraits<Scalar>::zero();
       }
       else if(nnz == 1)
@@ -447,7 +450,7 @@ public:
           GlobalOrdinal localgid = GID2localgid.at(col_gid);
           Scalar omega = (*ColBasedOmegas)[localgid];
           //Epetra_Vector* eeRowBasedOmegas = eRowBasedOmegas->getEpetra_Vector();
-          if((RowBasedOmegas)[row] == -666.0)
+          if(RowBasedOmegas[row] == -666.0)
             RowBasedOmegas[row] = omega;
           else if (omega < RowBasedOmegas[row])
             RowBasedOmegas[row] = omega;
@@ -463,14 +466,16 @@ public:
     {
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
+    return RowBasedOmegas;
 #else
     for(size_t i=0; i<Teuchos::as<size_t>(RowBasedOmegas.size()); i++)
     {
       if(RowBasedOmegas[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmegas[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
+    //return RowBasedOmegas;
 #endif
 
-    return RowBasedOmegas;
+
   }
 
   RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
