@@ -68,7 +68,7 @@ main (int argc, char *argv[])
   bool testBlockGivens = false;
   bool testGivensRotations = false;
   bool verbose = false;
-  bool verbose = false;
+  bool debug = false;
   int testProblemSize = 10;
 
   // Parse command-line arguments

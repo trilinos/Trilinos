@@ -550,6 +550,43 @@ namespace Belos {
 	solveGivens (problem.y, problem.R, problem.z, curCol);
       }
 
+      /// \brief Update CA-GMRES' upper Hessenberg matrix.
+      ///
+      /// The R input argument is a different R than the R factor of
+      /// the upper Hessenberg matrix.  This R stores the
+      /// orthogonalization coefficients of the Krylov basis.  (Thus,
+      /// it's the R factor in the QR factorization of the Krylov
+      /// basis, rather than the R factor in the QR factorization of
+      /// H.)
+      ///
+      /// After calling this method, the upper Hessenberg matrix is
+      /// ready for updateColumnsGivens().
+      ///
+      /// Notation: S = endCol-startCol+1 is the number of "new"
+      ///   Krylov basis vectors generated in this round of CA-GMRES,
+      ///   not counting the starting vector of the matrix powers
+      ///   kernel invocation.
+      ///
+      /// \param problem [in/out] The projected problem.
+      /// \param R [in/out] The upper triangular orthogonalization
+      ///   coefficients of the Krylov basis.  This is <i>not</i> the
+      ///   same as problem.R.  R is the R factor of the Krylov basis;
+      ///   problem.R is the R factor of the upper Hessenberg matrix.
+      /// \param B [in] The S+1 by S change-of-basis matrix.
+      /// \param startCol [in] [startCol, endCol] is an inclusive
+      ///   zero-based index range of columns of H to update.
+      /// \param endCol [in] [startCol, endCol] is an inclusive
+      ///   zero-based index range of columns of H to update.
+      void
+      caGmresUpdateUpperHessenberg (ProjectedLeastSquaresProblem<Scalar>& problem,
+				    const mat_type& R,
+				    const mat_type& B, 
+				    const int startCol, 
+				    const int endCol) const
+      {
+	caGmresUpdateUpperHessenbergImpl (problem.H, R, B, startCol, endCol);
+      }
+
     public:
       /// \brief Test Givens rotations.
       ///
@@ -896,7 +933,7 @@ namespace Belos {
 	  mat_type H_view (View, H, numCols+1, numCols);
 
 	  // H_view := R_underline * B_view.
-	  ops.matMatMult (STS::zero(), H_view, STS::alpha(), R_underline, B_view);
+	  ops.matMatMult (STS::zero(), H_view, STS::one(), R_underline, B_view);
 
 	  // H_view : = H_view / R_view.
 	  ops.rightUpperTriSolve (H_view, R_view);
@@ -932,16 +969,18 @@ namespace Belos {
 	  // H_km1k := -H_km1 * (R_km1k / R_k).
 	  ops.matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, temp);
 	  // temp := R_km1k_underline * B_k_underline.
-	  ops.matMatMult (STS::zero(), temp, R_km1k_underline, B_k_underline);
+	  ops.matMatMult (STS::zero(), temp, 
+			  STS::one(), R_km1k_underline, B_k_underline);
 	  // temp := temp / R_k.
 	  ops.rightUpperTriSolve (temp, R_k);
 	  // H_km1k := H_km1k + temp.
-	  ops.matAdd (H_km1k, H_km1k, temp);
-
+	  ops.matAdd (H_km1k, temp);
+	  //
 	  // H_k_underline := R_k_underline * B_k_underline / R_k -
 	  //   h_km1 * e_1 * lastRow.
 	  //
-	  ops.matMatMult (H_k_underline, R_k_underline, B_k_underline);
+	  ops.matMatMult (STS::zero(), H_k_underline, 
+			  STS::one(), R_k_underline, B_k_underline);
 	  ops.rightUpperTriSolve (H_k_underline, R_k);
 	  ops.matScale (lastRow, H(M+1,M));
 	  mat_type H_k_view (View, H_k_underline, 1, S+1);
