@@ -187,7 +187,7 @@ public:
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
     int iLevel;
-    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels=" << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
+    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
     for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
       SubMonitor m(*this, "Level " + Teuchos::toString(iLevel));

@@ -152,10 +152,10 @@ namespace MueLu {
     T & Get(const std::string& ename, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = GetFactory(ename, factory);
 
-      if (!IsAvailable(ename, fac))	{
+      if (!IsAvailable(ename, fac)) {
 	TEST_FOR_EXCEPTION(needs_.NumRequests(ename, fac) < 1 && !needs_.isKept(ename, fac), Exceptions::RuntimeError, 
-			   "MueLu::Level::Get(): " << ename << "has not been requested (counter=" << needs_.NumRequests(ename, fac) << ". " << std::endl << "Generating factory:" << *fac);
-	  
+			   "MueLu::Level::Get(): " << ename << " has not been requested (counter = " << needs_.NumRequests(ename, fac) << ", isKept() = " << needs_.isKept(ename, fac) << "). " << std::endl << "Generating factory:" << *fac);
+	
 	fac->CallBuild(*this);
 	Release(*fac);
       }

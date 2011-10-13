@@ -18,12 +18,11 @@
 // JG: Some notes from code review 2011-10-12:
 //
 // TODO: 
-// - use factory ID instead of pointer to distinghuish factories
+// - Use factory ID instead of pointer to distinghuish factories
 //
 // QUESTIONS:
-// - can we use an std::map<Tuple<const std::string, const MueLu::FactoryBase*>, ... > instead?
+// - Can we use an std::map<Tuple<const std::string, const MueLu::FactoryBase*>, ... > instead?
 // - Teuchos::any vs. Teuchos::ParameterEntry?
-// - Teuchos::map deprecated?? vs. std::map
 // - Teuchos::ConstNonconstObjectContainer?
 // - Can we use an std::map<... , Tuple<counter,factory*> >  instead?
 
@@ -76,7 +75,7 @@ namespace MueLu {
       }
 
       template<class Value> 
-      Value& Get(const string& ename, const FactoryBase* factory)
+      Value & Get(const string& ename, const FactoryBase* factory)
       {
         if(!dataTable_.count(ename) > 0)
 	  {
@@ -97,7 +96,7 @@ namespace MueLu {
       }
 
       template<class Value>
-      const Value& Get(const string& ename, const FactoryBase* factory) const
+      const Value & Get(const string& ename, const FactoryBase* factory) const
       {
         if(!dataTable_.count(ename) > 0)
 	  {
@@ -106,7 +105,7 @@ namespace MueLu {
 	  }
 
         ConstIterator k = dataTable_.find(ename);
-        dataMapType mapData = k->second;
+	const dataMapType& mapData = k->second;
 
         if(!mapData.count(factory) > 0)
 	  {
@@ -148,7 +147,7 @@ namespace MueLu {
 
 
         ConstIterator k = dataTable_.find(ename);
-        dataMapType mapData = k->second;
+        const dataMapType& mapData = k->second;
 
         if(!mapData.count(factory) > 0)
 	  {
@@ -195,7 +194,7 @@ namespace MueLu {
 	  }
 
         ConstIterator k = dataTable_.find(ename);
-        dataMapType mapData = k->second;
+        const dataMapType& mapData = k->second;
 
         if(!mapData.count(factory) > 0)
 	  {
@@ -243,7 +242,7 @@ namespace MueLu {
 
         //const dataMapType& mapData = dataTable_[ename];
         ConstIterator k = dataTable_.find(ename);
-        dataMapType mapData = k->second;
+        const dataMapType& mapData = k->second;
 	for(ConstMapIterator it = mapData.begin(); it!=mapData.end(); ++it)
 	  {
             v.push_back(it->first);
