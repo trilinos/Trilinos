@@ -94,6 +94,7 @@ private:
   bool haveLocalIds_;
   int myRank_;
   int numProcs_;
+  bool consecutiveIdsRequired_;   // TODO
 
   void setupMap();
 
@@ -110,7 +111,8 @@ public:
   explicit IdentifierMap( RCP<const Comm<int> > &incomm_, 
                           RCP<Environment > &env, 
                           ArrayRCP<AppGID> &gids, 
-                          ArrayRCP<AppLID> &lids);
+                          ArrayRCP<AppLID> &lids,
+                          bool idsMustBeConsecutive=false);
 
   /*! Constructor 
       This constructor does not need to be called by all processes.
@@ -130,7 +132,8 @@ public:
   void initialize(RCP<const Comm<int> > &incomm_,
                   RCP<Environment > &env,
                   ArrayRCP<AppGID> &gids,
-                  ArrayRCP<AppLID> &lids);
+                  ArrayRCP<AppLID> &lids,
+                  bool idsMustBeConsecutive=false);
 
   /*! Return true if we are using the application global IDs 
    *  for our internal global numbers 
@@ -195,13 +198,13 @@ public:
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
-    RCP<const Comm<int> > &incomm_, 
-    RCP<Zoltan2::Environment> &env,
-    ArrayRCP<AppGID> &gids, 
-    ArrayRCP<AppLID> &lids) 
+    RCP<const Comm<int> > &incomm_, RCP<Zoltan2::Environment> &env,
+    ArrayRCP<AppGID> &gids, ArrayRCP<AppLID> &lids,
+    bool idsMustBeConsecutive) 
          : comm_(incomm_),  env_(env), myGids_(gids), myLids_(lids),
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
-           myRank_(0), numProcs_(0)
+           myRank_(0), numProcs_(0), 
+           consecutiveIdsRequired_(idsMustBeConsecutive)
 {
   setupMap();
 }
@@ -211,7 +214,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap()  
          : comm_(), env_(), myGids_(), myLids_(),
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
-           myRank_(0), numProcs_(0)
+           myRank_(0), numProcs_(0), consecutiveIdsRequired_(false)
 {
 }
 
@@ -241,8 +244,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID,AppGID,LNO,GNO>::initialize(
     RCP<const Comm<int> > &incomm_, 
     RCP<Zoltan2::Environment> &env,
-    ArrayRCP<AppGID> &gids, 
-    ArrayRCP<AppLID> &lids)
+    ArrayRCP<AppGID> &gids, ArrayRCP<AppLID> &lids,
+    bool idsMustBeConsecutive) 
 {
   gnoDist_.release();
   gidHash_.release();
@@ -261,6 +264,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   haveLocalIds_=false;;
   myRank_ = 0; 
   numProcs_ = 0;
+  consecutiveIdsRequired_ = idsMustBeConsecutive;
 
   setupMap();
 }

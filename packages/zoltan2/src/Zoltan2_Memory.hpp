@@ -19,9 +19,18 @@
 */
 
 #include <Teuchos_CommHelpers.hpp>
+#include <Zoltan2_config.h>
 
 
 namespace Zoltan2{
+
+#ifdef HAVE_MALLINFO
+int getAllocatedMemory();
+int mallocCount(std::string label);
+int getMallocCount(std::string label);
+void printMallocCount();
+void eraseMallocCount();
+#endif
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
