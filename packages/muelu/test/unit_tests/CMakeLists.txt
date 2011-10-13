@@ -28,7 +28,7 @@ APPEND_SET(SOURCES
   CoalesceDropFactory.cpp
   Memory.cpp
   #UCAggregationFactory.cpp
-  ExtendedHashtable.cpp
+  TwoKeyMap.cpp
   GenericRFactory.cpp
 
   Smoothers/SmootherFactory.cpp

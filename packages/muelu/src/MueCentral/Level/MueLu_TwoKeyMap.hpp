@@ -1,11 +1,11 @@
 /*
- * ExtendedHashtable.hpp
+ * TwoKeyMap.hpp
  *
  *  Created on: Aug 29, 2011
  *      Author: wiesner
  */
-#ifndef MUELU_EXTENDENDEDHASHTABLE_HPP
-#define MUELU_EXTENDENDEDHASHTABLE_HPP
+#ifndef MUELU_TWOKEYMAP_HPP
+#define MUELU_TWOKEYMAP_HPP
 
 #include <Teuchos_TabularOutputter.hpp>
 #include <Teuchos_ParameterEntry.hpp>
@@ -25,13 +25,14 @@
 // - Teuchos::any vs. Teuchos::ParameterEntry?
 // - Teuchos::ConstNonconstObjectContainer?
 // - Can we use an std::map<... , Tuple<counter,factory*> >  instead?
+// - Can be more generic (template type for key1, key2)
 
 namespace MueLu {
   namespace UTILS {
 
     using std::string;
     
-    class ExtendedHashtable : public BaseClass {
+    class TwoKeyMap : public BaseClass {
 
     private:
      
@@ -57,7 +58,7 @@ namespace MueLu {
       typedef dataMapType::const_iterator ConstMapIterator;
       //@}
 
-      ExtendedHashtable() {};
+      TwoKeyMap() {};
 
       template<class Value> 
       void Set(const string& ename, const Value& evalue, const FactoryBase* factory)
@@ -294,4 +295,4 @@ namespace MueLu {
 } // namespace MueLu
 
 
-#endif /* MUELU_EXTENDENDEDHASHTABLE_HPP */
+#endif /* MUELU_TWOKEYMAP_HPP */

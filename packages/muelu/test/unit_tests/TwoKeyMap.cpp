@@ -7,11 +7,11 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-#include "MueLu_ExtendedHashtable.hpp"
+#include "MueLu_TwoKeyMap.hpp"
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST(ExtendedHashtable, ptrTests)
+  TEUCHOS_UNIT_TEST(TwoKeyMap, ptrTests)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -29,7 +29,7 @@ namespace MueLuTests {
     RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, params);
 
     // an extended hashtable
-    RCP<MueLu::UTILS::ExtendedHashtable> exh = Teuchos::rcp(new MueLu::UTILS::ExtendedHashtable());
+    RCP<MueLu::UTILS::TwoKeyMap> exh = Teuchos::rcp(new MueLu::UTILS::TwoKeyMap());
 
 
     exh->Set<RCP<Operator> >("op",Op,sapFactory.get());

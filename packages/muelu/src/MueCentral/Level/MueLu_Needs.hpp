@@ -8,7 +8,7 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_ExtendedHashtable.hpp"
+#include "MueLu_TwoKeyMap.hpp"
 
 namespace MueLu {
   
@@ -33,8 +33,8 @@ namespace MueLu {
 
   private:
 
-    UTILS::ExtendedHashtable countTable_; //<! Stores number of outstanding requests for a need.
-    UTILS::ExtendedHashtable dataTable_;  //<! Stores data associated with a need.
+    UTILS::TwoKeyMap countTable_; //<! Stores number of outstanding requests for a need.
+    UTILS::TwoKeyMap dataTable_;  //<! Stores data associated with a need.
 
   public:
 
