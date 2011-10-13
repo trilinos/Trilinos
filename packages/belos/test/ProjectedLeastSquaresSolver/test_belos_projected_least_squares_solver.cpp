@@ -54,6 +54,7 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
   using std::endl;
   typedef double scalar_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   Teuchos::oblackholestream blackHole;
   // Initialize MPI using Teuchos wrappers, if Trilinos was built with
@@ -92,18 +93,92 @@ main (int argc, char *argv[])
   // verbose mode.
   std::ostream& verboseOut = verbose ? out : blackHole;
 
-  bool success = true;
+  bool success = true; // Innocent until proven guilty.
+
+  STS::seedrandom (0);
   Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
 
   if (testGivensRotations) {
     solver.testGivensRotations (verboseOut);
   }
   if (testProblemSize > 0) {
-    // Test the projected least-squares solver.
     const bool extraVerbose = debug;
     success = success && 
       solver.testUpdateColumn (verboseOut, testProblemSize, 
 			       testBlockGivens, extraVerbose);
+  }
+
+  if (testProblemSize > 0) {
+    using Belos::details::ERobustness;
+    using Belos::details::robustnessEnumToString;
+
+    verboseOut << "Testing upper triangular solves" << endl;
+
+    // Robustness level for triangular solves.
+    const ERobustness robustness = Belos::details::ROBUSTNESS_NONE;
+    verboseOut << "-- Robustness level: " 
+	       << robustnessEnumToString (robustness) << endl;
+    //
+    // Construct an upper triangular linear system to solve.
+    //
+    verboseOut << "-- Generating test matrix" << endl;
+    const int N = testProblemSize;
+    typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
+    mat_type R (N, N);
+    // Fill the upper triangle of R with random numbers.
+    for (int j = 0; j < N; ++j) {
+      for (int i = 0; i <= j; ++i) {
+	R(i,j) = STS::random ();
+      }
+    }
+    mat_type B (N, 1);
+    B.random ();
+
+    // Save a copy of the original upper triangular system.
+    mat_type R_copy (Teuchos::Copy, R, N, N);
+    mat_type B_copy (Teuchos::Copy, B, N, 1);
+
+    // Solution vector.
+    mat_type X (N, 1);
+
+    // Solve RX = B.
+    verboseOut << "-- Solving RX=B" << endl;
+    (void) solver.solveUpperTriangularSystem (Teuchos::LEFT_SIDE, X, R, B, 
+					      robustness);
+    // Test the forward error.
+    mat_type Resid (N, 1);
+    Resid.assign (B_copy);
+    Belos::details::LocalDenseMatrixOps<scalar_type> ops;
+    ops.matMatMult (STS::one(), Resid, -STS::one(), R_copy, X);
+    verboseOut << "---- ||R*X - B||_F = " << Resid.normFrobenius() << endl;
+    verboseOut << "---- ||R||_F ||X||_F + ||B||_F = " 
+	<< (R_copy.normFrobenius() * X.normFrobenius() + B_copy.normFrobenius())
+	<< endl;
+
+    // Restore R and B.
+    R.assign (R_copy);
+    B.assign (B_copy);
+
+    // 
+    // Set up a right-side test problem: YR = B^*.
+    //
+    mat_type Y (1, N);
+    mat_type B_star (1, N);
+    ops.conjugateTranspose (B_star, B);
+    mat_type B_star_copy (1, N);
+    B_star_copy.assign (B_star);
+    // Solve YR = B^*.
+    verboseOut << "-- Solving YR=B^*" << endl;
+    (void) solver.solveUpperTriangularSystem (Teuchos::RIGHT_SIDE, Y, R, B_star, 
+					      robustness);
+    // Test the forward error.
+    mat_type Resid2 (1, N);
+    Resid2.assign (B_star_copy);
+    ops.matMatMult (STS::one(), Resid2, -STS::one(), Y, R_copy);
+    verboseOut << "---- ||Y*R - B^*||_F = " << Resid2.normFrobenius() << endl;
+    verboseOut << "---- ||Y||_F ||R||_F + ||B^*||_F = " 
+	       << (Y.normFrobenius() * R_copy.normFrobenius() + B_star_copy.normFrobenius())
+	       << endl;
   }
   
   if (success) {

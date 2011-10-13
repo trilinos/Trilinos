@@ -305,6 +305,30 @@ namespace Belos {
       typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
       
     public:
+      //! A_star := (conjugate) transpose of A.
+      void
+      conjugateTranspose (mat_type& A_star, const mat_type& A) const
+      {
+	for (int i = 0; i < A.numRows(); ++i) {
+	  for (int j = 0; j < A.numCols(); ++j) {
+	    A_star(j,i) = STS::conjugate (A(i,j));
+	  }
+	}
+      }
+
+      //! L := (conjugate) transpose of R (upper triangular).
+      void
+      conjugateTransposeOfUpperTriangular (mat_type& L, const mat_type& R) const
+      {
+	const int N = R.numCols();
+
+	for (int j = 0; j < N; ++j) {
+	  for (int i = 0; i <= j; ++i) {
+	    L(j,i) = STS::conjugate (R(i,j));
+	  }
+	}
+      }
+
       //! A := alpha * A.
       void
       matScale (mat_type& A, const scalar_type& alpha) const
@@ -443,6 +467,52 @@ namespace Belos {
 		   beta, C.values(), C.stride());
       }
     };
+
+    /// \enum ERobustness
+    /// \brief Robustness level of projected least-squares solver operations.
+    /// \author Mark Hoemmen
+    ///
+    /// "Robustness" refers in particular to dense triangular solves.
+    /// ROBUSTNESS_NONE means use the BLAS' _TRSM, which may result in
+    /// inaccurate or invalid (e.g., NaN or Inf) results if the upper
+    /// triangular matrix R is singular.  ROBUSTNESS_LOTS means use an
+    /// SVD-based least-squares solver for upper triangular solves.
+    /// This will work even if R is singular, but is much more
+    /// expensive than _TRSM (in fact, it's at least N times more
+    /// expensive, where N is the number of columns in R).
+    /// ROBUSTNESS_SOME means some algorithmic point in between those
+    /// two extremes.
+    enum ERobustness {
+      ROBUSTNESS_NONE,
+      ROBUSTNESS_SOME,
+      ROBUSTNESS_LOTS,
+      ROBUSTNESS_INVALID
+    };
+
+    //! Convert the given ERobustness enum value to a string.
+    std::string
+    robustnessEnumToString (const ERobustness x) 
+    {
+      const char* strings[] = {"None", "Some", "Lots"};
+      TEST_FOR_EXCEPTION(x < ROBUSTNESS_NONE || x >= ROBUSTNESS_INVALID,
+			 std::invalid_argument,
+			 "Invalid enum value " << x << ".");
+      return std::string (strings[x]);
+    }
+
+    //! Convert the given robustness string value to an ERobustness enum.
+    ERobustness
+    robustnessStringToEnum (const std::string& x)
+    {
+      const char* strings[] = {"None", "Some", "Lots"};
+      for (int r = 0; r < static_cast<int> (ROBUSTNESS_INVALID); ++r) {
+	if (x == strings[r]) {
+	  return static_cast<ERobustness> (r);
+	}
+      }
+      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+			 "Invalid robustness string " << x << ".");
+    }
     
     /// \class ProjectedLeastSquaresSolver
     /// \brief Methods for solving GMRES' projected least-squares problem.
@@ -623,6 +693,268 @@ namespace Belos {
 				    const int endCol) const
       {
 	caGmresUpdateUpperHessenbergImpl (problem.H, R, B, startCol, endCol);
+      }
+
+      /// \brief Solve the square upper triangular linear system(s) \f$RX = B\f$.
+      ///
+      /// This method uses the number of columns of R as the dimension
+      /// of the square matrix.  R may have more rows than columns,
+      /// but we won't use the "extra" rows in the solve.
+      ///
+      /// \return (detectedRank, foundRankDeficiency).
+      std::pair<int, bool>
+      solveUpperTriangularSystem (Teuchos::ESide side,
+				  mat_type& X,
+				  const mat_type& R,
+				  const mat_type& B,
+				  const ERobustness robustness=ROBUSTNESS_NONE) const
+      {
+	TEST_FOR_EXCEPTION(X.numRows() != B.numRows(), std::invalid_argument,
+			   "The output X and right-hand side B have different "
+			   "numbers of rows.  X has " << X.numRows() << " rows"
+			   ", and B has " << B.numRows() << " rows.");
+	// If B has more columns than X, we ignore the remaining
+	// columns of B when solving the upper triangular system.  If
+	// B has _fewer_ columns than X, we can't solve for all the
+	// columns of X, so we throw an exception.
+	TEST_FOR_EXCEPTION(X.numCols() > B.numCols(), std::invalid_argument,
+			   "The output X has more columns than the "
+			   "right-hand side B.  X has " << X.numCols() 
+			   << " columns and B has " << B.numCols() 
+			   << " columns.");
+	// See above explaining the number of columns in B_view.
+	mat_type B_view (Teuchos::View, B, B.numRows(), X.numCols());
+
+	// Both the BLAS' _TRSM and LAPACK's _LATRS overwrite the
+	// right-hand side with the solution, so first copy B_view
+	// into X.
+	X.assign (B_view);
+
+	// Solve the upper triangular system.
+	return solveUpperTriangularSystemInPlace (side, X, R, robustness);
+      }
+
+      /// \brief Solve square upper triangular linear system(s) in place.
+      ///
+      /// Assuming that the right-hand side(s) is/are already stored
+      /// in X, compute (in Matlab notation) X := R \ B or B / R,
+      /// depending on the \c side input argument.
+      ///
+      /// This method uses the number of columns of R as the dimension
+      /// of the square matrix.  R may have more rows than columns,
+      /// but we won't use the "extra" rows in the solve.
+      ///
+      /// \return (detectedRank, foundRankDeficiency).
+      std::pair<int, bool>
+      solveUpperTriangularSystemInPlace (Teuchos::ESide side,
+					 mat_type& X,
+					 const mat_type& R,
+					 const ERobustness robustness=ROBUSTNESS_NONE) const
+      {
+	using Teuchos::Array;
+	using Teuchos::LEFT_SIDE;
+	using Teuchos::RIGHT_SIDE;
+
+	const int M = R.numRows();
+	const int N = R.numCols();
+	const int LDR = R.stride();
+	const int NRHS = X.numCols();
+	const int LDX = X.stride();
+
+	TEST_FOR_EXCEPTION(M < N, std::invalid_argument, 
+			   "The input matrix R has fewer columns than rows.  "
+			   "R is " << M << " x " << N << ".");
+	// Ignore any additional rows of R by working with a square view.
+	mat_type R_view (Teuchos::View, R, N, N);
+
+	if (side == LEFT_SIDE) {
+	  TEST_FOR_EXCEPTION(X.numRows() < N, std::invalid_argument,
+			     "The input/output matrix X has only "
+			     << X.numRows() << " rows, but needs at least " 
+			     << N << " rows to match the matrix for a "
+			     "left-side solve R \\ X.");
+	} else if (side == RIGHT_SIDE) {
+	  TEST_FOR_EXCEPTION(X.numCols() < N, std::invalid_argument,
+			     "The input/output matrix X has only "
+			     << X.numCols() << " columns, but needs at least " 
+			     << N << " columns to match the matrix for a "
+			     "right-side solve X / R.");
+	}
+	TEST_FOR_EXCEPTION(robustness < ROBUSTNESS_NONE || 
+			   robustness >= ROBUSTNESS_INVALID, 
+			   std::invalid_argument,
+			   "Invalid robustness value " << robustness << ".");
+
+	// In robust mode, scan for Infs and NaNs.
+	// Only look at the upper triangle of R_view.
+	if (robustness != ROBUSTNESS_NONE) {
+	  int count = 0;
+	  for (int j = 0; j < N; ++j) {
+	    for (int i = 0; i <= j; ++i) {
+	      if (STS::isnaninf (R_view(i,j))) {
+		++count;
+	      }
+	    }
+	  }
+	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
+			     "There " << (count != 1 ? "are" : "is")
+			     << " " << count << " Inf or NaN entr"
+			     << (count != 1 ? "ies" : "y") 
+			     << " in the upper triangle of R.");
+	  count = 0;
+	  for (int j = 0; j < X.numCols(); ++j) {
+	    for (int i = 0; i < X.numRows(); ++i) {
+	      if (STS::isnaninf (X(i,j))) {
+		++count;
+	      }
+	    }
+	  }
+	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
+			     "There " << (count != 1 ? "are" : "is")
+			     << " " << count << " Inf or NaN entr"
+			     << (count != 1 ? "ies" : "y") << " in X.");
+	}
+
+	int detectedRank = N;
+	bool foundRankDeficiency = false;
+
+	// Solve for X.
+	if (robustness == ROBUSTNESS_NONE) {
+	  blas_type blas;
+	  // Fast BLAS triangular solve.  No rank checks.
+	  blas.TRSM(side, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+		    Teuchos::NON_UNIT_DIAG, X.numRows(), X.numCols(), 
+		    STS::one(), R.values(), R.stride(), 
+		    X.values(), X.stride());
+	} else if (robustness < ROBUSTNESS_INVALID) {
+	  //
+	  // Find the minimum-norm solution to the least-squares
+	  // problem $\min_x \|RX - B\|_2$, using the singular value
+	  // decomposition (SVD).
+	  //
+	  LocalDenseMatrixOps<Scalar> ops;
+	  lapack_type lapack;
+
+	  // _GELSS overwrites its matrix input, so make a copy.
+	  mat_type R_copy (Teuchos::Copy, R_view, N, N);
+
+	  // Zero out the lower triangle of R_copy, since the mat_type
+	  // constructor copies all the entries, not just the upper
+	  // triangle.
+	  for (int j = 0; j < N; ++j) {
+	    for (int i = j+1; i < N; ++i) {
+	      R_copy(i,j) = STS::zero();
+	    }
+	  }
+	  // Array of singular values.
+	  Array<magnitude_type> singularValues (N);
+	  int rank = N; // to be set by _GELSS
+
+	  // Use Scalar's machine precision for the rank tolerance,
+	  // not magnitude_type's machine precision.
+	  const magnitude_type rankTolerance = STS::eps();
+
+	  // Extra workspace.  This is only used if Scalar is complex,
+	  // by CGELSS or ZGELSS.  Teuchos::LAPACK presents a unified
+	  // interface to _GELSS that always includes the RWORK
+	  // argument, even though SGELSS and DGELSS don't have the
+	  // RWORK argument.  We always allocate at least one entry so
+	  // that &rwork[0] makes sense.
+	  Array<magnitude_type> rwork (1);
+	  if (STS::isComplex) {
+	    rwork.resize (std::max (1, 5 * N));
+	  }
+
+	  if (side == LEFT_SIDE) {
+	    // _GELSS overwrites its matrix input, so make a copy.
+	    mat_type R_copy (Teuchos::Copy, R_view, N, N);
+
+	    // Zero out the lower triangle of R_copy, since the
+	    // mat_type constructor copies all the entries, not just
+	    // the upper triangle.  _GELSS will read all the entries
+	    // of the input matrix.
+	    for (int j = 0; j < N; ++j) {
+	      for (int i = j+1; i < N; ++i) {
+		R_copy(i,j) = STS::zero();
+	      }
+	    }
+	    //
+	    // Workspace query
+	    //
+	    Scalar lworkScalar = STS::one(); // To be set by workspace query
+	    int info = 0;
+	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, X.values(), LDX,
+			  &singularValues[0], rankTolerance, &rank, 
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			       "_GELSS workspace query returned INFO = " 
+			       << info << " != 0.");
+	    const int lwork = static_cast<int> (STS::real (lworkScalar));
+	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			       "_GELSS workspace query returned LWORK = " 
+			       << lwork << " < 0.");
+	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
+	    Array<Scalar> work (std::max (1, lwork));
+	    // Solve the least-squares problem.
+	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, X.values(), LDX,
+			  &singularValues[0], rankTolerance, &rank,
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+			       "_GELSS returned INFO = " << info << " != 0.");
+
+	  } else {
+	    // If solving with R on the right-hand side, the interface
+	    // requires that instead of solving $\min \|XR - B\|_2$,
+	    // we have to solve $\min \|R^* X^* - B^*\|_2$.  We
+	    // compute (conjugate) transposes in newly allocated
+	    // temporary matrices X_star resp. R_star.  (B is already
+	    // in X and _GELSS overwrites its input vector X with the
+	    // solution.)
+	    mat_type X_star (X.numCols(), X.numRows());
+	    ops.conjugateTranspose (X_star, X);
+	    mat_type R_star (N, N); // Filled with zeros automatically.
+	    ops.conjugateTransposeOfUpperTriangular (R_star, R);
+	    //
+	    // Workspace query
+	    //
+	    Scalar lworkScalar = STS::one(); // To be set by workspace query
+	    int info = 0;
+	    lapack.GELSS (N, N, X_star.numCols(), 
+			  R_star.values(), R_star.stride(), 
+			  X_star.values(), X_star.stride(),
+			  &singularValues[0], rankTolerance, &rank, 
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			       "_GELSS workspace query returned INFO = " 
+			       << info << " != 0.");
+	    const int lwork = static_cast<int> (STS::real (lworkScalar));
+	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			       "_GELSS workspace query returned LWORK = " 
+			       << lwork << " < 0.");
+	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
+	    Array<Scalar> work (std::max (1, lwork));
+	    // Solve the least-squares problem.
+	    lapack.GELSS (N, N, X_star.numCols(), 
+			  R_star.values(), R_star.stride(),
+			  X_star.values(), X_star.stride(),
+			  &singularValues[0], rankTolerance, &rank,
+			  &lworkScalar, -1, &rwork[0], &info);
+	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+			       "_GELSS returned INFO = " << info << " != 0.");
+	    // Copy the transpose of X_star back into X.
+	    ops.conjugateTranspose (X, X_star);
+	  }
+	  if (rank < N) {
+	    foundRankDeficiency = true;
+	  }
+	  detectedRank = rank;
+	} else {
+	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "Should never get here!  Invalid robustness value " 
+			     << robustness << ".  Please report this bug to the "
+			     "Belos developers.");
+	}
+	return std::make_pair (detectedRank, foundRankDeficiency);
       }
 
     public:
@@ -955,7 +1287,9 @@ namespace Belos {
       {
 	using Teuchos::Copy;
 	using Teuchos::View;
+
 	LocalDenseMatrixOps<Scalar> ops;
+	const ERobustness robustness = ROBUSTNESS_LOTS;
 
 	TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
 			   "startCol = " << startCol << " < 0.");
@@ -963,8 +1297,17 @@ namespace Belos {
 			   "startCol = " << startCol << " > endCol = " 
 			   << endCol << ".");
 	if (startCol == 0) {
+	  //
+	  // This case only gets exercised on the first (outer)
+	  // iteration of CA-GMRES, if the caller is including the
+	  // first basis vector in the QR factorization.  We don't
+	  // recommend implementing CA-GMRES in this way, because it
+	  // requires a QR factorization that computes an R factor
+	  // with a nonnegative diagonal.  LAPACK's QR factorization
+	  // and algorithms built from it may compute an R factor
+	  // whose diagonal has mixed signs.
+	  //
 	  const int numCols = endCol - startCol + 1;
-
 	  const mat_type R_underline (View, R, numCols+1, numCols+1);
 	  const mat_type B_view (View, B, numCols+1, numCols);
 	  const mat_type R_view (View, R, numCols, numCols);
@@ -974,7 +1317,9 @@ namespace Belos {
 	  ops.matMatMult (STS::zero(), H_view, STS::one(), R_underline, B_view);
 
 	  // H_view : = H_view / R_view.
-	  ops.rightUpperTriSolve (H_view, R_view);
+	  //ops.rightUpperTriSolve (H_view, R_view);
+	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
+						    H_view, R_view, robustness);
 	} else {
 	  const int M = startCol+1;
 	  // The new basis vectors don't include the starting vector
@@ -992,36 +1337,52 @@ namespace Belos {
 	  mat_type H_k_underline (View, H, S+1, S, M, startCol);
 
 	  // We need R_km1k / R_k (which is M x S) for two different
-	  // things.  Let's precompute it, storing the result in
-	  // temporary storage.
-	  mat_type temp (M, S);
-	  temp.assign (R_km1k); // the solve overwrites its input
-	  ops.rightUpperTriSolve (temp, R_k);
-
-	  // Keep a copy of the last row of (R_km1k / R_k).
-	  mat_type lastRow (Copy, temp, 1, S, M-1, 0);
-
-	  // H_km1k :=
-	  // R_km1k_underline * B_k_underline / R_k - H_km1 * (R_km1k / R_k).
+	  // things.  Let's precompute it, storing the result in the
+	  // temporary storage matrix Temp.
+	  mat_type Temp (M, S);
+	  Temp.assign (R_km1k); // the solve overwrites its input
+	  //ops.rightUpperTriSolve (Temp, R_k);
+	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
+						    Temp, R_k, robustness);
+	  // Keep a copy of the last row of (R_km1k / R_k).  
+	  // The last row is 1 x S.
+	  mat_type lastRow (Copy, Temp, 1, S, M-1, 0);
 	  //
-	  // H_km1k := -H_km1 * (R_km1k / R_k).
-	  ops.matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, temp);
-	  // temp := R_km1k_underline * B_k_underline.
-	  ops.matMatMult (STS::zero(), temp, 
+	  // Compute H_km1k := R_km1k_underline * B_k_underline / R_k - 
+	  //   H_km1 * (R_km1k / R_k).
+	  //
+	  // 1. H_km1k := -H_km1 * (R_km1k / R_k), where (R_km1k / R_k)
+	  //    is stored in Temp.
+	  ops.matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, Temp);
+	  // 2. Temp := R_km1k_underline * B_k_underline.
+	  //
+	  // Here we're using Temp once again as temp space, since we
+	  // don't need its original value any more.
+	  ops.matMatMult (STS::zero(), Temp, 
 			  STS::one(), R_km1k_underline, B_k_underline);
-	  // temp := temp / R_k.
-	  ops.rightUpperTriSolve (temp, R_k);
-	  // H_km1k := H_km1k + temp.
-	  ops.matAdd (H_km1k, temp);
+	  // 3. Temp := Temp / R_k.
+	  //ops.rightUpperTriSolve (Temp, R_k);
+	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
+						    Temp, R_k, robustness);
+	  // 4. H_km1k := H_km1k + Temp.  This finishes the
+	  //    computation of H_km1k.
+	  ops.matAdd (H_km1k, Temp);
 	  //
-	  // H_k_underline := R_k_underline * B_k_underline / R_k -
+	  // Compute H_k_underline := R_k_underline * B_k_underline / R_k -
 	  //   h_km1 * e_1 * lastRow.
 	  //
+	  // 1. H_k_underline := R_k_underline * B_k_underline.
 	  ops.matMatMult (STS::zero(), H_k_underline, 
 			  STS::one(), R_k_underline, B_k_underline);
-	  ops.rightUpperTriSolve (H_k_underline, R_k);
+	  // 2. H_k_underline := H_k_underline / R_k.
+	  //ops.rightUpperTriSolve (H_k_underline, R_k);
+	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
+						    H_k_underline, R_k,
+						    robustness);
 	  ops.matScale (lastRow, H(M+1,M));
-	  mat_type H_k_view (View, H_k_underline, 1, S+1);
+	  mat_type H_k_view (View, H_k_underline, 1, S);
+	  // 3. H_k_underline(1, 1:S) := H_k_underline(1, 1:S) - lastRow.
+	  //    This finishes the computation of H_k_underline.
 	  ops.matSub (H_k_view, lastRow);
 	}
       }
@@ -1043,7 +1404,8 @@ namespace Belos {
 	const mat_type z_view (Teuchos::View, z, numRows-1, z.numCols());
 	mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
 
-	(void) solveUpperTriangularSystem (y_view, R_view, z_view);
+	(void) solveUpperTriangularSystem (Teuchos::LEFT_SIDE, y_view, 
+					   R_view, z_view);
       }
 
       //! Make a random projected least-squares problem.
@@ -1195,184 +1557,6 @@ namespace Belos {
       }
 
       
-      /// \brief Solve the square upper triangular linear system \f$Rx = b\f$.
-      ///
-      /// This method uses the number of columns of R as the dimension
-      /// of the linear system, so R may have more rows than columns;
-      /// we just won't use the "extra" rows in the solve.
-      ///
-      /// \return (detectedRank, foundRankDeficiency).
-      std::pair<int, bool>
-      solveUpperTriangularSystem (mat_type& x,
-				  const mat_type& R,
-				  const mat_type& b,
-				  const int robustness=0) const
-      {
-	using Teuchos::Array;
-
-	const int M = R.numRows();
-	const int N = R.numCols();
-	const int LDR = R.stride();
-	const int NRHS = x.numCols();
-	const int LDX = x.stride();
-
-	// If b has more columns than x, we ignore the remaining
-	// columns of b when solving the upper triangular system.  If
-	// b has _fewer_ columns than x, we can't solve for all the
-	// columns of x, so we throw an exception.
-	TEST_FOR_EXCEPTION(NRHS > b.numCols(), std::invalid_argument,
-			   "The solution vector x has more columns than the "
-			   "right-hand side vector b.  x has " << x.numCols() 
-			   << " columns and b has " << b.numCols() 
-			   << " columns.");
-	TEST_FOR_EXCEPTION(b.numRows() < N, std::invalid_argument,
-			   "The right-hand side vector b has only " 
-			   << b.numRows() << " rows, but needs at least " 
-			   << N << " rows to match the matrix.");
-	TEST_FOR_EXCEPTION(x.numRows() < N, std::invalid_argument,
-			   "The solution vector x has only " << x.numRows() 
-			   << " rows, but needs at least " << N 
-			   << " rows to match the matrix.");
-	TEST_FOR_EXCEPTION(M < N, std::invalid_argument,
-			   "R is " << M << " x " << N << ", but "
-			   "solveUpperTriangularSystem needs R to have at "
-			   "least as many rows as columns.");
-	TEST_FOR_EXCEPTION(M < N, std::invalid_argument,
-			   "R is " << M << " x " << N << ", but "
-			   "solveUpperTriangularSystem needs R to have at "
-			   "least as many rows as columns.");
-	TEST_FOR_EXCEPTION(robustness < 0 || robustness > 2, 
-			   std::invalid_argument,
-			   "Invalid robustness value " << robustness << ".");
-	lapack_type lapack;
-	blas_type blas;
-	int detectedRank = N;
-	bool foundRankDeficiency = false;
-
-	// Both the BLAS' _TRSM and LAPACK's _LATRS overwrite the
-	// right-hand side with the solution, so first copy b into x.
-	if (x.numCols() == b.numCols()) {
-	  x.assign (b);
-	} else {
-	  mat_type b_view (Teuchos::View, b, b.numRows(), NRHS);
-	  x.assign (b_view);
-	}
-
-	// Solve Rx = b.
-	if (robustness == 0) 
-	  { // Fast BLAS triangular solve.  No rank checks.
-	    blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		      Teuchos::NON_UNIT_DIAG, N, NRHS, STS::one(), R.values(),
-		      LDR, x.values(), LDX);
-	  }
-	else if (robustness == 1) 
-	  { // Robust triangular solve using LAPACK's LATRS routine.
-	    // Rudimentary rank detection, using diagonal entries of R
-	    // and the norms of the off-diagonal entries of each
-	    // column as computed by LATRS.
-	    Array<magnitude_type> cnorm (N);
-	    magnitude_type scaleFactor = STM::one();
-	    char NORMIN = 'N';
-	    int info = 0;
-
-	    for (int j = 0; j < x.numCols(); ++j) {
-	      // _LATRS only solves from the left side, and only one
-	      // column at a time.
-	      lapack.LATRS ('U', 'N', 'N', NORMIN, N, R.values(), LDR,
-			    &x(0,j), &scaleFactor, &cnorm[0], &info);
-	      TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-				 "LAPACK's _LATRS routine returned INFO = " 
-				 << info << " != 0.");
-	      // LATRS computes cnorm if NORMIN='N'.  We don't need to
-	      // compute them again, so tell LATRS to reuse cnorm the
-	      // next time around.
-	      NORMIN = 'Y'; 
-
-	      if (scaleFactor == STM::zero()) {
-		// LATRS doesn't tell us the actual rank, just that the
-		// matrix is either rank-deficient or badly scaled.
-		foundRankDeficiency = true;
-	      }
-	    }
-	    // However, _LATRS _does_ return the 1-norms of the
-	    // off-diagonal parts of the columns of R (in the cnorm
-	    // array).  We can at least use this to detect zero
-	    // columns of R.
-	    int rank = N;
-	    for (int j = 0; j < N; ++j) {
-	      if (R(j,j) == STS::zero() && (j == 0 || cnorm[j] == STM::zero())) {
-		--rank;
-	      }
-	    }
-	    if (rank < N) {
-	      foundRankDeficiency = true;
-	    }
-	    detectedRank = rank;
-	  } 
-	else if (robustness == 2) 
-	  { // Find the minimum-norm solution to the least-squares
-	    // problem $\min_x \|Rx-b\|_2$, using the singular value
-	    // decomposition (SVD).
-	    //
-	    // _GELSS overwrites its matrix input, so make a copy.
-	    mat_type R_copy (Teuchos::Copy, R, N, N);
-	    Array<magnitude_type> singularValues (N);
-	    int rank = N; // to be set by _GELSS
-
-	    // Use Scalar's machine precision for the rank tolerance,
-	    // not magnitude_type's machine precision.
-	    const magnitude_type rankTolerance = STS::eps();
-
-	    // Extra workspace.  This is only used if Scalar is
-	    // complex, by CGELSS or ZGELSS.  Teuchos::LAPACK presents
-	    // a unified interface to _GELSS that always includes the
-	    // RWORK argument, even though SGELSS and DGELSS don't
-	    // have the RWORK argument.  We always allocate at least
-	    // one entry so that &rwork[0] makes sense.
-	    Array<magnitude_type> rwork (1);
-	    if (STS::isComplex) {
-	      rwork.resize (std::max (1, 5 * N));
-	    }
-
-	    //
-	    // Workspace query
-	    //
-	    Scalar lworkScalar = STS::one(); // To be set by workspace query
-	    int info = 0;
-	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, x.values(), LDX,
-			  &singularValues[0], rankTolerance, &rank, 
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			       "_GELSS workspace query returned INFO = " 
-			       << info << " != 0.");
-	    const int lwork = static_cast<int> (STS::real (lworkScalar));
-	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			       "_GELSS workspace query returned LWORK = " 
-			       << lwork << " < 0.");
-	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
-	    Array<Scalar> work (std::max (1, lwork));
-	    // Solve the least-squares problem.
-	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, x.values(), LDX,
-			  &singularValues[0], rankTolerance, &rank,
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-			       "_GELSS returned INFO = " << info << " != 0.");
-	    if (rank < N) {
-	      foundRankDeficiency = true;
-	    }
-	    detectedRank = rank;
-	  }
-	else 
-	  {
-	    TEST_FOR_EXCEPTION(true, std::logic_error, 
-			       "Should never get here!  Invalid robustness value " 
-			       << robustness << ".  Please report this bug to the "
-			       "Belos developers.");
-	  }
-
-	return std::make_pair (detectedRank, foundRankDeficiency);
-      }
-
       /// \brief Normwise 2-norm condition number of the least-squares problem.
       ///
       /// \param A [in] The matrix in the least-squares problem.
