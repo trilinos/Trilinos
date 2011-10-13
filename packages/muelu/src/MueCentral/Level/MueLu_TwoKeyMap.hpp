@@ -24,7 +24,7 @@
 // - Can we use an std::map<Tuple<const std::string, const MueLu::FactoryBase*>, ... > instead?
 // - Teuchos::any vs. Teuchos::ParameterEntry?
 // - Teuchos::ConstNonconstObjectContainer? Avoid const and non-cosnt version of same method
-// - Can we use an std::map<... , Tuple<counter,factory*> >  instead?
+// - Can we use an std::map<... , Tuple<counter, factory*> >  instead?
 // - Can be more generic (template type for key1, key2)
 
 namespace MueLu {
@@ -45,17 +45,13 @@ namespace MueLu {
       //! hashtable container const iterator typedef
       typedef dataTableType::const_iterator ConstIterator;
 
-      dataTableType map_; //<! data storage object for extended hashtable
-
-    public:
-
-      //! @name Public types
-      //@{
-
       //! map container const iterator typedef
       typedef dataMapType::const_iterator ConstMapIterator;
 
-      //@}
+      //! data storage object for extended hashtable
+      dataTableType map_;
+
+    public:
 
       TwoKeyMap() { };
 
@@ -63,7 +59,7 @@ namespace MueLu {
       void Set(const string & ename, const Value & evalue, const FactoryBase* factory) {
         // if ename does not exist at all
         if (!map_.count(ename) > 0) {
-          Teuchos::map<const MueLu::FactoryBase*,Teuchos::ParameterEntry> newMapData;
+          Teuchos::map<const MueLu::FactoryBase*, Teuchos::ParameterEntry> newMapData;
           map_[ename] = newMapData; // empty map
         }
 
@@ -189,12 +185,11 @@ namespace MueLu {
         return v;
       }
 
-      //TODO: use describe()
-      void Print(std::ostream & out) {
+      void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
         Teuchos::TabularOutputter outputter(out);
-        outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT,Teuchos::TabularOutputter::GENERAL,12);
-        outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
-        outputter.pushFieldSpec("type", Teuchos::TabularOutputter::STRING,Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+        outputter.pushFieldSpec("name", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 12);
+        outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
+        outputter.pushFieldSpec("type", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
         outputter.outputHeader();
 
         std::vector<std::string> ekeys = GetKeyList();
@@ -203,7 +198,7 @@ namespace MueLu {
           for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
             outputter.outputField(*it);
             outputter.outputField(*kt);
-            outputter.outputField(GetType(*it,*kt));
+            outputter.outputField(GetType(*it, *kt));
             outputter.nextRow();
           }
         }
