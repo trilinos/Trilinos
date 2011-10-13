@@ -82,18 +82,20 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       }
       break;
 
-    case shards::Tetrahedron<11>::key:
-          TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                              ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-          pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
-          break;
-
     case shards::Tetrahedron<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                          ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      if (cellTopology.getCellTopologyData()->key == shards::Tetrahedron<11>::key)
+      {
+	TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+			    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+	pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      } 
+      else
+      {
+	TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+			    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+	pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      }
       break;
-
     case shards::Hexahedron<>::key:
       TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
