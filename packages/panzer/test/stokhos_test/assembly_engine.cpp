@@ -25,6 +25,8 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+#include "Epetra_MpiComm.h"
+
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"

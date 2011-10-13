@@ -10,6 +10,7 @@
 #include "Panzer_SGEpetraLinearObjFactoryT.hpp"
 
 template class panzer::SGEpetraLinearObjFactory<panzer::Traits,int>;
+template class panzer::SGEpetraLinearObjFactory<panzer::Traits,short>;
 
 #endif
 
