@@ -34,9 +34,9 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
-  std::string inputFile;  // Matrix Market file to read
-  bool verbose = false;       // Verbosity of output
-  bool echo = false;          // Echo the read-in matrix back?
+  std::string inputFile = "simple.mtx";  // Matrix Market file to read
+  bool verbose = false;                  // Verbosity of output
+  bool echo = false;                     // Echo the read-in matrix back?
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, true);
