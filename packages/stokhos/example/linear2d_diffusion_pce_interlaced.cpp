@@ -41,12 +41,14 @@
 
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
+#include "Stokhos_SGModelEvaluator_Interlaced.hpp"
 
 // Timing utilities
 #include "Teuchos_TimeMonitor.hpp"
 
 // I/O utilities
 #include "EpetraExt_VectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 int main(int argc, char *argv[]) {
   int n = 32;                        // spatial discretization (per dimension)
@@ -104,8 +106,6 @@ int main(int argc, char *argv[]) {
 
     // Create stochastic parallel distribution
     int num_spatial_procs = -1;
-    if (argc > 1)
-      num_spatial_procs = std::atoi(argv[1]);
     Teuchos::ParameterList parallelParams;
     parallelParams.set("Number of Spatial Processors", num_spatial_procs);
     // parallelParams.set("Rebalance Stochastic Graph", true);
@@ -128,20 +128,12 @@ int main(int argc, char *argv[]) {
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
-    Teuchos::ParameterList& sgOpParams = 
-      sgParams->sublist("SG Operator");
-    Teuchos::ParameterList& sgPrecParams = 
-      sgParams->sublist("SG Preconditioner");
     if (!nonlinear_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
-    sgOpParams.set("Operator Method", "Matrix Free");
-    sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
-    sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
-    sgPrecParams.set("Mean Preconditioner Type", "ML");
-    Teuchos::ParameterList& precParams = 
-      sgPrecParams.sublist("Mean Preconditioner Parameters");
+    
+    Teuchos::ParameterList precParams;
     precParams.set("default values", "SA");
     precParams.set("ML output", 0);
     precParams.set("max levels",5);
@@ -158,10 +150,11 @@ int main(int argc, char *argv[]) {
 #endif
 
     // Create stochastic Galerkin model evaluator
-    Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-						 expansion, sg_parallel_data, 
-						 sgParams));
+    Teuchos::RCP<Stokhos::SGModelEvaluator_Interlaced> sg_model =
+      Teuchos::rcp(new Stokhos::SGModelEvaluator_Interlaced(
+		     model, basis, Teuchos::null,
+		     expansion, sg_parallel_data, 
+		     sgParams));
 
     // Set up stochastic parameters
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_poly =
@@ -180,9 +173,11 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_f_map())));
     Teuchos::RCP<Epetra_Vector> sg_dx = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
-    Teuchos::RCP<Epetra_Operator> sg_J = sg_model->create_W();
-    Teuchos::RCP<Epetra_Operator> sg_M = sg_model->create_WPrec()->PrecOp;
-
+    Teuchos::RCP<Epetra_CrsMatrix> sg_J = 
+      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_model->create_W());
+    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> sg_M =
+      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*sg_J, precParams,
+							   false));
     
     // Setup InArgs and OutArgs
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
@@ -191,10 +186,10 @@ int main(int argc, char *argv[]) {
     sg_inArgs.set_x(sg_x);
     sg_outArgs.set_f(sg_f);
     sg_outArgs.set_W(sg_J);
-    sg_outArgs.set_WPrec(sg_M);
 
     // Evaluate model
     sg_model->evalModel(sg_inArgs, sg_outArgs);
+    sg_M->ComputePreconditioner();
 
     // Print initial residual norm
     double norm_f;
@@ -224,17 +219,16 @@ int main(int argc, char *argv[]) {
     sg_x->Update(-1.0, *sg_dx, 1.0);
 
     // Save solution to file
-    EpetraExt::VectorToMatrixMarketFile("stochastic_solution.mm", *sg_x);
+    EpetraExt::VectorToMatrixMarketFile("stochastic_solution_interlaced.mm", 
+					*sg_x);
 
     // Save RHS to file
-    EpetraExt::VectorToMatrixMarketFile("stochastic_RHS.mm", *sg_f);
+    EpetraExt::VectorToMatrixMarketFile("stochastic_RHS_interlaced.mm", 
+					*sg_f);
 
-    // Save operator to file (set "Operator Method" to "Fully Assembled" above)
-    Teuchos::RCP<Epetra_CrsMatrix> sg_J_crs =
-      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_J);
-    if (sg_J_crs != Teuchos::null)
-      EpetraExt::RowMatrixToMatrixMarketFile("stochastic_operator.mm", 
-					     *sg_J_crs);
+    // Save operator to file
+    EpetraExt::RowMatrixToMatrixMarketFile("stochastic_operator_interlaced.mm", 
+					   *sg_J);
 
     // Save mean and variance to file
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_poly = 
@@ -243,8 +237,8 @@ int main(int argc, char *argv[]) {
     Epetra_Vector std_dev(*(model->get_x_map()));
     sg_x_poly->computeMean(mean);
     sg_x_poly->computeStandardDeviation(std_dev);
-    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
-    EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
+    EpetraExt::VectorToMatrixMarketFile("mean_gal_interlaced.mm", mean);
+    EpetraExt::VectorToMatrixMarketFile("std_dev_gal_interlaced.mm", std_dev);
 
     // Compute new residual & response function
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs2 = sg_model->createOutArgs();
