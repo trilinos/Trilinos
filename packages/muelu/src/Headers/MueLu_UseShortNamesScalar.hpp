@@ -14,9 +14,9 @@ typedef MueLu::SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps
 typedef MueLu::PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> PgPFactory;
 #endif
 
-#ifdef MUELU_GENERICPRFACTORY_SHORT
+/*#ifdef MUELU_GENERICPRFACTORY_SHORT
 typedef MueLu::GenericPRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> GenericPRFactory;
-#endif
+#endif*/
 
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> GenericRFactory;
@@ -86,9 +86,9 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 typedef MueLu::CoalesceDropFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoalesceDropFactory;
 #endif
 
-#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
+/*#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
 typedef MueLu::DefaultFactoryHandler<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DefaultFactoryHandler;
-#endif
+#endif*/
 
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> NullspaceFactory;
