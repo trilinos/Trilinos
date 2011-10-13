@@ -49,6 +49,9 @@
 int 
 main (int argc, char *argv[]) 
 {
+  using Belos::details::ERobustness;
+  using Belos::details::robustnessEnumToString;
+  using Belos::details::robustnessStringToEnum;
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -66,6 +69,7 @@ main (int argc, char *argv[])
   std::ostream& out = (myRank == 0) ? std::cout : blackHole;
   
   // Command-line arguments
+  std::string robustnessLevel ("None");
   bool testBlockGivens = false;
   bool testGivensRotations = false;
   bool verbose = false;
@@ -74,6 +78,8 @@ main (int argc, char *argv[])
 
   // Parse command-line arguments
   CommandLineProcessor cmdp (false,true);
+  cmdp.setOption ("robustness", &robustnessLevel,
+		  "Robustness level: \"None\", \"Some\", or \"Lots\".");
   cmdp.setOption ("testGivensRotations", "dontTestGivensRotations", 
 		  &testGivensRotations, 
 		  "Test the implementation of Givens rotations.");
@@ -89,9 +95,16 @@ main (int argc, char *argv[])
     out << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
+
+  const ERobustness robustness = 
+    robustnessStringToEnum (robustnessLevel);
+
   // Verbose output stream only prints on MPI Proc 0, and only in
   // verbose mode.
   std::ostream& verboseOut = verbose ? out : blackHole;
+
+  // Robustness level for triangular solves.
+  verboseOut << "-- Robustness level: " << robustnessLevel << endl;
 
   bool success = true; // Innocent until proven guilty.
 
@@ -109,15 +122,7 @@ main (int argc, char *argv[])
   }
 
   if (testProblemSize > 0) {
-    using Belos::details::ERobustness;
-    using Belos::details::robustnessEnumToString;
-
     verboseOut << "Testing upper triangular solves" << endl;
-
-    // Robustness level for triangular solves.
-    const ERobustness robustness = Belos::details::ROBUSTNESS_NONE;
-    verboseOut << "-- Robustness level: " 
-	       << robustnessEnumToString (robustness) << endl;
     //
     // Construct an upper triangular linear system to solve.
     //
@@ -145,7 +150,7 @@ main (int argc, char *argv[])
     verboseOut << "-- Solving RX=B" << endl;
     (void) solver.solveUpperTriangularSystem (Teuchos::LEFT_SIDE, X, R, B, 
 					      robustness);
-    // Test the forward error.
+    // Test the residual error.
     mat_type Resid (N, 1);
     Resid.assign (B_copy);
     Belos::details::LocalDenseMatrixOps<scalar_type> ops;
@@ -171,7 +176,7 @@ main (int argc, char *argv[])
     verboseOut << "-- Solving YR=B^*" << endl;
     (void) solver.solveUpperTriangularSystem (Teuchos::RIGHT_SIDE, Y, R, B_star, 
 					      robustness);
-    // Test the forward error.
+    // Test the residual error.
     mat_type Resid2 (1, N);
     Resid2.assign (B_star_copy);
     ops.matMatMult (STS::one(), Resid2, -STS::one(), Y, R_copy);

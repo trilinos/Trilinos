@@ -329,6 +329,19 @@ namespace Belos {
 	}
       }
 
+      //! Zero out everything below the diagonal of A.
+      void
+      zeroOutStrictLowerTriangle (mat_type& A) const
+      {
+	const int N = std::min (A.numRows(), A.numCols());
+
+	for (int j = 0; j < N; ++j) {
+	  for (int i = j+1; i < A.numRows(); ++i) {
+	    A(i,j) = STS::zero();
+	  }
+	}
+      }
+
       //! A := alpha * A.
       void
       matScale (mat_type& A, const scalar_type& alpha) const
@@ -609,7 +622,7 @@ namespace Belos {
       ///   least-squares problem.
       magnitude_type
       updateColumn (ProjectedLeastSquaresProblem<Scalar>& problem,
-		    const int curCol) const
+		    const int curCol) 
       {
 	return updateColumnGivens (problem.H, problem.R, problem.y, problem.z,
 				   problem.theCosines, problem.theSines, curCol);
@@ -632,7 +645,7 @@ namespace Belos {
       magnitude_type
       updateColumns (ProjectedLeastSquaresProblem<Scalar>& problem,
 		     const int startCol,
-		     const int endCol) const
+		     const int endCol) 
       {
 	return updateColumnsGivens (problem.H, problem.R, problem.y, problem.z,
 				    problem.theCosines, problem.theSines, 
@@ -653,7 +666,7 @@ namespace Belos {
       ///   updated column of the least-squares problem.
       void
       solve (ProjectedLeastSquaresProblem<Scalar>& problem,
-	     const int curCol) const
+	     const int curCol) 
       {
 	solveGivens (problem.y, problem.R, problem.z, curCol);
       }
@@ -690,7 +703,7 @@ namespace Belos {
 				    const mat_type& R,
 				    const mat_type& B, 
 				    const int startCol, 
-				    const int endCol) const
+				    const int endCol) 
       {
 	caGmresUpdateUpperHessenbergImpl (problem.H, R, B, startCol, endCol);
       }
@@ -707,7 +720,7 @@ namespace Belos {
 				  mat_type& X,
 				  const mat_type& R,
 				  const mat_type& B,
-				  const ERobustness robustness=ROBUSTNESS_NONE) const
+				  const ERobustness robustness=ROBUSTNESS_NONE)
       {
 	TEST_FOR_EXCEPTION(X.numRows() != B.numRows(), std::invalid_argument,
 			   "The output X and right-hand side B have different "
@@ -749,7 +762,7 @@ namespace Belos {
       solveUpperTriangularSystemInPlace (Teuchos::ESide side,
 					 mat_type& X,
 					 const mat_type& R,
-					 const ERobustness robustness=ROBUSTNESS_NONE) const
+					 const ERobustness robustness=ROBUSTNESS_NONE) 
       {
 	using Teuchos::Array;
 	using Teuchos::LEFT_SIDE;
@@ -757,10 +770,6 @@ namespace Belos {
 
 	const int M = R.numRows();
 	const int N = R.numCols();
-	const int LDR = R.stride();
-	const int NRHS = X.numCols();
-	const int LDX = X.stride();
-
 	TEST_FOR_EXCEPTION(M < N, std::invalid_argument, 
 			   "The input matrix R has fewer columns than rows.  "
 			   "R is " << M << " x " << N << ".");
@@ -815,7 +824,8 @@ namespace Belos {
 			     << (count != 1 ? "ies" : "y") << " in X.");
 	}
 
-	int detectedRank = N;
+	// Pair of values to return from this method.
+	int rank = N;
 	bool foundRankDeficiency = false;
 
 	// Solve for X.
@@ -833,38 +843,6 @@ namespace Belos {
 	  // decomposition (SVD).
 	  //
 	  LocalDenseMatrixOps<Scalar> ops;
-	  lapack_type lapack;
-
-	  // _GELSS overwrites its matrix input, so make a copy.
-	  mat_type R_copy (Teuchos::Copy, R_view, N, N);
-
-	  // Zero out the lower triangle of R_copy, since the mat_type
-	  // constructor copies all the entries, not just the upper
-	  // triangle.
-	  for (int j = 0; j < N; ++j) {
-	    for (int i = j+1; i < N; ++i) {
-	      R_copy(i,j) = STS::zero();
-	    }
-	  }
-	  // Array of singular values.
-	  Array<magnitude_type> singularValues (N);
-	  int rank = N; // to be set by _GELSS
-
-	  // Use Scalar's machine precision for the rank tolerance,
-	  // not magnitude_type's machine precision.
-	  const magnitude_type rankTolerance = STS::eps();
-
-	  // Extra workspace.  This is only used if Scalar is complex,
-	  // by CGELSS or ZGELSS.  Teuchos::LAPACK presents a unified
-	  // interface to _GELSS that always includes the RWORK
-	  // argument, even though SGELSS and DGELSS don't have the
-	  // RWORK argument.  We always allocate at least one entry so
-	  // that &rwork[0] makes sense.
-	  Array<magnitude_type> rwork (1);
-	  if (STS::isComplex) {
-	    rwork.resize (std::max (1, 5 * N));
-	  }
-
 	  if (side == LEFT_SIDE) {
 	    // _GELSS overwrites its matrix input, so make a copy.
 	    mat_type R_copy (Teuchos::Copy, R_view, N, N);
@@ -873,36 +851,12 @@ namespace Belos {
 	    // mat_type constructor copies all the entries, not just
 	    // the upper triangle.  _GELSS will read all the entries
 	    // of the input matrix.
-	    for (int j = 0; j < N; ++j) {
-	      for (int i = j+1; i < N; ++i) {
-		R_copy(i,j) = STS::zero();
-	      }
-	    }
-	    //
-	    // Workspace query
-	    //
-	    Scalar lworkScalar = STS::one(); // To be set by workspace query
-	    int info = 0;
-	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, X.values(), LDX,
-			  &singularValues[0], rankTolerance, &rank, 
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			       "_GELSS workspace query returned INFO = " 
-			       << info << " != 0.");
-	    const int lwork = static_cast<int> (STS::real (lworkScalar));
-	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			       "_GELSS workspace query returned LWORK = " 
-			       << lwork << " < 0.");
-	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
-	    Array<Scalar> work (std::max (1, lwork));
-	    // Solve the least-squares problem.
-	    lapack.GELSS (N, N, NRHS, R_copy.values(), LDR, X.values(), LDX,
-			  &singularValues[0], rankTolerance, &rank,
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-			       "_GELSS returned INFO = " << info << " != 0.");
+	    ops.zeroOutStrictLowerTriangle (R_copy);
 
+	    // Solve the least-squares problem.
+	    rank = solveLeastSquaresUsingSVD (R_copy, X);
 	  } else {
+	    //
 	    // If solving with R on the right-hand side, the interface
 	    // requires that instead of solving $\min \|XR - B\|_2$,
 	    // we have to solve $\min \|R^* X^* - B^*\|_2$.  We
@@ -910,52 +864,94 @@ namespace Belos {
 	    // temporary matrices X_star resp. R_star.  (B is already
 	    // in X and _GELSS overwrites its input vector X with the
 	    // solution.)
+	    //
 	    mat_type X_star (X.numCols(), X.numRows());
 	    ops.conjugateTranspose (X_star, X);
 	    mat_type R_star (N, N); // Filled with zeros automatically.
 	    ops.conjugateTransposeOfUpperTriangular (R_star, R);
-	    //
-	    // Workspace query
-	    //
-	    Scalar lworkScalar = STS::one(); // To be set by workspace query
-	    int info = 0;
-	    lapack.GELSS (N, N, X_star.numCols(), 
-			  R_star.values(), R_star.stride(), 
-			  X_star.values(), X_star.stride(),
-			  &singularValues[0], rankTolerance, &rank, 
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			       "_GELSS workspace query returned INFO = " 
-			       << info << " != 0.");
-	    const int lwork = static_cast<int> (STS::real (lworkScalar));
-	    TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			       "_GELSS workspace query returned LWORK = " 
-			       << lwork << " < 0.");
-	    // Allocate workspace.  Size > 0 means &work[0] makes sense.
-	    Array<Scalar> work (std::max (1, lwork));
+
 	    // Solve the least-squares problem.
-	    lapack.GELSS (N, N, X_star.numCols(), 
-			  R_star.values(), R_star.stride(),
-			  X_star.values(), X_star.stride(),
-			  &singularValues[0], rankTolerance, &rank,
-			  &lworkScalar, -1, &rwork[0], &info);
-	    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-			       "_GELSS returned INFO = " << info << " != 0.");
+	    rank = solveLeastSquaresUsingSVD (R_star, X_star);
+
 	    // Copy the transpose of X_star back into X.
 	    ops.conjugateTranspose (X, X_star);
 	  }
 	  if (rank < N) {
 	    foundRankDeficiency = true;
 	  }
-	  detectedRank = rank;
 	} else {
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "Should never get here!  Invalid robustness value " 
 			     << robustness << ".  Please report this bug to the "
 			     "Belos developers.");
 	}
-	return std::make_pair (detectedRank, foundRankDeficiency);
+	return std::make_pair (rank, foundRankDeficiency);
       }
+
+
+    private:
+      /// \brief Solve \f$\min_X \|AX - B\|_2\f$ using the SVD.
+      ///
+      /// X on input stores the right-hand side B.  A will be
+      /// overwritten with factorization information.
+      ///
+      /// \return Numerical rank of A.
+      int 
+      solveLeastSquaresUsingSVD (mat_type& A, mat_type& X)
+      {
+	using Teuchos::Array;
+
+	const int N = std::min (A.numRows(), A.numCols());
+	lapack_type lapack;
+
+	// Rank of A; to be computed by _GELSS and returned.
+	int rank = N;
+
+	// Use Scalar's machine precision for the rank tolerance,
+	// not magnitude_type's machine precision.
+	const magnitude_type rankTolerance = STS::eps();
+
+	// Array of singular values.
+	Array<magnitude_type> singularValues (N);
+
+	// Extra workspace.  This is only used by _GELSS if Scalar is
+	// complex.  Teuchos::LAPACK presents a unified interface to
+	// _GELSS that always includes the RWORK argument, even though
+	// LAPACK's SGELSS and DGELSS don't have the RWORK argument.
+	// We always allocate at least one entry so that &rwork[0]
+	// makes sense.
+	Array<magnitude_type> rwork (1);
+	if (STS::isComplex) {
+	  rwork.resize (std::max (1, 5 * N));
+	}
+	//
+	// Workspace query
+	//
+	Scalar lworkScalar = STS::one(); // To be set by workspace query
+	int info = 0;
+	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
+		      A.values(), A.stride(), X.values(), X.stride(),
+		      &singularValues[0], rankTolerance, &rank,
+		      &lworkScalar, -1, &rwork[0], &info);
+	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			   "_GELSS workspace query returned INFO = " 
+			   << info << " != 0.");
+	const int lwork = static_cast<int> (STS::real (lworkScalar));
+	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			   "_GELSS workspace query returned LWORK = " 
+			   << lwork << " < 0.");
+	// Allocate workspace.  Size > 0 means &work[0] makes sense.
+	Array<Scalar> work (std::max (1, lwork));
+	// Solve the least-squares problem.
+	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
+		      A.values(), A.stride(), X.values(), X.stride(),
+		      &singularValues[0], rankTolerance, &rank,
+		      &work[0], lwork, &rwork[0], &info);
+	TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+			   "_GELSS returned INFO = " << info << " != 0.");
+	return rank;
+      }
+
 
     public:
       /// \brief Test Givens rotations.
@@ -1029,7 +1025,7 @@ namespace Belos {
       testUpdateColumn (std::ostream& out, 
 			const int numCols,
 			const bool testBlockGivens=false,
-			const bool extraVerbose=false) const
+			const bool extraVerbose=false) 
       {
 	using Teuchos::Array;
 	using std::endl;
@@ -1283,7 +1279,7 @@ namespace Belos {
 					const mat_type& R, 
 					const mat_type& B, 
 					const int startCol, 
-					const int endCol) const
+					const int endCol) 
       {
 	using Teuchos::Copy;
 	using Teuchos::View;
@@ -1393,7 +1389,7 @@ namespace Belos {
       /// with the same curCol, or updateColumnsGivens() with curCol =
       /// endCol.
       void
-      solveGivens (mat_type& y, mat_type& R, const mat_type& z, const int curCol) const
+      solveGivens (mat_type& y, mat_type& R, const mat_type& z, const int curCol) 
       {
 	const int numRows = curCol + 2;
 
@@ -1410,7 +1406,7 @@ namespace Belos {
 
       //! Make a random projected least-squares problem.
       void
-      makeRandomProblem (mat_type& H, mat_type& z) const
+      makeRandomProblem (mat_type& H, mat_type& z) 
       {
 	// In GMRES, z always starts out with only the first entry
 	// being nonzero.  That entry always has nonnegative real part
@@ -1459,7 +1455,7 @@ namespace Belos {
 			     const Scalar& y, 
 			     Scalar& theCosine, 
 			     Scalar& theSine,
-			     Scalar& result) const
+			     Scalar& result) 
       {
 	// _LARTG, an LAPACK aux routine, is slower but more accurate
 	// than the BLAS' _ROTG.
@@ -1485,7 +1481,7 @@ namespace Belos {
       //! Compute the singular values of A.  Store them in the sigmas array.
       void
       singularValues (const mat_type& A, 
-		      Teuchos::ArrayView<magnitude_type> sigmas) const
+		      Teuchos::ArrayView<magnitude_type> sigmas) 
       {
 	using Teuchos::Array;
 	using Teuchos::ArrayView;
@@ -1544,7 +1540,7 @@ namespace Belos {
       /// largest singular value, even if the smallest singular value is
       /// zero.
       std::pair<magnitude_type, magnitude_type>
-      extremeSingularValues (const mat_type& A) const
+      extremeSingularValues (const mat_type& A) 
       {
 	using Teuchos::Array;
 
@@ -1570,7 +1566,7 @@ namespace Belos {
       magnitude_type 
       leastSquaresConditionNumber (const mat_type& A,
 				   const mat_type& b,
-				   const magnitude_type& residualNorm) const
+				   const magnitude_type& residualNorm) 
       {
 	// Extreme singular values of A.
 	const std::pair<magnitude_type, magnitude_type> sigmaMaxMin = 
@@ -1618,7 +1614,7 @@ namespace Belos {
       magnitude_type
       leastSquaresResidualNorm (const mat_type& A,
 				const mat_type& x,
-				const mat_type& b) const
+				const mat_type& b) 
       {
 	mat_type r (b.numRows(), b.numCols());
 
@@ -1635,7 +1631,7 @@ namespace Belos {
       /// Don't scale if ||x_exact|| == 0.
       magnitude_type
       solutionError (const mat_type& x_approx,
-		     const mat_type& x_exact) const
+		     const mat_type& x_exact) 
       {
 	const int numRows = x_exact.numRows();
 	const int numCols = x_exact.numCols();
@@ -1705,7 +1701,7 @@ namespace Belos {
 			  mat_type& z,
 			  Teuchos::ArrayView<scalar_type> theCosines,
 			  Teuchos::ArrayView<scalar_type> theSines,
-			  const int curCol) const
+			  const int curCol) 
       {
 	using std::cerr;
 	using std::endl;
@@ -1810,7 +1806,7 @@ namespace Belos {
 		   mat_type& R, 
 		   mat_type& y, 
 		   mat_type& z,
-		   const int curCol) const
+		   const int curCol) 
       {
 	const int numRows = curCol + 2;
 	const int numCols = curCol + 1;
@@ -1901,7 +1897,7 @@ namespace Belos {
 			   Teuchos::ArrayView<scalar_type> theCosines,
 			   Teuchos::ArrayView<scalar_type> theSines,
 			   const int startCol,
-			   const int endCol) const
+			   const int endCol) 
       {
 	TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
 			   "updateColumnGivens: startCol = " << startCol 
@@ -1935,7 +1931,7 @@ namespace Belos {
 				Teuchos::ArrayView<scalar_type> theCosines,
 				Teuchos::ArrayView<scalar_type> theSines,
 				const int startCol,
-				const int endCol) const
+				const int endCol) 
       {
 	const int numRows = endCol + 2;
 	const int numColsToUpdate = endCol - startCol + 1;
