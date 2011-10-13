@@ -163,7 +163,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
     // GraphModel built with EpetraCrsMatrixInput
 
-    RCP<xpetraMatrix_t> eM = Teuchos::rcp_dynamic_cast<xpetraMatrix_t>(emi);
+    RCP<xpetraMatrix_t> eM = Teuchos::rcp_implicit_cast<xpetraMatrix_t>(emi);
 
     xGraphModel_t *graph = NULL;
 
