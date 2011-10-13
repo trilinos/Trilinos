@@ -52,27 +52,27 @@ namespace Xpetra {
 
 // these make some of the macros in Xpetra_Util.hpp much easier to describe
 #ifdef HAVE_XPETRA_THROW_EFFICIENCY_WARNINGS
-  #define XPETRA_THROWS_EFFICIENCY_WARNINGS 1
+#define XPETRA_THROWS_EFFICIENCY_WARNINGS 1
 #else
-  #define XPETRA_THROWS_EFFICIENCY_WARNINGS 0
+#define XPETRA_THROWS_EFFICIENCY_WARNINGS 0
 #endif
 
 #ifdef HAVE_XPETRA_PRINT_EFFICIENCY_WARNINGS
-  #define XPETRA_PRINTS_EFFICIENCY_WARNINGS 1
+#define XPETRA_PRINTS_EFFICIENCY_WARNINGS 1
 #else
-  #define XPETRA_PRINTS_EFFICIENCY_WARNINGS 0
+#define XPETRA_PRINTS_EFFICIENCY_WARNINGS 0
 #endif
 
 #ifdef HAVE_XPETRA_THROW_ABUSE_WARNINGS
-  #define XPETRA_THROWS_ABUSE_WARNINGS 1
+#define XPETRA_THROWS_ABUSE_WARNINGS 1
 #else
-  #define XPETRA_THROWS_ABUSE_WARNINGS 0
+#define XPETRA_THROWS_ABUSE_WARNINGS 0
 #endif
 
 #ifdef HAVE_XPETRA_PRINT_ABUSE_WARNINGS
-  #define XPETRA_PRINTS_ABUSE_WARNINGS 1
+#define XPETRA_PRINTS_ABUSE_WARNINGS 1
 #else
-  #define XPETRA_PRINTS_ABUSE_WARNINGS 0
+#define XPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
 #include <functional>
@@ -98,10 +98,10 @@ namespace Xpetra {
 namespace Xpetra {
   /** \brief Global size_t object. 
   
-      Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
+  Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
 
-      Currently, it is typedefed to size_t.
-   */
+  Currently, it is typedefed to size_t.
+  */
       
   typedef size_t global_size_t;
 
@@ -132,20 +132,20 @@ namespace Xpetra {
   /*!  \brief Xpetra::Combine Mode enumerable type */
   /*! 
     If set to Add, existing values will be summed with new values.
-		If set to Insert, new values will be inserted that don't currently exist.
-		If set to Replace, existing values will be replaced with new values.
+    If set to Insert, new values will be inserted that don't currently exist.
+    If set to Replace, existing values will be replaced with new values.
 
-		NOTE: Add and Replace are intended for modifying values that already exist,
-		but it will function correctly if those values don't already exist. (i.e.
-		zero will be inserted, and then summed with or replaced by the new value.)
-		However, performance may suffer. (The same goes for Insert.)
+    NOTE: Add and Replace are intended for modifying values that already exist,
+    but it will function correctly if those values don't already exist. (i.e.
+    zero will be inserted, and then summed with or replaced by the new value.)
+    However, performance may suffer. (The same goes for Insert.)
   */
 
-//   enum CombineMode {
-//     ADD,    /*!< Existing values will be summed with new values. */
-//     INSERT, /*!< Insert new values that don't currently exist. */
-//     REPLACE, /*!< Existing values will be replaced with new values. */
-//   };
+  //   enum CombineMode {
+  //     ADD,    /*!< Existing values will be summed with new values. */
+  //     INSERT, /*!< Insert new values that don't currently exist. */
+  //     REPLACE, /*!< Existing values will be replaced with new values. */
+  //   };
 
   enum CombineMode {
     ADD,    /*!< TODO */
@@ -179,7 +179,7 @@ namespace Xpetra {
   // inspired by SGI-specific project2nd, project1st
   template <class Arg1, class Arg2>
   class firstArg : std::binary_function<Arg1,Arg2,Arg1> {
-    public:
+  public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
     typedef Arg1 result_type;
@@ -188,7 +188,7 @@ namespace Xpetra {
 
   template <class Arg1, class Arg2>
   class secondArg : std::binary_function<Arg1,Arg2,Arg2> {
-    public:
+  public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
     typedef Arg2 result_type;

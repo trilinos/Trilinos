@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
-    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
+  //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
   MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
       gethostname(hostname, sizeof(hostname));
       LO pid = getpid();
       sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
-          hostname, mypid, pid, pid);
+              hostname, mypid, pid, pid);
       printf("%s\n",buf);
       fflush(stdout);
       sleep(1);
@@ -207,12 +207,12 @@ int main(int argc, char *argv[]) {
 
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
-  Teuchos::ParameterList ifpack2List;
-  ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-  ifpack2List.set("fact: drop tolerance", 0);
-  ifpack2List.set("fact: absolute threshold", 0);
-  ifpack2List.set("fact: relative threshold", 0);
-  coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+    Teuchos::ParameterList ifpack2List;
+    ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+    ifpack2List.set("fact: drop tolerance", 0);
+    ifpack2List.set("fact: absolute threshold", 0);
+    ifpack2List.set("fact: relative threshold", 0);
+    coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
 #endif
   }
   if (coarseProto == Teuchos::null) {
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::StatusTestDetails);
+                   Belos::TimingDetails + Belos::StatusTestDetails);
 
     RCP< Belos::SolverManager<double,MV,OP> > solver
       = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
       double actRes = actual_resids[i]/rhs_norm[i];
       std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) { badRes = true; }
-      }
+    }
 
     if (ret!=Belos::Converged || badRes) {
       std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;

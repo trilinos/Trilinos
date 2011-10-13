@@ -129,10 +129,10 @@ namespace MueLu {
 
     void DeclareInput(Level &currentLevel) const { 
       if (preSmootherPrototype_ != Teuchos::null) {
-	preSmootherPrototype_->DeclareInput(currentLevel);
+        preSmootherPrototype_->DeclareInput(currentLevel);
       }
       if ((postSmootherPrototype_ != Teuchos::null) && (preSmootherPrototype_ != postSmootherPrototype_)) {
-	postSmootherPrototype_->DeclareInput(currentLevel);
+        postSmootherPrototype_->DeclareInput(currentLevel);
       }
     }
 
@@ -178,48 +178,48 @@ namespace MueLu {
       }
       
       if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
-          {
-            if (preOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
+        {
+          if (preOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
               
-              // Very simple reuse. TODO: should be done in MueMat too
-              postSmoother = preSmoother;
+            // Very simple reuse. TODO: should be done in MueMat too
+            postSmoother = preSmoother;
               
-//            }  else if (preOrPost == BOTH &&
-//                        preSmootherPrototype_ != Teuchos::null &&
-//                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
+            //            }  else if (preOrPost == BOTH &&
+            //                        preSmootherPrototype_ != Teuchos::null &&
+            //                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
               
-//               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
+            //               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
               
-//               // YES: post-smoother == pre-smoother 
-//               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
-//               postSmoother = preSmoother->Copy();
-//               // If the post-smoother parameters are different from
-//               // pre-smoother, the parameters stored in the post-smoother
-//               // prototype are copied in the new post-smoother object.
-//               postSmoother->CopyParameters(postSmootherPrototype_);
-//               // If parameters don't influence the Setup phase (it is the case
-//               // for Jacobi, Chebyshev...), PostSmoother is already setup. Nothing
-//               // more to do. In the case of ILU, parameters of the smoother
-//               // are in fact the parameters of the Setup phase. The call to
-//               // CopyParameters resets the smoother (only if parameters are
-//               // different) and we must call Setup() again.
-//               postSmoother->Setup(currentLevel);
+            //               // YES: post-smoother == pre-smoother 
+            //               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
+            //               postSmoother = preSmoother->Copy();
+            //               // If the post-smoother parameters are different from
+            //               // pre-smoother, the parameters stored in the post-smoother
+            //               // prototype are copied in the new post-smoother object.
+            //               postSmoother->CopyParameters(postSmootherPrototype_);
+            //               // If parameters don't influence the Setup phase (it is the case
+            //               // for Jacobi, Chebyshev...), PostSmoother is already setup. Nothing
+            //               // more to do. In the case of ILU, parameters of the smoother
+            //               // are in fact the parameters of the Setup phase. The call to
+            //               // CopyParameters resets the smoother (only if parameters are
+            //               // different) and we must call Setup() again.
+            //               postSmoother->Setup(currentLevel);
 
-//               // TODO: if CopyParameters do not exist, do setup twice.
+            //               // TODO: if CopyParameters do not exist, do setup twice.
 
-            } else {
+          } else {
               
-              // NO reuse: preOrPost==POST or post-smoother != pre-smoother
-              // Copy the prototype and run the setup phase.
-              postSmoother = postSmootherPrototype_->Copy();
-              postSmoother->Setup(currentLevel);
+            // NO reuse: preOrPost==POST or post-smoother != pre-smoother
+            // Copy the prototype and run the setup phase.
+            postSmoother = postSmootherPrototype_->Copy();
+            postSmoother->Setup(currentLevel);
               
-            }
-            
-            // Level Set
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
-            currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother); // TODO: remove this
           }
+            
+          // Level Set
+          currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+          currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother); // TODO: remove this
+        }
         
     } // Build()
     
@@ -245,15 +245,15 @@ namespace MueLu {
       MUELU_DESCRIBE;
 
       if (verbLevel & Parameters0) {
-         out0 << "PreSmoother : "; if (preSmootherPrototype_  == Teuchos::null) { out0 << "null" << endl; } else { Teuchos::OSTab tab2(out); preSmootherPrototype_->describe(out, verbLevel); }
+        out0 << "PreSmoother : "; if (preSmootherPrototype_  == Teuchos::null) { out0 << "null" << endl; } else { Teuchos::OSTab tab2(out); preSmootherPrototype_->describe(out, verbLevel); }
 
-         out0 << "PostSmoother: ";
-         if      (postSmootherPrototype_ == preSmootherPrototype_) { out0 << "same as PreSmoother" << endl; } 
-         else if (postSmootherPrototype_ == Teuchos::null)         { out0 << "null" << endl; }
-         else { 
-           { Teuchos::OSTab tab2(out); postSmootherPrototype_->describe(out, verbLevel); }
-           out0 << "PostSmoother is different than PreSmoother (not the same object)" << endl;
-         }
+        out0 << "PostSmoother: ";
+        if      (postSmootherPrototype_ == preSmootherPrototype_) { out0 << "same as PreSmoother" << endl; } 
+        else if (postSmootherPrototype_ == Teuchos::null)         { out0 << "null" << endl; }
+        else { 
+          { Teuchos::OSTab tab2(out); postSmootherPrototype_->describe(out, verbLevel); }
+          out0 << "PostSmoother is different than PreSmoother (not the same object)" << endl;
+        }
       }
       
       if (verbLevel & Debug) {

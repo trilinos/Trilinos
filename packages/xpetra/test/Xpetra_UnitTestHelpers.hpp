@@ -7,7 +7,7 @@
 #define TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4, TYPE5) \
   template<class TYPE1, class TYPE2, class TYPE3, class TYPE4, class TYPE5>         \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
-	{ \
+        { \
   public: \
     TEST_GROUP##_##TEST_NAME##_UnitTest( \
       const std::string& type1Name, \

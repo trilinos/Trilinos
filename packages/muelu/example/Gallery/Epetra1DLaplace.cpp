@@ -82,27 +82,27 @@ int main(int argc, char *argv[])
   
   for (i=0; i<NumMyElements; i++)
     {
-    if (MyGlobalElements[i]==0)
-      {
-	Indices[0] = 1;
-	NumEntries = 1;
-      }
-    else if (MyGlobalElements[i] == numGlobalElements-1)
-      {
-	Indices[0] = numGlobalElements-2;
-	NumEntries = 1;
-      }
-    else
-      {
-	Indices[0] = MyGlobalElements[i]-1;
-	Indices[1] = MyGlobalElements[i]+1;
-	NumEntries = 2;
-      }
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-     assert(ierr==0);
-     // Put in the diagonal entry
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i]);
-     assert(ierr==0);
+      if (MyGlobalElements[i]==0)
+        {
+          Indices[0] = 1;
+          NumEntries = 1;
+        }
+      else if (MyGlobalElements[i] == numGlobalElements-1)
+        {
+          Indices[0] = numGlobalElements-2;
+          NumEntries = 1;
+        }
+      else
+        {
+          Indices[0] = MyGlobalElements[i]-1;
+          Indices[1] = MyGlobalElements[i]+1;
+          NumEntries = 2;
+        }
+      ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+      assert(ierr==0);
+      // Put in the diagonal entry
+      ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i]);
+      assert(ierr==0);
     }
    
   std::cout << myRank << ": " << "Memory after InsertGlobalValues(): " << PrintMemoryUsage() << std::endl;

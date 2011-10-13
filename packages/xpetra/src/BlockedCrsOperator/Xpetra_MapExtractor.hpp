@@ -35,19 +35,19 @@
 
 namespace Xpetra
 {
-        template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-	class MapExtractor : public Teuchos::Describable
-	{
-		typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;
-		typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> VectorClass;
-		typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorClass;
-		typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportClass;
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  class MapExtractor : public Teuchos::Describable
+  {
+    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;
+    typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> VectorClass;
+    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorClass;
+    typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportClass;
 
-	public:
+  public:
 
-		/** \name Extract subblocks from full map */
-		//@{
-		virtual void ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block, Teuchos::RCP<VectorClass>& partial) const = 0;
+    /** \name Extract subblocks from full map */
+    //@{
+    virtual void ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block, Teuchos::RCP<VectorClass>& partial) const = 0;
     virtual void ExtractVector(Teuchos::RCP<      VectorClass>& full, size_t block, Teuchos::RCP<VectorClass>& partial) const = 0;
     virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block) const = 0;
     virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<      VectorClass>& full, size_t block) const = 0;
@@ -58,20 +58,20 @@ namespace Xpetra
     virtual Teuchos::RCP<MultiVectorClass> ExtractVector(Teuchos::RCP<      MultiVectorClass>& full, size_t block) const = 0;
     //@}
 
-		//virtual Teuchos::RCP<Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> >ExtractVector(Teuchos::RCP<const Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> > full, int block) const {};
+    //virtual Teuchos::RCP<Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> >ExtractVector(Teuchos::RCP<const Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> > full, int block) const {};
 
     /** \name Insert subblocks into full map */
     //@{
-		virtual void InsertVector(Teuchos::RCP<const VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
-		virtual void InsertVector(Teuchos::RCP<      VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
+    virtual void InsertVector(Teuchos::RCP<const VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
+    virtual void InsertVector(Teuchos::RCP<      VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
 
     virtual void InsertVector(Teuchos::RCP<const MultiVectorClass>& partial, size_t block, Teuchos::RCP<MultiVectorClass>& full) const = 0;
     virtual void InsertVector(Teuchos::RCP<      MultiVectorClass>& partial, size_t block, Teuchos::RCP<MultiVectorClass>& full) const = 0;
 
-		//@}
+    //@}
 
-		virtual Teuchos::RCP<VectorClass> getVector(size_t i) const = 0;
-		virtual Teuchos::RCP<MultiVectorClass> getVector(size_t i, size_t numvec) const = 0;
+    virtual Teuchos::RCP<VectorClass> getVector(size_t i) const = 0;
+    virtual Teuchos::RCP<MultiVectorClass> getVector(size_t i, size_t numvec) const = 0;
 
     /** \name Maps */
     //@{
@@ -87,7 +87,7 @@ namespace Xpetra
 
     //@}
 
-	};
+  };
 }
 
 

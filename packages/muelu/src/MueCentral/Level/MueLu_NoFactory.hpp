@@ -44,7 +44,7 @@ namespace MueLu {
     //! 
     static const RCP<const NoFactory> getRCP() {
       if(noFactory_ == Teuchos::null) {
-	noFactory_ = rcp(new NoFactory());
+        noFactory_ = rcp(new NoFactory());
       }
 
       return noFactory_;

@@ -51,7 +51,7 @@ namespace MueLu {
     //! Set Factory
     void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
       if (IsAvailable(varName, factoryTable_)) // TODO: too much warnings (for smoothers)
-	GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for " << varName << std::endl;
+        GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for " << varName << std::endl;
 
       factoryTable_[varName] = factory;
     }
@@ -59,30 +59,30 @@ namespace MueLu {
     //! Get Factory
     const RCP<const FactoryBase> & GetFactory(const std::string & varName) const {
       if (FactoryManager::IsAvailable(varName, factoryTable_))
-	return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
+        return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
       else 
-	return GetDefaultFactory(varName);
+        return GetDefaultFactory(varName);
     }
 
     //!
     const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const {
       if (IsAvailable(varName, defaultFactoryTable_)) {
 
-	return defaultFactoryTable_[varName];
+        return defaultFactoryTable_[varName];
 
-      }	else {
-	  
-	//if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
-	if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
- 	if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
-	if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
+      }        else {
+          
+        //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
+        if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+        if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+        if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 
-    	if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+        if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
         if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
-	if (varName == "PreSmoother")   return GetFactory("Smoother");
-	if (varName == "PostSmoother")  return GetFactory("Smoother");
+        if (varName == "PreSmoother")   return GetFactory("Smoother");
+        if (varName == "PostSmoother")  return GetFactory("Smoother");
 
         TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }

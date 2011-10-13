@@ -172,40 +172,40 @@ namespace MueLu {
 #endif
 
       if (perturb)
-      {
-        if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
-          perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized
+        {
+          if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
+            perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized
 
-          // Modify seed of the random algorithm used by perturbWt_->randomize()
-          {
-            ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
-            for (int i = 0; i < 10; ++i) ST::random();
+            // Modify seed of the random algorithm used by perturbWt_->randomize()
+            {
+              ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
+              for (int i = 0; i < 10; ++i) ST::random();
               perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
-          }
-          perturbWt_->randomize(); 
-          ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
-          for (size_t i=0; i < nodeNumElements; ++i)
-            lperturbWt[i] = 1e-7*fabs(lperturbWt[i]); //FIXME this won't work for general SC
+            }
+            perturbWt_->randomize(); 
+            ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
+            for (size_t i=0; i < nodeNumElements; ++i)
+              lperturbWt[i] = 1e-7*fabs(lperturbWt[i]); //FIXME this won't work for general SC
 #ifdef COMPARE_IN_OUT_VECTORS
-          ArrayRCP<SC> locperturbWt = perturbWt_->getDataNonConst(0);
-          for (size_t i=0; i < nodeNumElements; ++i)
-            printf("perturbWt[%d] = %15.10e\n",i,locperturbWt[i]);
+            ArrayRCP<SC> locperturbWt = perturbWt_->getDataNonConst(0);
+            for (size_t i=0; i < nodeNumElements; ++i)
+              printf("perturbWt[%d] = %15.10e\n",i,locperturbWt[i]);
 #endif
-        } //if (perturbWt_ == Teuchos::null || ...
+          } //if (perturbWt_ == Teuchos::null || ...
 
-        ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
-        ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
+          ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
+          ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
 
-        // Note: maxValue() not available for Tpetra
-        //SC largestGlobalWeight = weight_.maxValue();
-        SC largestGlobalWeight = weight_.normInf();
-        for (size_t i=0; i < nodeNumElements; ++i) {
-          if (weight[i] != 0.) {
-            weight[i] += largestGlobalWeight*perturbWt[i];
+          // Note: maxValue() not available for Tpetra
+          //SC largestGlobalWeight = weight_.maxValue();
+          SC largestGlobalWeight = weight_.normInf();
+          for (size_t i=0; i < nodeNumElements; ++i) {
+            if (weight[i] != 0.) {
+              weight[i] += largestGlobalWeight*perturbWt[i];
+            }
           }
-        }
-        //TODO is it necessary to return the *perturbed* weights?
-      } //if (perturb)
+          //TODO is it necessary to return the *perturbed* weights?
+        } //if (perturb)
   
       // Communicate weights and store results in PostComm (which will be copied
       // back into weights later. When multiple processors have different weights
@@ -321,7 +321,7 @@ namespace MueLu {
           }
 
           if (entryMismatch == true) {
-             // Entries differ from last invocation, so repopulate myWinners_.
+            // Entries differ from last invocation, so repopulate myWinners_.
             realloc=true;
             numMyWinners = 0;
             for (size_t i = 0; i < nodeNumElements; ++i) {
@@ -418,12 +418,12 @@ namespace MueLu {
           {
             companion->doImport(*justWinners, *pushWinners, Xpetra::INSERT);   // VERSION1 Slow
             //companion->doExport(*justWinners, *winnerImport_, Xpetra::INSERT);   // JJH this should work... but exception
-//             if (weightMap->lib() == Xpetra::UseEpetra)
-//               justWinners->doExport(*companion, *winnerImport, Xpetra::INSERT);  // VERSION2 Tpetra doc is wrong
-//             else if (weightMap->lib() == Xpetra::UseTpetra)
-//               companion->doExport(*justWinners, *winnerImport, Xpetra::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Xpetra?)
-	    //companion->doExport(*justWinners, *pushWinners, Xpetra::INSERT);     // VERSION4
-//             else throw "lib()";
+            //             if (weightMap->lib() == Xpetra::UseEpetra)
+            //               justWinners->doExport(*companion, *winnerImport, Xpetra::INSERT);  // VERSION2 Tpetra doc is wrong
+            //             else if (weightMap->lib() == Xpetra::UseTpetra)
+            //               companion->doExport(*justWinners, *winnerImport, Xpetra::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Xpetra?)
+            //companion->doExport(*justWinners, *pushWinners, Xpetra::INSERT);     // VERSION4
+            //             else throw "lib()";
           }
         catch(std::exception& e)
           {
@@ -432,24 +432,24 @@ namespace MueLu {
         //#define JG_DEBUG
 #ifdef JG_DEBUG
         //            RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
-            //->describe(*out, Teuchos::VERB_EXTREME);
+        //->describe(*out, Teuchos::VERB_EXTREME);
 
-            // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;
+        // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;
 
-            std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
+        std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
             
-            std::cout << MyPid << ": justWinners(Vector in)=" << std::endl;
-            justWinners->describe(*out, Teuchos::VERB_EXTREME);
+        std::cout << MyPid << ": justWinners(Vector in)=" << std::endl;
+        justWinners->describe(*out, Teuchos::VERB_EXTREME);
 
-            std::cout << MyPid << ": companion(Vector out)=" << std::endl;
-            companion->describe(*out, Teuchos::VERB_EXTREME);
+        std::cout << MyPid << ": companion(Vector out)=" << std::endl;
+        companion->describe(*out, Teuchos::VERB_EXTREME);
 
-            // std::cout << MyPid << ": pushWinners(Import(winnerMap_, weight_.Map))=" << *pushWinners << std::endl;
-            std::cout << MyPid << ": winnerMap_=" << *winnerMap_ << std::endl;
-            std::cout << MyPid << ": weight_.Map=" << *weightMap << std::endl;
+        // std::cout << MyPid << ": pushWinners(Import(winnerMap_, weight_.Map))=" << *pushWinners << std::endl;
+        std::cout << MyPid << ": winnerMap_=" << *winnerMap_ << std::endl;
+        std::cout << MyPid << ": weight_.Map=" << *weightMap << std::endl;
 #endif
-            //  throw e;
-            // throw 1;
+        //  throw e;
+        // throw 1;
       }
 
 #ifdef COMPARE_IN_OUT_VECTORS
@@ -459,9 +459,9 @@ namespace MueLu {
         std::cout << "==============" << std::endl;
       }
       /*
-      bool sameWeight=true;
-      bool sameWinner=true;
-      bool sameComp=true;
+        bool sameWeight=true;
+        bool sameWinner=true;
+        bool sameComp=true;
       */
       std::string sameOrDiff;
       {
@@ -473,12 +473,12 @@ namespace MueLu {
           else                           sameOrDiff = " ";
           std::cout << std::setw(3) << i<<": " << in_weight[i] << "   " << weight[i] << sameOrDiff << in_weight[i] - weight[i] << std::endl;
           /*
-          if (in_weight[i] != weight[i]) {
+            if (in_weight[i] != weight[i]) {
             sameWeight=false;
             std::cout << "\n\nin and out weight DIFFER\n\n" << std::endl;
             std::cout << "i="<<i<<", in=" << in_weight[i] << " , out=" << weight[i] << std::endl;
             break;
-          }
+            }
           */
         }
       }
@@ -492,12 +492,12 @@ namespace MueLu {
           else                           sameOrDiff = " ";
           std::cout << std::setw(3) << i<<": " << in_procWinner[i] << "   " << procWinner[i] << sameOrDiff << std::endl;
           /*
-          if (in_procWinner[i] != procWinner[i]) {
+            if (in_procWinner[i] != procWinner[i]) {
             sameWinner=false;
             std::cout << "\n\nin and out procWinner DIFFER\n\n" << std::endl;
             std::cout << "i="<<i<<", in=" << in_procWinner[i] << ", out=" << procWinner[i] << std::endl;
             break;
-          }
+            }
           */
         }
       }
@@ -506,18 +506,18 @@ namespace MueLu {
         if (companion != NULL) {
           ArrayRCP<LO> in_comp = in_companion->getDataNonConst(0);
           ArrayRCP<LO> comp = companion->getDataNonConst(0);
-        if (MyPid == 0) std::cout << "==============\ncompanion\n==============\n" << std::endl;
+          if (MyPid == 0) std::cout << "==============\ncompanion\n==============\n" << std::endl;
           for (size_t i=0; i < companion->getLocalLength(); ++i) {
             if (in_comp[i] != comp[i]) sameOrDiff = "  <<<<";
             else                           sameOrDiff = " ";
             std::cout << std::setw(3) << i<<": " << in_comp[i] << "   " << comp[i] << sameOrDiff << std::endl;
             /*
-            if (in_comp[i] != comp[i]) {
+              if (in_comp[i] != comp[i]) {
               sameComp=false;
-            std::cout << "\n\nin and out companion DIFFER\n\n" << std::endl;
+              std::cout << "\n\nin and out companion DIFFER\n\n" << std::endl;
               std::cout << "i="<<i<<", in=" << in_comp[i] << ", out=" << comp[i] << std::endl;
               break;
-            }
+              }
             */
           }
         }

@@ -7,7 +7,7 @@
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 /*! \file BelosXpetraAdapter.hpp
-    \brief Provides several interfaces between Belos virtual classes and Xpetra concrete classes.
+  \brief Provides several interfaces between Belos virtual classes and Xpetra concrete classes.
 */
 
 // TODO: the assumption is made that the solver, multivector and operator are templated on the same scalar. this will need to be modified.
@@ -41,8 +41,8 @@ namespace Belos { // should go to Belos or Xpetra?
 
   /*!  \brief Template specialization of Belos::MultiVecTraits class using the Xpetra::MultiVector class.
 
-    This interface will ensure that any Xpetra::MultiVector will be accepted by the Belos
-    templated solvers.  */
+  This interface will ensure that any Xpetra::MultiVector will be accepted by the Belos
+  templated solvers.  */
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> >
   {
@@ -71,13 +71,13 @@ namespace Belos { // should go to Belos or Xpetra?
 
 #ifdef JG_TODO
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
-      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
+        TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+                           "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be >= zero.");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be < mv.getNumVectors().");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -93,31 +93,31 @@ namespace Belos { // should go to Belos or Xpetra?
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-	       const Teuchos::Range1D& index)
+               const Teuchos::Range1D& index)
     { 
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
-      const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && 
-	index.ubound() < GetNumberVecs(mv);
+        const bool validRange = index.size() > 0 && 
+        index.lbound() >= 0 && 
+        index.ubound() < GetNumberVecs(mv);
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
-	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
-	     << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  // Range1D bounds are signed; size_t is unsigned.
-	  TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
-			     std::invalid_argument, 
-			     os.str() << "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input multivector.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
+            "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
+             << "]): ";
+          TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          // Range1D bounds are signed; size_t is unsigned.
+          TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
+                             std::invalid_argument, 
+                             os.str() << "Index range exceeds number of vectors " 
+                             << mv.getNumVectors() << " in the input multivector.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, 
+                             os.str() << "Should never get here!");
+        }
       return mv.subCopy (index);
     }
 
@@ -127,12 +127,12 @@ namespace Belos { // should go to Belos or Xpetra?
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 #ifdef JG_TODO
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+                         "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -149,30 +149,30 @@ namespace Belos { // should go to Belos or Xpetra?
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneViewNonConst (Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-		       const Teuchos::Range1D& index)
+                       const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
       const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && index.ubound() < numCols;
+        index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
-	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
-	     << index.ubound() << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
-			     os.str() << "Index range exceeds number of "
-			     "vectors " << numCols << " in the input "
-			     "multivector.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
+            "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
+             << index.ubound() << "]): ";
+          TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
+                             os.str() << "Index range exceeds number of "
+                             "vectors " << numCols << " in the input "
+                             "multivector.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, 
+                             os.str() << "Should never get here!");
+        }
       return mv.subViewNonConst (index);
     }
 
@@ -184,12 +184,12 @@ namespace Belos { // should go to Belos or Xpetra?
 #ifdef JG_TODO
 
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+                         "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
+                          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -206,30 +206,30 @@ namespace Belos { // should go to Belos or Xpetra?
 
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
     CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-	       const Teuchos::Range1D& index)
+               const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
       const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && index.ubound() < numCols;
+        index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
-	    "CloneView(mv, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
-			     os.str() << "Index range exceeds number of "
-			     "vectors " << numCols << " in the input "
-			     "multivector.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
+            "CloneView(mv, index=[" << index.lbound() << ", " 
+             << index.ubound() << "]): ";
+          TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
+                             os.str() << "Index range exceeds number of "
+                             "vectors " << numCols << " in the input "
+                             "multivector.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, 
+                             os.str() << "Should never get here!");
+        }
       return mv.subView (index);
     }
 
@@ -252,7 +252,7 @@ namespace Belos { // should go to Belos or Xpetra?
 
       KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
 #ifdef HAVE_BELOS_XPETRA_TIMERS
-      Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
+        Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
       // create local map
       Teuchos::SerialComm<int> scomm;
@@ -286,7 +286,7 @@ namespace Belos { // should go to Belos or Xpetra?
 
       KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
 #ifdef HAVE_BELOS_XPETRA_TIMERS
-      Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
+        Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
       // form alpha * A^H * B, then copy into SDM
       // we will create a multivector C_mv from a a local map
@@ -294,8 +294,8 @@ namespace Belos { // should go to Belos or Xpetra?
       // otherwise, the reduced multivector data would be copied back to the GPU, only to turn around and have to get it back here.
       // this saves us a round trip for this data.
       const int numRowsC = C.numRows(),
-                numColsC = C.numCols(),
-                strideC  = C.stride();
+        numColsC = C.numCols(),
+        strideC  = C.stride();
       Teuchos::SerialComm<int> scomm;
       // create local map with serial comm
       RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), numRowsC, 0, rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
@@ -337,10 +337,10 @@ namespace Belos { // should go to Belos or Xpetra?
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
       TEST_FOR_EXCEPTION(A.getNumVectors() != B.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
+                         "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
 #ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION(dots.size() < (typename std::vector<int>::size_type)A.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
+                         "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
 #endif
       Teuchos::ArrayView<Scalar> av(dots);
       A.dot(B,av(0,A.getNumVectors()));
@@ -350,19 +350,19 @@ namespace Belos { // should go to Belos or Xpetra?
     { 
 #ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
+                         "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
       Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(normvec);
       switch (type) {
-        case OneNorm:
-          mv.norm1(av(0,mv.getNumVectors()));
-          break;
-        case TwoNorm:
-          mv.norm2(av(0,mv.getNumVectors()));
-          break;
-        case InfNorm:
-          mv.normInf(av(0,mv.getNumVectors()));
-          break;
+      case OneNorm:
+        mv.norm1(av(0,mv.getNumVectors()));
+        break;
+      case TwoNorm:
+        mv.norm2(av(0,mv.getNumVectors()));
+        break;
+      case InfNorm:
+        mv.normInf(av(0,mv.getNumVectors()));
+        break;
       }
     }
 
@@ -373,8 +373,8 @@ namespace Belos { // should go to Belos or Xpetra?
 #ifdef JG_TODO
       KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 #ifdef HAVE_XPETRA_DEBUG
-      TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
+        TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
+                           "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
       RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
       if ((typename std::vector<int>::size_type)A.getNumVectors() > index.size()) {
@@ -390,33 +390,33 @@ namespace Belos { // should go to Belos or Xpetra?
 
     static void
     SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-	      const Teuchos::Range1D& index, 
-	      Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+              const Teuchos::Range1D& index, 
+              Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 
-      // Range1D bounds are signed; size_t is unsigned.
-      // Assignment of Xpetra::MultiVector is a deep copy.
+        // Range1D bounds are signed; size_t is unsigned.
+        // Assignment of Xpetra::MultiVector is a deep copy.
 
-      // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
-      // fair to assume that the number of vectors won't overflow int,
-      // since the typical use case of multivectors involves few
-      // columns, but it's friendly to check just in case.
-      const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+        // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
+        // fair to assume that the number of vectors won't overflow int,
+        // since the typical use case of multivectors involves few
+        // columns, but it's friendly to check just in case.
+        const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
-	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "], mv): ";
-	  TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the input multi"
-			     "vector 'A' (a size_t) overflows int.");
-	  TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the output multi"
-			     "vector 'mv' (a size_t) overflows int.");
-	}
+        {
+          std::ostringstream os;
+          os <<        "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
+            "> >::SetBlock(A, index=[" << index.lbound() << ", " 
+             << index.ubound() << "], mv): ";
+          TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the input multi"
+                             "vector 'A' (a size_t) overflows int.");
+          TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the output multi"
+                             "vector 'mv' (a size_t) overflows int.");
+        }
       // We've already validated the static casts above.
       const int numColsA = static_cast<int> (A.getNumVectors());
       const int numColsMv = static_cast<int> (mv.getNumVectors());
@@ -426,23 +426,23 @@ namespace Belos { // should go to Belos or Xpetra?
       const bool validSource = index.size() <= numColsA;
 
       if (! validIndex || ! validSource)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
-	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "], mv): ";
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Range lower bound must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
-			     os.str() << "Range upper bound must be less than "
-			     "the number of columns " << numColsA << " in the "
-			     "'mv' output argument.");
-	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
-			     os.str() << "Range must have no more elements than"
-			     " the number of columns " << numColsA << " in the "
-			     "'A' input argument.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os <<        "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
+            "> >::SetBlock(A, index=[" << index.lbound() << ", " 
+             << index.ubound() << "], mv): ";
+          TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Range lower bound must be nonnegative.");
+          TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+                             os.str() << "Range upper bound must be less than "
+                             "the number of columns " << numColsA << " in the "
+                             "'mv' output argument.");
+          TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+                             os.str() << "Range must have no more elements than"
+                             " the number of columns " << numColsA << " in the "
+                             "'A' input argument.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       typedef RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
       typedef RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
 
@@ -451,18 +451,18 @@ namespace Belos { // should go to Belos or Xpetra?
       // the index range is different than [0, (# columns in mv) - 1].
       MV_ptr mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = rcpFromRef (mv); // Non-const, non-owning RCP
+        mv_view = rcpFromRef (mv); // Non-const, non-owning RCP
       else
-	mv_view = CloneViewNonConst (mv, index);
+        mv_view = CloneViewNonConst (mv, index);
 
       // View of the relevant column(s) of the source multivector A.
       // If A has fewer columns than mv_view, then create a view of
       // the first index.size() columns of A.
       const_MV_ptr A_view;
       if (index.size() == numColsA)
-	A_view = rcpFromRef (A); // Const, non-owning RCP
+        A_view = rcpFromRef (A); // Const, non-owning RCP
       else
-	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
+        A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
       // Assignment of Xpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
@@ -474,66 +474,66 @@ namespace Belos { // should go to Belos or Xpetra?
 
     static void
     Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-	    Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+            Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::Assign()")
 
-      // Range1D bounds are signed; size_t is unsigned.
-      // Assignment of Xpetra::MultiVector is a deep copy.
+        // Range1D bounds are signed; size_t is unsigned.
+        // Assignment of Xpetra::MultiVector is a deep copy.
 
-      // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
-      // fair to assume that the number of vectors won't overflow int,
-      // since the typical use case of multivectors involves few
-      // columns, but it's friendly to check just in case.
-      const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+        // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
+        // fair to assume that the number of vectors won't overflow int,
+        // since the typical use case of multivectors involves few
+        // columns, but it's friendly to check just in case.
+        const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
-	    "> >::Assign(A, mv): ";
-	  TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the input multi"
-			     "vector 'A' (a size_t) overflows int.");
-	  TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the output multi"
-			     "vector 'mv' (a size_t) overflows int.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os <<        "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
+            "> >::Assign(A, mv): ";
+          TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the input multi"
+                             "vector 'A' (a size_t) overflows int.");
+          TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the output multi"
+                             "vector 'mv' (a size_t) overflows int.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       // We've already validated the static casts above.
       const int numColsA = static_cast<int> (A.getNumVectors());
       const int numColsMv = static_cast<int> (mv.getNumVectors());
       if (numColsA > numColsMv)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
-	    "> >::Assign(A, mv): ";
-	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
-			     os.str() << "Input multivector 'A' has " 
-			     << numColsA << " columns, but output multivector "
-			     "'mv' has only " << numColsMv << " columns.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os <<        "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
+            "> >::Assign(A, mv): ";
+          TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+                             os.str() << "Input multivector 'A' has " 
+                             << numColsA << " columns, but output multivector "
+                             "'mv' has only " << numColsMv << " columns.");
+          TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       // Assignment of Xpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
       // HAVE_XPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
       if (numColsA == numColsMv)
-	mv = A;
+        mv = A;
       else
-	{
-	  RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
-	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  *mv_view = A;
-	}
+        {
+          RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
+            CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+          *mv_view = A;
+        }
     }
 
 
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { 
       KOKKOS_NODE_TRACE("Belos::MVT::randomize()")
-      mv.randomize(); 
+        mv.randomize(); 
     }
 
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
