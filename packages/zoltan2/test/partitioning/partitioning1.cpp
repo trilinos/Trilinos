@@ -90,7 +90,7 @@ int main(int narg, char** arg)
   Zoltan2::TpetraCrsMatrixInput<SparseMatrix> adapter(origMatrix);
 
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<SparseMatrix> problem(adapter, params);
+  Zoltan2::PartitioningProblem<SparseMatrix> problem(&adapter, &params);
   problem.solve();
   problem.redistribute();
 
