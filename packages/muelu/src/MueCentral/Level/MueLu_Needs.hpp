@@ -56,8 +56,8 @@ namespace MueLu {
     template <class T>
     void Set(const std::string & ename, const T & entry, const FactoryBase* factory) {
       // Check if data is requested
-      if(countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0) {
-        if(!countTable_.isKey(ename, factory))
+      if (countTable_.isKey(ename, factory) && countTable_.Get<int>(ename, factory) != 0) {
+        if (!countTable_.isKey(ename, factory))
           countTable_.Set(ename, 0, factory); // make sure that 'ename' is counted
         dataTable_.Set(ename, entry, factory);
       }
@@ -72,7 +72,7 @@ namespace MueLu {
     //! Indicate that an object is needed. This increments the storage counter.
     void Request(const std::string & ename, const FactoryBase* factory) {
       // If it's the first request for 'ename', create a new key in the hashtable
-      if(!countTable_.isKey(ename, factory))
+      if (!countTable_.isKey(ename, factory))
         countTable_.Set(ename, 0, factory);
 
       // Increment counter
@@ -90,7 +90,7 @@ namespace MueLu {
       // Desallocation if counter gets zero
       if (countTable_.Get<int>(ename, factory) == 0) {
         countTable_.Remove(ename, factory);
-        if(dataTable_.isKey(ename, factory) )
+        if (dataTable_.isKey(ename, factory))
           dataTable_.Remove(ename, factory);
       }
     } //Release
@@ -101,16 +101,17 @@ namespace MueLu {
     //@{
 
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
-    // Usage: Level->Get< RCP<Operator> >("A", A, factoryPtr)
+    // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
-    void Get(const std::string & ename, T &value, const FactoryBase* factory) const {
-      dataTable_.Get<T>(ename, value, factory);
+    T & Get(const std::string & ename, const FactoryBase* factory) {
+      TEST_FOR_EXCEPTION(!dataTable_.isKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      return dataTable_.Get<T>(ename, factory);
     }
 
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
-    T & Get(const std::string & ename, const FactoryBase* factory) {
+    const T & Get(const std::string & ename, const FactoryBase* factory) const {
       TEST_FOR_EXCEPTION(!dataTable_.isKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
       return dataTable_.Get<T>(ename, factory);
     }
@@ -165,9 +166,9 @@ namespace MueLu {
     bool IsRequestedFactory(const FactoryBase* factory) {
       std::vector<std::string> ekeys = RequestedKeys();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const FactoryBase*> ehandles = RequestedHandles(*it);
+        std::vector<const FactoryBase*> ehandles = RequestedFactories(*it);
         for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-          if(*kt == factory) // factory is generating factory of requested variable '*it'
+          if (*kt == factory) // factory is generating factory of requested variable '*it'
             return true;
         }
       }
@@ -178,9 +179,9 @@ namespace MueLu {
     bool IsAvailableFactory(const FactoryBase* factory) {
       std::vector<std::string> ekeys = AvailableKeys();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const FactoryBase*> ehandles = AvailableHandles(*it);
+        std::vector<const FactoryBase*> ehandles = AvailableFactories(*it);
         for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-          if(*kt == factory) // factory is generating factory of requested variable '*it'
+          if (*kt == factory) // factory is generating factory of requested variable '*it'
             return true;
         }
       }
@@ -200,22 +201,24 @@ namespace MueLu {
 
     //! Returns a vector of strings containing all key names of requested variables
     std::vector<std::string> RequestedKeys() const {
-      return countTable_.keys();
+      return countTable_.GetKeyList();
     }
 
-    std::vector<const FactoryBase*> RequestedHandles(const std::string & ename) const {
-      return countTable_.handles(ename);
+    std::vector<const FactoryBase*> RequestedFactories(const std::string & ename) const {
+      return countTable_.GetFactoryList(ename);
     }
 
     //! Returns a vector of strings containing all key names of available variables
     std::vector<std::string> AvailableKeys() {
-      return dataTable_.keys();
+      return dataTable_.GetKeyList();
     }
 
-    std::vector<const FactoryBase*> AvailableHandles(const std::string & ename) {
-      return dataTable_.handles(ename);
+  private:
+    std::vector<const FactoryBase*> AvailableFactories(const std::string & ename) {
+      return dataTable_.GetFactoryList(ename);
     }
 
+  public:
     std::string GetType(const std::string & ename, const FactoryBase* fac) const {
       return dataTable_.GetType(ename, fac);
     }
@@ -235,34 +238,33 @@ namespace MueLu {
       outputter.pushFieldSpec("data", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
       outputter.outputHeader();
 
-      std::vector<std::string> ekeys = countTable_.keys();
+      std::vector<std::string> ekeys = countTable_.GetKeyList();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const FactoryBase*> ehandles = countTable_.handles(*it);
+        std::vector<const FactoryBase*> ehandles = countTable_.GetFactoryList(*it);
         for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-          outputter.outputField(*it);   // variable name
-          outputter.outputField(*kt);   // factory ptr
-          int reqcount = 0;             // request counter
-          countTable_.Get<int>(*it, reqcount, *kt);
+          outputter.outputField(*it);                    // variable name
+          outputter.outputField(*kt);                    // factory ptr          
+          int reqcount = countTable_.Get<int>(*it, *kt); // request counter
           outputter.outputField(reqcount);
           // variable type
           std::string strType = dataTable_.GetType(*it, *kt);
-          if(strType.find("Xpetra::Operator")!=std::string::npos) {
+          if (strType.find("Xpetra::Operator") != std::string::npos) {
             outputter.outputField("Operator" );
             outputter.outputField(" ");
-          } else if(strType.find("Xpetra::MultiVector")!=std::string::npos) {
+          } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
             outputter.outputField("Vector");
             outputter.outputField("");
-          } else if(strType == "int") {
+          } else if (strType == "int") {
             outputter.outputField(strType);
-            int data = 0; dataTable_.Get<int>(*it, data, *kt);
+            int data = dataTable_.Get<int>(*it, *kt);
             outputter.outputField(data);
-          } else if(strType == "double") {
+          } else if (strType == "double") {
             outputter.outputField(strType);
-            double data = 0.0; dataTable_.Get<double>(*it, data, *kt);
+            double data = dataTable_.Get<double>(*it, *kt);
             outputter.outputField(data);
-          } else if(strType == "string") {
+          } else if (strType == "string") {
             outputter.outputField(strType);
-            std::string data = ""; dataTable_.Get<std::string>(*it, data, *kt);
+            std::string data = dataTable_.Get<std::string>(*it, *kt);
             outputter.outputField(data);
           } else {
             outputter.outputField(strType);
@@ -284,7 +286,7 @@ namespace MueLu {
     //! @brief Increments counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
     void IncrementCounter(const std::string & ename, const FactoryBase* factory) {
       int currentCount = countTable_.Get<int>(ename, factory);
-      if(currentCount != -1) { // if counter not disabled
+      if (currentCount != -1) { // if counter not disabled
         countTable_.Set(ename, ++currentCount, factory);
       }
     }
@@ -292,7 +294,7 @@ namespace MueLu {
     //! @brief Decrements counter for variable <tt>ename</tt> (generated by the given factory <tt>factory</tt>)
     void DecrementCounter(const std::string & ename, const FactoryBase* factory) {
       int currentCount = countTable_.Get<int>(ename, factory);
-      if(currentCount != -1 && currentCount != 0) { // if counter not disabled
+      if (currentCount != -1 && currentCount != 0) { // if counter not disabled
         countTable_.Set(ename, --currentCount, factory);
       }
       // TODO: if currentCount == 0 -> Exception??

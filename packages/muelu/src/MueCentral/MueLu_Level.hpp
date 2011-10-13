@@ -57,7 +57,7 @@ namespace MueLu {
       
       KeyList ekeys = needs_.RequestedKeys();
       for (KeyList::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedHandles(*it);
+        std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories(*it);
         for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
           const std::string & ename = *it;
           const MueLu::FactoryBase* fac = *kt;
@@ -302,7 +302,7 @@ namespace MueLu {
 
       std::vector<std::string> ekeys = needs_.RequestedKeys();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedHandles(*it);
+        std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories(*it);
         for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
           outputter.outputField(*it);   // variable name
           outputter.outputField(*kt);   // factory ptr
@@ -314,8 +314,7 @@ namespace MueLu {
           //         else
           //           outputter.outputField(" ");
 
-          int reqcount = 0;             // request counter
-          reqcount = needs_.NumRequests(*it, *kt);
+          int reqcount = needs_.NumRequests(*it, *kt); // request counter
           outputter.outputField(reqcount);
           // variable type
           std::string strType = needs_.GetType(*it,*kt);
@@ -330,15 +329,15 @@ namespace MueLu {
             outputter.outputField("");
           } else if (strType == "int") {
             outputter.outputField(strType);
-            int data = 0; needs_.Get<int>(*it,data,*kt);
+            int data = needs_.Get<int>(*it, *kt);
             outputter.outputField(data);
           } else if (strType == "double") {
             outputter.outputField(strType);
-            double data = 0.0; needs_.Get<double>(*it,data,*kt);
+            double data = needs_.Get<double>(*it,*kt);
             outputter.outputField(data);
           } else if (strType == "string") {
             outputter.outputField(strType);
-            std::string data = ""; needs_.Get<std::string>(*it,data,*kt);
+            std::string data = needs_.Get<std::string>(*it,*kt);
             outputter.outputField(data);
           } else{
             outputter.outputField(strType);

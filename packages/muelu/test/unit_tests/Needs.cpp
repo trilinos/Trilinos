@@ -27,9 +27,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), false);
-    needs.Request(aNeed,NULL);
-    TEST_EQUALITY(needs.IsRequested(aNeed,NULL), true);
+    TEST_EQUALITY(needs.IsRequested(aNeed, NULL), false);
+    needs.Request(aNeed, NULL);
+    TEST_EQUALITY(needs.IsRequested(aNeed, NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, ValueIsAvailable)
@@ -37,17 +37,17 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
     std::string aNeed = "knockNeed";
-    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), false);
-    needs.Request(aNeed,NULL);
-    needs.Set(aNeed,42,NULL);
-    TEST_EQUALITY(needs.IsAvailable(aNeed,NULL), true);
+    TEST_EQUALITY(needs.IsAvailable(aNeed, NULL), false);
+    needs.Request(aNeed, NULL);
+    needs.Set(aNeed, 42, NULL);
+    TEST_EQUALITY(needs.IsAvailable(aNeed, NULL), true);
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests_Exception)
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
-    TEST_THROW( needs.NumRequests("nonExistentNeed",NULL), std::logic_error );
+    TEST_THROW( needs.NumRequests("nonExistentNeed", NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, NumRequests)
@@ -55,17 +55,16 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
     std::string aNeed = "knockNeed";
-    needs.Request(aNeed,NULL);
-    needs.Request(aNeed,NULL);
-    TEST_EQUALITY(needs.NumRequests(aNeed,NULL), 2);
+    needs.Request(aNeed, NULL);
+    needs.Request(aNeed, NULL);
+    TEST_EQUALITY(needs.NumRequests(aNeed, NULL), 2);
   }
 
   TEUCHOS_UNIT_TEST(Needs, Get_Exception)
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
-    double value=0;
-    TEST_THROW( needs.Get("nonExistentNeed",value,NULL), std::logic_error );
+    TEST_THROW( needs.Get<int>("nonExistentNeed", NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, SetAndGet)
@@ -74,18 +73,18 @@ namespace MueLuTests {
     Needs needs;
     std::string aNeed = "knockNeed";
     double trueValue = 42;
-    needs.Request(aNeed,NULL);
-    needs.Set(aNeed,trueValue,NULL);
+    needs.Request(aNeed, NULL);
+    needs.Set(aNeed, trueValue, NULL);
     double expectedValue = 0;
-    needs.Get(aNeed,expectedValue,NULL);
-    TEST_EQUALITY(trueValue,expectedValue);
+    expectedValue = needs.Get<double>(aNeed, NULL);
+    TEST_EQUALITY(trueValue, expectedValue);
   }
 
   TEUCHOS_UNIT_TEST(Needs, Release_Exception)
   {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
-    TEST_THROW( needs.Release("nonExistentNeed",NULL), std::logic_error );
+    TEST_THROW( needs.Release("nonExistentNeed", NULL), std::logic_error );
   }
 
   TEUCHOS_UNIT_TEST(Needs, Release_Without_Request)
@@ -94,15 +93,15 @@ namespace MueLuTests {
     Needs needs;
     std::string aNeed = "knockNeed";
     double trueValue = 42;
-    needs.Set(aNeed,trueValue,NULL);
+    needs.Set(aNeed, trueValue, NULL);
     double expectedValue = 0;
-    TEST_THROW( expectedValue = needs.Get<double>(aNeed,NULL), MueLu::Exceptions::RuntimeError );
-    TEST_THROW( needs.Release(aNeed,NULL), MueLu::Exceptions::RuntimeError );
+    TEST_THROW( expectedValue = needs.Get<double>(aNeed, NULL), MueLu::Exceptions::RuntimeError );
+    TEST_THROW( needs.Release(aNeed, NULL), MueLu::Exceptions::RuntimeError );
 
     //    RCP<MueLu::TentativePFactory> fac = rcp(new MueLu::TentativePFactory() );
     //    needs.SetData<double>("test", trueValue, &fac);
-    //    TEST_THROW( expectedValue = needs.GetData<double>("test",&fac), MueLu::Exceptions::RuntimeError );
-    //    TEST_THROW( needs.Release("test",&fac), MueLu::Exceptions::RuntimeError );
+    //    TEST_THROW( expectedValue = needs.GetData<double>("test", &fac), MueLu::Exceptions::RuntimeError );
+    //    TEST_THROW( needs.Release("test", &fac), MueLu::Exceptions::RuntimeError );
 
   }
 
@@ -112,19 +111,17 @@ namespace MueLuTests {
     Needs needs;
     std::string aNeed = "knockNeed";
     double trueValue = 42;
-    needs.Request(aNeed,NULL);         // TODO: write new test
-    needs.Request(aNeed,NULL);
-    needs.Set(aNeed,trueValue,NULL);
-    double value = 0;
-    needs.Get(aNeed,value,NULL);
-    needs.Release(aNeed,NULL);
-    TEST_EQUALITY(trueValue,value);
-    TEST_EQUALITY(needs.NumRequests(aNeed,NULL),1);
-    value = 0;
-    needs.Get(aNeed,value,NULL);
-    needs.Release(aNeed,NULL);
+    needs.Request(aNeed, NULL);         // TODO: write new test
+    needs.Request(aNeed, NULL);
+    needs.Set(aNeed, trueValue, NULL);
+    double value = needs.Get<double>(aNeed, NULL);
+    needs.Release(aNeed, NULL);
+    TEST_EQUALITY(trueValue, value);
+    TEST_EQUALITY(needs.NumRequests(aNeed, NULL), 1);
+    value = needs.Get<double>(aNeed, NULL);
+    needs.Release(aNeed, NULL);
     //try to get the need one too many times
-    //JG TODO, disable for the moment    TEST_THROW( needs.Get(aNeed,value), std::logic_error );
+    //JG TODO, disable for the moment    TEST_THROW( needs.Get(aNeed, value), std::logic_error );
   }
 
   class foobarClass {
@@ -138,11 +135,11 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Needs needs;
     RCP<foobarClass> trueValue = rcp(new foobarClass);
-    needs.Request("foobar",NULL);
-    needs.Set("foobar",trueValue,NULL);
+    needs.Request("foobar", NULL);
+    needs.Set("foobar", trueValue, NULL);
     RCP<foobarClass> value;
-    needs.Get("foobar",value,NULL);
-    TEST_EQUALITY(trueValue,value);
+    value = needs.Get<RCP<foobarClass> >("foobar", NULL);
+    TEST_EQUALITY(trueValue, value);
   }
 
 } // namespace MueLuTests

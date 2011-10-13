@@ -31,30 +31,27 @@ namespace MueLuTests {
     // an extended hashtable
     RCP<MueLu::UTILS::TwoKeyMap> exh = Teuchos::rcp(new MueLu::UTILS::TwoKeyMap());
 
-
-    exh->Set<RCP<Operator> >("op",Op,sapFactory.get());
+    exh->Set<RCP<Operator> >("op", Op, sapFactory.get());
     RCP<Operator> test = Teuchos::null;
-    exh->Get<RCP<Operator> >("op",test, sapFactory.get());
+    test = exh->Get<RCP<Operator> >("op", sapFactory.get());
     TEST_EQUALITY_CONST( test, Op );
 
-    exh->Set("op",22,sapFactory.get());
-    int test2 = -1;
-    exh->Get<int> ("op",test2,sapFactory.get());
+    exh->Set("op", 22, sapFactory.get());
+    int test2 = exh->Get<int> ("op", sapFactory.get());
     TEST_EQUALITY_CONST( test2, 22 );
 
-    exh->Set("op",Op,sapFactory2.get());
-    RCP<Operator> test3 = Teuchos::null;
-    exh->Get<RCP<Operator> > ("op",test3,sapFactory2.get());
+    exh->Set("op", Op, sapFactory2.get());
+    RCP<Operator> test3 = exh->Get<RCP<Operator> > ("op", sapFactory2.get());
     TEST_EQUALITY_CONST( test3, Op );
     TEST_EQUALITY_CONST( exh->GetType("op", sapFactory.get()), "int" );
 
-    exh->Remove("op",sapFactory2.get());
-    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  true );
-    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false );
+    exh->Remove("op", sapFactory2.get());
+    TEST_EQUALITY_CONST( exh->isKey("op", sapFactory.get()),  true );
+    TEST_EQUALITY_CONST( exh->isKey("op", sapFactory2.get()), false );
 
-    exh->Remove("op",sapFactory.get());
-    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory.get()),  false );
-    TEST_EQUALITY_CONST( exh->isKey("op",sapFactory2.get()), false );
+    exh->Remove("op", sapFactory.get());
+    TEST_EQUALITY_CONST( exh->isKey("op", sapFactory.get()),  false );
+    TEST_EQUALITY_CONST( exh->isKey("op", sapFactory2.get()), false );
 
   }
 
