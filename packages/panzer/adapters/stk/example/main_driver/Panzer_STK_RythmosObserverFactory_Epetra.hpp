@@ -21,7 +21,7 @@ namespace panzer_stk {
 
     virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			 const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			 const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) const = 0;
   };
 

@@ -2,10 +2,12 @@
 
 #ifdef HAVE_STOKHOS
 
-#include "Panzer_SGEpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_SGEpetraLinearObjFactory.hpp"
 
-#ifndef NO_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+
+#include "Panzer_SGEpetraLinearObjFactoryT.hpp"
 
 template class panzer::SGEpetraLinearObjFactory<panzer::Traits,int>;
 

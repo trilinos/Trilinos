@@ -71,6 +71,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
 void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
 {
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
  
@@ -182,7 +183,7 @@ panzer::ModelEvaluator_Epetra::createInArgs() const
      // inArgs.setSupports(IN_ARG_x_dot_sg,true); NOT YET!
     
      // no parameter support yet!
-     for (int i=0; i<p_map_.size(); i++)
+     for (std::size_t i=0; i<p_map_.size(); i++)
          inArgs.setSupports(IN_ARG_p_sg, i, true);
    
      inArgs.setSupports(IN_ARG_sg_basis,true);
@@ -237,6 +238,7 @@ void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
 void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs, 
  					             const OutArgs& outArgs ) const
 {
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   
   // Transient or steady-state evaluation is determined by the x_dot
@@ -485,15 +487,15 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
   //
   // copy sg data structure into linear object container data structure
   {
-     TEUCHOS_ASSERT(x_in->size()==sgGlobalContainer->size()); 
-     TEUCHOS_ASSERT(x_in->size()==sgGhostedContainer->size()); 
+     TEUCHOS_ASSERT(x_in->size()==(int) sgGlobalContainer->size()); 
+     TEUCHOS_ASSERT(x_in->size()==(int) sgGhostedContainer->size()); 
      if(!Teuchos::is_null(W_out)) { TEUCHOS_ASSERT(x_in->size()==W_out->size()); }
      if(!Teuchos::is_null(f_out)) { TEUCHOS_ASSERT(x_in->size()==f_out->size()); }
      
      // loop over each coefficient, setting up in/out arguments for the lo containers
      SGEpetraLinearObjContainer::iterator glbItr = sgGlobalContainer->begin();
      SGEpetraLinearObjContainer::iterator ghsItr = sgGhostedContainer->begin();
-     for(std::size_t coeff_ind=0;coeff_ind<x_in->size();++coeff_ind,++glbItr,++ghsItr) {
+     for(int coeff_ind=0;coeff_ind<x_in->size();++coeff_ind,++glbItr,++ghsItr) {
         RCP<EpetraLinearObjContainer> globalContainer = *glbItr;
         RCP<EpetraLinearObjContainer> ghostedContainer = *ghsItr;
 

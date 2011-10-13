@@ -22,6 +22,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 
 #include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraVectorOrthogPoly.hpp"
 
 #include <vector>
 
@@ -97,14 +98,34 @@ public:
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > getEpetraFactory() const
    { return epetraFact_; }
 
+   //! Accessor for the expansion object.
+   Teuchos::RCP<const Stokhos::OrthogPolyExpansion<int,double> > getExpansion() const
+   { return expansion_; }
+
+   //! Set Orthog poly for this object, this serves as a template for converting vectors to block vectors
+   void setVectorOrthogPolyMaster(const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> & vecOrthogPoly)
+   { vecOrthogPoly_ = vecOrthogPoly; }
+   
+   //! Set orthog poly object, this serves as a template for converting vectors to block vectors
+   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> getVectorOrthogPoly() const
+   { TEST_FOR_EXCEPTION(vecOrthogPoly_==Teuchos::null,std::logic_error,
+                        "SGEpetraLinearObjFactory::getVectorOrthogPoly: Vector orthogonal poly object has not been set!");
+     return Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(*vecOrthogPoly_)); }
+
+   //! get the map from the matrix, this is the map for the solution vector
+   Teuchos::RCP<const Epetra_Map> getMap();
+
 protected:
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > epetraFact_;
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion_;
+   Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> vecOrthogPoly_; // this is probably unneccessary waste of space
 };
 
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_SGEpetraLinearObjFactoryT.hpp"
+#endif
 
 #endif
 #endif

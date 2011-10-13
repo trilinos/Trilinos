@@ -1,16 +1,21 @@
+#include "Panzer_config.hpp"
+
+// build it just for fun
+#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerT.hpp"
+
+template class panzer::DOFManager<int,long int>;
+template class panzer::DOFManager<int,int>;
+template class panzer::DOFManager<short,int>;
+template class panzer::DOFManager<char,long int>;
+
+#endif
 
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
 
-// build it just for fun
-#ifndef NO_EXPLICIT_TEMPLATE_INSTANTIATION
-
-template class panzer::DOFManager<int,long int>;
-template class panzer::DOFManager<int,int>;
-template class panzer::DOFManager<char,long int>;
-
-#endif
 
 using Teuchos::RCP;
 

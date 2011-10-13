@@ -1,6 +1,12 @@
 #ifndef PANZER_PAUSE_TO_ATTACH
 #define PANZER_PAUSE_TO_ATTACH
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_FancyOStream.hpp"
+
+#include <iostream>
+
 namespace panzer {
   
   void pauseToAttach(MPI_Comm mpicomm)

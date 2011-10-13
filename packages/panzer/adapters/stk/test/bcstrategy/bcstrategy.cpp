@@ -28,6 +28,8 @@
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 
+#include "Epetra_MpiComm.h"
+
 namespace panzer {
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

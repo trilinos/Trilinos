@@ -39,6 +39,8 @@
 #include "Piro_NOXSolver.hpp"
 #include "Piro_RythmosSolver.hpp"
 
+#include "Epetra_MpiComm.h"
+
 #include "EpetraExt_VectorOut.h"
 
 #ifdef HAVE_TEKO

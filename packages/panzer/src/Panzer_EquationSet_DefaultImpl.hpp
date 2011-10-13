@@ -82,6 +82,8 @@ namespace panzer {
   
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_EquationSet_DefaultImplT.hpp"
+#endif
 
 #endif

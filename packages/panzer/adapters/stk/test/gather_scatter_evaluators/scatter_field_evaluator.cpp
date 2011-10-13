@@ -37,6 +37,8 @@ using Teuchos::rcp;
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Epetra_MpiComm.h"
+
 #include <cstdio> // for get char
 #include <vector>
 #include <string>

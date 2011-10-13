@@ -405,5 +405,8 @@ protected:
 
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_BlockedDOFManagerT.hpp"
+#endif
+
 #endif

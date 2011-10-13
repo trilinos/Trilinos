@@ -35,6 +35,8 @@ using Teuchos::rcp;
 
 #include <cstdio> // for get char
 
+#include "Epetra_MpiComm.h"
+
 // Piro solver objects
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"

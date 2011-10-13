@@ -27,6 +27,8 @@ using Teuchos::rcp;
 
 #include "TestEvaluators.hpp"
 
+#include "Epetra_MpiComm.h"
+
 #include <vector>
 #include <map>
 #include <string>

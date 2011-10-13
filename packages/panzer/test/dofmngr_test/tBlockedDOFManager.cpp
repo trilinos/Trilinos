@@ -20,6 +20,9 @@
 
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
+
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;

@@ -133,7 +133,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
   {
      std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
      for(blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
-        RCP<panzer::PhysicsBlock> pb = *blkItr;
+        Teuchos::RCP<panzer::PhysicsBlock> pb = *blkItr;
         std::string blockId = pb->elementBlockID();
 
         // add block id, physics block pair to the map

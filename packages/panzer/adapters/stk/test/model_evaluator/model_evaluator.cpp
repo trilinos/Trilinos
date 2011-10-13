@@ -40,6 +40,8 @@ using Teuchos::rcp;
    #include "Stokhos_SGModelEvaluator.hpp"
 #endif
 
+#include "Epetra_MpiComm.h"
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 

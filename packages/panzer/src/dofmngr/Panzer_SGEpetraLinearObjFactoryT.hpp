@@ -1,5 +1,8 @@
 #ifdef HAVE_STOKHOS
 
+#include "EpetraExt_BlockUtility.h"
+#include "Epetra_LocalMap.h"
+
 namespace panzer {
 
 template <typename Traits,typename LocalOrdinalT>
@@ -157,6 +160,16 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
       // from the epetra factory.
       epetraFact_->initializeGhostedContainer(mem,loc);
    }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<const Epetra_Map> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getMap()
+{
+   Teuchos::RCP<const Epetra_Map> block_map = 
+      Teuchos::rcp(new Epetra_LocalMap(expansion_->getBasis()->size(), 0, *epetraFact_->getEpetraComm()));
+   Teuchos::RCP<Epetra_Map> ep_map = epetraFact_->getMap();
+   return Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*ep_map,*block_map,*epetraFact_->getEpetraComm()));
 }
 
 }

@@ -417,5 +417,8 @@ protected:
 
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_DOFManagerT.hpp"
+#endif
+
 #endif

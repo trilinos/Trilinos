@@ -24,6 +24,9 @@ using Teuchos::rcp;
 
 #include "Panzer_InitialCondition_Builder.hpp"
 
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
+
 #include <vector>
 #include <map>
 #include <string>

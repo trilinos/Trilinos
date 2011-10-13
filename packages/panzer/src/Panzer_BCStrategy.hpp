@@ -42,6 +42,8 @@ namespace panzer {
   
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_BCStrategyT.hpp"
+#endif
 
 #endif

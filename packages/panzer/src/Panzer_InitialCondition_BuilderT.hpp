@@ -17,7 +17,7 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
   
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
-    RCP<panzer::PhysicsBlock> pb = *blkItr;
+    Teuchos::RCP<panzer::PhysicsBlock> pb = *blkItr;
     std::string blockId = pb->elementBlockID();
 
     // build a field manager object

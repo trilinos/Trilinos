@@ -29,6 +29,8 @@ using Teuchos::rcp;
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
+#include "Epetra_MpiComm.h"
+
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MultiVectorOut.h"
