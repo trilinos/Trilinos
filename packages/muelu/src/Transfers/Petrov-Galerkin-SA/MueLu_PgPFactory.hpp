@@ -142,8 +142,12 @@ public:
 
     /////////////////// calculate local damping factors omega
     //Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
+#ifdef OLD
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
     Teuchos::ArrayRCP<Scalar> RowBasedOmega = RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
+#else
+    Teuchos::ArrayRCP<Scalar> RowBasedOmega = ComputeRowBasedOmegas(A,Ptent,DinvAP0,diag);
+#endif
 
     /////////////////// prolongator smoothing using local damping parameters omega
     RCP<Operator> P_smoothed = Teuchos::null;
@@ -176,8 +180,11 @@ public:
 
   //@}
 
-  //Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+#ifdef OLD
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+#else
+  Teuchos::ArrayRCP<Scalar> ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA) const
+#endif
   {
 
     std::map<GlobalOrdinal, GlobalOrdinal> GID2localgid;
@@ -292,18 +299,28 @@ public:
     }
 
     /////////////////// transform ColBasedOmegas to row based omegas (local ids)
+#ifdef OLD
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas =
         TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent);
-
     return RowBasedOmegas;
+#else
+    Teuchos::ArrayRCP<Scalar> RowBasedOmegas =
+        TransformCol2RowBasedOmegas(ColBasedOmegas, GID2localgid, DinvAPtent);
+    return RowBasedOmegas;
+#endif
   }
 
   // This routine still has Epetra/Tpetra specific code
+#ifdef OLD
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
+#else
+  Teuchos::ArrayRCP<Scalar> TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op) const
+#endif
   {
+    // build RowBasedOmegas
+#ifdef OLD
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmegas = Teuchos::null;
 
-    // build RowBasedOmegas
     if (Op->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<Xpetra::EpetraVector> eRowBasedOmegas =
@@ -399,14 +416,59 @@ public:
       throw("HAVE_MUELU_TPETRA not set. Compile MueLu with Tpetra enabled.");
 #endif
     }
+#else
 
+    Teuchos::ArrayRCP<Scalar> RowBasedOmegas( Op->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one() );
+    for(size_t row=0; row<Op->getNodeNumRows(); row++)
+    {
+      size_t nnz = Op->getNumEntriesInLocalRow(row);
+
+      Teuchos::ArrayView<const GlobalOrdinal> indices;
+      Teuchos::ArrayView<const Scalar> vals;
+      Op->getLocalRowView(row, indices, vals);
+
+      TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: number of nonzeros not equal to number of indices? Error.");
+
+      if(nnz == 0)
+      {
+        //eRowBasedOmegas->getEpetra_Vector()->ReplaceMyValue(row,0,Teuchos::ScalarTraits<Scalar>::zero());
+        RowBasedOmegas[row] = Teuchos::ScalarTraits<Scalar>::zero();
+      }
+      else if(nnz == 1)
+      {
+        // dirichlet dofs
+        RowBasedOmegas[row] = Teuchos::ScalarTraits<Scalar>::zero();
+      }
+      else
+      {
+        for(size_t j=0; j<nnz; j++)
+        {
+          GlobalOrdinal col_gid = Op->getColMap()->getGlobalElement(indices[j]);
+          GlobalOrdinal localgid = GID2localgid.at(col_gid);
+          Scalar omega = (*ColBasedOmegas)[localgid];
+          //Epetra_Vector* eeRowBasedOmegas = eRowBasedOmegas->getEpetra_Vector();
+          if((RowBasedOmegas)[row] == -666.0)
+            RowBasedOmegas[row] = omega;
+          else if (omega < RowBasedOmegas[row])
+            RowBasedOmegas[row] = omega;
+        }
+      }
+    }
+#endif
 
     // check for negative entries in RowBasedOmegas
+#ifdef OLD
     Teuchos::ArrayRCP< Scalar > RowBasedOmega_data = RowBasedOmegas->getDataNonConst(Teuchos::as<size_t>(0));
     for(size_t i=0; i<Teuchos::as<size_t>(RowBasedOmega_data.size()); i++)
     {
       if(RowBasedOmega_data[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmega_data[i] = Teuchos::ScalarTraits<Scalar>::zero();
     }
+#else
+    for(size_t i=0; i<Teuchos::as<size_t>(RowBasedOmegas.size()); i++)
+    {
+      if(RowBasedOmegas[i] < Teuchos::ScalarTraits<Scalar>::zero()) RowBasedOmegas[i] = Teuchos::ScalarTraits<Scalar>::zero();
+    }
+#endif
 
     return RowBasedOmegas;
   }
