@@ -77,7 +77,7 @@ int main(int narg, char** arg)
   origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
-                                    origMatrix->getRangeMap());
+                                    origMatrix->getDomainMap());
   origVector->randomize();
 
   ////// Specify problem parameters
