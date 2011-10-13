@@ -21,6 +21,7 @@ APPEND_SET(SOURCES
   Hierarchy.cpp
   RAPFactory.cpp
   SaPFactory.cpp
+  PgPFactory.cpp
   TransPFactory.cpp
   Needs.cpp
   TentativePFactory.cpp
