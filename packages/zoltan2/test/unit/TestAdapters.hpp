@@ -57,8 +57,10 @@ if (gval){ \
 int gval, lval=( (ok) ? 0 : 1);       \
 Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
-  if ((comm).getRank() == 0)\
+  if ((comm).getRank() == 0){\
     std::cerr << "Error: " << s << std::endl;\
+    std::cout << "FAIL" << std::endl;\
+  } \
   exit(code);\
 } \
 }
@@ -356,7 +358,7 @@ private:
     Epetra_SerialComm *ecomm_;
 #endif
 
-    Teuchos::RCP<Zoltan2::default_node_t> node_;
+    Teuchos::RCP<nodeType> node_;
 
     Teuchos::RCP<tcrsMatrix_t> M_; 
 
