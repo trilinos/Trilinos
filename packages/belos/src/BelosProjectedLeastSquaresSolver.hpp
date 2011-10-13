@@ -335,6 +335,12 @@ namespace Belos {
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
 
+	TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
+			   std::invalid_argument,
+			   "matAdd: The input matrices A and B have "
+			   "incompatible dimensions.  A is " << numRows 
+			   << " x " << numCols << ", but B is " << B.numRows()
+			   << " x " << B.numCols() << ".");
 	if (numRows == 0 || numCols == 0) {
 	  return;
 	} else {
@@ -358,6 +364,12 @@ namespace Belos {
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
 
+	TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
+			   std::invalid_argument,
+			   "matSub: The input matrices A and B have "
+			   "incompatible dimensions.  A is " << numRows 
+			   << " x " << numCols << ", but B is " << B.numRows()
+			   << " x " << B.numCols() << ".");
 	if (numRows == 0 || numCols == 0) {
 	  return;
 	} else {
@@ -372,11 +384,19 @@ namespace Belos {
 	}
       }
 
-      //! In Matlab notation: B = B / R, where R is upper triangular.
+      /// \brief In Matlab notation: B = B / R, where R is upper triangular.
+      ///
+      /// This method only looks at the upper left R.numCols() by
+      /// R.numCols() part of R.
       void
       rightUpperTriSolve (mat_type& B,
 			  const mat_type& R) const
       {
+	TEST_FOR_EXCEPTION(B.numCols() != R.numRows(),
+			   std::invalid_argument,
+			   "rightUpperTriSolve: R and B have incompatible "
+			   "dimensions.  B has " << B.numCols() << " columns, "
+			   "but R has " << R.numRows() << " rows.");
 	blas_type blas;
 	blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, 
 		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 
@@ -398,8 +418,26 @@ namespace Belos {
 		  const mat_type& B) const
       {
 	using Teuchos::NO_TRANS;
-	blas_type blas;
 
+	TEST_FOR_EXCEPTION(A.numCols() != B.numRows(),
+			   std::invalid_argument,
+			   "matMatMult: The input matrices A and B have "
+			   "incompatible dimensions.  A is " << A.numRows() 
+			   << " x " << A.numCols() << ", but B is " 
+			   << B.numRows() << " x " << B.numCols() << ".");
+	TEST_FOR_EXCEPTION(A.numRows() != C.numRows(),
+			   std::invalid_argument,
+			   "matMatMult: The input matrix A and the output "
+			   "matrix C have incompatible dimensions.  A has " 
+			   << A.numRows() << " rows, but C has " << C.numRows()
+			   << " rows.");
+	TEST_FOR_EXCEPTION(B.numCols() != C.numCols(),
+			   std::invalid_argument,
+			   "matMatMult: The input matrix B and the output "
+			   "matrix C have incompatible dimensions.  B has " 
+			   << B.numCols() << " columns, but C has " 
+			   << C.numCols() << " columns.");
+	blas_type blas;
 	blas.GEMM (NO_TRANS, NO_TRANS, C.numRows(), C.numCols(), A.numCols(), 
 		   alpha, A.values(), A.stride(), B.values(), B.stride(),
 		   beta, C.values(), C.stride());
