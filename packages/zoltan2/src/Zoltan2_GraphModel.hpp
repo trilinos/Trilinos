@@ -174,7 +174,7 @@ public:
    */
   GraphModel(
     const RCP<const XpetraCrsMatrixInput<User> > inputAdapter,
-    const RCP<const Comm<int> > comm, const RCP<const Environment> env) :
+    const RCP<const Comm<int> > &comm, const RCP<const Environment> &env) :
       input_(inputAdapter), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
       numLocalEdges_(), numGlobalEdges_(0)
