@@ -37,7 +37,7 @@ public:
   //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
   Problem(InputAdapter<User> *,
           Teuchos::ParameterList *params,
-          RCP<const Teuchos::Comm<int> > comm = 
+          const RCP<const Teuchos::Comm<int> > &comm = 
                        Teuchos::DefaultComm<int>::getComm());
 
   // Destructor
@@ -81,7 +81,7 @@ template <typename User>
 Problem<User>::Problem(
   InputAdapter<User> *input,
   Teuchos::ParameterList *params,
-  RCP<const Teuchos::Comm<int> > comm
+  const RCP<const Teuchos::Comm<int> > &comm
 ) :
   inputAdapter_(RCP<InputAdapter<User> >(input,false)),
   params_(RCP<Teuchos::ParameterList>(params,false)),

@@ -68,7 +68,7 @@ public:
 
   /*! Constructor
    */
-  TpetraCrsGraphInput(const RCP<const crsGraph> graph): 
+  TpetraCrsGraphInput(const RCP<const crsGraph> &graph): 
       XpetraCrsGraphInput<User>(
         Teuchos::rcp(new Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t>(
           Teuchos::rcp_const_cast<crsGraph>(graph)))) 

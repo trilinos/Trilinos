@@ -69,7 +69,7 @@ public:
 
   /*! Constructor with a Xpetra::CrsGraph
    */
-  XpetraCrsGraphInput(const RCP<const xgraphType> graph):
+  XpetraCrsGraphInput(const RCP<const xgraphType> &graph):
     graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()

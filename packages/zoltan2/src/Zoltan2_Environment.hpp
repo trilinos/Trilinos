@@ -78,7 +78,7 @@ public:
       copy of them instead of requiring an RCP.
    */
   Environment(ParameterList &prob, 
-    RCP<const Comm<int> > &comm);
+    const RCP<const Comm<int> > &comm);
 
   /*! Constructor
    */
@@ -94,7 +94,7 @@ public:
   Environment &operator=(const Environment &env);
 
   /*! Set communicator */
-  void setCommunicator(RCP<const Comm<int> > &comm);
+  void setCommunicator(const RCP<const Comm<int> > &comm);
 
   /*! Set or reset the problem parameters*/
   void setParameters(ParameterList &Params);

@@ -70,7 +70,7 @@ public:
 
   /*! Constructor 
    */
-  XpetraCrsMatrixInput(const RCP<const xmatrixType > matrix):
+  XpetraCrsMatrixInput(const RCP<const xmatrixType > &matrix):
     matrix_(), rowMap_(), colMap_(), base_(), offset_(), columnIds_()
   {
    matrix_ = matrix;
