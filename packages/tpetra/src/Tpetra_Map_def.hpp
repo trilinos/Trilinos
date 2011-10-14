@@ -186,7 +186,6 @@ namespace Tpetra {
       maxAllGID_ = indexBase_ + numGlobalElements_ - G1;
       contiguous_ = true;
       distributed_ = (numImages > 1 ? true : false);
-      setupDirectory();
     }
     else {  // lOrG == LocallyReplicated
       // compute the min/max global IDs
@@ -200,6 +199,7 @@ namespace Tpetra {
       contiguous_ = true;
       distributed_ = false;
     }
+    setupDirectory();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
