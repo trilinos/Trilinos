@@ -31,20 +31,20 @@ namespace Zoltan2 {
     all processes in the application to call it.  The rest of the
     method should be local methods.
 */
-template <typename User>
-class GraphModel : public Model<User>
+template <typename Adapter>
+class GraphModel : public Model<Adapter>
 {
 private:
 
 public:
 
-  typedef typename InputAdapter<User>::scalar_t  scalar_t;
-  typedef typename InputAdapter<User>::gno_t     gno_t;
-  typedef typename InputAdapter<User>::lno_t     lno_t;
-  typedef typename InputAdapter<User>::gid_t     gid_t;
-  typedef typename InputAdapter<User>::lid_t     lid_t;
-  typedef typename InputAdapter<User>::node_t    node_t;
-  typedef typename InputAdapter<User>::user_t    user_t;
+  typedef typename Adapter::scalar_t  scalar_t;
+  typedef typename Adapter::gno_t     gno_t;
+  typedef typename Adapter::lno_t     lno_t;
+  typedef typename Adapter::gid_t     gid_t;
+  typedef typename Adapter::lid_t     lid_t;
+  typedef typename Adapter::node_t    node_t;
+  typedef typename Adapter::user_t    user_t;
 
   /*! Returns the number vertices on this process.
    */
