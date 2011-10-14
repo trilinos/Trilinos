@@ -9,3 +9,7 @@
 
 /* Define if want to build with ifpack enabled */
 #define HAVE_IFPACK_EPETRAEXT 1
+
+/* Turn on deprecated features */
+#define IFPACK_DEPRECATED
+
