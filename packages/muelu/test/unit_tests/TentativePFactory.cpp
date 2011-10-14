@@ -221,6 +221,149 @@ namespace MueLuTests {
 
   } //MakeTentative
 
+#if 0
+  // crashing with Epetra in parallel
+  TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_NonStandardMaps)
+  {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    // generate problem
+    LO maxLevels = 3;
+    LO its=10;
+    GO nEle = 63;
+    GO nIndexBase = 10;
+    const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
+
+
+    RCP<CrsOperator> mtx = MueLu::Gallery::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+
+    LocalOrdinal NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+    GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
+
+    GlobalOrdinal NumEntries;
+    LocalOrdinal nnz=2;
+    std::vector<Scalar> Values(nnz);
+    std::vector<GlobalOrdinal> Indices(nnz);
+
+    Scalar a = 2.0;
+    Scalar b = -1.0;
+    Scalar c = -1.0;
+
+    for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+      {
+        if (MyGlobalElements[i] == 10)
+          {
+            // off-diagonal for first row
+            Indices[0] = 10;
+            NumEntries = 1;
+            Values[0] = c;
+          }
+        else if (MyGlobalElements[i] == 10 + NumGlobalElements - 1)
+          {
+            // off-diagonal for last row
+            Indices[0] = 10 + NumGlobalElements - 2;
+            NumEntries = 1;
+            Values[0] = b;
+          }
+        else
+          {
+            // off-diagonal for internal row
+            Indices[0] = MyGlobalElements[i] - 1;
+            Values[1] = b;
+            Indices[1] = MyGlobalElements[i] + 1;
+            Values[0] = c;
+            NumEntries = 2;
+          }
+
+        // put the off-diagonal entries
+        // Xpetra wants ArrayViews (sigh)
+        Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+        Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+        mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+
+        // Put in the diagonal entry
+        mtx->insertGlobalValues(MyGlobalElements[i],
+                                Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+                                Teuchos::tuple<Scalar>(a) );
+
+      } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+
+
+    mtx->fillComplete(map,map);
+
+    std::cout << map->getIndexBase() << std::endl;
+
+    RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(mtx);
+
+    // build nullspace
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+    nullSpace->putScalar( (SC) 1.0);
+
+    // fill hierarchy
+    RCP<Hierarchy> H = rcp( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    RCP<Level> Finest = H->GetLevel(); // first associate level with hierarchy (for defaultFactoryHandler!)
+
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);                      // set fine level matrix
+    Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+
+    // define transfer operators
+    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+    UCAggFact->SetMinNodesPerAggregate(3);
+    UCAggFact->SetMaxNeighAlreadySelected(0);
+    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    UCAggFact->SetPhase3AggCreation(0.5);
+
+    RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
+    RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+    RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+    H->SetMaxCoarseSize(1);
+
+    // setup smoothers
+    Teuchos::ParameterList smootherParamList;
+    smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    smootherParamList.set("relaxation: sweeps", (LO) 1);
+    smootherParamList.set("relaxation: damping factor", (SC) 1.0);
+    RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(lib, "RELAXATION", smootherParamList) );
+    RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    Teuchos::ParameterList status;
+    status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+
+    /*SmootherFactory coarseSolveFact(smooProto);
+    H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+
+    // Define RHS
+    RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
+    RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+
+    X->randomize();
+    Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+    // Use AMG directly as an iterative method
+    {
+      X->putScalar( (SC) 0.0);
+
+      H->Iterate(*RHS,its,*X);
+    }
+
+    RCP<Level> coarseLevel = H->GetLevel(1);
+    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
+    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+
+    RCP<CrsOperator> crsP1 = Teuchos::rcp_dynamic_cast<CrsOperator>(P1);
+    RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
+    RCP<Xpetra::EpetraCrsMatrix> epMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
+    RCP<Epetra_CrsMatrix> epP1 = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(epMat->getEpetra_CrsMatrix());
+
+    std::cout << *epP1 << std::endl;*/
+  }
+#endif
+
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
   TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_EpetraVsTpetra)
   {
