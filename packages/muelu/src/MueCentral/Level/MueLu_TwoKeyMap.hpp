@@ -41,8 +41,8 @@ namespace MueLu {
       void Set(const string & ename, const FactoryBase* factory, const Value & evalue) {
         SubMap & subMap = map_[ename]; // operator [] will add an entry in map_ for key 'ename' if it does not exists
         
-        if (subMap.count(factory) != 0)
-          GetOStream(Warnings0, 0) << "Warning: MueLu:TwoKeyMap::Set(): Value already exist for key (" << ename << ", " << factory << ")" << std::endl;
+        // if (subMap.count(factory) != 0)
+        //  GetOStream(Warnings0, 0) << "Warning: MueLu:TwoKeyMap::Set(): Value already exist for key (" << ename << ", " << factory << ")" << std::endl;
         
         subMap[factory] = Teuchos::ParameterEntry(evalue); // operator [] will add an entry in subMap for key 'factory' if it does not exists
       }
