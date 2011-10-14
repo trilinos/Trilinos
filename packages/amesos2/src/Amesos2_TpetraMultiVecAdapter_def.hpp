@@ -215,8 +215,7 @@ namespace Amesos2 {
 		LocalOrdinal,
 		GlobalOrdinal,
 		Node> >::describe(Teuchos::FancyOStream& os,
-				  const Teuchos::EVerbosityLevel verbLevel=
-				  Teuchos::Describable::verbLevel_default) const
+				  const Teuchos::EVerbosityLevel verbLevel) const
   {
 
   }
