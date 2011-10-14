@@ -174,8 +174,8 @@ public:
    *  All processes in the communicator must call the constructor.
    */
   GraphModel(
-    const RCP<const XpetraCrsMatrixInput<User> > inputAdapter,
-    const RCP<const Comm<int> > comm, const RCP<const Environment> env) :
+    const RCP<const XpetraCrsMatrixInput<User> > &inputAdapter,
+    const RCP<const Comm<int> > &comm, const RCP<const Environment> &env) :
       input_(inputAdapter), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
       numLocalEdges_(), numGlobalEdges_(0)
@@ -385,8 +385,8 @@ public:
    *  All processes in the communicator must call the constructor.
    */
   GraphModel(
-    RCP<const MatrixInput<Scalar, LNO, GNO, LID, GNO, Node> > inputAdapter,
-    RCP<const Comm<int> > comm, RCP<const Environment <int> > env) : 
+    const RCP<const MatrixInput<Scalar, LNO, GNO, LID, GNO, Node> > &inputAdapter,
+    const RCP<const Comm<int> > &comm, const RCP<const Environment <int> > &env) : 
       input_(inputAdapter), comm_(comm), env_(env),
       _gids(), gnos_(), _lids(), _nedges(), _edgeGids(), edgeGnos_(),
       procIds_(), offsets_(), _gnoToLno(),

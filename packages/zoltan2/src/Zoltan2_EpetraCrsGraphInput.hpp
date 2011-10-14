@@ -73,7 +73,7 @@ public:
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */
-  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> graph):
+  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> &graph):
     XpetraCrsGraphInput<User> (
       Teuchos::rcp(new Xpetra::EpetraCrsGraph(
         Teuchos::rcp_const_cast<Epetra_CrsGraph>(graph))))
@@ -89,9 +89,9 @@ public:
                certain order.  The edgeWeights follow this order, omitting
                any self edges.
    */
-  EpetraCrsGraphInput(RCP<const Epetra_CrsGraph> graph,
-                      ArrayRCP<double> vertexWeights,
-                      ArrayRCP<double> edgeWeights):
+  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> &graph,
+                      const ArrayRCP<double> &vertexWeights,
+                      const ArrayRCP<double> &edgeWeights):
     XpetraCrsGraphInput<int, int> (graph) {}
 #endif
 

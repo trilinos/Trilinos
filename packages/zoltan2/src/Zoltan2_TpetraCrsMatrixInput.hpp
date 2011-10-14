@@ -61,7 +61,7 @@ public:
 
   /*! Constructor 
    */
-  TpetraCrsMatrixInput(const RCP<const crsMatrix> matrix):
+  TpetraCrsMatrixInput(const RCP<const crsMatrix> &matrix):
     XpetraCrsMatrixInput<User>(
       Teuchos::rcp(new Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t>(
         Teuchos::rcp_const_cast<crsMatrix>(matrix))))
