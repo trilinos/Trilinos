@@ -42,7 +42,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Directory<LocalOrdinal,GlobalOrdinal,Node>::Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map_in)
-  : map_(map_in) {
+  : map_(map_in) 
+  {
     // initialize Comm instance
     comm_ = map_->getComm();
 
