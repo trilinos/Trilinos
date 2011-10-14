@@ -1285,6 +1285,9 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
       essBCindices_ = newBCindices;
       numEssBCs_ += offset;
     }
+    else {
+      delete [] newBCindices;
+    }
   }
 
   if (blockMatrix_) {
