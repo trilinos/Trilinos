@@ -57,6 +57,7 @@
   </ParameterList> <!-- end arc130.mtx -->
 
   <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+<!-- ETB: Disabling until complex types are fixed in Teuchos::SerialDenseSolver.  See bug 5309
   <ParameterList name="young1c.mtx">
     <!-- <Parameter name="complex" type="bool" value="true"/> -->
     <ParameterList name="LAPACK">
@@ -83,4 +84,5 @@
       </ParameterList>
     </ParameterList>
   </ParameterList> <!-- end young1c.mtx -->
+-->
 </ParameterList>

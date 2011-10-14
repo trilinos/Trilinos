@@ -348,7 +348,7 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 void
 SolverCore<ConcreteSolver,Matrix,Vector>::describe(
   Teuchos::FancyOStream &out,
-  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+  const Teuchos::EVerbosityLevel verbLevel) const
 {
   if( matrixA_.is_null() || (rank_ != 0) ){ return; }
   using std::endl;
