@@ -157,6 +157,7 @@ public:
            for a Zoltan2::XpetraCrsMatrixInput object.
 */
 
+template <>
 template <typename User>
 class GraphModel<XpetraCrsMatrixInput<User> >
 {
@@ -306,7 +307,6 @@ private:
   global_size_t numGlobalEdges_;
 
 };
-
 
 #if 0
 ////////////////////////////////////////////////////////////////
