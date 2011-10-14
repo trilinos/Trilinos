@@ -40,6 +40,8 @@
 #ifndef KOKKOS_BBCRS_HPP
 #define KOKKOS_BBCRS_HPP
 
+#include <stdexcept>
+#include <sstream>
 #include <Kokkos_DeviceCuda_MultiVectorView.hpp>
 
 namespace Kokkos {
@@ -148,9 +150,16 @@ public:
       throw std::runtime_error( std::string("block is too big") );
     }
 
+/*
     if ( DeviceCuda::maximum_grid_count() < m_graph.block_system_size ) {
-      throw std::runtime_error( std::string("too many blocks") );
+      std::ostringstream msg ;
+      msg << "Too many CUDA blocks: max = "
+          << DeviceCuda::maximum_grid_count()
+          << " , requested = " << m_graph.block_system_size ;
+
+      throw std::runtime_error( msg.str() );
     }
+*/
 
     const index_type thread_block_count = m_graph.block_system_size ;
     const index_type thread_per_block   = warp_count * Impl::DeviceCudaTraits::WarpSize ;

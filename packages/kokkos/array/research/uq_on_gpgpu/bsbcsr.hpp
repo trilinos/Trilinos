@@ -231,9 +231,11 @@ public:
       throw std::runtime_error( std::string("block is too big") );
     }
 
+/*
     if ( DeviceCuda::maximum_grid_count() < m_graph.block_system_size ) {
       throw std::runtime_error( std::string("too many blocks") );
     }
+*/
 
     const index_type shmem_size = 2 * m_shared_offset * sizeof(VectorScalar);
 

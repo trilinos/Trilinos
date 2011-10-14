@@ -8,6 +8,7 @@
 #include <Kokkos_DeviceCuda.hpp>
 #include <Kokkos_DeviceCuda_MultiVectorView.hpp>
 #include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 #include <bbcsr.hpp>
 #include <bsbcsr.hpp>
@@ -27,6 +28,13 @@ void print_vector( const VectorView v )
     std::cout << std::endl ;
   }
 }
+
+struct PerformanceData {
+  double seconds ;
+  size_t nonzeros ;
+  size_t flops ;
+};
+
 
 namespace diagonal_test { // Unit test with diagonal block graph
 
@@ -112,7 +120,7 @@ void run( int block_count , int block_size )
 
 }
 
-namespace checker_test {
+namespace bbcsr_test {
 
 // Unit test with checkerboard block graph
 // starting at the diagonal and going right
@@ -141,7 +149,11 @@ void initialize( const graph_type  graph ,
   }
 }
 
-void run( int block_count , int block_size )
+void run( const int block_count ,
+          const int block_size ,
+          const int number_iterations ,
+          const bool check_answer ,
+          PerformanceData & perf )
 {
   graph_type  graph ;
   matrix_type matrix ;
@@ -157,6 +169,12 @@ void run( int block_count , int block_size )
     if ( max_column_count < column_count ) max_column_count = column_count ;
     count += column_count ;
   }
+
+  // Floating point multiply-add for each matrix entry
+  perf.nonzeros = ((size_t) count ) *
+                  ((size_t) block_size ) *
+                  ((size_t) block_size );
+  perf.flops = 2 * perf.nonzeros * ((size_t) number_iterations );
 
   graph.block_system_size = block_count ;
   graph.block_size   = block_size ;
@@ -196,13 +214,17 @@ void run( int block_count , int block_size )
   dim3 grid_dim( block_count , 1 , 1 );
   dim3 block_dim( block_size , 1 , 1 );
 
-  std::cout << "checker_test::run( "
-            << block_count << " , "
-            << block_size << " )" << std::endl ;
-
   initialize<<< grid_dim , block_dim >>>( graph , matrix , input );
 
-  Kokkos::multiply( graph , matrix , input , output );
+  Kokkos::Impl::Timer wall_clock ;
+
+  for ( int i = 0 ; i < number_iterations ; ++i ) {
+    Kokkos::multiply( graph , matrix , input , output );
+  }
+
+  Kokkos::DeviceCuda::wait_functor_completion();
+
+  perf.seconds = wall_clock.seconds();
 
   vector_type::HostView h_output = Kokkos::mirror_create( output );
   vector_type::HostView h_input  = Kokkos::mirror_create( input );
@@ -216,25 +238,28 @@ void run( int block_count , int block_size )
 //  std::cout << "input  = " << std::endl ; print_vector( h_input );
 //  std::cout << "output = " << std::endl ; print_vector( h_output );
 
-  for ( int i = 0 ; i < block_count ; ++i ) {
-    const int output_begin = i * block_size ;
-    const int matrix_coeff = i + 1 ;
-    int sum = 0 ;
-    for ( int j = i ; j < block_count ; j += 2 ) {
-      int vector_begin = j * block_size ;
-      for ( int k = 0 ; k < block_size ; ++k ) {
-        sum += matrix_coeff * ( vector_begin + k );
-      }
-    }
+  if ( check_answer ) {
 
-    for ( int j = output_begin ; j < output_begin + block_size ; ++j ) {
-      const int expected_value = j % 2 ? sum : 0 ;
-      const int actual_value   = h_output(j);
-      if ( expected_value != actual_value ) {
-        std::cout << "check_test error at output(" << j << ") = "
-                  << actual_value << " != " << expected_value 
-                  << std::endl ;
-        throw std::runtime_error(std::string("FAILED"));
+    for ( int i = 0 ; i < block_count ; ++i ) {
+      const int output_begin = i * block_size ;
+      const int matrix_coeff = i + 1 ;
+      int sum = 0 ;
+      for ( int j = i ; j < block_count ; j += 2 ) {
+        int vector_begin = j * block_size ;
+        for ( int k = 0 ; k < block_size ; ++k ) {
+          sum += matrix_coeff * ( vector_begin + k );
+        }
+      }
+
+      for ( int j = output_begin ; j < output_begin + block_size ; ++j ) {
+        const int expected_value = j % 2 ? sum : 0 ;
+        const int actual_value   = h_output(j);
+        if ( expected_value != actual_value ) {
+          std::cout << "check_test error at output(" << j << ") = "
+                    << actual_value << " != " << expected_value 
+                    << std::endl ;
+          throw std::runtime_error(std::string("FAILED"));
+        }
       }
     }
   }
@@ -274,7 +299,11 @@ void initialize(
   }
 }
 
-void run( int block_count , int block_size )
+void run( const int block_count ,
+          const int block_size ,
+          const int number_iterations ,
+          const bool check_answer ,
+          PerformanceData & perf )
 {
   Kokkos::DenseSymmetricMatrixDiagonalStorageMap
     storage_map( block_size , block_size );
@@ -307,6 +336,12 @@ void run( int block_count , int block_size )
     if ( max_column_count < column_count ) max_column_count = column_count ;
     count += column_count ;
   }
+
+  // Floating point multiply-add for each matrix entry
+  perf.nonzeros = ((size_t) count ) *
+                  ((size_t) block_size ) *
+                  ((size_t) block_size );
+  perf.flops = 2 * perf.nonzeros * ((size_t) number_iterations );
 
   graph.block_system_size = block_count ;
   graph.block_length      = storage_map.m_length ;
@@ -346,13 +381,17 @@ void run( int block_count , int block_size )
   dim3 grid_dim( block_count , 1 , 1 );
   dim3 block_dim( block_size , 1 , 1 );
 
-  std::cout << "bsbcsr_test::run( "
-            << block_count << " , "
-            << block_size << " )" << std::endl ;
-
   initialize<<< grid_dim , block_dim >>>( graph , matrix , input );
 
-  Kokkos::multiply( graph , matrix , input , output );
+  Kokkos::Impl::Timer wall_clock ;
+
+  for ( int i = 0 ; i < number_iterations ; ++i ) {
+    Kokkos::multiply( graph , matrix , input , output );
+  }
+
+  Kokkos::DeviceCuda::wait_functor_completion();
+
+  perf.seconds = wall_clock.seconds();
 
   vector_type::HostView h_output = Kokkos::mirror_create( output );
   vector_type::HostView h_input  = Kokkos::mirror_create( input );
@@ -366,33 +405,36 @@ void run( int block_count , int block_size )
 //  std::cout << "input  = " << std::endl ; print_vector( h_input );
 //  std::cout << "output = " << std::endl ; print_vector( h_output );
 
-  for ( int i = 0 ; i < block_count ; ++i ) {
-    const int block_begin = h_column_offset(i);
-    const int block_end   = h_column_offset(i+1);
+  if ( check_answer ) {
 
-    for ( int iy = 0 ; iy < block_size ; ++iy ) {
-      const int global_y = iy + i * block_size ;
-      double y = 0 ;
+    for ( int i = 0 ; i < block_count ; ++i ) {
+      const int block_begin = h_column_offset(i);
+      const int block_end   = h_column_offset(i+1);
 
-      for ( int j = block_begin ; j < block_end ; ++j ) {
-        int vector_begin = h_column_index( j ) * block_size ;
-        int matrix_begin = j * graph.diag_stride * graph.diag_count ;
+      for ( int iy = 0 ; iy < block_size ; ++iy ) {
+        const int global_y = iy + i * block_size ;
+        double y = 0 ;
 
-        for ( int ix = 0 ; ix < block_size ; ++ix ) {
-          const int offset = storage_map.offset( iy , ix );
-          y += h_matrix( matrix_begin + offset ) *
-               h_input(  vector_begin + ix );
+        for ( int j = block_begin ; j < block_end ; ++j ) {
+          int vector_begin = h_column_index( j ) * block_size ;
+          int matrix_begin = j * graph.diag_stride * graph.diag_count ;
+
+          for ( int ix = 0 ; ix < block_size ; ++ix ) {
+            const int offset = storage_map.offset( iy , ix );
+            y += h_matrix( matrix_begin + offset ) *
+                 h_input(  vector_begin + ix );
+          }
         }
-      }
 
-      const int expected_value = y ;
-      const int actual_value   = h_output( global_y );
+        const int expected_value = y ;
+        const int actual_value   = h_output( global_y );
 
-      if ( expected_value != actual_value ) {
-        std::cout << "check_test error at output(" << global_y << ") = "
-                  << actual_value << " != " << expected_value 
-                  << std::endl ;
-        throw std::runtime_error(std::string("FAILED"));
+        if ( expected_value != actual_value ) {
+          std::cout << "check_test error at output(" << global_y << ") = "
+                    << actual_value << " != " << expected_value 
+                    << std::endl ;
+          throw std::runtime_error(std::string("FAILED"));
+        }
       }
     }
   }
@@ -409,23 +451,38 @@ int mainCuda()
   // diagonal_test::run( 1 , 48 );
   // diagonal_test::run( 10 , 32 );
 
-//  checker_test::run( 1 , 32 );
-//  checker_test::run( 3 , 32 );
-//  checker_test::run( 5 , 16 );
-//  checker_test::run( 50 , 64 );
-//  checker_test::run( 10 , 200 );
+  PerformanceData perf ;
 
-  bsbcsr_test::run( 1 , 1 );
-  bsbcsr_test::run( 1 , 4 );
-  bsbcsr_test::run( 1 , 8 );
-  bsbcsr_test::run( 1 , 32 );
-  bsbcsr_test::run( 1 , 64 );
-  bsbcsr_test::run( 1 , 128 );
-  bsbcsr_test::run( 2 , 4 );
-  bsbcsr_test::run( 4 , 2 );
-  bsbcsr_test::run( 5 , 4 );
-  bsbcsr_test::run( 8 , 20 );
-  bsbcsr_test::run( 10 , 200 );
+  bbcsr_test::run( 8 , 32 , 1 , true , perf );
+  bsbcsr_test::run( 8 , 32 , 1 , true , perf );
+
+  std::cout << "\"Test\" , \"BlockSize\" , \"Nonzeros\" , \"Flops\" , \"Time\" , \"GFlop/sec\"" << std::endl ;
+
+  const int block_size = 64 ;
+
+  std::cout << std::endl ;
+
+  for ( int i = 20 ; i <= 300 ; i += 20 ) {
+    bbcsr_test::run( i , block_size , 1000 , false , perf );
+
+    std::cout << "\"bbcsr_test(" << i << "," << block_size << ",1000) , "
+              << block_size << " , " << perf.nonzeros << " , "
+              << perf.flops << " , " << perf.seconds << " , "
+              << ( (double) perf.flops / ( perf.seconds * 1e9 ) )
+              << std::endl ;
+  }
+
+  std::cout << std::endl ;
+
+  for ( int i = 20 ; i <= 300 ; i += 20 ) {
+    bsbcsr_test::run( i , block_size , 1000 , false , perf );
+
+    std::cout << "\"bsbcsr_test(" << i << "," << block_size << ",1000) , "
+              << block_size << " , " << perf.nonzeros << " , "
+              << perf.flops << " , " << perf.seconds << " , "
+              << ( (double) perf.flops / ( perf.seconds * 1e9 ) )
+              << std::endl ;
+  }
 
   return 0 ;
 }

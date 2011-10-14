@@ -42,6 +42,7 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_DeviceHost.hpp>
 
 namespace Kokkos {
 
