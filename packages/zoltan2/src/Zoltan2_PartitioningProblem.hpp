@@ -119,6 +119,7 @@ void PartitioningProblem<User>::createPartitioningProblem()
                                         (this->inputAdapter_, true),
                         this->comm_,
                         this->env_);
+      delete model;  //KDDKDD REMOVE LATER WHEN HAVE RCPs WORKING.
 
       //KDDKDD NOT WORKING YET RCP<GraphModel<XpetraCrsMatrixInput<User> > > rcpmodel = rcp(model);
 
