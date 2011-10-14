@@ -97,3 +97,7 @@ typedef MueLu::NullspaceFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMat
 #ifdef MUELU_FACTORYMANAGER_SHORT
 typedef MueLu::FactoryManager<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
 #endif
+
+#ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
+typedef MueLu::ThresholdAFilterFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ThresholdAFilterFactory;
+#endif
