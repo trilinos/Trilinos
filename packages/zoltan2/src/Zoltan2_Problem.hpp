@@ -86,7 +86,7 @@ Problem<User>::Problem(
   inputAdapter_(RCP<InputAdapter<User> >(input,false)),
   params_(RCP<Teuchos::ParameterList>(params,false)),
   comm_(comm),
-  env_(Teuchos::RCP<Environment>(new Environment(*params, comm_)))
+  env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
 {
   HELLO;
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
