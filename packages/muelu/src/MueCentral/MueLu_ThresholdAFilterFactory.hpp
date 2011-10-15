@@ -1,12 +1,12 @@
 /*
- * MueLu_ThresholdAFilter.hpp
+ * MueLu_ThresholdAFilterFactory.hpp
  *
  *  Created on: 14.10.2011
  *      Author: tobias
  */
 
-#ifndef MUELU_THRESHOLDAFILTER_HPP_
-#define MUELU_THRESHOLDAFILTER_HPP_
+#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_
+#define MUELU_THRESHOLDAFILTERFACTORY_HPP_
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_RCP.hpp>
@@ -62,10 +62,10 @@ namespace MueLu {
     void Build(Level & currentLevel) const {
       RCP<Operator> Ain = currentLevel.Get< RCP<Operator> >(varName_, factory_);
 
+      Monitor m(*this, "A filter (thresholding)");
+
       // create new empty Operator
       RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile));
-
-      Scalar tol = 1.1;
 
       // loop over local rows
       for(size_t row=0; row<Ain->getNodeNumRows(); row++)
@@ -79,15 +79,16 @@ namespace MueLu {
         TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
         Teuchos::ArrayRCP<LocalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<LocalOrdinal>::zero());
-        Teuchos::ArrayRCP<LocalOrdinal> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
+        Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
         size_t nNonzeros = 0;
         for(size_t i=0; i<indices.size(); i++) {
-          if(abs(vals[i]) > threshold_ ) {
-            indout[nNonzeros] = indices[i];
+          if(abs(vals[i]) > threshold_ || indices[i]==row) {
+            indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
             valout[nNonzeros] = vals[i];
             nNonzeros++;
           }
         }
+
         indout.resize(nNonzeros);
         valout.resize(nNonzeros);
 
@@ -96,7 +97,9 @@ namespace MueLu {
 
       Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
 
-      currentLevel.Set(varName_, Aout, this);
+      GetOStream(Statistics0, 0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
+
+      currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Operator>(Aout), this);
     }
 
     //@}
@@ -109,8 +112,8 @@ namespace MueLu {
 
   }; // class ThresholdAFilterFactory
 
-} //#ifndef MUELU_THRESHOLDAFILTER_HPP_namespace MueLu
+} //#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_namespace MueLu
 
 #define MUELU_THRESHOLDAFILTERFACTORY_SHORT
 
-#endif /* MUELU_THRESHOLDAFILTER_HPP_ */
+#endif /* MUELU_THRESHOLDAFILTERFACTORY_HPP_ */

@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   FactoryManager M;
   M.SetFactory("A",            rcp(new RAPFactory())); //TODO: to be remove, but will require some work
   M.SetFactory("P",            pFact);
-  M.SetFactory("Aggregation",  aggregationFact);
+  M.SetFactory("Aggregation",  aggregationFact); // should be "Aggregates"?
   M.SetFactory("Smoother",     smootherFact);
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
