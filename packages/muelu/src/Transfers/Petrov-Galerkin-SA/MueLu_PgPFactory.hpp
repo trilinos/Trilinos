@@ -119,8 +119,8 @@ public:
     timer->start(true);
 
     // Level Get
-    RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
     RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
+    RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
 
     /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
     if(restrictionMode_)
@@ -170,6 +170,9 @@ public:
         RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
     }
+
+    timer->stop();
+    MemUtils::ReportTimeAndMemory(*timer, *(P_smoothed->getRowMap()->getComm()));
   }
 
   void BuildP(Level &fineLevel, Level &coarseLevel) const {
