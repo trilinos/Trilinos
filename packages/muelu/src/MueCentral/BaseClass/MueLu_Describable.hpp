@@ -45,7 +45,7 @@ namespace MueLu {
     }
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { describe(out, toMueLuVerbLevel(verbLevel)); }
+    //void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { describe(out, toMueLuVerbLevel(verbLevel)); }
 
     //@}
 
