@@ -31,6 +31,7 @@ APPEND_SET(SOURCES
   #UCAggregationFactory.cpp
   TwoKeyMap.cpp
   GenericRFactory.cpp
+  ThresholdAFilterFactory.cpp
 
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
