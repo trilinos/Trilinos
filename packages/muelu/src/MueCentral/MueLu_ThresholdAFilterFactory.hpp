@@ -81,8 +81,8 @@ namespace MueLu {
         Teuchos::ArrayRCP<LocalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<LocalOrdinal>::zero());
         Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
         size_t nNonzeros = 0;
-        for(size_t i=0; i<indices.size(); i++) {
-          if(abs(vals[i]) > threshold_ || indices[i]==row) {
+        for(size_t i=0; i<(size_t)indices.size(); i++) {
+          if((Scalar)abs(vals[i]) > threshold_ || indices[i]==(LocalOrdinal)row) {
             indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
             valout[nNonzeros] = vals[i];
             nNonzeros++;
