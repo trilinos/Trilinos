@@ -72,37 +72,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
 } // FillHierarchy_NoFactoriesGiven
 
-#ifdef FAILING_ONE_PROC_TERMINATING_BADLY_DONT_KNOW_WHY
-TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
-{
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<Level> levelOne = rcp(new Level() );
-  levelOne->SetLevelID(1);
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H;
-  H.SetLevel(levelOne);
-
-  levelOne->Request("A");
-  levelOne->Set("A",A);
-
-  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  GenericPRFactory PRFact(PFact);
-
-  out << "Providing just PR factory to FillHierarchy." << std::endl;
-  Teuchos::ParameterList status;
-  status = H.FillHierarchy(PRFact);
-  TEST_EQUALITY(status.get("fine nnz",(Xpetra::global_size_t)-1), 295);
-  TEST_EQUALITY(status.get("total nnz",(Xpetra::global_size_t)-1), 422);
-  TEST_EQUALITY(status.get("start level",-1), 0);
-  TEST_EQUALITY(status.get("end level",-1), 1);
-  TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.43051,1e-5);
-
-} //FillHierarchy_PRFactoryOnly
-#endif
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 {
@@ -315,6 +284,44 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 #endif
     }
 } //FullPopulate
+
+TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_KeepAggregates)
+{
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
+    {
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(399*comm->getSize());
+
+  Hierarchy H(A);
+  H.SetMaxCoarseSize(1);
+
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetMinNodesPerAggregate(3);
+  UCAggFact->SetMaxNeighAlreadySelected(0);
+  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  UCAggFact->SetPhase3AggCreation(0.5);
+
+  RCP<TentativePFactory>  PFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<RFactory> RFact = rcp(new TransPFactory());
+  RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
+
+  H.GetLevel(0)->Keep("Aggregates",UCAggFact.get());
+
+#ifdef HAVE_MUELU_IFPACK
+  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
+  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
+  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
+#endif
+
+  for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
+    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates",UCAggFact.get()),true);
+  }
+
+    }
+} //FullPopulate_KeepAggregates
 
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
