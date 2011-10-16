@@ -1,4 +1,5 @@
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -25,4 +26,28 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Condif2D
+    SOURCES Condif2d_test.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+  )
+
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Condif2DFiltered
+    SOURCES Condif2d_test_with_filter.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+  )
+  
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(Condif2_example_copyfiles
+  SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat
+  )
+ENDIF()
+  
 ENDIF()
