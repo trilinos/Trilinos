@@ -1,3 +1,4 @@
+#!/bin/bash
 headers=$(find ../.. -name "*.hpp" -exec basename {} \;)
 
 exclude="
@@ -14,6 +15,8 @@ Xpetra_TpetraVbrMatrix.hpp
 
 Xpetra_DoxygenDocumentation.hpp
 Xpetra_UnitTestHelpers.hpp
+
+Xpetra_RowGraph.hpp
 "
 
 not_a_templated_class=$(find ../.. -name "*Epetra*.hpp" -exec basename {} \;)

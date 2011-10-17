@@ -23,6 +23,9 @@ ADD_SUBDIRECTORIES(
   Operator
   )
 
+# uncomment this to ensure Xpetra header files include all necessary dependencies
+#ADD_SUBDIRECTORY(compile_tests)
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ADD_SUBDIRECTORIES(
     BlockedCrsOperator
