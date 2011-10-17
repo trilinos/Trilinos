@@ -47,6 +47,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -102,6 +103,46 @@ namespace Belos {
 	  }
 	}
 	out << ']' << endl;
+      }
+
+      /// \fn print
+      /// \brief Print A, a dense matrix, in Matlab-readable ASCII format.
+      template<class Scalar>
+      void 
+      print (std::ostream& out, 
+	     const Teuchos::SerialDenseMatrix<int, Scalar>& A,
+	     const std::string& linePrefix)
+      {
+	using std::endl;
+
+        const int numRows = A.numRows();
+	const int numCols = A.numCols();
+
+	out << linePrefix << '[';
+	if (numCols == 1) {
+	  // Compact form for column vectors; valid Matlab.
+	  for (int i = 0; i < numRows; ++i) {
+	    out << A(i,0);
+	    if (i < numRows-1) {
+	      out << "; ";
+	    } 
+	  }
+	} else {
+	  for (int i = 0; i < numRows; ++i) {
+	    for (int j = 0; j < numCols; ++j) {
+	      if (numRows > 1) {
+		out << linePrefix << "  ";
+	      }
+	      out << A(i,j);
+	      if (j < numCols-1) {
+		out << ", ";
+	      } else if (i < numRows-1) {
+		out << ';' << endl;
+	      }
+	    }
+	  }
+	}
+	out << linePrefix << ']' << endl;
       }
     } // namespace (anonymous)
 
@@ -342,6 +383,34 @@ namespace Belos {
 	}
       }
 
+      /// \brief A -> [A_11, A_21, A_12, A_22].
+      ///
+      /// The first four arguments are the output arguments.  They are
+      /// views of their respective submatrices of A.
+      ///
+      /// \note SerialDenseMatrix's operator= and copy constructor
+      ///   both always copy the matrix deeply, so I can't make the
+      ///   output arguments "mat_type&".
+      void
+      partition (Teuchos::RCP<mat_type>& A_11, 
+		 Teuchos::RCP<mat_type>& A_21,
+		 Teuchos::RCP<mat_type>& A_12,
+		 Teuchos::RCP<mat_type>& A_22,
+		 mat_type& A, 
+		 const int numRows1, 
+		 const int numRows2, 
+		 const int numCols1, 
+		 const int numCols2)
+      {
+	using Teuchos::rcp;
+	using Teuchos::View;
+
+	A_11 = rcp (new mat_type (View, A, numRows1, numCols1, 0, 0));
+	A_21 = rcp (new mat_type (View, A, numRows2, numCols1, numRows1, 0));
+	A_12 = rcp (new mat_type (View, A, numRows1, numCols2, 0, numCols1));
+	A_22 = rcp (new mat_type (View, A, numRows2, numCols2, numRows1, numCols1));
+      }
+
       //! A := alpha * A.
       void
       matScale (mat_type& A, const scalar_type& alpha) const
@@ -359,6 +428,29 @@ namespace Belos {
 	    for (int i = 0; i < numRows; ++i) {
 	      A_j[i] *= alpha;
 	    }
+	  }
+	}
+      }
+
+      /// \brief Y := Y + alpha * X.
+      ///
+      /// "AXPY" stands for "alpha times X plus y," and is the
+      /// traditional abbreviation for this operation.
+      void
+      axpy (mat_type& Y, 
+	    const scalar_type& alpha, 
+	    const mat_type& X) const
+      {
+	const int numRows = Y.numRows();
+	const int numCols = Y.numCols();
+
+	TEST_FOR_EXCEPTION(numRows != X.numRows() || numCols != X.numCols(), 
+			   std::invalid_argument, "Dimensions of X and Y don't "
+			   "match.  X is " << X.numRows() << " x " << X.numCols() 
+			   << ", and Y is " << numRows << " x " << numCols << ".");
+	for (int j = 0; j < numCols; ++j) {
+	  for (int i = 0; i < numRows; ++i) {
+	    Y(i,j) += alpha * X(i,j);
 	  }
 	}
       }
@@ -479,6 +571,111 @@ namespace Belos {
 		   alpha, A.values(), A.stride(), B.values(), B.stride(),
 		   beta, C.values(), C.stride());
       }
+
+      /// \brief Return the number of Inf or NaN entries in the matrix A.
+      ///
+      /// \param A [in] The matrix to check.
+      ///
+      /// \param upperTriangular [in] If true, only check the upper
+      ///   triangle / trapezoid of A.  Otherwise, check all entries
+      ///   of A.
+      int 
+      infNaNCount (const mat_type& A, const bool upperTriangular=false) const
+      {
+	int count = 0;
+	for (int j = 0; j < A.numCols(); ++j) {
+	  if (upperTriangular) {
+	    for (int i = 0; i <= j && i < A.numRows(); ++i) {
+	      if (STS::isnaninf (A(i,j))) {
+		++count;
+	      }
+	    }
+	  } else {
+	    for (int i = 0; i < A.numRows(); ++i) {
+	      if (STS::isnaninf (A(i,j))) {
+		++count;
+	      }
+	    }
+	  }
+	}
+	return count;
+      }
+
+      void
+      ensureUpperTriangular (const mat_type& A,
+			     const char* const matrixName) const
+      {
+	magnitude_type frobNormSquared = STM::zero();
+	int count = 0;
+
+	for (int j = 0; j < A.numCols(); ++j) {
+	  for (int i = j+1; i < A.numRows(); ++i) {
+	    const magnitude_type A_ij_mag = STS::magnitude (A(i,j));
+	    frobNormSquared += A_ij_mag * A_ij_mag;
+	    if (A_ij_mag != STM::zero()) {
+	      ++count;
+	    }
+	  }
+	}
+	TEST_FOR_EXCEPTION(count != 0, std::invalid_argument,
+			   "The " << A.numRows() << " x " << A.numCols() 
+			   << " matrix " << matrixName << " is not upper "
+			   "triangular; " << count << " entr" 
+			   << (count != 1 ? "ies" : "y") << " below the "
+			   "diagonal are nonzero.  The Frobenius norm of the "
+			   "lower triangle is " 
+			   << STM::squareroot (frobNormSquared) << ".");
+      }
+
+      /// \brief Ensure that the matrix A is at least minNumRows by
+      ///   minNumCols.
+      /// 
+      /// If A has fewer rows than minNumRows, or fewer columns than
+      /// minNumCols, this method throws an informative exception.
+      ///
+      /// \param A [in] The matrix whose dimensions to check.
+      /// \param matrixName [in] Name of the matrix; used to make the
+      ///   exception message more informative.
+      /// \param minNumRows [in] Minimum number of rows allowed in A.
+      /// \param minNumCols [in] Minimum number of columns allowed in A.
+      void
+      ensureMinimumDimensions (const mat_type& A, 
+			       const char* const matrixName,
+			       const int minNumRows, 
+			       const int minNumCols) const
+      {
+	TEST_FOR_EXCEPTION(A.numRows() < minNumRows || A.numCols() < minNumCols,
+			   std::invalid_argument,
+			   "The matrix " << matrixName << " is " << A.numRows() 
+			   << " x " << A.numCols() << ", and therefore does not "
+			   "satisfy the minimum dimensions " << minNumRows 
+			   << " x " << minNumCols << ".");
+      }
+
+      /// \brief Ensure that the matrix A is exactly numRows by numCols.
+      /// 
+      /// If A has a different number of rows than numRows, or a
+      /// different number of columns than numCols, this method throws
+      /// an informative exception.
+      ///
+      /// \param A [in] The matrix whose dimensions to check.
+      /// \param matrixName [in] Name of the matrix; used to make the
+      ///   exception message more informative.
+      /// \param numRows [in] Number of rows that A must have.
+      /// \param numCols [in] Number of columns that A must have.
+      void
+      ensureEqualDimensions (const mat_type& A, 
+			     const char* const matrixName,
+			     const int numRows, 
+			     const int numCols) const
+      {
+	TEST_FOR_EXCEPTION(A.numRows() != numRows || A.numCols() != numCols,
+			   std::invalid_argument,
+			   "The matrix " << matrixName << " is supposed to be " 
+			   << numRows << " x " << numCols << ", but is " 
+			   << A.numRows() << " x " << A.numCols() << " instead.");
+      }
+
     };
 
     /// \enum ERobustness
@@ -604,8 +801,19 @@ namespace Belos {
       typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
 
     public:
-      //! Constructor.
-      ProjectedLeastSquaresSolver () {}
+      /// \brief Constructor.
+      ///
+      /// \param defaultRobustness [in] Default robustness level for
+      ///   operations like triangular solves.  For example, at a low
+      ///   robustness level, triangular solves might fail if the
+      ///   triangular matrix is singular or ill-conditioned in a
+      ///   particular way.  At a high robustness level, triangular
+      ///   solves will always succeed, but may only be solved in a
+      ///   least-squares sense.
+      ///
+      ProjectedLeastSquaresSolver (const ERobustness defaultRobustness=ROBUSTNESS_NONE) :
+	defaultRobustness_ (defaultRobustness) 
+      {}
 
       /// \brief Update column curCol of the projected least-squares problem.
       ///
@@ -703,12 +911,43 @@ namespace Belos {
 				    const mat_type& R,
 				    const mat_type& B, 
 				    const int startCol, 
-				    const int endCol) 
+				    const int endCol,
+				    const ERobustness robustness)
       {
-	caGmresUpdateUpperHessenbergImpl (problem.H, R, B, startCol, endCol);
+	caGmresUpdateUpperHessenbergSlowImpl (problem.H, R, B, 
+					      startCol, endCol, robustness);
+      }
+      
+      /// \brief Update CA-GMRES' upper Hessenberg matrix.
+      ///
+      /// This method is just like its six-argument overload, except
+      /// that it uses the default robustness level.
+      void
+      caGmresUpdateUpperHessenberg (ProjectedLeastSquaresProblem<Scalar>& problem,
+				    const mat_type& R,
+				    const mat_type& B, 
+				    const int startCol, 
+				    const int endCol)
+      {
+	caGmresUpdateUpperHessenberg (problem, R, B, startCol, endCol, 
+				      defaultRobustness_);
       }
 
-      /// \brief Solve the square upper triangular linear system(s) \f$RX = B\f$.
+
+      /// \brief Solve the given square upper triangular linear system(s).
+      ///
+      /// This method does the same thing as the five-argument
+      /// overload, but uses the default robustness level.
+      std::pair<int, bool>
+      solveUpperTriangularSystem (Teuchos::ESide side,
+				  mat_type& X,
+				  const mat_type& R,
+				  const mat_type& B)
+      {
+	return solveUpperTriangularSystem (side, X, R, B, defaultRobustness_);
+      }
+
+      /// \brief Solve the given square upper triangular linear system(s).
       ///
       /// This method uses the number of columns of R as the dimension
       /// of the square matrix.  R may have more rows than columns,
@@ -720,7 +959,7 @@ namespace Belos {
 				  mat_type& X,
 				  const mat_type& R,
 				  const mat_type& B,
-				  const ERobustness robustness=ROBUSTNESS_NONE)
+				  const ERobustness robustness)
       {
 	TEST_FOR_EXCEPTION(X.numRows() != B.numRows(), std::invalid_argument,
 			   "The output X and right-hand side B have different "
@@ -749,6 +988,18 @@ namespace Belos {
 
       /// \brief Solve square upper triangular linear system(s) in place.
       ///
+      /// This method does the same thing as its four-argument
+      /// overload, but uses the default robustness level.
+      std::pair<int, bool>
+      solveUpperTriangularSystemInPlace (Teuchos::ESide side,
+					 mat_type& X,
+					 const mat_type& R)
+      {
+	return solveUpperTriangularSystemInPlace (side, X, R, defaultRobustness_);
+      }
+
+      /// \brief Solve square upper triangular linear system(s) in place.
+      ///
       /// Assuming that the right-hand side(s) is/are already stored
       /// in X, compute (in Matlab notation) X := R \ B or B / R,
       /// depending on the \c side input argument.
@@ -762,11 +1013,12 @@ namespace Belos {
       solveUpperTriangularSystemInPlace (Teuchos::ESide side,
 					 mat_type& X,
 					 const mat_type& R,
-					 const ERobustness robustness=ROBUSTNESS_NONE) 
+					 const ERobustness robustness)
       {
 	using Teuchos::Array;
 	using Teuchos::LEFT_SIDE;
 	using Teuchos::RIGHT_SIDE;
+	LocalDenseMatrixOps<Scalar> ops;
 
 	const int M = R.numRows();
 	const int N = R.numCols();
@@ -794,34 +1046,22 @@ namespace Belos {
 			   std::invalid_argument,
 			   "Invalid robustness value " << robustness << ".");
 
-	// In robust mode, scan for Infs and NaNs.
-	// Only look at the upper triangle of R_view.
-	if (robustness != ROBUSTNESS_NONE) {
-	  int count = 0;
-	  for (int j = 0; j < N; ++j) {
-	    for (int i = 0; i <= j; ++i) {
-	      if (STS::isnaninf (R_view(i,j))) {
-		++count;
-	      }
-	    }
-	  }
+	// In robust mode, scan the matrix and right-hand side(s) for
+	// Infs and NaNs.  Only look at the upper triangle of the
+	// matrix.
+	if (robustness > ROBUSTNESS_NONE) {
+	  int count = ops.infNaNCount (R_view, true);
 	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
 			     "There " << (count != 1 ? "are" : "is")
 			     << " " << count << " Inf or NaN entr"
 			     << (count != 1 ? "ies" : "y") 
 			     << " in the upper triangle of R.");
-	  count = 0;
-	  for (int j = 0; j < X.numCols(); ++j) {
-	    for (int i = 0; i < X.numRows(); ++i) {
-	      if (STS::isnaninf (X(i,j))) {
-		++count;
-	      }
-	    }
-	  }
+	  count = ops.infNaNCount (X, false);
 	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
 			     "There " << (count != 1 ? "are" : "is")
 			     << " " << count << " Inf or NaN entr"
-			     << (count != 1 ? "ies" : "y") << " in X.");
+			     << (count != 1 ? "ies" : "y") << " in the "
+			     "right-hand side(s) X.");
 	}
 
 	// Pair of values to return from this method.
@@ -900,7 +1140,20 @@ namespace Belos {
       solveLeastSquaresUsingSVD (mat_type& A, mat_type& X)
       {
 	using Teuchos::Array;
+	LocalDenseMatrixOps<Scalar> ops;
 
+	if (defaultRobustness_ > ROBUSTNESS_SOME) {
+	  int count = ops.infNaNCount (A);
+	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+			     "solveLeastSquaresUsingSVD: The input matrix A "
+			     "contains " << count << "Inf and/or NaN entr" 
+			     << (count != 1 ? "ies" : "y") << ".");
+	  count = ops.infNaNCount (X);
+	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+			     "solveLeastSquaresUsingSVD: The input matrix X "
+			     "contains " << count << "Inf and/or NaN entr" 
+			     << (count != 1 ? "ies" : "y") << ".");
+	}
 	const int N = std::min (A.numRows(), A.numCols());
 	lapack_type lapack;
 
@@ -1247,7 +1500,112 @@ namespace Belos {
 	}
       }
 
+      /// \brief Test upper triangular solves.
+      ///
+      /// \param out [out] Stream to which this method writes output.
+      /// \param testProblemSize [in] Dimension (number of rows and
+      ///   columns) of the upper triangular matrices tested by this
+      ///   method.
+      /// \param robustness [in] Robustness level of the upper
+      ///   triangular solves.
+      /// \param verbose [in] Whether to print more verbose output.
+      ///
+      /// \return True if test passed, else false. 
+      ///
+      /// \warning Before calling this routine, seed the random number
+      ///   generator via Teuchos::ScalarTraits<Scalar>::seedrandom
+      ///   (seed).
+      bool 
+      testTriangularSolves (std::ostream& out,
+			    const int testProblemSize,
+			    const ERobustness robustness,
+			    const bool verbose=false)
+      {
+	using std::endl;
+	typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
+
+	Teuchos::oblackholestream blackHole;
+	std::ostream& verboseOut = verbose ? out : blackHole;
+
+	verboseOut << "Testing upper triangular solves" << endl;
+	//
+	// Construct an upper triangular linear system to solve.
+	//
+	verboseOut << "-- Generating test matrix" << endl;
+	const int N = testProblemSize;
+	mat_type R (N, N);
+	// Fill the upper triangle of R with random numbers.
+	for (int j = 0; j < N; ++j) {
+	  for (int i = 0; i <= j; ++i) {
+	    R(i,j) = STS::random ();
+	  }
+	}
+	// Compute the Frobenius norm of R for later use.
+	const magnitude_type R_norm = R.normFrobenius ();
+	// Fill the right-hand side B with random numbers.
+	mat_type B (N, 1);
+	B.random ();
+	// Compute the Frobenius norm of B for later use.
+	const magnitude_type B_norm = B.normFrobenius ();
+
+	// Save a copy of the original upper triangular system.
+	mat_type R_copy (Teuchos::Copy, R, N, N);
+	mat_type B_copy (Teuchos::Copy, B, N, 1);
+
+	// Solution vector.
+	mat_type X (N, 1);
+
+	// Solve RX = B.
+	verboseOut << "-- Solving RX=B" << endl;
+	Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
+	(void) solver.solveUpperTriangularSystem (Teuchos::LEFT_SIDE, 
+						  X, R, B, robustness);
+	// Test the residual error.
+	mat_type Resid (N, 1);
+	Resid.assign (B_copy);
+	Belos::details::LocalDenseMatrixOps<scalar_type> ops;
+	ops.matMatMult (STS::one(), Resid, -STS::one(), R_copy, X);
+	verboseOut << "---- ||R*X - B||_F = " << Resid.normFrobenius() << endl;
+	verboseOut << "---- ||R||_F ||X||_F + ||B||_F = " 
+		   << (R_norm * X.normFrobenius() + B_norm)
+		   << endl;
+
+	// Restore R and B.
+	R.assign (R_copy);
+	B.assign (B_copy);
+
+	// 
+	// Set up a right-side test problem: YR = B^*.
+	//
+	mat_type Y (1, N);
+	mat_type B_star (1, N);
+	ops.conjugateTranspose (B_star, B);
+	mat_type B_star_copy (1, N);
+	B_star_copy.assign (B_star);
+	// Solve YR = B^*.
+	verboseOut << "-- Solving YR=B^*" << endl;
+	(void) solver.solveUpperTriangularSystem (Teuchos::RIGHT_SIDE, 
+						  Y, R, B_star, robustness);
+	// Test the residual error.
+	mat_type Resid2 (1, N);
+	Resid2.assign (B_star_copy);
+	ops.matMatMult (STS::one(), Resid2, -STS::one(), Y, R_copy);
+	verboseOut << "---- ||Y*R - B^*||_F = " << Resid2.normFrobenius() << endl;
+	verboseOut << "---- ||Y||_F ||R||_F + ||B^*||_F = " 
+		   << (Y.normFrobenius() * R_norm + B_norm)
+		   << endl;
+
+	// FIXME (mfh 14 Oct 2011) The test always "passes" for now;
+	// you have to inspect the output in order to see whether it
+	// succeeded.  We really should fix the above to use the
+	// infinity-norm bounds in Higham's book for triangular
+	// solves.  That would automate the test.
+	return true;
+      }
+
     private:
+      //! Default robustness level, for things like triangular solves.
+      ERobustness defaultRobustness_;
 
       /// \brief Update CA-GMRES' upper Hessenberg matrix.
       ///
@@ -1274,18 +1632,26 @@ namespace Belos {
       ///   zero-based index range of columns of H to update.
       /// \param endCol [in] [startCol, endCol] is an inclusive
       ///   zero-based index range of columns of H to update.
+      /// \param robustness [in] Robustness level for operations
+      ///   like triangular solves.
       void
       caGmresUpdateUpperHessenbergImpl (mat_type& H, 
 					const mat_type& R, 
 					const mat_type& B, 
 					const int startCol, 
-					const int endCol) 
+					const int endCol,
+					const ERobustness robustness)
       {
 	using Teuchos::Copy;
+	using Teuchos::RIGHT_SIDE;
 	using Teuchos::View;
+	using std::endl;
+	const int S = endCol - startCol + 1;
+	const bool debug = true;
 
+	Teuchos::oblackholestream blackHole;
+	std::ostream& err = debug ? std::cerr : blackHole;
 	LocalDenseMatrixOps<Scalar> ops;
-	const ERobustness robustness = ROBUSTNESS_LOTS;
 
 	TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
 			   "startCol = " << startCol << " < 0.");
@@ -1293,56 +1659,52 @@ namespace Belos {
 			   "startCol = " << startCol << " > endCol = " 
 			   << endCol << ".");
 	if (startCol == 0) {
+	  err << "---- First outer iteration of CA-GMRES: S = " << S << endl;
 	  //
 	  // This case only gets exercised on the first (outer)
-	  // iteration of CA-GMRES, if the caller is including the
-	  // first basis vector in the QR factorization.  We don't
-	  // recommend implementing CA-GMRES in this way, because it
-	  // requires a QR factorization that computes an R factor
-	  // with a nonnegative diagonal.  LAPACK's QR factorization
-	  // and algorithms built from it may compute an R factor
-	  // whose diagonal has mixed signs.
+	  // iteration of CA-GMRES.
 	  //
-	  const int numCols = endCol - startCol + 1;
-	  const mat_type R_underline (View, R, numCols+1, numCols+1);
-	  const mat_type B_view (View, B, numCols+1, numCols);
-	  const mat_type R_view (View, R, numCols, numCols);
-	  mat_type H_view (View, H, numCols+1, numCols);
+	  const mat_type R_underline (View, R, S+1, S+1);
+	  const mat_type B_view (View, B, S+1, S);
+	  const mat_type R_view (View, R, S, S);
+	  mat_type H_view (View, H, S+1, S);
 
 	  // H_view := R_underline * B_view.
 	  ops.matMatMult (STS::zero(), H_view, STS::one(), R_underline, B_view);
 
 	  // H_view : = H_view / R_view.
-	  //ops.rightUpperTriSolve (H_view, R_view);
-	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
-						    H_view, R_view, robustness);
+	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_view, 
+						    R_view, robustness);
 	} else {
-	  const int M = startCol+1;
+	  const int M = startCol;
 	  // The new basis vectors don't include the starting vector
 	  // for the matrix powers kernel.
-	  const int S = endCol - startCol + 1;
+	  err << "---- Later outer iteration of CA-GMRES: M = " 
+	      << M << ", S = " << S << endl;
 
-	  const mat_type R_km1k_underline (View, R, M, S+1, 0, startCol-1);
-	  const mat_type R_km1k (View, R, M, S, 0, startCol-1);	  
-	  const mat_type R_k_underline (View, R, S+1, S+1, M, startCol-1);
-	  const mat_type R_k (View, R, S, S, M, startCol-1);
-
+	  const mat_type R_km1k_underline (View, R, M-1, S+1, 0, M-1);
+	  const mat_type R_km1k (View, R, M-1, S, 0, M-1);
+	  const mat_type R_k_underline (View, R, S+1, S+1, M-1, M-1);
+	  const mat_type R_k (View, R, S, S, M-1, M-1);
+	  TEST_FOR_EXCEPTION(R(0,0) != STS::one(), std::invalid_argument, 
+			     "The input matrix R must have 1 as its upper left "
+			     "entry, but instead, R(0,0) = " << R(0,0) << ".");
 	  const mat_type B_k_underline (View, B, S+1, S);
-	  const mat_type H_km1 (View, H, M, M, 0, 0);
-	  mat_type H_km1k (View, H, M, S, 0, startCol);
-	  mat_type H_k_underline (View, H, S+1, S, M, startCol);
+	  const mat_type H_km1 (View, H, M-1, M-1, 0, 0);
+	  mat_type H_km1k (View, H, M-1, S, 0, M-1);
+	  mat_type H_k_underline (View, H, S+1, S, M-1, M-1);
 
-	  // We need R_km1k / R_k (which is M x S) for two different
-	  // things.  Let's precompute it, storing the result in the
-	  // temporary storage matrix Temp.
-	  mat_type Temp (M, S);
+	  // We need R_km1k / R_k (which is M-1 by S) for two
+	  // different things.  Let's precompute it, storing the
+	  // result in the temporary storage matrix Temp.
+	  mat_type Temp (M-1, S);
 	  Temp.assign (R_km1k); // the solve overwrites its input
-	  //ops.rightUpperTriSolve (Temp, R_k);
-	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
-						    Temp, R_k, robustness);
-	  // Keep a copy of the last row of (R_km1k / R_k).  
-	  // The last row is 1 x S.
-	  mat_type lastRow (Copy, Temp, 1, S, M-1, 0);
+	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, Temp,
+						    R_k, robustness);
+	  // Keep a copy of the last row of (R_km1k / R_k).  The last
+	  // row is 1 x S.  Since indices are zero-based and (R_km1k /
+	  // R_k) is M-1 by S, the index of the last row is M-2.
+	  mat_type lastRow (Copy, Temp, 1, S, M-2, 0);
 	  //
 	  // Compute H_km1k := R_km1k_underline * B_k_underline / R_k - 
 	  //   H_km1 * (R_km1k / R_k).
@@ -1357,9 +1719,8 @@ namespace Belos {
 	  ops.matMatMult (STS::zero(), Temp, 
 			  STS::one(), R_km1k_underline, B_k_underline);
 	  // 3. Temp := Temp / R_k.
-	  //ops.rightUpperTriSolve (Temp, R_k);
-	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
-						    Temp, R_k, robustness);
+	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, Temp,
+						    R_k, robustness);
 	  // 4. H_km1k := H_km1k + Temp.  This finishes the
 	  //    computation of H_km1k.
 	  ops.matAdd (H_km1k, Temp);
@@ -1371,10 +1732,8 @@ namespace Belos {
 	  ops.matMatMult (STS::zero(), H_k_underline, 
 			  STS::one(), R_k_underline, B_k_underline);
 	  // 2. H_k_underline := H_k_underline / R_k.
-	  //ops.rightUpperTriSolve (H_k_underline, R_k);
-	  (void) solveUpperTriangularSystemInPlace (Teuchos::RIGHT_SIDE,
-						    H_k_underline, R_k,
-						    robustness);
+	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_k_underline,
+						    R_k, robustness);
 	  ops.matScale (lastRow, H(M+1,M));
 	  mat_type H_k_view (View, H_k_underline, 1, S);
 	  // 3. H_k_underline(1, 1:S) := H_k_underline(1, 1:S) - lastRow.
@@ -1382,6 +1741,85 @@ namespace Belos {
 	  ops.matSub (H_k_view, lastRow);
 	}
       }
+
+
+      void
+      caGmresUpdateUpperHessenbergSlowImpl (mat_type& H, 
+					    const mat_type& R, 
+					    const mat_type& B, 
+					    const int startCol, 
+					    const int endCol,
+					    const ERobustness robustness)
+      {
+	using Teuchos::Copy;
+	using Teuchos::View;
+	using Teuchos::RIGHT_SIDE;
+	using std::endl;
+
+	const bool debug = true;
+	Teuchos::oblackholestream blackHole;
+	std::ostream& err = debug ? std::cerr : blackHole;
+
+	if (startCol == 0) {
+	  caGmresUpdateUpperHessenbergImpl (H, R, B, startCol, endCol, robustness);
+	} else {
+	  TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
+			     "startCol = " << startCol << " < 0.");
+	  TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
+			     "startCol = " << startCol << " < endCol = " 
+			     << endCol << ".");
+	  const int M = startCol+1;
+	  const int S = endCol - startCol + 1;
+	  LocalDenseMatrixOps<Scalar> ops;
+
+	  mat_type H_copy (M+S, M+S-1);
+	  {
+	    mat_type H_km1_underline (View, H, M, M-1);
+	    mat_type H_target (View, H_copy, M, M-1);
+	    H_target.assign (H_km1_underline);
+	    
+	    mat_type B_k_underline (View, B, S+1, S);
+	    err << "---- Change of basis matrix: " << endl;
+	    print (err, B_k_underline, "     ");
+	    mat_type H_target2 (View, H_copy, S+1, S, M-1, M-1);
+	    H_target2.assign (B_k_underline);
+
+	    err << "---- Middle matrix: " << endl;
+	    print (err, H_copy, "     ");
+	  }
+
+	  mat_type R_copy (M+S, M+S);
+	  {
+	    for (int j = 0; j < M-1; ++j) {
+	      R_copy (j,j) = STS::one();
+	    }
+	    mat_type R_km1k_underline (Copy, R, M-1, S+1, 0, M-1);
+	    for (int i = 0; i < M-1; ++i) {
+	      R_km1k_underline (i, 0) = STS::zero();
+	    }
+	    mat_type R_k_underline (Copy, R, S+1, S+1, M-1, M-1);
+	    R_k_underline(0,0) = STS::one();
+	    for (int i = 1; i < S+1; ++i) {
+	      R_k_underline (i, 0) = STS::zero();
+	    }
+	    mat_type R_target (View, R_copy, M-1, S+1, 0, M-1);
+	    R_target.assign (R_km1k_underline);
+	    mat_type R_target2 (View, R_copy, S+1, S+1, M-1, M-1);
+	    R_target2.assign (R_k_underline);
+
+	    err << "---- R_copy: " << endl;
+	    print (err, R_copy, "     ");
+	  }
+
+	  mat_type Big_R (View, R_copy, M+S-1, M+S-1);
+	  solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_copy, 
+					     Big_R, robustness);
+	  mat_type Big_R_underline (View, R_copy, M+S, M+S);
+	  mat_type H_out (View, H, M+S, M+S-1);
+	  ops.matMatMult (STS::zero(), H_out, STS::one(), Big_R_underline, H_copy);
+	}
+      }
+
 
       /// \brief Solve the projected least-squares problem, assuming Givens rotations updates.
       ///
@@ -1401,7 +1839,7 @@ namespace Belos {
 	mat_type y_view (Teuchos::View, y, numRows-1, y.numCols());
 
 	(void) solveUpperTriangularSystem (Teuchos::LEFT_SIDE, y_view, 
-					   R_view, z_view);
+					   R_view, z_view, defaultRobustness_);
       }
 
       //! Make a random projected least-squares problem.
@@ -1910,7 +2348,6 @@ namespace Belos {
 	return lastResult;
       }
 
-    private:
       /// \brief Update columns [startCol,endCol] of the projected least-squares problem.
       ///
       /// This method implements a "left-looking panel QR factorization"
