@@ -98,7 +98,7 @@ Int KLU_tsolve
     /* ---------------------------------------------------------------------- */
 
 #ifdef KLU_ENABLE_OPENMP
-#pragma omp parallel for private(tid, nr, k, block, k1, k2, nk, pend, p, s, i, Bz, X, x, offik, rs)
+#pragma omp parallel for schedule(guided) private(tid, nr, k, block, k1, k2, nk, pend, p, s, i, Bz, X, x, offik, rs) 
 #endif
     for (chunk = 0 ; chunk < nrhs ; chunk += 4)
     {
