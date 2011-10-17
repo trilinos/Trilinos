@@ -59,9 +59,10 @@
       vector3d tmp(x, y, z);
       return tmp *= -1.0;
     }
-    vector3d& operator+= (const vector3d& from);
-    vector3d& operator-= (const vector3d& from);
-    vector3d& operator*= (double scalar);
+
+    inline vector3d& operator+= (const vector3d& from);
+    inline vector3d& operator-= (const vector3d& from);
+    inline vector3d& operator*= (double scalar);
 
     vector3d& operator/= (double scalar)
     {
@@ -98,7 +99,7 @@
 
       return mylength;
     }
-    vector3d cross (const vector3d& from) const;
+    inline vector3d cross (const vector3d& from) const;
 
     static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3) {
       vector3d v32 = v3;   v32 -= v2;
