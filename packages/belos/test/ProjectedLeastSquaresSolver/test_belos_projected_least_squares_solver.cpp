@@ -50,14 +50,18 @@ int
 main (int argc, char *argv[]) 
 {
   using Belos::details::ERobustness;
+  using Belos::details::ProjectedLeastSquaresSolver;
   using Belos::details::robustnessEnumToString;
   using Belos::details::robustnessStringToEnum;
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
+
   typedef double scalar_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   Teuchos::oblackholestream blackHole;
   // Initialize MPI using Teuchos wrappers, if Trilinos was built with
@@ -95,21 +99,20 @@ main (int argc, char *argv[])
     out << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
-
-  const ERobustness robustness = 
-    robustnessStringToEnum (robustnessLevel);
-
   // Verbose output stream only prints on MPI Proc 0, and only in
   // verbose mode.
   std::ostream& verboseOut = verbose ? out : blackHole;
 
   // Robustness level for triangular solves.
+  const ERobustness robustness = robustnessStringToEnum (robustnessLevel);
   verboseOut << "-- Robustness level: " << robustnessLevel << endl;
 
   bool success = true; // Innocent until proven guilty.
 
+  // Seed the pseudorandom number generator with the same seed each
+  // time, to ensure repeatable results.
   STS::seedrandom (0);
-  Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
+  ProjectedLeastSquaresSolver<scalar_type> solver (out, robustness);
 
   if (testGivensRotations) {
     solver.testGivensRotations (verboseOut);

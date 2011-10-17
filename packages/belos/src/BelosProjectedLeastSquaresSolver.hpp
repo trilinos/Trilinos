@@ -59,6 +59,7 @@ namespace Belos {
 
   /// \namespace details
   /// \brief Namespace containing implementation details of Belos solvers.
+  /// \author Mark Hoemmen
   /// 
   /// \warning Belos users should not use anything in this namespace.
   ///   They should not even assume that the namespace will continue to
@@ -601,30 +602,121 @@ namespace Belos {
 	return count;
       }
 
-      void
-      ensureUpperTriangular (const mat_type& A,
-			     const char* const matrixName) const
+      /// \brief Is the matrix A upper triangular / trapezoidal?
+      ///
+      /// \return (is upper triangular?, (squared Frobenius norm of
+      ///   strict lower triangle, squared Frobenius norm of the whole
+      ///   matrix))
+      std::pair<bool, std::pair<magnitude_type, magnitude_type> >
+      isUpperTriangular (const mat_type& A) const
       {
-	magnitude_type frobNormSquared = STM::zero();
+	magnitude_type lowerTri = STM::zero();
+	magnitude_type upperTri = STM::zero();
 	int count = 0;
 
 	for (int j = 0; j < A.numCols(); ++j) {
+	  // Compute the Frobenius norm of the upper triangle /
+	  // trapezoid of A.  The second clause of the loop upper
+	  // bound is for matrices with fewer rows than columns.
+	  for (int i = 0; i <= j && i < A.numRows(); ++i) {
+	    const magnitude_type A_ij_mag = STS::magnitude (A(i,j));
+	    upperTri += A_ij_mag * A_ij_mag;
+	  }
+	  // Scan the strict lower triangle / trapezoid of A.
 	  for (int i = j+1; i < A.numRows(); ++i) {
 	    const magnitude_type A_ij_mag = STS::magnitude (A(i,j));
-	    frobNormSquared += A_ij_mag * A_ij_mag;
+	    lowerTri += A_ij_mag * A_ij_mag;
 	    if (A_ij_mag != STM::zero()) {
 	      ++count;
 	    }
 	  }
 	}
-	TEST_FOR_EXCEPTION(count != 0, std::invalid_argument,
+	return std::make_pair (count == 0, std::make_pair (lowerTri, upperTri));
+      }
+
+
+      /// \brief Is the matrix A upper Hessenberg?
+      ///
+      /// \return (is upper Hessenberg?, (squared Frobenius norm of
+      ///   the part of A that should be zero if A is upper
+      ///   Hessenberg, squared Frobenius norm of the whole matrix))
+      std::pair<bool, std::pair<magnitude_type, magnitude_type> >
+      isUpperHessenberg (const mat_type& A) const
+      {
+	magnitude_type lower = STM::zero();
+	magnitude_type upper = STM::zero();
+	int count = 0;
+
+	for (int j = 0; j < A.numCols(); ++j) {
+	  // Compute the Frobenius norm of the upper Hessenberg part
+	  // of A.  The second clause of the loop upper bound is for
+	  // matrices with fewer rows than columns.
+	  for (int i = 0; i <= j+1 && i < A.numRows(); ++i) {
+	    const magnitude_type A_ij_mag = STS::magnitude (A(i,j));
+	    upper += A_ij_mag * A_ij_mag;
+	  }
+	  // Scan the strict lower part of A.
+	  for (int i = j+2; i < A.numRows(); ++i) {
+	    const magnitude_type A_ij_mag = STS::magnitude (A(i,j));
+	    lower += A_ij_mag * A_ij_mag;
+	    if (A_ij_mag != STM::zero()) {
+	      ++count;
+	    }
+	  }
+	}
+	return std::make_pair (count == 0, std::make_pair (lower, upper));
+      }
+
+      void
+      ensureUpperTriangular (const mat_type& A,
+			     const char* const matrixName) const
+      {
+	std::pair<bool, std::pair<magnitude_type, magnitude_type> > result = 
+	  isUpperTriangular (A);
+
+	TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
 			   "The " << A.numRows() << " x " << A.numCols() 
 			   << " matrix " << matrixName << " is not upper "
-			   "triangular; " << count << " entr" 
-			   << (count != 1 ? "ies" : "y") << " below the "
-			   "diagonal are nonzero.  The Frobenius norm of the "
-			   "lower triangle is " 
-			   << STM::squareroot (frobNormSquared) << ".");
+			   "triangular.  ||tril(A)||_F = " 
+			   << result.second.first << " and ||A||_F = " 
+			   << result.second.second << ".");
+      }
+
+      void
+      ensureUpperHessenberg (const mat_type& A,
+			     const char* const matrixName) const
+      {
+	std::pair<bool, std::pair<magnitude_type, magnitude_type> > result = 
+	  isUpperHessenberg (A);
+
+	TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
+			   "The " << A.numRows() << " x " << A.numCols() 
+			   << " matrix " << matrixName << " is not upper "
+			   "triangular.  ||tril(A(2:end, :))||_F = " 
+			   << result.second.first << " and ||A||_F = " 
+			   << result.second.second << ".");
+      }
+
+      void
+      ensureUpperHessenberg (const mat_type& A,
+			     const char* const matrixName,
+			     const magnitude_type relativeTolerance) const
+      {
+	std::pair<bool, std::pair<magnitude_type, magnitude_type> > result = 
+	  isUpperHessenberg (A);
+
+	if (result.first) {
+	  // Mollified relative departure from upper Hessenberg.
+	  const magnitude_type err = (result.second.second == STM::zero() ? 
+				      result.second.first : 
+				      result.second.first / result.second.second);
+	  TEST_FOR_EXCEPTION(err > relativeTolerance, std::invalid_argument,
+			     "The " << A.numRows() << " x " << A.numCols() 
+			     << " matrix " << matrixName << " is not upper "
+			     "triangular.  ||tril(A(2:end, :))||_F "
+			     << (result.second.second == STM::zero() ? "" : " / ||A||_F")
+			     << " = " << err << " > " << relativeTolerance << ".");
+	}
       }
 
       /// \brief Ensure that the matrix A is at least minNumRows by
@@ -803,6 +895,10 @@ namespace Belos {
     public:
       /// \brief Constructor.
       ///
+      /// \param warnStream [out] Stream to which to output warnings.
+      ///   Set to a Teuchos::oblackholestream if you don't want to
+      ///   display warnings.
+      ///
       /// \param defaultRobustness [in] Default robustness level for
       ///   operations like triangular solves.  For example, at a low
       ///   robustness level, triangular solves might fail if the
@@ -811,7 +907,9 @@ namespace Belos {
       ///   solves will always succeed, but may only be solved in a
       ///   least-squares sense.
       ///
-      ProjectedLeastSquaresSolver (const ERobustness defaultRobustness=ROBUSTNESS_NONE) :
+      ProjectedLeastSquaresSolver (std::ostream& warnStream,
+				   const ERobustness defaultRobustness=ROBUSTNESS_NONE) :
+	warn_ (warnStream),
 	defaultRobustness_ (defaultRobustness) 
       {}
 
@@ -1016,6 +1114,7 @@ namespace Belos {
 					 const ERobustness robustness)
       {
 	using Teuchos::Array;
+	using Teuchos::Copy;
 	using Teuchos::LEFT_SIDE;
 	using Teuchos::RIGHT_SIDE;
 	LocalDenseMatrixOps<Scalar> ops;
@@ -1069,55 +1168,76 @@ namespace Belos {
 	bool foundRankDeficiency = false;
 
 	// Solve for X.
+	blas_type blas;
+
 	if (robustness == ROBUSTNESS_NONE) {
-	  blas_type blas;
-	  // Fast BLAS triangular solve.  No rank checks.
+	  // Fast triangular solve using the BLAS' _TRSM.  This does
+	  // no checking for rank deficiency.
 	  blas.TRSM(side, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 		    Teuchos::NON_UNIT_DIAG, X.numRows(), X.numCols(), 
 		    STS::one(), R.values(), R.stride(), 
 		    X.values(), X.stride());
 	} else if (robustness < ROBUSTNESS_INVALID) {
-	  //
-	  // Find the minimum-norm solution to the least-squares
-	  // problem $\min_x \|RX - B\|_2$, using the singular value
-	  // decomposition (SVD).
-	  //
-	  LocalDenseMatrixOps<Scalar> ops;
-	  if (side == LEFT_SIDE) {
-	    // _GELSS overwrites its matrix input, so make a copy.
-	    mat_type R_copy (Teuchos::Copy, R_view, N, N);
+	  // Save a copy of X, since X contains the right-hand side on
+	  // input.
+	  mat_type B (Copy, X, X.numRows(), X.numCols());
 
-	    // Zero out the lower triangle of R_copy, since the
-	    // mat_type constructor copies all the entries, not just
-	    // the upper triangle.  _GELSS will read all the entries
-	    // of the input matrix.
-	    ops.zeroOutStrictLowerTriangle (R_copy);
+	  // Fast triangular solve using the BLAS' _TRSM.  This does
+	  // no checking for rank deficiency.
+	  blas.TRSM(side, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+		    Teuchos::NON_UNIT_DIAG, X.numRows(), X.numCols(), 
+		    STS::one(), R.values(), R.stride(), 
+		    X.values(), X.stride());
 
-	    // Solve the least-squares problem.
-	    rank = solveLeastSquaresUsingSVD (R_copy, X);
-	  } else {
-	    //
-	    // If solving with R on the right-hand side, the interface
-	    // requires that instead of solving $\min \|XR - B\|_2$,
-	    // we have to solve $\min \|R^* X^* - B^*\|_2$.  We
-	    // compute (conjugate) transposes in newly allocated
-	    // temporary matrices X_star resp. R_star.  (B is already
-	    // in X and _GELSS overwrites its input vector X with the
-	    // solution.)
-	    //
-	    mat_type X_star (X.numCols(), X.numRows());
-	    ops.conjugateTranspose (X_star, X);
-	    mat_type R_star (N, N); // Filled with zeros automatically.
-	    ops.conjugateTransposeOfUpperTriangular (R_star, R);
+	  // Check for Infs or NaNs in X.  If there are any, then
+	  // assume that TRSM failed, and use a more robust algorithm.
+	  if (ops.infNaNCount (X, false) != 0) {
 
-	    // Solve the least-squares problem.
-	    rank = solveLeastSquaresUsingSVD (R_star, X_star);
+	    warn_ << "Upper triangular solve: Found Infs and/or NaNs in the "
+	      "solution after using the fast algorithm.  Retrying using a more "
+	      "robust algorithm." << std::endl;
 
-	    // Copy the transpose of X_star back into X.
-	    ops.conjugateTranspose (X, X_star);
-	  }
-	  if (rank < N) {
-	    foundRankDeficiency = true;
+	    // Restore X from the copy.
+	    X.assign (B);
+
+	    // Find the minimum-norm solution to the least-squares
+	    // problem $\min_x \|RX - B\|_2$, using the singular value
+	    // decomposition (SVD).
+	    LocalDenseMatrixOps<Scalar> ops;
+	    if (side == LEFT_SIDE) {
+	      // _GELSS overwrites its matrix input, so make a copy.
+	      mat_type R_copy (Teuchos::Copy, R_view, N, N);
+
+	      // Zero out the lower triangle of R_copy, since the
+	      // mat_type constructor copies all the entries, not just
+	      // the upper triangle.  _GELSS will read all the entries
+	      // of the input matrix.
+	      ops.zeroOutStrictLowerTriangle (R_copy);
+
+	      // Solve the least-squares problem.
+	      rank = solveLeastSquaresUsingSVD (R_copy, X);
+	    } else {
+	      // If solving with R on the right-hand side, the interface
+	      // requires that instead of solving $\min \|XR - B\|_2$,
+	      // we have to solve $\min \|R^* X^* - B^*\|_2$.  We
+	      // compute (conjugate) transposes in newly allocated
+	      // temporary matrices X_star resp. R_star.  (B is already
+	      // in X and _GELSS overwrites its input vector X with the
+	      // solution.)
+	      mat_type X_star (X.numCols(), X.numRows());
+	      ops.conjugateTranspose (X_star, X);
+	      mat_type R_star (N, N); // Filled with zeros automatically.
+	      ops.conjugateTransposeOfUpperTriangular (R_star, R);
+
+	      // Solve the least-squares problem.
+	      rank = solveLeastSquaresUsingSVD (R_star, X_star);
+
+	      // Copy the transpose of X_star back into X.
+	      ops.conjugateTranspose (X, X_star);
+	    }
+	    if (rank < N) {
+	      foundRankDeficiency = true;
+	    }
 	  }
 	} else {
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
@@ -1521,6 +1641,8 @@ namespace Belos {
 			    const ERobustness robustness,
 			    const bool verbose=false)
       {
+	using Teuchos::LEFT_SIDE;
+	using Teuchos::RIGHT_SIDE;
 	using std::endl;
 	typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
 
@@ -1557,9 +1679,8 @@ namespace Belos {
 
 	// Solve RX = B.
 	verboseOut << "-- Solving RX=B" << endl;
-	Belos::details::ProjectedLeastSquaresSolver<scalar_type> solver;
-	(void) solver.solveUpperTriangularSystem (Teuchos::LEFT_SIDE, 
-						  X, R, B, robustness);
+	// We're ignoring the return values for now.
+	(void) solveUpperTriangularSystem (LEFT_SIDE, X, R, B, robustness);
 	// Test the residual error.
 	mat_type Resid (N, 1);
 	Resid.assign (B_copy);
@@ -1584,8 +1705,8 @@ namespace Belos {
 	B_star_copy.assign (B_star);
 	// Solve YR = B^*.
 	verboseOut << "-- Solving YR=B^*" << endl;
-	(void) solver.solveUpperTriangularSystem (Teuchos::RIGHT_SIDE, 
-						  Y, R, B_star, robustness);
+	// We're ignoring the return values for now.
+	(void) solveUpperTriangularSystem (RIGHT_SIDE, Y, R, B_star, robustness);
 	// Test the residual error.
 	mat_type Resid2 (1, N);
 	Resid2.assign (B_star_copy);
@@ -1604,6 +1725,9 @@ namespace Belos {
       }
 
     private:
+      //! Stream to which to output warnings.
+      std::ostream& warn_;
+
       //! Default robustness level, for things like triangular solves.
       ERobustness defaultRobustness_;
 

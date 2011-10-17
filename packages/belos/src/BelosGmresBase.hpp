@@ -1355,7 +1355,7 @@ namespace Belos {
     } else {
       dbg << endl;
 
-      details::ProjectedLeastSquaresSolver<Scalar> solver;
+      details::ProjectedLeastSquaresSolver<Scalar> solver (outMan_->stream(Warnings));
       const magnitude_type newAbsoluteResidualNorm = 
 	solver.updateColumns (*projectedProblem_, startCol, endCol);
 
