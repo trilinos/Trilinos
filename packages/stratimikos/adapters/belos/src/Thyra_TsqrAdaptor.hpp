@@ -131,7 +131,8 @@ namespace Thyra {
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    dense_matrix_type& R)
+		    dense_matrix_type& R,
+		    const bool forceNonnegativeDiagonal=false);
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
