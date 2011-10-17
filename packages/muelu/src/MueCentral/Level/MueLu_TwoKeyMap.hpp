@@ -39,26 +39,12 @@ namespace MueLu {
 
       template<class Value> 
       void Set(const string & ename, const FactoryBase* factory, const Value & evalue) {
-        SubMap & subMap = map_[ename]; // operator [] will add an entry in map_ for key 'ename' if it does not exists
-        
-        // if (subMap.count(factory) != 0)
-        //  GetOStream(Warnings0, 0) << "Warning: MueLu:TwoKeyMap::Set(): Value already exist for key (" << ename << ", " << factory << ")" << std::endl;
-        
-        subMap[factory] = Teuchos::ParameterEntry(evalue); // operator [] will add an entry in subMap for key 'factory' if it does not exists
+        SetEntry(ename, factory, Teuchos::ParameterEntry(evalue));
       }
 
       template<class Value>
       const Value & Get(const string & ename, const FactoryBase* factory) const {
-
-        // Get SubMap
-        TEST_FOR_EXCEPTION(map_.count(ename) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << ename << ", *) does not exist.");
-        const SubMap & subMap = map_.find(ename)->second;
-
-        // Get ParameterEntry
-        TEST_FOR_EXCEPTION(subMap.count(factory) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << ename << ", " << factory << ") does not exist.");
-        const Teuchos::ParameterEntry & entry = subMap.find(factory)->second;
-
-        return Teuchos::getValue<Value>(entry);
+        return Teuchos::getValue<Value>(GetEntry(ename, factory));
       }
 
       template<class Value>
@@ -81,15 +67,7 @@ namespace MueLu {
       }
 
       std::string GetType(const string & ename, const FactoryBase* factory) const {
-        // Get SubMap
-        TEST_FOR_EXCEPTION(map_.count(ename) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << ename << ", *) does not exist.");
-        const SubMap & subMap = map_.find(ename)->second;
-
-        // Get ParameterEntry
-        TEST_FOR_EXCEPTION(subMap.count(factory) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << ename << ", " << factory << ") does not exist.");
-        const Teuchos::ParameterEntry & entry = subMap.find(factory)->second;
-
-        return entry.getAny(true).typeName();
+        return GetEntry(ename, factory).getAny(true).typeName();
       }
 
       bool IsKey(const string & ename, const FactoryBase* factory) const {
@@ -148,6 +126,32 @@ namespace MueLu {
         }
       }
 
+    private:
+
+      void SetEntry(const string & ename, const FactoryBase* factory, const Teuchos::ParameterEntry & entry) {
+        SubMap & subMap = map_[ename]; // operator [] will add an entry in map_ for key 'ename' if it does not exists
+        
+        // if (subMap.count(factory) != 0)
+        //  GetOStream(Warnings0, 0) << "Warning: MueLu:TwoKeyMap::Set(): Value already exist for key (" << ename << ", " << factory << ")" << std::endl;
+        
+        subMap[factory] = entry; // operator [] will add an entry in subMap for key 'factory' if it does not exists
+      }
+
+       const Teuchos::ParameterEntry & GetEntry(const string & ename, const FactoryBase* factory) const {
+        // Get SubMap
+        TEST_FOR_EXCEPTION(map_.count(ename) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::GetEntry(): Key (" << ename << ", *) does not exist.");
+        const SubMap & subMap = map_.find(ename)->second;
+        
+        // Get ParameterEntry
+        TEST_FOR_EXCEPTION(subMap.count(factory) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::GetEntry(): Key (" << ename << ", " << factory << ") does not exist.");
+        return subMap.find(factory)->second;
+      }
+
+      // Not used
+      Teuchos::ParameterEntry & GetEntry(const string & ename, const FactoryBase* factory) {
+        return const_cast<Teuchos::ParameterEntry &>(const_cast<const TwoKeyMap &>(*this).GetEntry(ename, factory)); // Valid cast. See Effective C++, Item 3.
+      }
+
     };
 
   } // namespace UTILS
@@ -169,3 +173,6 @@ namespace MueLu {
 // - Can we use an std::map<... , Tuple<counter, factory*> >  instead?
 // - Can be more generic (template type for key1, key2)
 // - Current implementation allows to get efficiently the list of entries sharing Key1. Is it useful? Is it useful to switch Key1 and Key2?
+//
+// - if templated Key1,Key2, Value, we can remove Set/Get with template and only keep SetEntry/GetEntry (as public methods)
+//   we can then deal with ParameterEntry wrapper in Needs.
