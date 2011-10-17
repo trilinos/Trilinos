@@ -73,13 +73,12 @@
 
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Epetra {
 
   /// \class TsqrAdaptor
-  /// \brief Adaptor from Epetra_MultiVector to TSQR
+  /// \brief Adaptor from Epetra_MultiVector to TSQR.
+  /// \author Mark Hoemmen
   ///
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
@@ -97,7 +96,6 @@ namespace Epetra {
   /// \note Epetra objects live in the global namespace.  TSQR
   ///   requires support for namespaces, so it's acceptable for us to
   ///   create an "Epetra" namespace to contain this adaptor.
-  ///
   class TsqrAdaptor {
   public:
     typedef Epetra_MultiVector MV;
@@ -202,29 +200,39 @@ namespace Epetra {
       pNode_ = Teuchos::rcp (new Kokkos::SerialNode (emptyParams));
     }
 
-    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    /// \brief Compute QR factorization [Q,R] = qr(A,0).
     ///
+    /// \param A [in/out] On input: the multivector to factor.
+    ///   Overwritten with garbage on output.
+    ///
+    /// \param Q [out] On output: the (explicitly stored) Q factor in
+    ///   the QR factorization of the (input) multivector A.
+    ///
+    /// \param R [out] On output: the R factor in the QR factorization
+    ///   of the (input) multivector A.
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
+    ///
+    /// \warning Currently, this method only works if A and Q have the
+    ///   same communicator and row distribution ("map," in Petra
+    ///   terms) as those of the multivector given to this TsqrAdaptor
+    ///   instance's constructor.  Otherwise, the result of this
+    ///   method is undefined.
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    dense_matrix_type& R)
+		    dense_matrix_type& R,
+		    const bool forceNonnegativeDiagonal=false)
     {
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
+      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
-      // FIXME (mfh 25 Oct 2010) Check Epetra_Comm objects in A and Q
-      // to make sure they are the same communicator as the one we are
-      // using in our dist_tsqr_type implementation.
-      //
-      // mfh 11 Jan 2011: Actually we should also check whether the
-      // Epetra_Map objects are compatible.  Fixing this at the TSQR
-      // implementation level likely will require reimplementing TSQR
-      // with Map awareness.  This will be troublesome if we want to
-      // maintain compatibility with both Epetra and Tpetra.
-      // Alternately, we can check for compatibility of maps at the
-      // adaptor or even the (Mat)OrthoManager levels.
       KMV A_view = getNonConstView (A);
       KMV Q_view = getNonConstView (Q);
-      pTsqr_->factorExplicit (A_view, Q_view, R, false);
+      pTsqr_->factorExplicit (A_view, Q_view, R, false,
+			      forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition

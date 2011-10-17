@@ -42,7 +42,6 @@
 /// \file BelosTsqrOrthoManagerImpl.hpp
 /// \brief Orthogonalization manager back end based on TSQR
 ///
-
 #ifndef __BelosTsqrOrthoManagerImpl_hpp
 #define __BelosTsqrOrthoManagerImpl_hpp
 
@@ -57,13 +56,12 @@
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 #include <algorithm>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Belos {
 
   /// \class TsqrOrthoError
   /// \brief TsqrOrthoManager(Impl) error
+  /// \author Mark Hoemmen
   class TsqrOrthoError : public OrthoError
   {
   public: 
@@ -420,12 +418,15 @@ namespace Belos {
     magnitude_type relativeRankTolerance() const { return relativeRankTolerance_; }
 
   private:
-    //! Configuration parameters
+    //! Configuration parameters.
     Teuchos::RCP<const Teuchos::ParameterList> params_;
-    //! Label for timers (if timers are used)
+
+    //! Label for timers (if timers are used).
     std::string label_;
-    //! Interface to TSQR implementation
+
+    //! Interface to TSQR implementation.
     tsqr_adaptor_ptr tsqrAdaptor_;
+
     /// \brief Scratch space for TSQR
     ///
     /// Allocated lazily; only allocated if normalize() is called.  We
@@ -437,18 +438,32 @@ namespace Belos {
     //! Machine precision for Scalar
     magnitude_type eps_;
 
-    /// Whether to fill in null space vectors (after normalization)
-    /// with random data.
+    /// \brief Whether to fill null space vectors with random data.
+    ///
+    /// If so, this happens after normalization.
     bool randomizeNullSpace_;
+
     //! Whether to reorthogonalize blocks at all.
     bool reorthogonalizeBlocks_;
-    /// Whether to throw an exception when an orthogonalization fault
-    /// occurs.  Recovery is possible, but expensive.
+
+    /// \brief Whether to throw an exception on a orthogonalization fault.
+    ///
+    /// Recovery is possible, but expensive.
     bool throwOnReorthogFault_;
+
     //! Relative reorthogonalization threshold in Block Gram-Schmidt.
     magnitude_type blockReorthogThreshold_;
+
     //! Relative tolerance for measuring the numerical rank of a matrix.
     magnitude_type relativeRankTolerance_;
+
+    /// \brief Force R factor of normalization to have a nonnegative diagonal.
+    ///
+    /// If true, then (if necessary) do extra work (modifying both the
+    /// Q and R factors) in the normalization step in order to force
+    /// the R factor of the current block to have a nonnegative
+    /// diagonal.
+    bool forceNonnegativeDiagonal_;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     //! Timer for all orthogonalization operations
@@ -580,6 +595,8 @@ namespace Belos {
 	getMagParamWithDefault (params, "blockReorthogThreshold");
       relativeRankTolerance_ = 
 	getMagParamWithDefault (params, "relativeRankTolerance");
+      forceNonnegativeDiagonal_ = 
+	getBoolParamWithDefault (params, "forceNonnegativeDiagonal");
     }
 
     /// \brief Initialize the TSQR adaptor and scratch space
@@ -817,14 +834,15 @@ namespace Belos {
 	     getDefaultParameters() : 
 	     Teuchos::rcp_const_cast<const Teuchos::ParameterList> (Teuchos::parameterList (*params))),
     label_ (label),
-    tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
-    Q_ (Teuchos::null),             // Scratch space for normalize()
-    eps_ (SCTM::eps()),             // Machine precision
-    randomizeNullSpace_ (true),     // Set later by readParams()
-    reorthogonalizeBlocks_ (true),  // Set later by readParams()
-    throwOnReorthogFault_ (false),  // Set later by readParams()
-    blockReorthogThreshold_ (0),    // Set later by readParams()
-    relativeRankTolerance_ (0)      // Set later by readParams()
+    tsqrAdaptor_ (Teuchos::null),     // Initialized on demand
+    Q_ (Teuchos::null),               // Scratch space for normalize()
+    eps_ (SCTM::eps()),               // Machine precision
+    randomizeNullSpace_ (true),       // Set later by readParams()
+    reorthogonalizeBlocks_ (true),    // Set later by readParams()
+    throwOnReorthogFault_ (false),    // Set later by readParams()
+    blockReorthogThreshold_ (0),      // Set later by readParams()
+    relativeRankTolerance_ (0),       // Set later by readParams()
+    forceNonnegativeDiagonal_ (false) // Set later by readParams()
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerOrtho_ = makeTimer (label, "All orthogonalization");
@@ -1442,13 +1460,17 @@ namespace Belos {
     params->set ("relativeRankTolerance", defaultRelativeRankTolerance,
 		 "Relative tolerance to determine the numerical rank of a "
 		 "block when normalizing.");
-    const bool defaultThrowOnReorthogFault = true;
     // See Stewart's 2008 paper on block Gram-Schmidt for a
     // definition of "orthogonalization fault."
+    const bool defaultThrowOnReorthogFault = true;
     params->set ("throwOnReorthogFault", defaultThrowOnReorthogFault,
 		 "Whether to throw an exception if an orthogonalization "
 		 "fault occurs.  This only matters if reorthogonalization "
 		 "is enabled (reorthogonalizeBlocks==true).");
+    const bool defaultForceNonnegativeDiagonal = false;
+    params->set ("forceNonnegativeDiagonal", defaultForceNonnegativeDiagonal,
+		 "Whether to force the R factor produced by the normalization "
+		 "step to have a nonnegative diagonal.");
     return params;
   }
 
@@ -1497,7 +1519,7 @@ namespace Belos {
       // This call only computes the QR factorization X = Q B.
       // It doesn't compute the rank of X.  That comes from
       // revealRank() below.
-      tsqrAdaptor_->factorExplicit (X, Q, B);
+      tsqrAdaptor_->factorExplicit (X, Q, B, forceNonnegativeDiagonal_);
       // This call will only modify *B if *B on input is not of full
       // numerical rank.
       rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);

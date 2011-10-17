@@ -49,6 +49,7 @@ namespace TSQR {
 
   /// \class Tsqr
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
+  /// \author Mark Hoemmen
   /// 
   /// This class computes the parallel Tall Skinny QR (TSQR)
   /// factorization of a matrix distributed in block rows across one
@@ -196,12 +197,17 @@ namespace TSQR {
     ///   (on input) and Q (on output) are stored contiguously.  If
     ///   you don't know what this means, set it to false.
     ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
     template<class NodeType>
     void
     factorExplicit (Kokkos::MultiVector<Scalar, NodeType>& A,
 		    Kokkos::MultiVector<Scalar, NodeType>& Q,
 		    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
-		    const bool contiguousCacheBlocks)
+		    const bool contiguousCacheBlocks,
+		    const bool forceNonnegativeDiagonal=false)
     {
       using Teuchos::asSafe;
       typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
@@ -224,39 +230,32 @@ namespace TSQR {
       const LocalOrdinal Q_stride = asSafe<LocalOrdinal> (Q.getStride());
 
       // Sanity checks for matrix dimensions
-      if (A_numRows < A_numCols)
-	{
-	  std::ostringstream os;
-	  os << "In Tsqr::factorExplicit: input matrix A has " << A_numRows 
-	     << " local rows, and " << A_numCols << " columns.  The input "
-	    "matrix must have at least as many rows on each processor as "
-	    "there are columns.";
-	  throw std::invalid_argument(os.str());
-	}
-      else if (A_numRows != Q_numRows)
-	{
-	  std::ostringstream os;
-	  os << "In Tsqr::factorExplicit: input matrix A and output matrix Q "
-	    "must have the same number of rows.  A has " << A_numRows << " rows"
-	    " and Q has " << Q_numRows << " rows.";
-	  throw std::invalid_argument(os.str());
-	}
-      else if (R.numRows() < R.numCols())
-	{
-	  std::ostringstream os;
-	  os << "In Tsqr::factorExplicit: output matrix R must have at least "
-	    "as many rows as columns.  R has " << R.numRows() << " rows and "
-	     << R.numCols() << " columns.";
-	  throw std::invalid_argument(os.str());
-	}
-      else if (A_numCols != R.numCols())
-	{
-	  std::ostringstream os;
-	  os << "In Tsqr::factorExplicit: input matrix A and output matrix R "
-	    "must have the same number of columns.  A has " << A_numCols 
-	     << " columns and R has " << R.numCols() << " columns.";
-	  throw std::invalid_argument(os.str());
-	}
+      if (A_numRows < A_numCols) {
+	std::ostringstream os;
+	os << "In Tsqr::factorExplicit: input matrix A has " << A_numRows 
+	   << " local rows, and " << A_numCols << " columns.  The input "
+	  "matrix must have at least as many rows on each processor as "
+	  "there are columns.";
+	throw std::invalid_argument(os.str());
+      } else if (A_numRows != Q_numRows) {
+	std::ostringstream os;
+	os << "In Tsqr::factorExplicit: input matrix A and output matrix Q "
+	  "must have the same number of rows.  A has " << A_numRows << " rows"
+	  " and Q has " << Q_numRows << " rows.";
+	throw std::invalid_argument(os.str());
+      } else if (R.numRows() < R.numCols()) {
+	std::ostringstream os;
+	os << "In Tsqr::factorExplicit: output matrix R must have at least "
+	  "as many rows as columns.  R has " << R.numRows() << " rows and "
+	   << R.numCols() << " columns.";
+	throw std::invalid_argument(os.str());
+      } else if (A_numCols != R.numCols()) {
+	std::ostringstream os;
+	os << "In Tsqr::factorExplicit: input matrix A and output matrix R "
+	  "must have the same number of columns.  A has " << A_numCols 
+	   << " columns and R has " << R.numCols() << " columns.";
+	throw std::invalid_argument(os.str());
+      }
 
       // Check for quick exit, based on matrix dimensions
       if (Q_numCols == 0)
@@ -265,10 +264,10 @@ namespace TSQR {
       // Hold on to nonconst views of A and Q.  This will make TSQR
       // correct (if perhaps inefficient) for all possible Kokkos Node
       // types, even GPU nodes.
-      Teuchos::ArrayRCP< scalar_type > A_ptr = A.getValuesNonConst();
-      Teuchos::ArrayRCP< scalar_type > Q_ptr = Q.getValuesNonConst();
+      Teuchos::ArrayRCP<scalar_type> A_ptr = A.getValuesNonConst();
+      Teuchos::ArrayRCP<scalar_type> Q_ptr = Q.getValuesNonConst();
 
-      R.putScalar (Scalar(0));
+      R.putScalar (STS::zero());
       NodeOutput nodeResults = 
 	nodeTsqr_->factor (A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
 			   R.values(), R.stride(), contiguousCacheBlocks);
@@ -281,26 +280,35 @@ namespace TSQR {
 			      Q_ptr.getRawPtr(), Q_stride);
       matview_type Q_top_block = 
 	nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
-      if (Q_top_block.nrows() < R.numCols())
-	{
-	  std::ostringstream os;
-	  os << "The top block of Q has too few rows.  This means that the "
-	     << "the intranode TSQR implementation has a bug in its top_block"
-	     << "() method.  The top block should have at least " << R.numCols()
-	     << " rows, but instead has only " << Q_top_block.ncols() 
-	     << " rows.";
-	  throw std::logic_error (os.str());
-	}
+      if (Q_top_block.nrows() < R.numCols()) {
+	std::ostringstream os;
+	os << "The top block of Q has too few rows.  This means that the "
+	   << "the intranode TSQR implementation has a bug in its top_block"
+	   << "() method.  The top block should have at least " << R.numCols()
+	   << " rows, but instead has only " << Q_top_block.ncols() 
+	   << " rows.";
+	throw std::logic_error (os.str());
+      }
       {
 	matview_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(), 
 			    Q_top_block.lda());
 	matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-	distTsqr_->factorExplicit (R_view, Q_top);
+	distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
       nodeTsqr_->apply (ApplyType::NoTranspose, 
 			A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
 			nodeResults, Q_numCols, Q_ptr.getRawPtr(), Q_stride,
 			contiguousCacheBlocks);
+
+      // If necessary, force the R factor to have a nonnegative diagonal.
+      if (forceNonnegativeDiagonal && 
+	  ! QR_produces_R_factor_with_nonnegative_diagonal()) {
+	details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
+	matview_type Q_mine (Q_numRows, Q_numCols, Q_ptr.getRawPtr(), Q_stride);
+	matview_type R_mine (R.numRows(), R.numCols(), R.values(), R.stride());
+	forcer.force (Q_mine, R_mine);
+      }
+
       // "Commit" the changes to the multivector.
       A_ptr = Teuchos::null;
       Q_ptr = Teuchos::null;
@@ -360,7 +368,7 @@ namespace TSQR {
 	    const bool contiguousCacheBlocks = false)
     {
       MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
-      R_view.fill (Scalar(0));
+      R_view.fill (STS::zero());
       NodeOutput nodeResults = 
 	nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local, 
 			  R_view.get(), R_view.lda(), 
