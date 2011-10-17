@@ -1,8 +1,7 @@
 #ifndef MUELU_NEEDS_HPP
 #define MUELU_NEEDS_HPP
 
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_ParameterEntry.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -33,8 +32,10 @@ namespace MueLu {
 
   private:
 
-    UTILS::TwoKeyMap countTable_; //<! Stores number of outstanding requests for a need.
-    UTILS::TwoKeyMap dataTable_;  //<! Stores data associated with a need.
+    UTILS::TwoKeyMap<std::string, const FactoryBase*, int>                     countTable_; //<! Stores number of outstanding requests for a need.
+    UTILS::TwoKeyMap<std::string, const FactoryBase*, Teuchos::ParameterEntry> dataTable_;  //<! Stores data associated with a need.
+
+    //TODO: Key1 = const std::string?
 
   public:
 
@@ -52,12 +53,14 @@ namespace MueLu {
     //! @brief functions for setting data in data storage
     //@{
 
+    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) {
+
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string & ename, const T & entry, const FactoryBase* factory) {
       // Store entry only if data have been requested (or IsKeep)
       if (IsRequested(ename, factory)) {
-        dataTable_.Set(ename, factory, entry);
+        dataTable_.Set(ename, factory, Teuchos::ParameterEntry(entry));
       }
     } // Set
 
@@ -74,7 +77,7 @@ namespace MueLu {
         countTable_.Set(ename, factory, 0);
 
       // Increment counter
-      int currentCount = countTable_.Get<int>(ename, factory);
+      int currentCount = countTable_.Get(ename, factory);
       if (currentCount != -1) { // if counter not disabled
         countTable_.Set(ename, factory, ++currentCount);
       }
@@ -87,7 +90,7 @@ namespace MueLu {
       TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Release(): " + ename + " not found. Do a request first.");
 
       // Decrement reference counter
-      int currentCount = countTable_.Get<int>(ename, factory);
+      int currentCount = countTable_.Get(ename, factory);
       if (currentCount != -1 && currentCount != 0) { // if counter not disabled
         countTable_.Set(ename, factory, --currentCount);
       }
@@ -111,7 +114,7 @@ namespace MueLu {
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
       TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
-      return dataTable_.Get<T>(ename, factory);
+      return Teuchos::getValue<T>(dataTable_.Get(ename, factory));
     }
 
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
@@ -135,7 +138,7 @@ namespace MueLu {
     //! returns false, if variable 'ename' is not requested or requested, but not for being permanently stored.
     bool IsKept(const std::string & ename, const FactoryBase* factory) const {
       if(IsRequested(ename, factory))
-        return countTable_.Get<int>(ename, factory) == -1;
+        return countTable_.Get(ename, factory) == -1;
       else
         return false;
     }
@@ -144,7 +147,7 @@ namespace MueLu {
     void Delete(const std::string & ename, const FactoryBase* factory) {
       if (!countTable_.IsKey(ename, factory)) return; // data not available? TODO: Exception ??
 
-      if (countTable_.Get<int>(ename, factory) != -1) {
+      if (countTable_.Get(ename, factory) != -1) {
         GetOStream(Errors, 0) << "Needs::Delete(): This method is intended to be used when the automatic garbage collector is disabled. Use Release() instead to decrement the reference counter!" << std::endl;
       }
 
@@ -168,7 +171,7 @@ namespace MueLu {
     // (if a factory is called, at least one ename of the factory is requested but maybe not all of them)
     // Note2: this tells nothing about whether the data actually exists.
     bool IsRequested(const std::string & ename, const FactoryBase* factory) const {
-      TEST_FOR_EXCEPTION(countTable_.IsKey(ename, factory) && (countTable_.Get<int>(ename, factory) == 0), Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+      TEST_FOR_EXCEPTION(countTable_.IsKey(ename, factory) && (countTable_.Get(ename, factory) == 0), Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
       return countTable_.IsKey(ename, factory);
     }
 
@@ -189,7 +192,7 @@ namespace MueLu {
     bool IsAvailableFactory(const FactoryBase* factory) {
       std::vector<std::string> ekeys = dataTable_.GetKeyList();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const FactoryBase*> ehandles = dataTable_.GetFactoryList(*it);
+        std::vector<const FactoryBase*> ehandles = dataTable_.GetKey2List(*it);
         for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
           if (*kt == factory) // factory is generating factory of requested variable '*it'
             return true;
@@ -203,7 +206,7 @@ namespace MueLu {
     int NumRequests(const std::string & ename, const FactoryBase* factory) const {
       //FIXME should we return 0 instead of throwing an exception?
       TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found in countTable_");
-      return countTable_.Get<int>(ename, factory);
+      return countTable_.Get(ename, factory);
     }
 
     //! @name Helper functions
@@ -215,11 +218,11 @@ namespace MueLu {
     }
 
     std::vector<const FactoryBase*> RequestedFactories(const std::string & ename) const {
-      return countTable_.GetFactoryList(ename);
+      return countTable_.GetKey2List(ename);
     }
 
-    std::string GetType(const std::string & ename, const FactoryBase* fac) const {
-      return dataTable_.GetType(ename, fac);
+    std::string GetType(const std::string & ename, const FactoryBase* factory) const {
+      return dataTable_.Get(ename, factory).getAny(true).typeName();
     }
 
     //@}
@@ -240,14 +243,14 @@ namespace MueLu {
 
       std::vector<std::string> ekeys = countTable_.GetKeyList();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
-        std::vector<const FactoryBase*> ehandles = countTable_.GetFactoryList(*it);
+        std::vector<const FactoryBase*> ehandles = countTable_.GetKey2List(*it);
         for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
           outputter.outputField(*it);                    // variable name
           outputter.outputField(*kt);                    // factory ptr          
-          int reqcount = countTable_.Get<int>(*it, *kt); // request counter
+          int reqcount = countTable_.Get(*it, *kt); // request counter
           outputter.outputField(reqcount);
           // variable type
-          std::string strType = dataTable_.GetType(*it, *kt);
+          std::string strType = GetType(*it, *kt);
           if (strType.find("Xpetra::Operator") != std::string::npos) {
             outputter.outputField("Operator" );
             outputter.outputField("");
@@ -256,15 +259,15 @@ namespace MueLu {
             outputter.outputField("");
           } else if (strType == "int") {
             outputter.outputField(strType);
-            int data = dataTable_.Get<int>(*it, *kt);
+            int data = Get<int>(*it, *kt);
             outputter.outputField(data);
           } else if (strType == "double") {
             outputter.outputField(strType);
-            double data = dataTable_.Get<double>(*it, *kt);
+            double data = Get<double>(*it, *kt);
             outputter.outputField(data);
           } else if (strType == "string") {
             outputter.outputField(strType);
-            std::string data = dataTable_.Get<std::string>(*it, *kt);
+            std::string data = Get<std::string>(*it, *kt);
             outputter.outputField(data);
           } else {
             outputter.outputField(strType);
