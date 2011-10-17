@@ -50,7 +50,7 @@
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
 #  define TEUCHOS_GET_STORED_STACKTRACE() \
-  (TestForException_getEnableStacktrace() \
+  (Teuchos::TestForException_getEnableStacktrace() \
     ? Teuchos::get_stored_stacktrace() + "\n" \
     : std::string() )
 #else

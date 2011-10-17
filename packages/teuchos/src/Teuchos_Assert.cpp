@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace {
@@ -64,19 +64,19 @@ bool& loc_enableStackTrace()
 } // namespace
 
 
-void TestForException_incrThrowNumber()
+void Teuchos::TestForException_incrThrowNumber()
 {
   ++throwNumber;
 }
 
 
-int TestForException_getThrowNumber()
+int Teuchos::TestForException_getThrowNumber()
 {
   return throwNumber;
 }
 
 
-void TestForException_break( const std::string &errorMsg )
+void Teuchos::TestForException_break( const std::string &errorMsg )
 {
   int break_on_me;
   break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
@@ -93,13 +93,13 @@ void TestForException_break( const std::string &errorMsg )
 }
 
 
-void TestForException_setEnableStacktrace(bool enableStrackTrace)
+void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
 {
   loc_enableStackTrace() = enableStrackTrace;
 }
 
 
-bool TestForException_getEnableStacktrace()
+bool Teuchos::TestForException_getEnableStacktrace()
 {
   return loc_enableStackTrace();
 }
