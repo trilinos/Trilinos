@@ -306,7 +306,7 @@ catch(const std::exception &except) { \
   std::ostream *l_out_ptr = (out_ptr); \
   if(l_out_ptr) { \
     *l_out_ptr \
-      << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except) \
+      << "\nThrowing an std::exception of type \'"<<Teuchos::typeName(except) \
       <<"\' with the error message: " \
       << except.what(); \
   } \
