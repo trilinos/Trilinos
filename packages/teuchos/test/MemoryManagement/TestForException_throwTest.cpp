@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     return parse_return;
   }
   
-  TestForException_setEnableStacktrace(enableStackTrace);
+  Teuchos::TestForException_setEnableStacktrace(enableStackTrace);
 
   bool success = true;
   
