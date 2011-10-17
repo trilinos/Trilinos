@@ -86,9 +86,6 @@ namespace Xpetra {
     //! Return the local index for a given global index.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return map_->LID(globalIndex); }
 
-    //! Return the global index for a given local index.
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return map_->GID(localIndex); }
-
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
 
@@ -123,7 +120,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Misc.
+    //! @name 
     //@{
 
     //! Get the Comm object for this Map.
@@ -134,7 +131,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Implements Teuchos::Describable
+    //! @name 
     //@{
 
     //! Return a simple one-line description of this object.
@@ -144,6 +141,13 @@ namespace Xpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
+
+    //! Return the global index for a given local index.  Note that this returns -1 if not found on this processor.  (This is different than Epetra's behavior!)
+    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const {
+      GlobalOrdinal gid = map_->GID(localIndex);
+      if (gid == map_->IndexBase()-1) return (-1);
+      else                            return (gid);
+     }
 
     //! @name Xpetra specific
     //@{

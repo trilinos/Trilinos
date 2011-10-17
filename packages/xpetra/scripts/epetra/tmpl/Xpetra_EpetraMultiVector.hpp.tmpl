@@ -38,6 +38,14 @@ namespace Xpetra {
 
 $TMPL_PUBLIC_FUNCTIONS
 
+    //! Set multi-vector values to random numbers.
+    void randomize(bool bUseXpetraImplementation = false) {
+        if(bUseXpetraImplementation)
+            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+        else
+            vec_->Random();
+    }
+
     //! Implements DistObject interface
     //{@
 
@@ -68,7 +76,10 @@ $TMPL_PUBLIC_FUNCTIONS
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
 
     //! Set seed for Random function.
-    void setSeed(unsigned int seed) { vec_->SetSeed(seed); }
+    void setSeed(unsigned int seed) {
+      Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
+      vec_->SetSeed(seed);
+    }
  
     //@}
     

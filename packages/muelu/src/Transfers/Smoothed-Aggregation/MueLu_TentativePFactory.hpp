@@ -192,7 +192,7 @@ namespace MueLu {
 
       Teuchos::ArrayView<GO> gidsForPtent(&globalIdsForPtent[0],globalIdsForPtent.size());
 
-      LO indexBase=fineA.getRowMap()->getIndexBase();
+      GO indexBase=fineA.getRowMap()->getIndexBase();
 
       RCP<const Map > rowMapForPtent =
         MapFactory::Build(
@@ -410,14 +410,14 @@ namespace MueLu {
             LO localRow = aggToRowMap[agg][j];
             //TODO is the use of Xpetra::global_size_t below correct?
             if (rowMapForPtent->getGlobalElement(localRow) == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid())
-              {
-                ghostQrows[qctr] = colMap()->getGlobalElement(localRow);
-                for (size_t k=0; k<NSDim; ++k) {
-                  ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
-                  ghostQvals[k][qctr] = localQR[k*myAggSize+j];
-                }
-                ++qctr;
-              } else {
+            {
+              ghostQrows[qctr] = colMap()->getGlobalElement(localRow);
+              for (size_t k=0; k<NSDim; ++k) {
+                ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
+                ghostQvals[k][qctr] = localQR[k*myAggSize+j];
+              }
+              ++qctr;
+            } else {
               LO nnz=0;
               for (size_t k=0; k<NSDim; ++k) {
                 try{

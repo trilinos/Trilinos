@@ -25,10 +25,18 @@ namespace Xpetra {
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
 
   public:
 
 $TMPL_PUBLIC_FUNCTIONS
+
+    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
+      XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
+      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
+      // mtx_->getLocalDiagCopy(toTpetra(diag)); 
+    }
 
     //! Implements DistObject interface
     //{@

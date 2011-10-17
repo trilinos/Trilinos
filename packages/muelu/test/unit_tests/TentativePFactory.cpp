@@ -221,8 +221,6 @@ namespace MueLuTests {
 
   } //MakeTentative
 
-#if 0
-  // crashing with Epetra in parallel
   TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_NonStandardMaps)
   {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -241,6 +239,7 @@ namespace MueLuTests {
     LocalOrdinal NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
     GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
+    assert(NumGlobalElements == nEle);
 
     GlobalOrdinal NumEntries;
     LocalOrdinal nnz=2;
@@ -253,17 +252,17 @@ namespace MueLuTests {
 
     for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
       {
-        if (MyGlobalElements[i] == 10)
+        if (MyGlobalElements[i] == nIndexBase)
           {
             // off-diagonal for first row
-            Indices[0] = 10;
+            Indices[0] = nIndexBase;
             NumEntries = 1;
             Values[0] = c;
           }
-        else if (MyGlobalElements[i] == 10 + NumGlobalElements - 1)
+        else if (MyGlobalElements[i] == nIndexBase + NumGlobalElements - 1)
           {
             // off-diagonal for last row
-            Indices[0] = 10 + NumGlobalElements - 2;
+            Indices[0] = nIndexBase + NumGlobalElements - 2;
             NumEntries = 1;
             Values[0] = b;
           }
@@ -362,7 +361,6 @@ namespace MueLuTests {
 
     std::cout << *epP1 << std::endl;*/
   }
-#endif
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
   TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_EpetraVsTpetra)

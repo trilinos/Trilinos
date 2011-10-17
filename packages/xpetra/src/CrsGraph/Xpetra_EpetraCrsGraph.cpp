@@ -60,7 +60,13 @@ namespace Xpetra {
 
   std::string EpetraCrsGraph::description() const { return "NotImplemented"; }
   
-  void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { } //TODO: throw exception or implements it
+  void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    out << "EpetraCrsGraph::describe : Warning, verbosity level is ignored by this method." << std::endl;
+    const Epetra_BlockMap rowmap = graph_->RowMap();
+    if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraph **\n\nrowmap" << std::endl;
+    rowmap.Print(out);
+    graph_->Print(out);
+  }
 
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph &g) {

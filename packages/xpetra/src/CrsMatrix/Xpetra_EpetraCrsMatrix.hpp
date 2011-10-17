@@ -98,7 +98,7 @@ namespace Xpetra {
     //! Returns the number of matrix rows owned on the calling node.
     size_t getNodeNumRows() const { return mtx_->NumMyRows(); }
 
-    //! Returns the number of matrix columns owned on the calling node.
+    //! Returns the number of columns connected to the locally owned rows of this matrix.
     size_t getNodeNumCols() const { return mtx_->NumMyCols(); }
 
     //! Returns the global number of entries in this matrix.
@@ -122,10 +122,10 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     size_t getNodeMaxNumRowEntries() const { return mtx_->MaxNumEntries(); }
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     bool isLocallyIndexed() const { return mtx_->IndicesAreLocal(); }
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
     bool isGloballyIndexed() const { return mtx_->IndicesAreGlobal(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.

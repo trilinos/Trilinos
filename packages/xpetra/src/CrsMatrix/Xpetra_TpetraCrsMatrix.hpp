@@ -99,7 +99,7 @@ namespace Xpetra {
     //! Returns the number of matrix rows owned on the calling node.
     size_t getNodeNumRows() const { return mtx_->getNodeNumRows(); }
 
-    //! Returns the number of matrix columns owned on the calling node.
+    //! Returns the number of columns connected to the locally owned rows of this matrix.
     size_t getNodeNumCols() const { return mtx_->getNodeNumCols(); }
 
     //! Returns the global number of entries in this matrix.
@@ -123,10 +123,10 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     size_t getNodeMaxNumRowEntries() const { return mtx_->getNodeMaxNumRowEntries(); }
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     bool isLocallyIndexed() const { return mtx_->isLocallyIndexed(); }
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
     bool isGloballyIndexed() const { return mtx_->isGloballyIndexed(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
@@ -140,13 +140,6 @@ namespace Xpetra {
 
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
-
-    //! Get a copy of the diagonal entries owned by this node, with local row idices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
-      XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
-      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
-      // mtx_->getLocalDiagCopy(toTpetra(diag)); 
-    }
 
     //@}
 
@@ -174,6 +167,13 @@ namespace Xpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { mtx_->describe(out, verbLevel); }
 
     //@}
+
+    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
+      XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
+      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
+      // mtx_->getLocalDiagCopy(toTpetra(diag)); 
+    }
 
     //! Implements DistObject interface
     //{@

@@ -81,14 +81,6 @@ namespace Xpetra {
     //! Initialize all values in a multi-vector with specified value.
     void putScalar(const Scalar &value) { vec_->putScalar(value); }
 
-    //! Set multi-vector values to random numbers.
-    void randomize(bool bUseXpetraImplementation = false) {
-        if(bUseXpetraImplementation)
-            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
-        else
-            vec_->randomize();
-    }
-
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
     void reduce() { vec_->reduce(); }
 
@@ -168,11 +160,7 @@ namespace Xpetra {
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { vec_->multiply(transA, transB, alpha, toTpetra(A), toTpetra(B), beta); }
 
-    //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
-    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis); // definition at the end of this file
-    //TODO: void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->elementWiseMultiply(scalarAB, toTpetra(A), toTpetra(B), scalarThis); }
-
-    //@} 
+    //@}
 
     //! @name Attribute access functions
     //@{
@@ -198,6 +186,18 @@ namespace Xpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { vec_->describe(out, verbLevel); }
 
     //@}
+
+    //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
+    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis); // definition at the end of this file
+    //TODO: void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->elementWiseMultiply(scalarAB, toTpetra(A), toTpetra(B), scalarThis); }
+
+    //! Set multi-vector values to random numbers.
+    void randomize(bool bUseXpetraImplementation = false) {
+        if(bUseXpetraImplementation)
+            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+        else
+            vec_->randomize();
+    }
 
     //{@
     // Implements DistObject interface
@@ -257,31 +257,6 @@ namespace Xpetra {
     
   }; // TpetraMultiVector class
 
-
-
-} // Xpetra namespace
-
-// Following header file inculsion is needed for the dynamic_cast to TpetraVector in elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
-// It is included here to avoid circular dependency between Vector and MultiVector
-// TODO: there is certainly a more elegant solution...
-#include "Xpetra_TpetraVector.hpp" 
-
-namespace Xpetra {
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
-    //TODO XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-    //TODO as an argument, hence the following typedef.
-    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
-    XPETRA_DYNAMIC_CAST(const tpv, A, tA, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
-    vec_->elementWiseMultiply(scalarAB, *tA.getTpetra_Vector(), *tB.getTpetra_MultiVector(), scalarThis); 
-  }
-
-} // Xpetra namespace
-
-namespace Xpetra {
-
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
@@ -297,6 +272,23 @@ namespace Xpetra {
       return *tX.getTpetra_MultiVector();
   }
   //
+} // Xpetra namespace
+
+// Following header file inculsion is needed for the dynamic_cast to TpetraVector in elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)
+// It is included here to avoid circular dependency between Vector and MultiVector
+// TODO: there is certainly a more elegant solution...
+#include "Xpetra_TpetraVector.hpp" 
+
+namespace Xpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
+    //TODO XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+    //TODO as an argument, hence the following typedef.
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
+    XPETRA_DYNAMIC_CAST(const tpv, A, tA, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
+    vec_->elementWiseMultiply(scalarAB, *tA.getTpetra_Vector(), *tB.getTpetra_MultiVector(), scalarThis); 
+  }
 
 } // Xpetra namespace
 

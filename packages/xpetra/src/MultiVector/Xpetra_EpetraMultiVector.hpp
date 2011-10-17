@@ -61,14 +61,6 @@ namespace Xpetra {
     //! Initialize all values in a multi-vector with specified value.
     void putScalar(const Scalar &value) { vec_->PutScalar(value); }
 
-    //! Set multi-vector values to random numbers.
-    void randomize(bool bUseXpetraImplementation = false) {
-        if (bUseXpetraImplementation)
-            Xpetra_randomize();
-        else
-            vec_->Random();
-    }
-
     //@}
 
     //! @name Data Copy and View get methods
@@ -151,6 +143,14 @@ namespace Xpetra {
 
     //@}
 
+    //! Set multi-vector values to random numbers.
+    void randomize(bool bUseXpetraImplementation = false) {
+        if(bUseXpetraImplementation)
+            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+        else
+            vec_->Random();
+    }
+
     //! Implements DistObject interface
     //{@
 
@@ -182,8 +182,8 @@ namespace Xpetra {
 
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {
-        Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
-        vec_->SetSeed(seed);
+      Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
+      vec_->SetSeed(seed);
     }
  
     //@}
