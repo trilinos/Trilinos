@@ -40,10 +40,10 @@
 /* use by SALSA.                                                            */
 /*--------------------------------------------------------------------------*/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "rf_salsa.h"
 #include "rf_comm.h"
@@ -74,6 +74,9 @@
 #endif
 
 extern void brdcst_command_info(void);
+#if defined(__STRICT_ANSI__)
+#include <getopt.h>
+#endif
 
 int main(int argc, char *argv[])
 {
