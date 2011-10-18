@@ -2199,7 +2199,7 @@ namespace Tpetra {
       const LocalOrdinal LINV = OrdinalTraits<LocalOrdinal>::invalid();
       size_t numLocalColGIDs = 0, numRemoteColGIDs = 0;
       //
-      // intitial: partitioning into local and remote
+      // initial: partitioning into local and remote
       Array<char> GIDisLocal(domainMap_->getNodeNumElements(),0);
       std::set<GlobalOrdinal> RemoteGIDSet;
       for (size_t r=0; r < nlrs; ++r) {

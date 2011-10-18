@@ -271,7 +271,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
 
 /*
  * This test was created at the request of Chris Seifert to verify
- * that some inexplicable behaviour in MueLue was not due to a faulty
+ * that some inexplicable behaviour in MueLu was not due to a faulty
  * assumption in the Matrix Matrix Multiply Kernel.
  * KLN 15/06/2011
  */
