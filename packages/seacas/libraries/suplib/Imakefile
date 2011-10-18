@@ -37,9 +37,11 @@ LIBDIR     = $(PLIBDIR)
 
 LIB = suplib
 
-INCLIST = argparse.inc
+INCLIST = argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h
 
-OBJSc  = addlog.o wildcmp.o
+OBJSC  = tokenize.o  GetLongOpt.o smart_assert.o timer.o to_string.o adler.o
+
+OBJSc  = addlog.o wildcmp.o add_to_log.o
 
 OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
          cknone.o ckwhol.o copint.o cpuifc.o cpyint.o cpylog.o \
@@ -71,6 +73,7 @@ OBJSf2 = ismax.o  ismin.o  wheneq.o
 OBJSf2 =
 #endif
 
+SRCSC  = ${OBJSC:.o=.C}
 SRCSc  = ${OBJSc:.o=.c}
 
 SRCSf1 = ${OBJSf1:.o=.f}
@@ -83,8 +86,8 @@ SRCS = $(SRCf1) $(SRCf2)
 OBJS = $(OBJSc) $(OBJSf1) $(OBJSf2)
 SRCS = $(SRCc) $(SRCf1) $(SRCf2)
 #else
-OBJS = $(OBJSc) $(OBJSf1) $(OBJSf2)
-SRCS = $(SRCc) $(SRCf1) $(SRCf2)
+OBJS = $(OBJSC) $(OBJSc) $(OBJSf1) $(OBJSf2)
+SRCS = $(SRCC)  $(SRCc)  $(SRCf1)  $(SRCf2)
 #endif
 
 NormalLibraryTarget($(LIB),$(OBJS))

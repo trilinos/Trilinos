@@ -25,12 +25,12 @@
 #include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>
 
+#include "add_to_log.h"
+
 #define OUTPUT std::cerr
 #define FOUTPUT std::cout
 
 // ========================================================================
-extern void add_to_log(const char *name, int elapsed);
-
 namespace {
   int file_info(const std::string& inpfile, const std::string& input_type,
 		SystemInterface& interface);

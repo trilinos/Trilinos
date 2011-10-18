@@ -42,10 +42,10 @@ CXXEXTRA_DEFINES = -LANG:std
 LOCAL_LDFLAGS = -LANG:std
 #endif
 
-LIBS = $(IOSS) $(NEMESIS) $(EXODUS) $(NETCDF) -lm
+LIBS = $(SUPLIB) $(IOSS) $(NEMESIS) $(EXODUS) $(NETCDF) -lm
 
-SRCS =	EJoin.C adler.C GetLongOpt.C smart_assert.C SystemInterface.C to_string.C add_to_log.C \
-	match_xyz.C index_sort.C vector3d.C tokenize.C mapping.C
+SRCS =	ejoin.C SystemInterface.C \
+	match_xyz.C index_sort.C vector3d.C mapping.C
 
 OBJS = $(SRCS:.C=.o)
 

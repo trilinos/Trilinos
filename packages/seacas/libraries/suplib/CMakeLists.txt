@@ -14,7 +14,10 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
+SET(HEADERS  argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
+
 SET(SOURCES
+	tokenize.C	  add_to_log.c      GetLongOpt.C      smart_assert.C    timer.C           to_string.C       adler.C
 	cpyrgt.f          dboelb.f          flush.f           locint.f          pltond.f
 	cpystr.f          dboess.f          argparse.f        gslibv.f          locrea.f          pltone.f
 	dberr.f           dboini.f          help.f            locstr.f          prterr.f
@@ -37,6 +40,7 @@ SET(SOURCES
 
 PACKAGE_ADD_LIBRARY(
 	suplib
+	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS supes
 )

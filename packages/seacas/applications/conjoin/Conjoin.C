@@ -56,6 +56,8 @@
 #include "adler.h"
 #include <sys/utsname.h>
 
+#include "add_to_log.h"
+
 namespace {
 template <typename T>
 bool approx_equal(T v1, T v2)
@@ -131,8 +133,7 @@ typedef GlobalElemMap::iterator GElemMapIter;
 #error "Requires exodusII version 4.68 or later"
 #endif
 
-extern void add_to_log(const char *name, int elapsed);
-extern double conjoin_timer();
+extern double seacas_timer();
 
 namespace {
   template <class  T>
@@ -379,7 +380,7 @@ int main(int argc, char* argv[])
   ExodusFile::close_all();
 
   time_t end_time = time(NULL);
-  add_to_log(argv[0], (int)(end_time-begin_time));
+  add_to_log(argv[0], end_time-begin_time);
   return (error);
   }
   catch (std::exception &e) {
@@ -470,7 +471,7 @@ int conjoin(SystemInterface &interface, T /* dummy */)
     local_mesh[p-1].timestepCount = i;
     t_min = t_min < times[0] ? t_min : times[0];
     if (!used) {
-      std::string part = "Part " + ToString(p) + ": ";
+      std::string part = "Part " + to_string(p) + ": ";
       part += interface.inputFiles_[p-1];
       std::cerr << "\nWARNING: " << part
 		<< " does not contain any time steps which will be used in conjoined file.\n";
@@ -689,7 +690,7 @@ int conjoin(SystemInterface &interface, T /* dummy */)
 
   // Determine if user wants a subset of timesteps transferred to the output file.
   // Time steps for output file
-  double start_time = conjoin_timer();
+  double start_time = seacas_timer();
 
   // Used for output formatting at end of loop.
   int percent_width = 0;
@@ -840,7 +841,7 @@ int conjoin(SystemInterface &interface, T /* dummy */)
 	      << global_times[time_step].localStepNumber+1 << ")"
 	      << "  Active Elem: " << std::setw(element_width) << local_mesh[p].count(ELEM);
 
-    double cur_time = conjoin_timer();
+    double cur_time = seacas_timer();
     double elapsed = cur_time - start_time;
     double time_per_step = elapsed / time_step_out;
     double percentage_done = (time_step_out * 100.0) / global.count(TIME);

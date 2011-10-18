@@ -52,7 +52,6 @@
 #include <ctype.h>
 #include <sys/utsname.h>
 
-#include "adler.h"
 #include "smart_assert.h"
 #include "to_string.h"
 
@@ -66,6 +65,8 @@
 #include "mapping.h"
 #include "vector3d.h"
 #include "Version.h"
+
+#include "add_to_log.h"
 
 namespace {
   bool valid_variable(const std::string variable, int id, const StringIdVector &variable_list);
@@ -112,9 +113,6 @@ namespace {
 #endif
   }
 }
-
-extern void add_to_log(const char *name, int elapsed);
-extern double ejoin_timer();
 
 #include <exodusII.h>
 

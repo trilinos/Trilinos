@@ -15,7 +15,7 @@ SET(SOURCES
    avg.f     clsfil.f  error.f   frge.f    ininod.f  invcon.f  mkei.f    qadsrc.f  rdb2.f    shlsrc.f  srchh.f   tetsrc.f  wrtc.f
    bldpte.f  cntr.f    exth.f    getbnd.f  initlz.f  jacobn.f  mklstv.f  rank.f    rdinpt.f  sintpe.f  srchq.f   tranab.f
    bldptn.f  elgrad.f  extq.f    hexsrc.f  intrp3.f  lenstr.f  mkrnk.f   rda1.f    seton0.f  sintpn.f  srchs.f   trutbl.f
-   bldsrf.f  elton0.f  exts.f    intrpe.f  node.f    rda2.f    seton1.f  srchge.f  srcht.f   version.f
+   bldsrf.f  elton0.f  exts.f    indexx.f  intrpe.f  node.f    rda2.f    seton1.f  srchge.f  srcht.f   version.f
    bs.f      elton1.f  flgrad.f  inielt.f  intrpn.f  mke.f     opnfil.f  rdb1.f    shapef.f  srchgt.f  stran.f   vol.f)
 
 PACKAGE_ADD_LIBRARY(mapvar_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)

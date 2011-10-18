@@ -140,6 +140,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help")) {
     options_.usage();
+    std::cerr << "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }

@@ -49,7 +49,7 @@ char    Par_Nem_File_Name[MAX_FNL+1];  /* The par nemesis file name. */
 int     Proc_For=-1;
 int     Raid_For=-1;
 int     Num_Proc_For=-1;
-int     Proc_Info[4];
+int     Proc_Info[6];
 int    *Proc_Ids;
 
 /* Function prototypes */

@@ -236,6 +236,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help")) {
     options_.usage();
+    std::cerr << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
+	      << "\tWrites: current_directory/basename.suf\n"
+	      << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
+	      << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
     std::cerr << "\n\t->->-> Send email to seacas-help@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }

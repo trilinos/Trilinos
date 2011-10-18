@@ -28,8 +28,7 @@
 #include <assert.h>
 #include <exodusII.h>
 #include "mat.h"
-
-extern void add_to_log(char *my_name);
+#include "add_to_log.h"
 
 /* The maximum buffer size we will need is MAX_LINE_LENGTH (defined in
    exodusII.h to be 80) x the number of informational records. */
@@ -450,7 +449,7 @@ int main (int argc, char *argv[]){
   free(str);
 
   /* exit status */
-  add_to_log("mat2exo");
+  add_to_log("mat2exo", 0);
   return(0);
 }
 

@@ -12,10 +12,9 @@ INCLUDE_DIRECTORIES(
 
 SET(CODE conjoin)
 SET(HEADERS "")
-SET(SOURCES add_to_log.C  GetLongOpt.C  smart_assert.C  timer.C            tokenize.C
-	    adler.C       ExodusFile.C  Internals.C     SystemInterface.C  to_string.C)
+SET(SOURCES ExodusFile.C  Internals.C     SystemInterface.C)
 
-PACKAGE_ADD_LIBRARY(${CODE}_app_lib SOURCES ${SOURCES} DEPLIBS exodus)
+PACKAGE_ADD_LIBRARY(${CODE}_app_lib SOURCES ${SOURCES} DEPLIBS exodus suplib)
 PACKAGE_ADD_EXECUTABLE(${CODE} NOEXEPREFIX NOEXESUFFIX SOURCES Conjoin.C DEPLIBS ${CODE}_app_lib COMM serial)
 install_executable(${CODE})
 

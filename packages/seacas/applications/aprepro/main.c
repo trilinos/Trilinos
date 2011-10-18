@@ -59,6 +59,8 @@ static char *qainfo[] =
 #include <sys/types.h>
 #include <time.h>
 
+#include "add_to_log.h"
+
 aprepro_options ap_options;
 
 void initialize_options(aprepro_options *ap_options)
@@ -85,7 +87,6 @@ extern void pstats(void);
 extern void init_table(char comment);
 static void copyright_output(void);
 extern FILE *open_file(char *file, char *mode);
-extern void add_to_log(char *my_name);
 
 /* The name the program was invoked under, for error messages */
 char *myname;
@@ -268,7 +269,7 @@ int main (int argc, char *argv[])
     dumpsym (VAR, 0);
   if (ap_options.statistics > 0)
     pstats ();
-  add_to_log(myname);
+  add_to_log(myname, 0);
   return (EXIT_SUCCESS);
 }				/* NOTREACHED */
 

@@ -1,8 +1,9 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2009-2010 Sandia Corporation.
  * 
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ *         
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
@@ -14,7 +15,6 @@
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
@@ -30,8 +30,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
  */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -51,7 +51,7 @@
 #endif
 #include <stdio.h>
 
-void add_to_log(const char *my_name, int elapsed)
+void add_to_log(const char *my_name, double elapsed)
 {
 #define LEN 512
   char time_string[LEN];
@@ -60,6 +60,11 @@ void add_to_log(const char *my_name, int elapsed)
   double u_time, s_time;
   struct utsname sys_info;
   
+  int minutes;
+  double seconds;
+  
+  char *access_dir = NULL;
+
   /* Don't log information if this environment variable is set */
   if (getenv("SEACAS_NO_LOGGING") != NULL) {
     fprintf(stderr, "SEACAS Audit logging disabled via SEACAS_NO_LOGGING setting.\n");
@@ -68,19 +73,20 @@ void add_to_log(const char *my_name, int elapsed)
   
   /* Now try to find the $ACCESS/etc/audit.log file */
   /* Don't need to try too hard since information is not critical; just useful */
-  char *access_dir = getenv("ACCESS");
+  access_dir = getenv("ACCESS");
   if (access_dir != NULL) {
     char filename[LEN];
     sprintf(filename, "%s/etc/audit.log", access_dir);
     if (0 == access(filename, W_OK)) {
       FILE *audit = fopen(filename, "a");
       if (audit != NULL) {
+	const char *codename = strrchr (my_name, '/');
+	
 	char *username = getlogin();
 	if (username == NULL) {
 	  username = getenv("LOGNAME");
 	}
 
-	const char *codename = strrchr (my_name, '/');
 	if (codename == NULL)
 	  codename = my_name;
 	else
@@ -92,29 +98,36 @@ void add_to_log(const char *my_name, int elapsed)
 	  strftime(time_string, LEN, "%a %b %d %H:%M:%S %Z %Y", local_time);
 	}
 
+	{
 #if defined(__LIBCATAMOUNT__)
-	struct rusage rusage;
+	  struct rusage rusage;
     
-	getrusage(RUSAGE_SELF,&rusage);
-	// NOTE: Catamount seems to return the same values for user and system.
-	//       To avoid double-counting cpu time, I only use the user time.
-	//       and set the system time to 0.
-	u_time = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec/1.e6;
-	s_time = 0.0;
+	  getrusage(RUSAGE_SELF,&rusage);
+	  /*
+	   * NOTE: Catamount seems to return the same values for user and system.
+	   *       To avoid double-counting cpu time, I only use the user time.
+	   *       and set the system time to 0.
+	   */
+	  u_time = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec/1.e6;
+	  s_time = 0.0;
 #else
-	int ticks_per_second;
-	struct tms time_buf;
-	times(&time_buf);
-	ticks_per_second = sysconf(_SC_CLK_TCK);
-	u_time = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
-	s_time = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
+	  int ticks_per_second;
+	  struct tms time_buf;
+	  times(&time_buf);
+	  ticks_per_second = sysconf(_SC_CLK_TCK);
+	  u_time = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
+	  s_time = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
 #endif
+	}
   
 	uname(&sys_info);
 
-	sprintf(log_string, "%s %s %s %.3fu %.3fs %d:%02d.00 0.0%% 0+0k 0+0io 0pf+0w %s\n",
+	minutes = elapsed / 60;
+	seconds = elapsed - minutes * 60.0;
+	
+	sprintf(log_string, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
 		codename, username, time_string, u_time, s_time,
-		elapsed/60, elapsed%60, sys_info.nodename);
+		minutes, seconds, sys_info.nodename);
 
 	fprintf(audit, "%s", log_string);
 	fclose(audit);

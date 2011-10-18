@@ -652,7 +652,7 @@ void load_mesh(int io_ws)
   else
     add_fname_ext(cTemp, PIO_Info.Exo_Extension);
 
-  for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+  for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
     gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc], Proc_Info[0]);
 
     /* Stage the writes if specified in the input file */

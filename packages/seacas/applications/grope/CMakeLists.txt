@@ -12,7 +12,7 @@ INCLUDE_DIRECTORIES(
 
 SET(HEADERS "")
 SET(SOURCES 
-   chkcnt.f ckess.f  dbsbel.f nxmmax.f prelem.f prinit.f prnode.f prssv.f  prxyz.f  rdess.f  rdname.f rdstep.f rixwrd.f setprc.f
+   chkcnt.f ckess.f  dbsbel.f indexx.f nxmmax.f prelem.f prinit.f prnode.f prssv.f  prxyz.f  rdess.f  rdname.f rdstep.f rixwrd.f setprc.f
    chkrng.f ckmap.f  dbselb.f invcon.f preb1.f  press.f  prmap.f  prnps.f  prstep.f rdcord.f rdmap.f  rdnmap.f rdtims.f selblk.f tostep.f
    ckeb1.f  cknps.f  getprc.f limits.f prebn.f  prfrm.f  prmmax.f prnsv.f  prtims.f rdeb1.f  rdmmax.f rdnps.f  rixid.f  selmap.f wdberr.f
    ckelb.f  comand.f numstr.f prelb.f  prglob.f prname.f prqa.f   prvers.f rdelb.f  rdnam1.f rdqa.f   rixint.f selset.f)

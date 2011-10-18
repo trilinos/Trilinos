@@ -1,4 +1,4 @@
-// Copyright(C) 2010 Sandia Corporation.
+// Copyright(C) 2009-2010 Sandia Corporation.
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -29,5 +29,29 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <stdlib.h>
-size_t adler(size_t adler, const void* vbuf, size_t len);
+#if defined(__LIBCATAMOUNT__)
+extern "C" {
+#include <catamount/dclock.h>
+}
+#else
+#include <unistd.h>
+#include <sys/times.h>
+#endif
+
+double seacas_timer()
+{
+#if !defined(__LIBCATAMOUNT__)
+  static double ticks_per_second = 0.0;
+  struct tms time_buf;
+
+  if (ticks_per_second == 0.0) {
+    ticks_per_second = double(sysconf(_SC_CLK_TCK));
+  }
+
+  clock_t ctime = times(&time_buf);
+  double time = double(ctime) / ticks_per_second;
+  return time;
+#else
+  return dclock();
+#endif
+}

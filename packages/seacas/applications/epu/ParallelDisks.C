@@ -40,7 +40,6 @@
 #include <string>
 
 #include <ParallelDisks.h>
-
 #include <to_string.h>
 
 /*****************************************************************************/
@@ -163,48 +162,48 @@ void Excn::ParallelDisks::Create_IO_Filename(std::string &name,
     exit(EXIT_FAILURE);
   }
   
-  name = name + "." + ToString(num_proc);
+  name = name + "." + to_string(num_proc);
   if(num_proc >= 1000000) {
-    if      (lnn <       10) { name = name + ".000000" + ToString(lnn); }
-    else if (lnn <      100) { name = name + ".00000" + ToString(lnn); }
-    else if (lnn <     1000) { name = name + ".0000" + ToString(lnn); }
-    else if (lnn <    10000) { name = name + ".000" + ToString(lnn); }
-    else if (lnn <   100000) { name = name + ".00" + ToString(lnn); }
-    else if (lnn <  1000000) { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 10000000) { name = name + "." + ToString(lnn); }
+    if      (lnn <       10) { name = name + ".000000" + to_string(lnn); }
+    else if (lnn <      100) { name = name + ".00000" + to_string(lnn); }
+    else if (lnn <     1000) { name = name + ".0000" + to_string(lnn); }
+    else if (lnn <    10000) { name = name + ".000" + to_string(lnn); }
+    else if (lnn <   100000) { name = name + ".00" + to_string(lnn); }
+    else if (lnn <  1000000) { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 10000000) { name = name + "." + to_string(lnn); }
   }
   if(num_proc >= 100000) {
-    if      (lnn <      10) { name = name + ".00000" + ToString(lnn); }
-    else if (lnn <     100) { name = name + ".0000" + ToString(lnn); }
-    else if (lnn <    1000) { name = name + ".000" + ToString(lnn); }
-    else if (lnn <   10000) { name = name + ".00" + ToString(lnn); }
-    else if (lnn <  100000) { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 1000000) { name = name + "." + ToString(lnn); }
+    if      (lnn <      10) { name = name + ".00000" + to_string(lnn); }
+    else if (lnn <     100) { name = name + ".0000" + to_string(lnn); }
+    else if (lnn <    1000) { name = name + ".000" + to_string(lnn); }
+    else if (lnn <   10000) { name = name + ".00" + to_string(lnn); }
+    else if (lnn <  100000) { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 1000000) { name = name + "." + to_string(lnn); }
   }
   if(num_proc >= 10000) {
-    if      (lnn <     10) { name = name + ".0000" + ToString(lnn); }
-    else if (lnn <    100) { name = name + ".000" + ToString(lnn); }
-    else if (lnn <   1000) { name = name + ".00" + ToString(lnn); }
-    else if (lnn <  10000) { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 100000) { name = name + "." + ToString(lnn); }
+    if      (lnn <     10) { name = name + ".0000" + to_string(lnn); }
+    else if (lnn <    100) { name = name + ".000" + to_string(lnn); }
+    else if (lnn <   1000) { name = name + ".00" + to_string(lnn); }
+    else if (lnn <  10000) { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 100000) { name = name + "." + to_string(lnn); }
   }
   else if(num_proc >= 1000) {
-    if      (lnn <    10)  { name = name + ".000" + ToString(lnn); }
-    else if (lnn <   100)  { name = name + ".00" + ToString(lnn); }
-    else if (lnn <  1000)  { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 10000)  { name = name + "." + ToString(lnn); }
+    if      (lnn <    10)  { name = name + ".000" + to_string(lnn); }
+    else if (lnn <   100)  { name = name + ".00" + to_string(lnn); }
+    else if (lnn <  1000)  { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 10000)  { name = name + "." + to_string(lnn); }
   }
   else if(num_proc >= 100) {
-    if      (lnn <   10)   { name = name + ".00" + ToString(lnn); }
-    else if (lnn <  100)   { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 1000)   { name = name + "." + ToString(lnn); }
+    if      (lnn <   10)   { name = name + ".00" + to_string(lnn); }
+    else if (lnn <  100)   { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 1000)   { name = name + "." + to_string(lnn); }
   }
   else if(num_proc >= 10) {
-    if      (lnn <  10)    { name = name + ".0" + ToString(lnn); }
-    else if (lnn < 100)    { name = name + "." + ToString(lnn); }
+    if      (lnn <  10)    { name = name + ".0" + to_string(lnn); }
+    else if (lnn < 100)    { name = name + "." + to_string(lnn); }
   }
   else if(num_proc >= 1) {
-    name=name + "." + ToString(lnn);
+    name=name + "." + to_string(lnn);
   }
   return;
 }

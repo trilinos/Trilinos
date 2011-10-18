@@ -1,47 +1,15 @@
-// Copyright(C) 2009-2010 Sandia Corporation.
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//         
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-// 
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-// 
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-
-#include "GetLongOpt.h"
+#include <GetLongOpt.h>
 #include <string.h>
 
-Excn::GetLongOpt::GetLongOpt(const char optmark)
+GetLongOpt::GetLongOpt(const char optmark)
   : table(NULL), ustring(NULL), pname(NULL), last(NULL),
     enroll_done(0), optmarker(optmark)
 {
    ustring = "[valid options and arguments]";
 }
 
-Excn::GetLongOpt::~GetLongOpt()
+GetLongOpt::~GetLongOpt()
 {
    Cell *t = table;
 
@@ -53,7 +21,7 @@ Excn::GetLongOpt::~GetLongOpt()
 }
 
 char *
-Excn::GetLongOpt::basename(char * const pathname)
+GetLongOpt::basename(char * const pathname)
 {
    char *s;
 
@@ -65,7 +33,7 @@ Excn::GetLongOpt::basename(char * const pathname)
 }
 
 int
-Excn::GetLongOpt::enroll(const char * const opt, const OptType t,
+GetLongOpt::enroll(const char * const opt, const OptType t,
 const char * const desc, const char * const val)
 {
    if ( enroll_done ) return 0;
@@ -89,7 +57,7 @@ const char * const desc, const char * const val)
 }
 
 const char *
-Excn::GetLongOpt::retrieve(const char * const opt) const
+GetLongOpt::retrieve(const char * const opt) const
 {
    Cell *t;
    for ( t = table; t != 0; t = t->next ) {
@@ -102,7 +70,7 @@ Excn::GetLongOpt::retrieve(const char * const opt) const
 }
 
 int
-Excn::GetLongOpt::parse(int argc, char * const *argv)
+GetLongOpt::parse(int argc, char * const *argv)
 {
    int my_optind = 1;
 
@@ -186,7 +154,7 @@ Excn::GetLongOpt::parse(int argc, char * const *argv)
 }
 
 int
-Excn::GetLongOpt::parse(char * const str, char * const p)
+GetLongOpt::parse(char * const str, char * const p)
 {
    enroll_done = 1;
    char *token = strtok(str, " \t");
@@ -257,7 +225,7 @@ GetLongOpt::setcell returns
 ------------------------------------------------------------------- */
 
 int
-Excn::GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
+GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 {
    if ( c == 0 ) return -1;
 
@@ -307,7 +275,7 @@ Excn::GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *
 }
 
 void
-Excn::GetLongOpt::usage(std::ostream &outfile) const
+GetLongOpt::usage(std::ostream &outfile) const
 {
    Cell *t;
 
@@ -320,8 +288,6 @@ Excn::GetLongOpt::usage(std::ostream &outfile) const
 	 outfile << " [$val]";
       outfile << " (" << t->description << ")\n";
    }
-   outfile << "\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n";
-
    outfile.flush();
 }
 

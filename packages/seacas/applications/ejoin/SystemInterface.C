@@ -190,6 +190,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("help")) {
     options_.usage();
+    std::cerr << "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
