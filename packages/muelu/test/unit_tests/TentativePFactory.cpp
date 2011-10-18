@@ -228,7 +228,7 @@ namespace MueLuTests {
 
     // generate problem
     LO maxLevels = 3;
-    LO its=10;
+    //LO its=10;
     GO nEle = 63;
     GO nIndexBase = 10;
     const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
