@@ -722,9 +722,6 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    MPI_Errhandler errorHandler;
-    MPI_Comm_get_errhandler(*rawMpiComm_, &errorHandler);
-    MPI_Comm_set_errhandler(newComm, errorHandler);
     return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
   }
 }
@@ -754,9 +751,6 @@ MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    MPI_Errhandler errorHandler;
-    MPI_Comm_get_errhandler(*rawMpiComm_, &errorHandler);
-    MPI_Comm_set_errhandler(newComm, errorHandler);
     return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
   }
 }
