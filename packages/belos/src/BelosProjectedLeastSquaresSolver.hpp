@@ -666,6 +666,12 @@ namespace Belos {
 	return std::make_pair (count == 0, std::make_pair (lower, upper));
       }
 
+      /// \brief Throw an exception if A is not upper triangular / trapezoidal.
+      ///
+      /// \param A [in] The matrix to test.
+      ///
+      /// \param matrixName [in] Name of the matrix.  Used only to
+      ///   make the exception message more informative.
       void
       ensureUpperTriangular (const mat_type& A,
 			     const char* const matrixName) const
@@ -681,6 +687,12 @@ namespace Belos {
 			   << result.second.second << ".");
       }
 
+      /// \brief Throw an exception if A is not (strictly) upper Hessenberg.
+      ///
+      /// \param A [in] The matrix to test.
+      ///
+      /// \param matrixName [in] Name of the matrix.  Used only to
+      ///   make the exception message more informative.
       void
       ensureUpperHessenberg (const mat_type& A,
 			     const char* const matrixName) const
@@ -696,6 +708,21 @@ namespace Belos {
 			   << result.second.second << ".");
       }
 
+      /// \brief Throw an exception if A is not "approximately" upper Hessenberg.
+      ///
+      /// "Approximately" in this case means that the Frobenius norm
+      /// of the part of A that should be zero, divided by the
+      /// Frobenius norm of all of A, is less than or equal to the
+      /// given relative tolerance.
+      ///
+      /// \param A [in] The matrix to test.
+      ///
+      /// \param matrixName [in] Name of the matrix.  Used only to
+      ///   make the exception message more informative.
+      ///
+      /// \param relativeTolerance [in] Amount by which we allow the
+      ///   norm of the part of A that should be zero to deviate from
+      ///   zero, relative to the norm of A.
       void
       ensureUpperHessenberg (const mat_type& A,
 			     const char* const matrixName,
@@ -783,6 +810,10 @@ namespace Belos {
     /// expensive, where N is the number of columns in R).
     /// ROBUSTNESS_SOME means some algorithmic point in between those
     /// two extremes.
+    ///
+    /// The projected least-squares solver may use this enum to
+    /// control the robustness of other operations besides dense
+    /// triangular solves.
     enum ERobustness {
       ROBUSTNESS_NONE,
       ROBUSTNESS_SOME,
@@ -990,9 +1021,40 @@ namespace Belos {
 
       /// \brief Solve the given square upper triangular linear system(s).
       ///
-      /// This method uses the number of columns of R as the dimension
-      /// of the square matrix.  R may have more rows than columns,
-      /// but we won't use the "extra" rows in the solve.
+      /// \param side [in] Whether to solve with the triangular matrix
+      ///   R on the left side or right side of the matrix X of
+      ///   unknowns.  side = Teuchos::LEFT_SIDE or
+      ///   Teuchos::RIGHT_SIDE.
+      ///
+      /// \param X [out] The matrix of unknowns.  (We consider a
+      ///   matrix with one column a vector.)
+      ///
+      /// \param R [in] The square upper triangular matrix.  If R has
+      ///   more rows than columns, this method uses the number of
+      ///   columns of R as the dimension of the square matrix, and
+      ///   ignores the "extra" rows of R.  If R has more columns than
+      ///   rows, this method throws an exception.
+      ///
+      /// \param B [in] The matrix of right-hand sides.  B must have
+      ///   at least as many columns as X, otherwise this method will
+      ///   throw an exception.  If B has more columns than X, those
+      ///   columns will be ignored.
+      ///
+      /// \param robustness [in] The robustness level to use for the
+      ///   solve.  ROBUSTNESS_NONE is fastest but does not attempt to
+      ///   detect rank deficiency in R.  ROBUSTNESS_LOTS is slowest,
+      ///   but can "solve" the problem (in a least-squares
+      ///   minimum-norm-solution sense) even if R is singular.
+      ///   ROBUSTNESS_SOME may do something in between.
+      ///
+      /// Depending on the specified robustness level, this method may
+      /// also attempt to compute the numerical rank and detect rank
+      /// deficiency in R.  The first return value is the computed
+      /// numerical rank, and the second return value is a Boolean
+      /// indicating whether any rank deficiency was detected.  If the
+      /// method does not attempt to compute the numerical rank or
+      /// detect rank deficiency, it will return (N, false), where N
+      /// is the number of columns in R.
       ///
       /// \return (detectedRank, foundRankDeficiency).
       std::pair<int, bool>
@@ -1041,15 +1103,11 @@ namespace Belos {
 
       /// \brief Solve square upper triangular linear system(s) in place.
       ///
-      /// Assuming that the right-hand side(s) is/are already stored
-      /// in X, compute (in Matlab notation) X := R \ B or B / R,
-      /// depending on the \c side input argument.
-      ///
-      /// This method uses the number of columns of R as the dimension
-      /// of the square matrix.  R may have more rows than columns,
-      /// but we won't use the "extra" rows in the solve.
-      ///
-      /// \return (detectedRank, foundRankDeficiency).
+      /// This is the "in-place" version of \c
+      /// solveUpperTriangularSystem().  The difference between that
+      /// method and this one is that this method assumes that the
+      /// right-hand side(s) is/are already stored in X on input.  It
+      /// then overwrites X with the solution.
       std::pair<int, bool>
       solveUpperTriangularSystemInPlace (Teuchos::ESide side,
 					 mat_type& X,
@@ -1189,83 +1247,6 @@ namespace Belos {
 			     "Belos developers.");
 	}
 	return std::make_pair (rank, foundRankDeficiency);
-      }
-
-
-    private:
-      /// \brief Solve \f$\min_X \|AX - B\|_2\f$ using the SVD.
-      ///
-      /// X on input stores the right-hand side B.  A will be
-      /// overwritten with factorization information.
-      ///
-      /// \return Numerical rank of A.
-      int 
-      solveLeastSquaresUsingSVD (mat_type& A, mat_type& X)
-      {
-	using Teuchos::Array;
-	LocalDenseMatrixOps<Scalar> ops;
-
-	if (defaultRobustness_ > ROBUSTNESS_SOME) {
-	  int count = ops.infNaNCount (A);
-	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
-			     "solveLeastSquaresUsingSVD: The input matrix A "
-			     "contains " << count << "Inf and/or NaN entr" 
-			     << (count != 1 ? "ies" : "y") << ".");
-	  count = ops.infNaNCount (X);
-	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
-			     "solveLeastSquaresUsingSVD: The input matrix X "
-			     "contains " << count << "Inf and/or NaN entr" 
-			     << (count != 1 ? "ies" : "y") << ".");
-	}
-	const int N = std::min (A.numRows(), A.numCols());
-	lapack_type lapack;
-
-	// Rank of A; to be computed by _GELSS and returned.
-	int rank = N;
-
-	// Use Scalar's machine precision for the rank tolerance,
-	// not magnitude_type's machine precision.
-	const magnitude_type rankTolerance = STS::eps();
-
-	// Array of singular values.
-	Array<magnitude_type> singularValues (N);
-
-	// Extra workspace.  This is only used by _GELSS if Scalar is
-	// complex.  Teuchos::LAPACK presents a unified interface to
-	// _GELSS that always includes the RWORK argument, even though
-	// LAPACK's SGELSS and DGELSS don't have the RWORK argument.
-	// We always allocate at least one entry so that &rwork[0]
-	// makes sense.
-	Array<magnitude_type> rwork (1);
-	if (STS::isComplex) {
-	  rwork.resize (std::max (1, 5 * N));
-	}
-	//
-	// Workspace query
-	//
-	Scalar lworkScalar = STS::one(); // To be set by workspace query
-	int info = 0;
-	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
-		      A.values(), A.stride(), X.values(), X.stride(),
-		      &singularValues[0], rankTolerance, &rank,
-		      &lworkScalar, -1, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			   "_GELSS workspace query returned INFO = " 
-			   << info << " != 0.");
-	const int lwork = static_cast<int> (STS::real (lworkScalar));
-	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			   "_GELSS workspace query returned LWORK = " 
-			   << lwork << " < 0.");
-	// Allocate workspace.  Size > 0 means &work[0] makes sense.
-	Array<Scalar> work (std::max (1, lwork));
-	// Solve the least-squares problem.
-	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
-		      A.values(), A.stride(), X.values(), X.stride(),
-		      &singularValues[0], rankTolerance, &rank,
-		      &work[0], lwork, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-			   "_GELSS returned INFO = " << info << " != 0.");
-	return rank;
       }
 
 
@@ -1671,8 +1652,92 @@ namespace Belos {
       //! Stream to which to output warnings.
       std::ostream& warn_;
 
-      //! Default robustness level, for things like triangular solves.
+      /// \brief Default robustness level, for things like triangular solves.
+      ///
+      /// \note Many methods, including the triangular solve methods,
+      ///   let you override the default robustness level.
       ERobustness defaultRobustness_;
+
+    private:
+      /// \brief Solve \f$\min_X \|AX - B\|_2\f$ using the SVD.
+      ///
+      /// \param X [in/out] On input: the right-hand side(s) B.  On
+      ///   output: the solution to the least-squares problem.
+      ///
+      /// \param A [in/out] On input: the matrix in the least-squares
+      ///   problem.  On output, A will be overwritten with
+      ///   factorization information.
+      ///
+      /// \return Numerical rank of A, computed using Scalar's machine
+      ///   precision as the rank tolerance.
+      int 
+      solveLeastSquaresUsingSVD (mat_type& A, mat_type& X)
+      {
+	using Teuchos::Array;
+	LocalDenseMatrixOps<Scalar> ops;
+
+	if (defaultRobustness_ > ROBUSTNESS_SOME) {
+	  int count = ops.infNaNCount (A);
+	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+			     "solveLeastSquaresUsingSVD: The input matrix A "
+			     "contains " << count << "Inf and/or NaN entr" 
+			     << (count != 1 ? "ies" : "y") << ".");
+	  count = ops.infNaNCount (X);
+	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+			     "solveLeastSquaresUsingSVD: The input matrix X "
+			     "contains " << count << "Inf and/or NaN entr" 
+			     << (count != 1 ? "ies" : "y") << ".");
+	}
+	const int N = std::min (A.numRows(), A.numCols());
+	lapack_type lapack;
+
+	// Rank of A; to be computed by _GELSS and returned.
+	int rank = N;
+
+	// Use Scalar's machine precision for the rank tolerance,
+	// not magnitude_type's machine precision.
+	const magnitude_type rankTolerance = STS::eps();
+
+	// Array of singular values.
+	Array<magnitude_type> singularValues (N);
+
+	// Extra workspace.  This is only used by _GELSS if Scalar is
+	// complex.  Teuchos::LAPACK presents a unified interface to
+	// _GELSS that always includes the RWORK argument, even though
+	// LAPACK's SGELSS and DGELSS don't have the RWORK argument.
+	// We always allocate at least one entry so that &rwork[0]
+	// makes sense.
+	Array<magnitude_type> rwork (1);
+	if (STS::isComplex) {
+	  rwork.resize (std::max (1, 5 * N));
+	}
+	//
+	// Workspace query
+	//
+	Scalar lworkScalar = STS::one(); // To be set by workspace query
+	int info = 0;
+	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
+		      A.values(), A.stride(), X.values(), X.stride(),
+		      &singularValues[0], rankTolerance, &rank,
+		      &lworkScalar, -1, &rwork[0], &info);
+	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			   "_GELSS workspace query returned INFO = " 
+			   << info << " != 0.");
+	const int lwork = static_cast<int> (STS::real (lworkScalar));
+	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			   "_GELSS workspace query returned LWORK = " 
+			   << lwork << " < 0.");
+	// Allocate workspace.  Size > 0 means &work[0] makes sense.
+	Array<Scalar> work (std::max (1, lwork));
+	// Solve the least-squares problem.
+	lapack.GELSS (A.numRows(), A.numCols(), X.numCols(), 
+		      A.values(), A.stride(), X.values(), X.stride(),
+		      &singularValues[0], rankTolerance, &rank,
+		      &work[0], lwork, &rwork[0], &info);
+	TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+			   "_GELSS returned INFO = " << info << " != 0.");
+	return rank;
+      }
 
       /// \brief Solve the projected least-squares problem, assuming
       ///   Givens rotations updates.
@@ -1846,7 +1911,6 @@ namespace Belos {
 	singularValues (A, sigmas);
 	return std::make_pair (sigmas[0], sigmas[std::min(numRows, numCols) - 1]);
       }
-
       
       /// \brief Normwise 2-norm condition number of the least-squares problem.
       ///
@@ -1955,10 +2019,11 @@ namespace Belos {
       /// These Givens rotations are also applied to the right-hand
       /// side z.
       ///
-      /// Return the residual of the resulting least-squares problem,
-      /// assuming that the upper triangular system Ry=z can be solved
-      /// exactly (with zero residual).  (This may not be the case if
-      /// R is singular and the system Ry=z is inconsistent.)
+      /// \return The residual of the resulting least-squares problem,
+      ///   assuming that the upper triangular system Ry=z can be
+      ///   solved exactly (with zero residual).  (This may not be the
+      ///   case if R is singular and the system Ry=z is
+      ///   inconsistent.)
       ///
       /// \param H [in] The upper Hessenberg matrix from GMRES.  We only
       ///   view H( 1:curCol+2, 1:curCol+1 ).  It's copied and not
@@ -2093,9 +2158,39 @@ namespace Belos {
 	return STS::magnitude( z(numRows-1, 0) );
       }
 
-      /// \brief Solve the least-squares problem using LAPACK's least-squares solver.
+      /// \brief Solve the least-squares problem using LAPACK.
       ///
-      /// This method is inefficient, but useful for testing.
+      /// In particular, this method uses LAPACK's _GELS dense
+      /// least-squares solver.  _GELS assumes that the input matrix
+      /// has full rank, so this method might fail.  This method is
+      /// inefficient compared to the Givens rotations approach, but
+      /// useful for testing the latter.
+      ///
+      /// \param H [in] The upper Hessenberg matrix from GMRES.  We only
+      ///   view H( 1:curCol+2, 1:curCol+1 ).  It's copied and not
+      ///   overwritten, so as not to disturb any backtracking or other
+      ///   features of GMRES.
+      ///
+      /// \param R [out] Matrix with the same dimensions as H.  On
+      ///   output: the upper triangle of R contains the R factor in
+      ///   the QR factorization of H.
+      ///
+      /// \param y [out] Vector (one-column matrix) with the same
+      ///   number of rows as H.  On output: the solution of the
+      ///   projected least-squares problem.  The vector should have
+      ///   one more entry than necessary for the solution, because of
+      ///   the way we solve the least-squares problem.
+      ///
+      /// \param z [in] Vector (one-column matrix) with the same
+      ///   number of rows as H.  On input: the current right-hand
+      ///   side of the projected least-squares problem.
+      ///
+      /// \param curCol [in] Index of the current column of H.
+      ///
+      /// \return The 2-norm of the residual of the least-squares
+      ///   problem, assuming that it can be solved using LAPACK's
+      ///   _GELS least-squares solver.  (This may not be the case if
+      ///   H is singular.)
       magnitude_type
       solveLapack (const mat_type& H, 
 		   mat_type& R, 
