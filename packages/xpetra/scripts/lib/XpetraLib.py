@@ -1,4 +1,5 @@
 from lxml import etree
+from XpetraDoxygenVersion import checkDoxygenVersion
 
 #### GENERATE HEADER / FOOTER ####
 def buildHeader( className, script='', prefix='' ):
@@ -43,6 +44,7 @@ def buildClassDefinition( XMLfile, prefix='' ):
     tree = etree.parse(XMLfile)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
+    checkDoxygenVersion(root)
     
     className = classNode.xpath('compoundname')[0].text # Tpetra::Map
     className = className.lstrip('Tpetra::')            # Map
@@ -57,6 +59,7 @@ def buildTemplateParam( XMLfile ):
     tree = etree.parse(XMLfile)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
+    checkDoxygenVersion(root)
     
     templateParamNode = classNode.xpath('templateparamlist')[0];
     str = ''
@@ -82,6 +85,7 @@ def buildTemplateParam2( XMLfile ):
     tree = etree.parse(XMLfile)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
+    checkDoxygenVersion(root)
     
     templateParamNode = classNode.xpath('templateparamlist')[0];
     str = ''
@@ -101,6 +105,7 @@ def buildClassFunctions( XMLfile, skipFunctionList, buildFuncLine ):
     tree = etree.parse(XMLfile)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
+    checkDoxygenVersion(root)
 
     functionStr = ''
 
