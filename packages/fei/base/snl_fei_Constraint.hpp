@@ -83,10 +83,10 @@ namespace snl_fei {
 
 
     /** intended for fei-implementation use only */
-    RecordType getSlave() { return( slave_ ); }
+    RecordType getSlave() { return getRecordCollection()->getRecordWithLocalID(slave_); }
 
     /** intended for fei-implementation use only */
-    void setSlave(const RecordType& slv) { slave_ = slv; }
+    void setSlave(int slv) { slave_ = slv; }
 
     /** if slave constraint, return constrained field-identifier of
         slaved mesh-object */
@@ -133,10 +133,7 @@ namespace snl_fei {
 
   private:
     Constraint(const Constraint<RecordType>& src);
-    Constraint<RecordType>& operator=(const Constraint<RecordType>& src)
-      {
-        return(*this);
-      }
+    Constraint<RecordType>& operator=(const Constraint<RecordType>& src);
 
     int constraintID_;
     int idType_;
@@ -146,7 +143,7 @@ namespace snl_fei {
     int eqnNumber_;
     int blkEqnNumber_;
 
-    RecordType slave_;
+    int slave_;
     int slaveField_;
     int offsetIntoSlaveField_;
 
@@ -265,7 +262,7 @@ inline snl_fei::Constraint<fei::Record<int>*>::Constraint(int id,
 
     if (isSlave && i == offsetOfSlave) {
       rec->hasSlaveDof(true);
-      setSlave(rec);
+      setSlave(rec_local_id);
       setSlaveFieldID(fieldIDs[i]);
       setOffsetIntoSlaveField(offsetIntoSlaveField);
       weightsOffset += fieldSize;
