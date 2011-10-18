@@ -1,4 +1,3 @@
-INCLUDE(SubPackageMacros)
 INCLUDE(PackageLibraryMacros)
 
 SUBPACKAGE(Suplib)
@@ -12,6 +11,7 @@ SET(SUPLIB_VERSION_FULL "${SUPLIB_VERSION}.${SUPLIB_VERSION_PATCH}")
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 SET(HEADERS  argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
@@ -44,5 +44,3 @@ PACKAGE_ADD_LIBRARY(
 	SOURCES ${SOURCES}
 	DEPLIBS supes
 )
-
-SUBPACKAGE_POSTPROCESS()
