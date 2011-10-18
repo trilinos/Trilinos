@@ -1,7 +1,7 @@
 
 #include "Panzer_IntegrationRule.hpp"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Panzer_Dimension.hpp"
@@ -22,7 +22,7 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   else if (spatial_dimension == 1)
     topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()));
   
-  TEST_FOR_EXCEPTION(Teuchos::is_null(topology), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(topology), std::runtime_error,
 		     "Failed to allocate cell topology!");
   
   Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > 
@@ -43,7 +43,7 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   if (cell_data.isSide()) {
     side = cell_data.side();
 
-    TEST_FOR_EXCEPTION( (side >= static_cast<int>(topology->getSideCount())), 
+    TEUCHOS_TEST_FOR_EXCEPTION( (side >= static_cast<int>(topology->getSideCount())), 
 			std::runtime_error, "Error - local side " 
 			<< side << " is not in range (0->" << topology->getSideCount()-1 
    			<< ") of topologic entity!");
@@ -51,7 +51,7 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
     side_topology = Teuchos::rcp(new shards::CellTopology(topology->getCellTopologyData(topology->getDimension()-1,side)));
   }
 
-  TEST_FOR_EXCEPTION(side >= 0 && Teuchos::is_null(side_topology), 
+  TEUCHOS_TEST_FOR_EXCEPTION(side >= 0 && Teuchos::is_null(side_topology), 
 		     std::runtime_error,
 		     "Failed to allocate side topology!");
   

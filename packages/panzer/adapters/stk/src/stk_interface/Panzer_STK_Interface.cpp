@@ -73,7 +73,7 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
 {
    TEUCHOS_ASSERT(not initialized_);
-   TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+   TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
 
@@ -172,7 +172,7 @@ void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
 
 void STK_Interface::beginModification()
 {
-   TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
                       "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"beginModification\"");
 
    bulkData_->modification_begin();
@@ -180,7 +180,7 @@ void STK_Interface::beginModification()
 
 void STK_Interface::endModification()
 {
-   TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
                       "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"endModification\"");
 
    bulkData_->modification_end();
@@ -191,11 +191,11 @@ void STK_Interface::endModification()
 
 void STK_Interface::addNode(stk::mesh::EntityId gid, const std::vector<double> & coord)
 {
-   TEST_FOR_EXCEPTION(not isModifiable(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not isModifiable(),std::logic_error,
                       "STK_Interface::addNode: STK_Interface must be modifiable to add a node");
-   TEST_FOR_EXCEPTION(not coord.size()==getDimension(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not coord.size()==getDimension(),std::logic_error,
                       "STK_Interface::addNode: number of coordinates in vector must mation dimension");
-   TEST_FOR_EXCEPTION(gid==0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(gid==0,std::logic_error,
                       "STK_Interface::addNode: STK has STUPID restriction of no zero GIDs, pick something else");
    stk::mesh::EntityRank nodeRank = getNodeRank();
 
@@ -409,7 +409,7 @@ void STK_Interface::buildMaxEntityIds()
 
 std::size_t STK_Interface::getEntityCounts(unsigned entityRank) const
 {
-   TEST_FOR_EXCEPTION(entityRank>=entityCounts_.size(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(entityRank>=entityCounts_.size(),std::logic_error,
                       "STK_Interface::getEntityCounts: Entity counts do not include rank: " << entityRank);
                       
    return entityCounts_[entityRank];
@@ -417,7 +417,7 @@ std::size_t STK_Interface::getEntityCounts(unsigned entityRank) const
 
 stk::mesh::EntityId STK_Interface::getMaxEntityId(unsigned entityRank) const
 {
-   TEST_FOR_EXCEPTION(entityRank>=maxEntityId_.size(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(entityRank>=maxEntityId_.size(),std::logic_error,
                       "STK_Interface::getMaxEntityId: Max entity ids do not include rank: " << entityRank);
                       
    return maxEntityId_[entityRank];
@@ -449,7 +449,7 @@ void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId el
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::Entity * cell = bulkData_->get_entity(elementRank,elementId);
    
-   TEST_FOR_EXCEPTION(cell==0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(cell==0,std::logic_error,
                       "STK_Interface::getSubcellIndices: could not find element requested (GID = " << elementId << ")");
 
    stk::mesh::PairIterRelation subcells = cell->relations(entityRank);
@@ -478,7 +478,7 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
 {
    stk::mesh::Part * elementBlock = getElementBlockPart(blockID);
 
-   TEST_FOR_EXCEPTION(elementBlock==0,std::logic_error,"Could not find element block \"" << blockID << "\"");
+   TEUCHOS_TEST_FOR_EXCEPTION(elementBlock==0,std::logic_error,"Could not find element block \"" << blockID << "\"");
 
    // setup local ownership
    // stk::mesh::Selector block = *elementBlock;
@@ -492,7 +492,7 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
-   TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
                       "Unknown side set \"" << sideName << "\"");
 
    stk::mesh::Selector side = *sidePart;
@@ -506,9 +506,9 @@ void STK_Interface::getMySides(const std::string & sideName,const std::string & 
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
    stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
-   TEST_FOR_EXCEPTION(sidePart==0,SidesetException,
+   TEUCHOS_TEST_FOR_EXCEPTION(sidePart==0,SidesetException,
                       "Unknown side set \"" << sideName << "\"");
-   TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
+   TEUCHOS_TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
                       "Unknown element block \"" << blockName << "\"");
 
    stk::mesh::Selector side = *sidePart;
@@ -575,7 +575,7 @@ stk::mesh::Field<double> * STK_Interface::getSolutionField(const std::string & f
          iter = fieldNameToSolution_.find(std::make_pair(fieldName,blockId));
  
    // check to make sure field was actually found
-   TEST_FOR_EXCEPTION(iter==fieldNameToSolution_.end(),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(iter==fieldNameToSolution_.end(),std::runtime_error,
                       "Field name \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
 
    return iter->second;

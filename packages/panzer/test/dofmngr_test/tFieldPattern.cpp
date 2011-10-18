@@ -101,7 +101,7 @@ bool intrepid_equals(const RCP<Intrepid::Basis<double,FieldContainer> > & basisA
    bool bckward = fpB->equals(*fpA); 
 
    if(bckward!=forward) { // if true, this is a big problem
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                          "Test \"intrepid_equals\" leads to an"
                          "inconsistency with the FieldPattern::equals "
                          "functionality: " << file << ": " << lineNo );
@@ -124,7 +124,7 @@ bool intrepid_same_geom(const RCP<Intrepid::Basis<double,FieldContainer> > & bas
    bool bckward = fpB->sameGeometry(*fpA); 
 
    if(bckward!=forward) { // if true, this is a big problem
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                          "Test \"intrepid_samegeom\" leads to an"
                          "inconsistency with the FieldPattern::sameGeometry "
                          "functionality: " << file << ": " << lineNo );

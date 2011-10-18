@@ -561,13 +561,13 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
  
       unsigned vertexCount 
          = stk::mesh::fem::get_cell_topology(element->bucket()).getCellTopologyData()->vertex_count;
-      TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices all elements "
                          "must have the same vertex count!");
 
       // loop over all element nodes
       stk::mesh::PairIterRelation nodes = element->relations(getNodeRank());
-      TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices cardinality of "
                          "element node relations must be the vertex count!");
       for(std::size_t node=0;node<nodes.size();++node) {

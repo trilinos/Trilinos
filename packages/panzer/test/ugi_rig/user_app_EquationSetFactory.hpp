@@ -32,7 +32,7 @@ namespace user_app {
       if (!found) {
 	std::string msg = "Error - the \"Equation Set\" called \"" + ies.name +
 	  "\" is not a valid equation set identifier. Please supply the correct factory.\n";
-	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
       
       return eq_set;

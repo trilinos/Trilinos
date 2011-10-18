@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
 	clp.parse(argc,argv,&std::cerr);
       
-      TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
+      TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
 			 std::runtime_error, "Failed to parse command line!");
     }
 

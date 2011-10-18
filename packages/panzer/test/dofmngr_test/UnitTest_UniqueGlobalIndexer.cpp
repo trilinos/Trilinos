@@ -13,7 +13,7 @@ namespace unit_test {
 UniqueGlobalIndexer::UniqueGlobalIndexer(int rank,int procCount)
    : procRank_(rank)
 {
-   TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::UniqueGlobalIndexer runs on only two processors!");
+   TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::UniqueGlobalIndexer runs on only two processors!");
 }
 
 int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
@@ -23,7 +23,7 @@ int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
    else if(str=="T") 
       return 1;
    else  
-      TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
 }
 
 void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
@@ -68,7 +68,7 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
    else if(blockId=="block_1")
       return *elements_b1_;
    else 
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 }
 
@@ -117,7 +117,7 @@ void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gi
 
 const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
 {
-   TEST_FOR_EXCEPTION(!((fieldNum==0 || fieldNum==1)), std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(!((fieldNum==0 || fieldNum==1)), std::runtime_error,
                    "unit_test::UniqueGlobalIndexer - Invalid field id specified");
 
    if(field0Offset_b0_==Teuchos::null || field1Offset_b0_==Teuchos::null ||
@@ -149,7 +149,7 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
    if(fieldNum==0 && blockId=="block_1") return *field0Offset_b1_;
    if(fieldNum==1 && blockId=="block_1") return *field1Offset_b1_;
 
-   TEST_FOR_EXCEPTION(true,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                    "unit_test::UniqueGlobalIndexer - getGIDFieldOffsets has incorrect arguments!");
 }
 
@@ -157,7 +157,7 @@ const std::pair<std::vector<int>,std::vector<int> > &
 UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                 int subcellDim,int subcellId) const
 {
-   TEST_FOR_EXCEPTION(true,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <list>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace panzer {
@@ -16,7 +16,7 @@ namespace panzer {
 					const shards::CellTopology& cell)
   {
     unsigned cell_dim = cell.getDimension();
-    //TEST_FOR_EXCEPTION(!cell.getSubcellHomogeneity(cell_dim - 1),
+    //TEUCHOS_TEST_FOR_EXCEPTION(!cell.getSubcellHomogeneity(cell_dim - 1),
     //	       std::runtime_error, "Sides are not homogeneous!");
     
     unsigned local_side;
@@ -58,7 +58,7 @@ namespace panzer {
       ++side;
     }
     
-    TEST_FOR_EXCEPTION(!found_local_side, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!found_local_side, std::runtime_error,
 		       "Failed to find side!");
     
     return local_side;
@@ -118,7 +118,7 @@ namespace panzer {
       ++subcell;
     }
   
-    TEST_FOR_EXCEPTION(!found_local_subcell, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!found_local_subcell, std::runtime_error,
                        "Failed to find subcell!");
   
     return local_subcell;

@@ -29,7 +29,7 @@ namespace panzer {
 
     }
     else if (type == "Tpetra") {
-      TEST_FOR_EXCEPTION(true, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			 "Tpetra version not supported yet, use Epetra!");
     }
     

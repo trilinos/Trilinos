@@ -50,7 +50,7 @@ public:
    virtual void reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const std::string & evalType)
    { 
       // sanity check
-      TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
                          "panzer::RLDynamicDispatch: Something is seriously wrong, dynamic evaluation type \""+evalType+"\" "
                          "is not equal to static type \""+PHX::TypeString<EvalT>::value+"\"!"); 
       responseLibrary_->template reserveVolumeResponse<EvalT>(rid,eBlock); 
@@ -59,7 +59,7 @@ public:
    virtual const ResponseAggregatorBase<Traits> & getAggregator(const std::string & type,const std::string & evalType) const
    { 
       // sanity check
-      TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(PHX::TypeString<EvalT>::value!=evalType,std::logic_error,
                          "panzer::RLDynamicDispatch: Something is seriously wrong, dynamic evaluation type \""+evalType+"\" "
                          "is not equal to static type \""+PHX::TypeString<EvalT>::value+"\"!"); 
       return responseLibrary_->template getAggregator<EvalT>(type);

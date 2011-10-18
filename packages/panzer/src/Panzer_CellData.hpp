@@ -2,7 +2,7 @@
 #ifndef PANZER_CELL_DATA_HPP
 #define PANZER_CELL_DATA_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace panzer {
   
@@ -30,7 +30,7 @@ namespace panzer {
     
     int side() const 
     {
-      TEST_FOR_EXCEPTION(!m_is_side, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(!m_is_side, std::logic_error,
 			 "Cannot return side index, CellData is not a side!");
       return m_side;
     }

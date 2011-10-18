@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 

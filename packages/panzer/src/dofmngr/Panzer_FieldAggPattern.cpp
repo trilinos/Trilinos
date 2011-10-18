@@ -48,7 +48,7 @@ void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<
 int FieldAggPattern::getDimension() const
 {
    FPPtr geomPattern = getGeometricAggFieldPattern();
-   TEST_FOR_EXCEPTION(geomPattern==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(geomPattern==Teuchos::null,std::logic_error,
                       "Geometric field pattern not yet set, call buildPatterns first");
 
    return geomPattern->getDimension();
@@ -66,7 +66,7 @@ const std::vector<int> & FieldAggPattern::getSubcellIndices(int dimension, int s
 
 void FieldAggPattern::getSubcellClosureIndices(int, int, std::vector<int> &) const 
 { 
-   TEST_FOR_EXCEPTION(true,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                       "FieldAggPattern::getSubcellClosureIndices should not be called"); 
 }
 
@@ -104,7 +104,7 @@ void FieldAggPattern::print(std::ostream & os) const
 Teuchos::RCP<const FieldPattern> FieldAggPattern::getFieldPattern(int fieldId) const
 {
    std::map<int,int>::const_iterator idxIter = fieldIdToPatternIdx_.find(fieldId);
-   TEST_FOR_EXCEPTION(idxIter==fieldIdToPatternIdx_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(idxIter==fieldIdToPatternIdx_.end(),std::logic_error,
                      "FieldID = " << fieldId << " not defined in this pattern");
 
    return patterns_[idxIter->second].second;
@@ -232,11 +232,11 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
       return itr->second;
    }
 
-   TEST_FOR_EXCEPTION(subcellDim>=getDimension(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(subcellDim>=getDimension(),std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellDim<getDimension() failed");
-   TEST_FOR_EXCEPTION(subcellId<0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(subcellId<0,std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellId>=0 failed");
-   TEST_FOR_EXCEPTION(subcellId>=getSubcellCount(subcellDim),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(subcellId>=getSubcellCount(subcellDim),std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellId<getSubcellCount(subcellDim) failed");
 
    // build vector for sub cell closure indices

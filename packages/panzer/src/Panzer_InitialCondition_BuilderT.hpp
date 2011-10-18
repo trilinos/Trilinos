@@ -1,7 +1,7 @@
 #ifndef PANZER_INITIAL_CONDITION_BUILDER_T_HPP
 #define PANZER_INITIAL_CONDITION_BUILDER_T_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
 						const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -31,7 +31,7 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
     else if (ic_block_closure_models.isSublist("Default"))
       closure_model_name = "Default";
     else 
-      TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId << "\".  You must provide an initial condition for each element block or set a default!" << ic_block_closure_models);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId << "\".  You must provide an initial condition for each element block or set a default!" << ic_block_closure_models);
 
     // use the physics block to register evaluators
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);

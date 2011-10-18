@@ -97,7 +97,7 @@ namespace panzer {
               physics_id_to_input_physics_blocks.find(physics_block_id);
   
         // sanity check: passes only if there is a paricular physics ID
-        TEST_FOR_EXCEPTION(ipb_it == physics_id_to_input_physics_blocks.end(),
+        TEUCHOS_TEST_FOR_EXCEPTION(ipb_it == physics_id_to_input_physics_blocks.end(),
   			 std::runtime_error,
   			 "Falied to find InputPhysicsBlock for physics id: "
   			 << physics_block_id << "!");

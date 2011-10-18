@@ -1,6 +1,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -56,7 +56,7 @@ setup(const panzer::PhysicsBlock& side_pb,
       this->basis = dof_it->second;
   }
 
-  TEST_FOR_EXCEPTION(Teuchos::is_null(this->basis), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->basis), std::runtime_error,
 		     "Error the name \"" << this->m_bc.equationSetName()
 		     << "\" is not a valid DOF for the boundary condition:\n"
 		     << this->m_bc << "\n");

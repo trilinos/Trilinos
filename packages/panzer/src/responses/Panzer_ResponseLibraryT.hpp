@@ -55,7 +55,7 @@ reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
                              const std::list<std::string> & eBlocks,
                              const std::list<std::string> & evalTypes)
 {
-   TEST_FOR_EXCEPTION(labeledResponses_.find(label)!=labeledResponses_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(labeledResponses_.find(label)!=labeledResponses_.end(),std::logic_error,
                       "ResponseLibrary::reserveLabeledVolumeResponse: Adding response labeled \""+label+"\" "
                       "failed because response label has already been added!");
 
@@ -100,7 +100,7 @@ getVolumeResponse(const ResponseId & rid,const std::string & eBlock) const
    { 
       typename std::map<std::string,Teuchos::RCP<RespContVector> >::const_iterator 
             itr = rsvdVolResp_.find(eBlock);
-      TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(itr==rsvdVolResp_.end(),std::logic_error, 
                          "Could not find element block \""+eBlock+"\" in response library");
       vec = itr->second;
    }
@@ -122,7 +122,7 @@ getVolumeResponse(const ResponseId & rid,const std::string & eBlock) const
       }
    }
 
-   TEST_FOR_EXCEPTION(!responseDataFound,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(!responseDataFound,std::logic_error,
                       "ReponseLibrary::getVolumeResponse could not find any such response \""+rid.getString() +"\""
                       " in element block \""+eBlock+"\"");
 
@@ -139,7 +139,7 @@ getVolumeResponseByLabel(const std::string & label) const
    using Teuchos::rcp;
 
    typename std::map<std::string,ResponseDescriptor>::const_iterator itr=labeledResponses_.find(label);
-   TEST_FOR_EXCEPTION(itr==labeledResponses_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==labeledResponses_.end(),std::logic_error,
                       "ResponseLibrary::getVolumeResponseByLabel: Cannot find response labeled \""+label+"\"!");
    
    const ResponseId & rid = itr->second.rid;
@@ -152,7 +152,7 @@ getVolumeResponseByLabel(const std::string & label) const
        eblkItr!=eBlocks.end();++eblkItr) 
       blkResponses.push_back(getVolumeResponse(rid,*eblkItr));
 
-   TEST_FOR_EXCEPTION(blkResponses.size()==0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(blkResponses.size()==0,std::logic_error,
                       "ReponseLibrary::getVolumeResponseByLabel: Could not find any response in "
                       "subcontainers for Response label \""+label+"\"!");
 

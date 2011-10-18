@@ -140,7 +140,7 @@ evaluateBCs(const panzer::BCType bc_type,
 
       bcwkst_it_type bc_wkst_it = bc_worksets.find(bc);
 
-      TEST_FOR_EXCEPTION(bc_wkst_it == bc_worksets.end(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_it == bc_worksets.end(), std::logic_error,
 			 "Failed to find corresponding bc workset!");
 
       const std::map<unsigned,panzer::Workset>& bc_wkst = 
@@ -159,7 +159,7 @@ evaluateBCs(const panzer::BCType bc_type,
 	  std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
 	    bc_wkst.find(local_side_index);
 	  
-	  TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
 			     "Failed to find corresponding bc workset side!");
 	  
 	  panzer::Workset& workset = 

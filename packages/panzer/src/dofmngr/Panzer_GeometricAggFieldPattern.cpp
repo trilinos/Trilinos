@@ -27,7 +27,7 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
    // must be at least one field to do something
    if(numPat<1) {
       bool no_patterns_to_construct = true;
-      TEST_FOR_EXCEPTION(no_patterns_to_construct,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(no_patterns_to_construct,std::logic_error,
                          "GeometricAggFieldPattern::buildPattern requires at least one field pattern");
       return;
    }
@@ -35,7 +35,7 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
    bool sameGeometry=true;
    for(std::size_t i=1;i<patterns.size();i++)
       sameGeometry &= patterns[0]->sameGeometry(*patterns[i]);       
-   TEST_FOR_EXCEPTION(not sameGeometry,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not sameGeometry,std::logic_error,
              "GeometricAggFieldPattern::buildPattern(): Patterns must "
              "have the same geometry!");
 
@@ -83,7 +83,7 @@ int GeometricAggFieldPattern::getSubcellCount(int dim) const
 {
    if(patternBuilt_) return patternData_[dim].size();
 
-   TEST_FOR_EXCEPTION(true,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
             "GeometricAggFieldPattern::getSubcellCount() cannot be called before "
             "GeometricAggFieldPattern::buildPattern()");
 }
@@ -92,7 +92,7 @@ const std::vector<int> & GeometricAggFieldPattern::getSubcellIndices(int dim,int
 {
    if(patternBuilt_) return patternData_[dim][cellIndex];
 
-   TEST_FOR_EXCEPTION(true,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
             "GeometricAggFieldPattern::getSubcellIndices() cannot be called before "
             "GeometricAggFieldPattern::buildPattern()");
 }
@@ -101,7 +101,7 @@ int GeometricAggFieldPattern::getDimension() const
 {
    if(patternBuilt_) return dimension_;
 
-   TEST_FOR_EXCEPTION(true,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
             "GeometricAggFieldPattern::getDimension() cannot be called before "
             "GeometricAggFieldPattern::buildPattern()");
 }

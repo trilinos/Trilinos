@@ -56,7 +56,7 @@ namespace panzer {
     if (Teuchos::is_null(basis)) {
       std::ostringstream s;
       s << "Failed to create basis.  Either the basis type in the input file, \"" << type << "\" is unsupported or we are out of memory!" << std::endl;
-      TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
 			 s.str());
     }
 

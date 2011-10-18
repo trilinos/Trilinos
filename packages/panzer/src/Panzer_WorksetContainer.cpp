@@ -42,7 +42,7 @@ const InputPhysicsBlock & WorksetContainer::lookupInputPhysicsBlock(const std::s
 {
    std::map<std::string,InputPhysicsBlock>::const_iterator itr = ebToIpb_.find(eBlock);
  
-   TEST_FOR_EXCEPTION(itr==ebToIpb_.end(),std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToIpb_.end(),std::logic_error, 
                       "WorksetContainer::lookupInputPhysicsBlock no InputPhysicsBlock object is associated "
                       "with the element block \""+eBlock+"\".");
 

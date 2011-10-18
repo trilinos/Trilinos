@@ -44,7 +44,7 @@ buildClosureModels(const std::string& model_id,
     std::stringstream msg;
     msg << "Falied to find requested model, \"" << model_id 
 	<< "\", for equation set:\n" << std::endl;
-    TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
+    TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
   const ParameterList& my_models = models.sublist(model_id);
@@ -160,7 +160,7 @@ buildClosureModels(const std::string& model_id,
       msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
 	  << "\"\nin model \"" << model_id 
 	  << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
-      TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
+      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }
 
   }

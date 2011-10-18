@@ -1,6 +1,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -70,7 +70,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	basis = it->second;
     }
     
-    TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
 		       "Error the name \"" << *dof_name
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
@@ -100,7 +100,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	basis = it->second;
     }
     
-    TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
 		       "Error the name \"" << res_to_dof->second
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
@@ -134,7 +134,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	basis = it->second;
     }
     
-    TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
 		       "Error the name \"" << res_to_dof->second
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
@@ -149,7 +149,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     names_map->insert(*res_to_dof);
     p.set("Dependent Map", names_map);
     
-    TEST_FOR_EXCEPTION(!pb.cellData().isSide(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!pb.cellData().isSide(), std::logic_error,
 		       "Error - physics block is not a side set!");
     
     p.set<int>("Side Subcell Dimension", 

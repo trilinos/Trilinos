@@ -3,7 +3,7 @@
 
 #include "NOX_Abstract_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"

@@ -21,7 +21,7 @@ class CoordMatcher {
    void parseParams(const std::vector<std::string> & params) 
    { 
       std::string errStr = "CoordMatcher \"" + std::string(1,labels_[index_]) + "-coord\" takes at most one parameter <tol>";
-      TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
+      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
  
       // read in string, get double
       if(params.size()==1) {
@@ -66,7 +66,7 @@ class PlaneMatcher {
    { 
       std::string errStr = "PlaneMatcher \"" + std::string(1,labels_[index0_])+std::string(1,labels_[index1_]) 
                          + "-coord\" takes only one parameter <tol>";
-      TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
+      TEUCHOS_TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
  
       // read in string, get double
       if(params.size()==1) {

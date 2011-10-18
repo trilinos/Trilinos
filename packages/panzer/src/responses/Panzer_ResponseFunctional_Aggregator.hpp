@@ -51,7 +51,7 @@ public:
    virtual void fillResponse(const std::string & field,Response<TraitsT> & response) const
    {
       std::size_t index = fieldIndex(field);
-      TEST_FOR_EXCEPTION(index>=fields_.size(),std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(index>=fields_.size(),std::logic_error,
                          "Cannnot find field \""+field+"\" in ReponseFunctional_Data object.");
       response.setValue(data_[index]);
    }

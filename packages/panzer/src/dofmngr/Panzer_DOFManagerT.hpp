@@ -104,7 +104,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
                                                         const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   TEST_FOR_EXCEPTION(fieldsRegistered_,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(fieldsRegistered_,std::logic_error,
                       "DOFManager::addField: addField cannot be called after registerFields or"
                       "buildGlobalUnknowns has been called"); 
 
@@ -153,7 +153,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
             ss << "\"" << *itr << "\" ";
          ss << " ]\n";
 
-         TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
+         TEUCHOS_TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
       }
    }
 
@@ -197,7 +197,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
          // directly from the fieldStringToPattern_ map. Possibly check the
          // order validator for letting something slip through!
          
-         TEST_FOR_EXCEPTION(false,std::logic_error,
+         TEUCHOS_TEST_FOR_EXCEPTION(false,std::logic_error,
                             "DOFManager::registerFields - Impossible case discoverved!");
       }
    }
@@ -213,7 +213,7 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
    // return based on what was found
    if(itr==fieldStrToInt_.end()) {
       // incorrect field name
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                          "DOFManager::getFieldNum No field with the name \"" + str + "\" has been added");
    }
    else {
@@ -460,7 +460,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
 getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
-   TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
