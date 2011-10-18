@@ -738,7 +738,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
     //This is slow and not thread-safe.
 
     for(int j=0; j<numCols; ++j) {
-      valuesptr[j] = values[i][j];
+      valuesptr[j] = values[j][i];
     }
 
     returncode += InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, valuesptr, mode);
