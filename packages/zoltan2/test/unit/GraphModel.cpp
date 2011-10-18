@@ -37,10 +37,13 @@ using Teuchos::ArrayView;
 //using Zoltan2::IdentifierTraits;
 
 
-template <typename Model, typename Scalar, typename LNO, typename GNO, typename Node>
-  void checkGraph(Model &graph,
-    RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > M, std::string errMsg)
+template <typename Model, typename Matrix>
+  void checkGraph(Model &graph, RCP<Matrix> M, std::string errMsg)
 {
+  typedef typename Model::scalar_t Scalar;
+  typedef typename Model::lno_t LNO;
+  typedef typename Model::gno_t GNO;
+
   const RCP<const Comm<int> > &comm = M->getComm();
   int rank = comm->getRank();
   RCP<const Zoltan2::Environment> default_env = 
@@ -110,9 +113,12 @@ template <typename Model, typename Scalar, typename LNO, typename GNO, typename 
 }
 
 template <typename Scalar, typename LNO, typename GNO, typename Node>
-  void testGraphFromXpetraMatrix(std::string fname, RCP<const Comm<int> > comm)
+  void testGraphInputFromMatrix(std::string fname, 
+  const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
+
+  // If LNO and GNO are int we can test an Epetra input adapter.
   bool includeEpetra = false;
   std::string intName(OrdinalTraits<int>::name());
   std::string ScalarName(ScalarTraits<Scalar>::name());
@@ -124,24 +130,25 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   RCP<const Zoltan2::Environment> default_env = 
     Teuchos::rcp(new Zoltan2::Environment);
 
-  if ((LNOName == intName) && (GNOName == intName))
-    includeEpetra = true;
+  // User input data types
 
-  // Create some matrix input adapters
+  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
+  typedef Epetra_CrsMatrix                    ecrsMatrix_t;
+  typedef Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
 
-  typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> epetraMatrix_t;
-  typedef Zoltan2::TpetraCrsMatrixInput<Tpetra::CrsMatrix<Scalar, LNO, GNO> > tpetraMatrix_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<Tpetra::CrsMatrix<Scalar, LNO, GNO> > xpetraMatrix_t;
+  // Zoltan2 user data input adapters
 
-  RCP<epetraMatrix_t> emi;
-  RCP<tpetraMatrix_t> tmi;
-  RCP<xpetraMatrix_t> xmi;
+  typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+  typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+  typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
-  TestAdapters<Scalar,LNO,GNO> input(fname);
+  // Test adapters
 
-#ifdef HAVE_MPI
-  input.setMpiCommunicator(MPI_COMM_WORLD);
-#endif
+  RCP<TpetraCrsMatrixInput> tmi;
+  RCP<EpetraCrsMatrixInput> emi;
+  RCP<XpetraCrsMatrixInput> xmi;
+
+  TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node> input(fname, comm);
 
   if (includeEpetra){
     emi = input.getEpetraCrsMatrixInputAdapter();
@@ -152,23 +159,24 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   xmi = input.getXpetraCrsMatrixInputAdapter();
 
   // Get original matrix for debugging.
-  RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > M = input.getMatrix();
+  RCP<tcrsMatrix_t > M = input.getTpetraMatrix();
 
-  // Create a graph model with each and test it.
+  // Create graph models with different user objects and test them.
 
-  typedef Zoltan2::GraphModel<xpetraMatrix_t> xGraphModel_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixUpcast;
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixUpcast;
+
+  typedef Zoltan2::GraphModel<XpetraCrsMatrixInput> xGraphModel_t;
+  typedef Zoltan2::GraphModel<EpetraCrsMatrixUpcast> eGraphModel_t;
+  typedef Zoltan2::GraphModel<TpetraCrsMatrixUpcast> tGraphModel_t;
 
   int fail = 0;
   if (includeEpetra){
-
-    // GraphModel built with EpetraCrsMatrixInput
-
-    RCP<xpetraMatrix_t> eM = Teuchos::rcp_dynamic_cast<xpetraMatrix_t>(emi);
-
-    xGraphModel_t *graph = NULL;
-
+    eGraphModel_t *graph = NULL;
     try{
-      graph = new xGraphModel_t(eM, comm, default_env);
+      RCP<EpetraCrsMatrixUpcast> upcastEmi = 
+        Teuchos::rcp_implicit_cast<EpetraCrsMatrixUpcast>(emi);
+      graph = new eGraphModel_t(upcastEmi, comm, default_env);
     }
     catch (std::exception &e){
       std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -176,19 +184,18 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
     }
     TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating epetra graph model", 1)
 
-    checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*graph, M, 
-                                                      " (epetra matrix input)");
+    checkGraph<eGraphModel_t, tcrsMatrix_t>(*graph, M, " (epetra matrix input)");
 
     delete graph;
   }
 
   // GraphModel built with TpetraCrsMatrixInput
 
-  RCP<xpetraMatrix_t> tM = Teuchos::rcp_implicit_cast<xpetraMatrix_t>(tmi);
-
-  xGraphModel_t *tgraph=NULL;
+  tGraphModel_t *tgraph=NULL;
   try{
-    tgraph = new xGraphModel_t(tM, comm, default_env);
+    RCP<TpetraCrsMatrixUpcast> upcastTmi = 
+      Teuchos::rcp_implicit_cast<TpetraCrsMatrixUpcast>(tmi);
+    tgraph = new tGraphModel_t(upcastTmi, comm, default_env);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -196,8 +203,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating tpetra graph model", 1)
 
-  checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*tgraph, M,
-                                                    " (tpetra matrix input)");
+  checkGraph<tGraphModel_t, tcrsMatrix_t>(*tgraph, M, " (tpetra matrix input)");
 
   delete tgraph;
 
@@ -213,8 +219,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating xpetra graph model", 1)
 
-  checkGraph<xGraphModel_t, Scalar, LNO, GNO, Node>(*xgraph, M,
-                                                    " (xpetra matrix input)");
+  checkGraph<xGraphModel_t, tcrsMatrix_t>(*xgraph, M, " (xpetra matrix input)");
 
   delete xgraph;
 
@@ -243,10 +248,10 @@ int main(int argc, char *argv[])
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
 
-    testGraphFromXpetraMatrix<
+    testGraphInputFromMatrix<
       double, int, int, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
 
-    testGraphFromXpetraMatrix<
+    testGraphInputFromMatrix<
       double, int, long, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
   }
 

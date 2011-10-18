@@ -24,9 +24,9 @@ class AlgScotch {
 public:
   typedef Adapter::user_t user_t;
 
-  AlgScotch(RCP<GraphModel<Adapter<user_t> >, 
-            RCP<PartitioningSolution<user_t> >,
-            RCP<Teuchos::ParameterList>);
+  AlgScotch(const RCP<GraphModel<Adapter<user_t> > &, 
+            const RCP<PartitioningSolution<user_t> > &,
+            const RCP<Teuchos::ParameterList> &);
 
   // Destructor
   ~AlgScotch() {};
@@ -40,9 +40,9 @@ private:
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 AlgScotch<Adapter>::AlgScotch(
-  RCP<GraphModel<Adapter> > model, 
-  RCP<PartitioningSolution<user_t> > solution,
-  RCP<Teuchos::ParameterList> pl
+  const RCP<GraphModel<Adapter> > &model, 
+  const RCP<PartitioningSolution<user_t> > &solution,
+  const RCP<Teuchos::ParameterList> &pl
 ) 
 {
   HELLO;

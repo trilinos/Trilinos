@@ -1,7 +1,25 @@
-/*
-**  TODO - what options do we care about
-*/
-
-/* define if we want to use MPI */
+/* define if we have MPI */
 #cmakedefine HAVE_MPI
 
+/* define if we have the METIS library*/
+#cmakedefine HAVE_METIS
+
+/* define if we have the PaToH library*/
+#cmakedefine HAVE_PATOH
+
+/* define if we have the Scotch library*/
+#cmakedefine HAVE_SCOTCH
+
+/* define if we have the ParMETIS library*/
+#cmakedefine HAVE_PARMETIS
+
+/* define if we have the PtScotch library*/
+#cmakedefine HAVE_PTSCOTCH
+
+/* define if we have the CCOLAMD library*/
+#cmakedefine HAVE_CCOLAMD
+
+/* define if malloc.h has mallinfo() and you 
+ * want to build Zoltan_Mallinfo.cpp.
+ */
+#cmakedefine HAVE_MALLINFO

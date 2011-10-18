@@ -18,6 +18,7 @@
 #include <vector>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Hashtable.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
@@ -30,6 +31,9 @@ namespace Zoltan2 {
     The constructor of the GraphModel can be a global call, requiring
     all processes in the application to call it.  The rest of the
     method should be local methods.
+
+    The template parameter is an Input Adapter.  Input adapters are
+    templated on the basic user input type.
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -45,6 +49,10 @@ public:
   typedef typename Adapter::lid_t     lid_t;
   typedef typename Adapter::node_t    node_t;
   typedef typename Adapter::user_t    user_t;
+  
+  GraphModel(){
+    std::cout <<"GRAPH MODEL base" << std::endl;
+  }
 
   /*! Returns the number vertices on this process.
    */
@@ -150,6 +158,11 @@ public:
 ////////////////////////////////////////////////////////////////
 // Graph model derived from XpetraCrsMatrixInput.
 //    We know that Xpetra input does not need an IdentifierMap
+//
+// TODO To build GraphModel from EpetraCrsMatrixInput<Epetra_CrsMatrix>
+//   we need to upcast to XpetraCrsMatrixInput<Epetra_CrsMatrix> and
+//   and similarly for TpetraCrsMatrixInput.  Should we create
+//   specializations for those two?  A trade off.
 ////////////////////////////////////////////////////////////////
 
 /*! Zoltan2::GraphModel<XpetraCrsMatrixInput>
@@ -157,6 +170,7 @@ public:
            for a Zoltan2::XpetraCrsMatrixInput object.
 */
 
+template <>
 template <typename User>
 class GraphModel<XpetraCrsMatrixInput<User> >
 {
@@ -173,8 +187,8 @@ public:
    *  All processes in the communicator must call the constructor.
    */
   GraphModel(
-    const RCP<const XpetraCrsMatrixInput<User> > inputAdapter,
-    const RCP<const Comm<int> > comm, const RCP<const Environment> env) :
+    const RCP<const XpetraCrsMatrixInput<User> > &inputAdapter,
+    const RCP<const Comm<int> > &comm, const RCP<const Environment> &env) :
       input_(inputAdapter), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
       numLocalEdges_(), numGlobalEdges_(0)
@@ -193,17 +207,25 @@ public:
 
     numLocalEdges_ = offsets_[numVtx];
 
-    edgeGnos_ = arcp(nborIds, 0, numLocalEdges_, false);
-
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
-    procIds_ = arcp<int>(numLocalEdges_);
+    const RCP<const Xpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &xmatrix = 
+      inputAdapter->getMatrix();
 
-    RCP<const Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > xmatrix =
-      input_->getMatrix();
+    RCP<const Xpetra::Map<lno_t, gno_t> > rowMap = xmatrix->getRowMap();
 
-    xmatrix->getRowMap()->getRemoteIndexList(edgeGnos_(), procIds_());
+    RCP<Array<int> > procBuf =  rcp(new Array<int>(numLocalEdges_));
+    procIds_ = arcp(procBuf);
+    edgeGnos_ = arcp(nborIds, 0, numLocalEdges_, false);
+
+    try{
+      rowMap->getRemoteIndexList(edgeGnos_.view(0,numLocalEdges_), 
+        procIds_.view(0, numLocalEdges_));
+    }
+    catch (std::exception &e){
+      Z2_THROW_ZOLTAN2_ERROR(env_, e);
+    }
   }
 
   // // // // // // // // // // // // // // // // // // // // // /
@@ -307,7 +329,6 @@ private:
 
 };
 
-
 #if 0
 ////////////////////////////////////////////////////////////////
 // Graph model derived from matrix input.
@@ -385,8 +406,8 @@ public:
    *  All processes in the communicator must call the constructor.
    */
   GraphModel(
-    RCP<const MatrixInput<Scalar, LNO, GNO, LID, GNO, Node> > inputAdapter,
-    RCP<const Comm<int> > comm, RCP<const Environment <int> > env) : 
+    const RCP<const MatrixInput<Scalar, LNO, GNO, LID, GNO, Node> > &inputAdapter,
+    const RCP<const Comm<int> > &comm, const RCP<const Environment <int> > &env) : 
       input_(inputAdapter), comm_(comm), env_(env),
       _gids(), gnos_(), _lids(), _nedges(), _edgeGids(), edgeGnos_(),
       procIds_(), offsets_(), _gnoToLno(),

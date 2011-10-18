@@ -34,9 +34,9 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
-  std::string inputFile;  // Matrix Market file to read
-  bool verbose = false;       // Verbosity of output
-  bool echo = false;          // Echo the read-in matrix back?
+  std::string inputFile = "simple.mtx";  // Matrix Market file to read
+  bool verbose = false;                  // Verbosity of output
+  bool echo = false;                     // Echo the read-in matrix back?
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, true);
@@ -77,7 +77,7 @@ int main(int narg, char** arg)
   origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
-                                    origMatrix->getRangeMap());
+                                    origMatrix->getDomainMap());
   origVector->randomize();
 
   ////// Specify problem parameters
@@ -90,7 +90,7 @@ int main(int narg, char** arg)
   Zoltan2::TpetraCrsMatrixInput<SparseMatrix> adapter(origMatrix);
 
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<SparseMatrix> problem(adapter, params);
+  Zoltan2::PartitioningProblem<SparseMatrix> problem(&adapter, &params);
   problem.solve();
   problem.redistribute();
 

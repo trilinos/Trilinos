@@ -38,7 +38,7 @@ template <typename User>
 class EpetraCrsMatrixInput : public XpetraCrsMatrixInput<User>{
 private:
 
-    RCP<const Epetra_CrsMatrix> inmatrix_;
+    RCP<const User> inmatrix_;
 public:
 
   typedef typename InputAdapter<User>::scalar_t scalar_t;
@@ -54,21 +54,12 @@ public:
 
   /*! Constructor
    */
-  EpetraCrsMatrixInput(const RCP<const Epetra_CrsMatrix> matrix):
+  EpetraCrsMatrixInput(const RCP<const User> &matrix):
     XpetraCrsMatrixInput<User> (
-      Teuchos::rcp(new Xpetra::EpetraCrsMatrix(
-        Teuchos::rcp_const_cast<Epetra_CrsMatrix>(matrix)))) 
+      rcp(new Xpetra::EpetraCrsMatrix(rcp_const_cast<User>(matrix)))) 
   {
     inmatrix_ = matrix;
   }
-
-  /*! Access to matrix that instantiated adapter
-   */
-  RCP<const Epetra_CrsMatrix> getMatrix() const 
-  { 
-    return inmatrix_;
-  }
-
 };
 
 } //namespace Zoltan2

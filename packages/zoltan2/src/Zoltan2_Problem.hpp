@@ -35,10 +35,10 @@ public:
   // correctly before calling a common problem construction function.
   //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
   //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  Problem(InputAdapter<User> &,
-          Teuchos::ParameterList &params,
-          const Teuchos::Comm<int> &comm = 
-                       *(Teuchos::DefaultComm<int>::getComm().getRawPtr()));
+  Problem(InputAdapter<User> *,
+          Teuchos::ParameterList *params,
+          const RCP<const Teuchos::Comm<int> > &comm = 
+                       Teuchos::DefaultComm<int>::getComm());
 
   // Destructor
   virtual ~Problem() {};
@@ -79,14 +79,14 @@ Problem<User>::Problem(
 
 template <typename User>
 Problem<User>::Problem(
-  InputAdapter<User> &input,
-  Teuchos::ParameterList &params,
-  const Teuchos::Comm<int> &comm
+  InputAdapter<User> *input,
+  Teuchos::ParameterList *params,
+  const RCP<const Teuchos::Comm<int> > &comm
 ) :
-  inputAdapter_(rcpFromRef(input)),
-  params_(rcpFromRef(params)),
-  comm_(rcpFromRef(comm)),
-  env_(Teuchos::RCP<Environment>(new Environment(params, comm_)))
+  inputAdapter_(RCP<InputAdapter<User> >(input,false)),
+  params_(RCP<Teuchos::ParameterList>(params,false)),
+  comm_(comm),
+  env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
 {
   HELLO;
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 

@@ -44,7 +44,7 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(InputAdapter<User> &A, Teuchos::ParameterList &p) 
+  PartitioningProblem(InputAdapter<User> *A, Teuchos::ParameterList *p) 
                       : Problem<User>(A, p) 
   {
     HELLO;
@@ -119,6 +119,7 @@ void PartitioningProblem<User>::createPartitioningProblem()
                                         (this->inputAdapter_, true),
                         this->comm_,
                         this->env_);
+      delete model;  //KDDKDD REMOVE LATER WHEN HAVE RCPs WORKING.
 
       //KDDKDD NOT WORKING YET RCP<GraphModel<XpetraCrsMatrixInput<User> > > rcpmodel = rcp(model);
 

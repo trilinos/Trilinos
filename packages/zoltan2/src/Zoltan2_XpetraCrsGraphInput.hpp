@@ -38,11 +38,14 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 /*! Zoltan2::XpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
-    The template parameter is the weight type.  Xpetra local and global IDs 
-    are ints.
     TODO -test for memory alloc failure when we resize a vector
     TODO: we assume FillComplete has been called.  We should support
                 objects that are not FillCompleted.
+
+    The template parameter is the user's input object - an Epetra
+    graph or a templated Tpetra graph (through sub classes 
+    EpetraCrsGraphInput or TpetraCrsGraphInput respectively), 
+    or a templated Xpetra::CrsGraph.
 */
 
 template <typename User>
@@ -56,10 +59,9 @@ public:
   typedef typename InputAdapter<User>::lid_t    lid_t;
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
+  typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 
-  typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraphType;
-
-  /*! Name of input adapter type
+  /*! Name of input adapter type   TODO make this a trait
    */
   std::string inputAdapterName()const {return std::string("XpetraCrsGraph");}
 
@@ -69,7 +71,7 @@ public:
 
   /*! Constructor with a Xpetra::CrsGraph
    */
-  XpetraCrsGraphInput(const RCP<const xgraphType> graph):
+  XpetraCrsGraphInput(const RCP<const xgraph_t> &graph):
     graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
@@ -381,7 +383,7 @@ public:
   /*! Access to xpetra graph 
    */ 
    
-  RCP<const xgraphType> getGraph() const
+  RCP<const xgraph_t> getGraph() const
   {
     return graph_;
   }
@@ -397,7 +399,7 @@ public:
 private:
 
 
-  RCP<const xgraphType > graph_;
+  RCP<const xgraph_t > graph_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > colMap_;
   std::vector<int> edgeOffsets_; 

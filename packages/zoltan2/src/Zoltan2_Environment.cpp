@@ -24,9 +24,9 @@
 namespace Zoltan2 {
 
 Environment::Environment( ParameterList &problemParams,
-  RCP<const Comm<int> > &comm):
+  const RCP<const Comm<int> > &comm):
   params_(problemParams), validParams_(), 
-  myRank_(0), numProcs_(0),
+  myRank_(0), numProcs_(1),
   printDebugMessages_(false), printProfilingMessages_(false),
   errorCheckLevel_(), debugDepthLevel_(), profilingIndicator_(),
   committed_(false), comm_(comm), dbg_()
@@ -37,7 +37,7 @@ Environment::Environment( ParameterList &problemParams,
 
 Environment::Environment():
   params_(), validParams_(), 
-  myRank_(0), numProcs_(0),
+  myRank_(0), numProcs_(1),
   printDebugMessages_(false), printProfilingMessages_(false),
   errorCheckLevel_(), debugDepthLevel_(), profilingIndicator_(),
   committed_(false), dbg_()
@@ -79,7 +79,7 @@ Environment &Environment::operator=(const Environment &env)
   return *this;
 }
 
-void Environment::setCommunicator(RCP<const Comm<int> > &comm)
+void Environment::setCommunicator(const RCP<const Comm<int> > &comm)
 {
   Z2_LOCAL_INPUT_ASSERTION(*comm, *this, 
     "parameters are already committed",

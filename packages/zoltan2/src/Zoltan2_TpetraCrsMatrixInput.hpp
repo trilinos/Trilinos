@@ -48,8 +48,8 @@ public:
   typedef typename InputAdapter<User>::lid_t    lid_t;
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
-
-  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> crsMatrix;
+  typedef Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t> xtmatrix_t;
+  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
 
   /*! Name of input adapter type.
    */
@@ -61,25 +61,17 @@ public:
 
   /*! Constructor 
    */
-  TpetraCrsMatrixInput(const RCP<const crsMatrix> matrix):
-    XpetraCrsMatrixInput<User>(
-      Teuchos::rcp(new Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t>(
-        Teuchos::rcp_const_cast<crsMatrix>(matrix))))
-    
+  TpetraCrsMatrixInput(const RCP<const User> &matrix):
+    XpetraCrsMatrixInput<User>(rcp_implicit_cast<const xmatrix_t>(
+      rcp(new xtmatrix_t(rcp_const_cast<User>(matrix)))))
+
   {
     inmatrix_ = matrix;
   }
 
-  /*! Access to matrix that instantiated adapter
-   */
-  RCP<const crsMatrix> getMatrix() const
-  { 
-    return inmatrix_;
-  }
-
 private:
 
-  RCP<const crsMatrix > inmatrix_;
+  RCP<const User> inmatrix_;
 };
 } // namespace
 
