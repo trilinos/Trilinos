@@ -139,11 +139,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   // Zoltan2 user data input adapters
 
   typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
-  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixBase;
-
   typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixBase;
-
   typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
   // Test adapters
@@ -163,20 +159,23 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   xmi = input.getXpetraCrsMatrixInputAdapter();
 
   // Get original matrix for debugging.
-  RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > M = input.getTpetraMatrix();
+  RCP<tcrsMatrix_t > M = input.getTpetraMatrix();
 
   // Create graph models with different user objects and test them.
 
+  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixUpcast;
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixUpcast;
+
   typedef Zoltan2::GraphModel<XpetraCrsMatrixInput> xGraphModel_t;
-  typedef Zoltan2::GraphModel<TpetraCrsMatrixBase> tGraphModel_t;
-  typedef Zoltan2::GraphModel<EpetraCrsMatrixBase> eGraphModel_t;
+  typedef Zoltan2::GraphModel<EpetraCrsMatrixUpcast> eGraphModel_t;
+  typedef Zoltan2::GraphModel<TpetraCrsMatrixUpcast> tGraphModel_t;
 
   int fail = 0;
   if (includeEpetra){
     eGraphModel_t *graph = NULL;
     try{
-      RCP<EpetraCrsMatrixBase> upcastEmi = 
-        Teuchos::rcp_implicit_cast<EpetraCrsMatrixBase>(emi);
+      RCP<EpetraCrsMatrixUpcast> upcastEmi = 
+        Teuchos::rcp_implicit_cast<EpetraCrsMatrixUpcast>(emi);
       graph = new eGraphModel_t(upcastEmi, comm, default_env);
     }
     catch (std::exception &e){
@@ -194,8 +193,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   tGraphModel_t *tgraph=NULL;
   try{
-    RCP<TpetraCrsMatrixBase> upcastTmi = 
-      Teuchos::rcp_implicit_cast<TpetraCrsMatrixBase>(tmi);
+    RCP<TpetraCrsMatrixUpcast> upcastTmi = 
+      Teuchos::rcp_implicit_cast<TpetraCrsMatrixUpcast>(tmi);
     tgraph = new tGraphModel_t(upcastTmi, comm, default_env);
   }
   catch (std::exception &e){

@@ -42,7 +42,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
     Zoltan2 are in the XpetraGraphInput parent class.  The methods used
     by the Zoltan2 caller are in this class.
 
-    The template parameter is the weight type.
+    The template parameter is the user's Tpetra::CrsGraph<lno, gno>.
 */
 
 template<typename User>
@@ -57,7 +57,6 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
 
-  typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> crsGraph;
   /*! Name of input adapter type.
    */
   std::string inputAdapterName()const {return std::string("TpetraCrsGraph");}
@@ -68,10 +67,9 @@ public:
 
   /*! Constructor
    */
-  TpetraCrsGraphInput(const RCP<const crsGraph> &graph): 
-      XpetraCrsGraphInput<User>(
-        Teuchos::rcp(new Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t>(
-          Teuchos::rcp_const_cast<crsGraph>(graph)))) 
+  TpetraCrsGraphInput(const RCP<const User> &graph): XpetraCrsGraphInput<User>(
+    rcp(new Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t>(
+      rcp_const_cast<User>(graph)))) 
   {
     ingraph_ = graph;
   }
@@ -79,13 +77,13 @@ public:
 
   /*! Access to the graph that instantiated the adapter
    */
-  RCP<const crsGraph> getGraph()
+  RCP<const User> getGraph()
   { 
     return ingraph_;
   }
 
 private:
-  RCP<const crsGraph > ingraph_;
+  RCP<const User > ingraph_;
 
 };
 

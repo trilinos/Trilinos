@@ -38,15 +38,15 @@ struct InputTraits<Epetra_CrsGraph>
     XpetraGraphInput parent class.  The methods used by the Zoltan2 caller 
     to initialize the objects are in this class.
 
-    The template parameter is the weight type.  Epetra local and global IDs 
-    are ints.
+    The template parameter is the Epetra_CrsGraph (the User data type).  
+    Epetra local and global IDs are ints, and weights are double.
 */
 
 template <typename User>
 class EpetraCrsGraphInput : public XpetraCrsGraphInput<User>{
 private:
 
-  RCP<const Epetra_CrsGraph> ingraph_;
+  RCP<const User> ingraph_;
 
 #if 0
   int vtxWeightDim_;
@@ -66,6 +66,7 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
 
+  // TODO - make the name part of the Traits definition
   std::string inputAdapterName()const {return std::string("EpetraCrsGraph");}
 
   //~EpetraCrsGraphInput() { }
@@ -73,31 +74,16 @@ public:
   /*! Constructor with graph only
       \param graph  the graph represented by this input adapter
    */
-  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> &graph):
+  EpetraCrsGraphInput(const RCP<const User> &graph):
     XpetraCrsGraphInput<User> (
-      Teuchos::rcp(new Xpetra::EpetraCrsGraph(
-        Teuchos::rcp_const_cast<Epetra_CrsGraph>(graph))))
+      rcp(new Xpetra::EpetraCrsGraph(rcp_const_cast<User>(graph))))
   {
     ingraph_ = graph;
   }
 
-#if 0
-  /*! Constructor with weights
-      \param graph  the graph represented by this input adapter
-      \param vertexWeights are given in vertex local number order
-      \param edgeWeights when queried, the Epetra_CrsGraph gives edges in a 
-               certain order.  The edgeWeights follow this order, omitting
-               any self edges.
-   */
-  EpetraCrsGraphInput(const RCP<const Epetra_CrsGraph> &graph,
-                      const ArrayRCP<double> &vertexWeights,
-                      const ArrayRCP<double> &edgeWeights):
-    XpetraCrsGraphInput<int, int> (graph) {}
-#endif
-
   /*! Access to graph that instantiated adapter
    */
-  RCP<const Epetra_CrsGraph> getGraph() const 
+  RCP<const User> getGraph() const 
   { 
     return ingraph_;
   }

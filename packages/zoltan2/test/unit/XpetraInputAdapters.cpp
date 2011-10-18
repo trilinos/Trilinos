@@ -25,7 +25,7 @@ using Teuchos::OrdinalTraits;
 using Teuchos::ScalarTraits;
 
 template <typename GraphAdapter, typename Graph>
-  void testGraphAdapter(RCP<GraphAdapter> input, RCP<const Graph> g, 
+  void testGraphAdapter(RCP<GraphAdapter > input, RCP<const Graph> g, 
     RCP<const Comm<int> > comm)
 {
   typedef typename GraphAdapter::lid_t LID;
@@ -50,7 +50,7 @@ template <typename GraphAdapter, typename Graph>
 }
 
 template <typename MatrixAdapter, typename Matrix>
-  void testMatrixAdapter(RCP<MatrixAdapter> input, RCP<Matrix> m, RCP<const Comm<int> >&comm)
+  void testMatrixAdapter(RCP<MatrixAdapter > input, RCP<Matrix> m, RCP<const Comm<int> >&comm)
 {
   typedef typename MatrixAdapter::scalar_t Scalar;
   typedef typename MatrixAdapter::lid_t LID;

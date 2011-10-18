@@ -37,6 +37,8 @@ typedef size_t global_size_t;
 namespace Zoltan2{
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
+using Teuchos::rcp_implicit_cast;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
