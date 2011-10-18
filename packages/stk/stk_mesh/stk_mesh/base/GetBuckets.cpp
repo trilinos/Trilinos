@@ -23,18 +23,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-void get_buckets( const Selector & selector ,
-                  const std::vector< Bucket * > & input ,
-                        std::vector< Bucket * > & output )
-{
-  output.clear();
-  for ( std::vector< Bucket * >::const_iterator
-        i = input.begin() ; i != input.end() ; ++i ) {
-    Bucket * const b = *i ;
-    if ( selector( *b ) ) { output.push_back( b ); }
-  }
-}
-
 AllSelectedBucketsRange get_buckets( const Selector & selector, const BulkData& mesh )
 {
   AllBucketsRange all_buckets = mesh.get_bucket_range();

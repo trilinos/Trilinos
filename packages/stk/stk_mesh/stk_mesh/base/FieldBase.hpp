@@ -138,6 +138,8 @@ class FieldBase
 
   void* get_initial_value() { return m_impl.get_initial_value(); }
 
+  unsigned get_initial_value_num_bytes() const { return m_impl.get_initial_value_num_bytes(); }
+
 private:
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"

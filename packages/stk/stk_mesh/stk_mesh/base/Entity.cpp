@@ -22,7 +22,11 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 Entity::Entity( const EntityKey & arg_key )
-  : m_entityImpl( arg_key )
+  :
+#ifdef SIERRA_MIGRATION
+    m_voidptr(NULL),
+#endif
+    m_entityImpl( arg_key )
 {}
 
 

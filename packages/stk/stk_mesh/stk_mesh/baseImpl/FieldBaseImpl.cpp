@@ -65,7 +65,8 @@ FieldBaseImpl::FieldBaseImpl(
   m_field_rank( arg_rank ),
   m_dim_map(),
   m_selector_restrictions(),
-  m_initial_value(NULL)
+  m_initial_value(NULL),
+  m_initial_value_num_bytes(0)
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
 
