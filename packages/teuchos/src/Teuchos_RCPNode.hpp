@@ -113,7 +113,7 @@ public:
         case RCP_STRONG:
           return "RCP_STRONG";
         case RCP_WEAK:
-          return "RCP_STRONG";
+          return "RCP_WEAK";
         default:
           // Should never get here but fall through ...
           break;
