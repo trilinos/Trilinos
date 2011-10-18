@@ -49,7 +49,7 @@
 #include "NOX_PrePostOperator_Vector.H"
 #include "NOX_PrePostOperator_RowSumScaling.H"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace NOX {
 
@@ -95,7 +95,7 @@ namespace NOX {
       else if (when_to_scale == "Before Each Nonlinear Solve")
 	scaled_ppo = rcp(new NOX::RowSumScaling(scale_vec, NOX::RowSumScaling::NOX_RowSumScaleAtBeginningOfSolve));
       else 
-	TEST_FOR_EXCEPTION(true, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			   "Error the option for \"Update Row Sum Scaling\" input as \"" << when_to_scale << "\" is invalid.  Please use one of the following: \"Before Each Nonlinear Iteration\" or \"Before Each Nonlinear Solve\".");
 
       // Create thyra scaled model evaluator

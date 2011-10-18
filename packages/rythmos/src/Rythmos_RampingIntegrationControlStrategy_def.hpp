@@ -135,7 +135,7 @@ void RampingIntegrationControlStrategy<Scalar>::setParameterList(
   using Teuchos::as;
   using Teuchos::get;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*getValidParameters());
   this->setMyParamList(paramList);
 

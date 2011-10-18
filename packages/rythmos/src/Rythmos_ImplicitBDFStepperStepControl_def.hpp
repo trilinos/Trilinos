@@ -39,16 +39,16 @@ template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::setStepControlState_(StepControlStrategyState newState)
 {
   if (stepControlState_ == UNINITIALIZED) {
-    TEST_FOR_EXCEPT(newState != BEFORE_FIRST_STEP);
+    TEUCHOS_TEST_FOR_EXCEPT(newState != BEFORE_FIRST_STEP);
   } else if (stepControlState_ == BEFORE_FIRST_STEP) {
-    TEST_FOR_EXCEPT(newState != MID_STEP);
+    TEUCHOS_TEST_FOR_EXCEPT(newState != MID_STEP);
   } else if (stepControlState_ == MID_STEP) {
-    TEST_FOR_EXCEPT(newState != AFTER_CORRECTION);
+    TEUCHOS_TEST_FOR_EXCEPT(newState != AFTER_CORRECTION);
   } else if (stepControlState_ == AFTER_CORRECTION) {
-    TEST_FOR_EXCEPT(newState != READY_FOR_NEXT_STEP);
+    TEUCHOS_TEST_FOR_EXCEPT(newState != READY_FOR_NEXT_STEP);
     checkReduceOrderCalled_ = false;
   } else if (stepControlState_ == READY_FOR_NEXT_STEP) {
-    TEST_FOR_EXCEPT(newState != MID_STEP);
+    TEUCHOS_TEST_FOR_EXCEPT(newState != MID_STEP);
   }
   stepControlState_ = newState;
 }
@@ -62,7 +62,7 @@ StepControlStrategyState ImplicitBDFStepperStepControl<Scalar>::getCurrentState(
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::updateCoeffs_() 
 {
-  TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP)));
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP)));
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -142,7 +142,7 @@ void ImplicitBDFStepperStepControl<Scalar>::initialize(const StepperBase<Scalar>
 
   // Set initial time:
   TimeRange<Scalar> stepperRange = stepper.getTimeRange();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       !stepperRange.isValid(),
       std::logic_error,
       "Error, Stepper does not have valid time range for initialization of ImplicitBDFStepperStepControl!\n"
@@ -252,7 +252,7 @@ template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<Scalar>& stepper)
 {
   
-  TEST_FOR_EXCEPT(!(stepControlState_ == BEFORE_FIRST_STEP));
+  TEUCHOS_TEST_FOR_EXCEPT(!(stepControlState_ == BEFORE_FIRST_STEP));
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -289,7 +289,7 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
     }
     // check for maximum step-size:
 #ifdef RYTHMOS_DEBUG
-      TEST_FOR_EXCEPT(ST::isnaninf(currentTimeStep));
+      TEUCHOS_TEST_FOR_EXCEPT(ST::isnaninf(currentTimeStep));
 #endif // RYTHMOS_DEBUG
     Scalar rh = std::abs(currentTimeStep)*h_max_inv_; 
     if (rh>1.0) {
@@ -318,8 +318,8 @@ void ImplicitBDFStepperStepControl<Scalar>::setRequestedStepSize(
     )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(!((stepControlState_ == UNINITIALIZED) || (stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP) || (stepControlState_ == MID_STEP)));
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == UNINITIALIZED) || (stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP) || (stepControlState_ == MID_STEP)));
+  TEUCHOS_TEST_FOR_EXCEPTION(
       ((stepSizeType == STEP_TYPE_FIXED) && (stepSize == ST::zero())), 
       std::logic_error, 
       "Error, step size type == STEP_TYPE_FIXED, but requested step size == 0!\n"
@@ -355,7 +355,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setRequestedStepSize(
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize, StepSizeType* stepSizeType, int* order)
 {
-  TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || 
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || 
          (stepControlState_ == MID_STEP) ||  
          (stepControlState_ == READY_FOR_NEXT_STEP) )
         );
@@ -385,8 +385,8 @@ void ImplicitBDFStepperStepControl<Scalar>::setCorrection(
     ,const RCP<const Thyra::VectorBase<Scalar> >& ee
     ,int solveStatus)
 {
-  TEST_FOR_EXCEPT(stepControlState_ != MID_STEP);
-  TEST_FOR_EXCEPTION(is_null(ee), std::logic_error, "Error, ee == Teuchos::null!\n");
+  TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != MID_STEP);
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(ee), std::logic_error, "Error, ee == Teuchos::null!\n");
   ee_ = ee;
   newtonConvergenceStatus_ = solveStatus;
   setStepControlState_(AFTER_CORRECTION);
@@ -395,7 +395,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setCorrection(
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scalar>& stepper)
 {
-  TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
+  TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -538,7 +538,7 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
 template<class Scalar>
 AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const StepperBase<Scalar>& stepper)
 {
-  TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
+  TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
 
   using Teuchos::as;
 
@@ -568,7 +568,7 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
     *out << "nef_ = " << nef_ << std::endl;
   }
   if (nef_ >= max_LET_fail_)  {
-    TEST_FOR_EXCEPTION(nef_ >= max_LET_fail_, std::logic_error, "Error, maximum number of local error test failures.\n");
+    TEUCHOS_TEST_FOR_EXCEPTION(nef_ >= max_LET_fail_, std::logic_error, "Error, maximum number of local error test failures.\n");
   }
   initialPhase_ = false;
   if (adjustStep) {
@@ -669,8 +669,8 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
 template<class Scalar>
 Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBase<Scalar>& stepper)
 {
-  TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
-  TEST_FOR_EXCEPT(checkReduceOrderCalled_ == true);
+  TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
+  TEUCHOS_TEST_FOR_EXCEPT(checkReduceOrderCalled_ == true);
 
   using Teuchos::as;
 
@@ -739,7 +739,7 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
 template<class Scalar>
 bool ImplicitBDFStepperStepControl<Scalar>::acceptStep(const StepperBase<Scalar>& stepper, Scalar* LETValue)
 {
-  TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
+  TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
   typedef Teuchos::ScalarTraits<Scalar> ST;
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -818,18 +818,18 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEST_FOR_EXCEPT(paramList == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList == Teuchos::null);
   paramList->validateParameters(*this->getValidParameters(),0);
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
   minOrder_ = parameterList_->get("minOrder",int(1)); // minimum order
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       !((1 <= minOrder_) && (minOrder_ <= 5)), std::logic_error,
       "Error, minOrder_ = " << minOrder_ << " is not in range [1,5]!\n"
       );
   maxOrder_ = parameterList_->get("maxOrder",int(5)); // maximum order
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       !((1 <= maxOrder_) && (maxOrder_ <= 5)), std::logic_error,
       "Error, maxOrder_ = " << maxOrder_ << " is not in range [1,5]!\n"
       );
@@ -1020,15 +1020,15 @@ void ImplicitBDFStepperStepControl<Scalar>::setStepControlData(const StepperBase
   }
   const ImplicitBDFStepper<Scalar>& bdfstepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
   int desiredOrder = bdfstepper.getOrder();
-  TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
+  TEUCHOS_TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
   if (stepControlState_ == BEFORE_FIRST_STEP) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         desiredOrder > 1, 
         std::logic_error, 
         "Error, this ImplicitBDF stepper has not taken a step yet, so it cannot take a step of order " << desiredOrder << " > 1!\n"
         );
   }
-  TEST_FOR_EXCEPT(!(desiredOrder <= currentOrder_+1));
+  TEUCHOS_TEST_FOR_EXCEPT(!(desiredOrder <= currentOrder_+1));
   currentOrder_ = desiredOrder;
 
   using Teuchos::as;
@@ -1065,7 +1065,7 @@ ImplicitBDFStepperStepControl<Scalar>::cloneStepControlStrategyAlgorithm() const
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::setErrWtVecCalc(const RCP<ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
 {
-  TEST_FOR_EXCEPT(is_null(errWtVecCalc));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(errWtVecCalc));
   errWtVecCalc_ = errWtVecCalc;
 }
 
@@ -1148,7 +1148,7 @@ void ImplicitBDFStepperStepControl<Scalar>::defaultInitializeAllData_()
 template<class Scalar>
 int ImplicitBDFStepperStepControl<Scalar>::getMinOrder() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       stepControlState_ == UNINITIALIZED, std::logic_error,
       "Error, attempting to call getMinOrder before intiialization!\n"
       );
@@ -1158,7 +1158,7 @@ int ImplicitBDFStepperStepControl<Scalar>::getMinOrder() const
 template<class Scalar>
 int ImplicitBDFStepperStepControl<Scalar>::getMaxOrder() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       stepControlState_ == UNINITIALIZED, std::logic_error,
       "Error, attempting to call getMaxOrder before initialization!\n"
       );

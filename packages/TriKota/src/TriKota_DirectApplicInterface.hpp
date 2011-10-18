@@ -44,7 +44,7 @@
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //!  TriKota namespace
 namespace TriKota {

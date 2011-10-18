@@ -27,7 +27,7 @@ void MLLinearOp::extractConversionInformation(ML_Epetra::MultiLevelPreconditione
    else if(postSmoother!=0)
       smootherData = (const mlutils::SmootherData *) ML_Get_MySmootherData(preSmoother);
    else
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                               "MLLinearOp::extractConversionInformation pre and post smoother " <<
                               "are both null, cannot build operator");
 
@@ -107,7 +107,7 @@ Teuchos::RCP<const ML_Epetra::MultiLevelPreconditioner> getMLPreconditioner(cons
    // try to extract the ML operator
    Teuchos::RCP<const MLLinearOp> mlOp = Teuchos::rcp_dynamic_cast<const MLLinearOp>(precOp);
 
-   TEST_FOR_EXCEPTION(mlOp==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(mlOp==Teuchos::null,std::runtime_error,
                       "Teko::getMLPreconditioner could not extract a MLLinearOp from the passed in argument");
 
    return mlOp->getMLPreconditioner();

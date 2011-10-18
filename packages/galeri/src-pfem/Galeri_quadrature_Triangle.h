@@ -158,7 +158,7 @@ public:
       break;
 
     default:
-      TEST_FOR_EXCEPTION(false, std::out_of_range,
+      TEUCHOS_TEST_FOR_EXCEPTION(false, std::out_of_range,
                          "Selected quadrature nodes, " << numQuadrNodes_ <<
                          ", not defined. Available choices are 1, 3, 4, 7");
     }
@@ -198,7 +198,7 @@ public:
              (  y_triangle_0 - y_triangle_1) *
              (  x_triangle_0 - x_triangle_2);
 
-    TEST_FOR_EXCEPTION(det_J_ == 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(det_J_ == 0, std::logic_error,
                        "element has zero determinant, " << 
                        "x = (" << x_triangle_0 << ", " << x_triangle_1 << ", " << x_triangle_2 << "); " << 
                        "y = (" << y_triangle_0 << ", " << y_triangle_1 << ", " << y_triangle_2 << "); ");

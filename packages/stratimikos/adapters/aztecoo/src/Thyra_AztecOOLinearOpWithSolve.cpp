@@ -52,7 +52,7 @@ Teuchos::ETransp convert( Thyra::EOpTransp trans_in )
       trans_out = Teuchos::TRANS;
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
   return trans_out;
 }
@@ -142,7 +142,7 @@ SetAztecSolveState::SetAztecSolveState(
     aztecSolver_->SetAztecOption(AZ_conv,AZ_r0);
   }
   else {
-    TEST_FOR_EXCEPT("Invalid solve measure type, you should never get here!");
+    TEUCHOS_TEST_FOR_EXCEPT("Invalid solve measure type, you should never get here!");
   }
 
 }
@@ -211,9 +211,9 @@ void AztecOOLinearOpWithSolve::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(aztecFwdSolver.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(aztecFwdSolver.get()==NULL);
 #endif
   fwdOp_ = fwdOp;
   fwdOpSrc_ = fwdOpSrc;
@@ -411,7 +411,7 @@ void AztecOOLinearOpWithSolve::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -732,7 +732,7 @@ AztecOOLinearOpWithSolve::solveImpl(
           // Leave overall unconverged!
           break;
         default:
-          TEST_FOR_EXCEPT(true); // Should never get here!
+          TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
       }
     }
   }

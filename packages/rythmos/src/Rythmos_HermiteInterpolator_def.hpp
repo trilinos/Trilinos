@@ -57,7 +57,7 @@ void HermiteInterpolator<Scalar>::interpolate(
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
 
-  //TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
+  //TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef RYTHMOS_DEBUG
@@ -213,7 +213,7 @@ void HermiteInterpolator<Scalar>::describe(
 template <class Scalar>
 void HermiteInterpolator<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -254,11 +254,11 @@ void HermiteInterpolator<Scalar>::assertInterpolatePreconditions(
 {
   assertBaseInterpolatePreconditions(data_in,t_values,data_out);
   for (int i=0; i<Teuchos::as<int>(data_in.size()) ; ++i) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         is_null(data_in[i].x), std::logic_error,
         "Error, data_in[" << i << "].x == Teuchos::null.\n"
         );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         is_null(data_in[i].xdot), std::logic_error,
         "Error, data_in[" << i << "].xdot == Teuchos::null.\n"
         );

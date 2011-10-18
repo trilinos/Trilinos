@@ -283,8 +283,8 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
   // Validate input
   //
 
-  TEST_FOR_EXCEPT( is_null(stateModel) );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateModel) );
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= p_index && p_index < stateModel->Np() ), std::logic_error,
     "Error, p_index does not fall in the range [0,"<<(stateModel->Np()-1)<<"]!" );
   // ToDo: Validate support for DfDp!
@@ -332,7 +332,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructureInitCo
   const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
-  TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement initializeStructureInitCondOnly()!" );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement initializeStructureInitCondOnly()!" );
 }
 
 
@@ -383,7 +383,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
 {
   TEUCHOS_ASSERT( Teuchos::nonnull(stateStepper) );
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializePointState(...)"
     );
@@ -393,7 +393,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
   RCP<const Thyra::VectorBase<Scalar> > x;
   x = get_x(*stateStepper,curr_t);
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT( Teuchos::is_null(x) );
+  TEUCHOS_TEST_FOR_EXCEPT( Teuchos::is_null(x) );
 #endif // RYTHMOS_DEBUG
       
   stateBasePoint_ = stateStepper->getInitialCondition(); // set parameters

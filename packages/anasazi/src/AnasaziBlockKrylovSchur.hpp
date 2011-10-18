@@ -585,32 +585,32 @@ namespace Anasazi {
     schurCurrent_(false),
     numRitzPrint_(0)
   {     
-    TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null problem pointer.");
-    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user passed null sort manager pointer.");
-    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user passed null output manager pointer.");
-    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user passed null status test pointer.");
-    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user passed null orthogonalization manager pointer.");
-    TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified problem is not set.");
-    TEST_FOR_EXCEPTION(sorter == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(sorter == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null sort manager pointer.");
-    TEST_FOR_EXCEPTION(printer == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(printer == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null output manager pointer.");
-    TEST_FOR_EXCEPTION(tester == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(tester == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null status test pointer.");
-    TEST_FOR_EXCEPTION(ortho == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(ortho == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null ortho manager pointer.");
 
     // Get problem operator
     Op_ = problem_->getOperator();
 
     // get the step size
-    TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: mandatory parameter 'Step Size' is not specified.");
     int ss = params.get("Step Size",numBlocks_);
     setStepSize(ss);
@@ -645,7 +645,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::setStepSize (int stepSize)
   {
-    TEST_FOR_EXCEPTION(stepSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive and non-zero.");
+    TEUCHOS_TEST_FOR_EXCEPTION(stepSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive and non-zero.");
     stepSize_ = stepSize;
   }
 
@@ -657,7 +657,7 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numRitzVecs < 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setNumRitzVectors(): number of Ritz vectors to compute must be positive.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numRitzVecs < 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setNumRitzVectors(): number of Ritz vectors to compute must be positive.");
 
     // Check to see if the number of requested Ritz vectors has changed.
     if (numRitzVecs != numRitzVecs_) {
@@ -680,8 +680,8 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize was passed a non-positive argument.");
-    TEST_FOR_EXCEPTION(numBlocks < 3, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize(): numBlocks must be at least three.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize was passed a non-positive argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks < 3, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize(): numBlocks must be at least three.");
     if (blockSize == blockSize_ && numBlocks == numBlocks_) {
       // do nothing
       return;
@@ -701,7 +701,7 @@ namespace Anasazi {
     }
     else {
       tmp = V_;
-      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
           "Anasazi::BlockKrylovSchur::setSize(): eigenproblem did not specify initial vectors to clone from.");
     }
 
@@ -716,7 +716,7 @@ namespace Anasazi {
       newsd = blockSize_*numBlocks_+1;
     }
     // check that new size is valid
-    TEST_FOR_EXCEPTION(newsd > MVT::GetVecLength(*tmp),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(newsd > MVT::GetVecLength(*tmp),std::invalid_argument,
         "Anasazi::BlockKrylovSchur::setSize(): maximum basis size is larger than problem dimension.");
 
     ritzValues_.resize(newsd);
@@ -790,22 +790,22 @@ namespace Anasazi {
 
       // initialize V_,H_, and curDim_
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, errstr );
       if (newstate.V != V_) {
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
             std::invalid_argument, errstr );
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > getMaxSubspaceDim(),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > getMaxSubspaceDim(),
             std::invalid_argument, errstr );
       }
-      TEST_FOR_EXCEPTION( newstate.curDim > getMaxSubspaceDim(),
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim > getMaxSubspaceDim(),
                           std::invalid_argument, errstr );
 
       curDim_ = newstate.curDim;
       int lclDim = MVT::GetNumberVecs(*newstate.V);
 
       // check size of H
-      TEST_FOR_EXCEPTION(newstate.H->numRows() < curDim_ || newstate.H->numCols() < curDim_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.H->numRows() < curDim_ || newstate.H->numCols() < curDim_, std::invalid_argument, errstr);
       
       if (curDim_ == 0 && lclDim > blockSize_) {
         om_->stream(Warnings) << "Anasazi::BlockKrylovSchur::initialize(): the solver was initialized with a kernel of " << lclDim << std::endl
@@ -838,7 +838,7 @@ namespace Anasazi {
       // user did not specify a basis V
       // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
       Teuchos::RCP<const MV> ivec = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockKrylovSchur::initialize(): eigenproblem did not specify initial vectors to clone from.");
 
       int lclDim = MVT::GetNumberVecs(*ivec);
@@ -890,7 +890,7 @@ namespace Anasazi {
         
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*newV,auxVecs_);
-        TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
       else {
@@ -899,7 +899,7 @@ namespace Anasazi {
 #endif
 
         int rank = orthman_->normalize(*newV);
-        TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
 
@@ -1041,7 +1041,7 @@ namespace Anasazi {
         // om_->stream(Debug) << "subH: " << std::endl << *subH << std::endl;
         // om_->stream(Debug) << "subR: " << std::endl << *subR << std::endl;
         // om_->stream(Debug) << "H:    " << std::endl << *H_ << std::endl;
-        TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): couldn't generate basis of full rank.");
       }
       //
@@ -1236,10 +1236,10 @@ namespace Anasazi {
     Teuchos::TimeMonitor LocalTimer(*timerCompRitzVec_);
 #endif
 
-    TEST_FOR_EXCEPTION(numRitzVecs_==0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numRitzVecs_==0, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::computeRitzVectors(): no Ritz vectors were required from this solver.");
 
-    TEST_FOR_EXCEPTION(curDim_ < numRitzVecs_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(curDim_ < numRitzVecs_, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::computeRitzVectors(): the current subspace is not large enough to compute the number of requested Ritz vectors.");
 
 
@@ -1258,7 +1258,7 @@ namespace Anasazi {
         
         // After the Schur form is computed, then the Ritz values are current.
         // Thus, I can check the Ritz index vector to see if I have enough space for the Ritz vectors requested.
-        TEST_FOR_EXCEPTION(ritzIndex_[numRitzVecs_-1]==1, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(ritzIndex_[numRitzVecs_-1]==1, std::logic_error,
                            "Anasazi::BlockKrylovSchur::computeRitzVectors(): the number of required Ritz vectors splits a complex conjugate pair.");
 
         Teuchos::LAPACK<int,ScalarType> lapack;
@@ -1309,7 +1309,7 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Teuchos::Copy, *Q_, curDim_, curDim_ );
           lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
                         copyQ.values(), copyQ.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                              "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC(n==" << curDim_ << ") returned info " << info << " != 0.");
 
           // Get a view into the eigenvectors of the Schur form
@@ -1368,7 +1368,7 @@ namespace Anasazi {
   // Set a new StatusTest for the solver.
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
-    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
         "Anasazi::BlockKrylovSchur::setStatusTest() was passed a null StatusTest.");
     tester_ = test;
   }
@@ -1445,7 +1445,7 @@ namespace Anasazi {
                        &tmp_iRitzValues[0], subQ.values(), subQ.stride(), &work[0], lwork, 
                        &rwork[0], &bwork[0], &info );
           
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                              "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES(n==" << curDim_ << ") returned info " << info << " != 0.");
           //
           //---------------------------------------------------
@@ -1493,7 +1493,7 @@ namespace Anasazi {
             lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
                           S.values(), S.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
             
-            TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                                "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC(n==" << curDim_ << ") returned info " << info << " != 0.");
             //
             // Scale the eigenvectors so that their Euclidean norms are all one.
@@ -1651,7 +1651,7 @@ namespace Anasazi {
     for (i=nevtemp-1; i>=0; i--) {
       lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, order2[i]+1+offset2[i], 
                     1, &work[0], &info );
-      TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                          "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC(n==" << curDim_ << ") returned info " << info << " != 0.");
     }
   }

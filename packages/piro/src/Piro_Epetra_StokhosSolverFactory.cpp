@@ -74,7 +74,7 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   else if (sg_type == "Multi-point Non-intrusive")
     sg_method = SG_MPNI;
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << "Error!  ENAT_SGNOXSolver():  " <<
 		       "Invalid SG Method  " << sg_type << std::endl);
   
@@ -339,7 +339,7 @@ createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model)
   else if (solve_type ==  "Jacobi")
     solve_method = SG_JACOBI; 
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << "Error!  ENAT_SGNOXSolver():  " <<
 		       "Invalid Solver Algorithm  " << solve_type << std::endl);
 

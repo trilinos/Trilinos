@@ -597,7 +597,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::setParameterList(
   nominalValuesAndBoundsUpdated_ = false;
 
   // Validate and set the parameter list
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters(),0);
   paramList_ = paramList;
 
@@ -613,7 +613,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::setParameterList(
   nominalValueIsParameterBase_ = paramList_->get(
     NominalValueIsParameterBase_name_, NominalValueIsParameterBase_default_ );
   if (!nominalValueIsParameterBase_) {
-    TEST_FOR_EXCEPT("ToDo: Implement reading parameter base vector from file!");
+    TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement reading parameter base vector from file!");
   }
   ignoreParameterBounds_ = paramList_->get(
     IgnoreParameterBounds_name_, IgnoreParameterBounds_default_ );
@@ -909,7 +909,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const
   const RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(thyraModel), std::logic_error,
     "Error, the underlying model evaluator must be set!" );
 
@@ -921,7 +921,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const
     generateParameterBasisMatrix();
   }
   else {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "Error, we don't handle a client-set parameter basis matrix yet!" );
   }
@@ -946,7 +946,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
 
   const Ordinal p_orig_dim = p_orig_space->dim();
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 1 <= numberOfBasisColumns_ && numberOfBasisColumns_ <= p_orig_dim ),
     std::logic_error,
     "Error, the number of basis columns = " << numberOfBasisColumns_ << " does not\n"
@@ -1010,14 +1010,14 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
   if (nominalValueIsParameterBase_) {
     const RCP<const VectorBase<Scalar> >
       p_orig_init = origNominalValues.get_p(p_idx_);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(p_orig_init), std::logic_error,
       "Error, if the user requested that the nominal values be used\n"
       "as the base vector p_orig_base then that vector has to exist!" );
     p_orig_base_ = p_orig_init->clone_v();
   }
   else {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "Error, we don't handle reading in the parameter base vector yet!" );
   }
@@ -1034,7 +1034,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
     nominalValues_.set_p(p_idx_, p_init);
   }
   else {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "Error, we don't handle creating p_init when p_orig_base != p_orig_init yet!" );
   }
@@ -1052,7 +1052,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
       p_orig_l = origLowerBounds.get_p(p_idx_),
       p_orig_u = origUpperBounds.get_p(p_idx_);
     if ( !is_null(p_orig_l) || !is_null(p_orig_u) ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
         "Error, we don't handle bounds on p_orig yet!" );
     }
@@ -1087,7 +1087,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::setupWrappedParamDerivOutArgs
   typedef ModelEvaluatorBase MEB;
   typedef MEB::Derivative<Scalar> Deriv;
 
-  TEST_FOR_EXCEPT(wrappedOutArgs_inout==0);
+  TEUCHOS_TEST_FOR_EXCEPT(wrappedOutArgs_inout==0);
   MEB::OutArgs<Scalar> &wrappedOutArgs = *wrappedOutArgs_inout;
     
   Deriv DfDp;
@@ -1121,7 +1121,7 @@ DefaultLumpedParameterModelEvaluator<Scalar>::create_deriv_wrt_p_orig(
 
   const RCP<const MultiVectorBase<Scalar> >
     DhDp_mv = DhDp.getMultiVector();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(DhDp_mv) || (DhDp.getMultiVectorOrientation() != requiredOrientation),
     std::logic_error,
     "Error, we currently can't handle non-multi-vector derivatives!" );
@@ -1141,7 +1141,7 @@ DefaultLumpedParameterModelEvaluator<Scalar>::create_deriv_wrt_p_orig(
       // since it must be the RHS for a linear operator apply!
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
   
   return MEB::Derivative<Scalar>(DhDp_orig_mv,requiredOrientation);
@@ -1186,13 +1186,13 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
 
   const RCP<const MultiVectorBase<Scalar> >
     DhDp_orig_mv = DhDp_orig.getMultiVector();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(DhDp_orig_mv), std::logic_error,
     "Error, we currently can't handle non-multi-vector derivatives!" );
 
   const RCP<MultiVectorBase<Scalar> >
     DhDp_mv = DhDp.getMultiVector();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(DhDp_mv), std::logic_error,
     "Error, we currently can't handle non-multi-vector derivatives!" );
 
@@ -1216,7 +1216,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
       apply( *B_, CONJTRANS, *DhDp_orig_mv, DhDp_mv.ptr() );
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 
 }

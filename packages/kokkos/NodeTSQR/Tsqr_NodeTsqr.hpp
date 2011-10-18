@@ -365,7 +365,7 @@ namespace TSQR {
 					    C.get(), C.lda());
       ConstMatView<Ordinal, Scalar> C_top = 
 	const_top_block (C_view, contiguous_cache_blocks);
-      TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
 			 "The subclass of NodeTsqr has a bug in const_top_block"
 			 "(); it returned a block with fewer rows than columns "
 			 "(" << C_top.nrows() << " rows and " << C_top.ncols() 
@@ -459,17 +459,17 @@ namespace TSQR {
     typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-    TEST_FOR_EXCEPTION(tol < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(tol < 0, std::invalid_argument,
 		       "In NodeTsqr::reveal_R_rank: numerical rank tolerance "
 		       "(tol = " << tol << ") is negative.");
-    TEST_FOR_EXCEPTION(ncols < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(ncols < 0, std::invalid_argument,
 		       "In NodeTsqr::reveal_R_rank: number of columns "
 		       "(ncols = " << ncols << ") is negative.");
-    TEST_FOR_EXCEPTION(ldr < ncols, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(ldr < ncols, std::invalid_argument,
 		       "In NodeTsqr::reveal_R_ank: stride of R (ldr = " 
 		       << ldr << ") is less than the number of columns "
 		       "(ncols = " << ncols << ").");
-    TEST_FOR_EXCEPTION(ldu < ncols, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(ldu < ncols, std::invalid_argument,
 		       "In NodeTsqr::reveal_R_rank: stride of U (ldu = " 
 		       << ldu << ") is less than the number of columns "
 		       "(ncols = " << ncols << ")");
@@ -515,7 +515,7 @@ namespace TSQR {
       // Failure of the LAPACK workspace query is a logic error (a
       // bug) because we have already validated the matrix
       // dimensions above.
-      TEST_FOR_EXCEPTION(svd_info != 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(svd_info != 0, std::logic_error,
 			 prefix << "a nonzero INFO = " << svd_info 
 			 << postfix);
       // LAPACK returns the workspace array length as a Scalar.  We
@@ -535,7 +535,7 @@ namespace TSQR {
       // original Scalar result.  This should work unless Scalar and
       // Ordinal are user-defined types with weird definitions of
       // the type casts.
-      TEST_FOR_EXCEPTION(static_cast<Scalar> (svd_lwork) != svd_lwork_scalar,
+      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Scalar> (svd_lwork) != svd_lwork_scalar,
 			 std::logic_error,
 			 prefix << "a workspace array length (LWORK) of type "
 			 "Scalar=" << TypeNameTraits<Scalar>::name() 
@@ -548,7 +548,7 @@ namespace TSQR {
       // signed type, as we explain above, so this test should never
       // signal any unsigned-to-signed conversions from the compiler.
       // If it does, you're probably using the wrong Ordinal type.
-      TEST_FOR_EXCEPTION(svd_lwork < 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(svd_lwork < 0, std::logic_error,
 			 prefix << "a negative workspace array length (LWORK)"
 			 " = " << svd_lwork << postfix);
     }

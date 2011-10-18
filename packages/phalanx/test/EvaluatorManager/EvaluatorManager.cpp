@@ -54,7 +54,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_ParameterList.hpp"

@@ -136,7 +136,7 @@ void LinearNonlinearSolver<Scalar>::setParameterList(
   )
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
   paramList_ = paramList;
   // ToDo: Accept some parameters if this makes sense!
@@ -198,7 +198,7 @@ void LinearNonlinearSolver<Scalar>::setModel(
   const RCP<const ModelEvaluator<Scalar> > &model
   )
 {
-  TEST_FOR_EXCEPT(model.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
   J_ = Teuchos::null;
 }
@@ -234,11 +234,11 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   typedef Teuchos::VerboseObjectTempState<LOWSB> VOTSLOWSB;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==x);
+  TEUCHOS_TEST_FOR_EXCEPT(0==x);
   THYRA_ASSERT_VEC_SPACES(
     "TimeStepNonlinearSolver<Scalar>::solve(...)",
     *x->space(),*model_->get_x_space() );
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
 #endif
   
@@ -305,7 +305,7 @@ RCP<LinearOpWithSolveBase<Scalar> >
 LinearNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
 {
   if (forceUpToDate) {
-    TEST_FOR_EXCEPT(forceUpToDate);
+    TEUCHOS_TEST_FOR_EXCEPT(forceUpToDate);
   }
   return J_;
 }

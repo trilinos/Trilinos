@@ -54,7 +54,7 @@ void computeCubicSplineCoeff(
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       (data.size() < 2), std::logic_error,
       "Error!  A minimum of two data points is required for this cubic spline."
       );
@@ -157,7 +157,7 @@ void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff)
   int b_n = coeff.b.size();
   int c_n = coeff.c.size();
   int d_n = coeff.d.size();
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       ((a_n != t_n-1) || (a_n != b_n) || (a_n != c_n) || (a_n != d_n)),
       std::logic_error,
       "Error!  The sizes of the data structures in the CubicSplineCoeff object do not match"
@@ -180,7 +180,7 @@ void evaluateCubicSpline(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
-  TEST_FOR_EXCEPTION( as<Teuchos::Ordinal>(j) >= coeff.a.size(),
+  TEUCHOS_TEST_FOR_EXCEPTION( as<Teuchos::Ordinal>(j) >= coeff.a.size(),
      std::out_of_range, "Error!, j is out of range" );
 
   Scalar dt = t-coeff.t[j];
@@ -267,7 +267,7 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
       "Error!, setNodes must be called before interpolate"
       );
 #ifdef RYTHMOS_DEBUG
@@ -395,7 +395,7 @@ void CubicSplineInterpolator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);

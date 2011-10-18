@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
       step_method = STEP_METHOD_FIXED;
       method = "Implicit RK";
     } else {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
     stepper.setInitialCondition(model_ic);

@@ -124,7 +124,7 @@ void BackwardEulerStepper<Scalar>::setInterpolator(
   )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(interpolator));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(interpolator));
 #endif
   interpolator_ = interpolator;
   isInitialized_ = false;
@@ -165,7 +165,7 @@ void BackwardEulerStepper<Scalar>::setSolver(
 {
   using Teuchos::as;
 
-  TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
       "Error!  Thyra::NonlinearSolverBase RCP passed in through BackwardEulerStepper::setSolver is null!"
       );
 
@@ -252,7 +252,7 @@ void BackwardEulerStepper<Scalar>::setModel(
 
   using Teuchos::as;
 
-  TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -317,7 +317,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
     x_init = initialCondition.get_x();
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
@@ -496,7 +496,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
       x_interp = x_vec[0],
       xdot_interp = xdot_vec[0];
 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelNormDiffErr(
         "x", *x, "x_interp", *x_interp,
         "2*epsilon", ScalarMag(100.0*SMT::eps()),
@@ -505,7 +505,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
         )
       );
 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelNormDiffErr(
         "xdot", *xdot, "xdot_interp", *xdot_interp,
         "2*epsilon", ScalarMag(100.0*SMT::eps()),
@@ -584,7 +584,7 @@ void BackwardEulerStepper<Scalar>::addPoints(
   initialize();
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     time_vec.size() == 0, std::logic_error,
     "Error, addPoints called with an empty time_vec array!\n");
 #endif // RYTHMOS_DEBUG
@@ -665,8 +665,8 @@ void BackwardEulerStepper<Scalar>::getPoints(
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(!haveInitialCondition_);
-  TEST_FOR_EXCEPT( 0 == x_vec );
+  TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
+  TEUCHOS_TEST_FOR_EXCEPT( 0 == x_vec );
 #endif
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -690,7 +690,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
     DataStore<Scalar> ds_temp;
     Scalar dt = t_ - t_old_;
 #ifdef RYTHMOS_DEBUG
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelErr(
         "dt", dt, "dt_", dt_,
         "1e+4*epsilon", ScalarMag(1e+4*SMT::eps()),
@@ -802,7 +802,7 @@ void BackwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     }
   }
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for BackwardEulerStepper at this time.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for BackwardEulerStepper at this time.\n");
   // TODO:
   // if any time in time_vec matches t_ or t_old_, then do the following:
   // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
@@ -825,7 +825,7 @@ void BackwardEulerStepper<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -931,9 +931,9 @@ void BackwardEulerStepper<Scalar>::initialize()
   if (isInitialized_)
     return;
 
-  TEST_FOR_EXCEPT(is_null(model_));
-  TEST_FOR_EXCEPT(is_null(solver_));
-  TEST_FOR_EXCEPT(!haveInitialCondition_);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(solver_));
+  TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
 
 #ifdef RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(

@@ -85,8 +85,8 @@ void LinearRegression<Scalar>::setData(Array<Scalar>& x, Array<Scalar>& y)
 template<class Scalar>
 void LinearRegression<Scalar>::validateXYData_(Array<Scalar>& x, Array<Scalar>& y)
 {
-  TEST_FOR_EXCEPT(x.size() != y.size());
-  TEST_FOR_EXCEPT(x.size() < 2);
+  TEUCHOS_TEST_FOR_EXCEPT(x.size() != y.size());
+  TEUCHOS_TEST_FOR_EXCEPT(x.size() < 2);
   int N = Teuchos::as<int>(x.size());
   // There must be at least two unique x values
   Scalar alpha = x[0];
@@ -96,27 +96,27 @@ void LinearRegression<Scalar>::validateXYData_(Array<Scalar>& x, Array<Scalar>& 
       numUnique++;
     }
   }
-  TEST_FOR_EXCEPT(numUnique==1);
+  TEUCHOS_TEST_FOR_EXCEPT(numUnique==1);
 }
 
 template<class Scalar>
 Scalar LinearRegression<Scalar>::getSlope() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return slope_;
 }
 
 template<class Scalar>
 Scalar LinearRegression<Scalar>::getYIntercept() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return yIntercept_;
 }
 
 template<class Scalar>
 void LinearRegression<Scalar>::compute_() 
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   int N = Teuchos::as<int>(x_.size());

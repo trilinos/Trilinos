@@ -302,12 +302,12 @@ namespace Belos {
 				 const int maxIterCount,
 				 const Teuchos::RCP<const Teuchos::ParameterList>& akxParams) const
     {
-      TEST_FOR_EXCEPTION(akx.is_null(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(akx.is_null(), std::logic_error,
 			 "The matrix powers kernel implementation must be "
 			 "initialized before asking for the initial candidate "
 			 "basis length, since the former gives a strict upper "
 			 "bound on the latter.");
-      TEST_FOR_EXCEPTION(akxParams.is_null(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(akxParams.is_null(), std::logic_error,
 			 "The list of parameters must be initialized before "
 			 "asking for the initial candidate basis length.");
       // An initial basis length of 5 is a reasonable first guess.
@@ -379,7 +379,7 @@ namespace Belos {
       std::ostream& dbg = this->outMan_->stream(Debug);
       const int k = this->getNumIters(); 
       const int m = this->maxNumIters();
-      TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
+      TEUCHOS_TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
 			 "Belos::CaGmres::extendBasis: "
 			 "Maximum number of iterations " << getNumIters() 
 			 << " reached; cannot extend basis further.");
@@ -461,19 +461,19 @@ namespace Belos {
 	  os << "You should either use standard GMRES for solving this "
 	    "problem, or try setting up the matrix powers kernel differently.";
 	  // Rank of the current candidate basis is < 2.
-	  TEST_FOR_EXCEPTION(lastCandidateBasisRank_ < 2, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(lastCandidateBasisRank_ < 2, 
 			     GmresRejectsCandidateBasis,
 			     "CA-GMRES cannot produce a candidate basis of rank at "
 			     "least 2.  " << os.str());
 	  // Candidate basis length (not the "last candidate basis
 	  // length," which may be different) is <= 2.
-	  TEST_FOR_EXCEPTION(candidateBasisLength_ <= 2, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(candidateBasisLength_ <= 2, 
 			     GmresRejectsCandidateBasis,
 			     "CA-GMRES: the current candidate basis length " 
 			     << candidateBasisLength_ << " is <= 2.  This means"
 			     " we cannot attempt recovery by recursing with a "
 			     "shorter candidate basis length." << os.str());
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
 
       // Decrease the candidate basis length and try again.  It could
@@ -491,7 +491,7 @@ namespace Belos {
 		  std::max (2, candidateBasisLength_ / 2));
       // Throw an exception if a programming bug would otherwise have
       // caused an infinite loop.
-      TEST_FOR_EXCEPTION(nextCandidateBasisLength < 2, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(nextCandidateBasisLength < 2, std::logic_error, 
 			 "CA-GMRES should never get here!");
       candidateBasisLength_ = nextCandidateBasisLength;
 
@@ -514,12 +514,12 @@ namespace Belos {
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
       // Sanity checks
-      TEST_FOR_EXCEPTION(C_Q.is_null(), std::logic_error, "C_Q is null");
-      TEST_FOR_EXCEPTION(B_Q.is_null(), std::logic_error, "B_Q is null");
-      TEST_FOR_EXCEPTION(flexible_ && C_Z.is_null(), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(C_Q.is_null(), std::logic_error, "C_Q is null");
+      TEUCHOS_TEST_FOR_EXCEPTION(B_Q.is_null(), std::logic_error, "B_Q is null");
+      TEUCHOS_TEST_FOR_EXCEPTION(flexible_ && C_Z.is_null(), std::logic_error, 
 			 "C_Z is null; not allowed when Flexible GMRES "
 			 "is being used");
-      TEST_FOR_EXCEPTION(flexible_ && B_Z.is_null(), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(flexible_ && B_Z.is_null(), std::logic_error, 
 			 "B_Z is null; not allowed when Flexible GMRES "
 			 "is being used");
       // Even on the first outer iteration, C_Q should be non-null; it
@@ -530,7 +530,7 @@ namespace Belos {
 	{
 	  const int m_z = C_Z->numRows();
 	  const int s_z = C_Q->numCols();
-	  TEST_FOR_EXCEPTION(m_z != m || s_z != s-1, std::logic_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(m_z != m || s_z != s-1, std::logic_error, 
 			     "C_Z has the wrong dimensions: C_Q is " << m 
 			     << " x " << s << " and so C_Z should be " << m 
 			     << " x " << (s-1) << ", but is " << m_z << " x " 

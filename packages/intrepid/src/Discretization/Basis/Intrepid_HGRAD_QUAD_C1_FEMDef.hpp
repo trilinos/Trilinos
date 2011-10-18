@@ -168,7 +168,7 @@ void Basis_HGRAD_QUAD_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
       break;
       
     case OPERATOR_DIV:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_QUAD_C1_FEM): DIV is invalid operator for rank-0 (scalar) functions in 2D");
       break;
       
@@ -217,7 +217,7 @@ void Basis_HGRAD_QUAD_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_QUAD_C1_FEM): Invalid operator type");
   }
 }
@@ -229,7 +229,7 @@ void Basis_HGRAD_QUAD_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&       
                                                              const ArrayScalar &    inputPoints,
                                                              const ArrayScalar &    cellVertices,
                                                              const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HGRAD_QUAD_C1_FEM): FEM Basis calling an FVD member function");
 }
 
@@ -239,13 +239,13 @@ template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_QUAD_C1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const {
 #ifdef HAVE_INTREPID_DEBUG
   // Verify rank of output array.
-  TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
                       ">>> ERROR: (Intrepid::Basis_HGRAD_QUAD_C1_FEM::getDofCoords) rank = 2 required for DofCoords array");
   // Verify 0th dimension of output array.
-  TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
                       ">>> ERROR: (Intrepid::Basis_HGRAD_QUAD_C1_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
   // Verify 1st dimension of output array.
-  TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
                       ">>> ERROR: (Intrepid::Basis_HGRAD_QUAD_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 

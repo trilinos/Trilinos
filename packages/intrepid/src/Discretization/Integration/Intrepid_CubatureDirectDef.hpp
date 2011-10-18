@@ -56,7 +56,7 @@ void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubatureData(ArrayPoint  
   int numCubPoints = getNumPoints();
   int cellDim      = getDimension();
   // check size of cubPoints and cubWeights
-  TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cellDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cellDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
                       std::out_of_range,
                       ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
 

@@ -136,7 +136,7 @@ void VanderPolModel::setImplicitFlag(bool implicit)
 
 ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -169,7 +169,7 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) co
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::getExactSensSolution(int j, double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
 
@@ -220,7 +220,7 @@ VanderPolModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return nominalValues_;
@@ -283,7 +283,7 @@ VanderPolModel::get_W_factory() const
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return inArgs_;
@@ -324,7 +324,7 @@ Array<Sacado::Fad::DFad<ScalarT> > convertToIndepVarFadArray(
 ModelEvaluatorBase::OutArgs<double>
 VanderPolModel::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return outArgs_;
@@ -343,7 +343,7 @@ void VanderPolModel::evalModelImpl(
   using Teuchos::inOutArg;
   using Sacado::Fad::DFad;
 
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
 
@@ -575,7 +575,7 @@ void VanderPolModel::setupInOutArgs_()
 void VanderPolModel::setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(paramList);
   RCP<ParameterList> pl = this->getMyNonconstParamList();

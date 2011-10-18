@@ -143,7 +143,7 @@ void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
   )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(integrationControlStrategy));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(integrationControlStrategy));
 #endif
   integrationControlStrategy_ = integrationControlStrategy;
 }
@@ -169,7 +169,7 @@ void DefaultIntegrator<Scalar>::setIntegrationObserver(
   )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(integrationObserver));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(integrationObserver));
 #endif
   integrationObserver_ = integrationObserver;
 }
@@ -216,7 +216,7 @@ void DefaultIntegrator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   maxNumTimeSteps_ = paramList->get(
@@ -291,8 +291,8 @@ void DefaultIntegrator<Scalar>::setStepper(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(is_null(stepper));
-  TEST_FOR_EXCEPT( finalTime <= stepper->getTimeRange().lower() );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper));
+  TEUCHOS_TEST_FOR_EXCEPT( finalTime <= stepper->getTimeRange().lower() );
   TEUCHOS_ASSERT( stepper->getTimeRange().length() == ST::zero() );
   // 2007/07/25: rabartl: ToDo: Validate state of the stepper!
   stepper_ = stepper;
@@ -412,7 +412,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
 
   // Assert preconditions
   assertTimePointsAreSorted(time_vec);
-  TEST_FOR_EXCEPT(accuracy_vec!=0); // ToDo: Remove accuracy_vec!
+  TEUCHOS_TEST_FOR_EXCEPT(accuracy_vec!=0); // ToDo: Remove accuracy_vec!
 
   // Resize the storage for the output arrays
   if (x_vec)
@@ -462,7 +462,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
         // Break out of the while loop and attempt to exit gracefully.
         break;
       }
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
           !advanceStepperToTimeSucceeded, Exceptions::GetFwdPointsFailed,
           this->description() << "\n\n"
           "Error:  The integration failed to get to time " << t << " and only achieved\n"
@@ -531,7 +531,7 @@ void DefaultIntegrator<Scalar>::getPoints(
 //    int nextTimePointIndex = 0;
 //    getCurrentPoints(*trailingInterpBuffer_, time_vec, x_vec, xdot_vec, &nextTimePointIndex);
 //    getCurrentPoints(*stepper_, time_vec, x_vec, xdot_vec, &nextTimePointIndex);
-//    TEST_FOR_EXCEPTION( nextTimePointIndex < Teuchos::as<int>(time_vec.size()),
+//    TEUCHOS_TEST_FOR_EXCEPTION( nextTimePointIndex < Teuchos::as<int>(time_vec.size()),
 //      std::out_of_range,
 //      "Error, the time point time_vec["<<nextTimePointIndex<<"] = "
 //      << time_vec[nextTimePointIndex] << " falls outside of the time range "
@@ -821,18 +821,18 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       // Validate step taken
       if (trialStepCtrlInfo.stepType == STEP_TYPE_VARIABLE) {
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           stepSizeTaken < ST::zero(), std::logic_error,
           "Error, stepper took negative step of dt = " << stepSizeTaken << "!\n"
           );
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           stepSizeTaken > trialStepCtrlInfo.stepSize, std::logic_error,
           "Error, stepper took step of dt = " << stepSizeTaken
           << " > max step size of = " << trialStepCtrlInfo.stepSize << "!\n"
           );
       }
       else { // STEP_TYPE_FIXED
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           stepSizeTaken != trialStepCtrlInfo.stepSize, std::logic_error,
           "Error, stepper took step of dt = " << stepSizeTaken 
           << " when asked to take step of dt = " << trialStepCtrlInfo.stepSize << "\n"

@@ -45,7 +45,7 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -90,7 +90,7 @@ void EpetraLinearOp::initialize(
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
     "Thyra::EpetraLinearOp::initialize(...): Error!" );
   // ToDo: Validate spmdRange, spmdDomain against op maps!
 #endif
@@ -138,11 +138,11 @@ void EpetraLinearOp::partiallyInitialize(
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( is_null(range_in), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(range_in), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
-  TEST_FOR_EXCEPTION( is_null(domain_in), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(domain_in), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
-  TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
 #endif
 
@@ -381,11 +381,11 @@ void EpetraLinearOp::applyImpl(
   const EOpTransp real_M_trans = real_trans(M_trans);
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!isFullyInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isFullyInitialized_);
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "EpetraLinearOp::euclideanApply(...)", *this, M_trans, X_in, Y_inout
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     real_M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED,
     Exceptions::OpNotSupported,
     "EpetraLinearOp::apply(...): *this was informed that adjoints "
@@ -461,7 +461,7 @@ void EpetraLinearOp::applyImpl(
       }
       else {
 #ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       }
       // Y = alpha * Y
@@ -515,7 +515,7 @@ void EpetraLinearOp::applyImpl(
       }
       else {
 #ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       }
       // Y_inout += alpha * T
@@ -593,7 +593,7 @@ bool EpetraLinearOp::rowStatIsSupportedImpl(
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
       return true;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return false; // Will never be called!
 }
@@ -612,7 +612,7 @@ void EpetraLinearOp::getRowStatImpl(
       rowMatrix_->InvRowSums(*rowStatVec);
       break;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 }
 

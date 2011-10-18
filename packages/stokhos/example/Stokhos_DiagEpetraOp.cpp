@@ -108,7 +108,7 @@ Stokhos::DiagEpetraOp::Apply(std::vector< Teuchos::RCP< const Epetra_CrsMatrix> 
 /*  Teuchos::RCP<Epetra_CrsMatrix> sg_J_poly_Crs =
     Teuchos::rcp_dynamic_cast< Epetra_CrsMatrix>((*sg_J_poly).getCoeffPtr(0),true);
 
-  TEST_FOR_EXCEPTION(Teuchos::is_null(sg_J_poly_Crs), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(sg_J_poly_Crs), std::runtime_error,
 		     "Dynamic cast of sg_J_poly failed!");
 */
 

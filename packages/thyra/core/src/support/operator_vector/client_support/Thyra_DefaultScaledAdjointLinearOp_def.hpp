@@ -169,7 +169,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never be called!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never be called!
   }
 }
 
@@ -284,7 +284,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Op.get()==NULL, std::invalid_argument
     ,"DefaultScaledAdjointLinearOp<"<<ST::name()<<">::initialize(scalar,transp,Op): "
     "Error!, Op.get()==NULL is not allowed!"
@@ -330,7 +330,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
       label << "adj";
       break;
     default:
-      TEST_FOR_EXCEPT("Invalid EOpTransp value!");
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid EOpTransp value!");
   }
   label << "(" << Op_label << ")";
   this->setObjectLabel(label.str());

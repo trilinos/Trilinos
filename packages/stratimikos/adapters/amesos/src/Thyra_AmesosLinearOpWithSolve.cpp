@@ -69,12 +69,12 @@ void AmesosLinearOpWithSolve::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(epetraLP.get()==NULL);
-  TEST_FOR_EXCEPT(amesosSolver.get()==NULL);
-  TEST_FOR_EXCEPT(epetraLP->GetLHS()!=NULL);
-  TEST_FOR_EXCEPT(epetraLP->GetRHS()!=NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(epetraLP.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(amesosSolver.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(epetraLP->GetLHS()!=NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(epetraLP->GetRHS()!=NULL);
 #endif
   fwdOp_ = fwdOp;
   fwdOpSrc_ = fwdOpSrc;
@@ -196,7 +196,7 @@ void AmesosLinearOpWithSolve::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -314,7 +314,7 @@ AmesosLinearOpWithSolve::solveImpl(
   const bool oldUseTranspose = amesosSolver_->UseTranspose();
   amesosSolver_->SetUseTranspose(amesosOpTransp==TRANS);
   const int err = amesosSolver_->Solve();
-  TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
     "Error, the function Solve() on the amesos solver of type\n"
     "\'"<<typeName(*amesosSolver_)<<"\' failed with error code "<<err<<"!"
     );

@@ -139,7 +139,7 @@ void ImplicitRKStepper<Scalar>::setSolver(
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  TEST_FOR_EXCEPT(is_null(solver));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(solver));
   solver_ = solver;
 }
 
@@ -216,7 +216,7 @@ void ImplicitRKStepper<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT(is_null(model));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model));
   assertValidModel( *this, *model );
   model_ = model;
 }
@@ -264,7 +264,7 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
     x_init = initialCondition.get_x();
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
@@ -337,7 +337,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     initialize_();
   }
 
-  TEST_FOR_EXCEPT( stepSizeType != STEP_TYPE_FIXED ); // ToDo: Handle variable case later
+  TEUCHOS_TEST_FOR_EXCEPT( stepSizeType != STEP_TYPE_FIXED ); // ToDo: Handle variable case later
 
   // A) Set up the IRK ModelEvaluator so that it can represent the time step
   // equation to be solved.
@@ -435,7 +435,7 @@ void ImplicitRKStepper<Scalar>::addPoints(
     ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -487,7 +487,7 @@ void ImplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -506,7 +506,7 @@ void ImplicitRKStepper<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   paramList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
@@ -586,9 +586,9 @@ void ImplicitRKStepper<Scalar>::initialize_()
   typedef ScalarTraits<Scalar> ST;
   using Teuchos::rcp_dynamic_cast;
 
-  TEST_FOR_EXCEPT(is_null(model_));
-  TEST_FOR_EXCEPT(is_null(solver_));
-  TEST_FOR_EXCEPT(irkButcherTableau_->numStages() == 0);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(solver_));
+  TEUCHOS_TEST_FOR_EXCEPT(irkButcherTableau_->numStages() == 0);
   TEUCHOS_ASSERT(haveInitialCondition_);
 
 #ifdef RYTHMOS_DEBUG
@@ -601,7 +601,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   // Set up the IRK mdoel
 
   if (!isDirk_) { // General Implicit RK 
-    TEST_FOR_EXCEPT(is_null(irk_W_factory_));
+    TEUCHOS_TEST_FOR_EXCEPT(is_null(irk_W_factory_));
     irkModel_ = implicitRKModelEvaluator(
       model_,basePoint_,irk_W_factory_,irkButcherTableau_);
   } else { // Diagonal Implicit RK
@@ -628,7 +628,7 @@ template <class Scalar>
 void ImplicitRKStepper<Scalar>::setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau )
 {
   TEUCHOS_ASSERT( !is_null(rkButcherTableau) );
-  TEST_FOR_EXCEPTION( isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( isInitialized_, std::logic_error,
       "Error!  The RK Butcher Tableau cannot be changed after internal initialization!"
       );
   validateIRKButcherTableau(*rkButcherTableau);
@@ -653,7 +653,7 @@ RCP<const RKButcherTableauBase<Scalar> > ImplicitRKStepper<Scalar>::getRKButcher
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
 {
-  TEST_FOR_EXCEPTION(isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(isInitialized_, std::logic_error,
       "Error!  Cannot change DIRK flag after internal initialization is completed\n"
       );
   if (isDirk == true) {
@@ -663,7 +663,7 @@ void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
       || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
       || (irkButcherTableau_->numStages() == 1)
       );
-    TEST_FOR_EXCEPTION( !RKBT_is_DIRK, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( !RKBT_is_DIRK, std::logic_error,
         "Error!  Cannot set DIRK flag on a non-DIRK RK Butcher Tableau\n"
         );
   } else { // isDirk = false;

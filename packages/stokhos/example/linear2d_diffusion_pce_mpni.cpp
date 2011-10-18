@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
       belosSolverParams->set("Num Recycled Blocks", 10);
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			 "Unknown solver type " << solver_type);
     belosSolverParams->set("Convergence Tolerance", 1e-12);
     belosSolverParams->set("Maximum Iterations", 1000);

@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Kokkos_ThrustGPUNode.hpp"
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <iostream>
 #include <cuda_runtime.h>
 
@@ -44,7 +44,7 @@ namespace Kokkos {
     int verbose = pl.get<int>("Verbose",0);
     // set device
     int deviceCount; cudaGetDeviceCount(&deviceCount); 
-    TEST_FOR_EXCEPTION(deviceCount == 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(deviceCount == 0, std::runtime_error,
         "ThrustGPUNode::ThrustGPUNode(): system has no CUDA devices.");
     if (device < 0 || device >= deviceCount) {
       cerr << "ThrustGPUNode::ThrustGPUNode(): specified device number not valid. Using device 0." << endl;
@@ -78,7 +78,7 @@ namespace Kokkos {
 
   void ThrustGPUNode::sync() const {
     cudaError err = cudaThreadSynchronize();
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::ThrustGPUNode::sync(): cudaThreadSynchronize() returned error " << err );
   }
 

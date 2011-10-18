@@ -492,7 +492,7 @@ void DefaultProductVectorSpace<Scalar>::assertInitialized() const
 {
   using Teuchos::implicit_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(vecSpaces_) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(vecSpaces_) );
 #endif
 }
 

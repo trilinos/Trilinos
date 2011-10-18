@@ -154,7 +154,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
 {
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   const Teuchos::RCP<const LinearOpBase<double> > 
     fwdOp = fwdOpSrc->getOp();
@@ -261,7 +261,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
           break;
 #endif
         default:
-          TEST_FOR_EXCEPTION(
+          TEUCHOS_TEST_FOR_EXCEPTION(
             true, std::logic_error
             ,"Error, the solver type ID = " << solverType_ << " is invalid!"
             );
@@ -326,7 +326,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
@@ -341,7 +341,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
@@ -358,7 +358,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);
@@ -387,7 +387,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),0); // Only validate this level for now!
   paramList_ = paramList;
   solverType_ =

@@ -188,10 +188,10 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   if ( this->root_ ){
 
 #ifdef HAVE_AMESOS2_DEBUG
-    TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
+    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
                         std::runtime_error,
                         "Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
-    TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
+    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
                         std::runtime_error,
                         "Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
 #endif
@@ -204,7 +204,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
                           data_.C.getRawPtr(), &rowcnd, &colcnd,
                           &amax, &info2);
-      TEST_FOR_EXCEPTION( info2 != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( info2 != 0,
                           std::runtime_error,
                           "SuperLU gsequ returned with status " << info2 );
 
@@ -252,10 +252,10 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
   global_size_type info_st = as<global_size_type>(info);
-  TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
+  TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
     std::runtime_error,
     "Factorization complete, but matrix is singular. Division by zero eminent");
-  TEST_FOR_EXCEPTION( (info_st > 0) && (info_st > this->globalNumCols_),
+  TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st > this->globalNumCols_),
     std::runtime_error,
     "Memory allocation failure in Superlu factorization");
 
@@ -339,13 +339,13 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
   global_size_type ierr_st = as<global_size_type>(ierr);
-  TEST_FOR_EXCEPTION( ierr < 0,
+  TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
                       std::invalid_argument,
                       "Argument " << -ierr << " to SuperLU xgssvx had illegal value" );
-  TEST_FOR_EXCEPTION( ierr > 0 && ierr_st <= this->globalNumCols_,
+  TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st <= this->globalNumCols_,
                       std::runtime_error,
                       "Factorization complete, but U is exactly singular" );
-  TEST_FOR_EXCEPTION( ierr > 0 && ierr_st > this->globalNumCols_ + 1,
+  TEUCHOS_TEST_FOR_EXCEPTION( ierr > 0 && ierr_st > this->globalNumCols_ + 1,
                       std::runtime_error,
                       "SuperLU allocated " << ierr - this->globalNumCols_ << " bytes of "
                       "memory before allocation failure occured." );
@@ -537,7 +537,7 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
   SLU::Dtype_t dtype = type_map::dtype;
 
   if( this->root_ ){
-    TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
 

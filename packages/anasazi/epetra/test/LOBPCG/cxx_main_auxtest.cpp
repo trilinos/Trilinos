@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
       problem->setHermitian(true);
       problem->setNEV( FIRST_BS+SECOND_BS+THIRD_BS );
       boolret = problem->setProblem();
-      TEST_FOR_EXCEPTION(boolret != true,get_out,"Anasazi::BasicEigenproblem::SetProblem() returned with error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(boolret != true,get_out,"Anasazi::BasicEigenproblem::SetProblem() returned with error.");
     }
 
 
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
       MyPL.set( "Block Size", FIRST_BS+SECOND_BS+THIRD_BS );
       Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman1(problem, MyPL);
       returnCode = solverman1.solve();
-      TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "First problem was not fully solved.");
+      TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "First problem was not fully solved.");
       sol1 = problem->getSolution();
     }
 
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
       problem->setInitVec(ivec);
       problem->setNEV( FIRST_BS );
       boolret = problem->setProblem();
-      TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
     }
 
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
       MyPL.set( "Block Size", FIRST_BS );
       Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman21(problem, MyPL);
       returnCode = solverman21.solve();
-      TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/1 problem was not fully solved.");
+      TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/1 problem was not fully solved.");
       sol21 = problem->getSolution();
       std::vector<int> bsind1(FIRST_BS);
       for (int i=0; i<FIRST_BS; i++) bsind1[i] = i;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
       problem->setInitVec(ivec);
       problem->setNEV( SECOND_BS );
       boolret = problem->setProblem();
-      TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
     }
 
 
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
       MyPL.set( "Block Size", SECOND_BS );
       Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman22(problem, MyPL);
       returnCode = solverman22.solve();
-      TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/2 problem was not fully solved." );
+      TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/2 problem was not fully solved." );
       sol22 = problem->getSolution();
       std::vector<int> bsind2(SECOND_BS);
       for (int i=0; i<SECOND_BS; i++) bsind2[i] = FIRST_BS+i;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
       problem->setInitVec(ivec);
       problem->setNEV( THIRD_BS );
       boolret = problem->setProblem();
-      TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(boolret != true, get_out, "Anasazi::BasicEigenproblem::SetProblem() returned with error.");
     }
 
 
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
       MyPL.set( "Block Size", THIRD_BS );
       Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman23(problem, MyPL);
       returnCode = solverman23.solve();
-      TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/3 problem was not fully solved." );
+      TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/3 problem was not fully solved." );
       sol23 = problem->getSolution();
       std::vector<int> bsind3(THIRD_BS);
       for (int i=0; i<THIRD_BS; i++) bsind3[i] = FIRST_BS+SECOND_BS+i;

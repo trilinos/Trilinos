@@ -62,7 +62,7 @@ Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scal
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0)
 {
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
       Teuchos::typeName(*this) << "::Chebyshev(): input matrix reference was null.");
 }
 
@@ -205,10 +205,10 @@ void Chebyshev<MatrixType>::apply(
                 Teuchos::ETransp mode,
                  Scalar alpha,
                  Scalar beta) const {
-  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error, 
       "Ifpack2::Chebyshev::apply() ERROR, not yet computed.");
 
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::Chebyshev::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   Time_->start();
@@ -349,9 +349,9 @@ void Chebyshev<MatrixType>::applyMat(
                  Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
              Teuchos::ETransp mode) const
 {
-  TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
      "Ifpack2::Chebyshev::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::Chebyshev::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply(X, Y, mode);
 }
@@ -361,10 +361,10 @@ template<class MatrixType>
 void Chebyshev<MatrixType>::initialize() {
   IsInitialized_ = false;
 
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
       "Ifpack2::Chebyshev::initialize ERROR: A_ == Teuchos::null");
 
-  TEST_FOR_EXCEPTION(A_->getGlobalNumRows() != A_->getGlobalNumCols(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_->getGlobalNumRows() != A_->getGlobalNumCols(), std::runtime_error,
      "Ifpack2::Chebyshev::initialize ERROR: only square matrices are supported");
 
   NumMyRows_ = A_->getNodeNumRows();
@@ -391,7 +391,7 @@ void Chebyshev<MatrixType>::compute()
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(PolyDegree_ <= 0, std::runtime_error,
     "Ifpack2::Chebyshev::compute() ERROR: PolyDegree_ must be at least one");
   
   if (InvDiagonal_ == Teuchos::null)
@@ -452,7 +452,7 @@ PowerMethod(const Tpetra::Operator<typename MatrixType::scalar_type, typename Ma
     x.dot(x, RQ_bottom());
     lambda_max = RQ_top[0] / RQ_bottom[0];
     y.norm2(norms());
-    TEST_FOR_EXCEPTION(norms[0] == zero, std::runtime_error, "Ifpack2::Chebyshev::PowerMethod ERROR, norm == 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(norms[0] == zero, std::runtime_error, "Ifpack2::Chebyshev::PowerMethod ERROR, norm == 0");
     x.update( one / norms[0], y, zero);
   }
 }

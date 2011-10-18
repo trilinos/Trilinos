@@ -118,7 +118,7 @@ class SolverManager : virtual public Teuchos::Describable {
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
     )
     {
-      TEST_FOR_EXCEPT_MSG(true, "Error, the function setUserConvStatusTest() has not been"
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setUserConvStatusTest() has not been"
         << " overridden for the class" << this->description() << " yet!");
     }
 

@@ -104,12 +104,12 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::checkStatus(
   
   // Compute the rhs norm if requested and not already computed
   if (solveCriteria_.solveMeasureType.contains(SOLVE_MEASURE_NORM_RHS)) {
-    TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||b||");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||b||");
   }
 
   // Compute the initial residual norm if requested and not already computed
   if (solveCriteria_.solveMeasureType.contains(SOLVE_MEASURE_NORM_INIT_RESIDUAL)) {
-    TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||r0||");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||r0||");
   }
 
   // Compute X if requested
@@ -227,10 +227,10 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::computeReductionFunctional(
       v = x;
       break;
     case SOLVE_MEASURE_NORM_INIT_RESIDUAL:
-      TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||r0||!)")
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||r0||!)")
       break;
     case SOLVE_MEASURE_NORM_RHS:
-      TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||b||!)");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Handle ||b||!)");
       break;
     TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT();
    }

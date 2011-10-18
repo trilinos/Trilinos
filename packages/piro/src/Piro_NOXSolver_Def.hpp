@@ -51,7 +51,7 @@ NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
 //   string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
 
 //   if (jacobianSource == "Matrix-Free") {
-//     TEST_FOR_EXCEPTION(jacobianSource == "Matrix-Free", std::logic_error,
+//     TEUCHOS_TEST_FOR_EXCEPTION(jacobianSource == "Matrix-Free", std::logic_error,
 //        "MATRIX_free not yet implemented for Piro Thyra");
 //     model = rcp(new Piro::Thyra::MatrixFreeDecorator(model));
 //   }
@@ -74,7 +74,7 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::NOXSolver<Scalar>::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::NOXSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -86,7 +86,7 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::NOXSolver<Scalar>::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::NOXSolver::get_g_map():  " <<
                      "Invalid response index j = " <<

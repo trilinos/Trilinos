@@ -103,7 +103,7 @@ template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
@@ -116,7 +116,7 @@ template<class Scalar>
 RCP<const Teuchos::Array<std::string> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_names(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
@@ -129,7 +129,7 @@ template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_space(j): "
     " Error, this function was not overridden in \'"
@@ -161,7 +161,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
     " this function create_W_op() must be overridden by the subclass "

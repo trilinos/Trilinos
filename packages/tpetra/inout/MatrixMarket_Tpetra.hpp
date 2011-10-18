@@ -273,18 +273,18 @@ namespace Tpetra {
 				    static_cast<global_ordinal_type> (0),
 				    pComm, GloballyDistributed, pNode));
 	} else {
-	  TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
 			     std::invalid_argument,
 			     "The specified row map is not distributed, but "
 			     "the given communicator includes more than one "
 			     "rank (in fact, there are " << pComm->getSize() 
 			     << " ranks).");
-	  TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm, 
 			     std::invalid_argument,
 			     "The specified row map's communicator (pRowMap->"
 			     "getComm()) is different than the given separately "
 			     "supplied communicator pComm.");
-	  TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
+	  TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
 			     std::invalid_argument,
 			     "The specified row map's node (pRowMap->getNode()) "
 			     "is different than the given separately supplied "
@@ -432,7 +432,7 @@ namespace Tpetra {
          // not be contiguous, and the row map need not be one-to-one.
          ArrayView<const GO> myRows = pRowMap->getNodeElementList();
          const size_type myNumRows = myRows.size();
-         TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) != 
+         TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) != 
 			    pRowMap->getNodeNumElements(),
                             std::logic_error,
                             "pRowMap->getNodeElementList().size() = " 
@@ -440,7 +440,7 @@ namespace Tpetra {
                             << " != pRowMap->getNodeNumElements() = "
                             << pRowMap->getNodeNumElements() << ".  "
                             "Please report this bug to the Tpetra developers.");
-         TEST_FOR_EXCEPTION(myRank == 0 && numEntriesPerRow.size() < myNumRows,
+         TEUCHOS_TEST_FOR_EXCEPTION(myRank == 0 && numEntriesPerRow.size() < myNumRows,
                             std::logic_error,
                             "On Proc 0: numEntriesPerRow.size() = "
                             << numEntriesPerRow.size()
@@ -640,7 +640,7 @@ namespace Tpetra {
                            std::ostringstream os;
                            std::copy (theirRows.begin(), theirRows.end(), 
                                       std::ostream_iterator<GO>(os, " "));
-                           TEST_FOR_EXCEPTION(! theirRowsValid, 
+                           TEUCHOS_TEST_FOR_EXCEPTION(! theirRowsValid, 
                                               std::logic_error,
                                               "Proc " << p << " has at least "
                                               "one invalid row index.  Here are"
@@ -819,16 +819,16 @@ namespace Tpetra {
         // and myValues would all be empty arrays in that degenerate
         // case, but the row and domain maps would still be nonnull
         // (though they would be trivial maps).
-        TEST_FOR_EXCEPTION(myRowPtr.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(myRowPtr.is_null(), std::logic_error,
                            "makeMatrix: myRowPtr array is null.  "
                            "Please report this bug to the Tpetra developers.");
-        TEST_FOR_EXCEPTION(pDomainMap.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(pDomainMap.is_null(), std::logic_error,
                            "makeMatrix: domain map is null.  "
                            "Please report this bug to the Tpetra developers.");
-        TEST_FOR_EXCEPTION(pRangeMap.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(pRangeMap.is_null(), std::logic_error,
                            "makeMatrix: range map is null.  "
                            "Please report this bug to the Tpetra developers.");
-        TEST_FOR_EXCEPTION(pRowMap.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(pRowMap.is_null(), std::logic_error,
                            "makeMatrix: row map is null.  "
                            "Please report this bug to the Tpetra developers.");
 
@@ -882,7 +882,7 @@ namespace Tpetra {
         sparse_matrix_ptr A = 
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, 
                                        DynamicProfile));
-        TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
                            "makeMatrix: Initial allocation of CrsMatrix failed"
                            ".  Please report this bug to the Tpetra developers"
                            ".");
@@ -965,7 +965,7 @@ namespace Tpetra {
             std::string line;
             // Try to read a line from the input stream.
             const bool readFailed = ! getline(in, line);
-            TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+            TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
                                "Failed to get Matrix Market banner line "
                                "from input.");
             // We read a line from the input stream.
@@ -975,11 +975,11 @@ namespace Tpetra {
             try {
               pBanner = rcp (new Banner (line, tolerant));
             } catch (std::exception& e) {
-              TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+              TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
                                  "Matrix Market banner line contains syntax "
                                  "error(s): " << e.what());
             }
-            TEST_FOR_EXCEPTION(pBanner->objectType() != "matrix",
+            TEUCHOS_TEST_FOR_EXCEPTION(pBanner->objectType() != "matrix",
                                std::invalid_argument,
                                "The Matrix Market file does not contain "
                                "matrix data.  Its banner (first) line says that"
@@ -988,7 +988,7 @@ namespace Tpetra {
 
             // Validate the data type of the matrix, with respect to
             // the Scalar type of the CrsMatrix entries.
-            TEST_FOR_EXCEPTION(! STS::isComplex && 
+            TEUCHOS_TEST_FOR_EXCEPTION(! STS::isComplex && 
 			       pBanner->dataType() == "complex",
                                std::invalid_argument,
                                "The Matrix Market file contains complex-valued "
@@ -997,7 +997,7 @@ namespace Tpetra {
                                "Scalar type \"" 
                                << Teuchos::TypeNameTraits<scalar_type>::name() 
                                << "\".");
-            TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
+            TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
                                pBanner->dataType() != "complex" && 
                                pBanner->dataType() != "integer",
                                std::invalid_argument,
@@ -1053,7 +1053,7 @@ namespace Tpetra {
         bool success = false;
         if (Teuchos::rank(*pComm) == 0)
           { 
-            TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
+            TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
                                std::invalid_argument,
                                "The Tpetra::CrsMatrix Matrix Market reader "
                                "only accepts \"coordinate\" (sparse) matrix "
@@ -1266,7 +1266,7 @@ namespace Tpetra {
             // In tolerant mode, we allow the matrix type to be
             // anything other than "array" (which would mean that the
             // file contains a dense matrix).
-            TEST_FOR_EXCEPTION(! tolerant && 
+            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
 			       pBanner->matrixType() != "coordinate",
                                std::runtime_error,
                                "Matrix Market file must contain a "
@@ -1279,7 +1279,7 @@ namespace Tpetra {
             // In tolerant mode, we allow the matrix type to be
             // anything other than "array" (which would mean that the
             // file contains a dense matrix).
-            TEST_FOR_EXCEPTION(tolerant && pBanner->matrixType() == "array",
+            TEUCHOS_TEST_FOR_EXCEPTION(tolerant && pBanner->matrixType() == "array",
                                std::runtime_error,
                                "Matrix Market file must contain a "
                                "\"coordinate\"-format sparse matrix in "
@@ -1357,7 +1357,7 @@ namespace Tpetra {
         //
         // Question: Should we run fillComplete() in tolerant mode, if
         // the read did not succeed?
-        TEST_FOR_EXCEPTION(! readSuccess, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(! readSuccess, std::runtime_error,
                            "Failed to read in the Matrix Market sparse "
                            "matrix.");
         if (debug && myRank == 0)
@@ -1437,7 +1437,7 @@ namespace Tpetra {
                     addersDims[1] = pAdder->getAdder()->numCols();
                   }
                 Teuchos::broadcast (*pComm, 0, addersDims);
-                TEST_FOR_EXCEPTION(dimsMatch == 0, std::runtime_error,
+                TEUCHOS_TEST_FOR_EXCEPTION(dimsMatch == 0, std::runtime_error,
                                    "The matrix metadata says that the matrix is "
                                    << dims[0] << " x " << dims[1] << ", but the "
                                    "actual data says that the matrix is " 
@@ -1521,7 +1521,7 @@ namespace Tpetra {
                 {
                   const element_type& curEntry = entries[curPos];
                   const global_ordinal_type curRow = curEntry.rowIndex();
-                  TEST_FOR_EXCEPTION(curRow < prvRow, std::logic_error,
+                  TEUCHOS_TEST_FOR_EXCEPTION(curRow < prvRow, std::logic_error,
                                      "Row indices out of order, even though "
                                      "they are supposed to be sorted.  curRow"
                                      " = " << curRow << ", prvRow = " 
@@ -1646,7 +1646,7 @@ namespace Tpetra {
         sparse_matrix_ptr pMatrix = 
           makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
                       pRowMap, pRangeMap, pDomainMap, callFillComplete);
-        TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
                            "Reader::makeMatrix() returned a null pointer.  "
                            "Please report this bug to the Tpetra developers.");
 
@@ -1849,7 +1849,7 @@ namespace Tpetra {
         // communicator resp. node equal pComm resp. pNode.  Checking
         // now avoids doing a lot of file reading before we detect the
         // violated precondition.
-        TEST_FOR_EXCEPTION(! pMap.is_null() && 
+        TEUCHOS_TEST_FOR_EXCEPTION(! pMap.is_null() && 
                            (pMap->getComm() != pComm || 
 			    pMap->getNode() != pNode),
                            std::invalid_argument,
@@ -1884,13 +1884,13 @@ namespace Tpetra {
 	    // matrix, and the type of the data it contains.
 	    RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
 						    tolerant, debug);
-	    TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
+	    TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
 			       std::invalid_argument,
 			       "The Matrix Market file does not contain dense "
 			       "matrix data.  Its banner (first) line says that"
 			       " its matrix type is \"" << pBanner->matrixType()
 			       << "\", rather than the required \"array\".");
-	    TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
+	    TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
 			       std::invalid_argument,
 			       "The Matrix Market file's banner (first) line "
 			       "claims that its data type is \"pattern\".  "
@@ -1911,7 +1911,7 @@ namespace Tpetra {
 	      // reported data type and ensures it is one of the above
 	      // three values.  We repeat the full test to make the
 	      // exception message more informative.
-	      TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
+	      TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
 				 pBanner->dataType() != "complex" && 
 				 pBanner->dataType() != "integer", 
 				 std::logic_error, 
@@ -1932,7 +1932,7 @@ namespace Tpetra {
           while (commentLine) {
             // Test whether it is even valid to read from the
             // input stream wrapping the line.
-            TEST_FOR_EXCEPTION(in.eof() || in.fail(), std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(in.eof() || in.fail(), std::runtime_error,
                                "Unable to get array dimensions line (at all) "
                                "from line " << lineNumber << " of input "
                                "stream.  The input stream claims that it is "
@@ -1958,7 +1958,7 @@ namespace Tpetra {
 
           // Test whether it is even valid to read from the input
           // stream wrapping the line.
-          TEST_FOR_EXCEPTION(istr.eof() || istr.fail(), std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(istr.eof() || istr.fail(), std::runtime_error,
                              "Unable to read any data from line " << lineNumber
                              << " of input; the line should contain the matrix "
                              << "dimensions \"<numRows> <numCols>\".");
@@ -1966,7 +1966,7 @@ namespace Tpetra {
           {
             GO theNumRows = 0;
             istr >> theNumRows;
-            TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
                                "Failed to get number of rows from line " 
 			       << lineNumber << " of input; the line should "
 			       "contain the matrix dimensions \"<numRows> "
@@ -1975,7 +1975,7 @@ namespace Tpetra {
             dims[0] = theNumRows;
           }
           // There should be one more thing to read.
-          TEST_FOR_EXCEPTION(istr.eof(), std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(istr.eof(), std::runtime_error,
                              "No more data after number of rows on line " 
 			     << lineNumber << " of input; the line should "
 			     "contain the matrix dimensions \"<numRows> "
@@ -1984,7 +1984,7 @@ namespace Tpetra {
           {
             GO theNumCols = 0;
             istr >> theNumCols;
-            TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
                                "Failed to get number of columns from line " 
                                << lineNumber << " of input; the line should "
                                "contain the matrix dimensions \"<numRows> "
@@ -2025,7 +2025,7 @@ namespace Tpetra {
               cerr << "-- Reading matrix data (dense)" << endl;
 
             // Make sure that we can get a 1-D view of X.
-            TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
                                "Can't get a 1-D view of the entries of the "
                                "MultiVector X on Rank 0, because the stride "
 			       "between the columns of X is not constant.  "
@@ -2038,7 +2038,7 @@ namespace Tpetra {
             // scope, so (if necessary) it will be written back to X
             // at this time.
             ArrayRCP<S> X_view = X->get1dViewNonConst ();
-            TEST_FOR_EXCEPTION(static_cast<global_size_t> (X_view.size()) < numRows * numCols,
+            TEUCHOS_TEST_FOR_EXCEPTION(static_cast<global_size_t> (X_view.size()) < numRows * numCols,
                                std::logic_error,
                                "The view of X has size " << X_view 
                                << " which is not enough to accommodate the "
@@ -2077,7 +2077,7 @@ namespace Tpetra {
                         if (tolerant)
                           break;
                         else
-                          TEST_FOR_EXCEPTION(count >= X_view.size(), 
+                          TEUCHOS_TEST_FOR_EXCEPTION(count >= X_view.size(), 
                                              std::runtime_error,
                                              "The Matrix Market input stream has "
                                              "more data in it than its metadata "
@@ -2094,7 +2094,7 @@ namespace Tpetra {
                           break;
                         // We repeat the full test here so the
                         // exception message is more informative.
-                        TEST_FOR_EXCEPTION(! tolerant && 
+                        TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
 					   (istr.eof() || istr.fail()),
                                            std::runtime_error,
                                            "Line " << lineNumber << " of the "
@@ -2128,7 +2128,7 @@ namespace Tpetra {
                         istr >> real;
                         if (istr.fail())
                           {
-                            TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
                                                std::runtime_error,
                                                "Failed to get real part of a "
                                                "complex-valued matrix entry "
@@ -2140,7 +2140,7 @@ namespace Tpetra {
                           }
                         else if (istr.eof())
                           {
-                            TEST_FOR_EXCEPTION(! tolerant && istr.eof(),
+                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.eof(),
                                                std::runtime_error,
                                                "Missing imaginary part of a "
                                                "complex-valued matrix entry "
@@ -2153,7 +2153,7 @@ namespace Tpetra {
                           { // Attempt to read the imaginary part of
                             // the current matrix entry.
                             istr >> imag;
-                            TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
                                                std::runtime_error,
                                                "Failed to get imaginary part "
                                                "of a complex-valued matrix "
@@ -2167,7 +2167,7 @@ namespace Tpetra {
                       {
                         // Attempt to read the current matrix entry.
                         istr >> real;
-                        TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+                        TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
                                            std::runtime_error,
                                            "Failed to get a real-valued matrix "
                                            "entry from line " << lineNumber 
@@ -2181,7 +2181,7 @@ namespace Tpetra {
 
                     // In tolerant mode, we simply let pass through
                     // whatever data we got.
-                    TEST_FOR_EXCEPTION(! tolerant && istr.fail(), 
+                    TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(), 
                                        std::runtime_error,
                                        "Failed to read matrix data from line " 
                                        << lineNumber << " of the Matrix Market "
@@ -2197,7 +2197,7 @@ namespace Tpetra {
                     ++count;
                   }
               }
-            TEST_FOR_EXCEPTION(! tolerant && 
+            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
 			       static_cast<global_size_t> (count) < numRows * numCols,
                                std::runtime_error,
                                "The Matrix Market metadata reports that the "
@@ -2629,7 +2629,7 @@ namespace Tpetra {
 		  // Convert from local to global row index.
 		  const GO globalRowIndex = 
 		    pGatherRowMap->getGlobalElement (localRowIndex);
-		  TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(), 
+		  TEUCHOS_TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(), 
 				     std::logic_error,
 				     "Failed to convert \"local\" row index " 
 				     << localRowIndex << " into a global row "
@@ -2649,7 +2649,7 @@ namespace Tpetra {
 		      // Convert from local to global index.
 		      const GO globalColIndex = 
 			pColMap->getGlobalElement (*indIter);
-		      TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(), 
+		      TEUCHOS_TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(), 
 					 std::logic_error,
 					 "Failed to convert \"local\" column " 
 					 "index " << *indIter << " into a "
@@ -2875,7 +2875,7 @@ namespace Tpetra {
 	    // have constant stride.  However, we check Y, just to
 	    // make sure.
 	    //
-	    TEST_FOR_EXCEPTION(! Y->isConstantStride (),
+	    TEUCHOS_TEST_FOR_EXCEPTION(! Y->isConstantStride (),
 			       std::logic_error,
 			       "The multivector Y imported onto Rank 0 does not"
 			       " have constant stride.  Please report this bug "

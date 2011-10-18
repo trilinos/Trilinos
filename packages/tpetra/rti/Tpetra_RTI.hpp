@@ -30,7 +30,7 @@
 #define TPETRA_RTI_HPP
 
 #include <Teuchos_Tuple.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 
@@ -119,7 +119,7 @@ namespace Tpetra {
     void binary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, OP op) 
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::binary_transform(vec_inout,vec_in2): vec_in2 and vec_inout must have the same local length.");
 #endif
       Tpetra::RTI::detail::BinaryFunctorAdapter<OP,S1,S2> adapter_op(op);
@@ -135,7 +135,7 @@ namespace Tpetra {
     void tertiary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op) 
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::tertiary_transform(vec_inout,vec_in2,vec_in3): vec_inout, vec_in2 and vec_in3 must have the same local length.");
 #endif
       Tpetra::RTI::detail::TertiaryFunctorAdapter<OP,S1,S2,S3> adapter_op(op);
@@ -153,7 +153,7 @@ namespace Tpetra {
     reduce( const Vector<S1,LO,GO,Node> &vec_in1, const Vector<S2,LO,GO,Node> &vec_in2, Glob glob)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIReductionAdapter<Glob,S1,S2> adapter_op(glob);
@@ -172,7 +172,7 @@ namespace Tpetra {
     reduce(const Vector<S1,LO,GO,Node> &vec_in1, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, Glob glob)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
           std::runtime_error, "Tpetra::RTI::reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIReductionAdapter3<Glob,S1,S2,S3> adapter_op(glob);
@@ -191,7 +191,7 @@ namespace Tpetra {
     binary_pre_transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, Glob glob)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::binary_pre_transform_reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIPreTransformReductionAdapter<Glob,S1,S2> adapter_op(glob);
@@ -211,7 +211,7 @@ namespace Tpetra {
     tertiary_pre_transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, Glob glob)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() && vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() && vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
           std::runtime_error, "Tpetra::RTI::tertiary_pre_transform_reduce(vec_in1,vec_in2,vec_in3): vec_in1, vec_in2 and vec_in3 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIPreTransformReductionAdapter3<Glob,S1,S2,S3> adapter_op(glob);

@@ -63,7 +63,7 @@ build_problem_mm(Teuchos::ParameterList& test_params,
     problem->setLeftPrec(prec);
   }
   else if (ifpack2_precond != "not specified") {
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
   problem->setProblem();

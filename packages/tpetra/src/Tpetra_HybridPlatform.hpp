@@ -196,7 +196,7 @@ namespace Tpetra {
             desigNode = sublist.get<std::string>("NodeType");
           }
           catch (Teuchos::Exceptions::InvalidParameterName &e) {
-            TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
+            TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
               std::endl << Teuchos::typeName(*this) << ": Invalid machine file." << std::endl 
               << "Missing parameter \"NodeType\" on Node " << myrank << " for Node designator " << "\"" << name << "\":" << std::endl 
               << sublist << std::endl);
@@ -235,7 +235,7 @@ namespace Tpetra {
       }
     }
     if (!matchFound) {
-      TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
           Teuchos::typeName(*this) << ": No matching node type on rank " << myrank);
     }
   } 
@@ -276,7 +276,7 @@ namespace Tpetra {
         break;
 #endif        
       default:
-        TEST_FOR_EXCEPTION(true, std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
             Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
     } // end of switch
     nodeCreated_ = true;
@@ -310,7 +310,7 @@ namespace Tpetra {
         break;
 #endif        
       default:
-        TEST_FOR_EXCEPTION(true, std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
             Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
     } // end of switch
   }
@@ -343,7 +343,7 @@ namespace Tpetra {
         break;
 #endif        
       default:
-        TEST_FOR_EXCEPTION(true, std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
             Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
     } // end of switch
   }

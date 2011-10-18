@@ -162,7 +162,7 @@ namespace Anasazi {
        However, to spice things up, grab the first vector,
        last vector, and choose the others randomly.
     */
-    TEST_FOR_EXCEPT(numvecs_2 != 5);
+    TEUCHOS_TEST_FOR_EXCEPT(numvecs_2 != 5);
     ind[0] = 0;
     ind[1] = 5;
     ind[2] = 2;

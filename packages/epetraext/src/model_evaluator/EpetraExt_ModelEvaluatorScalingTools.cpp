@@ -73,7 +73,7 @@ void assertModelVarScalings(
   )
 {
   typedef EpetraExt::ModelEvaluator EME;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     (varScalings.supports(EME::IN_ARG_x) && varScalings.supports(EME::IN_ARG_x_dot))
     && (varScalings.get_x() != varScalings.get_x_dot()),
     std::logic_error,
@@ -107,7 +107,7 @@ void scaleModelVar(
 
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!scaledVars);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledVars);
 #endif
 
   RCP<const Epetra_Vector>
@@ -174,8 +174,8 @@ void scaleModelBound(
   typedef EpetraExt::ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!scaledLowerBounds);
-  TEST_FOR_EXCEPT(!scaledUpperBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledLowerBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledUpperBounds);
 #endif
 
   RCP<const Epetra_Vector>
@@ -184,7 +184,7 @@ void scaleModelBound(
     RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
-      TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
+      TEUCHOS_TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
     }
     else {
       vecGetterSetter.setVector( orig_lower_vec, scaledLowerBounds );
@@ -200,7 +200,7 @@ void scaleModelBound(
     RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
-      TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
+      TEUCHOS_TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
     }
     else {
       vecGetterSetter.setVector( orig_upper_vec, scaledUpperBounds );
@@ -235,7 +235,7 @@ void unscaleModelVar(
 
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!origVars);
+  TEUCHOS_TEST_FOR_EXCEPT(!origVars);
 #endif
 
   RCP<const Epetra_Vector>
@@ -281,7 +281,7 @@ void scaleModelFunc(
   Teuchos::EVerbosityLevel verbLevel
   )
 {
-  TEST_FOR_EXCEPT(0==scaledFuncs);
+  TEUCHOS_TEST_FOR_EXCEPT(0==scaledFuncs);
   Teuchos::RCP<Epetra_Vector>
     func = vecGetterSetter.getVector(origFuncs);
   if (!is_null(func) ) {
@@ -308,7 +308,7 @@ void EpetraExt::gatherModelNominalValues(
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!nominalValues);
+  TEUCHOS_TEST_FOR_EXCEPT(!nominalValues);
 #endif
 
   *nominalValues = model.createInArgs();
@@ -343,8 +343,8 @@ void EpetraExt::gatherModelBounds(
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!lowerBounds);
-  TEST_FOR_EXCEPT(!upperBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!lowerBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!upperBounds);
 #endif
 
   *lowerBounds = model.createInArgs();
@@ -379,7 +379,7 @@ void EpetraExt::scaleModelVars(
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!scaledVars);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledVars);
   assertModelVarScalings(varScalings);
 #endif
 
@@ -400,7 +400,7 @@ void EpetraExt::scaleModelVars(
   }
 
   if (origVars.supports(EME::IN_ARG_x_poly)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_null(varScalings.get_x()), std::logic_error,
       "Error, can't hanlde scaling of x_poly yet!"
       );
@@ -408,7 +408,7 @@ void EpetraExt::scaleModelVars(
   }
 
   if (origVars.supports(EME::IN_ARG_x_dot_poly)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_null(varScalings.get_x()), std::logic_error,
       "Error, can't hanlde scaling of x_dot_poly yet!"
       );
@@ -416,7 +416,7 @@ void EpetraExt::scaleModelVars(
   }
 
   if (origVars.supports(EME::IN_ARG_t)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_t() > 0.0, std::logic_error,
       "Error, can't hanlde scaling of t yet!"
       );
@@ -424,7 +424,7 @@ void EpetraExt::scaleModelVars(
   }
 
   if (origVars.supports(EME::IN_ARG_alpha)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_alpha() > 0.0, std::logic_error,
       "Error, can't hanlde scaling of alpha yet!"
       );
@@ -432,7 +432,7 @@ void EpetraExt::scaleModelVars(
   }
 
   if (origVars.supports(EME::IN_ARG_beta)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_beta() > 0.0, std::logic_error,
       "Error, can't hanlde scaling of beta yet!"
       );
@@ -459,8 +459,8 @@ void EpetraExt::scaleModelBounds(
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!scaledLowerBounds);
-  TEST_FOR_EXCEPT(!scaledUpperBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledLowerBounds);
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledUpperBounds);
   assertModelVarScalings(varScalings);
 #endif
 
@@ -505,7 +505,7 @@ void EpetraExt::unscaleModelVars(
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!origVars);
+  TEUCHOS_TEST_FOR_EXCEPT(!origVars);
   assertModelVarScalings(varScalings);
 #endif
 
@@ -541,7 +541,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   if (scaledVars.supports(EME::IN_ARG_x_dot_poly)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_null(varScalings.get_x()), std::logic_error,
       "Error, can't hanlde unscaling of x_dot_poly yet!"
       );
@@ -549,7 +549,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   if (scaledVars.supports(EME::IN_ARG_x_poly)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_null(varScalings.get_x()), std::logic_error,
       "Error, can't hanlde unscaling of x_poly yet!"
       );
@@ -557,7 +557,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   if (scaledVars.supports(EME::IN_ARG_t)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_t() > 0.0, std::logic_error,
       "Error, can't hanlde unscaling of t yet!"
       );
@@ -565,7 +565,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   if (scaledVars.supports(EME::IN_ARG_alpha)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_alpha() > 0.0, std::logic_error,
       "Error, can't hanlde unscaling of alpha yet!"
       );
@@ -573,7 +573,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   if (scaledVars.supports(EME::IN_ARG_beta)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       varScalings.get_beta() > 0.0, std::logic_error,
       "Error, can't hanlde unscaling of beta yet!"
       );
@@ -597,7 +597,7 @@ void EpetraExt::scaleModelFuncs(
   using Teuchos::RCP;
   typedef ModelEvaluator EME;
 
-  TEST_FOR_EXCEPT(0==allFuncsWhereScaled);
+  TEUCHOS_TEST_FOR_EXCEPT(0==allFuncsWhereScaled);
 
   *allFuncsWhereScaled = true;
 
@@ -616,7 +616,7 @@ void EpetraExt::scaleModelFuncs(
     && !is_null(origFuncs.get_f_poly())
     )
   {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_null(funcScalings.get_f()), std::logic_error,
       "Error, we can't handle scaling of f_poly yet!"
       );
@@ -753,9 +753,9 @@ void EpetraExt::scaleModelVarsGivenInverseScaling(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!scaledVars);
-  TEST_FOR_EXCEPT(!origVars.Map().SameAs(invVarScaling.Map()));
-  TEST_FOR_EXCEPT(!origVars.Map().SameAs(scaledVars->Map()));
+  TEUCHOS_TEST_FOR_EXCEPT(!scaledVars);
+  TEUCHOS_TEST_FOR_EXCEPT(!origVars.Map().SameAs(invVarScaling.Map()));
+  TEUCHOS_TEST_FOR_EXCEPT(!origVars.Map().SameAs(scaledVars->Map()));
 #endif
   const int localDim = origVars.Map().NumMyElements();
   for ( int i = 0; i < localDim; ++i )
@@ -772,7 +772,7 @@ void EpetraExt::scaleModelVarBoundsGivenInverseScaling(
   Epetra_Vector *scaledUpperBounds
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement!");
 }
 
 
@@ -782,7 +782,7 @@ void EpetraExt::unscaleModelVarsGivenInverseScaling(
   Epetra_Vector *scaledVars
   )
 {
-  TEST_FOR_EXCEPT(0==scaledVars);
+  TEUCHOS_TEST_FOR_EXCEPT(0==scaledVars);
   scaledVars->Multiply( 1.0, invVarScaling, origVars, 0.0 );
 }
 
@@ -792,7 +792,7 @@ void EpetraExt::scaleModelFuncGivenForwardScaling(
   Epetra_Vector *funcs
   )
 {
-  TEST_FOR_EXCEPT(0==funcs);
+  TEUCHOS_TEST_FOR_EXCEPT(0==funcs);
   funcs->Multiply( 1.0,  fwdFuncScaling, *funcs, 0.0 );
   // Note: Above is what Epetra_LinearProblem does to scale the RHS and LHS
   // vectors so this type of argument aliasing must be okay in Epetra!
@@ -806,8 +806,8 @@ void EpetraExt::scaleModelFuncFirstDerivOp(
   bool *didScaling
   )
 {
-  TEST_FOR_EXCEPT(0==funcDerivOp);
-  TEST_FOR_EXCEPT(0==didScaling);
+  TEUCHOS_TEST_FOR_EXCEPT(0==funcDerivOp);
+  TEUCHOS_TEST_FOR_EXCEPT(0==didScaling);
   *didScaling = false; // Assume not scaled to start
   Epetra_RowMatrix *funcDerivRowMatrix
     = dynamic_cast<Epetra_RowMatrix*>(funcDerivOp);
@@ -833,8 +833,8 @@ void EpetraExt::scaleModelFuncFirstDeriv(
 {
   using Teuchos::RCP;
   typedef ModelEvaluator EME;
-  TEST_FOR_EXCEPT(0==scaledFuncDeriv);
-  TEST_FOR_EXCEPT(0==didScaling);
+  TEUCHOS_TEST_FOR_EXCEPT(0==scaledFuncDeriv);
+  TEUCHOS_TEST_FOR_EXCEPT(0==didScaling);
   *didScaling = false;
   const RCP<Epetra_MultiVector>
     funcDerivMv = origFuncDeriv.getMultiVector();
@@ -847,7 +847,7 @@ void EpetraExt::scaleModelFuncFirstDeriv(
         funcDerivMv->Multiply(1.0, *fwdFuncScaling, *funcDerivMv, 0.0);
       }
       if (invVarScaling) {
-        TEST_FOR_EXCEPT("ToDo: Scale rows!");
+        TEUCHOS_TEST_FOR_EXCEPT("ToDo: Scale rows!");
         //funcDerivMv->Multiply(1.0, *funcDerivMv, *invVarScaling, 0.0);
       }
     }
@@ -857,12 +857,12 @@ void EpetraExt::scaleModelFuncFirstDeriv(
         funcDerivMv->Multiply(1.0, *invVarScaling, *funcDerivMv, 0.0);
       }
       if (fwdFuncScaling) {
-        TEST_FOR_EXCEPT("ToDo: Scale rows!");
+        TEUCHOS_TEST_FOR_EXCEPT("ToDo: Scale rows!");
         //funcDerivMv->Multiply(1.0, *funcDerivMv, *fwdFuncScaling, 0.0);
       }
     }
     else {
-      TEST_FOR_EXCEPT("Should not get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should not get here!");
     }
     *scaledFuncDeriv = EME::Derivative(funcDerivMv,funcDerivMv_orientation);
     *didScaling = true;
@@ -870,7 +870,7 @@ void EpetraExt::scaleModelFuncFirstDeriv(
   else {
     RCP<Epetra_Operator>
       funcDerivOp = origFuncDeriv.getLinearOp();
-    TEST_FOR_EXCEPT(is_null(funcDerivOp));
+    TEUCHOS_TEST_FOR_EXCEPT(is_null(funcDerivOp));
     scaleModelFuncFirstDerivOp( invVarScaling, fwdFuncScaling,
       &*funcDerivOp, didScaling );
     if (didScaling)

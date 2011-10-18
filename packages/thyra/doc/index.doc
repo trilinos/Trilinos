@@ -517,11 +517,11 @@ software is performed using the built-in C++ exception handling mechanisms
 (i.e. <tt>try</tt>, <tt>throw</tt> and <tt>catch</tt>) and all thrown
 exceptions should inherit from the standard base class
 <tt>std::exception</tt>.  All exceptions in %Thyra software are thrown using
-the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
+the macros <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> or <tt>TEUCHOS_TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros it is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
-<tt>TestForException_break()</tt> (e.g. by typing <tt>break
-TestForException_break</tt> in gdb).  If Trilinos is configured with
+<tt>Teuchos::TestForException_break()</tt> (e.g. by typing <tt>break
+Teuchos::TestForException_break</tt> in gdb).  If Trilinos is configured with
 <tt>Trilinos_ENABLE_DEBUG=ON</tt> then a lot of runtime error checking is
 performed in %Thyra support software, as well as in many other software
 packages.  Whenever development work is being performed this option should

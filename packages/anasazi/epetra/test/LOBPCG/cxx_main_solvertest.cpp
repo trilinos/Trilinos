@@ -76,38 +76,38 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
              SolverUtils<ScalarType,MV,OP> &msutils) {
   LOBPCGState<ScalarType,MV> state = solver->getState();
   
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.H)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for H");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KH) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KH");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.P)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for P");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KP) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KP");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.H)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for H");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KH) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KH");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.P)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for P");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KP) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KP");
   if (solver->getProblem().getM() != null) {
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MX");
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MH) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MH");
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MP) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MP");
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MX");
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MH) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MH");
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MP) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MP");
   }
   else {
-    TEST_FOR_EXCEPTION(state.MX != null,get_out,"MX should null; problem has no M matrix");
-    TEST_FOR_EXCEPTION(state.MH != null,get_out,"MH should null; problem has no M matrix");
-    TEST_FOR_EXCEPTION(state.MP != null,get_out,"MP should null; problem has no M matrix");
+    TEUCHOS_TEST_FOR_EXCEPTION(state.MX != null,get_out,"MX should null; problem has no M matrix");
+    TEUCHOS_TEST_FOR_EXCEPTION(state.MH != null,get_out,"MH should null; problem has no M matrix");
+    TEUCHOS_TEST_FOR_EXCEPTION(state.MP != null,get_out,"MP should null; problem has no M matrix");
   }
-  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
-  TEST_FOR_EXCEPTION(solver->getFullOrtho() != fullortho, get_out,"Solver full ortho does not match specified state.");
-  TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*blocksize,get_out,"LOBPCG::getMaxSubspaceDim() should always be 3*blocksize");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getFullOrtho() != fullortho, get_out,"Solver full ortho does not match specified state.");
+  TEUCHOS_TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*blocksize,get_out,"LOBPCG::getMaxSubspaceDim() should always be 3*blocksize");
 
   if (solver->isInitialized()) 
   {
-    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block size.");
-    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block size.");
-    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)blocksize,get_out,"getRitzRes2Norms.size() does not match block size.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block size.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block size.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)blocksize,get_out,"getRitzRes2Norms.size() does not match block size.");
     // check residual norms for consitency
     std::vector<double> RN2 = solver->getRes2Norms();
     std::vector<double> RR2 = solver->getRitzRes2Norms();
     for (int i=0; i<blocksize; i++) {
-      TEST_FOR_EXCEPTION(RN2[i] != RR2[i],get_out,"getRitzRes2Norms() values do not match getRes2Norms() values.");
+      TEUCHOS_TEST_FOR_EXCEPTION(RN2[i] != RR2[i],get_out,"getRitzRes2Norms() values do not match getRes2Norms() values.");
     }
     // check residuals
     RCP<const MV> evecs = state.X;
@@ -122,14 +122,14 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
     std::vector<Value<ScalarType> > theta = solver->getRitzValues();
-    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
+    TEUCHOS_TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;
     // LOBPCG computes residuals like R = K*X - M*X*T 
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
     MagnitudeType error = msutils.errorEquality(*Kevecs,*state.R);
     // residuals from LOBPCG should be exact; we will cut a little slack
-    TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Residuals from solver did not match eigenvectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Residuals from solver did not match eigenvectors.");
 
     // check eigenvalues
     // X should be ritz vectors; they should diagonalize K to produce the current eigenvalues
@@ -138,18 +138,18 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
     MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
     for (int i=0; i<blocksize; i++) T(i,i) -= theta[i].realpart;
     error = T.normFrobenius() / ninf;
-    TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
 
     if (solver->hasP() && solver->getFullOrtho() == true) {
       // this should be small
       error = ortho->orthogError(*state.X,*state.P);
-      TEST_FOR_EXCEPTION(error >= 1e-14,get_out,"FullOrtho enabled and P not orthogonal to X.");
+      TEUCHOS_TEST_FOR_EXCEPTION(error >= 1e-14,get_out,"FullOrtho enabled and P not orthogonal to X.");
     }
   }
   else {
     // not initialized
-    TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"In unitialized state, hasP() should be false.");
-    TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"In unitialized state, getCurSubspaceDim() should be 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"In unitialized state, hasP() should be false.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"In unitialized state, getCurSubspaceDim() should be 0.");
   }
 }
 
@@ -166,10 +166,10 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   RCP< LOBPCG<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new LOBPCG<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
-    TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
+    TEUCHOS_TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
   }
   catch (const std::invalid_argument &ia) {
-    TEST_FOR_EXCEPTION(!invalid, get_out, "Initializing with valid parameters unexpectadly threw exception.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!invalid, get_out, "Initializing with valid parameters unexpectadly threw exception.");
     // caught expected exception
     return;
   }
@@ -181,10 +181,10 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   SolverUtils<ScalarType,MV,OP> msutils;
 
   // solver should be uninitialized
-  TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations after initialization should be zero after init.")
-  TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"Uninitialized solver should not have valid search directions.");
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations after initialization should be zero after init.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"Uninitialized solver should not have valid search directions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
   checks(solver,blocksize,fullortho,problem,ortho,msutils);
 
   // initialize solver and perform checks
@@ -193,11 +193,11 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   vals1.resize(blocksize);
   MagnitudeType sum1 = 0.0;
   for (int i=0; i<blocksize; i++) sum1 += vals1[i].realpart;
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"Solver should not have valid P.");
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after init, getCurSubspaceDim() should be blocksize.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"Solver should not have valid P.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after init, getCurSubspaceDim() should be blocksize.");
   checks(solver,blocksize,fullortho,problem,ortho,msutils);
 
   // call iterate(); solver should perform exactly one iteration and return; status test should be passed
@@ -206,49 +206,49 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   vals2.resize(blocksize);
   MagnitudeType sum2 = 0.0;
   for (int i=0; i<blocksize; i++) sum2 += vals2[i].realpart;
-  TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
-  TEST_FOR_EXCEPTION(sum2 < sum1,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->hasP() != true,get_out,"Solver should have valid P.");
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after one step, getCurSubspaceDim() should be 2*blocksize.");
+  TEUCHOS_TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(sum2 < sum1,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->hasP() != true,get_out,"Solver should have valid P.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after one step, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,fullortho,problem,ortho,msutils);
 
   // reset numiters, call iterate(); solver should perform exactly one iteration and return; status test should be passed
   solver->resetNumIters();
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   solver->iterate();
   std::vector<Value<ScalarType> > vals3 = solver->getRitzValues();
   vals3.resize(blocksize);
   MagnitudeType sum3 = 0.0;
   for (int i=0; i<blocksize; i++) sum3 += vals3[i].realpart;
-  TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
-  TEST_FOR_EXCEPTION(sum3 < sum2,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->hasP() != true,get_out,"Solver should have valid P.");
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 3*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 3*blocksize.");
+  TEUCHOS_TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(sum3 < sum2,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->hasP() != true,get_out,"Solver should have valid P.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 3*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 3*blocksize.");
   checks(solver,blocksize,fullortho,problem,ortho,msutils);
 
   // call setBlockSize with current blocksize and ensure that it wasn't resized and that it is still initialized
   solver->setBlockSize(blocksize);
-  TEST_FOR_EXCEPTION(!solver->isInitialized(),get_out,"After trivial setBlockSize(), solver should still be initialized.");
-  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After trivial setBlockSize(), solver should have same block size.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!solver->isInitialized(),get_out,"After trivial setBlockSize(), solver should still be initialized.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After trivial setBlockSize(), solver should have same block size.");
 
   // decrease block size and see the difference
   solver->setBlockSize(blocksize-1);
-  TEST_FOR_EXCEPTION(!solver->isInitialized(),get_out,"After decreasing setBlockSize(), solver should be initialized.");
-  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize-1,get_out,"After setBlockSize(), new block size was not in effect.");
-  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*solver->getBlockSize(),get_out,"After setBlockSize(), getMaxSubspaceDim() should be changed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!solver->isInitialized(),get_out,"After decreasing setBlockSize(), solver should be initialized.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize-1,get_out,"After setBlockSize(), new block size was not in effect.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*solver->getBlockSize(),get_out,"After setBlockSize(), getMaxSubspaceDim() should be changed.");
 
   // increase block size and see the difference
   solver->setBlockSize(blocksize);
-  TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After increasing setBlockSize(), solver should be uninitialized.");
-  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After setBlockSize(), new block size was not in effect.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"Unitialized solver should have getCurSubspaceDim() of 0.");
-  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*solver->getBlockSize(),get_out,"After setBlockSize(), getMaxSubspaceDim() should be changed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After increasing setBlockSize(), solver should be uninitialized.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After setBlockSize(), new block size was not in effect.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"Unitialized solver should have getCurSubspaceDim() of 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*solver->getBlockSize(),get_out,"After setBlockSize(), getMaxSubspaceDim() should be changed.");
 }
 
 int main(int argc, char *argv[]) 
@@ -348,8 +348,8 @@ int main(int argc, char *argv[])
     pls.set<bool>("Full Ortho",false);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
-    TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
-    TEST_FOR_EXCEPTION(pls.getEntryPtr("Full Ortho")->isUsed() == false, get_out, "Solver did not consume parameter \"Full Ortho\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Full Ortho")->isUsed() == false, get_out, "Solver did not consume parameter \"Full Ortho\".");
     pls.set<bool>("Full Ortho",true);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -440,7 +440,7 @@ int main(int argc, char *argv[])
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception

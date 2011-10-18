@@ -27,7 +27,7 @@
 //**************************************************************************
 
 #include "ModeLaplace3DQ2.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 const int ModeLaplace3DQ2::dofEle = 27;
@@ -640,7 +640,7 @@ void ModeLaplace3DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
 
   for (i=0; i<localSize; ++i) {
     int info = K->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity+maxConnect*i);
-    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
         "ModeLaplace3DQ2::makeMass(): InsertGlobalValues() returned error code " << info);
   }
 
@@ -668,7 +668,7 @@ void ModeLaplace3DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
         numEntries += 1;
       }
       int info = K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
-      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
           "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
     }
   }
@@ -678,10 +678,10 @@ void ModeLaplace3DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
   delete[] indices;
 
   int info = K->FillComplete();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
   info = K->OptimizeStorage();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
 
 }
@@ -860,7 +860,7 @@ void ModeLaplace3DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
     values[i] = 0.0;
   for (i=0; i<localSize; ++i) {
     int info = M->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity + maxConnect*i);
-    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
         "ModeLaplace3DQ2::makeMass(): InsertGlobalValues() returned error code " << info);
   }
 
@@ -888,7 +888,7 @@ void ModeLaplace3DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
         numEntries += 1;
       }
       int info = M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
-      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
           "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
     }
   }
@@ -898,10 +898,10 @@ void ModeLaplace3DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   delete[] indices;
 
   int info = M->FillComplete();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
   info = M->OptimizeStorage();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace3DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
 
 }

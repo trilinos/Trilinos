@@ -69,8 +69,8 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(productSpace_in));
-  TEST_FOR_EXCEPT(is_null(multiVec));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(productSpace_in));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVec));
   THYRA_ASSERT_VEC_SPACES(
     "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
     *multiVec->range(), *productSpace_in->getBlock(0)
@@ -94,8 +94,8 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(productSpace_in));
-  TEST_FOR_EXCEPT(is_null(multiVec));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(productSpace_in));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVec));
   THYRA_ASSERT_VEC_SPACES(
     "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace_in,multiVec)",
     *multiVec->range(), *productSpace_in->getBlock(0)
@@ -182,7 +182,7 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -303,7 +303,7 @@ void DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewI
   const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(...)!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(...)!");
 }
 
 
@@ -312,7 +312,7 @@ void DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewIm
   RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(...)!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(...)!");
 }
 
 
@@ -321,7 +321,7 @@ void DefaultMultiVectorProductVector<Scalar>::setSubVectorImpl(
   const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::setSubVector(...)!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::setSubVector(...)!");
 }
 
 

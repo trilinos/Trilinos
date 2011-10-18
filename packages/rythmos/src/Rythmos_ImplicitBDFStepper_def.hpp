@@ -103,17 +103,17 @@ template<class Scalar>
 const Thyra::VectorBase<Scalar>& 
   ImplicitBDFStepper<Scalar>::getxHistory(int index) const
 {
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,
       "Error, attempting to call getxHistory before initialization!\n");
-  TEST_FOR_EXCEPT( !(( 0 <= index ) && ( index <= maxOrder_ )) );
-  TEST_FOR_EXCEPT( !( index <= usedOrder_+1 ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !(( 0 <= index ) && ( index <= maxOrder_ )) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( index <= usedOrder_+1 ) );
   return(*(xHistory_[index]));
 }
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setStepControlStrategy(const RCP<StepControlStrategyBase<Scalar> >& stepControl)
 {
-  TEST_FOR_EXCEPTION(stepControl == Teuchos::null,std::logic_error,"Error, stepControl == Teuchos::null!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(stepControl == Teuchos::null,std::logic_error,"Error, stepControl == Teuchos::null!\n");
   stepControl_ = stepControl;    
 }
 
@@ -136,7 +136,7 @@ RCP<const StepControlStrategyBase<Scalar> > ImplicitBDFStepper<Scalar>::getStepC
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setSolver(const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver)
 {
-  TEST_FOR_EXCEPT(solver == Teuchos::null)
+  TEUCHOS_TEST_FOR_EXCEPT(solver == Teuchos::null)
     solver_ = solver;
 }
 
@@ -215,7 +215,7 @@ void ImplicitBDFStepper<Scalar>::setModel(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
   model_ = model;
 }
@@ -252,8 +252,8 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
-  TEST_FOR_EXCEPT(is_null(initialCondition.get_x()));
-  TEST_FOR_EXCEPT(is_null(initialCondition.get_x_dot()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(initialCondition.get_x()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(initialCondition.get_x_dot()));
   basePoint_ = initialCondition;
   xn0_ = initialCondition.get_x()->clone_v();
   xpn0_ = initialCondition.get_x_dot()->clone_v(); 
@@ -323,8 +323,8 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     Scalar hh_old = hh_;
     int desiredOrder;
     stepControl_->nextStepSize(*this,&hh_,&stepType,&desiredOrder);
-    TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
-    TEST_FOR_EXCEPT(!(desiredOrder <= usedOrder_+1));
+    TEUCHOS_TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
+    TEUCHOS_TEST_FOR_EXCEPT(!(desiredOrder <= usedOrder_+1));
     currentOrder_ = desiredOrder;
     if (numberOfSteps_ == 0) {
       psi_[0] = hh_;
@@ -499,7 +499,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitBDFStepper<Scalar>::get_x_space() const
 {
-  //TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
+  //TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
   return ( !is_null(model_) ? model_->get_x_space() : Teuchos::null );
 }
 
@@ -511,7 +511,7 @@ void ImplicitBDFStepper<Scalar>::addPoints(
   const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, addPoints is not implemented for ImplicitBDFStepper.\n");
 }
 
@@ -623,7 +623,7 @@ void ImplicitBDFStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, removeNodes is not implemented for ImplicitBDFStepper.\n");
 }
 
@@ -646,7 +646,7 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList == Teuchos::null);
   paramList->validateParameters(*this->getValidParameters(),0);
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -850,11 +850,11 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !isInitialized_,std::logic_error,
     "Error, attempting to call interpolateSolution before initialization!\n");
   const TimeRange<Scalar> currTimeRange = this->getTimeRange();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !currTimeRange.isInRange(timepoint), std::logic_error,
     "Error, timepoint = " << timepoint << " is not in the time range "
     << currTimeRange << "!" );
@@ -1021,8 +1021,8 @@ void ImplicitBDFStepper<Scalar>::initialize_()
       << "::initialize_()...\n";
   }
 
-  TEST_FOR_EXCEPT(model_ == Teuchos::null);
-  TEST_FOR_EXCEPT(solver_ == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(model_ == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(solver_ == Teuchos::null);
   TEUCHOS_ASSERT(haveInitialCondition_);
 
   // Initialize Parameter List if none provided.
@@ -1043,7 +1043,7 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   stepControl_->initialize(*this);
 
   maxOrder_ = stepControl_->getMaxOrder(); // maximum order
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       !((1 <= maxOrder_) && (maxOrder_ <= 5)), std::logic_error,
       "Error, maxOrder returned from stepControl_->getMaxOrder() = " << maxOrder_ << " is outside range of [1,5]!\n"
       );
@@ -1110,7 +1110,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(ST::isnaninf(hh_));
+  TEUCHOS_TEST_FOR_EXCEPT(ST::isnaninf(hh_));
 #endif  
 
   numberOfSteps_ ++;

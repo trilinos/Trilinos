@@ -165,7 +165,7 @@ SmootherPreconditionerFactory::SmootherPreconditionerFactory()
   */
 LinearOp SmootherPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
 {
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::SmootherPreconditionerFactory::buildPreconditionerOperator requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
@@ -237,7 +237,7 @@ void SmootherPreconditionerFactory::initializeFromParameterList(const Teuchos::P
    if(settings.isParameter(str_destAsInitialGuess)) {
       bool useDest = settings.get<bool>(str_destAsInitialGuess);
       if(useDest) {
-         TEST_FOR_EXCEPTION(initialGuessType_!=Unspecified, std::runtime_error,
+         TEUCHOS_TEST_FOR_EXCEPTION(initialGuessType_!=Unspecified, std::runtime_error,
                             "Cannot set both \"" << str_initialGuessBlock  <<  
                             "\" and \""          << str_destAsInitialGuess << "\"");
 
@@ -252,7 +252,7 @@ void SmootherPreconditionerFactory::initializeFromParameterList(const Teuchos::P
    // get preconditioner factory
    //////////////////////////////////////
  
-   TEST_FOR_EXCEPTION(not settings.isParameter(str_precType),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not settings.isParameter(str_precType),std::runtime_error,
                       "Parameter \"" << str_precType << "\" is required by a Teko::SmootherPreconditionerFactory");
       
    // grab library and preconditioner name
@@ -261,7 +261,7 @@ void SmootherPreconditionerFactory::initializeFromParameterList(const Teuchos::P
 
    // build preconditioner factory
    precFactory_ = il->getInverseFactory(precName);
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"" << str_precType << "\" = " << precName 
                    << " could not be found");
 

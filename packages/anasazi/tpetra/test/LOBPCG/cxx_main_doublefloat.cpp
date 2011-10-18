@@ -140,13 +140,13 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
     Vector<Scalar,int> diags(A->getRowMap());
     A->getLocalDiagCopy(diags);
     for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
-      TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
       diags[i] = SCT::one() / diags[i];
     }
     RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
     problem->setPrec(P);
   }
-  TEST_FOR_EXCEPT(problem->setProblem() == false);
+  TEUCHOS_TEST_FOR_EXCEPT(problem->setProblem() == false);
   return problem;
 }
 

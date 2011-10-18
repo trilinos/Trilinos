@@ -164,7 +164,7 @@ namespace Anasazi {
     stopReasons_.push_back("theta convergence");
 
     rho_prime_ = params.get("Rho Prime",0.5);
-    TEST_FOR_EXCEPTION(rho_prime_ <= 0 || rho_prime_ >= 1,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(rho_prime_ <= 0 || rho_prime_ >= 1,std::invalid_argument,
                        "Anasazi::IRTR::constructor: rho_prime must be in (0,1).");
 
     useSA_ = params.get<bool>("Use SA",false);
@@ -858,8 +858,8 @@ namespace Anasazi {
         ret = Utils::directSolver(AA.numRows(),AA,Teuchos::rcpFromRef(BB),S,newtheta,rank,1);
       }
       this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
-      TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::IRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
-      TEST_FOR_EXCEPTION(rank != AA.numRows(),RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::IRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != AA.numRows(),RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
       //
       // order the projected ritz values and vectors

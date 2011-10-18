@@ -31,7 +31,7 @@
 #ifndef SIMPLE_MODELEVAL_H
 #define SIMPLE_MODELEVAL_H
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
 #include "Epetra_Vector.h"

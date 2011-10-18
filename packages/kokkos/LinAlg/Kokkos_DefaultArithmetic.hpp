@@ -30,7 +30,7 @@
 #define KOKKOS_DEFAULTARITHMETIC_H
 
 #include <Teuchos_BLAS_types.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -62,7 +62,7 @@ namespace Kokkos {
   struct NodeGEMM {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, Scalar beta, MultiVector<Scalar,Node> &C) {
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
       }
   };
 
@@ -143,7 +143,7 @@ namespace Kokkos {
   struct NodeGEMM<Scalar,ThrustGPUNode> {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,ThrustGPUNode> &A, const MultiVector<Scalar,ThrustGPUNode> &B, Scalar beta, MultiVector<Scalar,ThrustGPUNode> &C) {
-        TEST_FOR_EXCEPTION(true, std::logic_error, "NodeGEMM: ThrustGPUNode has no support for GEMM operations over Scalar=" << Teuchos::typeName(alpha) << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "NodeGEMM: ThrustGPUNode has no support for GEMM operations over Scalar=" << Teuchos::typeName(alpha) << ".");
       }
   };
 
@@ -164,7 +164,7 @@ namespace Kokkos {
         cublasSgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
 #ifdef HAVE_KOKKOS_DEBUG
         cublasStatus info = cublasGetError();
-        TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasSgemm failed with status " << info << "." );
+        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasSgemm failed with status " << info << "." );
 #endif
       }
   };
@@ -186,7 +186,7 @@ namespace Kokkos {
         cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
 #ifdef HAVE_KOKKOS_DEBUG
         cublasStatus info = cublasGetError();
-        TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
+        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
 #endif
       }
   };
@@ -244,7 +244,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Recip(A,B): A and B must have the same dimensions.");
         RCP<Node> node = B.getNode();
         ArrayRCP<const Scalar> Bdata = B.getValues();
@@ -283,13 +283,13 @@ namespace Kokkos {
                                const MultiVector<Scalar,Node> &B) {
         const size_t nR_A = A.getNumRows();
         const size_t nC_A = A.getNumCols();
-        TEST_FOR_EXCEPTION(nC_A != 1, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC_A != 1, std::runtime_error,
                            "DefaultArithmetic<"<<Teuchos::typeName(A) << ">::ElemMult(C,sC,sAB,A,B): A must have just 1 column.");
         const size_t Cstride = C.getStride();
         const size_t Bstride = B.getStride();
         const size_t nC_C = C.getNumCols();
         const size_t nR_C = C.getNumRows();
-        TEST_FOR_EXCEPTION(nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::ElemMult(C,sC,sAB,A,B): A, B and C must have the same num-rows, B and C must have the same num-cols.");
         RCP<Node> node = B.getNode();
         ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
@@ -322,7 +322,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B): A and B must have the same dimensions.");
         if (nC*nR == 0) return;
         RCP<Node> node = A.getNode();
@@ -359,9 +359,9 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same dimensions.");
-        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(dots.size()), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(dots.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): dots must have length as large as number of columns of A and B.");
         if (nR*nC == 0) {
           std::fill( dots.begin(), dots.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
@@ -389,7 +389,7 @@ namespace Kokkos {
       inline static Scalar Dot(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
-        TEST_FOR_EXCEPTION(nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same number of rows.");
         if (nR*nC == 0) {
           return Teuchos::ScalarTraits<Scalar>::zero();
@@ -418,7 +418,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): A and B must have the same dimensions.");
         RCP<Node> node = B.getNode();
         ArrayRCP<const Scalar> Adata = A.getValues();
@@ -456,7 +456,7 @@ namespace Kokkos {
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
         const size_t Cstride = C.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
         RCP<Node> node = B.getNode();
         ArrayRCP<const Scalar> Adata = A.getValues(),
@@ -498,7 +498,7 @@ namespace Kokkos {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
@@ -542,7 +542,7 @@ namespace Kokkos {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > (size_t)sums.size(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > (size_t)sums.size(), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Sum(A,sums): sums must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           std::fill( sums.begin(), sums.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
@@ -603,7 +603,7 @@ namespace Kokkos {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::NormInf(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
@@ -628,7 +628,7 @@ namespace Kokkos {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm2Squared(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
@@ -694,7 +694,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride(),
                      Wstride = weightVector.getStride();
-        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
@@ -757,7 +757,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
         if (nC*nR == 0) return;
         RCP<Node> node = A.getNode();
@@ -794,7 +794,7 @@ namespace Kokkos {
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Scale(B,alpha,A): A and B must have the same dimensions.");
         RCP<Node> node = B.getNode();
         ArrayRCP<const Scalar> Adata = A.getValues();

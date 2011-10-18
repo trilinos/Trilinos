@@ -128,7 +128,7 @@ void TimeStepNonlinearSolver<Scalar>::setParameterList(
   )
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
   paramList_ = paramList;
   defaultTol_ = get<double>(*paramList_,DefaultTol_name_);
@@ -229,7 +229,7 @@ void TimeStepNonlinearSolver<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
-  TEST_FOR_EXCEPT(model.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
   J_ = Teuchos::null;
   current_x_ = Teuchos::null;
@@ -270,11 +270,11 @@ TimeStepNonlinearSolver<Scalar>::solve(
   typedef Teuchos::VerboseObjectTempState<LOWSB> VOTSLOWSB;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(0==x);
+  TEUCHOS_TEST_FOR_EXCEPT(0==x);
   THYRA_ASSERT_VEC_SPACES(
     "TimeStepNonlinearSolver<Scalar>::solve(...)",
     *x->space(),*model_->get_x_space() );
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
 #endif
 
@@ -299,7 +299,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Initialize storage for algorithm
   if(!J_.get()) J_ = model_->create_W();
-  TEST_FOR_EXCEPTION( Teuchos::is_null(J_), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::is_null(J_), std::logic_error,
       "Error!  model->create_W() returned a null pointer!\n"
       );
   RCP<Thyra::VectorBase<Scalar> > f = createMember(model_->get_f_space());
@@ -360,7 +360,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
       sawFailedLinearSolve = true;
       failedLinearSolveStatus = linearSolveStatus;
       if (throwOnLinearSolveFailure_) {
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           throwOnLinearSolveFailure_, Thyra::CatastrophicSolveFailure,
           "Error, the linear solver did not converge!"
           );
@@ -514,7 +514,7 @@ TimeStepNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
     return Teuchos::null;
   if (forceUpToDate) {
 #ifdef RYTHMOS_DEBUG
-    TEST_FOR_EXCEPT(is_null(current_x_));
+    TEUCHOS_TEST_FOR_EXCEPT(is_null(current_x_));
 #endif
     Thyra::eval_f_W<Scalar>( *model_, *current_x_, 0, &*J_ );
     J_is_current_ = true;

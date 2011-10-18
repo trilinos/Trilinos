@@ -63,7 +63,7 @@ ModelEvaluator::InArgs::InArgs()
 
 bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
@@ -84,7 +84,7 @@ bool ModelEvaluator::InArgs::supports(EInArgs_p_mp arg, int l) const
 
 void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\':Error, arg="<<toString(arg)<<" is invalid!"
     );
@@ -106,7 +106,7 @@ void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp arg, int l, bool supports
 
 void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg): model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << toString(arg) << " is not supported!"
@@ -116,7 +116,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg arg, int l) const
 {
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_p_sg_[l], std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(IN_ARG_p_sg,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -127,7 +127,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg arg, int l) const
 void ModelEvaluator::InArgs::assert_supports(EInArgs_p_mp arg, int l) const
 {
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_p_mp_[l], std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(IN_ARG_p_mp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -138,7 +138,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgs_p_mp arg, int l) const
 
 void ModelEvaluator::InArgs::assert_l(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_l(l): model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
@@ -161,7 +161,7 @@ ModelEvaluator::OutArgs::OutArgs()
 
 bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
@@ -289,7 +289,7 @@ bool ModelEvaluator::OutArgs::funcOrDerivesAreSet(EOutArgsMembers arg) const
       break;
     }
     default:
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
         "ModelEvaluator::OutArgs::funcOrDerivesAreSet(arg): Error, we can not handle"
         " the argument " << toString(arg) << "yet!");
   }
@@ -398,7 +398,7 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
@@ -594,7 +594,7 @@ void ModelEvaluator::OutArgs::_set_DgDp_mp_properties( int j, int l, const Deriv
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
@@ -606,7 +606,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
 {
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DfDp_[l].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -618,7 +618,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_dot_[j].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -630,7 +630,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot arg, int j) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_[j].none(), std::logic_error
     ,"TEpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -643,7 +643,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
 {
   assert_j(j);
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDp_[ j*Np() + l ].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -654,7 +654,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
 void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_g_sg_[j], std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_g_sg,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -665,7 +665,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg arg, int j) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
 {
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DfDp_sg_[l].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_sg,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -677,7 +677,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_dot_sg_[j].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_sg,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -689,7 +689,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) co
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_sg_[j].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_sg,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -701,7 +701,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l)
 {
   assert_j(j);
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDp_sg_[ j*Np() + l ].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_sg,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -712,7 +712,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l)
 void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_g_mp_[j], std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_g_mp,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -723,7 +723,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp arg, int j) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
 {
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DfDp_mp_[l].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_mp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -735,7 +735,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_dot_mp_[j].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_mp,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -747,7 +747,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) co
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp arg, int j) const
 {
   assert_j(j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDx_mp_[j].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_mp,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -759,7 +759,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_mp arg, int j, int l)
 {
   assert_j(j);
   assert_l(l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     supports_DgDp_mp_[ j*Np() + l ].none(), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_mp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
@@ -770,12 +770,12 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_mp arg, int j, int l)
 
 void ModelEvaluator::OutArgs::assert_l(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Np()==0, std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "no auxiliary parameters subvectors p(l) are supported!!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
@@ -786,12 +786,12 @@ void ModelEvaluator::OutArgs::assert_l(int l) const
 
 void ModelEvaluator::OutArgs::assert_j(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Ng()==0, std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "no auxiliary functions g(j) are supported!!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= j && j < Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
@@ -928,7 +928,7 @@ std::string EpetraExt::toString(
     case ModelEvaluator::DERIV_TRANS_MV_BY_ROW:
       return "DERIV_TRANS_MV_BY_ROW";
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return ""; // Should never be called
 }
@@ -960,7 +960,7 @@ std::string EpetraExt::toString( ModelEvaluator::EInArgsMembers inArg )
     case ModelEvaluator::IN_ARG_beta:
       return "IN_ARG_beta";
     default:
-      TEST_FOR_EXCEPT("Invalid inArg!");
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid inArg!");
   }
   return ""; // Will never be executed!
 }
@@ -986,7 +986,7 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
     case ModelEvaluator::OUT_ARG_W_mp:
       return "OUT_ARG_W_mp";
     default:
-      TEST_FOR_EXCEPT("Invalid outArg!");
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid outArg!");
   }
   return ""; // Will never be executed!
 }
@@ -999,7 +999,7 @@ EpetraExt::getLinearOp(
   const std::string &derivName
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     deriv.getMultiVector().get() != NULL, std::logic_error
     ,"For model \'" << modelEvalDescription << "\' the derivative \'"
     << derivName << "\' is of type Epetra_MultiVector and not of type Epetra_Operator!"
@@ -1016,7 +1016,7 @@ EpetraExt::getMultiVector(
   const ModelEvaluator::EDerivativeMultiVectorOrientation mvOrientation
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     deriv.getLinearOp().get() != NULL, std::logic_error
     ,"For model \'" << modelEvalDescription << "\' the derivative \'"
     << derivName << "\' is of type Epetra_Operator and not of type Epetra_MultiVector!"
@@ -1024,7 +1024,7 @@ EpetraExt::getMultiVector(
   Teuchos::RefCountPtr<Epetra_MultiVector>
     mv = deriv.getMultiVector();
   if(mv.get()) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       deriv.getMultiVectorOrientation()!=mvOrientation, std::logic_error
       ,"For model \'" << modelEvalDescription << "\' the derivative \'"
       << derivName << "\' if not the orientation \'" << toString(mvOrientation)

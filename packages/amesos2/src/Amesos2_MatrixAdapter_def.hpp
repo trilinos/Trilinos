@@ -271,7 +271,7 @@ namespace Amesos2 {
 	Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
       }
       
-      TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+      TEUCHOS_TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
 			  std::runtime_error,
 			  "Number of values returned different from "
                           "number of values reported");
@@ -403,7 +403,7 @@ namespace Amesos2 {
 	Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
       }
       
-      TEST_FOR_EXCEPTION( colNNZ != nnzRet,
+      TEUCHOS_TEST_FOR_EXCEPTION( colNNZ != nnzRet,
 			  std::runtime_error,
 			  "Number of values returned different from "
                           "number of values reported");

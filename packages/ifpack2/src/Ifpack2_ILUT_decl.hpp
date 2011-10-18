@@ -44,7 +44,7 @@
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>

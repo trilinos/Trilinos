@@ -85,7 +85,7 @@ namespace Kokkos {
   , node_(node)
   { 
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPT(node_ == null);
+    TEUCHOS_TEST_FOR_EXCEPT(node_ == null);
     originalHostPtr_ = NULL;
 #endif
   }
@@ -94,13 +94,13 @@ namespace Kokkos {
   ArrayRCP<T>
   CUDANodeCopyBackDeallocator<T>::alloc() const {
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION( originalHostPtr_ != NULL, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( originalHostPtr_ != NULL, std::runtime_error,
         Teuchos::typeName(*this) << "::alloc(): alloc() has already been called." );
 #endif
     T *hostPtr = NULL;
     // alloc page-locked ("pinned") memory on the host
     cudaError_t err = cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault);
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeCopyBackDeallocator::alloc(): cudaHostAlloc() returned error:\n"
         << cudaGetErrorString(err) 
     );
@@ -116,7 +116,7 @@ namespace Kokkos {
   template <class T>
   void CUDANodeCopyBackDeallocator<T>::free(void *hostPtr) const {
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION( hostPtr != originalHostPtr_, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( hostPtr != originalHostPtr_, std::logic_error,
         Teuchos::typeName(*this) << "::free(): pointer to free not consistent with originally allocated pointer." );
     originalHostPtr_ = NULL;
 #endif
@@ -128,7 +128,7 @@ namespace Kokkos {
       node_->template copyToBuffer<T>(devbuf_.size(), tmpav, devbuf_);
     }
     cudaError_t err = cudaFreeHost( (void**)hostPtr );
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeCopyBackDeallocator::free(): cudaFreeHost() returned error:\n"
         << cudaGetErrorString(err) 
     );

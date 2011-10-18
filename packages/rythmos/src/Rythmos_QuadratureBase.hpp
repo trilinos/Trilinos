@@ -81,8 +81,8 @@ GaussLegendreQuadrature1D<Scalar>::GaussLegendreQuadrature1D(int numNodes) {
 template<class Scalar>
 void GaussLegendreQuadrature1D<Scalar>::fixQuadrature_(int numNodes) {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPTION( numNodes < 2, std::out_of_range, "Error, numNodes < 2" );
-  TEST_FOR_EXCEPTION( numNodes > 10, std::out_of_range, "Error, numNodes > 10" );
+  TEUCHOS_TEST_FOR_EXCEPTION( numNodes < 2, std::out_of_range, "Error, numNodes < 2" );
+  TEUCHOS_TEST_FOR_EXCEPTION( numNodes > 10, std::out_of_range, "Error, numNodes > 10" );
   numNodes_ = numNodes;
   range_ = Teuchos::rcp(new TimeRange<Scalar>(Scalar(-ST::one()),ST::one()));
   order_ = 2*numNodes_;
@@ -239,8 +239,8 @@ GaussLobattoQuadrature1D<Scalar>::GaussLobattoQuadrature1D(int numNodes) {
 template<class Scalar>
 void GaussLobattoQuadrature1D<Scalar>::fixQuadrature_(int numNodes) {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPTION( numNodes < 3, std::out_of_range, "Error, numNodes < 3" );
-  TEST_FOR_EXCEPTION( numNodes > 10, std::out_of_range, "Error, numNodes > 10" );
+  TEUCHOS_TEST_FOR_EXCEPTION( numNodes < 3, std::out_of_range, "Error, numNodes < 3" );
+  TEUCHOS_TEST_FOR_EXCEPTION( numNodes > 10, std::out_of_range, "Error, numNodes > 10" );
   numNodes_ = numNodes;
   range_ = Teuchos::rcp(new TimeRange<Scalar>(Scalar(-ST::one()),ST::one()));
   order_ = 2*numNodes_-2;

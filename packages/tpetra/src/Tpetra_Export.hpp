@@ -418,7 +418,7 @@ namespace Tpetra {
   {
     if (src == tgt) return null;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
         "Tpetra::createExport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
 #endif
     return rcp(new Export<LO,GO,Node>(src,tgt));

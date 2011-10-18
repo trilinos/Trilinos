@@ -142,7 +142,7 @@ void PreconditionerFactory::uninitializePrec(PreconditionerBase<double> * prec,
    // Preconditioner * blkPrec = dynamic_cast<Preconditioner *>(prec);
 
    // what do I do here?
-   TEST_FOR_EXCEPT_MSG(true,"\"PreconditionerFactory::uninitializePrec not implemented\"");
+   TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"\"PreconditionerFactory::uninitializePrec not implemented\"");
 }
 
 // for ParameterListAcceptor

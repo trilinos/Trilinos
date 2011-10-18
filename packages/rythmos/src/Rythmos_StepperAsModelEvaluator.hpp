@@ -168,9 +168,9 @@ void StepperAsModelEvaluator<Scalar>::initialize(
 {
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(stepper));
-  TEST_FOR_EXCEPT(is_null(stepper->getModel()));
-  TEST_FOR_EXCEPT(is_null(integrator));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper->getModel()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(integrator));
 #endif
   stepper_ = stepper;
   integrator_ = integrator;
@@ -290,7 +290,7 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
   RCP<Thyra::VectorBase<Scalar> >
     g_out = outArgs.get_g(0);
 
-  TEST_FOR_EXCEPT_MSG(
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
     is_null(g_out), "You must ask for g(0) when you call this function!"
     );
 

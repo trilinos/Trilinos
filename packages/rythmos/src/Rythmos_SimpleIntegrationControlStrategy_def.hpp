@@ -133,7 +133,7 @@ void SimpleIntegrationControlStrategy<Scalar>::setParameterList(
   using Teuchos::as;
   using Teuchos::get;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   takeVariableSteps_ = paramList->get(
@@ -141,7 +141,7 @@ void SimpleIntegrationControlStrategy<Scalar>::setParameterList(
   if (!takeVariableSteps_) {
     numTimeSteps_ = paramList->get(numTimeSteps_name_,numTimeSteps_);
     fixed_dt_ = paramList->get(fixed_dt_name_,fixed_dt_);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       numTimeSteps_ < 0 && fixed_dt_ <= ST::zero(), std::logic_error,
       "Error, when taking fixed steps, the user must set the parameters "
       "\""<<numTimeSteps_name_<<"\" > 0 or \""<<fixed_dt_name_<<"\" > 0.0!" );

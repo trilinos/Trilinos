@@ -151,7 +151,7 @@ namespace Belos {
 
     //! Scale each element of the vectors in \c *this with \c alpha.
     void MvScale ( const double alpha ) { 
-      TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvScale() call to Scale() returned a nonzero value."); }
 
     //! Scale each element of the \c i-th vector in \c *this with \c alpha[i].
@@ -168,12 +168,12 @@ namespace Belos {
 
     //! Fill all columns of *this with random values.
     void MvRandom() { 
-      TEST_FOR_EXCEPTION( Random()!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( Random()!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvRandom() call to Random() returned a nonzero value."); }
 
     //! Initialize each element of (*this) to the scalar value alpha. 
     void MvInit ( const double alpha ) { 
-      TEST_FOR_EXCEPTION( PutScalar(alpha)!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( PutScalar(alpha)!=0, EpetraMultiVecFailure, 
 			  "Belos::EpetraMultiVec::MvInit() call to PutScalar() returned a nonzero value."); }
 
     //! Print (*this) to the given output stream.
@@ -417,7 +417,7 @@ namespace Belos {
     static Teuchos::RCP<Epetra_MultiVector> 
     Clone (const Epetra_MultiVector& mv, const int outNumVecs)
     { 
-      TEST_FOR_EXCEPTION(outNumVecs <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs <= 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double, Epetra_MultiVector>::"
 			 "Clone(mv, outNumVecs = " << outNumVecs << "): "
 			 "outNumVecs must be positive.");
@@ -441,7 +441,7 @@ namespace Belos {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneCopy(mv, index = {}): At least one vector must be"
 			 " cloned from mv.");
@@ -454,7 +454,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to copy, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -473,7 +473,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -485,7 +485,7 @@ namespace Belos {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -508,11 +508,11 @@ namespace Belos {
 	  std::ostringstream os;
 	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,"
 	    "index=[" << index.lbound() << ", " << index.ubound() << "]): ";
-	  TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= inNumVecs, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= inNumVecs, std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << inNumVecs << " in the "
 			     "input multivector.");
@@ -527,7 +527,7 @@ namespace Belos {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneViewNonConst(mv, index = {}): The output view "
 			 "must have at least one column.");
@@ -540,7 +540,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to view, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -559,7 +559,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -571,7 +571,7 @@ namespace Belos {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -593,11 +593,11 @@ namespace Belos {
 	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
 	    "NonConst(mv,index=[" << index.lbound() << ", " << index.ubound() 
 	     << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
 			     std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << mv.NumVectors() << " in "
@@ -613,7 +613,7 @@ namespace Belos {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneView(mv, index = {}): The output view "
 			 "must have at least one column.");
@@ -626,7 +626,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to view, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -645,7 +645,7 @@ namespace Belos {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -657,7 +657,7 @@ namespace Belos {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -679,11 +679,11 @@ namespace Belos {
 	  os <<	"Belos::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
 	    "(mv,index=[" << index.lbound() << ", " << index.ubound() 
 	     << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
 			     std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << mv.NumVectors() << " in "
@@ -709,20 +709,20 @@ namespace Belos {
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
       int info = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
-      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv call to Multiply() returned a nonzero value.");
     }
 
     static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       int info = mv.Update( alpha, A, beta, B, 0.0 );
-      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvAddMv call to Update() returned a nonzero value.");
     }
 
     static void MvScale ( Epetra_MultiVector& mv, const double alpha )
     { int ret = mv.Scale( alpha );
-      TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
     }
 
@@ -732,7 +732,7 @@ namespace Belos {
     {
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();
-      TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale scaling vector (alpha) not same size as number of input vectors (mv).");
 
       int ret = 0;
@@ -740,7 +740,7 @@ namespace Belos {
       for (int i=0; i<numvecs; i++) {
         Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
         ret = temp_vec.Scale( alpha[i] );
-        TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+        TEUCHOS_TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
 	                   "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
         tmp_index[0]++;
       }
@@ -753,14 +753,14 @@ namespace Belos {
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
       int info = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
-      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTransMv call to Multiply() returned a nonzero value.");
     }
     ///
     static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>& b )
     {
       int info = mv.Dot( A, &b[0] );
-      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvDot call to Dot() returned a nonzero value.");   
     }
     ///
@@ -781,7 +781,7 @@ namespace Belos {
 	default:
 	  break;
 	}
-        TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+        TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			   "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvNorm call to Norm() returned a nonzero value.");
       }
     }
@@ -813,7 +813,7 @@ namespace Belos {
 	    }
 	  os << "}): A has only " << inNumVecs << " columns, but there are "
 	     << outNumVecs << " indices in the index vector.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       // Make a view of the columns of mv indicated by the index std::vector.
       Teuchos::RCP<Epetra_MultiVector> mv_view = CloneViewNonConst (mv, index);
@@ -855,17 +855,17 @@ namespace Belos {
 	  os <<	"Belos::MultiVecTraits<double, Epetra_MultiVector>::SetBlock"
 	    "(A, index=[" << index.lbound() << ", " << index.ubound() << "], "
 	    "mv): ";
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Range lower bound must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
 			     os.str() << "Range upper bound must be less than "
 			     "the number of columns " << numColsA << " in the "
 			     "'mv' output argument.");
-	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
 			     os.str() << "Range must have no more elements than"
 			     " the number of columns " << numColsA << " in the "
 			     "'A' input argument.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
 
       // View of columns [index.lbound(), index.ubound()] of the
@@ -908,11 +908,11 @@ namespace Belos {
 	  std::ostringstream os;
 	  os <<	"Belos::MultiVecTraits<double, Epetra_MultiVector>::Assign"
 	    "(A, mv): ";
-	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
 			     os.str() << "Input multivector 'A' has " 
 			     << numColsA << " columns, but output multivector "
 			     "'mv' has only " << numColsMv << " columns.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
       // View of the first [0, numColsA-1] columns of mv.
       Teuchos::RCP<Epetra_MultiVector> mv_view;
@@ -933,7 +933,7 @@ namespace Belos {
 
     static void MvRandom (Epetra_MultiVector& mv)
     { 
-      TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure, 
 			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			  "MvRandom() call to Random() returned a nonzero value.");
     }
@@ -941,7 +941,7 @@ namespace Belos {
     static void MvInit (Epetra_MultiVector& mv, 
 			double alpha = Teuchos::ScalarTraits<double>::zero())
     { 
-      TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure, 
 			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			  "MvInit() call to PutScalar() returned a nonzero value.");
     }

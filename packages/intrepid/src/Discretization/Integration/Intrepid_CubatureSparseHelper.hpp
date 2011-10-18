@@ -49,7 +49,7 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
 #include "Intrepid_FieldContainer.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 
 namespace Intrepid{

@@ -304,7 +304,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	if (R_ == Teuchos::null || MVT::GetNumberVecs(*R_)!=blockSize_) {
 	  // Get the multivector that is not null.
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::BlockCGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  R_ = MVT::Clone( *tmp, blockSize_ );
 	  Z_ = MVT::Clone( *tmp, blockSize_ );
@@ -326,7 +326,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Belos::BlockGmresIter::setBlockSize was passed a non-positive argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Belos::BlockGmresIter::setBlockSize was passed a non-positive argument.");
     if (blockSize == blockSize_) {
       // do nothing
       return;
@@ -353,7 +353,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::BlockCGIter::initialize(): Cannot initialize state storage!");
     
     // NOTE:  In BlockCGIter R_, the initial residual, is required!!!  
@@ -366,9 +366,9 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     if (newstate.R != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != blockSize_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
@@ -397,7 +397,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
                          "Belos::BlockCGIter::initialize(): BlockCGStateIterState does not have initial residual.");
     }
 
@@ -435,10 +435,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution std::vector has blockSize_ columns. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, CGIterateFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, CGIterateFailure,
                         "Belos::BlockCGIter::iterate(): current linear system does not have the right number of vectors!" );
     int rank = ortho_->normalize( *P_, Teuchos::null );
-    TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute initial block of orthonormal direction vectors.");
 
 
@@ -463,13 +463,13 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
      
       // Compute Cholesky factorization of pAp
       lapack.POTRF(UPLO, blockSize_, pAp.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute Cholesky factorization using LAPACK routine POTRF.");
 
       // Compute alpha by performing a back and forward solve with the Cholesky factorization in pAp.
       lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
 		   alpha.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute alpha using Cholesky factorization (POTRS).");
       
       //
@@ -508,7 +508,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       //
       lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
 		   beta.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute beta using Cholesky factorization (POTRS).");
       //
       // Compute the new direction vectors P_ = Z_ + P_ * beta 
@@ -519,7 +519,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
       // Compute orthonormal block of new direction vectors.
       rank = ortho_->normalize( *P_, Teuchos::null );
-      TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute block of orthonormal direction vectors.");
       
     } // end while (sTest_->checkStatus(this) != Passed)

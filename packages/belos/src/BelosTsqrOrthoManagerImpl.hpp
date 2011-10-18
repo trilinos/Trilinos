@@ -662,7 +662,7 @@ namespace Belos {
 	  // we'll throw an exception below.
 	}
       }
-      TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
+      TEUCHOS_TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
 			 std::logic_error,
 			 "Belos::TsqrOrthoManagerImpl::lazyInit: Failed to find"
 			 " \"TsqrImpl\" parameter in either the input parameter"
@@ -1086,7 +1086,7 @@ namespace Belos {
 
     if (outOfPlace) {
       // Make sure that X_out has at least as many columns as X_in.
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
 			 std::invalid_argument, 
 			 "Belos::TsqrOrthoManagerImpl::"
 			 "projectAndNormalizeOutOfPlace(...):"
@@ -1142,7 +1142,7 @@ namespace Belos {
       B_out = rcp (new mat_type (ncols_X, ncols_X));
     } else {
       // Make sure that B is no smaller than numCols x numCols.
-      TEST_FOR_EXCEPTION(B->numRows() < ncols_X || B->numCols() < ncols_X,
+      TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < ncols_X || B->numCols() < ncols_X,
 			 std::invalid_argument,
 			 "normalizeOne: Input matrix B must be at "
 			 "least " << ncols_X << " x " << ncols_X 
@@ -1225,7 +1225,7 @@ namespace Belos {
       // to be full rank after projection and normalization.  In that
       // case, we could try another set of random data and recurse as
       // necessary, but instead for now we just raise an exception.
-      TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
+      TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			 TsqrOrthoError, 
 			 "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
 			 "OutOfPlace(): After projecting and normalizing the "
@@ -1332,7 +1332,7 @@ namespace Belos {
 	// B_out := B2 * B_out (where input B_out is in B_copy).
 	const int err = B_out->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
 					 *B2, B_copy, SCT::zero());
-	TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+	TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
 			   "Teuchos::SerialDenseMatrix::multiply "
 			   "returned err = " << err << " != 0");
 	// Update the block coefficients from the projection step.  We
@@ -1344,7 +1344,7 @@ namespace Belos {
 	  // C[k] := C2[k]*B_copy + C[k].
 	  const int err = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
 					  *C2[k], B_copy, SCT::one());
-	  TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
 			     "Teuchos::SerialDenseMatrix::multiply "
 			     "returned err = " << err << " != 0");
 	}
@@ -1380,7 +1380,7 @@ namespace Belos {
 	  // offending vectors of X.  However, we choose not to
 	  // implement this for now.  If it becomes a problem, let us
 	  // know and we will prioritize implementing this.
-	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "TsqrOrthoManagerImpl has not yet implemented"
 			     " recovery from an orthogonalization fault.");
 	}
@@ -1544,7 +1544,7 @@ namespace Belos {
     } else {
       const int numRows = B->numRows();
       const int numCols = B->numCols();
-      TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, 
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, 
 			 std::invalid_argument,
 			 "normalizeOne: Input matrix B must be at "
 			 "least 1 x 1, but is instead " << numRows
@@ -1617,10 +1617,10 @@ namespace Belos {
     const int num_Q_blocks = Q.size();
     for (int i = 0; i < num_Q_blocks; ++i)
       {
-	// TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
+	// TEUCHOS_TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
 	// 		   "TsqrOrthoManagerImpl::rawProject(): C[" 
 	// 		   << i << "] is null");
-	// TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
+	// TEUCHOS_TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
 	// 		   "TsqrOrthoManagerImpl::rawProject(): Q[" 
 	// 		   << i << "] is null");
 	mat_type& Ci = *C[i];
@@ -1673,7 +1673,7 @@ namespace Belos {
 
     // We allow Q to have more columns than X.  In that case, we only
     // touch the first numCols columns of Q.
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
 		       std::invalid_argument, 
 		       "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): Q has "
 		       << MVT::GetNumberVecs(Q) << " columns.  This is too "
@@ -1692,7 +1692,7 @@ namespace Belos {
       B_out = rcp (new mat_type (numCols, numCols));
     } else {
       // Make sure that B is no smaller than numCols x numCols.
-      TEST_FOR_EXCEPTION(B->numRows() < numCols || B->numCols() < numCols,
+      TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < numCols || B->numCols() < numCols,
 			 std::invalid_argument,
 			 "normalizeOne: Input matrix B must be at "
 			 "least " << numCols << " x " << numCols 
@@ -1745,7 +1745,7 @@ namespace Belos {
 	  cerr << ", ";
       }
     }
-    TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
 		       "Belos::TsqrOrthoManagerImpl::normalizeImpl: "
 		       "rawNormalize() returned rank = " << rank << " for a "
 		       "matrix X with " << numCols << " columns.  Please report"
@@ -1849,7 +1849,7 @@ namespace Belos {
 	    "randomly, but it is likely a bug.  Please report it to the "
 	    "Belos developers, especially if you are able to reproduce the "
 	    "behavior.";
-	  TEST_FOR_EXCEPTION(anyZero, TsqrOrthoError, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(anyZero, TsqrOrthoError, os.str());
 	}
       }
 
@@ -1921,7 +1921,7 @@ namespace Belos {
 	   << "report it to the Belos developers, especially if "
 	   << "you are able to reproduce the behavior.";
 
-	TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
+	TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
 			   TsqrOrthoError, os.str());
       }
       // If we're normalizing out of place, copy the X_null

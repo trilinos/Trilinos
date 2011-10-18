@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ParameterList.hpp"
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -91,7 +91,7 @@ buildStatusTests(const std::string& file_name , const NOX::Utils& u,
   status_tests = this->buildStatusTests(param_list, u, tagged_tests);
 #else
   std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with exteded support enabled.";
-  TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 #endif
 
   return status_tests;
@@ -112,7 +112,7 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
     test_type = get<std::string>(p, "Test Type");
   else {
     std::string msg = "Error - The \"Test Type\" is a required parameter in the NOX::StatusTest::Factory!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 
   if (test_type == "Combo")
@@ -140,7 +140,7 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
   else {
     std::ostringstream msg;
     msg << "Error - the test type \"" << test_type << "\" is invalid!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
   }
 
   this->checkAndTagTest(p, status_test, tagged_tests);
@@ -167,7 +167,7 @@ buildComboTest(Teuchos::ParameterList& p, const NOX::Utils& u,
   else{
     std::string msg = 
       "Error - The \"Combo Type\" must be \"AND\" or \"OR\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   RCP<NOX::StatusTest::Combo> combo_test = 
@@ -205,7 +205,7 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     norm_type = NOX::Abstract::Vector::MaxNorm;
   else {
     std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   // Scale Type
@@ -218,7 +218,7 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     scale_type = NOX::StatusTest::NormF::Scaled;
   else {
     std::string msg = "\"Scale Type\" must be either \"Unscaled\" or \"Scaled\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 
   // Relative or absoltue tolerance (relative requires f_0)
@@ -265,7 +265,7 @@ buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     norm_type = NOX::Abstract::Vector::MaxNorm;
   else {
     std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   // Scale Type
@@ -278,7 +278,7 @@ buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     scale_type = NOX::StatusTest::NormUpdate::Scaled;
   else {
     std::string msg = "\"Scale Type\" must be either \"Unscaled\" or \"Scaled\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 
   Teuchos::RCP<NOX::StatusTest::NormUpdate> status_test =
@@ -352,7 +352,7 @@ buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     vector_type = NOX::StatusTest::FiniteValue::SolutionVector;
   else {
     std::string msg = "\"Vector Type\" must be either \"F Vector\" or \"Solution Vector\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   if (norm_type_string == "Two Norm")
@@ -363,7 +363,7 @@ buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     norm_type = NOX::Abstract::Vector::MaxNorm;
   else {
     std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   RCP<NOX::StatusTest::FiniteValue> status_test = 
@@ -458,7 +458,7 @@ buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     status_test = get< RCP<NOX::StatusTest::Generic> >(p, "User Status Test");
   else {
     std::string msg = "Error - NOX::StatusTest::Factory::buildUserDefinedTest() - a user defined status test has been selected, but the test has not been supplied as an RCP<NOX::StatusTest::Generic> in the parameter list.  please make sure it is set as a \"Generic\" object in the parameter list.";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   return status_test;

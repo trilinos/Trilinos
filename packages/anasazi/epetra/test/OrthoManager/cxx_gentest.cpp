@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
       SerialDenseMatrix<int,ST> yTx1(sizeX1,sizeX1), yTx2(sizeX2,sizeX2);
       Array<int> yTx1_piv(sizeX1), yTx2_piv(sizeX2);
       Teuchos::LAPACK<int,ST> lapack;
-      TEST_FOR_EXCEPTION(sizeX1 < sizeX2,std::logic_error,"Internal logic error: sizeX1 < sizeX2.");
+      TEUCHOS_TEST_FOR_EXCEPTION(sizeX1 < sizeX2,std::logic_error,"Internal logic error: sizeX1 < sizeX2.");
       Array<ST> LUwork(sizeX1);
       vector<MT> norms1(sizeX1), norms2(sizeX2);
       // use a BasicOrthoManager for testing
@@ -194,22 +194,22 @@ int main(int argc, char *argv[])
       // Y1
       MVT::MvRandom(*Y1);
       rank = OM_basic->normalize(*Y1);
-      TEST_FOR_EXCEPTION(rank != sizeX1, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX1, std::runtime_error, 
           "normalize(Y1) returned rank " << rank << " from " 
           << sizeX1 << " vectors. Cannot continue.");
       err = OM_basic->orthonormError(*Y1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "normalize(Y1) did meet tolerance: orthonormError(Y1) == " << err);
       MyOM->stream(Warnings) << "   || <Y1,Y1> - I || : " << err << endl;
 
       // Y2
       MVT::MvRandom(*Y2);
       rank = OM_basic->normalize(*Y2);
-      TEST_FOR_EXCEPTION(rank != sizeX2, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX2, std::runtime_error, 
           "normalize(Y1) returned rank " << rank << " from " 
           << sizeX2 << " vectors. Cannot continue.");
       err = OM_basic->orthonormError(*Y2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "projectAndNormalize(Y2,Y1) did not meet tolerance: orthonormError(Y2) == " << err);
       MyOM->stream(Warnings) << "   || <Y2,Y2> - I || : " << err << endl;
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
       MVT::MvRandom(*X1);
       OM_basic->project(*X1,tuple<RCP<const MV> >(Y2));
       err = OM_basic->orthogError(*X1,*Y2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "project(X1,Y2) did not meet tolerance: orthog(X1,Y2) == " << err);
       MyOM->stream(Warnings) << "   || <X1,Y2> ||     : " << err << endl;
       MVT::MvNorm(*X1,norms1);
@@ -228,9 +228,9 @@ int main(int argc, char *argv[])
       // Compute LU factorization of <Y1,X1> and use it to compute explicit inverse of <Y1,X1>
       OM_basic->innerProd(*Y1,*X1,yTx1);
       lapack.GETRF(yTx1.numRows(),yTx1.numCols(),yTx1.values(),yTx1.stride(),&yTx1_piv.front(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU factorization of <Y1,X1>.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU factorization of <Y1,X1>.");
       lapack.GETRI(yTx1.numRows(),yTx1.values(),yTx1.stride(),&yTx1_piv.front(),&LUwork.front(),LUwork.size(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU inverse of <Y1,X1>.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU inverse of <Y1,X1>.");
       // Set X1b=X1*inv(<Y1,X1>), so that <Y1,X1b> = <Y1,X1*inv(<Y1,X1>)> = <Y1,X1>*inv(<Y1,X1>) = I
       MVT::MvTimesMatAddMv(ONE,*X1,yTx1,ZERO,*X1b);
       // Test that this was successful
@@ -239,10 +239,10 @@ int main(int argc, char *argv[])
         yTx1(i,i) -= ONE;
       }
       err = yTx1.normFrobenius();
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error, "Failed to make <X1b,Y1> = I.");
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error, "Failed to make <X1b,Y1> = I.");
       // test <X1b,Y2> == 0
       err = OM_basic->orthogError(*X1b,*Y2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "X1b did not meet tolerance: orthog(X1b,Y2) == " << err);
       MyOM->stream(Warnings) << "   || <X1b,Y2> ||     : " << err << endl;
 
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X1b,M1,ZERO,*X1);
       // test <X1,Y2> == 0
       err = OM_basic->orthogError(*X1,*Y2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "New X1 did not meet tolerance: orthog(X1,Y2) == " << err);
       MyOM->stream(Warnings) << "   || <X1,Y2> ||     : " << err << endl;
       // test explicit symmetry of <Y1,X1>:  yTx1 - yTx1' == 0
@@ -264,12 +264,12 @@ int main(int argc, char *argv[])
       OM_basic->innerProd(*X1,*Y1,xTy1);
       xTy1 -= yTx1;
       err = xTy1.normFrobenius();
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "New <Y1,X1> not symmetric: ||<Y1,X1> - <X1,Y1>|| == " << err);
       MyOM->stream(Warnings) << "   ||<Y1,X1> - <X1,Y1>||     : " << err << endl;
       // test s.p.d. of <Y1,X1>: try to compute a cholesky
       lapack.POTRF('U',yTx1.numCols(),yTx1.values(),yTx1.stride(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == " << info
           << "\nyTx1: \n" << yTx1);
 
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
       MVT::MvRandom(*X2);
       OM_basic->project(*X2,tuple<RCP<const MV> >(Y1));
       err = OM_basic->orthogError(*X2,*Y1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "project(X2,Y1) did not meet tolerance: orthog(X2,Y1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,Y1> ||     : " << err << endl;
       MVT::MvNorm(*X2,norms2);
@@ -288,9 +288,9 @@ int main(int argc, char *argv[])
       // Compute LU factorization of <Y2,X2> and use it to compute explicit inverse of <Y2,X2>
       OM_basic->innerProd(*Y2,*X2,yTx2);
       lapack.GETRF(yTx2.numRows(),yTx2.numCols(),yTx2.values(),yTx2.stride(),&yTx2_piv.front(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU factorization of <Y2,X2>.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU factorization of <Y2,X2>.");
       lapack.GETRI(yTx2.numRows(),yTx2.values(),yTx2.stride(),&yTx2_piv.front(),&LUwork.front(),LUwork.size(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU inverse of <Y2,X2>.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Error computing LU inverse of <Y2,X2>.");
       // Set X2b=X2*inv(<Y2,X2>), so that <Y2,X2b> = <Y2,X2*inv(<Y2,X2>)> = <Y2,X2>*inv(<Y2,X2>) = I
       MVT::MvTimesMatAddMv(ONE,*X2,yTx2,ZERO,*X2b);
       // Test that this was successful
@@ -299,10 +299,10 @@ int main(int argc, char *argv[])
         yTx2(i,i) -= ONE;
       }
       err = yTx2.normFrobenius();
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error, "Failed to make <X2b,Y2> = I.");
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error, "Failed to make <X2b,Y2> = I.");
       // test <X2b,Y1> == 0
       err = OM_basic->orthogError(*X2b,*Y1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "X2b did not meet tolerance: orthog(X2b,Y1) == " << err);
       MyOM->stream(Warnings) << "   || <X2b,Y1> ||     : " << err << endl;
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X2b,M2,ZERO,*X2);
       // test <X2,Y1> == 0
       err = OM_basic->orthogError(*X2,*Y1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "New X2 did not meet tolerance: orthog(X2,Y1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,Y1> ||     : " << err << endl;
       // test explicit symmetry of <Y2,X2>:  yTx2 - yTx2' == 0
@@ -324,12 +324,12 @@ int main(int argc, char *argv[])
       OM_basic->innerProd(*X2,*Y2,xTy2);
       xTy2 -= yTx2;
       err = xTy2.normFrobenius();
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "New <Y2,X2> not symmetric: ||<Y2,X2> - <X2,Y2>|| == " << err);
       MyOM->stream(Warnings) << "   ||<Y2,X2> - <X2,Y2>||     : " << err << endl;
       // test s.p.d. of <Y2,X2>: try to compute a cholesky
       lapack.POTRF('U',yTx2.numCols(),yTx2.values(),yTx2.stride(),&info);
-      TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == " << info
           << "\nyTx2: \n" << yTx2);
     }

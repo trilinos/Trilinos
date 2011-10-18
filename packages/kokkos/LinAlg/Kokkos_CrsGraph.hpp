@@ -31,7 +31,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 
@@ -283,9 +283,9 @@ namespace Kokkos {
                                                                      ArrayRCP<size_t>  rowBegs,
                                                                      ArrayRCP<size_t>  rowEnds)
   {
-    TEST_FOR_EXCEPTION( (size_t)rowBegs.size() != numRows_+1 || (size_t)rowEnds.size() != numRows_, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)rowBegs.size() != numRows_+1 || (size_t)rowEnds.size() != numRows_, std::runtime_error, 
         Teuchos::typeName(*this) << "::set1DStructure(inds,rowBegs,rowEnds): rowBegs and rowEnds are not correctly sized.");
-    TEST_FOR_EXCEPTION( (size_t)rowBegs[numRows_] > (size_t)inds.size(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)rowBegs[numRows_] > (size_t)inds.size(), std::runtime_error,
         Teuchos::typeName(*this) << "::set1DStructure(inds,rowBegs,rowEnds): rowBegs contents to not agree with inds size.");
     this->clear();
     //
@@ -300,7 +300,7 @@ namespace Kokkos {
         // sanity        : begs[i] <= ends[i]
         // ordering      : begs[i] <= begs[i+1]
         // no overlapping: ends[i] <= begs[i+1]
-        TEST_FOR_EXCEPTION( rowBegs_[i+1] < rowBegs_[i] || rowEnds_[i] < rowBegs_[i] || rowEnds_[i] > rowBegs_[i+1], std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( rowBegs_[i+1] < rowBegs_[i] || rowEnds_[i] < rowBegs_[i] || rowEnds_[i] > rowBegs_[i+1], std::runtime_error,
             Teuchos::typeName(*this) << "::set1DStructure(inds,rowBegs,rowEnds): ends and begs are not consistent.");
 #endif
       }
@@ -313,7 +313,7 @@ namespace Kokkos {
   void CrsGraphHostCompute<Ordinal,Node,LocalMatOps>::set2DStructure(ArrayRCP<ArrayRCP<Ordinal> > inds,
                                                                      ArrayRCP<size_t>                      numEntriesPerRow)
   {
-    TEST_FOR_EXCEPTION( (size_t)inds.size() != numRows_ || (size_t)numEntriesPerRow.size() != numRows_, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)inds.size() != numRows_ || (size_t)numEntriesPerRow.size() != numRows_, std::runtime_error,
         Teuchos::typeName(*this) << "::set2DStructure(inds,numEntriesPerRow): numEntriesPerRow and inds must have as many entries as the number of rows specified to the constructor.");
     this->clear();
     //
@@ -323,7 +323,7 @@ namespace Kokkos {
       numEntries_ = std::accumulate(this->numEntriesPerRow_.begin(), this->numEntriesPerRow_.end(), 0);
 #ifdef HAVE_KOKKOS_DEBUG
       for (size_t i=0; i<numRows_; ++i) {
-        TEST_FOR_EXCEPTION( (size_t)inds[i].size() < numEntriesPerRow[i], std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( (size_t)inds[i].size() < numEntriesPerRow[i], std::runtime_error,
             Teuchos::typeName(*this) << "::set2DStructure(): inds[" << i << "] == " << inds[i] 
             << " is not large enough for the specified number of entries, "
             << " numEntriesPerRow[" << i << "] == " << numEntriesPerRow[i]);
@@ -373,7 +373,7 @@ namespace Kokkos {
           curoffset += curnuminds;
         }
         offsets[numRows_] = curoffset;
-        TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
             Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
         // done with the original row beg/end offsets, can point to the new overlapping one
         rowBegs_   = offsets;
@@ -438,7 +438,7 @@ namespace Kokkos {
           curoffset += curnuminds;
         }
         offsets[numRows_] = curoffset;
-        TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
             Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
         // done with the original row beg/end offsets, can point to the new overlapping one
         rowBegs_   = offsets;
@@ -587,7 +587,7 @@ namespace Kokkos {
           curoffset += curnuminds;
         }
         view_offsets[this->getNumRows()] = curoffset;
-        TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
             Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
         view_offsets = null;
         view_indices = null;
@@ -656,7 +656,7 @@ namespace Kokkos {
           curoffset += curnuminds;
         }
         view_offsets[this->getNumRows()] = curoffset;
-        TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
             Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
         view_offsets = null;
         view_indices = null;
@@ -788,7 +788,7 @@ namespace Kokkos {
               curoffset += this->numEntriesPerRow_[i];
             }
             offsets[this->numRows_] = curoffset;
-            TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+            TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
                 Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
           }
           FirstTouchCopyIndicesKernel<Ordinal> kern;
@@ -814,7 +814,7 @@ namespace Kokkos {
             curoffset += curnuminds;
           }
           offsets[this->numRows_] = curoffset;
-          TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
               Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
         }
         // done with the original row beg/end offsets, can point to the new overlapping one
@@ -861,7 +861,7 @@ namespace Kokkos {
               curoffset += this->numEntriesPerRow_[i];
             }
             offsets[this->numRows_] = curoffset;
-            TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+            TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
                 Teuchos::typeName(*this) << "::finalize(): Internal logic error. Please contact Kokkos team.");
           }
           {
@@ -902,7 +902,7 @@ namespace Kokkos {
             curoffset += curnuminds;
           }
           offsets[this->numRows_] = curoffset;
-          TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION( curoffset != this->getNumEntries(), std::logic_error, 
 			      Teuchos::typeName(*this) << "::finalize(): "
 			      "Internal logic error: curoffset (= " 
 			      << curoffset << ") != this->getNumEntries() (= "

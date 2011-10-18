@@ -29,7 +29,7 @@
 #include "Kokkos_TPINode.hpp"
 #include <iostream>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 namespace Kokkos {
 
@@ -40,7 +40,7 @@ namespace Kokkos {
 
     curNumThreads_ = plist.get<int>("Num Threads", 0);
     int verbose = plist.get<int>("Verbose",0);
-    TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error, 
         "TPINode::TPINode(): invalid ""Num Threads"" specification.");
     if (verbose) {
       cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;

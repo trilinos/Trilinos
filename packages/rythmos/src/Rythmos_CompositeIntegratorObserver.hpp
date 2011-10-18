@@ -122,7 +122,7 @@ void CompositeIntegratorObserver<Scalar>::addObserver(
   )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(observer));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(observer));
 #endif
   observers_.push_back(observer);
 }
@@ -141,7 +141,7 @@ CompositeIntegratorObserver<Scalar>::cloneIntegrationObserver() const
   for (int i = 0; i < as<int>(observers_.size()); ++i ) {
     compositeObserver->addObserver(observers_[i]->cloneIntegrationObserver());
   }
-  TEST_FOR_EXCEPTION( true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
     "Error, I have not tested this function yet so look over this very carefully before you"
     " remove this this macro call!" );
   return compositeObserver;

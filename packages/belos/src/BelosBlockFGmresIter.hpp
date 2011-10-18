@@ -347,7 +347,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     iter_(0)
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
-    TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::BlockFGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
@@ -364,7 +364,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Belos::BlockFGmresIter::setSize was passed a non-positive argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Belos::BlockFGmresIter::setSize was passed a non-positive argument.");
     if (blockSize == blockSize_ && numBlocks == numBlocks_) {
       // do nothing
       return;
@@ -414,14 +414,14 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	}
 	
 	// Initialize the state storage
-        TEST_FOR_EXCEPTION(blockSize_*numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION(blockSize_*numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
                            "Belos::BlockFGmresIter::setStateSize(): Cannot generate a Krylov basis with dimension larger the operator!");
 
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
 	if (V_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::BlockFGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  V_ = MVT::Clone( *tmp, newsd );
 	}
@@ -436,7 +436,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	if (Z_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::BlockFGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  Z_ = MVT::Clone( *tmp, newsd );
 	}
@@ -541,7 +541,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::BlockFGmresIter::initialize(): Cannot initialize state storage!");
     
     // NOTE:  In BlockFGmresIter, V and Z are required!!!  
@@ -554,18 +554,18 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
       // initialize V_,z_, and curDim_
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*(numBlocks_+1),
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*(numBlocks_+1),
                           std::invalid_argument, errstr );
 
       curDim_ = newstate.curDim;
       int lclDim = MVT::GetNumberVecs(*newstate.V);
 
       // check size of Z
-      TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < blockSize_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < blockSize_, std::invalid_argument, errstr);
       
 
       // copy basis vectors from newstate into V
@@ -601,10 +601,10 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,
                          "Belos::BlockFGmresIter::initialize(): BlockFGmresStateIterState does not have initial kernel V_0.");
 
-      TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
                          "Belos::BlockFGmresIter::initialize(): BlockFGmresStateIterState does not have initial norms z_0.");
     }
 
@@ -690,7 +690,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			     ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
-      TEST_FOR_EXCEPTION(rank != blockSize_,GmresIterationOrthoFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,GmresIterationOrthoFailure,
 			 "Belos::BlockFGmresIter::iterate(): couldn't generate basis of full rank.");
       //
       // V has been extended, and H has been extended. 

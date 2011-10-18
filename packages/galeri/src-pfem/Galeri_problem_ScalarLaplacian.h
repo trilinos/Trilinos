@@ -96,7 +96,7 @@ class ScalarLaplacian : public Base
       NE_ = rcp(new Galeri::quadrature::Hex(normDegree));
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                          "input elementType not recognized, " << elementType);
   }
 
@@ -141,7 +141,7 @@ class ScalarLaplacian : public Base
                                          Epetra_FEVector& RHS,
                                          Epetra_FEVector& LHS)
   {
-    TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
                        "input matrix must be filled");
 
     const Epetra_Map& matrixMap = A.RowMatrixRowMap();

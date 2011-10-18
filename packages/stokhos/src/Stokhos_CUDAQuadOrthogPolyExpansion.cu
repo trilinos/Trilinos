@@ -32,7 +32,7 @@
 #include <thrust/transform.h>
 #include "cublas.h"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -425,7 +425,7 @@ timesEqual(
     pc = sz;
   else
     pc = p*xp;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::QuadOrthogPolyExpansion::timesEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -629,7 +629,7 @@ times(Stokhos::OrthogPolyApprox<int, float, CUDAStorage<int,float> >& c,
     pc = sz;
   else
     pc = pa*pb;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::QuadOrthogPolyExpansion::times()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");

@@ -305,7 +305,7 @@ namespace Belos {
     virtual void 
     acceptCandidateBasis (const int newNumVectors = 1) 
     {
-      TEST_FOR_EXCEPTION(newNumVectors <= 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(newNumVectors <= 0, std::logic_error,
 			 "The number of candidate basis vectors to accept, " 
 			 << newNumVectors << ", is nonpositive, which is not "
 			 "allowed.  This is an std:logic_error because it "
@@ -963,7 +963,7 @@ namespace Belos {
 	<< "-- Iteration " << getNumIters() << endl
 	<< "--" << endl;
 
-    TEST_FOR_EXCEPTION( !canExtendBasis(), GmresCantExtendBasis,
+    TEUCHOS_TEST_FOR_EXCEPTION( !canExtendBasis(), GmresCantExtendBasis,
 			"GMRES (iteration " << getNumIters() << ") cannot "
 			"add any more basis vectors." );
 
@@ -1141,30 +1141,30 @@ namespace Belos {
     // Sanity checks on the linear problem.
     //
     // First, make sure A, X, and B are all non-null.
-    TEST_FOR_EXCEPTION(lp_.is_null(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_.is_null(), std::invalid_argument,
 		       prefix << "The given LinearProblem is null.");
-    TEST_FOR_EXCEPTION(! lp_->isProblemSet(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(! lp_->isProblemSet(), std::invalid_argument,
     		       prefix << "The given LinearProblem has not yet been set."
 		       << postfix);
-    TEST_FOR_EXCEPTION(lp_->getLHS().is_null(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_->getLHS().is_null(), std::invalid_argument,
     		       prefix << "The given LinearProblem has null initial guess"
 		       " (getLHS()) for all right-hand sides." << postfix);
-    TEST_FOR_EXCEPTION(lp_->getRHS().is_null(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_->getRHS().is_null(), std::invalid_argument,
     		       prefix << "The given LinearProblem's right-hand side(s) "
 		       "are all null (getRHS().is_null() == true)." << postfix);
-    TEST_FOR_EXCEPTION(lp_->getOperator().is_null(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_->getOperator().is_null(), std::invalid_argument,
     		       prefix << "The given LinearProblem's operator (the "
 		       "matrix A) is null." << postfix);
     // Next, make sure that setLSIndex() has been called on the linear
     // problem instance, so that the "current" right-hand side and
     // "current" initial guess have been set.
-    TEST_FOR_EXCEPTION(lp_->getCurrLHSVec().is_null(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_->getCurrLHSVec().is_null(), 
 		       std::invalid_argument,
     		       prefix << "Although the given LinearProblem has non-null "
 		       "initial guess (getLHS()) for all right-hand sides, the "
 		       "current initial guess (getCurrLHSVec()) is null."
 		       << postfix2);
-    TEST_FOR_EXCEPTION(lp_->getCurrRHSVec().is_null(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(lp_->getCurrRHSVec().is_null(), 
 		       std::invalid_argument,
     		       prefix << "Although the given LinearProblem has non-null "
 		       "initial guess (getLHS()) for all right-hand sides, the "
@@ -1175,12 +1175,12 @@ namespace Belos {
     RCP<const MV> x0 = lp_->getCurrLHSVec();
     {
       const int numLHS = MVT::GetNumberVecs (*x0);
-      TEST_FOR_EXCEPTION(numLHS != 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numLHS != 1, std::invalid_argument,
 			 "Our GMRES implementation only works for single-"
 			 "vector problems, but the supplied initial guess has "
 			 << numLHS << " columns.");
       const int numRHS = MVT::GetNumberVecs (*(lp_->getCurrRHSVec()));
-      TEST_FOR_EXCEPTION(numRHS != 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numRHS != 1, std::invalid_argument,
 			 "Our GMRES implementation only works for single-"
 			 "vector problems, but the current right-hand side has "
 			 << numRHS << " columns.");
@@ -1226,7 +1226,7 @@ namespace Belos {
     if (verboseDebug)
       dbg << "-- currentNativeResidualVector: getNumIters() = " << m << endl;
 
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*initResVec_) != 1,
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*initResVec_) != 1,
 		       std::logic_error,
 		       prefix << "Initial residual vector (initResVec_) has " 
 		       << MVT::GetNumberVecs(*initResVec_)
@@ -1248,7 +1248,7 @@ namespace Belos {
     MVT::Assign (*initResVec_, *nativeResVec_);
     if (m > 0)
       {
-	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < m+1,
+	TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*V_) < m+1,
 			   std::logic_error,
 			   "Only " << MVT::GetNumberVecs(*V_) << " basis vectors "
 			   "were given, but getNumIters()+1=" << (m+1) 
@@ -1267,7 +1267,7 @@ namespace Belos {
 	  const int err = 
 	    H_times_y.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, 
 				one, H_view, y_view, zero);
-	  TEST_FOR_EXCEPTION(err != 0, std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error,
 			     "In (F)GMRES, when computing the current native "
 			     "residual vector via the Arnoldi relation, H*y "
 			     "failed due to incompatible dimensions.  "
@@ -1339,7 +1339,7 @@ namespace Belos {
     std::ostream& dbg = outMan_->stream(Debug);
     dbg << "---- updateProjectedLeastSquaresProblem: ";
 
-    TEST_FOR_EXCEPTION(startCol > endCol+1, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(startCol > endCol+1, std::logic_error,
 		       prefix << "Somehow, GmresBase updated the QR "
 		       "factorization of the upper Hessenberg matrix past the "
 		       "last updated column, which was " << lastUpdatedCol_ 
@@ -1452,7 +1452,7 @@ namespace Belos {
     const char prefix[] = "Belos::GmresBase::setInitialResidual: ";
     std::ostream& dbg = outMan_->stream(Debug);
 
-    TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
 		       prefix << "maxIterCount = " << maxIterCount 
 		       << " < 0.");
     // Do we have a left preconditioner?
@@ -1475,7 +1475,7 @@ namespace Belos {
     RCP<const MV> R_full = 
       haveLeftPrec ? lp_->getInitPrecResVec() : lp_->getInitResVec();
     std::vector<int> inputIndices = lp_->getLSIndex();
-    TEST_FOR_EXCEPTION(inputIndices.size() == 0, 
+    TEUCHOS_TEST_FOR_EXCEPTION(inputIndices.size() == 0, 
 		       std::invalid_argument,
 		       "The LinearProblem claims that there are zero linear "
 		       "systems to solve: getLSIndex() returns an index "
@@ -1536,13 +1536,13 @@ namespace Belos {
 	os << prefix << "The LinearProblem instance's getLSIndex() method "
 	  "returns indices " << inputIndicesAsString << ", of which the "
 	  "following are not -1: " << outputIndicesAsString << ".";
-	TEST_FOR_EXCEPTION(outputIndices.size() != 1,
+	TEUCHOS_TEST_FOR_EXCEPTION(outputIndices.size() != 1,
 			   std::invalid_argument, 
 			   os.str() << "  The latter list should have length "
 			   "exactly 1, since our GMRES implementation only "
 			   "knows how to solve for one right-hand side at a "
 			   "time.");
-	TEST_FOR_EXCEPTION(outputIndices[0] == -1,
+	TEUCHOS_TEST_FOR_EXCEPTION(outputIndices[0] == -1,
 			   std::invalid_argument,
 			   os.str() << "  the latter list contains no "
 			   "nonnegative entries, meaning that there is no "
@@ -1553,7 +1553,7 @@ namespace Belos {
     // Sanity check that the residual vector has exactly 1 column.
     // We've already checked this a different way above.
     const int numResidVecs = MVT::GetNumberVecs (*r0);
-    TEST_FOR_EXCEPTION(numResidVecs != 1, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numResidVecs != 1, std::logic_error,
 		       prefix << "Residual vector has " << numResidVecs 
 		       << " columns, but should only have one.  "
 		       "Should never get here.");
@@ -1615,10 +1615,10 @@ namespace Belos {
   void 
   GmresBase<Scalar, MV, OP>::backOut (const int numIters)
   {
-    TEST_FOR_EXCEPTION(numIters < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numIters < 0, std::invalid_argument,
 		       "The GMRES iteration count cannot be less than "
 		       "zero, but you specified numIters = " << numIters);
-    TEST_FOR_EXCEPTION(numIters > getNumIters(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numIters > getNumIters(), std::invalid_argument,
 		       "The GMRES iteration count cannot be reset to more than "
 		       "its current iteration count " << getNumIters()
 		       << ", but you specified numIters = " << numIters << ".");

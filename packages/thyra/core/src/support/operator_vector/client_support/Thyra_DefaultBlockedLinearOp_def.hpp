@@ -175,7 +175,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
 #ifdef TEUCHOS_DEBUG
   if (is_null(productRange_)) {
     for (int i = 0; i < numRowBlocks_; ++i) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !rangeBlocks_[i].get(), std::logic_error
         ,"DefaultBlockedLinearOp<Scalar>::endBlockFill():"
         " Error, no linear operator block for the i="<<i<<" block row was added"
@@ -183,7 +183,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
         );
     }
     for(int j = 0; j < numColBlocks_; ++j) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !domainBlocks_[j].get(), std::logic_error
         ,"DefaultBlockedLinearOp<Scalar>::endBlockFill():"
         " Error, no linear operator block for the j="
@@ -272,7 +272,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockIsConst(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!blockExists(i,j));
+  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
 #endif
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
@@ -285,7 +285,7 @@ RCP<LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!blockExists(i,j));
+  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
 #endif
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
@@ -298,7 +298,7 @@ RCP<const LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!blockExists(i,j));
+  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
 #endif
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
@@ -398,7 +398,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -523,7 +523,7 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockFillIsActive(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!(blockFillIsActive_==wantedValue));
+  TEUCHOS_TEST_FOR_EXCEPT(!(blockFillIsActive_==wantedValue));
 #endif
 }
 
@@ -534,22 +534,22 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockRowCol(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= i ), std::logic_error
     ,"Error, i="<<i<<" is invalid!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= j ), std::logic_error
     ,"Error, j="<<j<<" is invalid!"
     );
   // Only validate upper range if the number of row and column blocks is
   // fixed!
   if(Ops_.size()) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= i && i < numRowBlocks_ ), std::logic_error
       ,"Error, i="<<i<<" does not fall in the range [0,"<<numRowBlocks_-1<<"]!"
       );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= j && j < numColBlocks_ ), std::logic_error
       ,"Error, j="<<j<<" does not fall in the range [0,"<<numColBlocks_-1<<"]!"
       );

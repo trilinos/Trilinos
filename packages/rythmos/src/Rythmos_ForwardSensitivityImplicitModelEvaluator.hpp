@@ -637,7 +637,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
   const StepStatus<Scalar> stateStepStatus = stateStepper->getStepStatus();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
       "Error, the status should be converged since a positive step size was returned!"
       );
@@ -680,19 +680,19 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
   RCP<Thyra::LinearOpWithSolveBase<Scalar> >
     W_tilde = stateTimeStepSolver->get_nonconst_W(forceUpToDateW);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(W_tilde), std::logic_error,
       "Error, the W from the state time step must be non-null!"
       );
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
     );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x_dot()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_p(p_index_)) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x_dot()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_p(p_index_)) );
   // What about the other parameter values?  We really can't say anything
   // about these and we can't check them.  They can be null just fine.
   if (!is_null(W_tilde)) {
@@ -726,14 +726,14 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
   typedef Thyra::ModelEvaluatorBase MEB;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
     );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x_dot()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x_dot()) );
   if (hasStateFuncParams()) {
-    TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
   }
   // What about the other parameter values?  We really can't say anything
   // about these and we can't check them.  They can be null just fine.
@@ -993,11 +993,11 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   }
   
   if(nonnull(W_sens)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       alpha != coeff_x_dot_, std::logic_error,
       "Error, alpha="<<alpha<<" != coeff_x_dot="<<coeff_x_dot_
       <<" with difference = "<<(alpha-coeff_x_dot_)<<"!" );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       beta != coeff_x_, std::logic_error,
       "Error, beta="<<beta<<" != coeff_x="<<coeff_x_
       <<" with difference = "<<(beta-coeff_x_)<<"!" );
@@ -1030,7 +1030,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureCommon
   TEUCHOS_ASSERT(nonnull(stateModel));
   TEUCHOS_ASSERT(p_index >= 0 || nonnull(p_space));
   if (p_index >= 0) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= p_index && p_index < stateModel->Np() ), std::logic_error,
       "Error, p_index does not fall in the range [0,"<<(stateModel->Np()-1)<<"]!" );
     // ToDo: Validate support for DfDp!
@@ -1126,7 +1126,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   TEUCHOS_ASSERT_EQUALITY( t , t_base );
 
   if (is_null(W_tilde_)) {
-    TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
   }
   
   if ( is_null(DfDx_dot_) || is_null(DfDp_) ) {
@@ -1163,7 +1163,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   
   }
 
-  TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
     "ToDo: Update for using the stateIntegrator!" );
 
 /* 2007/12/11: rabartl: ToDo: Update the code below to work for the general

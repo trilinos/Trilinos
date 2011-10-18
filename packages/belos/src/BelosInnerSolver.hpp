@@ -76,7 +76,7 @@ namespace Belos {
 
     RCP<const OP> A = problem->getOperator (); 
     RCP<MV> X_orig = problem->getLHS ();
-    TEST_FOR_EXCEPTION(is_null (X_orig), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null (X_orig), std::invalid_argument,
 		       "problemWithNewRHS(): The original LinearProblem's "
 		       "initial guess / current approximate solution (getLHS())"
 		       " is null.  We need an initial guess or current approxim"
@@ -85,7 +85,7 @@ namespace Belos {
 		       "because Belos::MultiVecTraits does not include the idea"
 		       " of the domain and range of an operator, or the space "
 		       "to which a vector belongs.");
-    TEST_FOR_EXCEPTION(is_null (B), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null (B), std::invalid_argument,
 		       "problemWithNewRHS(): the given new right-hand side B "
 		       "is null.");
     RCP<MV> X = MVT::CloneCopy (problem->getLHS ());
@@ -270,7 +270,7 @@ namespace Belos {
       using Teuchos::RCP;
       using Teuchos::rcpFromRef;
 
-      TEST_FOR_EXCEPTION(trans != NOTRANS, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, std::invalid_argument,
 			 "Belos::InnerSolver is not able to solve the "
 			 "transposed system.");
       RCP<const MV> x_ptr = rcpFromRef (x);

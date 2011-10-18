@@ -52,7 +52,7 @@
 #define INTREPID_POINTTOOLS_HPP
 
 #include "Shards_CellTopology.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Intrepid_Polylib.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -243,7 +243,7 @@ Gauss-Lobatto points on the line).
         }
         break;
       default:
-        TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
                             ">>> ERROR (Intrepid::PointTools::getLatticeSize): Illegal cell type" );
       }
     }

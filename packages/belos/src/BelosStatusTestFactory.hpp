@@ -239,9 +239,9 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    TEST_FOR_EXCEPTION(blockSize < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize < 1, std::invalid_argument,
 		       "blockSize (= " << blockSize << ") must be >= 1.");
-    TEST_FOR_EXCEPTION(defQuorum > blockSize, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(defQuorum > blockSize, std::invalid_argument,
 		       "defQuorum (= " << defQuorum << ") may be no larger "
 		       "than blockSize (= " << blockSize << ").");
 
@@ -309,11 +309,11 @@ namespace Belos {
 
     const magnitude_type convTol = 
       params->get<magnitude_type> ("Convergence Tolerance");
-    TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol 
 		       << " is negative.");
     const int maxIterCount = params->get<int> ("Maximum Iterations");
-    TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
 		       "Maximum number of iterations " << maxIterCount
 		       << " is negative.");
 
@@ -537,7 +537,7 @@ namespace Belos {
 	if (scaleType == validNames[k])
 	  return correspondingOutputs[k];
       }
-    TEST_FOR_EXCEPTION (true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION (true, std::logic_error,
 			"Invalid residual scaling type \"" << scaleType 
 			<< "\".");
   }

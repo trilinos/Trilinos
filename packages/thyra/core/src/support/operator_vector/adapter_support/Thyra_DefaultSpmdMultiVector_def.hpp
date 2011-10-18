@@ -262,7 +262,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstColImpl(Ordinal j)
   std::cerr << "\nSpmdMultiVectorStd<Scalar>::col() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(

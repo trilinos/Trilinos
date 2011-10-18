@@ -501,7 +501,7 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
   using Teuchos::ArrayRCP;
 
   const size_t NumVectors = X.getNumVectors();
-  TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet
+  TEUCHOS_TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet
   if (NumVectors != Y.getNumVectors()) EPETRA_CHK_ERR(-1);
   //
   // if we require permutation, then we must have importMV
@@ -668,7 +668,7 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
 
 
 /*   const int NumVectors = X.NumVectors(); */
-/*   TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet */
+/*   TEUCHOS_TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet */
 /*   if (NumVectors != Y.NumVectors()) EPETRA_CHK_ERR(-1); */
 /*   // */
 /*   // if we require permutation, then we must have importMV */
@@ -794,7 +794,7 @@ int Epetra_LevelSolver<Node>::ApplyInverse(const Epetra_MultiVector &X, Epetra_M
 /*   using std::cout; */
 /*   const int NumVectors = X.NumVectors(); */
 /*   if (NumVectors != Y.NumVectors()) EPETRA_CHK_ERR(-1); */
-/*   TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet */
+/*   TEUCHOS_TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet */
 /*   // */
 /*   // if we require permutation, then we must have importMV */
 /*   // this is because permutation cannot be done in situ, and we are only allowed to write to Y */

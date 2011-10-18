@@ -68,7 +68,7 @@ void BlockImplicitLinearOp::applyImpl(
   const double beta
   ) const
 {
-   TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS, std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS, std::runtime_error,
      "Linear operators of inherited type BlockImplicitLinearOp "
      "cannot handle conjugation (yet!)");
 

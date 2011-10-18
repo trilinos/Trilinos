@@ -97,7 +97,7 @@ void Thyra::assertSolveSupports(
   )
 {
   using Teuchos::toString;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !lows.solveSupports(M_trans, solveCriteria),
     std::logic_error,
     "Error, the LinearOpWithSolve object \"" << lows.description() << "\"\n"
@@ -118,7 +118,7 @@ void Thyra::assertSupportsSolveMeasureType(
   const SolveMeasureType &solveMeasureType
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !solveSupportsSolveMeasureType(lows,M_trans,solveMeasureType),
     std::logic_error,
     "Error, the LinearOpWithSolve object \"" << lows.description() << "\"\n"

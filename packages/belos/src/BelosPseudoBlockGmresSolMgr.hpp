@@ -479,7 +479,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   expResTest_(false),
   loaDetected_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if (!is_null(pl)) {
@@ -520,7 +520,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Check for blocksize
   if (params->isParameter("Block Size")) {
     blockSize_ = params->get("Block Size",blockSize_default_);    
-    TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
         "Belos::PseudoBlockGmresSolMgr: \"Block Size\" must be strictly positive.");
 
     // Update parameter in our list.
@@ -530,7 +530,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Check for the maximum number of blocks.
   if (params->isParameter("Num Blocks")) {
     numBlocks_ = params->get("Num Blocks",numBlocks_default_);
-    TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
         "Belos::PseudoBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
 
     // Update parameter in our list.
@@ -555,7 +555,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
+    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
                         std::invalid_argument,
                         "Belos::PseudoBlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\",\"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
@@ -728,7 +728,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Get the deflation quorum, or number of converged systems before deflation is allowed
   if (params->isParameter("Deflation Quorum")) {
     defQuorum_ = params->get("Deflation Quorum", defQuorum_);
-    TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
         "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
     params_->set("Deflation Quorum", defQuorum_);
     if (impConvTest_ != Teuchos::null)
@@ -755,7 +755,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
       ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     } 
     else {
-      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
           "Belos::PseudoBlockGmresSolMgr(): Invalid orthogonalization type.");
     }  
   }
@@ -931,12 +931,12 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   
   Teuchos::BLAS<int,ScalarType> blas;
   
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockGmresSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockGmresSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Check if we have to create the status tests.
   if (!isSTSet_ || (!expResTest_ && !Teuchos::is_null(problem_->getLeftPrec())) ) {
-    TEST_FOR_EXCEPTION( checkStatusTest(),PseudoBlockGmresSolMgrLinearProblemFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( checkStatusTest(),PseudoBlockGmresSolMgrLinearProblemFailure,
       "Belos::BlockGmresSolMgr::solve(): Linear problem and requested status tests are incompatible.");
   }
 
@@ -1011,7 +1011,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
         // Orthonormalize the new V_0
         int rank = ortho_->normalize( *tmpV, tmpZ );
-        TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
             "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
 
         newState.V[i] = tmpV;
@@ -1171,7 +1171,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               
               // Orthonormalize the new V_0
               int rank = ortho_->normalize( *tmpV, tmpZ );
-              TEST_FOR_EXCEPTION(rank != 1 ,PseudoBlockGmresSolMgrOrthoFailure,
+              TEUCHOS_TEST_FOR_EXCEPTION(rank != 1 ,PseudoBlockGmresSolMgrOrthoFailure,
                   "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after the restart.");
               
               newstate.V[i] = tmpV;
@@ -1192,7 +1192,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
         
           else {
-            TEST_FOR_EXCEPTION(true,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                 "Belos::PseudoBlockGmresSolMgr::solve(): Invalid return from PseudoBlockGmresIter::iterate().");
           }
         }

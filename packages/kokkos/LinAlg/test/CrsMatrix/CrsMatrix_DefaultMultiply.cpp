@@ -181,7 +181,7 @@ namespace {
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
       offsets[N]   = NNZsofar;
-      TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
     G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
     offsets = Teuchos::null;

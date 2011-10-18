@@ -218,21 +218,21 @@ namespace Anasazi {
       which_ = SI;
     }
     else {
-      TEST_FOR_EXCEPTION(true, std::invalid_argument, "Anasazi::BasicSort::setSortType(): sorting order is not valid");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Anasazi::BasicSort::setSortType(): sorting order is not valid");
     }
   }
 
   template<class MagnitudeType>
   void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &evals, Teuchos::RCP<std::vector<int> > perm, int n) const
   {
-    TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r): n must be n >= 0 or n == -1.");
+    TEUCHOS_TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r): n must be n >= 0 or n == -1.");
     if (n == -1) {
       n = evals.size();
     }
-    TEST_FOR_EXCEPTION(evals.size() < (unsigned int) n,
+    TEUCHOS_TEST_FOR_EXCEPTION(evals.size() < (unsigned int) n,
                        std::invalid_argument, "Anasazi::BasicSort::sort(r): eigenvalue vector size isn't consistent with n.");
     if (perm != Teuchos::null) {
-      TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
+      TEUCHOS_TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
                          std::invalid_argument, "Anasazi::BasicSort::sort(r): permutation vector size isn't consistent with n.");
     }
 
@@ -256,7 +256,7 @@ namespace Anasazi {
         std::sort(evals.begin(),evals.begin()+n,compAlg<less_mt>());
       }
       else {
-        TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
+        TEUCHOS_TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
       }
     }
     else {
@@ -288,7 +288,7 @@ namespace Anasazi {
         std::sort(pairs.begin(),pairs.begin()+n,compAlg<less_mt>());
       }
       else {
-        TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
+        TEUCHOS_TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
       }
 
       // copy the values and indices out of the pair structure
@@ -316,14 +316,14 @@ namespace Anasazi {
     typedef typename std::vector<MagnitudeType>::iterator r_eval_iter_t;
     typedef typename std::vector<MagnitudeType>::iterator i_eval_iter_t;
 
-    TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r,i): n must be n >= 0 or n == -1.");
+    TEUCHOS_TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r,i): n must be n >= 0 or n == -1.");
     if (n == -1) {
       n = r_evals.size() < i_evals.size() ? r_evals.size() : i_evals.size();
     }
-    TEST_FOR_EXCEPTION(r_evals.size() < (unsigned int) n || i_evals.size() < (unsigned int) n,
+    TEUCHOS_TEST_FOR_EXCEPTION(r_evals.size() < (unsigned int) n || i_evals.size() < (unsigned int) n,
                        std::invalid_argument, "Anasazi::BasicSort::sort(r,i): eigenvalue vector size isn't consistent with n.");
     if (perm != Teuchos::null) {
-      TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
+      TEUCHOS_TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
                          std::invalid_argument, "Anasazi::BasicSort::sort(r,i): permutation vector size isn't consistent with n.");
     }
 

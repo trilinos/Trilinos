@@ -161,7 +161,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: AmesosLOWSF");
 #endif
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   const RCP<const LinearOpBase<double> > 
     fwdOp = fwdOpSrc->getOp();
@@ -279,7 +279,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
           break;
 #endif
         default:
-          TEST_FOR_EXCEPTION(
+          TEUCHOS_TEST_FOR_EXCEPTION(
             true, std::logic_error
             ,"Error, the solver type ID = " << solverType_ << " is invalid!"
             );
@@ -293,7 +293,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Symbolic", Symbolic);
 #endif
       const int err = amesosSolver->SymbolicFactorization();
-      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
@@ -302,7 +302,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Factor", Factor);
 #endif
       const int err = amesosSolver->NumericFactorization();
-      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
@@ -331,7 +331,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Symbolic", Symbolic);
 #endif
       const int err = amesosSolver->SymbolicFactorization();
-      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
@@ -340,7 +340,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF::Factor", Factor);
 #endif
       const int err = amesosSolver->NumericFactorization();
-      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
@@ -368,7 +368,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
@@ -383,7 +383,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
@@ -400,7 +400,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);
@@ -429,7 +429,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),0); // Only validate this level for now!
   paramList_ = paramList;
   solverType_ =

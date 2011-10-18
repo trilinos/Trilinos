@@ -54,9 +54,9 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
                              const ArrayInFields &  inputFields) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
   for (int i=0; i<inputFields.rank(); i++) {
     std::string errmsg  = ">>> ERROR (ArrayTools::cloneFields): Dimensions ";
@@ -64,7 +64,7 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
     errmsg += " and ";
     errmsg += (char)(48+i+1);
     errmsg += " of the input and output fields containers must agree!";
-    TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
   }
 #endif
 
@@ -124,7 +124,7 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::cloneFields): This method is defined only for rank-2, 3 or 4 input containers.");
   }// invalRank
 
@@ -137,15 +137,15 @@ void ArrayTools::cloneScaleFields(ArrayOutFields &        outputFields,
                                   const ArrayInFields &   inputFields) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputFactors.rank() != 2), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFactors.rank() != 2), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input factors container must be 2.");
-  TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): Input fields container must have rank 2, 3, or 4.");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-  TEST_FOR_EXCEPTION( ( inputFactors.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( inputFactors.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
-  TEST_FOR_EXCEPTION( ( inputFactors.dimension(1) != outputFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( inputFactors.dimension(1) != outputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
   for (int i=0; i<inputFields.rank(); i++) {
     std::string errmsg  = ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions ";
@@ -153,7 +153,7 @@ void ArrayTools::cloneScaleFields(ArrayOutFields &        outputFields,
     errmsg += " and ";
     errmsg += (char)(48+i+1);
     errmsg += " of the input and output fields containers must agree!";
-    TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
   }
 #endif
 
@@ -213,7 +213,7 @@ void ArrayTools::cloneScaleFields(ArrayOutFields &        outputFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::cloneScaleFields): This method is defined only for rank-2, 3 or 4 input containers.");
   }// invalRank
 
@@ -225,13 +225,13 @@ void ArrayTools::scaleFields(ArrayInOutFields &      inoutFields,
                              const ArrayInFactors &  inputFactors) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputFactors.rank() != 2), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFactors.rank() != 2), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scaleFields): The rank of the input factors container must be 2.");
-  TEST_FOR_EXCEPTION( ( (inoutFields.rank() < 3) || (inoutFields.rank() > 5) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inoutFields.rank() < 3) || (inoutFields.rank() > 5) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scaleFields): Input/output fields container must have rank 3, 4, or 5.");
-  TEST_FOR_EXCEPTION( ( inputFactors.dimension(0) != inoutFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( inputFactors.dimension(0) != inoutFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scaleFields): Zeroth dimensions of input factors container and input/output fields container (numbers of integration domains) must agree!");
-  TEST_FOR_EXCEPTION( ( inputFactors.dimension(1) != inoutFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( inputFactors.dimension(1) != inoutFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scaleFields): First dimensions (number of fields) of input factors and input/output fields containers must agree!");
 #endif
 
@@ -290,7 +290,7 @@ void ArrayTools::scaleFields(ArrayInOutFields &      inoutFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( !( (inoutRank == 3) || (inoutRank == 4) || (inoutRank == 5) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (inoutRank == 3) || (inoutRank == 4) || (inoutRank == 5) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::cloneScaleFields): This method is defined only for rank-3, 4 or 5 input/output containers.");
   }// inoutRank
 

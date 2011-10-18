@@ -194,7 +194,7 @@ void PointwiseInterpolationBufferAppender<Scalar>::setParameterList(
   const RCP<ParameterList> &paramList
   )
 {
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParameters(*this->getValidParameters());
   Teuchos::readVerboseObjectSublist(&*paramList,this);
   setMyParamList(paramList);

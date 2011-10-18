@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -68,14 +68,14 @@ void compareScalarFields(PHX::Field<ScalarT>& field1,
   std::cout << "Comparing scalar fields\n" << field1.fieldTag() << "\n" 
 	    << field2.fieldTag() << std::endl; 
 
-  TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
 		     "Fields for comparison do not have the same size!");
 
   double error = 0.0;
   for (int i=0; i < field1.size(); ++i)
     error += fabs(field1[i]-field2[i]);
   
-  TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
 		     "Fields are not equal in comparison!");
 
   std::cout << "Passed: " << error << " < " << tol << std::endl; 
@@ -92,7 +92,7 @@ void compareVectorFields(PHX::Field< MyVector<ScalarT> >& field1,
   std::cout << "Comparing vector fields\n" << field1.fieldTag() << "\n" 
 	    << field2.fieldTag() << std::endl; 
 
-  TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
 		     "Fields for comparison do not have the same size!");
 
   double error = 0.0;
@@ -100,7 +100,7 @@ void compareVectorFields(PHX::Field< MyVector<ScalarT> >& field1,
     for (int j=0; j < 3; ++j)
       error += fabs(field1[i][j]-field2[i][j]);
   
-  TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
 		     "Fields are not equal in comparison!");
 
   std::cout << "Passed: " << error << " < " << tol << std::endl; 
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
       fm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
 	   << d_var.dataLayout().size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != d_var.dataLayout().size(),
+      TEUCHOS_TEST_FOR_EXCEPTION(den.size() != d_var.dataLayout().size(),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
       

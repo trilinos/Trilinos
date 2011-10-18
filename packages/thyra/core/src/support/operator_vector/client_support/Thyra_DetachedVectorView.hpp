@@ -211,7 +211,7 @@ private:
       v_ = v;
       v_->acquireDetachedView(rng,&sv_s_);
       if( forceUnitStride && sv_s_.stride() != 1 ) {
-        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
         //const ArrayRCP<Scalar> values = Teuchos::arcp(sv_s_.subDim());
         //Teuchos_Index i; const Scalar *sv_v;
         //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
@@ -342,7 +342,7 @@ public:
   ~DetachedVectorView()
     {
       if( sv_s_.stride() != sv_.stride() ) {
-        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
         //Teuchos_Index i; Scalar *sv_v; const Scalar *values;
         //for (
         //  sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
@@ -401,7 +401,7 @@ private:
       v_ = v;
       v_->acquireDetachedView(rng,&sv_s_);
       if( forceUnitStride && sv_s_.stride() != 1 ) {
-        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
         //Scalar *values = new Scalar[sv_s_.subDim()];
         //Teuchos_Index i; const Scalar *sv_v;
         //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )

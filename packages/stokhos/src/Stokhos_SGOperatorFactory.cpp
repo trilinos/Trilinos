@@ -33,7 +33,7 @@
 #include "Stokhos_KLMatrixFreeOperator.hpp"
 #include "Stokhos_KLReducedMatrixFreeOperator.hpp"
 #include "Stokhos_FullyAssembledOperator.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::SGOperatorFactory::
 SGOperatorFactory(const Teuchos::RCP<Teuchos::ParameterList>& params_) :
@@ -79,7 +79,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
 			   domain_sg_map, range_sg_map, params));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown operator method " << op_method
 		       << "." << std::endl);
 

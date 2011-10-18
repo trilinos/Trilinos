@@ -180,12 +180,12 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       break;
       
     case OPERATOR_DIV:
-       TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HCURL_TET_I1_FEM): DIV is invalid operator for HCURL Basis Functions");
       break;
       
     case OPERATOR_GRAD:
-       TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
+       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
                           ">>> ERROR (Basis_HCURL_TET_I1_FEM): GRAD is invalid operator for HCURL Basis Functions");
       break;
 
@@ -199,7 +199,7 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
                             (operatorType == OPERATOR_D2)    ||
                             (operatorType == OPERATOR_D3)    ||
                             (operatorType == OPERATOR_D4)    ||
@@ -214,7 +214,7 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
                             (operatorType != OPERATOR_GRAD)  &&
                             (operatorType != OPERATOR_CURL)  &&
                             (operatorType != OPERATOR_DIV)   &&
@@ -240,7 +240,7 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                                                             const ArrayScalar &    inputPoints,
                                                             const ArrayScalar &    cellVertices,
                                                             const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HCURL_TET_I1_FEM): FEM Basis calling an FVD member function");
                                                              }
 

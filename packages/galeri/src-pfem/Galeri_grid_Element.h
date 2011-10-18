@@ -54,7 +54,7 @@
 
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_core_Object.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include <vector>
 
 namespace Galeri {
@@ -150,7 +150,7 @@ public:
   //! Sets the element type for component \c which.
   void setComponent(const int which, const Element& what)
   {
-    TEST_FOR_EXCEPTION(which >= components_.size(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(which >= components_.size(), std::logic_error,
                        "accessing element " << which << ", but the "
                        << " element only has " <<  components_.size()
                        << " components.");

@@ -338,7 +338,7 @@ public:
         switch(mvOrientation) {
           case DERIV_MV_BY_COL: supportsMVByCol_ = true; break;
           case DERIV_TRANS_MV_BY_ROW: supportsTransMVByRow_ = true; break;
-          default: TEST_FOR_EXCEPT(true);
+          default: TEUCHOS_TEST_FOR_EXCEPT(true);
         }
         return *this;
       }
@@ -354,7 +354,7 @@ public:
         switch(mvOrientation) {
           case DERIV_MV_BY_COL: return supportsMVByCol_;
           case DERIV_TRANS_MV_BY_ROW: return supportsTransMVByRow_;
-          default: TEST_FOR_EXCEPT(true);
+          default: TEUCHOS_TEST_FOR_EXCEPT(true);
         }
         return false; // Will never be called!
       }

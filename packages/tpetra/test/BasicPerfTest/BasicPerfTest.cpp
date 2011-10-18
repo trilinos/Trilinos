@@ -27,7 +27,7 @@
 //@HEADER
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_Time.hpp>

@@ -29,7 +29,7 @@
 #include "Stokhos_SGModelEvaluator_Interlaced.hpp"
 
 #include <algorithm>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_InterlacedOperator.hpp"
@@ -270,7 +270,7 @@ Stokhos::SGModelEvaluator_Interlaced::get_f_map() const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator_Interlaced::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_map(l);
@@ -283,7 +283,7 @@ Stokhos::SGModelEvaluator_Interlaced::get_p_map(int l) const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator_Interlaced::get_g_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_g_sg, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_g_sg, std::logic_error,
 		     "Error!  Invalid g map index " << l);
   return sg_g_map[l];
 }
@@ -291,7 +291,7 @@ Stokhos::SGModelEvaluator_Interlaced::get_g_map(int l) const
 Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::SGModelEvaluator_Interlaced::get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_names(l);
@@ -310,7 +310,7 @@ Stokhos::SGModelEvaluator_Interlaced::get_x_init() const
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGModelEvaluator_Interlaced::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_init(l);
@@ -518,7 +518,7 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
 			       SGDerivative(dfdp_sg,
 					    dfdp.getMultiVectorOrientation()));
       }
-      TEST_FOR_EXCEPTION(dfdp.getLinearOp() != Teuchos::null, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dfdp.getLinearOp() != Teuchos::null, std::logic_error,
 			 "Error!  Stokhos::SGModelEvaluator_Interlaced::evalModel " << 
 			 "cannot handle operator form of df/dp!");
     }
@@ -562,7 +562,7 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
 						        DERIV_TRANS_MV_BY_ROW));
 	}
       }
-      TEST_FOR_EXCEPTION(dgdx_dot.getLinearOp() == Teuchos::null &&
+      TEUCHOS_TEST_FOR_EXCEPTION(dgdx_dot.getLinearOp() == Teuchos::null &&
 			 dgdx_dot.isEmpty() == false, 
 			 std::logic_error,
 			 "Error!  Stokhos::SGModelEvaluator_Interlaced::evalModel: " << 
@@ -595,7 +595,7 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
 						    DERIV_TRANS_MV_BY_ROW));
 	}
       }
-      TEST_FOR_EXCEPTION(dgdx.getLinearOp() == Teuchos::null &&
+      TEUCHOS_TEST_FOR_EXCEPTION(dgdx.getLinearOp() == Teuchos::null &&
 			 dgdx.isEmpty() == false, 
 			 std::logic_error,
 			 "Error!  Stokhos::SGModelEvaluator_Interlaced::evalModel: " << 
@@ -628,7 +628,7 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
 				 SGDerivative(dgdp_sg,
 					      dgdp.getMultiVectorOrientation()));
 	}
-	TEST_FOR_EXCEPTION(dgdp.getLinearOp() != Teuchos::null, 
+	TEUCHOS_TEST_FOR_EXCEPTION(dgdp.getLinearOp() != Teuchos::null, 
 			   std::logic_error,
 			   "Error!  Stokhos::SGModelEvaluator_Interlaced::evalModel " << 
 			   "cannot handle operator form of dg/dp!");
@@ -820,7 +820,7 @@ Stokhos::SGModelEvaluator_Interlaced::create_p_sg(int l, Epetra_DataAccess CV,
   Teuchos::Array<int>::const_iterator it = std::find(sg_p_index_map.begin(),
 						     sg_p_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == sg_p_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == sg_p_index_map.end(), std::logic_error,
 		     "Error!  Invalid p map index " << l);
   int ll = it - sg_p_index_map.begin();
   if (v == NULL)
@@ -909,7 +909,7 @@ Stokhos::SGModelEvaluator_Interlaced::create_g_sg(int l, Epetra_DataAccess CV,
   Teuchos::Array<int>::const_iterator it = std::find(sg_g_index_map.begin(),
 						     sg_g_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
 		     "Error!  Invalid g map index " << l);
   int ll = it - sg_g_index_map.begin();
   if (v == NULL)
@@ -934,7 +934,7 @@ Stokhos::SGModelEvaluator_Interlaced::create_g_mv_sg(int l, int num_vecs,
   Teuchos::Array<int>::const_iterator it = std::find(sg_g_index_map.begin(),
 						     sg_g_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
 		     "Error!  Invalid g map index " << l);
   int ll = it - sg_g_index_map.begin();
   if (v == NULL)

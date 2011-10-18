@@ -272,7 +272,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
 
   const Ordinal n = vecSpc.dim();
 
-  TEST_FOR_EXCEPTION( n < 4, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( n < 4, std::logic_error,
     "Error: n = "<<n<<" must be least 4 or greater to"
     " run Thyra::VectorStdOpsTester::checkStdOps(...)!" );
 

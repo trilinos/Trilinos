@@ -389,17 +389,17 @@ namespace Belos {
 	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar> "
 	    ">::SetBlock(A, [" << index.lbound() << ", " << index.ubound() 
 	     << "], mv): ";
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Range lower bound must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
 			     os.str() << "Range upper bound must be less than "
 			     "the number of columns " << numColsA << " in the "
 			     "'mv' output argument.");
-	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
 			     os.str() << "Range must have no more elements than"
 			     " the number of columns " << numColsA << " in the "
 			     "'A' input argument.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
 
       // View of the relevant column(s) of the target multivector mv.
@@ -435,11 +435,11 @@ namespace Belos {
 	  std::ostringstream os;
 	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar>"
 	    " >::Assign(A, mv): ";
-	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
 			     os.str() << "Input multivector 'A' has " 
 			     << numColsA << " columns, but output multivector "
 			     "'mv' has only " << numColsMv << " columns.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
       // Copy the data to the destination multivector.
       if (numColsA == numColsMv)
@@ -550,7 +550,7 @@ namespace Belos {
       else if (trans == CONJTRANS)
 	whichOp = Thyra::CONJTRANS;
       else
-	TEST_FOR_EXCEPTION(true, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
 			   "Belos::OperatorTraits::Apply (Thyra specialization): "
 			   "'trans' argument must be neither NOTRANS=" << NOTRANS 
 			   << ", TRANS=" << TRANS << ", or CONJTRANS=" << CONJTRANS

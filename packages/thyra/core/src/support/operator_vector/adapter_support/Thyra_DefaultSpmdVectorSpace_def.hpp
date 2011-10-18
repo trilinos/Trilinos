@@ -79,7 +79,7 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( localSubDim_in >= 0 ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( localSubDim_in >= 0 ) );
 #endif
   comm_ = comm;
   localSubDim_ = localSubDim_in;
@@ -145,7 +145,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
+  TEUCHOS_TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
@@ -164,7 +164,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
+  TEUCHOS_TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
@@ -183,7 +183,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
+  TEUCHOS_TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
@@ -204,7 +204,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
+  TEUCHOS_TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(

@@ -143,7 +143,7 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
    if(epetraMV->ConstantStride() )
       epetraMV->ExtractView( &localValues, &leadingDim );
    else
-      TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
 
    // Build the MultiVector
    spmdMV->initialize(range, domain,
@@ -215,7 +215,7 @@ void zeroMultiVectorRowIndices(Epetra_MultiVector & mv,const std::vector<int> & 
  
       // loop over columns
       for(int j=0;j<colCnt;j++)
-         TEST_FOR_EXCEPT(mv.ReplaceGlobalValue(*itr,j,0.0));
+         TEUCHOS_TEST_FOR_EXCEPT(mv.ReplaceGlobalValue(*itr,j,0.0));
    }
 }
 

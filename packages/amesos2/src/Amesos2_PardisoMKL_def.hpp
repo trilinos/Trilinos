@@ -510,7 +510,7 @@ PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
     break;
   }
 
-  TEST_FOR_EXCEPTION( true, std::runtime_error, errmsg );
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, errmsg );
 }
 
 
@@ -527,17 +527,17 @@ PardisoMKL<Matrix,Vector>::set_pardiso_mkl_matrix_type(int_t mtype)
   } else {
     switch( mtype ){
     case 11:
-      TEST_FOR_EXCEPTION( complex_,
+      TEUCHOS_TEST_FOR_EXCEPTION( complex_,
                           std::invalid_argument,
                           "Cannot set a real Pardiso matrix type with scalar type complex" );
       mtype_ = 11; break;
     case 13:
-      TEST_FOR_EXCEPTION( !complex_,
+      TEUCHOS_TEST_FOR_EXCEPTION( !complex_,
                           std::invalid_argument,
                           "Cannot set a complex Pardiso matrix type with non-complex scalars" );
       mtype_ = 13; break;
     default:
-      TEST_FOR_EXCEPTION( true,
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
                           std::invalid_argument,
                           "Symmetric matrices are not yet supported by the Amesos2 interface" );
     }

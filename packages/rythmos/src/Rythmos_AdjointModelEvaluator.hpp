@@ -305,7 +305,7 @@ void AdjointModelEvaluator<Scalar>::setFwdStateModel(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint
   )
 {
-  TEST_FOR_EXCEPT(is_null(fwdStateModel));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdStateModel));
   fwdStateModel_ = fwdStateModel;
   basePoint_ = basePoint;
   isInitialized_ = false;
@@ -324,7 +324,7 @@ template<class Scalar>
 void AdjointModelEvaluator<Scalar>::setFwdStateSolutionBuffer(
   const RCP<const InterpolationBufferBase<Scalar> > &fwdStateSolutionBuffer )
 {
-  TEST_FOR_EXCEPT(is_null(fwdStateSolutionBuffer));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdStateSolutionBuffer));
   fwdStateSolutionBuffer_ = fwdStateSolutionBuffer;
 }
 
@@ -520,7 +520,7 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
       W_bar_adj_op = W_bar_op->getNonconstOp();
     }
     else if (!is_null(f_bar)) {
-      TEST_FOR_EXCEPT_MSG(true, "ToDo: Unit test this code!");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Unit test this code!");
       // If the user did not pass in W_bar or W_bar_op, then we need to create
       // our own local LOB form W_bar_adj_op of W_bar_adj in order to evaluate
       // the residual f_bar

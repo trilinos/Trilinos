@@ -38,7 +38,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::SGQuadMPModelEvaluator::
 SGQuadMPModelEvaluator(
@@ -409,11 +409,11 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   Teuchos::Array<SGDerivative> dgdx_sg(num_g_mp);
   Teuchos::Array<SGDerivative> dgdx_dot_sg(num_g_mp);
   Teuchos::Array< Teuchos::Array<SGDerivative> > dgdp_sg(num_g_mp);
-  TEST_FOR_EXCEPTION(inArgs.get_sg_basis() == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(inArgs.get_sg_basis() == Teuchos::null, 
 		     std::logic_error,
 		     "Error!  Stokhos::SGQuadModelEvaluator::evalModel():  " <<
 		     "SG basis inArg cannot be null!");
-  TEST_FOR_EXCEPTION(inArgs.get_sg_quadrature() == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(inArgs.get_sg_quadrature() == Teuchos::null, 
 		     std::logic_error,
 		     "Error!  Stokhos::SGQuadModelEvaluator::evalModel():  " <<
 		     "SG quadrature inArg cannot be null!");

@@ -176,8 +176,8 @@ void MLPreconditionerFactory::initializePrec(
 
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
-  TEST_FOR_EXCEPT(prec==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(prec==NULL);
 #endif
   //
   // Unwrap and get the forward Epetra_Operator object
@@ -194,7 +194,7 @@ void MLPreconditionerFactory::initializePrec(
   // Validate what we get is what we need
   RCP<const Epetra_RowMatrix>
     epetraFwdRowMat = rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp,true);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
@@ -223,7 +223,7 @@ void MLPreconditionerFactory::initializePrec(
     // already being used!
     const Epetra_RowMatrix & rm = ml_precOp->RowMatrix();
    
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
        &rm!=&*epetraFwdRowMat, std::logic_error
        ,"ML requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
        );
@@ -255,11 +255,11 @@ void MLPreconditionerFactory::initializePrec(
     // and faster code.
     // Set parameters if the list exists
     if(paramList_.get())
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         0!=ml_precOp->SetParameterList(paramList_->sublist(MLSettings_name))
         );
     // Initailize the structure for the preconditioner
-    //        TEST_FOR_EXCEPT(0!=ml_precOp->Initialize());
+    //        TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->Initialize());
   }
   //
   // Attach the epetraFwdOp to the ml_precOp to guarantee that it will not go away
@@ -272,7 +272,7 @@ void MLPreconditionerFactory::initializePrec(
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the factorization of the preconditioner ...\n";
   timer.start(true);
-  TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+  TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
@@ -319,7 +319,7 @@ void MLPreconditionerFactory::uninitializePrec(
   ESupportSolveUse *supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -330,7 +330,7 @@ void MLPreconditionerFactory::setParameterList(
   Teuchos::RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
   const EMLProblemType
@@ -341,7 +341,7 @@ void MLPreconditionerFactory::setParameterList(
     const std::string
       defaultTypeStr = BaseMethodDefaults_valueNames[defaultType];
     Teuchos::ParameterList defaultParams;
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
       ,Teuchos::Exceptions::InvalidParameterValue
       ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recongnised by ML!"
@@ -468,7 +468,7 @@ MLPreconditionerFactory::getValidParameters() const
           ParameterList defaultParams;
           const std::string defaultTypeStr = BaseMethodDefaults_valueNames[i];
           if (defaultTypeStr != BaseMethodDefaults_valueNames_none) {
-            TEST_FOR_EXCEPTION(
+            TEUCHOS_TEST_FOR_EXCEPTION(
               0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
               ,Teuchos::Exceptions::InvalidParameterValue
               ,"Error, the ML problem type \"" << defaultTypeStr

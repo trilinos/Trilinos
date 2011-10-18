@@ -70,7 +70,7 @@ DataT RequestHandler::request(const RequestMesg & rd) const
          return cb->request(rd);
    }
 
-   TEST_FOR_EXCEPTION(true,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
          "RequestHandler::request could not find appropriate callback: " << rd);
 }
 
@@ -97,7 +97,7 @@ void RequestHandler::preRequest(const RequestMesg & rd) const
          return cb->preRequest(rd);
    }
 
-   TEST_FOR_EXCEPTION(true,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
          "RequestHandler::preRequest could not find appropriate callback: " << rd);
 }
 

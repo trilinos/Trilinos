@@ -53,7 +53,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
    blockIDsAreContiguous_(true),
    constantBlockSize_(blockSize)
 {
-  TEST_FOR_EXCEPTION( blockSize <= 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( blockSize <= 0, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: blockSize must be greater than 0.");
 
   global_size_t numGlobalPoints = numGlobalBlocks*blockSize;
@@ -74,7 +74,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   size_t numLocalBlocks = pointMap_->getNodeNumElements()/blockSize;
   size_t checkLocalBlocks = numLocalPoints/blockSize;
   //can there be an inconsistency here???
-  TEST_FOR_EXCEPTION(numLocalBlocks != checkLocalBlocks, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numLocalBlocks != checkLocalBlocks, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: internal failure, numLocalBlocks not consistent with point-map.");
   
   myGlobalBlockIDs_.resize(numLocalBlocks);
@@ -109,7 +109,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
    blockIDsAreContiguous_(true),
    constantBlockSize_(blockSize)
 {
-  TEST_FOR_EXCEPTION( blockSize <= 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( blockSize <= 0, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: blockSize must be greater than 0.");
 
   global_size_t numGlobalPoints = numGlobalBlocks*blockSize;
@@ -160,7 +160,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
    blockIDsAreContiguous_(false),
    constantBlockSize_(0)
 {
-  TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
              "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
 
   size_t sum_blockSizes = 0;
@@ -205,7 +205,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   if (blockSizesAreConstant) constantBlockSize_ = firstBlockSize;
 
   size_t num_points = pointMap_->getNodeNumElements();
-  TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
             "Tpetra::BlockMap::BlockMap ERROR: internal failure, sum of block-sizes must equal pointMap->getNodeNumElements().");
 
   typename Teuchos::Array<GlobalOrdinal>::const_iterator
@@ -237,7 +237,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
    blockIDsAreContiguous_(false),
    constantBlockSize_(0)
 {
-  TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
              "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
 
   global_size_t numLocalBlocks = myGlobalBlockIDs.size();
@@ -267,7 +267,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
   if (blockSizesAreConstant) constantBlockSize_ = firstBlockSize;
 
   size_t num_points = pointMap->getNodeNumElements();
-  TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
             "Tpetra::BlockMap::BlockMap ERROR: sum of block-sizes must equal pointMap->getNodeNumElements().");
 
   typename Teuchos::Array<GlobalOrdinal>::const_iterator

@@ -29,7 +29,7 @@
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_KLReducedMatrixFreeOperator.hpp"
 #include "Stokhos_PCEAnasaziKL.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_MatrixFreeOperator.hpp"
@@ -386,7 +386,7 @@ setup()
   }
 
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::KLReducedMatrixFreeOperator is available " <<
 		     "only when configured with Anasazi support!")
 #endif

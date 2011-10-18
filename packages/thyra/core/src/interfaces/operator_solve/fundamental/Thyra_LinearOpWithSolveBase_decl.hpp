@@ -515,7 +515,7 @@ protected:
     const Ptr<const SolveCriteria<Scalar> > solveCriteria
     ) const
     {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
       return(false);
     }
 

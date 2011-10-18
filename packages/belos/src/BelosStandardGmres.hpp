@@ -129,7 +129,7 @@ namespace Belos {
       // This does not count the initial basis vector.
       const int k = this->getNumIters(); 
       const int m = this->maxNumIters();
-      TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
+      TEUCHOS_TEST_FOR_EXCEPTION(k >= m, GmresCantExtendBasis,
 			 "Belos::StandardGmres::extendBasis: "
 			 "Maximum number of iterations " << m << "reached; "
 			 "cannot extend basis further.");

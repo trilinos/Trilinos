@@ -417,15 +417,15 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::initialize(
 #ifdef RYTHMOS_DEBUG
   const int numResponseTimes = responseTimes.size();
 
-  TEST_FOR_EXCEPT(is_null(stateStepper));
-  TEST_FOR_EXCEPT(is_null(stateIntegrator));
-  TEST_FOR_EXCEPT(is_null(stateAndSensStepper));
-  TEST_FOR_EXCEPT(is_null(stateAndSensInitCond.get_x()));
-  TEST_FOR_EXCEPT(is_null(stateAndSensInitCond.get_x_dot()));
-  TEST_FOR_EXCEPT( !( numResponseTimes > 0 ) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stateStepper));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stateIntegrator));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stateAndSensStepper));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stateAndSensInitCond.get_x()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stateAndSensInitCond.get_x_dot()));
+  TEUCHOS_TEST_FOR_EXCEPT( !( numResponseTimes > 0 ) );
   assertTimePointsAreSorted(responseTimes);
-  TEST_FOR_EXCEPT( as<int>(responseFuncs.size()) != numResponseTimes );
-  TEST_FOR_EXCEPT( as<int>(responseFuncBasePoints.size()) != numResponseTimes );
+  TEUCHOS_TEST_FOR_EXCEPT( as<int>(responseFuncs.size()) != numResponseTimes );
+  TEUCHOS_TEST_FOR_EXCEPT( as<int>(responseFuncBasePoints.size()) != numResponseTimes );
   // ToDo: Assert that all of the observation models have the same response
   // function spaces so that they can be added together!
 #endif // RYTHMOS_DEBUG
@@ -529,7 +529,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(0==paramList.get());
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList.get());
   paramList->validateParameters(*getValidParameters());
   paramList_ = paramList;
   dumpSensitivities_ = paramList_->get(

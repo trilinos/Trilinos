@@ -76,18 +76,18 @@ class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
 public:
   // Public functions overridden from ModelEvaulator.
   RCP<const VectorSpaceBase<Scalar> > get_x_space() const
-    { TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const
-    { TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
-    { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
-    { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
   void evalModel(
     const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const
-    { TEST_FOR_EXCEPT(true); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); }
   // Static function that does the magic!
   static ModelEvaluatorBase::OutArgs<Scalar> createOutArgs(
     const ModelEvaluator<Scalar> &model,
@@ -154,7 +154,7 @@ private:
     {
 #ifdef TEUCHOS_DEBUG
       const bool p_space_l_is_in_core = model.get_p_space(l)->hasInCoreView();
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !p_space_l_is_in_core, std::logic_error,
         "Error, for the model " << model.description()
         << ", the space p_space("<<l<<") must be in-core so that they can"
@@ -276,7 +276,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==0);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==0);
   paramList->validateParameters(*getValidParameters());
   paramList_ = paramList;
   fd_method_type_ = fdMethodValidator->getIntegralValue(
@@ -400,7 +400,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       << "\nvariations=\n" << describe(var,Teuchos::VERB_LOW);
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     var.isEmpty(), std::logic_error,
     "Error, all of the variations can not be null!"
     );
@@ -457,7 +457,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       if(out.get()&&trace) *out<<"\nUsing auto selection of some fourth-order finite difference method ...\n";
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should not get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should not get here!
   }
 
   // ////////////////////////
@@ -494,7 +494,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       uh_opt = u_optimal_4 * ( fd_step_select_type() == DFDCT::FD_STEP_ABSOLUTE ? 1.0 : bp_norm + 1.0 );
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should not get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should not get here!
   }
 
   if(out.get()&&trace) *out<<"\nDefault optimal step length uh_opt = " << uh_opt << " ...\n";
@@ -632,7 +632,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       dwgt      = ScalarMag(12.0);
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should not get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should not get here!
   }
   for( int eval_i = 1; eval_i <= num_evals; ++eval_i ) {
     // Set the step constant and the weighting constant
@@ -733,7 +733,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       case DFDCT::FD_ORDER_FOUR_AUTO:
         break; // Okay
       default:
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
     }
 
     if(out.get() && trace)

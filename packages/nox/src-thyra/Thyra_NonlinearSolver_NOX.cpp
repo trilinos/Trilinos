@@ -26,7 +26,7 @@ Thyra::NOXNonlinearSolver::~NOXNonlinearSolver()
 void Thyra::NOXNonlinearSolver::
 setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& p)
 {
-  TEST_FOR_EXCEPT(Teuchos::is_null(p));
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(p));
   param_list_ = p;
   this->resetSolver();
 }
@@ -70,7 +70,7 @@ Thyra::NOXNonlinearSolver::getValidParameters() const
 void Thyra::NOXNonlinearSolver::
 setModel(const Teuchos::RCP<const ModelEvaluator<double> >& model)
 {
-  TEST_FOR_EXCEPT(model.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
 }
 
@@ -94,8 +94,8 @@ solve(VectorBase<double> *x,
   TEUCHOS_FUNC_TIME_MONITOR("Thyra::NOXNonlinearSolver::solve");
 #endif
 
-  TEST_FOR_EXCEPT(model_.get()==NULL);
-  TEST_FOR_EXCEPT(param_list_.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(model_.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(param_list_.get()==NULL);
   
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 

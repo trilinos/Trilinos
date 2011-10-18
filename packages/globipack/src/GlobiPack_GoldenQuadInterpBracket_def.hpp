@@ -95,9 +95,9 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   typedef PointEval1D<Scalar> PE1D;
   
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(pointLower));
-  TEST_FOR_EXCEPT(is_null(pointUpper));
-  TEST_FOR_EXCEPT(is_null(pointMiddle));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pointLower));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pointUpper));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pointMiddle));
   TEUCHOS_ASSERT_INEQUALITY(pointLower->alpha, <, pointMiddle->alpha);
   TEUCHOS_ASSERT_INEQUALITY(pointLower->phi, !=, PE1D::valNotGiven());
   TEUCHOS_ASSERT_INEQUALITY(pointMiddle->phi, !=, PE1D::valNotGiven());

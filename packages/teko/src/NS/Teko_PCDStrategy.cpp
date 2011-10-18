@@ -274,13 +274,13 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
       pcdParams_ = Teuchos::rcp(new Teuchos::ParameterList);
 
    // The user should not have already added this parameters
-   TEST_FOR_EXCEPTION(lapParams_->isParameter("Name"),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(lapParams_->isParameter("Name"),std::logic_error,
                    "Teko: Parameter \"Name\" is not allowed in the sublist \""+lapParams_->name()+"\"");
-   TEST_FOR_EXCEPTION(lapParams_->isParameter("Tag"),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(lapParams_->isParameter("Tag"),std::logic_error,
                    "Teko: Parameter \"Tag\" is not allowed in the sublist \""+lapParams_->name()+"\"");
-   TEST_FOR_EXCEPTION(pcdParams_->isParameter("Name"),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(pcdParams_->isParameter("Name"),std::logic_error,
                    "Teko: Parameter \"Name\" is not allowed in the sublist \""+pcdParams_->name()+"\"");
-   TEST_FOR_EXCEPTION(pcdParams_->isParameter("Tag"),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(pcdParams_->isParameter("Tag"),std::logic_error,
                    "Teko: Parameter \"Tag\" is not allowed in the sublist \""+pcdParams_->name()+"\"");
 
    Teko_DEBUG_MSG_BEGIN(5)

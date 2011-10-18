@@ -43,7 +43,7 @@
 #define THYRA_MULTI_VECTOR_ALLOCATOR_HPP
 
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace Thyra {
 
@@ -62,7 +62,7 @@ public:
     : vs_(vs), numMembers_(numMembers)
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION( vs.get()==NULL, std::logic_error, "Error!" );
+      TEUCHOS_TEST_FOR_EXCEPTION( vs.get()==NULL, std::logic_error, "Error!" );
 #endif			
     }
   /** \brief . */

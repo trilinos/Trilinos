@@ -46,7 +46,7 @@ GAASPErrorEstimator::GAASPErrorEstimator():
 {}
 
 void GAASPErrorEstimator::setModel( Teuchos::RCP<Thyra::ModelEvaluator<double> > model ) {
-  TEST_FOR_EXCEPT(is_null(model));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model));
   model_ = model;
 }
 
@@ -57,7 +57,7 @@ void GAASPErrorEstimator::setQuantityOfInterest(
 }
 
 void GAASPErrorEstimator::initialize_() {
-  TEST_FOR_EXCEPT(is_null(model_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model_));
   
   // Create GAASP interface
   gaaspInterfacePtr_ = Teuchos::rcp(new GAASPInterface );
@@ -141,7 +141,7 @@ void GAASPErrorEstimator::describe(
 void GAASPErrorEstimator::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*paramList_,this);

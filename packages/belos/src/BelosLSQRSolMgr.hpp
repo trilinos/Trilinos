@@ -470,7 +470,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
-  TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
 		     "Belos::LSQRSolMgr::setParameters: "
 		     "the input ParameterList is null.");
   RCP<const ParameterList> defaultParams = getValidParameters ();
@@ -690,12 +690,12 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     setParameters (Teuchos::parameterList (*getValidParameters()));
   }
 
-  TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
 		     "The linear problem to solve is null.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
                      "LSQRSolMgr::solve(): The linear problem is not ready, "
 		     "as its setProblem() method has not been called.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
 		     LSQRSolMgrBlockSizeFailure, 
 		     "LSQRSolMgr::solve(): The current implementation of LSQR "
 		     "only knows how to solve problems with one right-hand "
@@ -777,7 +777,7 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     } else if (maxIterTest_->getStatus() == Belos::Passed) {
       isConverged = false;
     } else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "LSQRSolMgr::solve(): LSQRIteration::iterate() "
 			 "returned without either the convergence test or "
 			 "the maximum iteration count test passing."

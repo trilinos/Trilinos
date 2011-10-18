@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     it != matrixSystems->end();
     ++it)
   {
-	  TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
       "All top level items in the matrix "
 	    "file names list must be ParameterLists! In otherwords, you always "
       "need to have matricies "
@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile(C_file, comm, node);
  
 
-    TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op << "!" << std::endl);
   
     if(op == "multiply"){

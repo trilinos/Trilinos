@@ -126,7 +126,7 @@ template<class Scalar>
 void restart( StepperBase<Scalar> *stepper )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(0==stepper);
+  TEUCHOS_TEST_FOR_EXCEPT(0==stepper);
 #endif // RYTHMOS_DEBUG
   typedef Thyra::ModelEvaluatorBase MEB;
   const Rythmos::StepStatus<double>
@@ -248,7 +248,7 @@ void defaultGetPoints(
         tmpVecDot = xdot->clone_v();
       }
     } else {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
           is_null(interpolator), std::logic_error,
           "Error, getPoints:  This stepper only supports time values on the boundaries!\n"
           );

@@ -77,7 +77,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
   , root_(rank_ == 0)
   , nprocs_(Teuchos::size(*this->getComm()))
 {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
     !matrixShapeOK(),
     std::invalid_argument,
     "Matrix shape inappropriate for this solver");
@@ -182,17 +182,17 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
 
 #ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
-  TEST_FOR_EXCEPTION(x->getGlobalLength() != matrixA_->getGlobalNumCols(),
+  TEUCHOS_TEST_FOR_EXCEPTION(x->getGlobalLength() != matrixA_->getGlobalNumCols(),
                      std::invalid_argument,
                      "MultiVector X must have length equal to the number of "
                      "global columns in A");
 
-  TEST_FOR_EXCEPTION(b->getGlobalLength() != matrixA_->getGlobalNumRows(),
+  TEUCHOS_TEST_FOR_EXCEPTION(b->getGlobalLength() != matrixA_->getGlobalNumRows(),
                      std::invalid_argument,
                      "MultiVector B must have length equal to the number of "
                      "global rows in A");
 
-  TEST_FOR_EXCEPTION(x->getGlobalNumVectors() != b->getGlobalNumVectors(),
+  TEUCHOS_TEST_FOR_EXCEPTION(x->getGlobalNumVectors() != b->getGlobalNumVectors(),
                      std::invalid_argument,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
@@ -237,7 +237,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix>
   matrixA_ = createConstMatrixAdapter(a);
 
 #ifdef HAVE_AMESOS2_DEBUG
-  TEST_FOR_EXCEPTION( (keep_phase != CLEAN) &&
+  TEUCHOS_TEST_FOR_EXCEPTION( (keep_phase != CLEAN) &&
                       (globalNumRows_ != matrixA_->getGlobalNumRows() ||
                        globalNumCols_ != matrixA_->getGlobalNumCols()),
                       std::invalid_argument,

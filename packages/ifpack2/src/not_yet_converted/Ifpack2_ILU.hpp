@@ -482,7 +482,7 @@ void ILU::computeSetup() {
 	L_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Copy, Graph().getL_Graph()));
 	U_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Copy, Graph().getU_Graph()));
 	D_ = rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph().getL_Graph().getRowMap()));
-	TEST_FOR_EXCEPTION(((L_.get() == 0) || (U_.get() == 0) || (D_.get() == 0)), std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(((L_.get() == 0) || (U_.get() == 0) || (D_.get() == 0)), std::runtime_error,
 					   "Ifpack2::ILU::computeSetup(): Local column value of "<< k << 
 					   " for user matrix at local row " << i << " and index " << j << " less than zero on node " <<
 					   getGraph().getL_Graph().getRowMap().getComm()->getRank());
@@ -533,7 +533,7 @@ void ILU::computeSetup() {
 		for (j=0; j< numIn; j++) {
 			int k = InI[j];
 			
-			TEST_FOR_EXCEPTION((k<0 || k> getNumMyRows()), std::runtime_error,
+			TEUCHOS_TEST_FOR_EXCEPTION((k<0 || k> getNumMyRows()), std::runtime_error,
 							   "Ifpack2::ILU::computeSetup(): Local column value of "<< k 
 							   << " for user matrix at local row " << i << " and index " << j << " out of column range " 
 							   <<  izero << " and " << getNumMyRows() << " on node " <<
@@ -596,7 +596,7 @@ void ILU::computeSetup() {
 	getGraph().getL_Graph().getRowMap().getComm().SumAll(&numNonzeroDiags, &totalNonzeroDiags, 1));
 	numMyDiagonals_ = numNonzeroDiags;
 	
-	TEST_FOR_EXCEPTION(numNonzeroDiags != getNumMyRows(), std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(numNonzeroDiags != getNumMyRows(), std::runtime_error,
 					   "Ifpack2::ILU::computeSetup(): Number of nonzero diagonal values "<< numNonzeroDiags << 
 					   " for factorization is less than the number of rows " << getNumMyRows() << " in factor node " <<
 					   getGraph().getL_Graph().getRowMap().getComm()->getRank());	 // Diagonals are not right, warn user

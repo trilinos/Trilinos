@@ -121,11 +121,11 @@ createTridiagEpetraLinearOp(
       values[0]  = offDiag;         values[1]  = diag;          values[2]  = offDiag;
       indexes[0] = rowIndex-1;      indexes[1] = rowIndex;      indexes[2] = rowIndex+1; 
     }
-    TEST_FOR_EXCEPT( 0!=A_epetra->InsertGlobalValues(rowIndex,numEntries,values,indexes) );
+    TEUCHOS_TEST_FOR_EXCEPT( 0!=A_epetra->InsertGlobalValues(rowIndex,numEntries,values,indexes) );
   }
 
   // (B.4) Finish the construction of the Epetra_CrsMatrix
-  TEST_FOR_EXCEPT( 0!=A_epetra->FillComplete() );
+  TEUCHOS_TEST_FOR_EXCEPT( 0!=A_epetra->FillComplete() );
 
   // Return the Epetra_Operator object
   return A_epetra;

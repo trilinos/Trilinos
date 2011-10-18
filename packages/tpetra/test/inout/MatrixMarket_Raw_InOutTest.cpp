@@ -125,7 +125,7 @@ main (int argc, char *argv[])
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }

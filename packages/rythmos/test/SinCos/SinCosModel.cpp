@@ -129,7 +129,7 @@ void SinCosModel::setImplicitFlag(bool implicit)
 
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -162,7 +162,7 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 //
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -230,7 +230,7 @@ SinCosModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   return nominalValues_;
@@ -339,7 +339,7 @@ void SinCosModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
 
@@ -539,7 +539,7 @@ void SinCosModel::setupInOutArgs_() const
 void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   // 06/16/09 tscoffe:  TODO:  Only set the parameters that explicitely show up
   // in the new parameter list I.e.  Save all the previous options that have

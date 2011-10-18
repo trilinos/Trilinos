@@ -99,11 +99,11 @@ namespace Tpetra {
     LookupStatus res = AllIDsPresent;
 
     // fill nodeIDs and localIDs with -1s
-    TEST_FOR_EXCEPTION(nodeIDs.size() != globalIDs.size(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(nodeIDs.size() != globalIDs.size(), std::runtime_error,
         Teuchos::typeName(*this) << "::getEntries(): Output buffers are not allocated properly.");
     std::fill(nodeIDs.begin(),nodeIDs.end(), -1);
     if (computeLIDs) {
-      TEST_FOR_EXCEPTION(localIDs.size() != globalIDs.size(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(localIDs.size() != globalIDs.size(), std::runtime_error,
           Teuchos::typeName(*this) << "::getEntries(): Output buffers are not allocated properly.");
       std::fill(localIDs.begin(),localIDs.end(), LINVALID);
     }
@@ -222,7 +222,7 @@ namespace Tpetra {
         for (gidptr = sendGIDs.begin(); gidptr != sendGIDs.end(); ++gidptr) {
           *ptr++ = as<global_size_t>(*gidptr);
           curLID = directoryMap_->getLocalElement(*gidptr);
-          TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
               Teuchos::typeName(*this) << "::getEntries(): Internal logic error. Please contact Tpetra team.");
           *ptr++ = as<global_size_t>(nodeIDs_[curLID]);
           if (computeLIDs) {
@@ -297,7 +297,7 @@ namespace Tpetra {
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = map_->getNodeElementList();
     // an ID not present in this lookup indicates that it lies outside of the range [minAllGID,maxAllGID] (from map_). 
     // this means something is wrong with map_, our fault.
-    TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == IDNotPresent, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == IDNotPresent, std::logic_error,
         Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please contact Tpetra team.");
 
     // Create distributor & call createFromSends
@@ -327,7 +327,7 @@ namespace Tpetra {
       typename Teuchos::Array<GlobalOrdinal>::iterator ptr = importElements.begin();
       for (size_t i = 0; i < numReceives; ++i) {
         LocalOrdinal currLID = directoryMap_->getLocalElement(*ptr++); // Convert incoming GID to Directory LID
-        TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
             Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please notify the Tpetra team.");
         nodeIDs_[currLID] = *ptr++;
         LIDs_[currLID] = *ptr++;

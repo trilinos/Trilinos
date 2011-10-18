@@ -53,7 +53,7 @@
 #include "Intrepid_Cubature.hpp"
 #include "Intrepid_CubatureDirectLineGauss.hpp"
 #include "Intrepid_CubatureSparseHelper.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 /** \def INTREPID_CUBATURE_SPARSE2D_GAUSS_MAX

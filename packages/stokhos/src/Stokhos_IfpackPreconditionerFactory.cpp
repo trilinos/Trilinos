@@ -30,7 +30,7 @@
 #include "Stokhos_IfpackPreconditionerFactory.hpp"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #ifdef HAVE_STOKHOS_IFPACK
 #include "Ifpack.h"
 #endif
@@ -58,7 +58,7 @@ compute(const Teuchos::RCP<Epetra_Operator>& op, bool compute_prec) {
     err = ifpackPrec->Compute();
   return ifpackPrec;
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::IfpackPreconditionerFactory is available " <<
 		     "only with configured with Ifpack support!");
   return Teuchos::null;
@@ -85,7 +85,7 @@ recompute(const Teuchos::RCP<Epetra_Operator>& op,
   // Compute preconditioenr
   int err = ifpackPrec->Compute();
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::IfpackPreconditionerFactory is available " <<
 		     "only with configured with Ifpack support!");
 #endif // HAVE_STOKHOS_IFPACK

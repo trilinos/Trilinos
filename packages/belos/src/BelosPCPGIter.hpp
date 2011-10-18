@@ -341,7 +341,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 			 "Belos::PCPGIter::setBlockSize(): Cannot use a block size that is not one.");
     }
 
@@ -454,7 +454,7 @@ namespace Belos {
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
 
-    TEST_FOR_EXCEPTION(!params.isParameter("Saved Blocks"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Saved Blocks"), std::invalid_argument,
                        "Belos::PCPGIter::constructor: mandatory parameter \"Saved Blocks\" is not specified.");
     int rb = Teuchos::getParameter<int>(params, "Saved Blocks");
 
@@ -476,7 +476,7 @@ namespace Belos {
     // allocate space only; perform no computation
     // Any change in size invalidates the state of the solver as implemented here.
 
-    TEST_FOR_EXCEPTION(savedBlocks <= 0, std::invalid_argument, "Belos::PCPGIter::setSize() was passed a non-positive argument for \"Num Saved Blocks\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(savedBlocks <= 0, std::invalid_argument, "Belos::PCPGIter::setSize() was passed a non-positive argument for \"Num Saved Blocks\".");
 
     if ( savedBlocks_ != savedBlocks) {
       stateStorageInitialized_ = false;
@@ -539,9 +539,9 @@ namespace Belos {
 
 	  // Get the multivector that is not null. 
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::PCPGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	  TEST_FOR_EXCEPTION( 0 != prevUdim_,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION( 0 != prevUdim_,std::invalid_argument,
 			     "Belos::PCPGIter::setStateSize(): prevUdim not zero and C is null.");
 	  C_ = MVT::Clone( *tmp, savedBlocks_ );
 	}
@@ -554,7 +554,7 @@ namespace Belos {
 	}
 	if (U_ == Teuchos::null) {        
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION( 0 != prevUdim_,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION( 0 != prevUdim_,std::invalid_argument,
 			     "Belos::PCPGIter::setStateSize(): prevUdim not zero and U is null.");
 	  U_ = MVT::Clone( *tmp, savedBlocks_ );
 	}
@@ -590,7 +590,7 @@ namespace Belos {
   void PCPGIter<ScalarType,MV,OP>::initialize(PCPGIterState<ScalarType,MV> newstate)
   {
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::PCPGIter::initialize(): Cannot initialize state storage!");
     
     // Requirements: R_ and consistent multivectors widths and lengths
@@ -623,13 +623,13 @@ namespace Belos {
       if (!stateStorageInitialized_) 
         setStateSize();
 
-      //TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, errstr );
-      //TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < 1, std::invalid_argument, errstr );
+      //TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, errstr );
+      //TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < 1, std::invalid_argument, errstr );
 
       newstate.prevUdim =  prevUdim_; // big change in functionality from GCRODR 
       newstate.curDim =  curDim_; 
 
-      //TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < 1, std::invalid_argument, errstr);
+      //TEUCHOS_TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < 1, std::invalid_argument, errstr);
 
       std::vector<int> zero_index(1);
       zero_index[0] = 0;
@@ -649,13 +649,13 @@ namespace Belos {
       ++curDim_;
       newstate.curDim = curDim_; 
 
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.U) != savedBlocks_ ,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.U) != savedBlocks_ ,
                           std::invalid_argument, errstr );
       if (newstate.U != U_) { // Why this is needed?
 	U_ = newstate.U;
       }
 
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.C) != savedBlocks_ ,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.C) != savedBlocks_ ,
                           std::invalid_argument, errstr );
       if (newstate.C != C_) {
 	C_ = newstate.C;
@@ -663,7 +663,7 @@ namespace Belos {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
                          "Belos::PCPGIter::initialize(): PCPGStateIterState does not have initial kernel R_0.");
     }
 
@@ -712,11 +712,11 @@ namespace Belos {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution std::vector only has one column.
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, PCPGIterInitFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, PCPGIterInitFailure,
                         "Belos::CGIter::iterate(): current linear system has more than one std::vector!" );
 
     //Check that the input is correctly set up 
-    TEST_FOR_EXCEPTION( curDim_  != prevUdim_ + 1, PCPGIterInitFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( curDim_  != prevUdim_ + 1, PCPGIterInitFailure,
                         "Belos::CGIter::iterate(): mistake in initialization !" );
 
 
@@ -782,14 +782,14 @@ namespace Belos {
         (*D_)(iter_ -1 ,iter_ -1 ) = pAp(0,0);
 
       // positive pAp required 
-      TEST_FOR_EXCEPTION( pAp(0,0) <= zero, PCPGIterateFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( pAp(0,0) <= zero, PCPGIterateFailure,
                           "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // alpha := <R_,Z_> / <P,AP>
       alpha(0,0) = rHz(0,0) / pAp(0,0);
 
       // positive alpha required 
-      TEST_FOR_EXCEPTION( alpha(0,0) <= zero, PCPGIterateFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( alpha(0,0) <= zero, PCPGIterateFailure,
                           "Belos::CGIter::iterate(): non-positive value for alpha encountered!" );
 
       // solution update  x += alpha * P
@@ -864,7 +864,7 @@ namespace Belos {
       // loop iterations. therefore, I moved it inside to avoid scoping errors with previously used variables named P.
       // to ensure that this wasn't a bug, I verify below that we have set P == null, i.e., that we are not going to use it again
       // same for AP
-      TEST_FOR_EXCEPTION( AP != Teuchos::null || P != Teuchos::null, std::logic_error, "Loop recurrence violated. Please contact Belos team.");
+      TEUCHOS_TEST_FOR_EXCEPTION( AP != Teuchos::null || P != Teuchos::null, std::logic_error, "Loop recurrence violated. Please contact Belos team.");
     } // end coupled two-term recursion
     if( prevUdim_ + iter_ < savedBlocks_ ) --curDim_; // discard negligible search direction
   }

@@ -55,7 +55,7 @@ namespace Kokkos {
     const size_t sizeInBytes = sizeof(T)*size;
     if (size > 0) {
       cudaError_t err = cudaMalloc( (void**)&devptr, sizeInBytes );
-      TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
           "Kokkos::CUDANodeMemoryModel::allocBuffer(): cudaMalloc() returned error: "
           << cudaGetErrorString(err) 
           );
@@ -73,7 +73,7 @@ namespace Kokkos {
   template <class T> inline
   void CUDANodeMemoryModel::copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
-    TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
         "CUDANodeMemoryModel::copyFromBuffer: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2H_;
@@ -83,7 +83,7 @@ namespace Kokkos {
     std::cerr << "copyFromBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
     cudaError_t err = cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost);
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeMemoryModel::copyFromBuffer(): cudaMemcpy() returned error: "
         << cudaGetErrorString(err) 
         );
@@ -92,8 +92,8 @@ namespace Kokkos {
   template <class T> inline
   void CUDANodeMemoryModel::copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
-    TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
+    TEUCHOS_TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
+    TEUCHOS_TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesH2D_;
     bytesCopiedH2D_ += size*sizeof(T);
@@ -102,7 +102,7 @@ namespace Kokkos {
     std::cerr << "copyToBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice);
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeMemoryModel::copyToBuffer(): cudaMemcpy() returned error: "
         << cudaGetErrorString(err) 
         );
@@ -112,7 +112,7 @@ namespace Kokkos {
   void CUDANodeMemoryModel::copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
         "CUDANodeMemoryModel::copyBuffers: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2D_;
@@ -122,7 +122,7 @@ namespace Kokkos {
     std::cerr << "copyBuffers<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice);
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
         "Kokkos::CUDANodeMemoryModel::copyBuffers(): cudaMemcpy() returned error: "
         << cudaGetErrorString(err) 
         );

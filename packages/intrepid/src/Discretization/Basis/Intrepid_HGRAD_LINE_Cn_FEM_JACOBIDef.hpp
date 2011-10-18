@@ -164,17 +164,17 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     break;
     case OPERATOR_DIV:
     case OPERATOR_CURL:
-	TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
 			    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
       break;
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
       break;
     }
   }
   catch (std::invalid_argument &exception){
-    TEST_FOR_EXCEPTION( true , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
 			">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Operator failed");    
   }
 }
@@ -186,7 +186,7 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar&
                                                                     const ArrayScalar &    inputPoints,
                                                                     const ArrayScalar &    cellVertices,
                                                                     const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): FEM Basis calling an FVD member function");
 }
 

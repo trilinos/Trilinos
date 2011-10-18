@@ -41,7 +41,7 @@ BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::
 BorderedOperator(const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > >& A) : 
   A_(A)
 { 
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
       Teuchos::typeName(*this) << "::BordredOperator(): input matrix reference was null.");
 }
 //==============================================================================
@@ -79,9 +79,9 @@ void BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::apply(
      Scalar coefY ) const 
 {
   //bool opHasTrans = A_->hasTransposeApply();
-  //TEST_FOR_EXCEPTION( mode  &&  !opHasTrans, std::runtime_error,
+  //TEUCHOS_TEST_FOR_EXCEPTION( mode  &&  !opHasTrans, std::runtime_error,
   //"Ifpack2::BorderedOperator::apply() ERROR: The operator does not implement transpose.");
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::BorderedOperator::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply(X, Y, mode, coefAx, coefY );
 }

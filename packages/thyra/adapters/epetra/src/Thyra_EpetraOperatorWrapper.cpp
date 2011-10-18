@@ -88,7 +88,7 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
 
   const int numVecs = x.NumVectors();
 
-  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
     "epetraToThyra does not work with MV dimension != 1");
 
   const RCP<ProductVectorBase<double> > prodThyraVec =
@@ -126,7 +126,7 @@ void EpetraOperatorWrapper::copyThyraIntoEpetra(
 
   const int numVecs = x.NumVectors();
 
-  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
     "epetraToThyra does not work with MV dimension != 1");
 
   const RCP<const ProductVectorBase<double> > prodThyraVec =
@@ -181,7 +181,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X,
 int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
   Epetra_MultiVector& Y) const
 {
-  TEST_FOR_EXCEPTION(true, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "EpetraOperatorWrapper::ApplyInverse not implemented");
   return 1;
 }
@@ -189,7 +189,7 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
 
 double EpetraOperatorWrapper::NormInf() const 
 {
-  TEST_FOR_EXCEPTION(true, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "EpetraOperatorWrapper::NormInf not implemated");
   return 1.0;
 }

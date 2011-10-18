@@ -83,7 +83,7 @@ typedef Tpetra::CrsMatrix< scalar_type, int, int, node_type >   sparse_matrix_ty
 template <class NODE>
 RCP< NODE > 
 getNode() {
-  TEST_FOR_EXCEPTION(true, std::logic_error, "Node type not defined.");
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Node type not defined.");
 }
 
 RCP<Kokkos::SerialNode> serialnode;
@@ -163,7 +163,7 @@ static const int numValidOrthoManagers = 4;
 static std::string
 printValidOrthoManagerList ()
 {
-  TEST_FOR_EXCEPTION( numValidOrthoManagers <= 0,
+  TEUCHOS_TEST_FOR_EXCEPTION( numValidOrthoManagers <= 0,
                       std::logic_error,
                       "Invalid number " 
                       << numValidOrthoManagers 
@@ -207,7 +207,7 @@ getOrthoManager (const std::string& ortho,
     return rcp (new ortho_type (params, label, M));
   }
   else {
-    TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                         "Invalid value for command-line parameter \"ortho\":"
                         " valid values are " << printValidOrthoManagerList() 
                         << "." );
@@ -474,7 +474,7 @@ main (int argc, char *argv[])
       // one or two arguments, whereas Belos' normalize() requires
       // two arguments.
       const int initialX1Rank = OM->normalize(*X1);
-      TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
+      TEUCHOS_TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
                          std::runtime_error, 
                          "normalize(X1) returned rank "
                          << initialX1Rank << " from " << sizeX1
@@ -482,7 +482,7 @@ main (int argc, char *argv[])
       debugOut << "done." << endl 
                << "Calling orthonormError() on X1... ";
       err = OM->orthonormError(*X1);
-      TEST_FOR_EXCEPTION(err > TOL,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,
                          std::runtime_error,
                          "normalize(X1) did meet tolerance: "
                          "orthonormError(X1) == " << err);
@@ -506,7 +506,7 @@ main (int argc, char *argv[])
       // not optional.
       const int initialX2Rank = 
         OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
-      TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+      TEUCHOS_TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
                          std::runtime_error, 
                          "projectAndNormalize(X2,X1) returned rank " 
                          << initialX2Rank << " from " << sizeX2 
@@ -514,14 +514,14 @@ main (int argc, char *argv[])
       debugOut << "done." << endl
                << "Calling orthonormError() on X2... ";
       err = OM->orthonormError (*X2);
-      TEST_FOR_EXCEPTION(err > TOL,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,
                          std::runtime_error,
                          "projectAndNormalize(X2,X1) did not meet tolerance: "
                          "orthonormError(X2) == " << err);
       debugOut << "done: || <X2,X2> - I || = " << err << endl
                << "Calling orthogError(X2, X1)... ";
       err = OM->orthogError (*X2, *X1);
-      TEST_FOR_EXCEPTION(err > TOL,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,
                          std::runtime_error,
                          "projectAndNormalize(X2,X1) did not meet tolerance: "
                          "orthogError(X2,X1) == " << err);
@@ -1287,7 +1287,7 @@ MVDiff (const MV& X,
 {
   const scalar_type ONE = SCT::one();
   const int ncols_X = MVT::GetNumberVecs(X);
-  TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
+  TEUCHOS_TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
       std::logic_error,
       "MVDiff: X and Y should have the same number of columns."
       "  X has " << ncols_X << " column(s) and Y has " 

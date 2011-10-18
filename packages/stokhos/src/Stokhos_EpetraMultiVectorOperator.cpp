@@ -88,7 +88,7 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     trans = 'T';
 
   int ret = Result.Multiply(trans, 'N', 1.0, *multi_vec, Input, 0.0);
-  TEST_FOR_EXCEPTION(ret != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(ret != 0, std::logic_error,
 		     "Error!  Stokhos::EpetraMultiVectorOperator:  " <<
 		     "Result.Multiply() returned " << ret << "!");
   

@@ -254,7 +254,7 @@ namespace Belos {
     {
       using Teuchos::rcpFromRef;
 
-      TEST_FOR_EXCEPTION(mode != NOTRANS, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(mode != NOTRANS, std::invalid_argument,
 			 "Belos::OperatorInnerSolver only supports applying the"
 			 " operator itself, not its transpose or conjugate "
 			 "transpose.");

@@ -240,7 +240,7 @@ void DefaultInverseLinearOp<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never be called!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never be called!
   }
 }
 
@@ -300,7 +300,7 @@ void DefaultInverseLinearOp<Scalar>::applyImpl(
   SolveStatus<Scalar> solveStatus =
     Thyra::solve<Scalar>(*lows_.getConstObj(), M_trans, X, T.ptr(), solveCriteria);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(solveCriteria) && solveStatus.solveStatus!=SOLVE_STATUS_CONVERGED
     && ( real_trans(M_trans)==NOTRANS
          ? throwOnFwdSolveFailure_==THROW_ON_SOLVE_FAILURE

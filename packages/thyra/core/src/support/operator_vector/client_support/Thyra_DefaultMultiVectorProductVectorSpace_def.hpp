@@ -66,8 +66,8 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(space));
-  TEST_FOR_EXCEPT(numColumns <= 0);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(space));
+  TEUCHOS_TEST_FOR_EXCEPT(numColumns <= 0);
 #endif
   space_ = space;
   numColumns_ = numColumns;
@@ -81,7 +81,7 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::uninitialize(
   int *numColumns
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement when needed!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement when needed!");
 }
   
   
@@ -99,7 +99,7 @@ template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::getBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( k < 0 || numColumns_ < k );
+  TEUCHOS_TEST_FOR_EXCEPT( k < 0 || numColumns_ < k );
   return space_;
 }
 
@@ -259,7 +259,7 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 

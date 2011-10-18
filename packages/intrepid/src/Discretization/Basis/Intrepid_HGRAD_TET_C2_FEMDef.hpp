@@ -196,12 +196,12 @@ void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       break;
       
     case OPERATOR_CURL:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_C2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
     case OPERATOR_DIV:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
@@ -302,7 +302,7 @@ void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       }
       break;
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_C2_FEM): Invalid operator type");
   }
 }
@@ -314,7 +314,7 @@ void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                                                              const ArrayScalar &    inputPoints,
                                                              const ArrayScalar &    cellVertices,
                                                              const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HGRAD_TET_C2_FEM): FEM Basis calling an FVD member function");
 }
 }// namespace Intrepid

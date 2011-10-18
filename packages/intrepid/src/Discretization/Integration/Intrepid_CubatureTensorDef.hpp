@@ -51,7 +51,7 @@ namespace Intrepid {
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures) {
   unsigned numCubs = cubatures.size();
-  TEST_FOR_EXCEPTION( (numCubs < 1),
+  TEUCHOS_TEST_FOR_EXCEPTION( (numCubs < 1),
                       std::out_of_range,
                       ">>> ERROR (CubatureTensor): Input cubature array must be of size 1 or larger.");
 
@@ -138,7 +138,7 @@ void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cu
   int numCubPoints = getNumPoints();
   int cubDim       = getDimension();
   // check size of cubPoints and cubWeights
-  TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cubDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cubDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
                       std::out_of_range,
                       ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 

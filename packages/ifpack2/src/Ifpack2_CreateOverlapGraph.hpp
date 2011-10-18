@@ -49,7 +49,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOve
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MapType;
   typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportType;
 
-  TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Ifpack2::CreateOverlapGraph: OverlapLevel must be >= 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Ifpack2::CreateOverlapGraph: OverlapLevel must be >= 0.");
 
   Teuchos::RCP<GraphType> OverlapGraph;
 

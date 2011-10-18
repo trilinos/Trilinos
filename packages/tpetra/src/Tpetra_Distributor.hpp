@@ -385,7 +385,7 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayView<Packet>& imports) 
   {
-    TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::doPostsAndWaits(): Cannot call with outstanding posts.");
     // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
     // however, it need only persist until doWaits is called, so it is safe for us to 
@@ -401,7 +401,7 @@ namespace Tpetra {
       const ArrayView<Packet> &imports,
       const ArrayView<size_t> &numImportPacketsPerLID)
   {
-    TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::doPostsAndWaits(): Cannot call with outstanding posts.");
     // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
     // however, it need only persist until doWaits is called, so it is safe for us to 
@@ -420,7 +420,7 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, std::runtime_error,
         Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
 #endif
 
@@ -545,7 +545,7 @@ namespace Tpetra {
     for(int ii=0; ii<numImportPacketsPerLID.size(); ++ii) {
       totalNumPackets += numImportPacketsPerLID[ii];
     }
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalNumPackets, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalNumPackets, std::runtime_error,
         Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
 #endif
 
@@ -723,7 +723,7 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayRCP<Packet>& imports) 
   {
-    TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
         Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
     if (reverseDistributor_ == null) {
       createReverseDistributor();
@@ -738,7 +738,7 @@ namespace Tpetra {
       const ArrayRCP<Packet>& imports,
       const ArrayView<size_t>& numImportPacketsPerLID) 
   {
-    TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
         Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
     if (reverseDistributor_ == null) {
       createReverseDistributor();
@@ -797,7 +797,7 @@ namespace Tpetra {
       int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
       int gbl_err;
       Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,outArg(gbl_err));
-      TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
           Teuchos::typeName(*this) 
           << "::createFromRecvs(): lists of remote IDs and remote node IDs must have the same size (error on node " 
           << gbl_err << ").");

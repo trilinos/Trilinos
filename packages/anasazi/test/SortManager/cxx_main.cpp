@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
     }
 
     // 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
     }
 
     // 
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
       catch (const SortManagerError &sme) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"LI\" without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"LI\" without throwing exception.");
     }
 
     // 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
       catch (const SortManagerError &sme) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"SI\" without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"SI\" without throwing exception.");
     }
 
     // 
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small value vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small value vector without throwing exception.");
     }
 
     // 
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
     }
 
     // 
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
       catch (std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
     }
 
     // 
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small rvalue vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small rvalue vector without throwing exception.");
     }
 
     // 
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small ivalue vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small ivalue vector without throwing exception.");
     }
 
     // 
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
     }
 
     // 
@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
       catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
     }
 
     // sorter to use for rest of tests
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
         printer->print(Debug,">> Before sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         sorter.sort(sorted,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -432,9 +432,9 @@ int main(int argc, char *argv[])
         sorter.sort(sorted,rcp(&perm,false),i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
     }
 
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
         printer->print(Debug,">> Before sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         sorter.sort(sorted,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -460,9 +460,9 @@ int main(int argc, char *argv[])
         sorter.sort(sorted,rcp(&perm,false),i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
     }
 
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
         printer->print(Debug,">> Before sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         sorter.sort(sorted,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsSM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -488,9 +488,9 @@ int main(int argc, char *argv[])
         sorter.sort(sorted,rcp(&perm,false),i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsSM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
     }
 
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
         printer->print(Debug,">> Before sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         sorter.sort(sorted,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsLM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -516,9 +516,9 @@ int main(int argc, char *argv[])
         sorter.sort(sorted,rcp(&perm,false),i);
         printer->print(Debug,">>  After sort: "); copy(sorted.begin(), sorted.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsLM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(real) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLM(i,sorted) == false, get_out, "BasicSort::sort(real) returned incorrect sort.");
       }
     }
 
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -548,10 +548,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 
@@ -569,7 +569,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -581,10 +581,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsSM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -614,10 +614,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsSM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 
@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsLM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -647,10 +647,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsLM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLM(i,sorted_r,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -680,10 +680,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsSA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsSA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 
@@ -701,7 +701,7 @@ int main(int argc, char *argv[])
         sorter.sort(sorted_r,sorted_i,null,i);
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
       // try for each length with permutation
       for (int i=0; i<=numVals; ++i) {
@@ -713,10 +713,10 @@ int main(int argc, char *argv[])
         printer->print(Debug,">>  After sort: "); copy(sorted_r.begin(), sorted_r.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>      (imag): "); copy(sorted_i.begin(), sorted_i.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
         printer->print(Debug,">>  Permutation: "); copy(perm.begin(), perm.end(), ostream_iterator<MT>(printer->stream(Debug), " ")); printer->print(Debug,"\n");
-        TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
-        TEST_FOR_EXCEPTION( checkValsLA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermValid(i,perm) == false, get_out, "BasicSort::sort(complex) returned invalid permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_r,sorted_r) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkPermMatch(i,perm,unsorted_i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect permutation vector.");
+        TEUCHOS_TEST_FOR_EXCEPTION( checkValsLA(i,sorted_i) == false, get_out, "BasicSort::sort(complex) returned incorrect sort.");
       }
     }
 

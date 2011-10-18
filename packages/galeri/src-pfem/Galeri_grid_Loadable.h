@@ -56,7 +56,7 @@
 #include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Element.h"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "Epetra_Comm.h"
@@ -184,7 +184,7 @@ class Loadable : public core::Object
     inline const Epetra_Comm& getComm() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getComm() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -195,7 +195,7 @@ class Loadable : public core::Object
     inline int getNumGlobalElements() const 
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumGlobalElements() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -206,7 +206,7 @@ class Loadable : public core::Object
     inline int getNumMyElements() const 
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumMyElements() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -217,7 +217,7 @@ class Loadable : public core::Object
     inline int getNumGlobalVertices() const 
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumGlobalVertices() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -228,7 +228,7 @@ class Loadable : public core::Object
     inline int getNumMyVertices() const 
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumMyVertices() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -241,7 +241,7 @@ class Loadable : public core::Object
     inline int getNumVerticesPerElement() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumVerticesPerElement() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -252,7 +252,7 @@ class Loadable : public core::Object
     inline const Epetra_Map getElementMap() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getElementMap() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -263,7 +263,7 @@ class Loadable : public core::Object
     inline const Epetra_Map getVertexMap() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getVertexMap() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -274,7 +274,7 @@ class Loadable : public core::Object
     inline int getGEID(const int LEID) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getGEID() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -285,7 +285,7 @@ class Loadable : public core::Object
     inline int getGVID(const int LVID) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getGVID() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -296,7 +296,7 @@ class Loadable : public core::Object
     inline int getLEID(const int GEID) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getLEID() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -307,7 +307,7 @@ class Loadable : public core::Object
     inline int getLVID(const int GVID) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getLVID() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -318,7 +318,7 @@ class Loadable : public core::Object
     const grid::Element getElement() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getElement() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -329,7 +329,7 @@ class Loadable : public core::Object
     inline int getNumVertexData() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumVertexData() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -340,7 +340,7 @@ class Loadable : public core::Object
     inline int getNumElementData() const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getNumElementData() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -354,7 +354,7 @@ class Loadable : public core::Object
     inline double getElementData(const int GEID, const int which) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getElementData() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -367,7 +367,7 @@ class Loadable : public core::Object
     inline void setElementData(const int GEID, const int which, const double val)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method setElementData() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -380,7 +380,7 @@ class Loadable : public core::Object
     inline double getVertexData(const int GVID, const int which) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ != core::Workspace::CONNECTIVITY_FREEZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ != core::Workspace::CONNECTIVITY_FREEZED, std::logic_exception,
                          "method setVertexData() called, but freezeConnectivity() has not been called");
 #endif
       int LVID = getLVID(GVID);
@@ -392,7 +392,7 @@ class Loadable : public core::Object
     inline void setVertexData(const int GVID, const int which, const double val)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method setVertexData() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -408,11 +408,11 @@ class Loadable : public core::Object
     inline void setGlobalCoordinates(const int GID, const int index, const double value)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method setGlobalCoordinates() called, but the object is " <<
                          "uninitialized");
 
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::COORDINATES_FREEZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::COORDINATES_FREEZED, std::logic_exception,
                          "method setGlobalCoordinates() called, but the coordinates are " <<
                          "already freezed");
 #endif
@@ -423,7 +423,7 @@ class Loadable : public core::Object
     inline double& getGlobalCoordinates(const int GID, const int index)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getGlobalCoordinates() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -435,7 +435,7 @@ class Loadable : public core::Object
     inline double& getMyCoordinates(const int LID, const int index)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getMyCoordinates() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -446,7 +446,7 @@ class Loadable : public core::Object
     inline const double& getMyCoordinates(const int LID, const int index) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getMyCoordinates() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -457,13 +457,13 @@ class Loadable : public core::Object
     inline void setGlobalConnectivity(const int GID, const int index, const int what)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method setGlobalConnectivity() called, but the object is " <<
                          "uninitialized");
 #endif
       int LID = elementMap_->LID(GID);
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
                          "Requested GID (" << GID << ") is not locally owned");
 #endif
       (*CON_)(LID, index) = what;
@@ -473,13 +473,13 @@ class Loadable : public core::Object
     inline int& getGlobalConnectivity(const int GID, const int index)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getGlobalConnectivity() called, but the object is " <<
                          "uninitialized");
 #endif
       int LID = elementMap_->LID(GID);
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
                          "Requested GID (" << GID << ") is not locally owned");
 #endif
       return ((*CON_)(LID, index));
@@ -489,7 +489,7 @@ class Loadable : public core::Object
     inline int& getMyConnectivity(const int LID, const int index)
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getMyConnectivity() called, but the object is " <<
                          "uninitialized");
 #endif
@@ -500,7 +500,7 @@ class Loadable : public core::Object
     inline const int& getMyConnectivity(const int LID, const int index) const
     {
 #ifdef GALERI_CHECK
-      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+      TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                          "method getMyConnectivity() called, but the object is " <<
                          "uninitialized");
 #endif

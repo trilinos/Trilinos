@@ -381,7 +381,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr(
   label_(label_default_),
   isSet_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if ( !is_null(pl) ) {
@@ -413,7 +413,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
   // Check for blocksize
   if (params->isParameter("Block Size")) {
     blockSize_ = params->get("Block Size",blockSize_default_);    
-    TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
 		       "Belos::BlockCGSolMgr: \"Block Size\" must be strictly positive.");
 
     // Update parameter in our list.
@@ -446,7 +446,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
+    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
                         std::invalid_argument,
 			"Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
@@ -604,7 +604,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
       ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     } 
     else {
-      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
 			 "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
     }  
   }
@@ -685,7 +685,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockCGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockCGSolMgrLinearProblemFailure,
                      "Belos::BlockCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
@@ -845,7 +845,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 			       "Belos::BlockCGSolMgr::solve(): Invalid return from CGIteration::iterate().");
 	  }
 	}

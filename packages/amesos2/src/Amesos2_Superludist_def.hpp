@@ -259,7 +259,7 @@ namespace Amesos2 {
                                         &(data_.sizes), &(data_.fstVtxSep),
                                         &(data_.grid), &(data_.symb_comm) );
 
-      TEST_FOR_EXCEPTION( info > 0.0,
+      TEUCHOS_TEST_FOR_EXCEPTION( info > 0.0,
                           std::runtime_error,
                           "SuperLU_DIST pre-ordering ran out of memory after allocating "
                           << info << " bytes of memory" );
@@ -294,7 +294,7 @@ namespace Amesos2 {
                                  &(data_.grid.comm), &(data_.symb_comm),
                                  &(data_.mem_usage));
 
-      TEST_FOR_EXCEPTION( info > 0.0,
+      TEUCHOS_TEST_FOR_EXCEPTION( info > 0.0,
                           std::runtime_error,
                           "SuperLU_DIST symbolic factorization ran out of memory after"
                           " allocating " << info << " bytes of memory" );
@@ -362,7 +362,7 @@ namespace Amesos2 {
       }
 
       // Check output
-      TEST_FOR_EXCEPTION( info > 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( info > 0,
                           std::runtime_error,
                           "L and U factors have been computed but U("
                           << info << "," << info << ") is exactly zero "
@@ -469,7 +469,7 @@ namespace Amesos2 {
                             &(data_.solve_struct), &(data_.stat), &ierr);
       } // end block for solve time
 
-      TEST_FOR_EXCEPTION( ierr < 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
                           std::runtime_error,
                           "Argument " << -ierr << " to gstrs had an illegal value" );
 
@@ -539,7 +539,7 @@ namespace Amesos2 {
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
     if( parameterList->isParameter("npcol") || parameterList->isParameter("nprow") ){
-      TEST_FOR_EXCEPTION( !(parameterList->isParameter("nprow") &&
+      TEUCHOS_TEST_FOR_EXCEPTION( !(parameterList->isParameter("nprow") &&
                             parameterList->isParameter("npcol")),
                           std::invalid_argument,
                           "nprow and npcol must be set together" );
@@ -547,7 +547,7 @@ namespace Amesos2 {
       SLUD::int_t nprow = parameterList->template get<SLUD::int_t>("nprow");
       SLUD::int_t npcol = parameterList->template get<SLUD::int_t>("npcol");
 
-      TEST_FOR_EXCEPTION( nprow * npcol > this->getComm()->getSize(),
+      TEUCHOS_TEST_FOR_EXCEPTION( nprow * npcol > this->getComm()->getSize(),
                           std::invalid_argument,
                           "nprow and npcol combination invalid" );
 
@@ -559,7 +559,7 @@ namespace Amesos2 {
       } // else our grid has not changed size since the last initialization
     }
 
-    TEST_FOR_EXCEPTION( this->control_.useTranspose_,
+    TEUCHOS_TEST_FOR_EXCEPTION( this->control_.useTranspose_,
                         std::invalid_argument,
                         "SuperLU_DIST does not support solving the tranpose system" );
 
@@ -670,7 +670,7 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::get_default_grid_size(int nprocs,
                                                     SLUD::int_t& nprow,
                                                     SLUD::int_t& npcol) const {
-    TEST_FOR_EXCEPTION( nprocs < 1,
+    TEUCHOS_TEST_FOR_EXCEPTION( nprocs < 1,
                         std::invalid_argument,
                         "Number of MPI processes must be at least 1" );
     SLUD::int_t c, r = 1;
@@ -740,7 +740,7 @@ namespace Amesos2 {
                                          ARBITRARY);
   }
 
-    TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
 

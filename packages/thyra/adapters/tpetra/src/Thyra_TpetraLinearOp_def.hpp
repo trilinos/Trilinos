@@ -174,7 +174,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstEpetraOp
   const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 

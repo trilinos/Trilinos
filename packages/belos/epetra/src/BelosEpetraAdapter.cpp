@@ -143,7 +143,7 @@ namespace Belos {
 	  // its original value.
 	  const int info = 
 	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (newTransposeFlag_);
-	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
 			     "Toggling the transpose flag of the operator failed, "
 			     "returning a nonzero error code of " << info 
 			     << ".  That probably means that the Epetra_Operator "
@@ -166,7 +166,7 @@ namespace Belos {
 	if (newTransposeFlag_ != originalTransposeFlag_) {
 	  const int info = 
 	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (originalTransposeFlag_);
-	  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
 			     "Resetting the original "
 			     "transpose flag value of the Epetra_Operator failed, "
 			     "returning a nonzero error code of " << info << ".  "
@@ -194,7 +194,7 @@ namespace Belos {
 	// have the right value on the second call.  This would make the
 	// resulting exception message confusing.
 	const bool finalTransposeFlag = Op_.UseTranspose ();
-	TEST_FOR_EXCEPTION(originalTransposeFlag_ != finalTransposeFlag,
+	TEUCHOS_TEST_FOR_EXCEPTION(originalTransposeFlag_ != finalTransposeFlag,
 			   std::logic_error,
 			   "Belos::OperatorTraits::Apply: The value of the "
 			   "Epetra_Operator's transpose flag changed unexpectedly!"
@@ -300,7 +300,7 @@ void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>
     for(int i=0; i<numvecs; i++)
       index2[i] = i;
     EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
                        "Belos::EpetraMultiVec::SetBlock cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
     EpetraMultiVec A_vec(View, *tmp_vec, index2);
     temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
@@ -323,11 +323,11 @@ void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double
   Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
   
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
                      "Belos::EpetraMultiVec::MvTimesMatAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   
   int info = Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta );
-  TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 		     "Belos::EpetraMultiVec::MvTimesMatAddMv call to Multiply() returned a nonzero value.");
 
 }
@@ -342,14 +342,14 @@ void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A,
 			       const double beta, const MultiVec<double>& B) 
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
-  TEST_FOR_EXCEPTION( A_vec==NULL, EpetraMultiVecFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL, EpetraMultiVecFailure,
                      "Belos::EpetraMultiVec::MvAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B));
-  TEST_FOR_EXCEPTION( B_vec==NULL, EpetraMultiVecFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION( B_vec==NULL, EpetraMultiVecFailure,
                      "Belos::EpetraMultiVec::MvAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   
   int info = Update( alpha, *A_vec, beta, *B_vec, 0.0 );
-  TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 		     "Belos::EpetraMultiVec::MvAddMv call to Update() returned a nonzero value.");
 }
 
@@ -362,14 +362,14 @@ void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
 {
   // Check to make sure the vector is as long as the multivector has columns.
   int numvecs = this->NumVectors();
-  TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale scaling vector (alpha) not same size as number of input vectors (mv).");
   int ret = 0;
   std::vector<int> tmp_index( 1, 0 );
   for (int i=0; i<numvecs; i++) {
     Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
     ret = temp_vec.Scale( alpha[i] );
-    TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
                       "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
     tmp_index[0]++;
   }
@@ -391,7 +391,7 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
     Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
     
     int info = B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 );
-    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+    TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 		       "Belos::EpetraMultiVec::MvTransMv call to Multiply() returned a nonzero value.");
   }
 }
@@ -405,11 +405,11 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
                      "Belos::EpetraMultiVec::MvDot cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   if (A_vec && ( (int)b.size() >= A_vec->NumVectors() ) ) {
      int info = this->Dot( *A_vec, &b[0] );
-     TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+     TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			"Belos::EpetraMultiVec::MvDot call to Dot() returned a nonzero value.");   
   }
 }
@@ -436,7 +436,7 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
     default:
       break;
     }
-    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+    TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 		       "Belos::EpetraMultiVec::MvNorm call to Norm() returned a nonzero value.");
   }
 }
@@ -461,7 +461,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-  TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
 		      "Belos::EpetraOp::Apply: x and/or y could not be "
 		      "dynamic cast to an Epetra_MultiVector.");
 
@@ -471,7 +471,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
 
   // Apply the operator to x and put the result in y.
   const int info = Epetra_Op->Apply (*vec_x, *vec_y);
-  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
 		     "Belos::EpetraOp::Apply: The Epetra_Operator's Apply() "
 		     "method returned a nonzero value of " << info << ".");
 }
@@ -502,11 +502,11 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 {
   MultiVec<double>&  temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-  TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
 		     "Belos::EpetraPrecOp::Apply: The MultiVec<double> input x "
 		     "cannot be dynamic cast to an Epetra_MultiVector.");
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-  TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
 		     "Belos::EpetraPrecOp::Apply: The MultiVec<double> input y "
 		     "cannot be dynamic cast to an Epetra_MultiVector.");
 
@@ -518,7 +518,7 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
   // underlying operator.  This may not succeed for all
   // implementations of Epetra_Operator, so we have to check.
   const int info = Epetra_Op->ApplyInverse (*vec_x, *vec_y);
-  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
 		     "Belos::EpetraPrecOp::Apply: Calling ApplyInverse() on the "
 		     "underlying Epetra_Operator object failed, returning a "
 		     "nonzero error code of " << info << ".  This probably means"
@@ -572,7 +572,7 @@ Apply (const Epetra_Operator& Op,
   EpetraOperatorTransposeScopeGuard guard (Op, trans);
 
   const int info = Op.Apply (x, y);
-  TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
 		     "Belos::OperatorTraits::Apply (Epetra specialization): "
 		     "Calling the Epetra_Operator object's Apply() method "
 		     "failed, returning a nonzero error code of " << info

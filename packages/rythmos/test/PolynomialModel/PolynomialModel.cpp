@@ -69,7 +69,7 @@ void PolynomialModel::setPolynomial( const RCP<const Teuchos::Polynomial<double>
 
 ModelEvaluatorBase::InArgs<double> PolynomialModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setPolynomial must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -101,7 +101,7 @@ PolynomialModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 PolynomialModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setPolynomial must be called first!\n"
       );
   return nominalValues_;
@@ -112,7 +112,7 @@ PolynomialModel::getNominalValues() const
 ModelEvaluatorBase::InArgs<double>
 PolynomialModel::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setPolynomial must be called first!\n"
       );
   return inArgs_;
@@ -125,7 +125,7 @@ PolynomialModel::createInArgs() const
 ModelEvaluatorBase::OutArgs<double>
 PolynomialModel::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setPolynomial must be called first!\n"
       );
   return outArgs_;
@@ -137,7 +137,7 @@ void PolynomialModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setPolynomial must be called first!\n"
       );
 

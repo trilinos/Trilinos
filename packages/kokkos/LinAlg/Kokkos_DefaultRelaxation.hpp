@@ -31,7 +31,7 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <stdexcept>
@@ -206,7 +206,7 @@ namespace Kokkos {
   template <class GRAPH>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
   /**********************************************************************/
@@ -214,16 +214,16 @@ namespace Kokkos {
   template <class MATRIX>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   template <class SparseOps>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node,SparseOps> &graph, Teuchos::DataAccess cv) {
-    TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeStructure(): requires View access.");
-    TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -262,11 +262,11 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class SparseOps>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps> &matrix, Teuchos::DataAccess cv) {
-    TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): requires View access.");
-    TEST_FOR_EXCEPTION(valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeValues(): values already initialized.");
-    TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || (!isEmpty_ && isPacked_ != matrix.isPacked()), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || (!isEmpty_ && isPacked_ != matrix.isPacked()), std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
     if (isEmpty_ || matrix.isEmpty() || numRows_ == 0) {
       isEmpty_ = true;
@@ -332,13 +332,13 @@ namespace Kokkos {
     // NTS: Copy diag over
 
     // Make it fail for now...
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
     
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::ExtractDiagonal(){    
-    TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::ExtractDiagonal(): initializeValues() hasn't been called.");
 
     // Allocate space for diagonal
@@ -412,13 +412,13 @@ namespace Kokkos {
     typedef DefaultFineGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
 
 
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_fine_hybrid(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // This makes no sense to try to call ...
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     else if (isPacked_ == true) {
       Op1D wdp;
@@ -465,14 +465,14 @@ namespace Kokkos {
     typedef DefaultCoarseGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
 
 
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_coarse_hybrid(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);   
 
     if (isEmpty_ == true) {
       // This makes no sense to try to call ...
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     else if (isPacked_ == true) {
       Op1D wdp;
@@ -522,9 +522,9 @@ namespace Kokkos {
     typedef DefaultJacobiOp2<Scalar,Ordinal>  Op2D;
 
 
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
 
     // Copy x over to the temp vector
@@ -536,7 +536,7 @@ namespace Kokkos {
 
     if (isEmpty_ == true) {
       // This makes no sense to try to call ...
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     else if (isPacked_ == true) {
       Op1D wdp;
@@ -603,13 +603,13 @@ namespace Kokkos {
     typedef DefaultChebyshevOp1<Scalar,Ordinal>  Op1D;
     //    typedef DefaultChebyOp2<Scalar,Ordinal>  Op2D;
     
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
 		       Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     //size_t xstride = X.getStride();
     //size_t bstride = B.getStride();
-    //TEST_FOR_EXCEPT(xstride != bstride); //TODO JJH don't think we want this b/c X is imported, B is local
-    TEST_FOR_EXCEPT(cheby_setup_done_ == false);
+    //TEUCHOS_TEST_FOR_EXCEPT(xstride != bstride); //TODO JJH don't think we want this b/c X is imported, B is local
+    TEUCHOS_TEST_FOR_EXCEPT(cheby_setup_done_ == false);
     
     ReadyBufferHelper<Node> rbh(node_);
     
@@ -634,7 +634,7 @@ namespace Kokkos {
     
     if (isEmpty_ == true) {
       // This makes no sense to try to call ...
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     else if (isPacked_ == true) {
       Op1D wdp;

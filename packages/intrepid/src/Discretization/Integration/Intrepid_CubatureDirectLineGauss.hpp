@@ -51,7 +51,7 @@
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_CubatureDirect.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 /** \def INTREPID_CUBATURE_LINE_GAUSS_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by

@@ -279,7 +279,7 @@ NonlinearSolverBase<Scalar>::get_W() const
 template <class Scalar>
 void NonlinearSolverBase<Scalar>::set_W_is_current(bool W_is_current)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error,
     "Error, the subclass object described as " << this->description() << " did not"
     " override this function!"

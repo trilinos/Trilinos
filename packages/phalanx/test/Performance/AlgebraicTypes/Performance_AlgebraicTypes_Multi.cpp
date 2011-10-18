@@ -46,7 +46,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Inefficient vector/tensor objects
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   const int size = 1000;
   const int num_vectors = 3;
 
-  TEST_FOR_EXCEPTION(num_loops * size != 5000000, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_loops * size != 5000000, std::logic_error,
 		     "Work amount is not constant!");
 
   // Make all vectors in a contiguous block

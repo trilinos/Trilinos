@@ -34,7 +34,7 @@ namespace Kokkos {
   OpenMPNode::OpenMPNode(Teuchos::ParameterList &pl) {
     curNumThreads_ = pl.get<int>("Num Threads", -1);
     int verbose = pl.get<int>("Verbose", 0);
-    TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error,
         "OpenMPNode::OpenMPNode(): invalid ""Num Threads"" specification.");
     if (verbose) {
       std::cout << "OpenMPNode initializing with numThreads == " << curNumThreads_ << std::endl;

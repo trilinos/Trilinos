@@ -92,12 +92,12 @@ namespace Tpetra {
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const {
     using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "a.getMap(): " << std::endl << *a.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
     Scalar gbldot;
@@ -164,12 +164,12 @@ namespace Tpetra {
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
         "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::normWeighted(): Vectors do not have the same local length.");
 #endif
     Mag norm = MVT::WeightedNorm(this->lclMV_,weights.lclMV_);

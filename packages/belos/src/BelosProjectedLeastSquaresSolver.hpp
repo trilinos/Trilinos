@@ -276,16 +276,16 @@ namespace Belos {
 	typedef Teuchos::ScalarTraits<Scalar> STS;
 	typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-	TEST_FOR_EXCEPTION(beta < STM::zero(), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(beta < STM::zero(), std::invalid_argument,
 			   "ProjectedLeastSquaresProblem::reset: initial "
 			   "residual beta = " << beta << " < 0.");
-	TEST_FOR_EXCEPTION(maxNumIterations <= 0, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(maxNumIterations <= 0, std::invalid_argument,
 			   "ProjectedLeastSquaresProblem::reset: maximum number "
 			   "of iterations " << maxNumIterations << " <= 0.");
 
 	if (H.numRows() < maxNumIterations+1 || H.numCols() < maxNumIterations) {
 	  const int errcode = H.reshape (maxNumIterations+1, maxNumIterations);
-	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
 			     "Failed to reshape H into a " << (maxNumIterations+1) 
 			     << " x " << maxNumIterations << " matrix.");
 	}
@@ -293,7 +293,7 @@ namespace Belos {
 
 	if (R.numRows() < maxNumIterations+1 || R.numCols() < maxNumIterations) {
 	  const int errcode = R.reshape (maxNumIterations+1, maxNumIterations);
-	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
 			     "Failed to reshape R into a " << (maxNumIterations+1) 
 			     << " x " << maxNumIterations << " matrix.");
 	}
@@ -301,7 +301,7 @@ namespace Belos {
 
 	if (y.numRows() < maxNumIterations+1 || y.numCols() < 1) {
 	  const int errcode = y.reshape (maxNumIterations+1, 1);
-	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
 			     "Failed to reshape y into a " << (maxNumIterations+1) 
 			     << " x " << 1 << " matrix.");
 	}
@@ -309,7 +309,7 @@ namespace Belos {
 
 	if (z.numRows() < maxNumIterations+1 || z.numCols() < 1) {
 	  const int errcode = z.reshape (maxNumIterations+1, 1);
-	  TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(errcode != 0, std::runtime_error, 
 			     "Failed to reshape z into a " << (maxNumIterations+1) 
 			     << " x " << 1 << " matrix.");
 	}
@@ -444,7 +444,7 @@ namespace Belos {
 	const int numRows = Y.numRows();
 	const int numCols = Y.numCols();
 
-	TEST_FOR_EXCEPTION(numRows != X.numRows() || numCols != X.numCols(), 
+	TEUCHOS_TEST_FOR_EXCEPTION(numRows != X.numRows() || numCols != X.numCols(), 
 			   std::invalid_argument, "Dimensions of X and Y don't "
 			   "match.  X is " << X.numRows() << " x " << X.numCols() 
 			   << ", and Y is " << numRows << " x " << numCols << ".");
@@ -464,7 +464,7 @@ namespace Belos {
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
 
-	TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
+	TEUCHOS_TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
 			   std::invalid_argument,
 			   "matAdd: The input matrices A and B have "
 			   "incompatible dimensions.  A is " << numRows 
@@ -493,7 +493,7 @@ namespace Belos {
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
 
-	TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
+	TEUCHOS_TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
 			   std::invalid_argument,
 			   "matSub: The input matrices A and B have "
 			   "incompatible dimensions.  A is " << numRows 
@@ -521,7 +521,7 @@ namespace Belos {
       rightUpperTriSolve (mat_type& B,
 			  const mat_type& R) const
       {
-	TEST_FOR_EXCEPTION(B.numCols() != R.numRows(),
+	TEUCHOS_TEST_FOR_EXCEPTION(B.numCols() != R.numRows(),
 			   std::invalid_argument,
 			   "rightUpperTriSolve: R and B have incompatible "
 			   "dimensions.  B has " << B.numCols() << " columns, "
@@ -548,19 +548,19 @@ namespace Belos {
       {
 	using Teuchos::NO_TRANS;
 
-	TEST_FOR_EXCEPTION(A.numCols() != B.numRows(),
+	TEUCHOS_TEST_FOR_EXCEPTION(A.numCols() != B.numRows(),
 			   std::invalid_argument,
 			   "matMatMult: The input matrices A and B have "
 			   "incompatible dimensions.  A is " << A.numRows() 
 			   << " x " << A.numCols() << ", but B is " 
 			   << B.numRows() << " x " << B.numCols() << ".");
-	TEST_FOR_EXCEPTION(A.numRows() != C.numRows(),
+	TEUCHOS_TEST_FOR_EXCEPTION(A.numRows() != C.numRows(),
 			   std::invalid_argument,
 			   "matMatMult: The input matrix A and the output "
 			   "matrix C have incompatible dimensions.  A has " 
 			   << A.numRows() << " rows, but C has " << C.numRows()
 			   << " rows.");
-	TEST_FOR_EXCEPTION(B.numCols() != C.numCols(),
+	TEUCHOS_TEST_FOR_EXCEPTION(B.numCols() != C.numCols(),
 			   std::invalid_argument,
 			   "matMatMult: The input matrix B and the output "
 			   "matrix C have incompatible dimensions.  B has " 
@@ -679,7 +679,7 @@ namespace Belos {
 	std::pair<bool, std::pair<magnitude_type, magnitude_type> > result = 
 	  isUpperTriangular (A);
 
-	TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
 			   "The " << A.numRows() << " x " << A.numCols() 
 			   << " matrix " << matrixName << " is not upper "
 			   "triangular.  ||tril(A)||_F = " 
@@ -700,7 +700,7 @@ namespace Belos {
 	std::pair<bool, std::pair<magnitude_type, magnitude_type> > result = 
 	  isUpperHessenberg (A);
 
-	TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(! result.first, std::invalid_argument,
 			   "The " << A.numRows() << " x " << A.numCols() 
 			   << " matrix " << matrixName << " is not upper "
 			   "triangular.  ||tril(A(2:end, :))||_F = " 
@@ -736,7 +736,7 @@ namespace Belos {
 	  const magnitude_type err = (result.second.second == STM::zero() ? 
 				      result.second.first : 
 				      result.second.first / result.second.second);
-	  TEST_FOR_EXCEPTION(err > relativeTolerance, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(err > relativeTolerance, std::invalid_argument,
 			     "The " << A.numRows() << " x " << A.numCols() 
 			     << " matrix " << matrixName << " is not upper "
 			     "triangular.  ||tril(A(2:end, :))||_F "
@@ -762,7 +762,7 @@ namespace Belos {
 			       const int minNumRows, 
 			       const int minNumCols) const
       {
-	TEST_FOR_EXCEPTION(A.numRows() < minNumRows || A.numCols() < minNumCols,
+	TEUCHOS_TEST_FOR_EXCEPTION(A.numRows() < minNumRows || A.numCols() < minNumCols,
 			   std::invalid_argument,
 			   "The matrix " << matrixName << " is " << A.numRows() 
 			   << " x " << A.numCols() << ", and therefore does not "
@@ -787,7 +787,7 @@ namespace Belos {
 			     const int numRows, 
 			     const int numCols) const
       {
-	TEST_FOR_EXCEPTION(A.numRows() != numRows || A.numCols() != numCols,
+	TEUCHOS_TEST_FOR_EXCEPTION(A.numRows() != numRows || A.numCols() != numCols,
 			   std::invalid_argument,
 			   "The matrix " << matrixName << " is supposed to be " 
 			   << numRows << " x " << numCols << ", but is " 
@@ -826,7 +826,7 @@ namespace Belos {
     robustnessEnumToString (const ERobustness x) 
     {
       const char* strings[] = {"None", "Some", "Lots"};
-      TEST_FOR_EXCEPTION(x < ROBUSTNESS_NONE || x >= ROBUSTNESS_INVALID,
+      TEUCHOS_TEST_FOR_EXCEPTION(x < ROBUSTNESS_NONE || x >= ROBUSTNESS_INVALID,
 			 std::invalid_argument,
 			 "Invalid enum value " << x << ".");
       return std::string (strings[x]);
@@ -842,7 +842,7 @@ namespace Belos {
 	  return static_cast<ERobustness> (r);
 	}
       }
-      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
 			 "Invalid robustness string " << x << ".");
     }
     
@@ -1064,7 +1064,7 @@ namespace Belos {
 				  const mat_type& B,
 				  const ERobustness robustness)
       {
-	TEST_FOR_EXCEPTION(X.numRows() != B.numRows(), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(X.numRows() != B.numRows(), std::invalid_argument,
 			   "The output X and right-hand side B have different "
 			   "numbers of rows.  X has " << X.numRows() << " rows"
 			   ", and B has " << B.numRows() << " rows.");
@@ -1072,7 +1072,7 @@ namespace Belos {
 	// columns of B when solving the upper triangular system.  If
 	// B has _fewer_ columns than X, we can't solve for all the
 	// columns of X, so we throw an exception.
-	TEST_FOR_EXCEPTION(X.numCols() > B.numCols(), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(X.numCols() > B.numCols(), std::invalid_argument,
 			   "The output X has more columns than the "
 			   "right-hand side B.  X has " << X.numCols() 
 			   << " columns and B has " << B.numCols() 
@@ -1122,26 +1122,26 @@ namespace Belos {
 
 	const int M = R.numRows();
 	const int N = R.numCols();
-	TEST_FOR_EXCEPTION(M < N, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(M < N, std::invalid_argument, 
 			   "The input matrix R has fewer columns than rows.  "
 			   "R is " << M << " x " << N << ".");
 	// Ignore any additional rows of R by working with a square view.
 	mat_type R_view (Teuchos::View, R, N, N);
 
 	if (side == LEFT_SIDE) {
-	  TEST_FOR_EXCEPTION(X.numRows() < N, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(X.numRows() < N, std::invalid_argument,
 			     "The input/output matrix X has only "
 			     << X.numRows() << " rows, but needs at least " 
 			     << N << " rows to match the matrix for a "
 			     "left-side solve R \\ X.");
 	} else if (side == RIGHT_SIDE) {
-	  TEST_FOR_EXCEPTION(X.numCols() < N, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(X.numCols() < N, std::invalid_argument,
 			     "The input/output matrix X has only "
 			     << X.numCols() << " columns, but needs at least " 
 			     << N << " columns to match the matrix for a "
 			     "right-side solve X / R.");
 	}
-	TEST_FOR_EXCEPTION(robustness < ROBUSTNESS_NONE || 
+	TEUCHOS_TEST_FOR_EXCEPTION(robustness < ROBUSTNESS_NONE || 
 			   robustness >= ROBUSTNESS_INVALID, 
 			   std::invalid_argument,
 			   "Invalid robustness value " << robustness << ".");
@@ -1151,13 +1151,13 @@ namespace Belos {
 	// matrix.
 	if (robustness > ROBUSTNESS_NONE) {
 	  int count = ops.infNaNCount (R_view, true);
-	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
 			     "There " << (count != 1 ? "are" : "is")
 			     << " " << count << " Inf or NaN entr"
 			     << (count != 1 ? "ies" : "y") 
 			     << " in the upper triangle of R.");
 	  count = ops.infNaNCount (X, false);
-	  TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(count > 0, std::runtime_error,
 			     "There " << (count != 1 ? "are" : "is")
 			     << " " << count << " Inf or NaN entr"
 			     << (count != 1 ? "ies" : "y") << " in the "
@@ -1241,7 +1241,7 @@ namespace Belos {
 	    }
 	  }
 	} else {
-	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     "Should never get here!  Invalid robustness value " 
 			     << robustness << ".  Please report this bug to the "
 			     "Belos developers.");
@@ -1327,7 +1327,7 @@ namespace Belos {
 	using Teuchos::Array;
 	using std::endl;
 	
-	TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
 			   "numCols = " << numCols << " <= 0.");
 	const int numRows = numCols + 1;
 
@@ -1678,12 +1678,12 @@ namespace Belos {
 
 	if (defaultRobustness_ > ROBUSTNESS_SOME) {
 	  int count = ops.infNaNCount (A);
-	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
 			     "solveLeastSquaresUsingSVD: The input matrix A "
 			     "contains " << count << "Inf and/or NaN entr" 
 			     << (count != 1 ? "ies" : "y") << ".");
 	  count = ops.infNaNCount (X);
-	  TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(count != 0, std::invalid_argument, 
 			     "solveLeastSquaresUsingSVD: The input matrix X "
 			     "contains " << count << "Inf and/or NaN entr" 
 			     << (count != 1 ? "ies" : "y") << ".");
@@ -1720,11 +1720,11 @@ namespace Belos {
 		      A.values(), A.stride(), X.values(), X.stride(),
 		      &singularValues[0], rankTolerance, &rank,
 		      &lworkScalar, -1, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			   "_GELSS workspace query returned INFO = " 
 			   << info << " != 0.");
 	const int lwork = static_cast<int> (STS::real (lworkScalar));
-	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
 			   "_GELSS workspace query returned LWORK = " 
 			   << lwork << " < 0.");
 	// Allocate workspace.  Size > 0 means &work[0] makes sense.
@@ -1734,7 +1734,7 @@ namespace Belos {
 		      A.values(), A.stride(), X.values(), X.stride(),
 		      &singularValues[0], rankTolerance, &rank,
 		      &work[0], lwork, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
 			   "_GELSS returned INFO = " << info << " != 0.");
 	return rank;
       }
@@ -1793,7 +1793,7 @@ namespace Belos {
 	  for (int trial = 0; trial < numTrials && z_init == STM::zero(); ++trial) {
 	    z_init = STM::random();
 	  }
-	  TEST_FOR_EXCEPTION(z_init == STM::zero(), std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(z_init == STM::zero(), std::runtime_error,
 			     "After " << numTrials << " trial" 
 			     << (numTrials != 1 ? "s" : "") 
 			     << ", we were unable to generate a nonzero pseudo"
@@ -1848,7 +1848,7 @@ namespace Belos {
 
 	const int numRows = A.numRows();
 	const int numCols = A.numCols();
-	TEST_FOR_EXCEPTION(sigmas.size() < std::min (numRows, numCols),
+	TEUCHOS_TEST_FOR_EXCEPTION(sigmas.size() < std::min (numRows, numCols),
 			   std::invalid_argument,
 			   "The sigmas array is only of length " << sigmas.size()
 			   << ", but must be of length at least "
@@ -1872,11 +1872,11 @@ namespace Belos {
 		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
 		      &lworkScalar, -1, &rwork[0], &info);
 
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			   "LAPACK _GESVD workspace query failed with INFO = " 
 			   << info << ".");
 	const int lwork = static_cast<int> (STS::real (lworkScalar));
-	TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
 			   "LAPACK _GESVD workspace query returned LWORK = " 
 			   << lwork << " < 0.");
 	// Make sure that the workspace array always has positive
@@ -1888,7 +1888,7 @@ namespace Belos {
 		      A_copy.values(), A_copy.stride(), &sigmas[0], 
 		      (Scalar*) NULL, 1, (Scalar*) NULL, 1, 
 		      &work[0], lwork, &rwork[0], &info);
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			   "LAPACK _GESVD failed with INFO = " << info << ".");
       }
 
@@ -1933,7 +1933,7 @@ namespace Belos {
 
 	// Our solvers currently assume that H has full rank.  If the
 	// test matrix doesn't have full rank, we stop right away.
-	TEST_FOR_EXCEPTION(sigmaMaxMin.second == STM::zero(), std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(sigmaMaxMin.second == STM::zero(), std::runtime_error,
 			   "The test matrix is rank deficient; LAPACK's _GESVD "
 			   "routine reports that its smallest singular value is "
 			   "zero.");
@@ -2220,19 +2220,19 @@ namespace Belos {
 	lapack.GELS ('N', numRows, numCols, y_view.numCols(),
 		     NULL, LDR, NULL, y_view.stride(), 
 		     &lworkScalar, -1, &info);
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			   "LAPACK _GELS workspace query failed with INFO = " 
 			   << info << ", for a " << numRows << " x " << numCols
 			   << " matrix with " << y_view.numCols() 
 			   << " right hand side"
 			   << ((y_view.numCols() != 1) ? "s" : "") << ".");
-	TEST_FOR_EXCEPTION(STS::real(lworkScalar) < STM::zero(),
+	TEUCHOS_TEST_FOR_EXCEPTION(STS::real(lworkScalar) < STM::zero(),
 			   std::logic_error,
 			   "LAPACK _GELS workspace query returned an LWORK with "
 			   "negative real part: LWORK = " << lworkScalar 
 			   << ".  That should never happen.  Please report this "
 			   "to the Belos developers.");
-	TEST_FOR_EXCEPTION(STS::isComplex && STS::imag(lworkScalar) != STM::zero(),
+	TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex && STS::imag(lworkScalar) != STM::zero(),
 			   std::logic_error,
 			   "LAPACK _GELS workspace query returned an LWORK with "
 			   "nonzero imaginary part: LWORK = " << lworkScalar 
@@ -2257,7 +2257,7 @@ namespace Belos {
 		     (lwork > 0 ? &work[0] : (Scalar*) NULL), 
 		     lwork, &info);
 
-	TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			   "Solving projected least-squares problem with LAPACK "
 			   "_GELS failed with INFO = " << info << ", for a " 
 			   << numRows << " x " << numCols << " matrix with " 
@@ -2289,7 +2289,7 @@ namespace Belos {
 			   const int startCol,
 			   const int endCol) 
       {
-	TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
 			   "updateColumnGivens: startCol = " << startCol 
 			   << " > endCol = " << endCol << ".");
 	magnitude_type lastResult = STM::zero();

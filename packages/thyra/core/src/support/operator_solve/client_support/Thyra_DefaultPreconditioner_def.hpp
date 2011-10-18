@@ -64,7 +64,7 @@ DefaultPreconditioner<Scalar>::DefaultPreconditioner(
  )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(leftPrecOp) && is_null(rightPrecOp) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(leftPrecOp) && is_null(rightPrecOp) );
 #endif
   if (!is_null(leftPrecOp))
     leftPrecOp_.initialize(leftPrecOp);
@@ -80,7 +80,7 @@ DefaultPreconditioner<Scalar>::DefaultPreconditioner(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(leftPrecOp) && is_null(rightPrecOp) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(leftPrecOp) && is_null(rightPrecOp) );
 #endif
   if (!is_null(leftPrecOp))
     leftPrecOp_.initialize(leftPrecOp);
@@ -332,7 +332,7 @@ void DefaultPreconditioner<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 

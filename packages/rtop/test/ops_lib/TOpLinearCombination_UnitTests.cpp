@@ -158,7 +158,7 @@ void basicTest(const int stride, const int num_sub_vecs, FancyOStream &out,
             {
               alpha[2] = alpha_vals[k2];
               if (num_sub_vecs > 3) {
-                TEST_FOR_EXCEPT(true); // This is not scalable!
+                TEUCHOS_TEST_FOR_EXCEPT(true); // This is not scalable!
               }
               else {
                 basicTestGuts<Scalar>(alpha(), beta, v(), orig_z0, out, success);

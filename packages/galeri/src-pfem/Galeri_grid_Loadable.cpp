@@ -106,7 +106,7 @@ Galeri::grid::Loadable::Loadable(const Epetra_Comm& comm,
     element = hex;
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                        "input elementType not recognized, " << elementType);
 
   initialize(comm, numGlobalElements, numMyElements, element, myGlobalElements,
@@ -149,7 +149,7 @@ void Galeri::grid::Loadable::initialize(const Epetra_Comm& comm,
 void Galeri::grid::Loadable::freezeConnectivity()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                      "method freezeConnectivity() called, but the object is " <<
                      "uninitialized");
 #endif
@@ -196,7 +196,7 @@ void Galeri::grid::Loadable::freezeConnectivity()
 void Galeri::grid::Loadable::freezeCoordinates()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ != core::Workspace::CONNECTIVITY_FREEZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ != core::Workspace::CONNECTIVITY_FREEZED, std::logic_exception,
                      "method freezeCoordinates() called, but freezeCoordinates() " <<
                      "has not been called");
 #endif
@@ -310,7 +310,7 @@ void Galeri::grid::Loadable::print(ostream & os) const
 const Epetra_Map& Galeri::grid::Loadable::getNonOverlappingVertexMap()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                      "method getNonOverlappingVertexMap() called, but the object is " <<
                      "uninitialized");
 #endif
@@ -365,7 +365,7 @@ const Epetra_Map& Galeri::grid::Loadable::getNonOverlappingVertexMap()
 const Epetra_MultiVector& Galeri::grid::Loadable::getNonOverlappingCoordinates()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                      "method getNonOverlappingCoordinates() called, but the object is " <<
                      "uninitialized");
 #endif
@@ -385,7 +385,7 @@ const Epetra_MultiVector& Galeri::grid::Loadable::getNonOverlappingCoordinates()
 const Epetra_Map& Galeri::grid::Loadable::getLinearVertexMap()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                      "method getLinearVertexMap() called, but the object is " <<
                      "uninitialized");
 #endif
@@ -400,7 +400,7 @@ const Epetra_Map& Galeri::grid::Loadable::getLinearVertexMap()
 const Epetra_MultiVector& Galeri::grid::Loadable::getLinearCoordinates()
 {
 #ifdef GALERI_CHECK
-  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+  TEUCHOS_TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
                      "method getLinearCoordinates() called, but the object is " <<
                      "uninitialized");
 #endif

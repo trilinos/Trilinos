@@ -137,10 +137,10 @@ namespace Tpetra {
 	RCP<sparse_matrix_type> pMatrix =
 	  reader_type::readSparseFile (inputFilename, pComm, pNode, 
 				       callFillComplete, tolerant, debug);
-	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::runtime_error,
 			   "The Tpetra::CrsMatrix returned from "
 			   "readSparseFile() is null.");
-	TEST_FOR_EXCEPTION(callFillComplete && ! pMatrix->isFillComplete(), 
+	TEUCHOS_TEST_FOR_EXCEPTION(callFillComplete && ! pMatrix->isFillComplete(), 
 			   std::logic_error,
 			   "We asked readSparseFile() to call fillComplete() "
 			   "on the Tpetra::CrsMatrix before returning it, but"
@@ -224,7 +224,7 @@ main (int argc, char *argv[])
 	  cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }

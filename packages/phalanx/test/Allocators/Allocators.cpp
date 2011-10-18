@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -56,7 +56,7 @@
 template<typename T>
 bool arrayCompare(Teuchos::ArrayRCP<T> a, Teuchos::ArrayRCP<T> b, double tol)
 {
-  TEST_FOR_EXCEPTION(a.size() != b.size(), std::logic_error, "The arrays in checkTolerance() are not of the same size!");
+  TEUCHOS_TEST_FOR_EXCEPTION(a.size() != b.size(), std::logic_error, "The arrays in checkTolerance() are not of the same size!");
 
   double error = 0.0;
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
       cout << "  Testing allocate()...";
       ArrayRCP<double> vec = na.allocate<double>(4);
-      TEST_FOR_EXCEPTION(vec.size() != 4, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(vec.size() != 4, std::runtime_error, 
 			 "Allocator is broken!");
       cout << "passed!" << endl;
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
       
       cout << "  Testing getTotalBytes()...";
       const int total_bytes = ca.getTotalBytes();
-      TEST_FOR_EXCEPTION(total_bytes != 5 * num_bytes, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(total_bytes != 5 * num_bytes, std::logic_error,
 			 "addRequiredBytes() is failing!");
       cout << "passed!" << endl;
             
@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
       ArrayRCP<double> b = ca.allocate<double>(size);
       ArrayRCP<double> c = ca.allocate<double>(size);
       ArrayRCP<double> d = ca.allocate<double>(2 * size);
-      TEST_FOR_EXCEPTION(a.size() != size, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(a.size() != size, std::runtime_error, 
 			 "Allocator is broken!");
-      TEST_FOR_EXCEPTION(d.size() != 2 * size, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(d.size() != 2 * size, std::runtime_error, 
 			 "Allocator is broken!");
       cout << "passed!" << endl;
 
@@ -177,13 +177,13 @@ int main(int argc, char *argv[])
       for (ArrayRCP<double>::Ordinal i = 0; i < d.size(); ++i)
 	d_ref[i] = 4.0;
 
-      TEST_FOR_EXCEPTION(arrayCompare(a, a_ref, 1.0e-8), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(arrayCompare(a, a_ref, 1.0e-8), std::runtime_error,
 			 "Array Integrity failed.  Arrays are different!");
-      TEST_FOR_EXCEPTION(arrayCompare(b, b_ref, 1.0e-8), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(arrayCompare(b, b_ref, 1.0e-8), std::runtime_error,
 			 "Array Integrity failed.  Arrays are different!");
-      TEST_FOR_EXCEPTION(arrayCompare(c, c_ref, 1.0e-8), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(arrayCompare(c, c_ref, 1.0e-8), std::runtime_error,
 			 "Array Integrity failed.  Arrays are different!");
-      TEST_FOR_EXCEPTION(arrayCompare(d, d_ref, 1.0e-8), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(arrayCompare(d, d_ref, 1.0e-8), std::runtime_error,
 			 "Array Integrity failed.  Arrays are different!");
       
       cout << "passed!" << endl;
@@ -225,19 +225,19 @@ int main(int argc, char *argv[])
       }
       print_num_ctor_dtor_calls<int>(std::cout);
       
-      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_empty_ctor_called != 1,
+      TEUCHOS_TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_empty_ctor_called != 1,
 			 std::runtime_error,
 			 "Empty ctors are not being called correctly!");
       
-      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_sized_ctor_called != 1,
+      TEUCHOS_TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_sized_ctor_called != 1,
 			 std::runtime_error,
 			 "Sized ctors are not being called correctly!");
       
-      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_copy_ctor_called != 10,
+      TEUCHOS_TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_copy_ctor_called != 10,
 			 std::runtime_error,
 			 "Copy ctors are not being called correctly!");
       
-      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_dtor_called != 12,
+      TEUCHOS_TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_dtor_called != 12,
 			 std::runtime_error,
 			 "dtors are not being called correctly!");
       
@@ -284,17 +284,17 @@ int main(int argc, char *argv[])
       ArrayRCP<Alignment<2> > b = ca.allocate<Alignment<2> >(num_elements_b);
       ArrayRCP<Alignment<8> > c = ca.allocate<Alignment<8> >(num_elements_c);
 
-      TEST_FOR_EXCEPTION(a.size() != static_cast<int>(num_elements_a), 
+      TEUCHOS_TEST_FOR_EXCEPTION(a.size() != static_cast<int>(num_elements_a), 
 			 std::runtime_error,
 			 "Error - mismatch in object sizes - a.size() = "
 			 << a.size() << " is not equal to " << num_elements_a);
 
-      TEST_FOR_EXCEPTION(b.size() != static_cast<int>(num_elements_b), 
+      TEUCHOS_TEST_FOR_EXCEPTION(b.size() != static_cast<int>(num_elements_b), 
 			 std::runtime_error,
 			 "Error - mismatch in object sizes - b.size() = "
 			 << b.size() << " is not equal to " << num_elements_b);
 
-      TEST_FOR_EXCEPTION(c.size() != static_cast<int>(num_elements_c), 
+      TEUCHOS_TEST_FOR_EXCEPTION(c.size() != static_cast<int>(num_elements_c), 
 			 std::runtime_error,
 			 "Error - mismatch in object sizes - c.size() = "
 			 << c.size() << " is not equal to " << num_elements_c);

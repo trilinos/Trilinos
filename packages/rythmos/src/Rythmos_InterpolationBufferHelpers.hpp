@@ -184,7 +184,7 @@ void Rythmos::assertTimePointsAreSorted(const Array<Scalar>& time_vec)
 {
   const int numTimePoints = time_vec.size();
   for ( int i = 0; i < numTimePoints-1; ++ i ) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       time_vec[i] >= time_vec[i+1], std::logic_error,
       "Error, the time vector points time_vec["<<i<<"] = " << time_vec[i]
       << " >= time_vec["<<i+1<<"] = " << time_vec[i+1] << " are not [unique|sorted]!"
@@ -205,7 +205,7 @@ void Rythmos::assertNoTimePointsBeforeCurrentTimeRange(
   const TimeRange<Scalar> currentTimeRange = interpBuffer.getTimeRange();
   if (currentTimeRange.length() >= ST::zero()) {
     for ( int i = 0; i < numTimePoints; ++i ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         time_vec[i] < currentTimeRange.lower(), std::out_of_range,
         "Error, time_vec["<<i<<"] = " << time_vec[i] << " < currentTimeRange.lower() = "
         << currentTimeRange.lower() << " for " << interpBuffer.description() << "!"
@@ -226,7 +226,7 @@ void Rythmos::assertNoTimePointsInsideCurrentTimeRange(
   const TimeRange<Scalar> currentTimeRange = interpBuffer.getTimeRange();
   if (currentTimeRange.length() >= ST::zero()) {
     for ( int i = 0; i < numTimePoints; ++i ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         currentTimeRange.isInRange(time_vec[i]), std::out_of_range,
         "Error, time_vec["<<i<<"] = " << time_vec[i] << " is in TimeRange of " 
         << interpBuffer.description() << " = ["
@@ -269,7 +269,7 @@ void Rythmos::removePointsInTimeRange(
   typename Array<TimeType>::iterator point_it;
   for (int i=0 ; i< Teuchos::as<int>(values_to_remove.size()) ; ++i) {
     point_it = std::find(points_in->begin(),points_in->end(),values_to_remove[i]);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         point_it == points_in->end(), std::logic_error,
         "Error, point to remove = " << values_to_remove[i] << " not found with std:find!\n"
         );
@@ -295,7 +295,7 @@ bool Rythmos::getCurrentPoints(
 
   // Validate input
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(nextTimePointIndex_inout==0);
+  TEUCHOS_TEST_FOR_EXCEPT(nextTimePointIndex_inout==0);
   TEUCHOS_ASSERT( 0 <= *nextTimePointIndex_inout && *nextTimePointIndex_inout < numTotalTimePoints );
   TEUCHOS_ASSERT( x_vec == 0 || as<int>(x_vec->size()) == numTotalTimePoints );
   TEUCHOS_ASSERT( xdot_vec == 0 || as<int>(xdot_vec->size()) == numTotalTimePoints );

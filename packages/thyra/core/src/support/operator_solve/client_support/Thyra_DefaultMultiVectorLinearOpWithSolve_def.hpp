@@ -268,10 +268,10 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::validateInitialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(lows));
-  TEST_FOR_EXCEPT(is_null(multiVecRange));
-  TEST_FOR_EXCEPT(is_null(multiVecDomain));
-  TEST_FOR_EXCEPT( multiVecRange->numBlocks() != multiVecDomain->numBlocks() );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lows));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecRange));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(multiVecDomain));
+  TEUCHOS_TEST_FOR_EXCEPT( multiVecRange->numBlocks() != multiVecDomain->numBlocks() );
   THYRA_ASSERT_VEC_SPACES(
     "DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(lows,multiVecRange,multiVecDomain)",
     *lows->range(), *multiVecRange->getBlock(0) );

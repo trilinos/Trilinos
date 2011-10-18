@@ -165,7 +165,7 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobal
   typename std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>::iterator
     iter = graph_.find(globalRow);
 
-  TEST_FOR_EXCEPTION(iter == graph_.end(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(iter == graph_.end(), std::runtime_error,
   Teuchos::typeName(*this) << "::insertGlobalValues could not find row " << globalRow << " in the graph. Super bummer man. Hope you figure it out.\n");
 
   std::set<GlobalOrdinal>& cols = *(iter->second);

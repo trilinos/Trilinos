@@ -91,7 +91,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::setPreconditionerFactor
   const std::string &precFactoryName
   )
 {
-  TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
 }
 
 
@@ -109,7 +109,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFact
   std::string *precFactoryName
   )
 {
-  TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support a preconditioner factory!");
 }
 
 
@@ -143,7 +143,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeOp(
   using Teuchos::rcp_dynamic_cast;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
 
   const RCP<const LinearOpBase<Scalar> > tmpFwdOp = fwdOpSrc->getOp();
@@ -182,7 +182,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   using Teuchos::dyn_cast;
   using Teuchos::is_null;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif // TEUCHOS_DEBUG
   typedef DefaultSerialDenseLinearOpWithSolve<Scalar> DSDLOWS;
   DSDLOWS &dsdlows = dyn_cast<DSDLOWS>(*Op);
@@ -219,7 +219,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializePreconditione
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");
 }
 
 
@@ -231,7 +231,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeApproxPrecond
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, we don't support an external preconditioner!");
 }
 
 

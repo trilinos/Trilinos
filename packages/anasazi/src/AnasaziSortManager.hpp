@@ -45,7 +45,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 

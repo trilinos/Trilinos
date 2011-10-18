@@ -140,7 +140,7 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
     {
-      TEST_FOR_EXCEPT( is_null(paramList) );
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
       paramList->validateParameters(*this->getValidParameters());
       Teuchos::readVerboseObjectSublist(&*paramList,this);
       setMyParamList(paramList);
@@ -736,7 +736,7 @@ class SDIRK2Stage3rdOrder_RKBT :
     }
     void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
     {
-      TEST_FOR_EXCEPT( is_null(paramList) );
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
       paramList->validateParameters(*this->getValidParameters());
       Teuchos::readVerboseObjectSublist(&*paramList,this);
       gamma_coeff_ = paramList->get<int>("gamma coefficient",gamma_coeff_default_);

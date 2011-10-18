@@ -1384,7 +1384,7 @@ void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<doubl
          break;
 
        default:
-         TEST_FOR_EXCEPTION( ( (cellTopology.getKey() != shards::Tetrahedron<4>::key)             &&
+         TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getKey() != shards::Tetrahedron<4>::key)             &&
                                (cellTopology.getKey() != shards::Hexahedron<8>::key) ),
                                 std::invalid_argument,
                                "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4.");

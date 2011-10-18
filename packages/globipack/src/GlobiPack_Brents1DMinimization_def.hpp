@@ -110,7 +110,7 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   using std::max;
   
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(pointMiddle));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pointMiddle));
   TEUCHOS_ASSERT_INEQUALITY(pointLower.alpha, <, pointMiddle->alpha);
   TEUCHOS_ASSERT_INEQUALITY(pointMiddle->alpha, <, pointUpper.alpha);
   TEUCHOS_ASSERT_INEQUALITY(pointLower.phi, !=, PE1D::valNotGiven());

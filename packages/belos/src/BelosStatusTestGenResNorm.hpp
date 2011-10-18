@@ -422,7 +422,7 @@ void StatusTestGenResNorm<ScalarType,MV,OP>::reset()
 template <class ScalarType, class MV, class OP>
 int StatusTestGenResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
 {    
-  TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
+  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
 	"StatusTestGenResNorm::defineResForm(): The residual form has already been defined.");
   firstcallDefineResForm_ = false;
     
@@ -436,7 +436,7 @@ template <class ScalarType, class MV, class OP>
 int StatusTestGenResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
                                                          MagnitudeType ScaleValue )
 {
-  TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
+  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
 	"StatusTestGenResNorm::defineScaleForm(): The scaling type has already been defined.");
   firstcallDefineScaleForm_ = false;
     
@@ -571,7 +571,7 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
       } else {
         // Throw an std::exception if a NaN is found.
         status_ = Failed;
-        TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestGenResNorm::checkStatus(): NaN has been detected.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestGenResNorm::checkStatus(): NaN has been detected.");
       }
     }
   } 

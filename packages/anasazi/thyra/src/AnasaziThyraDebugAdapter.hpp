@@ -43,7 +43,7 @@
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_TimeMonitor.hpp"

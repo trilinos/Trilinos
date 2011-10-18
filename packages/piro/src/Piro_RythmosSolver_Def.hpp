@@ -73,10 +73,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::RythmosSolver " <<
                      "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::RythmosSolver " <<
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
@@ -132,7 +132,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 	nox_solver->setParameterList(nox_params);
 	fwdTimeStepSolver = nox_solver;
 #else
-	TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
 #endif
       }
 
@@ -155,7 +155,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 
       }
       else 
-        TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
                      << stepperType << std::endl);
 
@@ -192,7 +192,7 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::RythmosSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -204,7 +204,7 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::RythmosSolver::get_g_map():  " <<
                      "Invalid response index j = " <<

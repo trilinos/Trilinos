@@ -78,7 +78,7 @@ void SmartInterpolationBufferAppender<Scalar>::append(
   const Ptr<InterpolationBufferBase<Scalar> > &interpBuffSink
     ) 
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error,
     "This class has never been tested before and should not be used\n"
     "until it is"
@@ -98,7 +98,7 @@ void SmartInterpolationBufferAppender<Scalar>::append(
     // In this case, the incoming interpolation buffer's order of interpolation
     // is higher than the base interpolation buffer's, so we'll ask it to
     // interpolate points before inserting into the base interpolation buffer.
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         true,std::logic_error,
         "Error, the smart interpolation buffer appender is not implemented\n"
         "for appending interpolation buffers with higher order interpolation\n"
@@ -113,7 +113,7 @@ void SmartInterpolationBufferAppender<Scalar>::append(
 template<class Scalar>
 void SmartInterpolationBufferAppender<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParameters(*this->getValidParameters());
   setMyParamList(paramList);
   Teuchos::readVerboseObjectSublist(&*paramList,this);

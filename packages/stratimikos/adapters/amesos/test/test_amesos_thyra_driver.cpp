@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    TEST_FOR_EXCEPT( matrixDir == "" );
+    TEUCHOS_TEST_FOR_EXCEPT( matrixDir == "" );
 
     //
     // Define the test matrices

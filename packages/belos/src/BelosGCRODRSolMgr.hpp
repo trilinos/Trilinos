@@ -505,7 +505,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   // to default values.
   init();
 
-  TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, 
 		     "Belos::GCRODRSolMgr constructor: The solver manager's "
 		     "constructor needs the linear problem argument 'problem' "
 		     "to be non-null.");
@@ -667,7 +667,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Check for the maximum number of blocks.
   if (params->isParameter ("Num Blocks")) {
     numBlocks_ = params->get ("Num Blocks", numBlocks_default_);
-    TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Blocks\" parameter must "
 		       "be strictly positive, but you specified a value of "
 		       << numBlocks_ << ".");
@@ -679,11 +679,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (params->isParameter ("Num Recycled Blocks")) {
     recycledBlocks_ = params->get ("Num Recycled Blocks", 
 				   recycledBlocks_default_);
-    TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
 		       "parameter must be strictly positive, but you specified "
 		       "a value of " << recycledBlocks_ << ".");
-    TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
 		       "parameter must be less than the \"Num Blocks\" "
 		       "parameter, but you specified \"Num Recycled Blocks\" "
@@ -1154,7 +1154,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
                          "Belos::GCRODRSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1283,9 +1283,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   std::vector<int> index(numBlocks_+1);
   
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
@@ -1345,7 +1345,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       
       // If there is a subspace to recycle, recycle it, otherwise generate the initial recycled subspace.
       if (keff > 0) {
-	TEST_FOR_EXCEPTION(keff < recycledBlocks_,GCRODRSolMgrRecyclingFailure,
+	TEUCHOS_TEST_FOR_EXCEPTION(keff < recycledBlocks_,GCRODRSolMgrRecyclingFailure,
 			   "Belos::GCRODRSolMgr::solve(): Requested size of recycled subspace is not consistent with the current recycle subspace.");
 
 	printer_->stream(Debug) << " Now solving RHS index " << currIdx[0] << " using recycled subspace of dimension " << keff << std::endl << std::endl;
@@ -1363,20 +1363,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff ); 
 	int rank = ortho_->normalize(*Ctmp, rcp(&Rtmp,false));
 	// Throw an error if we could not orthogonalize this block
-	TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 	
 	// U_ = U_*R^{-1}	
 	// First, compute LU factorization of R
 	int info = 0;
         ipiv_.resize(Rtmp.numRows());
 	lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	
 	// Now, form inv(R)
 	int lwork = Rtmp.numRows();
         work_.resize(lwork);
 	lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	
         // U_ = U1_; (via a swap)
 	MVT::MvTimesMatAddMv( one, *Utmp, Rtmp, zero, *U1tmp );
@@ -1515,20 +1515,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           int lwork = -1;
           tau_.resize(keff);
           lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
           // Step #2: Compute QR factorization of HP
           lwork = (int)work_[0];
           work_.resize(lwork);
           lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
           // Step #3: Explicitly construct Q and R factors 
 	  // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff );
           for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
           lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
 
           // Now we have [Q,R] = qr(H*P)
 
@@ -1545,13 +1545,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  // Step #1: First, compute LU factorization of R
 	  ipiv_.resize(Rtmp.numRows());
 	  lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	  
 	  // Step #2: Form inv(R)
 	  lwork = Rtmp.numRows();
 	  work_.resize(lwork);
 	  lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	  
           // Step #3: Let U = U * R^{-1}
 	  MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
@@ -1696,7 +1696,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
 	  }
 	}
         catch (const GCRODRIterOrthoFailure &e) {
@@ -1852,19 +1852,19 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
   int info = 0, lwork = -1;
   tau_.resize(keff_new);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
   lwork = (int)work_[0];
   work_.resize(lwork);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
   Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Rtmp(i,j) = HPtmp(i,j); }
   lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
   // C = [C V] * Q;
@@ -1899,13 +1899,13 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
   // First, compute LU factorization of R
   ipiv_.resize(Rtmp.numRows());
   lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 
   // Now, form inv(R)
   lwork = Rtmp.numRows();
   work_.resize(lwork);
   lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
 
   {
     index.resize(keff_new);
@@ -1963,7 +1963,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   Teuchos::SerialDenseVector<int, ScalarType> e_m( m );
   e_m[m-1] = one;
   lapack.GESV(m, 1, HHt.values(), HHt.stride(), &iperm[0], e_m.values(), e_m.stride(), &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
@@ -1977,7 +1977,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   ScalarType* vl = 0;
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
 	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
   for( i=0; i<m; ++i )
@@ -2109,7 +2109,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
                &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
                &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
   
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above

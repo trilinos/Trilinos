@@ -51,7 +51,7 @@ namespace Intrepid {
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
 		      int degree, EIntrepidBurkardt rule, bool isNormalized ) {
-  TEST_FOR_EXCEPTION((degree < 0),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0),std::out_of_range,
     ">>> ERROR (CubatureLineSorted): No rule implemented for desired polynomial degree.");
   degree_    = degree;
   rule_type_ = rule;
@@ -158,7 +158,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
                    EIntrepidBurkardt rule, int numPoints, bool isNormalized ) {
-  TEST_FOR_EXCEPTION((numPoints < 0),std::out_of_range, 
+  TEUCHOS_TEST_FOR_EXCEPTION((numPoints < 0),std::out_of_range, 
      ">>> ERROR (CubatureLineSorted): No rule implemented for desired number of points.");
   numPoints_ = numPoints;
   rule_type_ = rule;
@@ -198,7 +198,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
 	break;
       }
     }
-    TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
+    TEUCHOS_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
 	">>> ERROR (CubatureLineSorted): Number of points must be numPoints = 1, 3, 7, 15, 31, 63, 127, 255.");
     Scalar degree = 1.5*(double)numPoints+0.5;
     degree_ = (int)degree;
@@ -224,7 +224,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
 	break;
       }
     }
-    TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
+    TEUCHOS_TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
        ">>> ERROR (CubatureLineSorted): Number of points must be numPoints = 1, 3, 9, 35, 37, 41, 43.");
     Scalar degree = 1.5*(double)numPoints+0.5;
     degree_ = (int)degree;
@@ -265,7 +265,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
                  std::vector<Scalar> & points, std::vector<Scalar> & weights) {
 
   int size = (int)weights.size();
-  TEST_FOR_EXCEPTION(((int)points.size()!=size),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION(((int)points.size()!=size),std::out_of_range,
 	     ">>> ERROR (CubatureLineSorted): Input dimension mismatch.");
   points_.clear(); weights.clear();
   for (int loc=0; loc<size; loc++) {

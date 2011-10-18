@@ -249,7 +249,7 @@ namespace TSQR {
 	view_type A_top = *cbIter;
 	if (A_top.empty())
 	  return A_top;
-	TEST_FOR_EXCEPTION(cbIndices.first >= cbIndices.second,
+	TEUCHOS_TEST_FOR_EXCEPTION(cbIndices.first >= cbIndices.second,
 			   std::logic_error,
 			   "FactorFirstPass::factor: A_top is not empty, but "
 			   "the cache block index range " << cbIndices.first 
@@ -276,7 +276,7 @@ namespace TSQR {
 	    view_type A_cur = *cbIter;
 	    // Iteration over cache blocks of a partition should
 	    // always result in nonempty cache blocks.
-	    TEST_FOR_EXCEPTION(A_cur.empty(), std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(A_cur.empty(), std::logic_error,
 			       "FactorFirstPass::factor: The current cache bloc"
 			       "k (the " << count << "-th to factor in the rang"
 			       "e [" << cbIndices.first << ","
@@ -285,7 +285,7 @@ namespace TSQR {
 			       "t of " << numPartitions_ << " partitions) is em"
 			       "pty.  Please report this bug to the Kokkos deve"
 			       "lopers.");
-	    TEST_FOR_EXCEPTION(static_cast<size_t>(curTauIdx) >= tauArrays_.size(),
+	    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(curTauIdx) >= tauArrays_.size(),
 			       std::logic_error,
 			       "FactorFirstPass::factor: curTauIdx (= " 
 			       << curTauIdx << ") >= tauArrays_.size() (= " 
@@ -336,10 +336,10 @@ namespace TSQR {
 	numPartitions_ (numPartitions),
 	contiguousCacheBlocks_ (contiguousCacheBlocks)
       {
-	TEST_FOR_EXCEPTION(A_.empty(), std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(A_.empty(), std::logic_error,
 			   "TSQR::FactorFirstPass constructor: A is empty.  "
 			   "Please report this bug to the Kokkos developers.");
-	TEST_FOR_EXCEPTION(numPartitions < 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(numPartitions < 1, std::logic_error,
 			   "TSQR::FactorFirstPass constructor: numPartitions "
 			   "must be positive, but numPartitions = " 
 			   << numPartitions << ".  Please report this bug to "
@@ -440,7 +440,7 @@ namespace TSQR {
 			    const MatView<LocalOrdinal, Scalar>& C_top,
 			    std::vector<Scalar>& work)
       {
-	TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.ncols()), 
+	TEUCHOS_TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.ncols()), 
 			   std::logic_error,
 			   "ApplyFirstPass::applyFirstCacheBlock: tau.size() "
 			   "(= " << tau.size() << ") < number of columns " 
@@ -463,7 +463,7 @@ namespace TSQR {
 		       const MatView<LocalOrdinal, Scalar>& C_cur,
 		       std::vector<Scalar>& work)
       {
-	TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_cur.ncols()), 
+	TEUCHOS_TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_cur.ncols()), 
 			   std::logic_error,
 			   "ApplyFirstPass::applyCacheBlock: tau.size() "
 			   "(= " << tau.size() << ") < number of columns " 
@@ -515,12 +515,12 @@ namespace TSQR {
 	range_type C_range (C_, strategy_, 
 			    cbIndices.first, cbIndices.second,
 			    contiguousCacheBlocks_);
-	TEST_FOR_EXCEPTION(Q_range.empty(), std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(Q_range.empty(), std::logic_error,
 			   "Q_range is empty, but the range of cache block "
 			   "indices [" << cbIndices.first << ", " 
 			   << cbIndices.second << ") is not empty.  Please "
 			   "report this bug to the Kokkos developers.");
-	TEST_FOR_EXCEPTION(C_range.empty(), std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(C_range.empty(), std::logic_error,
 			   "C_range is empty, but the range of cache block "
 			   "indices [" << cbIndices.first << ", " 
 			   << cbIndices.second << ") is not empty.  Please "
@@ -537,11 +537,11 @@ namespace TSQR {
 	  {
 	    typename const_range_type::iterator Q_rangeIter = Q_range.begin();
 	    typename range_type::iterator C_rangeIter = C_range.begin();
-	    TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.end(), std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.end(), std::logic_error,
 			       "The Q cache block range claims to be nonempty, "
 			       "but the iterator range is empty.  Please report"
 			       " this bug to the Kokkos developers.");
-	    TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(), std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(), std::logic_error,
 			       "The C cache block range claims to be nonempty, "
 			       "but the iterator range is empty.  Please report"
 			       " this bug to the Kokkos developers.");
@@ -568,7 +568,7 @@ namespace TSQR {
 	    ++C_rangeIter;
 	    while (Q_rangeIter != Q_range.end())
 	      {
-		TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(),
+		TEUCHOS_TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(),
 				   std::logic_error,
 				   "When applying Q^T or Q^H to C: The Q cache "
 				   "block iterator is not yet at the end, but "
@@ -610,11 +610,11 @@ namespace TSQR {
 	    // cache blocks in reverse order.
 	    typename const_range_type::iterator Q_rangeIter = Q_range.rbegin();
 	    typename range_type::iterator C_rangeIter = C_range.rbegin();
-	    TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.rend(), std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.rend(), std::logic_error,
 			       "The Q cache block range claims to be nonempty, "
 			       "but the iterator range is empty.  Please report"
 			       " this bug to the Kokkos developers.");
-	    TEST_FOR_EXCEPTION(C_rangeIter == C_range.rend(), std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(C_rangeIter == C_range.rend(), std::logic_error,
 			       "The C cache block range claims to be nonempty, "
 			       "but the iterator range is empty.  Please report"
 			       " this bug to the Kokkos developers.");
@@ -638,7 +638,7 @@ namespace TSQR {
 		cerr << "tauArrays_[curTauIndex=" << curTauIndex << "].size() = " 
 		     << tauArrays_[curTauIndex].size() << endl;
 #endif // KNR_DEBUG
-		TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
+		TEUCHOS_TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
 				   "curTauIndex=" << curTauIndex << " out of valid "
 				   "range [" << cbIndices.first << "," 
 				   << cbIndices.second << ").  Please report this "
@@ -649,7 +649,7 @@ namespace TSQR {
 		++Q_rangeIter;
 		++C_rangeIter;
 	      }
-	    TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
 			       "curTauIndex=" << curTauIndex << " out of valid "
 			       "range [" << cbIndices.first << "," 
 			       << cbIndices.second << ").  Please report this "
@@ -750,7 +750,7 @@ namespace TSQR {
 	{
 	  std::pair<size_t, size_t> cbInds (static_cast<size_t> (cbIndices.first),
 					    static_cast<size_t> (cbIndices.second));
-	  TEST_FOR_EXCEPTION(cbIndices.first < static_cast<LocalOrdinal>(0), 
+	  TEUCHOS_TEST_FOR_EXCEPTION(cbIndices.first < static_cast<LocalOrdinal>(0), 
 			     std::logic_error,
 			     "TSQR::ApplyFirstPass::execute: cacheBlockIndexRa"
 			     "nge(" << Q_.nrows() << ", " << Q_.ncols() << ", "
@@ -759,7 +759,7 @@ namespace TSQR {
 			     << cbIndices.first << "," << cbIndices.second 
 			     << " with negative starting index.  Please report"
 			     " this bug to the Kokkos developers.");
-	  TEST_FOR_EXCEPTION(cbInds.second > tauArrays_.size(),
+	  TEUCHOS_TEST_FOR_EXCEPTION(cbInds.second > tauArrays_.size(),
 			     std::logic_error,
 			     "TSQR::ApplyFirstPass::execute: cacheBlockIndexRa"
 			     "nge(" << Q_.nrows() << ", " << Q_.ncols() << ", " 
@@ -843,7 +843,7 @@ namespace TSQR {
 	numPartitions_ (numPartitions),
 	unblock_ (unblock)
       {
-	TEST_FOR_EXCEPTION(A_in_.nrows() != A_out_.nrows() || 
+	TEUCHOS_TEST_FOR_EXCEPTION(A_in_.nrows() != A_out_.nrows() || 
 			   A_in_.ncols() != A_out_.ncols(), 
 			   std::invalid_argument,
 			   "A_in and A_out do not have the same dimensions: "
@@ -851,7 +851,7 @@ namespace TSQR {
 			   << A_in_.ncols() << ", but A_out is " 
 			   << A_out_.nrows() << " by " 
 			   << A_out_.ncols() << ".");
-	TEST_FOR_EXCEPTION(numPartitions_ < 1, 
+	TEUCHOS_TEST_FOR_EXCEPTION(numPartitions_ < 1, 
 			   std::invalid_argument,
 			   "The number of partitions " << numPartitions_ 
 			   << " is not a positive integer.");
@@ -1115,7 +1115,7 @@ namespace TSQR {
     {
       // Protect the cast to size_t from a negative number of
       // partitions.
-      TEST_FOR_EXCEPTION(theNumPartitions < 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(theNumPartitions < 1, std::invalid_argument,
 			 "TSQR::KokkosNodeTsqrFactorOutput: Invalid number of "
 			 "partitions " << theNumPartitions << "; number of "
 			 "partitions must be a positive integer.");
@@ -1543,7 +1543,7 @@ namespace TSQR {
     {
       if (A.empty())
 	{
-	  TEST_FOR_EXCEPTION(! R.empty(), std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(! R.empty(), std::logic_error,
 			     "KokkosNodeTsqr::factorImpl: A is empty, but R "
 			     "is not.  Please report this bug to the Kokkos "
 			     "developers.");
@@ -1577,7 +1577,7 @@ namespace TSQR {
       // The "topmost top block" contains the resulting R factor.
       typedef MatView<LocalOrdinal, Scalar> view_type;
       const view_type& R_top = result.topBlocks[0];
-      TEST_FOR_EXCEPTION(R_top.empty(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(R_top.empty(), std::logic_error,
 			 "After factorSecondPass: result.topBlocks[0] is an "
 			 "empty MatView.  Please report this bug to the Kokkos "
 			 "developers.");
@@ -1603,7 +1603,7 @@ namespace TSQR {
       typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
 
-      TEST_FOR_EXCEPTION(numPartitions_ != factorOutput.numPartitions(),
+      TEUCHOS_TEST_FOR_EXCEPTION(numPartitions_ != factorOutput.numPartitions(),
 			 std::invalid_argument,
 			 "applyImpl: KokkosNodeTsqr's number of partitions " 
 			 << numPartitions_ << " does not match the given "
@@ -1658,13 +1658,13 @@ namespace TSQR {
     factorPair (const MatView<LocalOrdinal, Scalar>& R_top,
 		const MatView<LocalOrdinal, Scalar>& R_bot) const
     {
-      TEST_FOR_EXCEPTION(R_top.empty(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(R_top.empty(), std::logic_error,
 			 "R_top is empty!");
-      TEST_FOR_EXCEPTION(R_bot.empty(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(R_bot.empty(), std::logic_error,
 			 "R_bot is empty!");
-      TEST_FOR_EXCEPTION(work_.size() == 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(work_.size() == 0, std::logic_error,
 			 "Workspace array work_ has length zero.");
-      TEST_FOR_EXCEPTION(work_.size() < static_cast<size_t> (R_top.ncols()),
+      TEUCHOS_TEST_FOR_EXCEPTION(work_.size() < static_cast<size_t> (R_top.ncols()),
 			 std::logic_error,
 			 "Workspace array work_ has length = " 
 			 << work_.size() << " < R_top.ncols() = " 
@@ -1690,13 +1690,13 @@ namespace TSQR {
     {
       if (numPartitions <= 1)
 	return; // Done!
-      TEST_FOR_EXCEPTION (topBlocks.size() < static_cast<size_t>(numPartitions), 
+      TEUCHOS_TEST_FOR_EXCEPTION (topBlocks.size() < static_cast<size_t>(numPartitions), 
 			  std::logic_error,
 			  "KokkosNodeTsqr::factorSecondPass: topBlocks.size() "
 			  "(= " << topBlocks.size() << ") < numPartitions (= " 
 			  << numPartitions << ").  Please report this bug to "
 			  "the Kokkos developers.");
-      TEST_FOR_EXCEPTION (tauArrays.size() < static_cast<size_t>(numPartitions-1), 
+      TEUCHOS_TEST_FOR_EXCEPTION (tauArrays.size() < static_cast<size_t>(numPartitions-1), 
 			  std::logic_error,
 			  "KokkosNodeTsqr::factorSecondPass: topBlocks.size() "
 			  "(= " << topBlocks.size() << ") < numPartitions-1 (= " 
@@ -1705,7 +1705,7 @@ namespace TSQR {
       // The top partition (partition index zero) should always be
       // nonempty if we get this far, so its top block should also be
       // nonempty.
-      TEST_FOR_EXCEPTION(topBlocks[0].empty(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(topBlocks[0].empty(), std::logic_error,
 			 "KokkosNodeTsqr::factorSecondPass: topBlocks[0] is "
 			 "empty.  Please report this bug to the Kokkos "
 			 "developers.");
@@ -1747,13 +1747,13 @@ namespace TSQR {
       const int numParts = factorOutput.numPartitions();
       if (numParts <= 1)
 	return; // Done!
-      TEST_FOR_EXCEPTION(topBlocksOfC.size() != static_cast<size_t>(numParts),
+      TEUCHOS_TEST_FOR_EXCEPTION(topBlocksOfC.size() != static_cast<size_t>(numParts),
 			 std::logic_error,
 			 "KokkosNodeTsqr:applySecondPass: topBlocksOfC.size() ("
 			 "= " << topBlocksOfC.size() << ") != number of partiti"
 			 "ons (= " << numParts << ").  Please report this bug t"
 			 "o the Kokkos developers.");
-      TEST_FOR_EXCEPTION(factorOutput.secondPassTauArrays.size() != static_cast<size_t>(numParts-1),
+      TEUCHOS_TEST_FOR_EXCEPTION(factorOutput.secondPassTauArrays.size() != static_cast<size_t>(numParts-1),
 			 std::logic_error,
 			 "KokkosNodeTsqr:applySecondPass: factorOutput.secondPassTauArrays.size() ("
 			 "= " << factorOutput.secondPassTauArrays.size() << ") != number of partiti"

@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 template <typename value_type>
 Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
@@ -122,7 +122,7 @@ newton(const Func& func, const value_type& a, const value_type& b,
     f = func.eval(u);
     ++nit;
   }
-  TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
 		     "Nonlinear solver did not converge!" << std::endl);
 
   return u;
@@ -138,7 +138,7 @@ bisection(const Func& func, const value_type& a, const value_type& b,
   value_type low, hi;
   value_type fa = func.eval(a);
   value_type fb = func.eval(b);
-  TEST_FOR_EXCEPTION(fa*fb > 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fa*fb > 0, std::logic_error,
 		     "Bounds must bracket the root!" << std::endl)
 
   if (fa <= 0.0) {
@@ -165,7 +165,7 @@ bisection(const Func& func, const value_type& a, const value_type& b,
     f = func.eval(u);
     ++nit;
   }
-  TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
 		     "Nonlinear solver did not converge!" << std::endl);
 
   return u;

@@ -29,7 +29,7 @@
 #include "Stokhos_ConfigDefs.h"
 #include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Stokhos_Sparse3TensorUtilities.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #ifdef HAVE_STOKHOS_ISORROPIA
 #include "Isorropia_Epetra.hpp"
 #endif
@@ -157,7 +157,7 @@ rebalance(Teuchos::ParameterList& isorropia_params)
   // Build new parallel Cijk
   Cijk_parallel = buildParallelCijk();
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Error!  Stokhos must be configured with " <<
 		     "isorropia support to rebalance the stochastic " <<
 		     "graph.");
@@ -200,7 +200,7 @@ transformToLocal()
   for (Cijk_type::i_iterator i_it = Cijk_parallel->i_begin();
        i_it != Cijk_parallel->i_end(); ++i_it) {
     int i = stoch_row_map->LID(index(i_it));
-    TEST_FOR_EXCEPTION(i == -1, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(i == -1, std::logic_error,
 		       "Error!  Global row index " << index(i_it) <<
 		       " is not on processor " << globalMultiComm->MyPID());
     for (Cijk_type::ik_iterator k_it = Cijk_parallel->k_begin(i_it);
@@ -209,7 +209,7 @@ transformToLocal()
       for (Cijk_type::ikj_iterator j_it = Cijk_parallel->j_begin(k_it);
 	   j_it != Cijk_parallel->j_end(k_it); ++j_it) {
 	int j= stoch_col_map->LID(index(j_it));
-	TEST_FOR_EXCEPTION(j == -1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(j == -1, std::logic_error,
 			   "Error!  Global col index " << index(j_it) <<
 			   " is not on processor " << globalMultiComm->MyPID());
 	double c = value(j_it);

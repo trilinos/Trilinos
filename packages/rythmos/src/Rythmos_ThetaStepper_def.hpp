@@ -121,7 +121,7 @@ void ThetaStepper<Scalar>::setInterpolator(
   )
 {
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(interpolator));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(interpolator));
 #endif
   interpolator_ = interpolator;
   isInitialized_ = false;
@@ -163,7 +163,7 @@ void ThetaStepper<Scalar>::setSolver(
 {
   using Teuchos::as;
 
-  TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
       "Error!  Thyra::NonlinearSolverBase RCP passed in through ThetaStepper::setSolver is null!"
       );
 
@@ -271,7 +271,7 @@ void ThetaStepper<Scalar>::setModel(
 
   using Teuchos::as;
 
-  TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -320,7 +320,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ThetaStepper<Scalar>::getNonconstModel() 
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -342,7 +342,7 @@ void ThetaStepper<Scalar>::setInitialCondition(
     x_init = initialCondition.get_x();
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
@@ -587,7 +587,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
       x_interp = x_vec[0],
       xdot_interp = xdot_vec[0];
 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelNormDiffErr(
         "x", *x, "x_interp", *x_interp,
         "2*epsilon", ScalarMag(100.0*SMT::eps()),
@@ -596,7 +596,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
         )
       );
 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelNormDiffErr(
         "xdot", *xdot, "xdot_interp", *xdot_interp,
         "2*epsilon", ScalarMag(100.0*SMT::eps()),
@@ -675,7 +675,7 @@ void ThetaStepper<Scalar>::addPoints(
   initialize_();
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     time_vec.size() == 0, std::logic_error,
     "Error, addPoints called with an empty time_vec array!\n");
 #endif // RYTHMOS_DEBUG
@@ -756,8 +756,8 @@ void ThetaStepper<Scalar>::getPoints(
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
 
 #ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(!haveInitialCondition_);
-  TEST_FOR_EXCEPT( 0 == x_vec );
+  TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
+  TEUCHOS_TEST_FOR_EXCEPT( 0 == x_vec );
 #endif
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -782,7 +782,7 @@ void ThetaStepper<Scalar>::getPoints(
     DataStore<Scalar> ds_temp;
     Scalar dt = t_ - t_old_;
 #ifdef RYTHMOS_DEBUG
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelErr(
         "dt", dt, "dt_", dt_,
         "1e+4*epsilon", ScalarMag(1e+4*SMT::eps()),
@@ -896,7 +896,7 @@ void ThetaStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     }
   }
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ThetaStepper at this time.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ThetaStepper at this time.\n");
   // TODO:
   // if any time in time_vec matches t_ or t_old_, then do the following:
   // remove t_old_:  set t_old_ = t_ and set x_dot_base_ = x_
@@ -919,7 +919,7 @@ void ThetaStepper<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -934,7 +934,7 @@ void ThetaStepper<Scalar>::setParameterList(
   else if (thetaStepperTypeString == "Trapezoid")
     thetaStepperType_ = Trapezoid;
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "Value of " << ThetaStepperType_name << " = " << thetaStepperTypeString 
 		       << " is invalid for Rythmos::ThetaStepper");
 
@@ -1064,9 +1064,9 @@ void ThetaStepper<Scalar>::initialize_()
   if (isInitialized_)
     return;
 
-  TEST_FOR_EXCEPT(is_null(model_));
-  TEST_FOR_EXCEPT(is_null(solver_));
-  TEST_FOR_EXCEPT(!haveInitialCondition_);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(solver_));
+  TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
 
 #ifdef RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(
@@ -1128,7 +1128,7 @@ void ThetaStepper<Scalar>::obtainPredictor_()
     {
       V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
 
-      TEST_FOR_EXCEPT (dt_ <= 0.0);
+      TEUCHOS_TEST_FOR_EXCEPT (dt_ <= 0.0);
 
       Vp_StV(&*x_pre_, dt_, *x_dot_old_);
     }
@@ -1137,8 +1137,8 @@ void ThetaStepper<Scalar>::obtainPredictor_()
     {
       V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
 
-      TEST_FOR_EXCEPT (dt_ <= 0.0);
-      TEST_FOR_EXCEPT (dt_old_ <= 0.0);
+      TEUCHOS_TEST_FOR_EXCEPT (dt_ <= 0.0);
+      TEUCHOS_TEST_FOR_EXCEPT (dt_old_ <= 0.0);
 
       const Scalar coeff_x_dot_old = (0.5 * dt_) * (2.0 + dt_/dt_old_);
       const Scalar coeff_x_dot_really_old = - (0.5 * dt_) * (dt_/dt_old_);
@@ -1153,7 +1153,7 @@ void ThetaStepper<Scalar>::obtainPredictor_()
     }
     break;
     default:
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Invalid predictor order " << predictor_order << ". Valid values are 0, 1, and 2.");
   }
   

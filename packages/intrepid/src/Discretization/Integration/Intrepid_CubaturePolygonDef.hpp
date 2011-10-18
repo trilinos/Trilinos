@@ -61,7 +61,7 @@ namespace Intrepid{
 								  int degree)
     : degree_(degree), cubDimension_(2), cellTopology_(cellTopology), cellVertices_(cellVertices){
     
-    TEST_FOR_EXCEPTION( (degree < 0) || degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX, std::out_of_range,
+    TEUCHOS_TEST_FOR_EXCEPTION( (degree < 0) || degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX, std::out_of_range,
 			">>> ERROR (CubaturePolygon): No direct cubature rule implemented for the desired polynomial degree.");
     // compute area and centroid of polygon
     Scalar area;
@@ -145,7 +145,7 @@ void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cub
   int numCubPoints = numPoints_;
   int cellDim = cubDimension_;
     
-  TEST_FOR_EXCEPTION ( ( cubPoints.size() < numCubPoints*cellDim || cubWeights.size() < numCubPoints ),
+  TEUCHOS_TEST_FOR_EXCEPTION ( ( cubPoints.size() < numCubPoints*cellDim || cubWeights.size() < numCubPoints ),
 		       std::out_of_range,
 		       ">>> ERROR (CubaturePolygon): Insufficient space allocated for cubature points or weights.");
 

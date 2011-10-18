@@ -35,7 +35,7 @@
 #include "Stokhos_KroneckerProductPreconditioner.hpp"
 #include "Stokhos_FullyAssembledPreconditioner.hpp"
 #include "Stokhos_PreconditionerFactory.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::SGPreconditionerFactory::
 SGPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& params_) :
@@ -114,7 +114,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
   else if (prec_method == "None")
     sg_prec = Teuchos::null;
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown preconditioner method " << prec_method
 		       << "." << std::endl);
 

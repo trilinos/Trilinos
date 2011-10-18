@@ -144,7 +144,7 @@ namespace Belos {
     printValidNames (std::ostream& out) const
     {
       const int numValid = numOrthoManagers();
-      TEST_FOR_EXCEPTION(numValid <= 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(numValid <= 0, std::logic_error,
 			 "Invalid number " << numValid << " of valid MatOrtho"
 			 "Manager names.  Please report this bug to the Belos "
 			 "developers." );
@@ -208,7 +208,7 @@ namespace Belos {
 	return SimpleOrthoManager<Scalar, MV>::getDefaultParameters();
       }
       else {
-	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name \"" << name 
 			   << "\": Valid names are " << validNamesString() 
 			   << ".  For many of the test executables, the "
@@ -255,7 +255,7 @@ namespace Belos {
 	return SimpleOrthoManager<Scalar, MV>::getFastParameters();
       }
       else {
-	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name \"" << name 
 			   << "\": Valid names are " << validNamesString() 
 			   << ".  For many of the test executables, the "
@@ -306,7 +306,7 @@ namespace Belos {
       using Teuchos::rcp;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
-      TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
 			 "SimpleOrthoManager does not yet support the "
 			 "MatOrthoManager interface");
 
@@ -340,7 +340,7 @@ namespace Belos {
 							 blkTol, singTol));
       }
       else {
-	TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name: Valid names"
 			   " are " << validNamesString() << ".  For many of "
 			   "the test executables, the orthogonalization manager"
@@ -392,7 +392,7 @@ namespace Belos {
 
       if (ortho == "Simple")
 	{
-	  TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
 			     "SimpleOrthoManager is not yet supported "
 			     "when the operator M is nontrivial (i.e., "
 			     "M != null).");

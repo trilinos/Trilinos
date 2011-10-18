@@ -106,21 +106,21 @@ namespace Tpetra {
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
         else {
           // logic error on our part
-          TEST_FOR_EXCEPTION(true,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
       // numGlobalElements is coherent, but is it valid? this comparison looks funny, but it avoids compiler warnings on unsigned types.
-      TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
           errPrefix << "numGlobalElements (== " << rootNGE << ") must be >= 0.");
 
       indexBase_ = rootIB;
@@ -277,29 +277,29 @@ namespace Tpetra {
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numLocal is not valid on at least one node (possibly node " 
               << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal is not valid on at least one node (possibly node " 
               << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal doesn't match sum of numLocal (== " 
               << global_sum << ") on at least one node (possibly node " 
               << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 4) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "indexBase is not the same on all nodes (examine node " 
               << globalChecks[0] << ").");
         }
         else {
           // logic error on my part
-          TEST_FOR_EXCEPTION(true,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
@@ -388,24 +388,24 @@ namespace Tpetra {
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal is not valid on at least one node (possibly node "
               << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal doesn't match sum of numLocal (" 
               << global_sum << ") on at least one node (possibly node "
               << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "indexBase is not the same on all nodes (possibly node "
               << globalChecks[0] << ").");
         }
         else {
           // logic error on my part
-          TEST_FOR_EXCEPTION(true,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
@@ -452,7 +452,7 @@ namespace Tpetra {
     Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,maxMyGID_,Teuchos::outArg(maxAllGID_));
     contiguous_  = false;
     distributed_ = checkIsDist();
-    TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
         errPrefix << "minimum GID (== " << minAllGID_ << ") is less than indexBase (== " << indexBase_ << ")");
     setupDirectory();
   }
@@ -611,7 +611,7 @@ namespace Tpetra {
     if (lgMap_ == Teuchos::null && numLocalElements_ > 0) {
 #ifdef HAVE_TEUCHOS_DEBUG
       // this would have been set up for a non-contiguous map
-      TEST_FOR_EXCEPTION(contiguous_ != true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(contiguous_ != true, std::logic_error,
           "Tpetra::Map::getNodeElementList: logic error. Please notify the Tpetra team.");
 #endif
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
@@ -724,7 +724,7 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList, 
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
-    TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
     return directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
@@ -733,7 +733,7 @@ namespace Tpetra {
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList) const {
-    TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
     return directory_->getDirectoryEntries(GIDList, imageIDList);
   }
@@ -860,7 +860,7 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
   elemsLeft = numElements - elemsLeft;
   // std::cout << "(before) localNumElements: " << localNumElements << "  elemsLeft: " << elemsLeft << std::endl;
   // i think this is true. just test it for now.
-  TEST_FOR_EXCEPT(elemsLeft < -numImages || numImages < elemsLeft);
+  TEUCHOS_TEST_FOR_EXCEPT(elemsLeft < -numImages || numImages < elemsLeft);
   if (elemsLeft < 0) {
     // last elemsLeft nodes lose an element
     if (myImageID >= numImages-elemsLeft) --localNumElements;

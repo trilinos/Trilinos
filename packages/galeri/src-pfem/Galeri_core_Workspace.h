@@ -49,7 +49,7 @@
 #ifndef GALERI_CORE_WORKSPACE_H
 #define GALERI_CORE_WORKSPACE_H
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 class Epetra_Comm;
 class Epetra_RowMatrix;

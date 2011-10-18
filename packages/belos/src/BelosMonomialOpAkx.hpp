@@ -67,12 +67,12 @@ namespace Belos {
       using Teuchos::rcp_const_cast;
       typedef MultiVecTraits<Scalar, MV> MVT;
 
-      TEST_FOR_EXCEPTION(s < 0, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION(s < 0, std::invalid_argument, 
 			 "Number of basis vectors to compute (s = " 
 			 << s << ") is invalid; it must be positive.");
       if (s == 0)
 	return; // Nothing to do
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(V_cur) < s, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(V_cur) < s, std::invalid_argument,
 			 "You're asking to compute s = " << s << " basis "
 			 "vectors, but only have room for " 
 			 << MVT::GetNumberVecs(V_cur) << ".");
@@ -96,16 +96,16 @@ namespace Belos {
       using Teuchos::rcp_const_cast;
       typedef MultiVecTraits<Scalar, MV> MVT;
 
-      TEST_FOR_EXCEPTION(s < 0, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION(s < 0, std::invalid_argument, 
 			 "Number of basis vectors to compute (s = " 
 			 << s << ") is invalid; it must be positive.");
       if (s == 0)
 	return; // Nothing to do
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(V_cur) < s, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(V_cur) < s, std::invalid_argument,
 			 "You're asking to compute s = " << s << " basis "
 			 "vectors, but only have room for " 
 			 << MVT::GetNumberVecs(V_cur) << " in V_cur.");
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Z_cur) < s, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Z_cur) < s, std::invalid_argument,
 			 "You're asking to compute s = " << s << " basis "
 			 "vectors, but only have room for " 
 			 << MVT::GetNumberVecs(Z_cur) << " in Z_cur.");

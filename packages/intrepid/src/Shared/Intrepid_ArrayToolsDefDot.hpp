@@ -55,15 +55,15 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
 
 #ifdef HAVE_INTREPID_DEBUG
   if (inputFields.rank() > inputData.rank()) {
-    TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
-    TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()+1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()+1), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Input fields container must have rank one larger than the rank of the input data container.");
-    TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
-    TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-    TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
     for (int i=2; i<inputData.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
@@ -71,35 +71,35 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
       errmsg += " and ";
       errmsg += (char)(48+i+1);
       errmsg += " of the input data and fields containers must agree!";
-      TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i+1)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i+1)), std::invalid_argument, errmsg );
     }
     for (int i=0; i<outputFields.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
-      TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i)), std::invalid_argument, errmsg );
     }
   }
   else {
-    TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
-    TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): The rank of fields input container must equal the rank of data input container.");
-    TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
-    TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the fields and data input containers (number of integration points) must agree or first data dimension must be 1!");
-    TEST_FOR_EXCEPTION( (inputFields.dimension(0) != outputFields.dimension(1)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != outputFields.dimension(1)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the fields input container and first dimension of the fields output container (number of fields) must agree!");
-    TEST_FOR_EXCEPTION( (inputFields.dimension(1) != outputFields.dimension(2)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(1) != outputFields.dimension(2)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimension of the fields input container and second dimension of the fields output container (number of integration points) must agree!");
-    TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputData.dimension(0)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputData.dimension(0)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
     for (int i=2; i<inputData.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input data and fields containers must agree!";
-      TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i)), std::invalid_argument, errmsg );
     }
   }
 #endif
@@ -171,7 +171,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataField): This branch of the method is defined only for rank-3, 4 or 5 input fields containers.");
       }// invalRank
 
@@ -223,7 +223,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataField): This branch of the method is defined only for rank-3, 4 or 5 input fields containers.");
       }// invalRank
 
@@ -279,7 +279,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataField): This branch of the method is defined only for rank-2, 3 or 4 input fields containers.");
       }// invalRank
 
@@ -331,7 +331,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataField): This branch of the method is defined only for rank-2, 3 or 4 input fields containers.");
       }// invalRank
 
@@ -350,41 +350,41 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
 
 #ifdef HAVE_INTREPID_DEBUG
   if (inputDataRight.rank() >= inputDataLeft.rank()) {
-    TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-    TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): The rank of the right data input container must equal the rank of the left data input container.");
-    TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
-    TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the left and right data input containers (number of integration points) must agree or first left data dimension must be 1!");
     for (int i=0; i<inputDataLeft.rank(); i++) {
       if (i != 1) {
         std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
         errmsg += (char)(48+i);
         errmsg += " of the left and right data input containers must agree!";
-        TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
+        TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
       }
     }
     for (int i=0; i<outputData.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the output and right input data containers must agree!";
-      TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i)), std::invalid_argument, errmsg );
     }
   }
   else {
-    TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-    TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()-1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()-1), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
-    TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
-    TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of left data input container (number of integration points) must agree or first left data dimension must be 1!");
-    TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != outputData.dimension(1)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != outputData.dimension(1)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of output data container (number of integration points) must agree!");
-    TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != outputData.dimension(0)), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != outputData.dimension(0)), std::invalid_argument,
                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the left data input and data output containers (number of integration domains) must agree!");
     for (int i=1; i<inputDataRight.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
@@ -392,7 +392,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
       errmsg += " and ";
       errmsg += (char)(48+i);
       errmsg += " of the left and right data input containers must agree!";
-      TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i+1) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i+1) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
     }
   }
 #endif
@@ -457,7 +457,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (rightDataRank == 2) || (rightDataRank == 3) || (rightDataRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (rightDataRank == 2) || (rightDataRank == 3) || (rightDataRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataData): This branch of the method is defined only for rank-2, 3 or 4 right data input containers.");
       }// rightDataRank
 
@@ -503,7 +503,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (rightDataRank == 2) || (rightDataRank == 3) || (rightDataRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (rightDataRank == 2) || (rightDataRank == 3) || (rightDataRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataData): This branch of the method is defined only for rank-2, 3 or 4 right data input containers.");
       }// rightDataRank
 
@@ -553,7 +553,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (rightDataRank == 1) || (rightDataRank == 2) || (rightDataRank == 3) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (rightDataRank == 1) || (rightDataRank == 2) || (rightDataRank == 3) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataData): This branch of the method is defined only for rank-1, 2 or 3 right data input containers.");
       }// rightDataRank
 
@@ -599,7 +599,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (rightDataRank == 1) || (rightDataRank == 2) || (rightDataRank == 3) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (rightDataRank == 1) || (rightDataRank == 2) || (rightDataRank == 3) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::dotMultiplyDataData): This branch of the method is defined only for rank-1, 2 or 3 right data input containers.");
       }// rightDataRank
 

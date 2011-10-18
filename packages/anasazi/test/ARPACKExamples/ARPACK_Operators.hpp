@@ -112,14 +112,14 @@ public:
   
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     // MyY = ONE*MyX
     MyY->MvAddMv( ONE, *MyX, ZERO, *MyX );
@@ -183,14 +183,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -198,7 +198,7 @@ public:
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
-    TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
     
     // The rest is stolen from the ARPACK codes (see notice above)
     //
@@ -272,14 +272,14 @@ public:
   {
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     int n = X.GetVecLength();
@@ -370,7 +370,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPD() {}
   
@@ -383,19 +383,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -408,7 +408,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -446,14 +446,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -509,14 +509,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -588,7 +588,7 @@ public:
     _e.resize(_n-1, ONE*h);
   
     lapack.PTTRF(_n,&_d[0],&_e[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPG() {}
   
@@ -599,19 +599,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -625,7 +625,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.PTTRS(_n,1,&_d[0],&_e[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -687,7 +687,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPH() {}
   
@@ -698,19 +698,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -724,7 +724,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -772,14 +772,14 @@ public:
   
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -787,7 +787,7 @@ public:
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
-    TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
     
     // The rest is stolen from the ARPACK codes (see notice above)
     //
@@ -861,14 +861,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -948,7 +948,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPO() {}
   
@@ -961,19 +961,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -986,7 +986,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -1018,14 +1018,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -1079,14 +1079,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -1172,7 +1172,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPR() {}
   
@@ -1183,19 +1183,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1209,7 +1209,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -1274,7 +1274,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPS() {}
   
@@ -1285,19 +1285,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1311,7 +1311,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -1376,7 +1376,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPT() {}
   
@@ -1387,19 +1387,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1413,7 +1413,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }
@@ -1479,7 +1479,7 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPU() {}
   
@@ -1491,19 +1491,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
+    TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1524,7 +1524,7 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
   }

@@ -1,7 +1,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include <Kokkos_TBBNode.hpp>
 
@@ -51,11 +51,11 @@ int main(int argc, char *argv[]) {
 #ifndef HAVE_KOKKOS_NO_FIRST_TOUCH_MATVEC_ALLOCATION
     std::cout << "Using Kokkos first-touch matrix objects." << std::endl;
     // this will fail to compile if the above macro doesn't appropriately correspond with the reality of the CrsMatrix inheritance
-    TEST_FOR_EXCEPT( (static_cast<Kokkos::FirstTouchHostCrsMatrix<double,int,Node,DSM> *>(mat) != 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( (static_cast<Kokkos::FirstTouchHostCrsMatrix<double,int,Node,DSM> *>(mat) != 0) );
 #else
     std::cout << "Not using Kokkos first-touch matrix objects." << std::endl;
     // this will fail to compile if the above macro doesn't appropriately correspond with the reality of the CrsMatrix inheritance
-    TEST_FOR_EXCEPT( (static_cast<   Kokkos::CrsMatrixHostCompute<double,int,Node,DSM> *>(mat) != 0) );
+    TEUCHOS_TEST_FOR_EXCEPT( (static_cast<   Kokkos::CrsMatrixHostCompute<double,int,Node,DSM> *>(mat) != 0) );
 #endif
   }
 

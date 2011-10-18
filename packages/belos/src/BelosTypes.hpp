@@ -48,7 +48,7 @@
 */
 
 #include "BelosConfigDefs.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace Belos {
  
@@ -143,7 +143,7 @@ namespace Belos {
       case Undefined:
         return "Undefined";
       default:
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     return NULL; // Should never be called!
   }
@@ -162,7 +162,7 @@ namespace Belos {
     } else if (scaleType == "None") {
       return Belos::None;
     } else
-      TEST_FOR_EXCEPTION( true ,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( true ,std::logic_error,
         "convertStringToScaleType(): Invalid residual scaling type.");
   }
   

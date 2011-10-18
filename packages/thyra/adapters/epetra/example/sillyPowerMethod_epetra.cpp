@@ -58,7 +58,7 @@
 void scaleFirstDiagElement( const double diagScale, Thyra::LinearOpBase<double> *A )
 {
   using Teuchos::RCP;
-  TEST_FOR_EXCEPT(A==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(A==NULL);
   // (A) Get at the underlying Epetra_Operator object that the EpetraLinearOp
   // object directly maintains.
   const RCP<Epetra_Operator> epetra_op = Thyra::get_Epetra_Operator(*A);
@@ -70,10 +70,10 @@ void scaleFirstDiagElement( const double diagScale, Thyra::LinearOpBase<double> 
   // it is get it and scale it.
   if(crsMatrix.MyGlobalRow(0)) {
     const int numRowNz = crsMatrix.NumGlobalEntries(0);
-    TEST_FOR_EXCEPT( numRowNz != 2 );
+    TEUCHOS_TEST_FOR_EXCEPT( numRowNz != 2 );
     int returndNumRowNz; double rowValues[2]; int rowIndexes[2];
     crsMatrix.ExtractGlobalRowCopy( 0, numRowNz, returndNumRowNz, &rowValues[0], &rowIndexes[0] );
-    TEST_FOR_EXCEPT( returndNumRowNz != 2 );
+    TEUCHOS_TEST_FOR_EXCEPT( returndNumRowNz != 2 );
     for( int k = 0; k < numRowNz; ++k) if (rowIndexes[k] == 0) rowValues[k] *= diagScale;
     crsMatrix.ReplaceGlobalValues( 0, numRowNz, rowValues, rowIndexes );
   }
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     if (parse_return != CommandLineProcessor::PARSE_SUCCESSFUL)
       return parse_return;
 
-    TEST_FOR_EXCEPTION( globalDim < 2, std::logic_error, "Error, globalDim=" << globalDim << " < 2 is not allowed!" );
+    TEUCHOS_TEST_FOR_EXCEPTION( globalDim < 2, std::logic_error, "Error, globalDim=" << globalDim << " < 2 is not allowed!" );
 
     *out << "\n***\n*** Running power method example using Epetra implementation\n***\n" << std::scientific;
 

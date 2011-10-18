@@ -144,7 +144,7 @@ int testResponses(const Epetra_Vector& g,
                   Teuchos::FancyOStream& out)
 {
   int failures = 0;
-  TEST_FOR_EXCEPTION(g.MyLength() != testValues.size(),
+  TEUCHOS_TEST_FOR_EXCEPTION(g.MyLength() != testValues.size(),
 		     std::logic_error,
 		     tag << " Test Values array has size " << 
 		     testValues.size() << "but expected size " <<
@@ -558,7 +558,7 @@ TEUCHOS_UNIT_TEST( Piro, SGAnalysis )
     Teuchos::Array<double> testValues =
       testParams.get<Teuchos::Array<double> >("Test Values");
     Thyra::DetachedVectorView<double> my_p(p);
-    TEST_FOR_EXCEPTION(my_p.subDim() != testValues.size(),
+    TEUCHOS_TEST_FOR_EXCEPTION(my_p.subDim() != testValues.size(),
 		       std::logic_error,
 		       "Test Values array has size " << 
 		       testValues.size() << "but expected size " <<

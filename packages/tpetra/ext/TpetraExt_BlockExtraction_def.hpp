@@ -43,11 +43,11 @@ Tpetra::Ext::extractBlockDiagonals(
   // block meta-data
   const int numBlocks = (int)first_points.size()-1;
   const size_t numRows = matrix.getNodeNumRows();
-  TEST_FOR_EXCEPTION(numRows != 0 && numBlocks <= 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows != 0 && numBlocks <= 0, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): specified zero blocks for a matrix with more than zero rows.");
-  TEST_FOR_EXCEPTION(numBlocks > 0 && first_points[0] != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks > 0 && first_points[0] != 0, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): first point of first block must be zero.");
-  TEST_FOR_EXCEPTION(matrix.isFillComplete() == false, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(matrix.isFillComplete() == false, std::runtime_error,
       "Tpetra::Ext::extractBlockDiagonals(): matrix must be fill-complete.");
   // INVARIANT: for all i=0,...,numBlock-1: first_points[i] - first_points[i-1] = block_size[i]
   int alloc_size      = 0,
@@ -58,13 +58,13 @@ Tpetra::Ext::extractBlockDiagonals(
   for (int b=0; b < numBlocks; ++b) 
   {
     const int block_size_b = (int)first_points[b+1] - (int)first_points[b];
-    TEST_FOR_EXCEPTION(block_size_b < 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(block_size_b < 0, std::runtime_error,
         "Tpetra::Ext::extractBlockDiagonals(): first points are not coherent.");
     sum_block_sizes += block_size_b;
     out_offsets[b]   = alloc_size;
     alloc_size      += block_size_b*block_size_b;
   }
-  TEST_FOR_EXCEPTION( sum_block_sizes != (int)matrix.getNodeNumRows(), std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION( sum_block_sizes != (int)matrix.getNodeNumRows(), std::runtime_error, 
       "Tpetra::Ext::extractBlockDiagonals(): specified blocks are not compatible with specified matrix (blocks are too large or too small or the last offset was missing).");
   if (alloc_size) {
     out_diags = arcp<Scalar>(alloc_size);
@@ -111,7 +111,7 @@ Tpetra::Ext::extractBlockDiagonals(
       ++subrow;
     }
     // this should have simultaneously finished matrix and the last block
-    TEST_FOR_EXCEPTION( subrow != block_size_b, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( subrow != block_size_b, std::logic_error,
         "Tpetra::Ext::extractBlockDiagonals(): internal logic error. Please contact Tpetra team.");
   }
 }
@@ -129,7 +129,7 @@ Tpetra::Ext::extractBlockDiagonals(
     extractBlockDiagonals( matrix, block_firsts(), out_diags, out_offsets );
   }
   catch (std::exception &e) {
-    TEST_FOR_EXCEPTION(true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
         "Tpetra::Ext::extractBlockDiagonals(RowMatrix,BlockMap,...) caught exception:\n\n" << e.what());
   }
 }
@@ -144,13 +144,13 @@ Tpetra::Ext::extractBlockRow(LocalOrdinal localBlockRow,
                              Teuchos::ArrayRCP<LocalOrdinal>                                 &out_block_indices)
 {
   std::string errstr("Tpetra::Ext::extractBlockRow(): ");
-  TEST_FOR_EXCEPTION( matrix.isFillComplete() == false, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION( matrix.isFillComplete() == false, std::runtime_error, 
       errstr << "matrix not fill-complete.");
-  TEST_FOR_EXCEPTION( !( localBlockRow >= 0 && (size_t)localBlockRow < block_row_map.getNodeNumBlocks() ), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( localBlockRow >= 0 && (size_t)localBlockRow < block_row_map.getNodeNumBlocks() ), std::runtime_error,
       errstr << "requested block row is not valid:\n" 
             << "localBlockRow == " << localBlockRow << "\n"
             << "block_row_map.getNodeNumBlocks() == " << block_row_map.getNodeNumBlocks() << "\n");
-  TEST_FOR_EXCEPTION( ! block_row_map.getPointMap()->isCompatible( *matrix.getRowMap() ), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( ! block_row_map.getPointMap()->isCompatible( *matrix.getRowMap() ), std::runtime_error,
       errstr << "specified block row map is not compatible with the matix row map.");
   // 
   out_block_entries = null;
@@ -186,7 +186,7 @@ Tpetra::Ext::extractBlockRow(LocalOrdinal localBlockRow,
         nfp = std::upper_bound( firstPoints.begin(), firstPoints.end(), bLind );
 #ifdef HAVE_TPETRA_DEBUG
         // firstPoints[0] == 0, so search for any bLind >= 0 should return nfp > firstPoints.end()
-        TEST_FOR_EXCEPTION( nfp == firstPoints.begin(), std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
+        TEUCHOS_TEST_FOR_EXCEPTION( nfp == firstPoints.begin(), std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
 #endif
         const size_t bj     = nfp - firstPoints.begin() - 1;
         // which sub-column in that block?
@@ -194,7 +194,7 @@ Tpetra::Ext::extractBlockRow(LocalOrdinal localBlockRow,
         const size_t blockWidth = block_col_map.getLocalBlockSize( bj );
 #ifdef HAVE_TPETRA_DEBUG
         // if this fails, it is probably an error with blockWidth from BlockMap
-        TEST_FOR_EXCEPTION( subCol >= blockWidth, std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
+        TEUCHOS_TEST_FOR_EXCEPTION( subCol >= blockWidth, std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
 #endif
         // find the block by looking it up in our std::map object
         ArrayRCP<Scalar> &block = blocks[bj];
@@ -206,7 +206,7 @@ Tpetra::Ext::extractBlockRow(LocalOrdinal localBlockRow,
         }
         else {
 #ifdef HAVE_TPETRA_DEBUG
-          TEST_FOR_EXCEPTION((size_t)block.size() != blockWidth*blockSize, std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
+          TEUCHOS_TEST_FOR_EXCEPTION((size_t)block.size() != blockWidth*blockSize, std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
 #endif
         }
         block[subCol*blockSize + subRow] = *rowval;
@@ -214,7 +214,7 @@ Tpetra::Ext::extractBlockRow(LocalOrdinal localBlockRow,
     }
   }
 #ifdef HAVE_TPETRA_DEBUG
-  TEST_FOR_EXCEPTION( numAllocatedBlocks != blocks.size(), std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION( numAllocatedBlocks != blocks.size(), std::logic_error, errstr << "internal Tpetra logic error. Please contact Tpetra team.\n");
 #endif
   out_block_entries = arcp<ArrayRCP<Scalar> >( numAllocatedBlocks );
   out_block_indices = arcp<LocalOrdinal>     ( numAllocatedBlocks );

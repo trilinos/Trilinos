@@ -141,7 +141,7 @@ Thyra::create_VectorSpace(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !epetra_map.get(), std::invalid_argument,
     "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
@@ -153,7 +153,7 @@ Thyra::create_VectorSpace(
     defaultSpmdVectorSpace<double>(
       comm, localSubDim, epetra_map->NumGlobalElements());
 #ifndef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
     ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
     "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
@@ -172,9 +172,9 @@ Thyra::create_LocallyReplicatedVectorSpace(
 {
   using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(parentSpace.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(parentSpace.get()==NULL);
   Teuchos::dyn_cast<const SpmdVectorSpaceBase<double> >(*parentSpace);
-  TEST_FOR_EXCEPT(dim <= 0);
+  TEUCHOS_TEST_FOR_EXCEPT(dim <= 0);
 #endif
   return parentSpace->smallVecSpcFcty()->createVecSpc(dim);
 }
@@ -187,7 +187,7 @@ Thyra::create_Vector(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space_in.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(space_in.get()==NULL);
 #endif
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
@@ -219,7 +219,7 @@ Thyra::create_Vector(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space_in.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(space_in.get()==NULL);
 #endif
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
@@ -253,7 +253,7 @@ Thyra::create_MultiVector(
 {
   using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(range_in.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
   const RCP<const SpmdVectorSpaceBase<double> > range =
     Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
@@ -278,7 +278,7 @@ Thyra::create_MultiVector(
     epetra_mv->ExtractView( &localValues, &leadingDim );
   }
   else {
-    TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
+    TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
   }
   // Build the MultiVector
   RCP<SpmdMultiVectorBase<double> >
@@ -305,7 +305,7 @@ Thyra::create_MultiVector(
 {
   using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(range_in.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
   const RCP<const SpmdVectorSpaceBase<double> > range =
     Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
@@ -330,7 +330,7 @@ Thyra::create_MultiVector(
     epetra_mv->ExtractView( &localValues, &leadingDim );
   }
   else {
-    TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
+    TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
   }
   // Build the MultiVector
   RCP<const SpmdMultiVectorBase<double> >
@@ -372,7 +372,7 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
   const Ptr<const MpiComm<Ordinal> > mpiComm =
     ptr_dynamic_cast<const MpiComm<Ordinal> >(comm);
 
-  TEST_FOR_EXCEPTION(is_null(mpiComm) && is_null(serialComm),
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(mpiComm) && is_null(serialComm),
     std::runtime_error, 
     "SPMD std::vector space has a communicator that is "
     "neither a serial comm nor an MPI comm");
@@ -386,7 +386,7 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
 
 #else
 
-  TEST_FOR_EXCEPTION(is_null(serialComm), std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(serialComm), std::runtime_error, 
     "SPMD std::vector space has a communicator that is "
     "neither a serial comm nor an MPI comm");
 
@@ -394,7 +394,7 @@ Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
   
 #endif
   
-  TEST_FOR_EXCEPTION(is_null(epetraComm), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(epetraComm), std::runtime_error,
     "null communicator created");
   
   return epetraComm;
@@ -421,7 +421,7 @@ Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
   const Ptr<const ProductVectorSpaceBase<double> > &prod_vs = 
     ptr_dynamic_cast<const ProductVectorSpaceBase<double> >(vs_ptr);
 
-  TEST_FOR_EXCEPTION( is_null(spmd_vs) && is_null(prod_vs), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(spmd_vs) && is_null(prod_vs), std::logic_error,
     "Error, the concrete VectorSpaceBase object of type "
     +Teuchos::demangleName(typeid(vs_in).name())+" does not support the"
     " SpmdVectorSpaceBase or the ProductVectorSpaceBase interfaces!" );

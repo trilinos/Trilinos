@@ -354,7 +354,7 @@ namespace {
 	  A = generateTestMatrix (globalNumRows, symmetric);
 	}
       } else {
-	TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
       }
 
       if (outMatrixFilename != "") {
@@ -635,16 +635,16 @@ main (int argc, char *argv[])
 	out << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
     if (generated)
       {
-	TEST_FOR_EXCEPTION(matrixFilename != "",
+	TEUCHOS_TEST_FOR_EXCEPTION(matrixFilename != "",
 			   std::invalid_argument,
 			   "The --generated and \"--matrixFilename=<file>\" "
 			   "options may not both be used.");
-	TEST_FOR_EXCEPTION(globalNumRows < std::max(3, Teuchos::size(*comm)),
+	TEUCHOS_TEST_FOR_EXCEPTION(globalNumRows < std::max(3, Teuchos::size(*comm)),
 			   std::invalid_argument,
 			   "The number of rows in the test matrix to generate "
 			   "must be at least max(3, # MPI processes), in order "
@@ -746,7 +746,7 @@ main (int argc, char *argv[])
     // For now, we use default parameters.
     RCP<ParameterList> nodeParams = parameterList ("Node Parameters");
     node = getNode<node_type> (nodeParams);
-    TEST_FOR_EXCEPTION(node.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::logic_error, 
 		       "Failed to initialize Kokkos Node.");
   }
   //

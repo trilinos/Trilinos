@@ -120,7 +120,7 @@ public:
     const Teuchos::ArrayView<const Scalar> &upper
     )
     {
-      TEST_FOR_EXCEPT( dim < 2 );
+      TEUCHOS_TEST_FOR_EXCEPT( dim < 2 );
       space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim);
       lower_ = lower;
       diag_ = diag;
@@ -227,7 +227,7 @@ void ExampleTridiagSerialLinearOp<Scalar>::applyImpl(
       y[k] += alpha * ( ST::conjugate(upper_[k-1])*x[k-1] + ST::conjugate(diag_[k])*x[k] );
     }
     else {
-      TEST_FOR_EXCEPT(true); // Throw exception if we get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Throw exception if we get here!
     }
   }
 

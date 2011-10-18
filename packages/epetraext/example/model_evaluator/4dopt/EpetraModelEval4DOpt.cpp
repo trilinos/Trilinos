@@ -151,14 +151,14 @@ EpetraModelEval4DOpt::get_f_map() const
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraModelEval4DOpt::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return map_p_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraModelEval4DOpt::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
@@ -171,7 +171,7 @@ EpetraModelEval4DOpt::get_x_init() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return p0_;
 }
 
@@ -190,14 +190,14 @@ EpetraModelEval4DOpt::get_x_upper_bounds() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_lower_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return pL_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_upper_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return pU_;
 }
 

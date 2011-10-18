@@ -26,7 +26,7 @@ LinearSystem(
 {
 
   // Check if we are running with too many processors
-  TEST_FOR_EXCEPTION( comm->NumProc() > 3, 
+  TEUCHOS_TEST_FOR_EXCEPTION( comm->NumProc() > 3, 
       std::logic_error,
       "Run this code with 3 processors at most!");
 
