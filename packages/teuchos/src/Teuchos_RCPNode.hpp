@@ -675,7 +675,7 @@ namespace Teuchos {
 
 
 /** \brief Utility handle class for handling the reference counting and
- * managuement of the RCPNode object.
+ * management of the RCPNode object.
  *
  * Again, this is *not* a user-level class.  Instead, this class is used by
  * all of the user-level reference-counting classes.
@@ -683,7 +683,7 @@ namespace Teuchos {
  * NOTE: I (Ross Bartlett) am not generally a big fan of handle classes and
  * greatly prefer smart pointers.  However, this is one case where a handle
  * class makes sense.  First, I want special behavior in some functions when
- * the wrapped RCPNode pointer is null.  Secound, I can't use one of the
+ * the wrapped RCPNode pointer is null.  Second, I can't use one of the
  * smart-pointer classes because this class is used to implement all of those
  * smart-pointer classes!
  *

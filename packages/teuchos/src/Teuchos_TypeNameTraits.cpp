@@ -42,7 +42,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 
-// Define this if you want to fource name demangling if supported
+// Define this if you want to force name demangling if supported
 //#define HAVE_TEUCHOS_DEMANGLE
 
 #if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)

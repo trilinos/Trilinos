@@ -596,14 +596,14 @@ std::string RCPNodeTracer::getCommonDebugNotesString()
     "2) Set a breakpoint in the RCPNode insertion routine when the desired RCPNode is first\n"
     "inserted.  In GDB, to break when the RCPNode with insertionNumber==3 is added, do:\n"
     "\n"
-    "  (gdb) b 'Teuchos::RCPNodeTracer::addNewRCPNode( [TAB] [ENTER]\n"
+    "  (gdb) b 'Teuchos::RCPNodeTracer::addNewRCPNode( [TAB] ' [ENTER]\n"
     "  (gdb) cond 1 insertionNumber==3 [ENTER]\n"
     "\n"
     "3) Run the program in the debugger.  In GDB, do:\n"
     "\n"
     "  (gdb) run [ENTER]\n"
     "\n"
-    "4) Examine the call stack when the prgoram breaks in the function addNewRCPNode(...)\n"
+    "4) Examine the call stack when the program breaks in the function addNewRCPNode(...)\n"
     );
 }
 
