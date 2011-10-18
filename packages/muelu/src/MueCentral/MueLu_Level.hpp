@@ -301,8 +301,8 @@ namespace MueLu {
       outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
       //outputter.pushFieldSpec("gen by",             Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 6);
       outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
-      //outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
-      //outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
+      outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
+      outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
       outputter.outputHeader();
 
       std::vector<std::string> ekeys = needs_.RequestedKeys();
@@ -321,33 +321,39 @@ namespace MueLu {
 
           int reqcount = needs_.NumRequests(*it, *kt); // request counter
           outputter.outputField(reqcount);
-          // variable type
-          /*std::string strType = needs_.GetType(*it, *kt);
-          if (strType.find("Xpetra::Operator")!=std::string::npos) {
-            outputter.outputField("Operator" );
-            outputter.outputField(" ");
-          } else if (strType.find("Xpetra::MultiVector")!=std::string::npos) {
-            outputter.outputField("Vector");
-            outputter.outputField("");
-          } else if (strType.find("MueLu::SmootherBase")!=std::string::npos) {
-            outputter.outputField("SmootherBase");
-            outputter.outputField("");
-          } else if (strType == "int") {
-            outputter.outputField(strType);
-            int data = needs_.Get<int>(*it, *kt);
-            outputter.outputField(data);
-          } else if (strType == "double") {
-            outputter.outputField(strType);
-            double data = needs_.Get<double>(*it, *kt);
-            outputter.outputField(data);
-          } else if (strType == "string") {
-            outputter.outputField(strType);
-            std::string data = needs_.Get<std::string>(*it, *kt);
-            outputter.outputField(data);
-          } else{
-            outputter.outputField(strType);
+
+          if (needs_.IsAvailable(*it, *kt)) {
+            std::string strType = needs_.GetType(*it, *kt); // Variable type
+            if (strType.find("Xpetra::Operator") != std::string::npos) {
+              outputter.outputField("Operator" );
+              outputter.outputField(" ");
+            } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
+              outputter.outputField("Vector");
+              outputter.outputField("");
+            } else if (strType.find("MueLu::SmootherBase") != std::string::npos) {
+              outputter.outputField("SmootherBase");
+              outputter.outputField("");
+            } else if (strType == "int") {
+              outputter.outputField(strType);
+              int data = needs_.Get<int>(*it, *kt);
+              outputter.outputField(data);
+            } else if (strType == "double") {
+              outputter.outputField(strType);
+              double data = needs_.Get<double>(*it, *kt);
+              outputter.outputField(data);
+            } else if (strType == "string") {
+              outputter.outputField(strType);
+              std::string data = needs_.Get<std::string>(*it, *kt);
+              outputter.outputField(data);
+            } else {
+              outputter.outputField(strType);
+              outputter.outputField("");
+            }
+          } else {
             outputter.outputField("unknown");
-          }*/
+            outputter.outputField("not available");
+          }
+
 
           outputter.nextRow();
         }
@@ -401,3 +407,5 @@ namespace MueLu {
 
 #define MUELU_LEVEL_SHORT
 #endif //ifndef MUELU_LEVEL_HPP
+
+//TODO: Caps should not matter
