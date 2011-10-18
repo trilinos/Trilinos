@@ -38,7 +38,7 @@
 
 //! Namespace for Kokkos classes and methods
 namespace Kokkos {
-  // import Teuchos memory management classes into Tpetra
+  // import Teuchos memory management classes into Kokkos
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
