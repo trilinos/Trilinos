@@ -507,7 +507,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       if (oldSolveLabel != newSolveLabel) {
 	// Tell TimeMonitor to forget about the old timer.
 	// TimeMonitor lets you clear timers by name.
-	TimeMonitor::clearTimer (oldSolveLabel);
+	TimeMonitor::clearCounter (oldSolveLabel);
 	timerSolve_ = TimeMonitor::getNewCounter (newSolveLabel);
       }
     }
