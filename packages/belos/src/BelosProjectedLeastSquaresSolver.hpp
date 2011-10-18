@@ -150,7 +150,6 @@ namespace Belos {
     /// \class ProjectedLeastSquaresProblem
     /// \brief "Container" for the data representing the projected least-squares problem.
     /// \author Mark Hoemmen
-    ///
     template<class Scalar>
     class ProjectedLeastSquaresProblem {
     public:
@@ -906,7 +905,6 @@ namespace Belos {
       ///   particular way.  At a high robustness level, triangular
       ///   solves will always succeed, but may only be solved in a
       ///   least-squares sense.
-      ///
       ProjectedLeastSquaresSolver (std::ostream& warnStream,
 				   const ERobustness defaultRobustness=ROBUSTNESS_NONE) :
 	warn_ (warnStream),
@@ -976,61 +974,6 @@ namespace Belos {
       {
 	solveGivens (problem.y, problem.R, problem.z, curCol);
       }
-
-      /// \brief Update CA-GMRES' upper Hessenberg matrix.
-      ///
-      /// The R input argument is a different R than the R factor of
-      /// the upper Hessenberg matrix.  This R stores the
-      /// orthogonalization coefficients of the Krylov basis.  (Thus,
-      /// it's the R factor in the QR factorization of the Krylov
-      /// basis, rather than the R factor in the QR factorization of
-      /// H.)
-      ///
-      /// After calling this method, the upper Hessenberg matrix is
-      /// ready for updateColumnsGivens().
-      ///
-      /// Notation: S = endCol-startCol+1 is the number of "new"
-      ///   Krylov basis vectors generated in this round of CA-GMRES,
-      ///   not counting the starting vector of the matrix powers
-      ///   kernel invocation.
-      ///
-      /// \param problem [in/out] The projected problem.
-      /// \param R [in/out] The upper triangular orthogonalization
-      ///   coefficients of the Krylov basis.  This is <i>not</i> the
-      ///   same as problem.R.  R is the R factor of the Krylov basis;
-      ///   problem.R is the R factor of the upper Hessenberg matrix.
-      /// \param B [in] The S+1 by S change-of-basis matrix.
-      /// \param startCol [in] [startCol, endCol] is an inclusive
-      ///   zero-based index range of columns of H to update.
-      /// \param endCol [in] [startCol, endCol] is an inclusive
-      ///   zero-based index range of columns of H to update.
-      void
-      caGmresUpdateUpperHessenberg (ProjectedLeastSquaresProblem<Scalar>& problem,
-				    const mat_type& R,
-				    const mat_type& B, 
-				    const int startCol, 
-				    const int endCol,
-				    const ERobustness robustness)
-      {
-	caGmresUpdateUpperHessenbergSlowImpl (problem.H, R, B, 
-					      startCol, endCol, robustness);
-      }
-      
-      /// \brief Update CA-GMRES' upper Hessenberg matrix.
-      ///
-      /// This method is just like its six-argument overload, except
-      /// that it uses the default robustness level.
-      void
-      caGmresUpdateUpperHessenberg (ProjectedLeastSquaresProblem<Scalar>& problem,
-				    const mat_type& R,
-				    const mat_type& B, 
-				    const int startCol, 
-				    const int endCol)
-      {
-	caGmresUpdateUpperHessenberg (problem, R, B, startCol, endCol, 
-				      defaultRobustness_);
-      }
-
 
       /// \brief Solve the given square upper triangular linear system(s).
       ///
@@ -1731,227 +1674,17 @@ namespace Belos {
       //! Default robustness level, for things like triangular solves.
       ERobustness defaultRobustness_;
 
-      /// \brief Update CA-GMRES' upper Hessenberg matrix.
+      /// \brief Solve the projected least-squares problem, assuming
+      ///   Givens rotations updates.
       ///
-      /// The R input argument is a different R than the R factor of
-      /// the upper Hessenberg matrix.  This R stores the
-      /// orthogonalization coefficients of the Krylov basis.  (Thus,
-      /// it's the R factor in the QR factorization of the Krylov
-      /// basis, rather than the R factor in the QR factorization of
-      /// H.)
-      ///
-      /// After calling this method, the upper Hessenberg matrix is
-      /// ready for updateColumnsGivens().
-      ///
-      /// Notation: S = endCol-startCol+1 is the number of "new"
-      ///   Krylov basis vectors generated in this round of CA-GMRES,
-      ///   not counting the starting vector of the matrix powers
-      ///   kernel invocation.
-      ///
-      /// \param H [in/out] The upper Hessenberg matrix.
-      /// \param R [in/out] The upper triangular orthogonalization
-      ///   coefficients of the Krylov basis.
-      /// \param B [in] The S+1 by S change-of-basis matrix.
-      /// \param startCol [in] [startCol, endCol] is an inclusive
-      ///   zero-based index range of columns of H to update.
-      /// \param endCol [in] [startCol, endCol] is an inclusive
-      ///   zero-based index range of columns of H to update.
-      /// \param robustness [in] Robustness level for operations
-      ///   like triangular solves.
-      void
-      caGmresUpdateUpperHessenbergImpl (mat_type& H, 
-					const mat_type& R, 
-					const mat_type& B, 
-					const int startCol, 
-					const int endCol,
-					const ERobustness robustness)
-      {
-	using Teuchos::Copy;
-	using Teuchos::RIGHT_SIDE;
-	using Teuchos::View;
-	using std::endl;
-	const int S = endCol - startCol + 1;
-	const bool debug = true;
-
-	Teuchos::oblackholestream blackHole;
-	std::ostream& err = debug ? std::cerr : blackHole;
-	LocalDenseMatrixOps<Scalar> ops;
-
-	TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
-			   "startCol = " << startCol << " < 0.");
-	TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument, 
-			   "startCol = " << startCol << " > endCol = " 
-			   << endCol << ".");
-	if (startCol == 0) {
-	  err << "---- First outer iteration of CA-GMRES: S = " << S << endl;
-	  //
-	  // This case only gets exercised on the first (outer)
-	  // iteration of CA-GMRES.
-	  //
-	  const mat_type R_underline (View, R, S+1, S+1);
-	  const mat_type B_view (View, B, S+1, S);
-	  const mat_type R_view (View, R, S, S);
-	  mat_type H_view (View, H, S+1, S);
-
-	  // H_view := R_underline * B_view.
-	  ops.matMatMult (STS::zero(), H_view, STS::one(), R_underline, B_view);
-
-	  // H_view : = H_view / R_view.
-	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_view, 
-						    R_view, robustness);
-	} else {
-	  const int M = startCol;
-	  // The new basis vectors don't include the starting vector
-	  // for the matrix powers kernel.
-	  err << "---- Later outer iteration of CA-GMRES: M = " 
-	      << M << ", S = " << S << endl;
-
-	  const mat_type R_km1k_underline (View, R, M-1, S+1, 0, M-1);
-	  const mat_type R_km1k (View, R, M-1, S, 0, M-1);
-	  const mat_type R_k_underline (View, R, S+1, S+1, M-1, M-1);
-	  const mat_type R_k (View, R, S, S, M-1, M-1);
-	  TEST_FOR_EXCEPTION(R(0,0) != STS::one(), std::invalid_argument, 
-			     "The input matrix R must have 1 as its upper left "
-			     "entry, but instead, R(0,0) = " << R(0,0) << ".");
-	  const mat_type B_k_underline (View, B, S+1, S);
-	  const mat_type H_km1 (View, H, M-1, M-1, 0, 0);
-	  mat_type H_km1k (View, H, M-1, S, 0, M-1);
-	  mat_type H_k_underline (View, H, S+1, S, M-1, M-1);
-
-	  // We need R_km1k / R_k (which is M-1 by S) for two
-	  // different things.  Let's precompute it, storing the
-	  // result in the temporary storage matrix Temp.
-	  mat_type Temp (M-1, S);
-	  Temp.assign (R_km1k); // the solve overwrites its input
-	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, Temp,
-						    R_k, robustness);
-	  // Keep a copy of the last row of (R_km1k / R_k).  The last
-	  // row is 1 x S.  Since indices are zero-based and (R_km1k /
-	  // R_k) is M-1 by S, the index of the last row is M-2.
-	  mat_type lastRow (Copy, Temp, 1, S, M-2, 0);
-	  //
-	  // Compute H_km1k := R_km1k_underline * B_k_underline / R_k - 
-	  //   H_km1 * (R_km1k / R_k).
-	  //
-	  // 1. H_km1k := -H_km1 * (R_km1k / R_k), where (R_km1k / R_k)
-	  //    is stored in Temp.
-	  ops.matMatMult (STS::zero(), H_km1k, -STS::one(), H_km1, Temp);
-	  // 2. Temp := R_km1k_underline * B_k_underline.
-	  //
-	  // Here we're using Temp once again as temp space, since we
-	  // don't need its original value any more.
-	  ops.matMatMult (STS::zero(), Temp, 
-			  STS::one(), R_km1k_underline, B_k_underline);
-	  // 3. Temp := Temp / R_k.
-	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, Temp,
-						    R_k, robustness);
-	  // 4. H_km1k := H_km1k + Temp.  This finishes the
-	  //    computation of H_km1k.
-	  ops.matAdd (H_km1k, Temp);
-	  //
-	  // Compute H_k_underline := R_k_underline * B_k_underline / R_k -
-	  //   h_km1 * e_1 * lastRow.
-	  //
-	  // 1. H_k_underline := R_k_underline * B_k_underline.
-	  ops.matMatMult (STS::zero(), H_k_underline, 
-			  STS::one(), R_k_underline, B_k_underline);
-	  // 2. H_k_underline := H_k_underline / R_k.
-	  (void) solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_k_underline,
-						    R_k, robustness);
-	  ops.matScale (lastRow, H(M+1,M));
-	  mat_type H_k_view (View, H_k_underline, 1, S);
-	  // 3. H_k_underline(1, 1:S) := H_k_underline(1, 1:S) - lastRow.
-	  //    This finishes the computation of H_k_underline.
-	  ops.matSub (H_k_view, lastRow);
-	}
-      }
-
-
-      void
-      caGmresUpdateUpperHessenbergSlowImpl (mat_type& H, 
-					    const mat_type& R, 
-					    const mat_type& B, 
-					    const int startCol, 
-					    const int endCol,
-					    const ERobustness robustness)
-      {
-	using Teuchos::Copy;
-	using Teuchos::View;
-	using Teuchos::RIGHT_SIDE;
-	using std::endl;
-
-	const bool debug = true;
-	Teuchos::oblackholestream blackHole;
-	std::ostream& err = debug ? std::cerr : blackHole;
-
-	if (startCol == 0) {
-	  caGmresUpdateUpperHessenbergImpl (H, R, B, startCol, endCol, robustness);
-	} else {
-	  TEST_FOR_EXCEPTION(startCol < 0, std::invalid_argument, 
-			     "startCol = " << startCol << " < 0.");
-	  TEST_FOR_EXCEPTION(startCol > endCol, std::invalid_argument,
-			     "startCol = " << startCol << " < endCol = " 
-			     << endCol << ".");
-	  const int M = startCol+1;
-	  const int S = endCol - startCol + 1;
-	  LocalDenseMatrixOps<Scalar> ops;
-
-	  mat_type H_copy (M+S, M+S-1);
-	  {
-	    mat_type H_km1_underline (View, H, M, M-1);
-	    mat_type H_target (View, H_copy, M, M-1);
-	    H_target.assign (H_km1_underline);
-	    
-	    mat_type B_k_underline (View, B, S+1, S);
-	    err << "---- Change of basis matrix: " << endl;
-	    print (err, B_k_underline, "     ");
-	    mat_type H_target2 (View, H_copy, S+1, S, M-1, M-1);
-	    H_target2.assign (B_k_underline);
-
-	    err << "---- Middle matrix: " << endl;
-	    print (err, H_copy, "     ");
-	  }
-
-	  mat_type R_copy (M+S, M+S);
-	  {
-	    for (int j = 0; j < M-1; ++j) {
-	      R_copy (j,j) = STS::one();
-	    }
-	    mat_type R_km1k_underline (Copy, R, M-1, S+1, 0, M-1);
-	    for (int i = 0; i < M-1; ++i) {
-	      R_km1k_underline (i, 0) = STS::zero();
-	    }
-	    mat_type R_k_underline (Copy, R, S+1, S+1, M-1, M-1);
-	    R_k_underline(0,0) = STS::one();
-	    for (int i = 1; i < S+1; ++i) {
-	      R_k_underline (i, 0) = STS::zero();
-	    }
-	    mat_type R_target (View, R_copy, M-1, S+1, 0, M-1);
-	    R_target.assign (R_km1k_underline);
-	    mat_type R_target2 (View, R_copy, S+1, S+1, M-1, M-1);
-	    R_target2.assign (R_k_underline);
-
-	    err << "---- R_copy: " << endl;
-	    print (err, R_copy, "     ");
-	  }
-
-	  mat_type Big_R (View, R_copy, M+S-1, M+S-1);
-	  solveUpperTriangularSystemInPlace (RIGHT_SIDE, H_copy, 
-					     Big_R, robustness);
-	  mat_type Big_R_underline (View, R_copy, M+S, M+S);
-	  mat_type H_out (View, H, M+S, M+S-1);
-	  ops.matMatMult (STS::zero(), H_out, STS::one(), Big_R_underline, H_copy);
-	}
-      }
-
-
-      /// \brief Solve the projected least-squares problem, assuming Givens rotations updates.
-      ///
-      /// Call this method after invoking either updateColumnGivens()
-      /// with the same curCol, or updateColumnsGivens() with curCol =
+      /// Call this method after invoking either \c updateColumnGivens()
+      /// with the same curCol, or \c updateColumnsGivens() with curCol =
       /// endCol.
       void
-      solveGivens (mat_type& y, mat_type& R, const mat_type& z, const int curCol) 
+      solveGivens (mat_type& y, 
+		   mat_type& R, 
+		   const mat_type& z, 
+		   const int curCol)
       {
 	const int numRows = curCol + 2;
 
