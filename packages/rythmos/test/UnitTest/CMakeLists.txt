@@ -325,3 +325,10 @@ IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
       STANDARD_PASS_OUTPUT
       )
 ENDIF()
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    CompositeIntegrationObserver_UnitTest
+    SOURCES Rythmos_IntegrationObservers_UnitTest.cpp Rythmos_UnitTest.cpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
