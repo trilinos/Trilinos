@@ -24,20 +24,18 @@
 
 namespace Zoltan2
 {
-
 /*! \brief Identifier translations available from IdentifierMap.
 
-  GNO and LNO are the internal Zoltan2 global and local IDs.
-  GID and LID are the global and local IDs used by the caller.
-  The internal GNOs may be the same as the GIDs if the caller
-  used a data type that can be used as a Teuchos Ordinal.
+  TRANSLATE_APP_TO_LIB  Translate the applications identifiers to
+                          Zoltan's internal identifiers
+
+  TRANSLATE_LIB_TO_APP  Translate Zoltan's internal identifiers back
+                          to the application's original identifiers
 */
 
 enum TranslationType {
-  TRANSLATE_GNO_TO_GID,
-  TRANSLATE_GID_TO_GNO,
-  TRANSLATE_GNO_TO_LID,
-  TRANSLATE_LID_TO_GNO
+  TRANSLATE_APP_TO_LIB,
+  TRANSLATE_LIB_TO_APP
 };
 
 /*! Z2::IdentifierMap
@@ -47,72 +45,39 @@ enum TranslationType {
            replace new/delete with memory wrappers
            exception handling
            use Kokkos node 
-
-    TODO - methods called by Problem to redistribute in place or to
-          create a redistributed copy.
 */
 
 ////////////////////////////////////////////////////////////////////
 // Declarations
 ////////////////////////////////////////////////////////////////////
 
-template<typename AppLID, typename AppGID, typename LNO=int, 
-  typename GNO=AppGID> 
+template<typename User>
     class IdentifierMap{
-
-private:
-
-  // Input communicator
-
-  RCP<const Comm<int> > comm_;
-
-  // Problem parameters, library configuration.
-
-  RCP<Environment> env_;
-
-  // Application global and local IDs
-
-  ArrayRCP<AppGID> myGids_; 
-  ArrayRCP<AppLID> myLids_;
-
-  // In the case of consecutive ordinal application global IDs,
-  // gnoDist[p] is the first global number on process p, and
-  // we don't need the gidHash_.
-
-  ArrayRCP<GNO> gnoDist_;
-
-  // A hash table from application global ID key to our local index.
-
-  RCP<Teuchos::Hashtable<double, LNO> >  gidHash_;
-
-  // A hash table from application local ID key to our local index.
-
-  RCP<Teuchos::Hashtable<double, LNO> >  lidHash_;
-
-  typename Array<GNO>::size_type globalNumberOfIds_;
-  typename Array<GNO>::size_type localNumberOfIds_;
-  bool haveLocalIds_;
-  int myRank_;
-  int numProcs_;
-  bool consecutiveIdsRequired_;   // TODO
-
-  void setupMap();
 
 public:
 
+  typedef typename InputTraits<User>::gno_t gno_t;
+  typedef typename InputTraits<User>::lno_t lno_t;
+  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::lid_t lid_t;
+
   /*! Constructor - Must be called by all processes 
    *
-   *  We are not taking a Kokkos node here.  In the future we should.
-   *
-   *  Problem: we have to template the communicator on int, because Tpetra_Map
-   *  only takes Comm<int>. 
+   * \param comm the problem communicator
+   * \param env  the problem and library environment
+   * \param gids  the application global IDs
+   * \param lids  the application local IDs, if any
+   * \param gidsMustBeConsecutive  set to true if the algorithm
+   *           or third party library requires consective ids
+   *           If necessary the IdentifierMap will map the application's
+   *           global IDs to integral IDs beginning at zero.
    */
 
-  explicit IdentifierMap( const RCP<const Comm<int> > &incomm_, 
+  explicit IdentifierMap( const RCP<const Comm<int> > &comm, 
                           const RCP<Environment > &env, 
-                          const ArrayRCP<AppGID> &gids, 
-                          const ArrayRCP<AppLID> &lids,
-                          bool idsMustBeConsecutive=false);
+                          const ArrayRCP<gid_t> &gids, 
+                          const ArrayRCP<lid_t> &lids,
+                          bool gidsMustBeConsecutive=false);
 
   /*! Constructor 
       This constructor does not need to be called by all processes.
@@ -128,23 +93,45 @@ public:
   /*! Assignment operator */
   IdentifierMap &operator=(const IdentifierMap &id);
 
-  /*! Initialize object if not done in the constructor */
+  /*! Initialize object if not done in the constructor 
+   *
+   * \param comm the problem communicator
+   * \param env  the problem and library environment
+   * \param gids  the application global IDs
+   * \param lids  the application local IDs, if any
+   * \param gidsMustBeConsecutive  set to true if the algorithm
+   *           or third party library requires consective ids
+   *           If necessary the IdentifierMap will map the application's
+   *           global IDs to integral IDs beginning at zero.
+   */
   void initialize(const RCP<const Comm<int> > &incomm_,
                   const RCP<Environment > &env,
-                  const ArrayRCP<AppGID> &gids,
-                  const ArrayRCP<AppLID> &lids,
-                  bool idsMustBeConsecutive=false);
+                  const ArrayRCP<gid_t> &gids,
+                  const ArrayRCP<lid_t> &lids,
+                  bool gidsMustBeConsecutive=false);
 
   /*! Return true if we are using the application global IDs 
    *  for our internal global numbers 
    */
   bool gnosAreGids() const;
 
+  /*! Return true if our internal global numbers are consecutive.
+   */
+  bool gnosAreConsecutive() const;
+
+  /*! Return true if consecutive Gids are required.
+   */
+  bool consecutiveGnosAreRequired() const;
+
+  /*! Return the lowest global number if Gids are consecutive.
+   */
+  void getConsecutiveGidBase(gno_t &base) const;
+
   /*! Map the application global IDs to internal global numbers or vice versa.
 
       \param gid an array of caller's global IDs
       \param gno an array of Zoltan2 global numbers
-      \param tt should be TRANSLATE_GNO_TO_GID or TRANSLATE_GID_TO_GNO 
+      \param tt should be TRANSLATE_APP_TO_LIB or TRANSLATE_LIB_TO_APP
 
       This is a local call.  If gid is a vector of application global IDs, then
       gno will be set to the corresponding internal global numbers.  If the
@@ -154,15 +141,15 @@ public:
 
       TODO: Why does code fail to compile if I pass gid and gno by reference?
    */
-  void gidTranslate(ArrayView<AppGID> gid, 
-                    ArrayView<GNO> gno,
+  void gidTranslate(ArrayView<gid_t> gid, 
+                    ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
   /*! Map application local IDs to internal global numbers or vice versa.
 
       \param lid an array of caller's local IDs
       \param gno an array of Zoltan2 global numbers
-      \param tt should be TRANSLATE_GNO_TO_LID or TRANSLATE_LID_TO_GNO 
+      \param tt should be TRANSLATE_APP_TO_LIB or TRANSLATE_LIB_TO_APP
 
       This is a local call.  If lid is a vector of application local IDs, then
       gno will be set to the corresponding internal global numbers.  If the
@@ -170,8 +157,8 @@ public:
       to application local IDs.  The application local IDs must be from
       those supplied by this process.
    */
-  void lidTranslate(ArrayView<AppLID> lid, 
-                    ArrayView<GNO> gno,
+  void lidTranslate(ArrayView<lid_t> lid, 
+                    ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
   /*! Map application global IDs to internal global numbers.
@@ -187,64 +174,111 @@ public:
       All processes must call this.  The global IDs 
       supplied may belong to another process.  
    */
-  void gidGlobalTranslate( ArrayView<const AppGID> in_gid,
-                           ArrayView<GNO> out_gno,
+  void gidGlobalTranslate( ArrayView<const gid_t> in_gid,
+                           ArrayView<gno_t> out_gno,
                            ArrayView<int> out_proc) const;
+
+private:
+
+  // Input communicator
+
+  RCP<const Comm<int> > comm_;
+
+  // Problem parameters, library configuration.
+
+  RCP<Environment> env_;
+
+  // Application global and local IDs
+
+  ArrayRCP<gid_t> myGids_; 
+  ArrayRCP<lid_t> myLids_;
+
+  // In the case of consecutive ordinal application global IDs,
+  // gnoDist[p] is the first global number on process p, and
+  // we don't need the gidHash_.
+
+  ArrayRCP<gno_t> gnoDist_;
+
+  // A hash table from application global ID key to our local index.
+
+  RCP<Teuchos::Hashtable<double, lno_t> >  gidHash_;
+
+  // A hash table from application local ID key to our local index.
+
+  RCP<Teuchos::Hashtable<double, lno_t> >  lidHash_;
+
+  typename Array<gno_t>::size_type globalNumberOfIds_;
+  typename Array<gno_t>::size_type localNumberOfIds_;
+  bool haveLocalIds_;
+  int myRank_;
+  int numProcs_;
+
+  bool userGidsAreTeuchosOrdinal_;
+  bool userGidsAreConsecutive_;
+  bool userGidsAreZoltan2Gids_;
+  bool zoltan2GidsAreConsecutive_;
+  bool consecutiveGidsAreRequired_;
+
+  void setupMap();
+
 };
 
 ////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
-  IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
+template<typename User> 
+  IdentifierMap<User>::IdentifierMap(
     const RCP<const Comm<int> > &incomm_, const RCP<Zoltan2::Environment> &env,
-    const ArrayRCP<AppGID> &gids, const ArrayRCP<AppLID> &lids,
+    const ArrayRCP<gid_t> &gids, const ArrayRCP<lid_t> &lids,
     bool idsMustBeConsecutive) 
          : comm_(incomm_),  env_(env), myGids_(gids), myLids_(lids),
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
-           myRank_(0), numProcs_(0), 
-           consecutiveIdsRequired_(idsMustBeConsecutive)
+           myRank_(0), numProcs_(0), userGidsAreTeuchosOrdinal_(false),
+           userGidsAreConsecutive_(false), userGidsAreZoltan2Gids_(false),
+           zoltan2GidsAreConsecutive_(false), 
+           consecutiveGidsAreRequired_(idsMustBeConsecutive)
 {
   setupMap();
 }
 
   /*! Constructor */
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap()  
+template<typename User>
+  IdentifierMap<User>::IdentifierMap()  
          : comm_(), env_(), myGids_(), myLids_(),
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
-           myRank_(0), numProcs_(0), consecutiveIdsRequired_(false)
+           myRank_(0), numProcs_(0), userGidsAreTeuchosOrdinal_(false),
+           userGidsAreConsecutive_(false), userGidsAreZoltan2Gids_(false),
+           zoltan2GidsAreConsecutive_(false)
 {
 }
 
   /*! Destructor */
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  IdentifierMap<AppLID,AppGID,LNO,GNO>::~IdentifierMap() 
+template<typename User>
+  IdentifierMap<User>::~IdentifierMap() 
   {
   }
 
   /*! Copy Constructor */
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(const IdentifierMap &id)
+template<typename User>
+  IdentifierMap<User>::IdentifierMap(const IdentifierMap &id)
 {
     //TODO    default should work, shouldn't it?
 }
 
   /*! Assignment operator */
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  IdentifierMap<AppLID,AppGID,LNO,GNO> &
-    IdentifierMap<AppLID,AppGID,LNO,GNO>::operator=(const IdentifierMap<AppLID,
-                  AppGID,LNO,GNO> &id)
+template<typename User>
+  IdentifierMap<User> &
+    IdentifierMap<User>::operator=(const IdentifierMap<User> &id)
 {
     //TODO
 }
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  void IdentifierMap<AppLID,AppGID,LNO,GNO>::initialize(
+template<typename User>
+  void IdentifierMap<User>::initialize(
     const RCP<const Comm<int> > &incomm_, 
     const RCP<Zoltan2::Environment> &env,
-    const ArrayRCP<AppGID> &gids, const ArrayRCP<AppLID> &lids,
+    const ArrayRCP<gid_t> &gids, const ArrayRCP<lid_t> &lids,
     bool idsMustBeConsecutive) 
 {
   gnoDist_.release();
@@ -264,24 +298,49 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   haveLocalIds_=false;;
   myRank_ = 0; 
   numProcs_ = 0;
-  consecutiveIdsRequired_ = idsMustBeConsecutive;
+  userGidsAreTeuchosOrdinal_ = false;
+  userGidsAreConsecutive_ = false ;
+  userGidsAreZoltan2Gids_ = false;
+  zoltan2GidsAreConsecutive_ = false;
+  consecutiveGidsAreRequired_ = idsMustBeConsecutive;
 
   setupMap();
 }
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  bool IdentifierMap<AppLID, AppGID, LNO, GNO>::gnosAreGids() const
+template<typename User>
+  bool IdentifierMap<User>::gnosAreGids() const
 {
-  return IdentifierTraits<AppGID>::isGlobalOrdinalType();
+  return userGidsAreZoltan2Gids_;
 }
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidTranslate(
-    ArrayView<AppGID> gid, 
-    ArrayView<GNO> gno,
+template<typename User>
+  bool IdentifierMap<User>::gnosAreConsecutive() const
+{
+  return zoltan2GidsAreConsecutive_;
+}
+
+template<typename User>
+  bool IdentifierMap<User>::consecutiveGnosAreRequired() const
+{
+  return consecutiveGidsAreRequired_;
+}
+
+template<typename User>
+  void IdentifierMap<User>::getConsecutiveGidBase(gno_t &base) const
+{
+  if (gnoDist_.size() > 0) 
+    base = gnoDist_[0];
+  else 
+    base = 0;   // error or not?
+}
+
+template<typename User>
+  void IdentifierMap<User>::gidTranslate(
+    ArrayView<gid_t> gid, 
+    ArrayView<gno_t> gno,
     TranslationType tt) const
 {
-  typedef typename Array<GNO>::size_type teuchos_size_t;
+  typedef typename Array<gno_t>::size_type teuchos_size_t;
   teuchos_size_t len=gid.size();
 
   if (len == 0){
@@ -290,30 +349,30 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
     "invalid TranslationType", 
-    (tt==TRANSLATE_GNO_TO_GID) || (tt==TRANSLATE_GID_TO_GNO), 
+    (tt==TRANSLATE_APP_TO_LIB) || (tt==TRANSLATE_LIB_TO_APP), 
     BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
     "Destination array is too small",
-    ((tt==TRANSLATE_GNO_TO_GID) && (gid.size() >= gno.size())) || 
-     ((tt==TRANSLATE_GID_TO_GNO) && (gno.size() >= gid.size())),
+    ((tt==TRANSLATE_LIB_TO_APP) && (gid.size() >= gno.size())) || 
+     ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= gid.size())),
     BASIC_ASSERTION);
 
-  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){   
+  if (IdentifierTraits<gid_t>::isGlobalOrdinalType()){   
                               // our gnos are the app gids
-    if (tt == TRANSLATE_GNO_TO_GID)
+    if (tt == TRANSLATE_LIB_TO_APP)
       for (teuchos_size_t i=0; i < len; i++)
-        gid[i] = static_cast<AppGID>(gno[i]);
+        gid[i] = static_cast<gid_t>(gno[i]);
     else
       for (teuchos_size_t i=0; i < len; i++)
-        gno[i] = static_cast<GNO>(gid[i]);
+        gno[i] = static_cast<gno_t>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
   
-    GNO firstGno = gnoDist_[myRank_];
-    GNO endGno = gnoDist_[myRank_ + 1];
+    gno_t firstGno = gnoDist_[myRank_];
+    gno_t endGno = gnoDist_[myRank_ + 1];
 
-    if (tt == TRANSLATE_GNO_TO_GID){
+    if (tt == TRANSLATE_LIB_TO_APP){
       for (teuchos_size_t i=0; i < len; i++){
 
         Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, "invalid global number", 
@@ -323,10 +382,10 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       }
     }
     else{
-      LNO idx;
+      lno_t idx;
       for (teuchos_size_t i=0; i < len; i++){
         try{
-          idx = gidHash_->get(Zoltan2::IdentifierTraits<AppGID>::key(gid[i]));
+          idx = gidHash_->get(Zoltan2::IdentifierTraits<gid_t>::key(gid[i]));
         }
         catch (const std::exception &e) {
           Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -339,13 +398,13 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   return;
 }
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  void IdentifierMap<AppLID, AppGID, LNO, GNO>::lidTranslate(
-    ArrayView<AppLID> lid, 
-    ArrayView<GNO> gno, 
+template<typename User>
+  void IdentifierMap<User>::lidTranslate(
+    ArrayView<lid_t> lid, 
+    ArrayView<gno_t> gno, 
     TranslationType tt) const
 {
-  typedef typename Array<GNO>::size_type teuchos_size_t;
+  typedef typename Array<gno_t>::size_type teuchos_size_t;
   teuchos_size_t len=lid.size();
 
   if (len == 0){
@@ -354,12 +413,12 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
     "invalid TranslationType", 
-    (tt==TRANSLATE_GNO_TO_LID) || (tt==TRANSLATE_LID_TO_GNO), 
+    (tt==TRANSLATE_LIB_TO_APP) || (tt==TRANSLATE_APP_TO_LIB), 
     BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
     "Destination array is too small",
-    ((tt==TRANSLATE_GNO_TO_LID) && (lid.size() >= gno.size())) || ((tt==TRANSLATE_LID_TO_GNO) && (gno.size() >= lid.size())),
+    ((tt==TRANSLATE_LIB_TO_APP) && (lid.size() >= gno.size())) || ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lid.size())),
     BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
@@ -367,15 +426,15 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
      haveLocalIds_,
     BASIC_ASSERTION);
 
-  GNO firstGno(0), endGno(0);
+  gno_t firstGno(0), endGno(0);
   if (gnoDist_.size() > 0){
     firstGno = gnoDist_[myRank_];
     endGno = gnoDist_[myRank_+1];
   }
   
-  if (tt == TRANSLATE_GNO_TO_LID){
+  if (tt == TRANSLATE_LIB_TO_APP){
     for (teuchos_size_t i=0; i < len; i++){
-      LNO idx = 0;
+      lno_t idx = 0;
       if (gnoDist_.size() > 0) {// gnos are consecutive
 
         Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
@@ -388,7 +447,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       else {                    // gnos must be the app gids
         try{
           idx = gidHash_->get(
-            IdentifierTraits<AppGID>::key(static_cast<AppGID>(gno[i])));
+            IdentifierTraits<gid_t>::key(static_cast<gid_t>(gno[i])));
         }
         catch (const std::exception &e) {
           Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -400,9 +459,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   }
   else{
     for (teuchos_size_t i=0; i < len; i++){
-      LNO idx(0);
+      lno_t idx(0);
       try{
-        idx = lidHash_->get(IdentifierTraits<AppLID>::key(lid[i]));
+        idx = lidHash_->get(IdentifierTraits<lid_t>::key(lid[i]));
       }
       catch (const std::exception &e) {
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -411,20 +470,20 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       if (gnoDist_.size() > 0)  // gnos are consecutive
         gno[i] = firstGno + idx;
       else                     // gnos must be the app gids
-        gno[i] = static_cast<GNO>(myGids_[idx]);
+        gno[i] = static_cast<gno_t>(myGids_[idx]);
     }
   }
 }
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidGlobalTranslate(
-    ArrayView<const AppGID> in_gid,
-    ArrayView<GNO> out_gno,
+template<typename User>
+  void IdentifierMap<User>::gidGlobalTranslate(
+    ArrayView<const gid_t> in_gid,
+    ArrayView<gno_t> out_gno,
     ArrayView<int> out_proc) const
 {
-  typedef typename Array<GNO>::size_type teuchos_size_t;
-  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
-  typedef typename Teuchos::Hashtable<double, Array<LNO> > 
+  typedef typename Array<gno_t>::size_type teuchos_size_t;
+  typedef typename Teuchos::Hashtable<double, lno_t> id2index_hash_t;
+  typedef typename Teuchos::Hashtable<double, Array<lno_t> > 
     id2index_array_hash_t;
 
   teuchos_size_t len=in_gid.size();
@@ -440,21 +499,21 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
-  if (IdentifierTraits<AppGID>::isGlobalOrdinalType() && (gnoDist_.size() > 0)){
+  if (IdentifierTraits<gid_t>::isGlobalOrdinalType() && (gnoDist_.size() > 0)){
 
     // Easy case - communication is not needed.
     // Global numbers are the application global IDs and
     // they are increasing consecutively with rank.
  
-    typename std::map<GNO, int> firstGnoToProc;
-    typename std::map<GNO, int>::iterator pos;
+    typename std::map<gno_t, int> firstGnoToProc;
+    typename std::map<gno_t, int>::iterator pos;
 
     for (int p=0; p <= numProcs_; p++){
       firstGnoToProc[gnoDist_[p]] = p;
     }
 
     for (teuchos_size_t i=0; i < len; i++){
-      GNO globalNumber = static_cast<GNO>(in_gid[i]);
+      gno_t globalNumber = static_cast<gno_t>(in_gid[i]);
       if (!skipGno)
         out_gno[i] = globalNumber;
       pos = firstGnoToProc.upper_bound(globalNumber);
@@ -464,25 +523,25 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     return;
   }
 
-  bool needGnoInfo = !IdentifierTraits<AppGID>::isGlobalOrdinalType();
+  bool needGnoInfo = !IdentifierTraits<gid_t>::isGlobalOrdinalType();
 
   ///////////////////////////////////////////////////////////////////////
-  // First: Hash each of my AppGIDs to a process that will answer
-  // for it.  Send my AppGIDs (and the Gnos if they are different)
+  // First: Hash each of my gid_ts to a process that will answer
+  // for it.  Send my gid_ts (and the Gnos if they are different)
   // to their assigned processes.  Build a search structure for
-  // the AppGIDs that were assigned to me, so I can reply with
+  // the gid_ts that were assigned to me, so I can reply with
   // with the process owning them (and their Gnos if they are different).
   ///////////////////////////////////////////////////////////////////////
 
   Array<int> hashProc(0);
-  Array<AppGID> gidOutBuf(0);
-  Array<GNO> gnoOutBuf(0);
-  Array<LNO> countOutBuf(numProcs_, 0);
-  Array<LNO> offsetBuf(numProcs_ + 1, 0);
+  Array<gid_t> gidOutBuf(0);
+  Array<gno_t> gnoOutBuf(0);
+  Array<lno_t> countOutBuf(numProcs_, 0);
+  Array<lno_t> offsetBuf(numProcs_ + 1, 0);
 
-  ArrayRCP<AppGID> gidInBuf();
-  ArrayRCP<GNO> gnoInBuf();
-  ArrayRCP<LNO> countInBuf();
+  ArrayRCP<gid_t> gidInBuf();
+  ArrayRCP<gno_t> gnoInBuf();
+  ArrayRCP<lno_t> countInBuf();
 
   if (localNumberOfIds_ > 0){
 
@@ -499,7 +558,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
-      hashProc[i] = IdentifierTraits<AppGID>::hashCode(myGids_[i]) % numProcs_;
+      hashProc[i] = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
       countOutBuf[hashProc[i]]++;
     }
   
@@ -514,7 +573,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     }
   
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
-      LNO offset = offsetBuf[hashProc[i]];
+      lno_t offset = offsetBuf[hashProc[i]];
       gidOutBuf[offset] = myGids_[i];
       if (needGnoInfo)
         gnoOutBuf[offset] = gnoDist_[myRank_] + i;
@@ -524,7 +583,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   }
 
   // Teuchos comment #1: An Array can be passed for an ArrayView parameter.
-  // Teuchos comment #2: AppGID need not be a Teuchos Packet type,
+  // Teuchos comment #2: gid_t need not be a Teuchos Packet type,
   //                     so we wrote our own AlltoAllv.
   // Z2::AlltoAllv comment: Buffers are in process rank order.
 
@@ -552,8 +611,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   // Save the information that was hashed to me so I can do lookups.
   //
 
-  std::map<LNO, int> firstIndexToProc;
-  LNO total = 0;
+  std::map<lno_t, int> firstIndexToProc;
+  lno_t total = 0;
 
   for (int p=0; p < numProcs_; p++){
     firstIndexToProc[total] = p;
@@ -566,9 +625,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   total = 0;
   for (int p=0; p < numProcs_; p++){
-    for (LNO i=countInBuf[p]; i < countInBuf[p+1]; i++, total++){
+    for (lno_t i=countInBuf[p]; i < countInBuf[p+1]; i++, total++){
       try{
-        gidToIndex.put(IdentifierTraits<AppGID>::key(gidInBuf[total]), total);
+        gidToIndex.put(IdentifierTraits<gid_t>::key(gidInBuf[total]), total);
       }
       catch (const std::exception &e) 
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -587,9 +646,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   
   Array<double> uniqueGidQueries(0);
-  Array<Array<LNO> > uniqueGidQueryIndices(0);
+  Array<Array<lno_t> > uniqueGidQueryIndices(0);
   teuchos_size_t numberOfUniqueGids = 0;
-  Array<LNO> gidLocation(0);
+  Array<lno_t> gidLocation(0);
 
   countOutBuf.resize(numProcs_, 0);
 
@@ -608,12 +667,12 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     Z2_ASYNC_MEMORY_ALLOC(*comm_, *env_, id2index_array_hash_t, 
       gidIndices, tableSize);
 
-    for (LNO i=0; i < len; i++){
+    for (lno_t i=0; i < len; i++){
 
-      double uniqueKey(IdentifierTraits<AppGID>::key(in_gid[i]));
+      double uniqueKey(IdentifierTraits<gid_t>::key(in_gid[i]));
 
       if (gidIndices->containsKey(uniqueKey)){
-        Array<LNO> v;
+        Array<lno_t> v;
         try{
           v = gidIndices->get(uniqueKey);
         }
@@ -627,7 +686,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         v.push_back(i);
       }
       else{
-        Array<LNO> v(sizeChunk);
+        Array<lno_t> v(sizeChunk);
         v[0] = i;
         try{
           gidIndices->put(uniqueKey, v);
@@ -673,7 +732,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, numberOfUniqueGids, false); 
   
     for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
-      AppGID gid = IdentifierTraits<AppGID>::keyToGid(uniqueGidQueries[i]);
+      gid_t gid = IdentifierTraits<gid_t>::keyToGid(uniqueGidQueries[i]);
       gidLocation[i] = offsetBuf[hashProc[i]];
       gidOutBuf[gidLocation[i]] = gid;
       offsetBuf[hashProc[i]] = gidLocation[i] + 1;
@@ -717,9 +776,9 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     total=0;
   
     for (int p=0; p < numProcs_; p++){
-      for (LNO i=0; i < countInBuf[p]; i++, total++){
-        double k(IdentifierTraits<AppGID>::key(gidInBuf[total]));
-        LNO index(0);
+      for (lno_t i=0; i < countInBuf[p]; i++, total++){
+        double k(IdentifierTraits<gid_t>::key(gidInBuf[total]));
+        lno_t index(0);
         try{
           index = gidToIndex.get(k);
         }
@@ -768,16 +827,16 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
 
     double key(uniqueGidQueries[i]);
-    Array<LNO> v(uniqueGidQueryIndices[i]);
+    Array<lno_t> v(uniqueGidQueryIndices[i]);
 
     int gidProc = procInBuf[gidLocation[i]];
 
-    LNO gno;
+    lno_t gno;
     if (needGnoInfo){
       gno = gnoInBuf[gidLocation[i]];
     }
     else{
-      gno = static_cast<GNO>(IdentifierTraits<AppGID>::keyToGid(key));
+      gno = static_cast<gno_t>(IdentifierTraits<gid_t>::keyToGid(key));
     }
 
     for (teuchos_size_t j=0; j < v.size(); j++){
@@ -789,21 +848,21 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 }
 
 
-template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
-  void IdentifierMap<AppLID,AppGID,LNO,GNO>::setupMap(void)
+template<typename User> 
+  void IdentifierMap<User>::setupMap(void)
 {
   numProcs_ = comm_->getSize(); 
   myRank_ = comm_->getRank(); 
 
   Z2_GLOBAL_INPUT_ASSERTION( *comm_, *env_, 
            "application global ID type is not supported",
-           IdentifierTraits<AppGID>::is_valid_id_type() == true,
+           IdentifierTraits<gid_t>::is_valid_id_type() == true,
            BASIC_ASSERTION);
 
   localNumberOfIds_ = myGids_.size();
 
-  typedef typename Array<GNO>::size_type teuchos_size_t;
-  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
+  typedef typename Array<gno_t>::size_type teuchos_size_t;
+  typedef typename Teuchos::Hashtable<double, lno_t> id2index_hash_t;
 
   Teuchos::Tuple<teuchos_size_t, 4> counts;
 
@@ -837,11 +896,11 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
     }
 
-    AppLID *lidPtr = myLids_.get();  // for performance
+    lid_t *lidPtr = myLids_.get();  // for performance
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       try{
-        p->put(IdentifierTraits<AppLID>::key(lidPtr[i]), i);
+        p->put(IdentifierTraits<lid_t>::key(lidPtr[i]), i);
       }
       catch (const std::exception &e) 
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -850,24 +909,32 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     lidHash_ = RCP<id2index_hash_t>(p);
   }
 
-  // If the application's global ID data type (AppGID) is a Teuchos Ordinal,
-  // we will be able to use it as our internal global numbers (GNO).  
-  // Otherwise we will have to map their global IDs to valid global numbers.
+  // Determine whether the application's global ID data type (gid_t) is a 
+  // Teuchos Ordinal, and if so, whether they are consecutive, and what the
+  // gid_t base is.
+  //
+  // If they are non-consecutive Teuchos Ordinals, and consecutive IDs are
+  // not required, or if they are consecutive Teuchos Ordinals, we can use 
+  // the user's global IDs.  Otherwise we map their IDs to valid global numbers.
 
-  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){
+  userGidsAreTeuchosOrdinal_ = false;
+  userGidsAreConsecutive_ = false;
+  userGidsAreZoltan2Gids_ = false;
 
-    // Are the AppGIDs consecutive and increasing with process rank? 
+  if (IdentifierTraits<gid_t>::isGlobalOrdinalType()){
+
+    // Are the gids consecutive and increasing with process rank? 
     // If so GID/proc lookups can be optimized.
 
-    AppGID min(0), max(0), globalMin(0), globalMax(0);
-    AppGID *gidPtr = myGids_.get();  // for performance
+    userGidsAreTeuchosOrdinal_ = true;
+    gid_t min(0), max(0), globalMin(0), globalMax(0);
+    gid_t *gidPtr = myGids_.get();  // for performance
     min = max = gidPtr[0];
-    AppGID checkVal = min;
-    bool consecutive = true;
+    gid_t checkVal = min;
   
     for (teuchos_size_t i=1; i < localNumberOfIds_; i++){
-      if (consecutive && (gidPtr[i] != ++checkVal)){
-        consecutive=false;
+      if (userGidsAreConsecutive_ && (gidPtr[i] != ++checkVal)){
+        userGidsAreConsecutive_=false;
         break;
       }
       if (gidPtr[i] < min)
@@ -876,14 +943,14 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         max = gidPtr[i];
     }
 
-    Teuchos::Tuple<AppGID, 4> results;
+    Teuchos::Tuple<gid_t, 4> results;
 
-    results[0] = static_cast<AppGID>(consecutive ? 1 : 0);
+    results[0] = static_cast<gid_t>(userGidsAreConsecutive_? 1 : 0);
     results[1] = min;
     results[2] = results[3] = 0;
 
     try{
-      Teuchos::reduceAll<int, AppGID>(*comm_, Teuchos::REDUCE_MIN, 2, 
+      Teuchos::reduceAll<int, gid_t>(*comm_, Teuchos::REDUCE_MIN, 2, 
         results.getRawPtr(), results.getRawPtr()+2);
     }
     catch (const std::exception &e) {
@@ -891,30 +958,30 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     }
 
     if (results[2] != 1)       // min of consecutive flags
-      consecutive=false;
+      userGidsAreConsecutive_=false;
 
-    if (consecutive){
+    if (userGidsAreConsecutive_){
       globalMin = results[3];
       try{
-        Teuchos::reduceAll<int, AppGID>(*comm_, Teuchos::REDUCE_MAX, 1, &max, 
+        Teuchos::reduceAll<int, gid_t>(*comm_, Teuchos::REDUCE_MAX, 1, &max, 
           &globalMax);
       }
       catch (const std::exception &e) {
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
       }
 
-      if (globalMax - globalMin + 1 != static_cast<AppGID>(globalNumberOfIds_))
-        consecutive = false;   // there are gaps in the gids
+      if (globalMax - globalMin + 1 != static_cast<gid_t>(globalNumberOfIds_))
+        userGidsAreConsecutive_= false;   // there are gaps in the gids
   
-      if (consecutive){
-        AppGID myStart = myGids_[0];
+      if (userGidsAreConsecutive_){
+        gid_t myStart = myGids_[0];
 
-        gnoDist_ = ArrayRCP<GNO>(numProcs_ + 1);
+        gnoDist_ = ArrayRCP<gno_t>(numProcs_ + 1);
 
-        AppGID *startGID = static_cast<AppGID *>(gnoDist_.getRawPtr());
+        gid_t *startGID = static_cast<gid_t *>(gnoDist_.getRawPtr());
       
         try{
-          Teuchos::gatherAll<int, AppGID>(*comm_, 1, &myStart, numProcs_, 
+          Teuchos::gatherAll<int, gid_t>(*comm_, 1, &myStart, numProcs_, 
             startGID);
         }
         catch (const std::exception &e) {
@@ -923,32 +990,43 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       
         for (int p=1; p < numProcs_; p++){
           if (startGID[p] < startGID[p-1]){
-            consecutive = false;  // gids do not increase with process rank
+            gnoDist_.clear();
+            userGidsAreConsecutive_= false;  // gids do not increase with process rank
             break;
           }
         }
-        if (consecutive){
+        if (userGidsAreConsecutive_){
           startGID[numProcs_] = globalMax + 1;
         }
       }
     }
   }
-  else{
 
-    // AppGIDs are not Ordinals.  We map them to consecutive 
-    // global numbers starting with 0. 
+  if (userGidsAreTeuchosOrdinal_ &&
+      ((consecutiveGidsAreRequired_ && userGidsAreConsecutive_) ||
+      !consecutiveGidsAreRequired_))
+  {
+    // We can use the application's global IDs
+    userGidsAreZoltan2Gids_ = true;
+    zoltan2GidsAreConsecutive_ = userGidsAreConsecutive_;
+  }
+
+  if (!userGidsAreZoltan2Gids_){
+    // We map application gids to consecutive global numbers starting with 0. 
+
+    zoltan2GidsAreConsecutive_ = true;
 
     try{
-      gnoDist_ = ArrayRCP<GNO>(numProcs_ + 1, 0);
+      gnoDist_ = ArrayRCP<gno_t>(numProcs_ + 1, 0);
     }
     catch (const std::exception &e) {
       Z2_THROW_OUTSIDE_ERROR(*env_, e);
     }
 
-    GNO myNum = static_cast<GNO>(localNumberOfIds_);
+    gno_t myNum = static_cast<gno_t>(localNumberOfIds_);
 
     try{
-      Teuchos::scan<int, GNO>(*comm_, Teuchos::REDUCE_SUM, 1, &myNum, 
+      Teuchos::scan<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &myNum, 
         gnoDist_.getRawPtr() + 1);
     }
     catch (const std::exception &e) {
@@ -970,11 +1048,11 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
     }
 
-    AppGID *gidPtr = myGids_.get();  // for performance
+    gid_t *gidPtr = myGids_.get();  // for performance
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       try{
-        p->put(IdentifierTraits<AppGID>::key(gidPtr[i]), i);
+        p->put(IdentifierTraits<gid_t>::key(gidPtr[i]), i);
       }
       catch (const std::exception &e) {
         Z2_THROW_OUTSIDE_ERROR(*env_, e);

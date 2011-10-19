@@ -5,6 +5,6 @@ ADD_SUBDIRECTORIES(
   data
   unit
   util
-  partitioning
   scaling
+  partitioning
   )

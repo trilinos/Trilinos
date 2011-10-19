@@ -20,19 +20,6 @@
 
 namespace Zoltan2 {
 
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-};
-
 /*! Zoltan2::TpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Tpetra::CrsGraph data plus weights.
 

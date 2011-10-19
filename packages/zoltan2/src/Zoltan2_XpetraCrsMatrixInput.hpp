@@ -20,21 +20,6 @@
 
 namespace Zoltan2 {
 
-// Specialization of InputTraits for Xpetra matrices.
-template <typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef Scalar        scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-};
-
 /*! Zoltan2::XpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
 

@@ -39,6 +39,31 @@ class Model
 public:
 
   virtual ~Model() {};
+
+  /*! An algorithm or third party library may
+   *   require that global IDs be consecutive.
+   *   It should be expected that this is not
+   *   always as efficient as allowing arbitrary
+   *   global IDs.
+   *
+   *   \param c  If true, a model will be created that has
+   *      consecutive global ids.  If false, the most convenient
+   *      global numbering will be used.
+   */
+  void setGlobalIdsMustBeConsecutive(bool c) {requireConsecutiveGlobalIds_=c;}
+
+  /*! An algorithm or third party library may
+   *   require that global IDs be consecutive.
+   *
+   *   \return  true, if a model will be created that has
+   *      consecutive global ids.  false, if the most convenient
+   *      global numbering will be used.
+   */
+  bool getGlobalIdsMustBeConsecutive()  { return requireConsecutiveGlobalIds_; }
+
+private:
+
+  bool requireConsecutiveGlobalIds_;
 };
 
 }

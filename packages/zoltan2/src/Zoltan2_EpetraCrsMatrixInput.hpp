@@ -19,17 +19,6 @@
 
 namespace Zoltan2 {
 
-template < >
-struct InputTraits<Epetra_CrsMatrix>
-{
-  typedef double scalar_t;
-  typedef int lno_t;
-  typedef int gno_t;
-  typedef int lid_t;
-  typedef int gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
-};
-
 /*! Zoltan2::EpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Epetra_CrsMatrix data.
 */
