@@ -1,5 +1,5 @@
 /*
-  Direct translation of parts of Galeri to use Tpetra or Xpetra rather than Epetra.
+  Direct translation of parts of Galeri to use Tpetra or Xpetra rather than Epetra. Epetra also supported.
 */
 
 // TODO: rename variables (camelCase)
