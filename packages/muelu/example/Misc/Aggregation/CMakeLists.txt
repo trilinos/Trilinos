@@ -13,4 +13,16 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       DEPLIBS muelu muelu-xpetra
       )
 #  ENDIF()
+
+PACKAGE_ADD_EXECUTABLE(
+  VisualizeAggregates
+  SOURCES visualizeAggregates.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-xpetra
+)
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_copyfiles
+SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat plotaggs.py convhull.py nodes0.txt
+)
+  
 ENDIF()
