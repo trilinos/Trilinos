@@ -42,8 +42,10 @@
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_RampingIntegrationControlStrategy.hpp"
-
 #include "Rythmos_MockStepperDecorator.hpp"
+#include "Rythmos_MockIntegrationObserver.hpp"
+#include "Rythmos_LoggingIntegrationObserver.hpp"
+#include "Rythmos_CompositeIntegrationObserver.hpp"
 
 #include "Thyra_DetachedVectorView.hpp"
 
@@ -256,6 +258,23 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, failRampingTimestep )
         "  <Parameter name=\"Initial dt\" type=\"double\" value=\"0.2\"/>"
         "</ParameterList>"
         ) ) );
+
+
+  RCP<MockIntegrationObserver<double> > observer = 
+    createMockIntegrationObserver<double>();
+  {
+    std::list<std::string> call_stack;
+    call_stack.push_back(observer->nameResetIntegrationObserver_);
+    call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveFailedTimeStep_);
+    call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    observer->setCallStack(call_stack);
+    integrator->setIntegrationObserver(observer);
+  }
+
   const double finalTime = 1.0;
   integrator->setStepper(stepper, finalTime);
   integrator->setVerbLevel(Teuchos::VERB_EXTREME);
@@ -263,7 +282,6 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, failRampingTimestep )
   const RCP<const Thyra::VectorBase<double> > x_final =
     get_fwd_x<double>(*integrator, finalTime);
 
-  
 }
 
 
