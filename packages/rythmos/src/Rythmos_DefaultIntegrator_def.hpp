@@ -404,6 +404,13 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
     *out << "\nRequested time points: " << Teuchos::toString(time_vec) << "\n";
 
+  // Observe start of a time integration
+  if (!is_null(integrationObserver_)) {
+    integrationObserver_->setOStream(out);
+    integrationObserver_->setVerbLevel(incrVerbLevel(verbLevel,-1));
+    integrationObserver_->observeStartTimeIntegration(*stepper_);
+  }
+
   //
   // 0) Initial setup
   //
@@ -478,6 +485,11 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
       getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
     }
     
+  }
+
+  // Observe end of a time integration
+  if (!is_null(integrationObserver_)) {
+    integrationObserver_->observeEndTimeIntegration(*stepper_);
   }
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
@@ -752,6 +764,12 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       //
       // B.2) Take the step
       //
+
+      // Output to the observer we are starting a step
+      if (!is_null(integrationObserver_))
+	integrationObserver_->observeStartTimeStep(
+            *stepper_, trialStepCtrlInfo, currTimeStepIndex_
+            );
 
       // Print step type and size
       if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {

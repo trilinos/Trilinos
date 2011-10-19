@@ -56,6 +56,16 @@ public:
   void 
   resetIntegrationObserver(const TimeRange<Scalar> &integrationTimeDomain);
 
+  void observeStartTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeEndTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   void observeCompletedTimeStep(
     const StepperBase<Scalar> &stepper,
     const StepControlInfo<Scalar> &stepCtrlInfo,
@@ -78,6 +88,9 @@ public:
   
   const std::string nameCloneIntegrationObserver_;
   const std::string nameResetIntegrationObserver_;
+  const std::string nameObserveStartTimeIntegration_;
+  const std::string nameObserveEndTimeIntegration_;
+  const std::string nameObserveStartTimeStep_;
   const std::string nameObserveCompletedTimeStep_;
   const std::string nameObserveFailedTimeStep_;
 
@@ -121,6 +134,9 @@ template<typename Scalar>
 MockIntegrationObserver<Scalar>::MockIntegrationObserver() :
   nameCloneIntegrationObserver_("cloneIntegrationObserver"),
   nameResetIntegrationObserver_("resetIntegrationObserver"),
+  nameObserveStartTimeIntegration_("observeStartTimeIntegration"),
+  nameObserveEndTimeIntegration_("observeEndTimeIntegration"),
+  nameObserveStartTimeStep_("observeStartTimeStep"),
   nameObserveCompletedTimeStep_("observeCompletedTimeStep"),
   nameObserveFailedTimeStep_("observeFailedTimeStep")
 { }
@@ -149,6 +165,30 @@ resetIntegrationObserver(const TimeRange<Scalar> &integrationTimeDomain)
 {
   this->verifyCallAndPop(nameResetIntegrationObserver_);
 }
+
+template<typename Scalar>
+void MockIntegrationObserver<Scalar>::
+observeStartTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  this->verifyCallAndPop(nameObserveStartTimeIntegration_);
+}				
+
+template<typename Scalar>
+void MockIntegrationObserver<Scalar>::
+observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  this->verifyCallAndPop(nameObserveEndTimeIntegration_);
+}				
+
+template<typename Scalar>
+void MockIntegrationObserver<Scalar>::observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  this->verifyCallAndPop(nameObserveStartTimeStep_);
+}				
 
 template<typename Scalar>
 void MockIntegrationObserver<Scalar>::observeCompletedTimeStep(

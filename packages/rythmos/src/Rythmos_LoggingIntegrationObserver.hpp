@@ -61,6 +61,16 @@ public:
   void 
   resetIntegrationObserver(const TimeRange<Scalar> &integrationTimeDomain);
 
+  void observeStartTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeEndTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   void observeCompletedTimeStep(
     const StepperBase<Scalar> &stepper,
     const StepControlInfo<Scalar> &stepCtrlInfo,
@@ -83,6 +93,9 @@ public:
   
   const std::string nameCloneIntegrationObserver_;
   const std::string nameResetIntegrationObserver_;
+  const std::string nameObserveStartTimeIntegration_;
+  const std::string nameObserveEndTimeIntegration_;
+  const std::string nameObserveStartTimeStep_;
   const std::string nameObserveCompletedTimeStep_;
   const std::string nameObserveFailedTimeStep_;
 
@@ -128,6 +141,9 @@ template<typename Scalar>
 LoggingIntegrationObserver<Scalar>::LoggingIntegrationObserver() :
   nameCloneIntegrationObserver_("cloneIntegrationObserver"),
   nameResetIntegrationObserver_("resetIntegrationObserver"),
+  nameObserveStartTimeIntegration_("observeStartTimeIntegration"),
+  nameObserveEndTimeIntegration_("observeEndTimeIntegration"),
+  nameObserveStartTimeStep_("observeStartTimeStep"),
   nameObserveCompletedTimeStep_("observeCompletedTimeStep"),
   nameObserveFailedTimeStep_("observeFailedTimeStep")
 { 
@@ -142,6 +158,9 @@ resetLogCounters()
 {
   (*counters_)[nameCloneIntegrationObserver_] = 0;
   (*counters_)[nameResetIntegrationObserver_] = 0;
+  (*counters_)[nameObserveStartTimeIntegration_] = 0;
+  (*counters_)[nameObserveEndTimeIntegration_] = 0;
+  (*counters_)[nameObserveStartTimeStep_] = 0;
   (*counters_)[nameObserveCompletedTimeStep_] = 0;
   (*counters_)[nameObserveFailedTimeStep_] = 0;
   order_->clear();
@@ -164,6 +183,30 @@ resetIntegrationObserver(const TimeRange<Scalar> &integrationTimeDomain)
 {
   logCall(nameResetIntegrationObserver_);
 }
+
+template<typename Scalar>
+void LoggingIntegrationObserver<Scalar>::
+observeStartTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  logCall(nameObserveStartTimeIntegration_);
+}				
+
+template<typename Scalar>
+void LoggingIntegrationObserver<Scalar>::
+observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  logCall(nameObserveEndTimeIntegration_);
+}				
+
+template<typename Scalar>
+void LoggingIntegrationObserver<Scalar>::observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  logCall(nameObserveStartTimeStep_);
+}				
 
 template<typename Scalar>
 void LoggingIntegrationObserver<Scalar>::observeCompletedTimeStep(

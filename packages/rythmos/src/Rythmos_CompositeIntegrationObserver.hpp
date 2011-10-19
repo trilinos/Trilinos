@@ -74,6 +74,16 @@ public:
     const TimeRange<Scalar> &integrationTimeDomain
     );
 
+  void observeStartTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeEndTimeIntegration(const StepperBase<Scalar> &stepper);
+
+  void observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   /** \brief . */
   virtual void observeCompletedTimeStep(
     const StepperBase<Scalar> &stepper,
@@ -160,6 +170,61 @@ void CompositeIntegrationObserver<Scalar>::resetIntegrationObserver(
   }
 }
 
+template<class Scalar>
+void CompositeIntegrationObserver<Scalar>::observeStartTimeIntegration(
+  const StepperBase<Scalar> &stepper
+  )
+{
+  using Teuchos::as;
+
+  const RCP<FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  for (int i = 0; i < as<int>(observers_.size()); ++i ) {
+    RCP<IntegrationObserverBase<Scalar> > observer = observers_[i];
+    observer->setOStream(out);
+    observer->setVerbLevel(verbLevel);
+    observer->observeStartTimeIntegration(stepper);
+  }
+}
+
+template<class Scalar>
+void CompositeIntegrationObserver<Scalar>::observeEndTimeIntegration(
+  const StepperBase<Scalar> &stepper
+  )
+{
+  using Teuchos::as;
+
+  const RCP<FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  for (int i = 0; i < as<int>(observers_.size()); ++i ) {
+    RCP<IntegrationObserverBase<Scalar> > observer = observers_[i];
+    observer->setOStream(out);
+    observer->setVerbLevel(verbLevel);
+    observer->observeEndTimeIntegration(stepper);
+  }
+}
+
+template<class Scalar>
+void CompositeIntegrationObserver<Scalar>::observeStartTimeStep(
+  const StepperBase<Scalar> &stepper,
+  const StepControlInfo<Scalar> &stepCtrlInfo,
+  const int timeStepIter
+  )
+{
+  using Teuchos::as;
+
+  const RCP<FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  for (int i = 0; i < as<int>(observers_.size()); ++i ) {
+    RCP<IntegrationObserverBase<Scalar> > observer = observers_[i];
+    observer->setOStream(out);
+    observer->setVerbLevel(verbLevel);
+    observer->observeStartTimeStep(stepper,stepCtrlInfo,timeStepIter);
+  }
+}
 
 template<class Scalar>
 void CompositeIntegrationObserver<Scalar>::observeCompletedTimeStep(

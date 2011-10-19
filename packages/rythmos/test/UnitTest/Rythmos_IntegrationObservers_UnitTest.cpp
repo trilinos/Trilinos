@@ -46,10 +46,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
   std::list<std::string> call_stack;
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
+  call_stack.push_back(observer->nameObserveStartTimeIntegration_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveFailedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveEndTimeIntegration_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
 
   // Objects needed for observer calls
@@ -63,10 +69,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
 
     observer->cloneIntegrationObserver();
     observer->resetIntegrationObserver(timeRange);
+    observer->observeStartTimeIntegration(stepper);
+    observer->observeStartTimeStep(stepper, stepControlInfo, 0);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+    observer->observeStartTimeStep(stepper, stepControlInfo, 0);
     observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
+    observer->observeStartTimeStep(stepper, stepControlInfo, 0);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+    observer->observeStartTimeStep(stepper, stepControlInfo, 0);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+    observer->observeEndTimeIntegration(stepper);
     observer->resetIntegrationObserver(timeRange);
     
     // Stack should be empty, check that it throws gracefully (no seg fault) 
@@ -95,10 +107,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   std::list<std::string> call_stack;
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
+  call_stack.push_back(observer->nameObserveStartTimeIntegration_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveFailedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveStartTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveEndTimeIntegration_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
 
   // Objects needed for observer calls
@@ -108,10 +126,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
 
   observer->cloneIntegrationObserver();
   observer->resetIntegrationObserver(timeRange);
+  observer->observeStartTimeIntegration(stepper);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeEndTimeIntegration(stepper);
   observer->resetIntegrationObserver(timeRange);
     
   const std::map<std::string,int>& counters = *(observer->getCounters());
@@ -119,6 +143,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
 
   TEST_EQUALITY(counters.find(observer->nameCloneIntegrationObserver_)->second, 1);
   TEST_EQUALITY(counters.find(observer->nameResetIntegrationObserver_)->second, 2);
+  TEST_EQUALITY(counters.find(observer->nameObserveStartTimeIntegration_)->second, 1);
+  TEST_EQUALITY(counters.find(observer->nameObserveEndTimeIntegration_)->second, 1);
+  TEST_EQUALITY(counters.find(observer->nameObserveStartTimeStep_)->second, 4);
   TEST_EQUALITY(counters.find(observer->nameObserveCompletedTimeStep_)->second, 3);
   TEST_EQUALITY(counters.find(observer->nameObserveFailedTimeStep_)->second, 1);
 
@@ -131,6 +158,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   observer->resetLogCounters();
   TEST_EQUALITY(counters.find(observer->nameCloneIntegrationObserver_)->second, 0);
   TEST_EQUALITY(counters.find(observer->nameResetIntegrationObserver_)->second, 0);
+  TEST_EQUALITY(counters.find(observer->nameObserveStartTimeIntegration_)->second, 0);
+  TEST_EQUALITY(counters.find(observer->nameObserveEndTimeIntegration_)->second, 0);
+  TEST_EQUALITY(counters.find(observer->nameObserveStartTimeStep_)->second, 0);
   TEST_EQUALITY(counters.find(observer->nameObserveCompletedTimeStep_)->second, 0);
   TEST_EQUALITY(counters.find(observer->nameObserveFailedTimeStep_)->second, 0);
   TEST_EQUALITY(order.size(), 0);
@@ -145,10 +175,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   std::list<std::string> call_stack;
   call_stack.push_back(mockObserver->nameCloneIntegrationObserver_);
   call_stack.push_back(mockObserver->nameResetIntegrationObserver_);
+  call_stack.push_back(mockObserver->nameObserveStartTimeIntegration_);
+  call_stack.push_back(mockObserver->nameObserveStartTimeStep_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
+  call_stack.push_back(mockObserver->nameObserveStartTimeStep_);
   call_stack.push_back(mockObserver->nameObserveFailedTimeStep_);
+  call_stack.push_back(mockObserver->nameObserveStartTimeStep_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
+  call_stack.push_back(mockObserver->nameObserveStartTimeStep_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
+  call_stack.push_back(mockObserver->nameObserveEndTimeIntegration_);
   call_stack.push_back(mockObserver->nameResetIntegrationObserver_);
 
   mockObserver->setCallStack(call_stack);
@@ -169,10 +205,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
 
   observer->cloneIntegrationObserver();
   observer->resetIntegrationObserver(timeRange);
+  observer->observeStartTimeIntegration(stepper);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeStartTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeEndTimeIntegration(stepper);
   observer->resetIntegrationObserver(timeRange);
 
   const std::map<std::string,int>& counters = *(loggingObserver->getCounters());
@@ -180,6 +222,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
 
   TEST_EQUALITY(counters.find(loggingObserver->nameCloneIntegrationObserver_)->second, 1);
   TEST_EQUALITY(counters.find(loggingObserver->nameResetIntegrationObserver_)->second, 2);
+  TEST_EQUALITY(counters.find(loggingObserver->nameObserveStartTimeIntegration_)->second, 1);
+  TEST_EQUALITY(counters.find(loggingObserver->nameObserveEndTimeIntegration_)->second, 1);
+  TEST_EQUALITY(counters.find(loggingObserver->nameObserveStartTimeStep_)->second, 4);
   TEST_EQUALITY(counters.find(loggingObserver->nameObserveCompletedTimeStep_)->second, 3);
   TEST_EQUALITY(counters.find(loggingObserver->nameObserveFailedTimeStep_)->second, 1);
 

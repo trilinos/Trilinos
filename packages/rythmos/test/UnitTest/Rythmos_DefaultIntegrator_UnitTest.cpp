@@ -259,18 +259,25 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, failRampingTimestep )
         "</ParameterList>"
         ) ) );
 
-
   RCP<MockIntegrationObserver<double> > observer = 
     createMockIntegrationObserver<double>();
   {
     std::list<std::string> call_stack;
     call_stack.push_back(observer->nameResetIntegrationObserver_);
+    call_stack.push_back(observer->nameObserveStartTimeIntegration_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveFailedTimeStep_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveStartTimeStep_);
     call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+    call_stack.push_back(observer->nameObserveEndTimeIntegration_);
     observer->setCallStack(call_stack);
     integrator->setIntegrationObserver(observer);
   }

@@ -51,13 +51,72 @@ public:
     // ToDo: Pass in the initial condition to the observer
     ) = 0;
 
-  // ToDo: add observeStartTimeIntegration(stepper)
+  /** \brief Observe the beginning of a time integration loop.
+   *
+   * \param stepper [in] The stepper object.
+   *
+   * Warning! This function is *NOT* stateless.  It should be called once and
+   * only once at the beginning of getFwdPoints().
+   *
+   * NOTE: The function <tt>resetIntegrationControlStrategy()</tt> must be
+   * called prior to even the first call to function.
+   *
+   * NOTE: This method should be pure virtual but has been given a
+   * default implementation for backwards compatibility.  We will make
+   * this pure virtual in the future.
+   */
+  virtual void observeStartTimeIntegration(
+    const StepperBase<Scalar> &stepper);
 
-  // ToDo: add observeEndTimeIntegration(stepper)
+  /** \brief Observe the end of a time integration loop.
+   *
+   * \param stepper [in] The stepper object.
+   *
+   * Warning! This function is *NOT* stateless.  It should be called once and
+   * only once at the end of getFwdPoints().
+   *
+   * NOTE: The function <tt>resetIntegrationControlStrategy()</tt> must be
+   * called prior to even the first call to function.
+   *
+   * NOTE: This method should be pure virtual but has been given a
+   * default implementation for backwards compatibility.  We will make
+   * this pure virtual in the future.
+   */
+  virtual void observeEndTimeIntegration(
+    const StepperBase<Scalar> &stepper);
 
   // ToDo: add observeStartTimeStep(stepper, ...)
+  /** \brief Observer the beginning of an integration step.
+   *
+   * \param stepper [in] The stepper object.
+   *
+   * \param stepCtrlInfo [in] The info for the time step about to be
+   * taken.
+   *
+   * \param timeStepIter [in] The time step iteration counter.  In the first
+   * call to this function, this should be <tt>timeStepIter==0</tt> and it
+   * should be incremented on each call only once.  While the concrete
+   * implementation of <tt>*this</tt> could keep track of the this counter,
+   * putting it in the argument list helps to simplify logic and helps to
+   * validate correct usage.
+   *
+   * Warning! This function is *NOT* stateless.  It should be called once and
+   * only once at the beginning of each time step.
+   *
+   * NOTE: The function <tt>resetIntegrationControlStrategy()</tt> must be
+   * called prior to even the first call to function.
+   *
+   * NOTE: This method should be pure virtual but has been given a
+   * default implementation for backwards compatibility.  We will make
+   * this pure virtual in the future.
+   */
+  virtual void observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
 
-  /** \brief Observer an integration step.
+  /** \brief Observe a successfully completed integration step.
    *
    * \param stepper [in] The stepper object that was just stepped forward once
    * to integrate the transient ODE/DAE equations.  On the very first call and
@@ -94,8 +153,7 @@ public:
     const int timeStepIter
     ) = 0;
 
-  // ToDo: add observeFailedTimeStep(stepper, ...)
-  /** \brief Observer an integration step.
+  /** \brief Observer a failed integration step.
    *
    * \param stepper [in] The stepper object that was just stepped forward once
    * to integrate the transient ODE/DAE equations.  On the very first call and
@@ -181,6 +239,30 @@ bool isFinalTimeStep(
    future.
 */
 
+template<class Scalar>
+void IntegrationObserverBase<Scalar>::
+observeStartTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}    
+
+template<class Scalar>
+void IntegrationObserverBase<Scalar>::
+observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}    
+
+template<class Scalar>
+void IntegrationObserverBase<Scalar>::
+observeStartTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}    
 
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
