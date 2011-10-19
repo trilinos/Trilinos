@@ -27,6 +27,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tSquareTriMeshFactory
+  SOURCES tSquareTriMeshFactory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
 PACKAGE_ADD_EXECUTABLE(
   tCubeHexMeshFactory
   SOURCES tCubeHexMeshFactory.cpp ${UNIT_TEST_DRIVER}

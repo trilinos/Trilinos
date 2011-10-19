@@ -112,7 +112,7 @@ public:
      */
    void addNode(stk::mesh::EntityId gid, const std::vector<double> & coord);
 
-   void addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block);
+   void addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block);
 
    /** Addes an entity to a specified side set.
      */

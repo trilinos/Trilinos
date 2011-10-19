@@ -67,7 +67,6 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
    if(sideset==NULL)
       sideset = &metaData_->declare_part(name,stk::mesh::fem::CellTopology(ctData)); 
    sidesets_.insert(std::make_pair(name,sideset));
-   // stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
 }
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
@@ -215,7 +214,7 @@ void STK_Interface::addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Par
    bulkData_->change_entity_parts(entity,sidesetV);
 }
 
-void STK_Interface::addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
+void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
 {
    std::vector<stk::mesh::Part*> blockVec;
    blockVec.push_back(block);
@@ -235,10 +234,6 @@ void STK_Interface::addElement(Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::P
 
    ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
    procId[0] = Teuchos::as<ProcIdData>(procRank_);
-
-   // std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
-   // localId[0] = currentLocalId_;
-   // currentLocalId_++;
 }
 
 void STK_Interface::writeToExodus(const std::string & filename)
