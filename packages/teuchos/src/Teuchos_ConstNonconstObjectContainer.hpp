@@ -287,7 +287,7 @@ public:
    * Allows both const and non-const access to the contained object. */
   void initialize( const RCP<ObjType> &obj )
     {
-      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      TEUCHOS_TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
       constObj_ = obj;
       isConst_ = false;
     }
@@ -295,7 +295,7 @@ public:
    * Allows only const access enforced with a runtime check. */
   void initialize( const RCP<const ObjType> &obj )
     {
-      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      TEUCHOS_TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
       constObj_ = obj; 
       isConst_ = true;
     }
@@ -321,7 +321,7 @@ public:
    */
   RCP<ObjType> getNonconstObj() const
     {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         constObj_.get() && isConst_, NonconstAccessError,
         "Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()
         <<"\" was given as a const-only object and non-const access is not allowed."

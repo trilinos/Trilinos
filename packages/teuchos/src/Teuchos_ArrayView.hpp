@@ -67,8 +67,8 @@ ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLo
   :ptr_(p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
-  TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
   setUpIterators(rcpNodeLookup);
 #endif
 }
@@ -311,9 +311,9 @@ const ArrayView<T>&
 ArrayView<T>::assert_in_range(size_type offset, size_type size_in) const
 {
   assert_not_null();
-  TEST_FOR_EXCEPTION( size_in == as<size_type>(0), RangeError,
+  TEUCHOS_TEST_FOR_EXCEPTION( size_in == as<size_type>(0), RangeError,
     "Error, size=0 is not allowed!" );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(
       ( 0 <= offset && offset+size_in <= this->size() )
       &&

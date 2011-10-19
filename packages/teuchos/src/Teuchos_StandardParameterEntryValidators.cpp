@@ -59,7 +59,7 @@ std::string Teuchos::getVerbosityLevelParameterValueName(
     case VERB_EXTREME:
       return "extreme";
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
   }
   return ""; // Never get here!
 }
@@ -285,7 +285,7 @@ void AnyNumberParameterEntryValidator::validateAndModify(
   ParameterEntry * entry
   ) const
 {
-  TEST_FOR_EXCEPT(0==entry);
+  TEUCHOS_TEST_FOR_EXCEPT(0==entry);
   switch(preferredType_) {
     case PREFER_INT:
       entry->setValue(
@@ -306,7 +306,7 @@ void AnyNumberParameterEntryValidator::validateAndModify(
         );
       break;
     default:
-      TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
+      TEUCHOS_TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
   }
 }
 
@@ -344,7 +344,7 @@ void AnyNumberParameterEntryValidator::throwTypeError(
   ) const
 {
   const std::string &entryName = entry.getAny(false).typeName();
-  TEST_FOR_EXCEPTION_PURE_MSG(
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     true, Exceptions::InvalidParameterType
     ,"Error, the parameter {paramName=\""<<paramName<<"\""
     ",type=\""<<entryName<<"\"}"
@@ -391,7 +391,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 {
   const std::string &entryName = entry.getAny(false).typeName();
   any anyValue = entry.getAny(true);
-  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
+  TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
@@ -406,7 +406,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     std::endl << std::endl);
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
-    TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
+    TEUCHOS_TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
       "Aww shoot! Sorry bud, but it looks like the \"" 
       << paramName << "\"" <<
@@ -472,7 +472,7 @@ void StringValidator::validate(
 {
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
-  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
+  TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
@@ -489,7 +489,7 @@ void StringValidator::validate(
     Array<std::string>::const_iterator
       it = std::find(validStrings_->begin(),
       validStrings_->end(), getValue<std::string>(entry));
-    TEST_FOR_EXCEPTION(it == validStrings_->end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(it == validStrings_->end(),
       Exceptions::InvalidParameterValue,
       "Aww shoot! Sorry bud, but it looks like the \""
       << paramName << "\"" <<
@@ -560,7 +560,7 @@ void Teuchos::setIntParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes
@@ -576,7 +576,7 @@ void Teuchos::setDoubleParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_DOUBLE, acceptedTypes
@@ -592,7 +592,7 @@ void Teuchos::setNumericStringParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_STRING, acceptedTypes

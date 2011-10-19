@@ -46,7 +46,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_stacktrace.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
 #  define TEUCHOS_GET_STORED_STACKTRACE() \

@@ -44,7 +44,7 @@
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"

@@ -50,7 +50,7 @@ ValidatorXMLConverter::fromXMLtoValidator(
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     xmlObj.getRequired(getTypeAttributeName())
     !=
     dummyValidator->getXMLTypeName(), 
@@ -72,7 +72,7 @@ ValidatorXMLConverter::fromValidatortoXML(
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     validator->getXMLTypeName() 
     !=
     dummyValidator->getXMLTypeName(), 
@@ -84,7 +84,7 @@ ValidatorXMLConverter::fromValidatortoXML(
   XMLObject toReturn(getValidatorTagName());
   toReturn.addAttribute(getTypeAttributeName(), validator->getXMLTypeName());
   if(assignedID){
-    TEST_FOR_EXCEPTION(validatorIDsMap.find(validator) == validatorIDsMap.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(validatorIDsMap.find(validator) == validatorIDsMap.end(),
       MissingValidatorDefinitionException,
       "Could not find an id associated with the validator in the "
       "given validatorIDsMap to use when " <<

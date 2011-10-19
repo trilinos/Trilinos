@@ -47,7 +47,7 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -1417,7 +1417,7 @@ Array<T>::raw_position( iterator position )
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const iterator first = this->begin();
   const iterator last = this->end();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(first <= position && position <= last), DanglingReferenceError,
     "Error, this iterator is no longer valid for this Aray!"
     );
@@ -1434,7 +1434,7 @@ Array<T>::raw_position( iterator position )
 template<typename T> inline
 void Array<T>::assertIndex(int i) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= i && i < length() ), RangeError,
     "Array<T>::assertIndex(i): i="<<i<<" out of range [0, "<< length() << ")"
     );
@@ -1444,7 +1444,7 @@ void Array<T>::assertIndex(int i) const
 template<typename T> inline
 void Array<T>::assertNotNull() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !size(), NullReferenceError,
     typeName(*this)<<"::assertNotNull(): "
     "Error, the array has size zero!"
@@ -1534,7 +1534,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
 {
   const std::string str = Utils::trimWhiteSpace(arrayStr);
   std::istringstream iss(str);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ( str[0]!='{' || str[str.length()-1] != '}' )
     ,InvalidArrayStringRepresentation
     ,"Error, the std::string:\n"
@@ -1545,7 +1545,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
     );
   char c;
   c = iss.get(); // Read initial '{'
-  TEST_FOR_EXCEPT(c!='{'); // Should not throw!
+  TEUCHOS_TEST_FOR_EXCEPT(c!='{'); // Should not throw!
   // Now we are ready to begin reading the entries of the array!
   Array<T> a;
   while( !iss.eof() ) {
@@ -1570,7 +1570,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
       if( entryStr.length()==0 && a.size()==0 )
         return a; // This is the empty array "{}" (with any spaces in it!)
     }
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       0 == entryStr.length()
       ,InvalidArrayStringRepresentation
       ,"Error, the std::string:\n"
@@ -1590,7 +1590,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
     // then the input stream iss should be empty and iss.eof() should be
     // true, so the loop should terminate.  We put an std::exception test here
     // just in case something has gone wrong.
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       found_end && !iss.eof()
       ,InvalidArrayStringRepresentation
       ,"Error, the std::string:\n"

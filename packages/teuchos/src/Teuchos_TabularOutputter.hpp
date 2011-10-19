@@ -193,7 +193,7 @@ public: // Should be hidden
   double stopTimer()
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(numLoops_ == -1);
+      TEUCHOS_TEST_FOR_EXCEPT(numLoops_ == -1);
 #endif      
       timer_.stop();
       const double relTime = 
@@ -248,13 +248,13 @@ void TabularOutputter::outputField( const T& t )
   using std::setw;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     currFieldIdx_ == -1,
     MissingHeaderError,
     "Error, you can not output a field until you print the header with"
     " outputHeader()."
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(currFieldIdx_ < as<int>(fieldSpecs_.size())),
     InvalidFieldOutputError,
     "Error, you have already output all of the "
@@ -275,7 +275,7 @@ void TabularOutputter::outputField( const T& t )
       *out_ << std::right;
       break;
     default: {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
 
@@ -287,7 +287,7 @@ void TabularOutputter::outputField( const T& t )
       *out_ << std::fixed;
       break;
     default: {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
 

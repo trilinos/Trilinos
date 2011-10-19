@@ -115,7 +115,7 @@ void TabularOutputter::pushFieldSpec(
 {
 #ifdef TEUCHOS_DEBUG
   if (width > 0) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !(as<int>(fieldName.size()) <= width),
       InvalidFieldSpecError,
       "Error, the length of the field name \""<<fieldName<<"\"\n"
@@ -148,7 +148,7 @@ void TabularOutputter::outputHeader()
   const int numFields = fieldSpecs_.size();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     numFields==0, MissingFieldsError,
     "Error, you must add at least one field spec using pushFieldSpec(...)!"
     );
@@ -190,7 +190,7 @@ void TabularOutputter::nextRow(const bool allowRemainingFields)
   }
   else {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !(currFieldIdx_ == numFields),
       InvalidFieldOutputError,
       "Error, you must call outputField(...) for every field in the row\n"

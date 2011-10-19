@@ -48,7 +48,7 @@ namespace Teuchos{
 ParameterCondition::ParameterCondition(RCP<const ParameterEntry> parameter):
   parameterEntry_(parameter)
 {
-  TEST_FOR_EXCEPTION(is_null(parameter),
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(parameter),
     InvalidConditionException,
     "Parameter conditions can't be given a null parameter" <<
     std::endl << std::endl);
@@ -65,7 +65,7 @@ ParameterCondition::getAllParameters() const
 BoolLogicCondition::BoolLogicCondition(ConstConditionList& conditions):
   conditions_(conditions)
 {
-  TEST_FOR_EXCEPTION(conditions_.size() ==0,
+  TEUCHOS_TEST_FOR_EXCEPTION(conditions_.size() ==0,
     InvalidConditionException,
     "Sorry bud, but you gotta at least give "
     "me one condition "
@@ -164,7 +164,7 @@ RCP<EqualsCondition> DummyObjectGetter<EqualsCondition>::getDummyObject(){
 NotCondition::NotCondition(RCP<const Condition> childCondition):
   childCondition_(childCondition)
 {
-  TEST_FOR_EXCEPTION(childCondition_.is_null(),
+  TEUCHOS_TEST_FOR_EXCEPTION(childCondition_.is_null(),
     InvalidConditionException,
     "OOOOOOOOPppppps! Looks like you tried "
     "to give me "
@@ -212,7 +212,7 @@ StringCondition::StringCondition(
 }
 
 void StringCondition::checkParameterType(){
-  TEST_FOR_EXCEPTION(!getParameter()->isType<std::string>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getParameter()->isType<std::string>(),
     InvalidConditionException,
     "The parameter of a String Condition "
     "must be of type string." << std::endl << 
@@ -236,7 +236,7 @@ RCP<StringCondition> DummyObjectGetter<StringCondition>::getDummyObject(){
 BoolCondition::BoolCondition(RCP<const ParameterEntry> parameter):
   ParameterCondition(parameter)
 {
-  TEST_FOR_EXCEPTION(!getParameter()->isType<bool>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getParameter()->isType<bool>(),
     InvalidConditionException,
     "The parameter of a Bool Condition "
     "must be of type " << TypeNameTraits<bool>::name() << std::endl <<

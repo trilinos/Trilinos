@@ -60,7 +60,7 @@ RCP<const FunctionObjectXMLConverter>
 FunctionObjectXMLConverterDB::getConverter(const FunctionObject& function){
   ConverterMap::const_iterator it = 
     getConverterMap().find(function.getTypeAttributeValue());
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindFunctionObjectConverterException,
     "Could not find a FunctionObjectXMLConverter for a FuncitonObject of type " <<
     function.getTypeAttributeValue() << " when writing out a condition to " <<
@@ -76,7 +76,7 @@ FunctionObjectXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::string functionType = xmlObject.getRequired(
     FunctionObjectXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(functionType);
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindFunctionObjectConverterException,
     "Could not find a FunctionObjectXMLConverter for a condition of type " <<
     functionType << " when reading in a condition from " <<

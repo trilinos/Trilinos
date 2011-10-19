@@ -93,7 +93,7 @@ Teuchos::getValidVerboseObjectSublist()
 
 void Teuchos::setupVerboseObjectSublist( ParameterList* paramList )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   paramList->sublist(VerboseObject_name).setParameters(
     *getValidVerboseObjectSublist()
     ).disableRecursiveValidation();
@@ -106,9 +106,9 @@ void Teuchos::readVerboseObjectSublist(
   )
 {
   // Validate input
-  TEST_FOR_EXCEPT(0==paramList);
-  TEST_FOR_EXCEPT(0==oStream);
-  TEST_FOR_EXCEPT(0==verbLevel);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==oStream);
+  TEUCHOS_TEST_FOR_EXCEPT(0==verbLevel);
   ParameterList
     &voSublist = paramList->sublist(VerboseObject_name);
   voSublist.validateParameters(*getValidVerboseObjectSublist());
@@ -123,7 +123,7 @@ void Teuchos::readVerboseObjectSublist(
   else {
     RCP<std::ofstream>
       oFileStream = rcp(new std::ofstream(outputFileStr.c_str()));
-    TEST_FOR_EXCEPTION_PURE_MSG(
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
       oFileStream->eof(), Exceptions::InvalidParameterValue,
       "Error, the file \"" << outputFileStr << "\n given by the parameter\n"
       "\'" << OutputFile_name << "\' in the sublist\n"
