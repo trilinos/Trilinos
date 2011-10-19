@@ -45,12 +45,75 @@
 */
 
 #include "BelosEpetraAdapter.hpp"
+#include "Teuchos_oblackholestream.hpp"
+
 
 namespace Belos {
 
   // An anonymous namespace restricts the scope of its definitions to
   // this file.
   namespace {
+
+    //! Indent level for the stream returned by \c getErrStream().
+    int indentLevel;
+
+    //! Indentation string for current line of error output.
+    std::string
+    getErrIndent ()
+    {
+      TEST_FOR_EXCEPTION(indentLevel < 0, std::logic_error, 
+			 "indentLevel = " << indentLevel << " < 0.");
+      if (indentLevel == 0) {
+	return "";
+      } else {
+	return std::string (static_cast<size_t> (2*indentLevel), '-') + " ";
+      }
+    }
+
+    /// \fn getErrStream
+    /// \brief Get a stream for debugging output that prints only on MPI Rank 0.
+    ///
+    /// Rank 0 is relative to the Epetra_Operator's MPI communicator,
+    /// which is why this function wants an Epetra_Operator input.
+    ///
+    /// \warning This function is NOT reentrant, because it has static data.
+    Teuchos::RCP<std::ostream>
+    getErrStream (const Epetra_Operator& Op)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
+
+      /// The static data make this function NOT reentrant.
+      static RCP<std::ostream> errStream;
+
+      if (errStream.is_null()) {
+	// Initialize the indent level.
+	indentLevel = 0;
+
+	if (Op.Comm().MyPID() == 0) {
+	  errStream = rcpFromRef (std::cerr);
+	} else {
+	  errStream = rcp (new Teuchos::oblackholestream);
+	}
+      }
+      return errStream;
+    }
+
+    //! Return a string representation of the given transpose enum value.
+    std::string
+    etransToString (const ETrans trans)
+    {
+      if (trans == NOTRANS) {
+	return "NOTRANS";
+      } else if (trans == TRANS) {
+	return "TRANS";
+      } else if (trans == CONJTRANS) {
+	return "CONJTRANS";
+      }
+      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+			 "Invalid ETrans value trans = " << trans << ".");
+    }
 
     /// \fn implementsApplyTranspose
     /// \brief Whether Op implements applying the transpose.
@@ -79,41 +142,63 @@ namespace Belos {
       // leave Op in the same state as it was given to us.
       const bool transposed = Op.UseTranspose ();
 
-      // If Op is already transposed, Apply() doesn't need to do anything
-      // in order to apply the transpose.  (Apply() will just apply the
-      // already transposed operator in that case.)
-      if (transposed)
+      // If Op is already transposed, then obviously it implements
+      // applying the transpose.
+      if (transposed) {
 	return true;
+      }
 
-      // SetUseTranspose() is a nonconst method, so we have to cast away
-      // const-ness of Op in order to call it.  Epetra_Operator gives us
-      // no other way to query whether it knows how to apply the
-      // transpose.
-      const int errcode = const_cast<Epetra_Operator&>(Op).SetUseTranspose (true);
+      // SetUseTranspose() is a nonconst method, so we have to cast
+      // away const-ness of Op in order to call it.  Epetra_Operator
+      // gives us no other way to query whether it knows how to apply
+      // the transpose.
+      const int transposeFailed = 
+	const_cast<Epetra_Operator&>(Op).SetUseTranspose (true);
 
       // SetUseTranspose() follows the POSIX convention that returning
       // zero means success.  If SetUseTranspose() failed, the best we can
       // do is assume that the state of Op was not changed.  Any
       // reasonable implementation of SetUseTranspose() should not change
       // the state of the operator if setting the transpose failed.
-      if (errcode != 0)
+      if (transposeFailed != 0) {
+	// Make sure that the failed call didn't managed to change the
+	// state of Op.  It shouldn't have, but if it did, then Op is
+	// broken.
+	const bool currentTransposedState = Op.UseTranspose();
+	TEST_FOR_EXCEPTION(currentTransposedState != transposed, std::logic_error,
+			   "implementsApplyTranspose: Op.SetUseTranspose(true) "
+			   "failed (with error code " << transposeFailed << "), "
+			   "but nevertheless managed to change the transposed "
+			   "state of Op.  On input, Op.UseTranspose() = " 
+			   << transposed << ", but now, Op.UseTranspose() = " 
+			   << currentTransposedState << ".  This likely indicates"
+			   " a bug in the implementation of the operator Op.");
 	return false;
+      }
 
-      // Now we need to restore the original transpose state.
-      if (! transposed)
-	// We assume that this call succeeds.
-	(void) const_cast<Epetra_Operator&>(Op).SetUseTranspose (false);
-
-      return errcode == 0;
+      // Now we need to restore the original transpose state.  We can
+      // do this unconditionally because if we're here, Op's state is
+      // not transposed.  
+      {
+	const int errcode = 
+	  const_cast<Epetra_Operator&>(Op).SetUseTranspose (false);
+	TEST_FOR_EXCEPTION(errcode != 0, std::logic_error, 
+			   "implementsApplyTranspose: Op.SetUseTranspose(true) "
+			   "succeeded, but Op.SetUseTranspose(false) failed with "
+			   "error code " << errcode << ".  This likely indicates "
+			   "a bug in the implementation of the operator Op.");
+      }
+      // If we made it this far, then Op implements transpose.
+      return true; 
     }
 
     /// \class EpetraOperatorTransposeScopeGuard
     /// \brief Safely sets and unsets an Epetra_Operator's transpose state.
     ///
-    /// This class uses RAII (Resource Acquisition Is Instantiation)
-    /// techniques to set the transpose state of an Epetra_Operator
-    /// instance on construction, and restore its original transpose
-    /// state on destruction.
+    /// This class uses the RAII (Resource Acquisition Is
+    /// Instantiation) technique to set the transpose state of an
+    /// Epetra_Operator instance on construction, and restore its
+    /// original transpose state on destruction.
     class EpetraOperatorTransposeScopeGuard {
     private:
       //! Reference to the Epetra_Operator instance to protect.
@@ -130,6 +215,12 @@ namespace Belos {
       const bool newTransposeFlag_;
 
     public:
+      /// \brief Constructor.
+      ///
+      /// \param Op [in/out] The operator whose transpose state to guard.
+      ///
+      /// \param trans [in] True if we want to set Op to apply the
+      ///   transpose, else false.
       EpetraOperatorTransposeScopeGuard (const Epetra_Operator& Op, 
 					 const ETrans trans)
 	: Op_ (Op),
@@ -152,7 +243,7 @@ namespace Belos {
 			     "Epetra_Operator for which applying the transpose "
 			     "is not implemented?  Anyway, just to help with "
 			     "debugging, you specified trans=" 
-			     << (trans == NOTRANS ? "NOTRANS" : (trans == TRANS ? "TRANS" : "CONJTRANS"))
+			     << etransToString (trans)
 			     << ", and the original operator was set "
 			     << (originalTransposeFlag_ ? "" : "NOT ")
 			     << "to apply the transpose.");
@@ -450,6 +541,12 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
 EpetraOp::EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op ) 
   : Epetra_Op(Op)
 {
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "Belos::EpetraOp constructor" << endl;
+  err << "-- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
 }
 
 void 
@@ -457,6 +554,15 @@ EpetraOp::Apply (const MultiVec<double>& x,
 		 MultiVec<double>& y, 
 		 ETrans trans) const 
 {
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraOp::Apply:" << endl
+      << "---- Implements Belos::Operator<double>::Apply()" << endl
+      << "---- trans input = " << etransToString (trans) << endl
+      << "---- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
+
   MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
@@ -469,6 +575,9 @@ EpetraOp::Apply (const MultiVec<double>& x,
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
 
+  err << "---- Before calling Apply: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
+
   // Apply the operator to x and put the result in y.
   const int info = Epetra_Op->Apply (*vec_x, *vec_y);
   TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
@@ -479,6 +588,9 @@ EpetraOp::Apply (const MultiVec<double>& x,
 bool 
 EpetraOp::HasApplyTranspose() const
 {
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraOp::HasApplyTranspose" << std::endl;
+
   return implementsApplyTranspose (*Epetra_Op);
 }
 
@@ -491,7 +603,14 @@ EpetraOp::HasApplyTranspose() const
 
 EpetraPrecOp::EpetraPrecOp (const Teuchos::RCP<Epetra_Operator> &Op) 
   : Epetra_Op(Op)
-{}
+{
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraPrecOp constructor" << endl
+      << "---- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
+}
 
 // The version of Apply() that takes an optional 'trans' argument and
 // returns void implements the Belos::Operator interface.
@@ -500,6 +619,15 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 		     MultiVec<double>& y, 
 		     ETrans trans) const 
 {
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraPrecOp::Apply:" << endl
+      << "---- Implements Belos::Operator<double>::Apply()" << endl
+      << "---- trans input = " << etransToString (trans) << endl
+      << "---- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
+
   MultiVec<double>&  temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   TEUCHOS_TEST_FOR_EXCEPTION(vec_x == NULL, EpetraOpFailure, 
@@ -513,6 +641,9 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
+
+  err << "---- Before calling ApplyInverse: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl;
 
   // EpetraPrecOp's Apply() methods apply the inverse of the
   // underlying operator.  This may not succeed for all
@@ -532,8 +663,18 @@ int
 EpetraPrecOp::Apply (const Epetra_MultiVector &X, 
 		     Epetra_MultiVector &Y) const 
 {
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraPrecOp::Apply:" << endl
+      << "---- Implements Epetra_Operator::Apply()" << endl
+      << "---- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl
+      << "---- Calling Epetra_Op->ApplyInverse (X, Y)" << endl;
+
   // This operation computes Y = A^{-1}*X.
   const int info = Epetra_Op->ApplyInverse( X, Y );
+  err << "---- Epetra_Op->ApplyInverse (X, Y) returned info = " << info << endl;
   return info;
 }
 
@@ -542,14 +683,27 @@ int
 EpetraPrecOp::ApplyInverse (const Epetra_MultiVector &X, 
 			    Epetra_MultiVector &Y) const
 {
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraPrecOp::ApplyInverse:" << endl
+      << "---- Implements Epetra_Operator::ApplyInverse()" << endl
+      << "---- On input: Epetra_Op->UseTranspose() = " 
+      << Epetra_Op->UseTranspose() << endl
+      << "---- Calling Epetra_Op->Apply (X, Y)" << endl;
+
   // This operation computes Y = A*X.
   const int info = Epetra_Op->Apply( X, Y );
+  err << "---- Epetra_Op->Apply (X, Y) returned info = " << info << endl;
   return info;
 }
 
 bool 
 EpetraPrecOp::HasApplyTranspose() const
 {
+  std::ostream& err = *(getErrStream (*Epetra_Op));
+  err << "-- Belos::EpetraPrecOp::HasApplyTranspose" << std::endl;
+
   return implementsApplyTranspose (*Epetra_Op);
 }
 
@@ -567,9 +721,21 @@ Apply (const Epetra_Operator& Op,
        Epetra_MultiVector& y,
        ETrans trans)
 { 
+  using std::endl;
+
+  std::ostream& err = *(getErrStream (Op));
+  err << "Belos::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::Apply:" 
+      << endl
+      << "-- trans input = " << etransToString (trans) << endl
+      << "-- On input: Op.UseTranspose() = " 
+      << Op.UseTranspose() << endl;
+
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (Op, trans);
+
+  err << "-- Before calling Op.Apply: Op.UseTranspose() = " 
+      << Op.UseTranspose() << endl;
 
   const int info = Op.Apply (x, y);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
@@ -583,6 +749,10 @@ bool
 OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
 HasApplyTranspose (const Epetra_Operator& Op)
 {
+  std::ostream& err = *(getErrStream (Op));
+  err << "Belos::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::"
+    "HasApplyTranspose" << std::endl;
+
   return implementsApplyTranspose (Op);
 }
 
