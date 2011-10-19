@@ -46,6 +46,7 @@
 
 #include "BelosEpetraAdapter.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Epetra_Comm.h"
 
 
 namespace Belos {
