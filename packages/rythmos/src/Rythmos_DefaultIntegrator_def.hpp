@@ -791,6 +791,14 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
         *out << "\nWARNING: timeStep = "<<trialStepCtrlInfo.stepSize<<" failed!\n";
       }
 
+      // Notify observer of a failed time step
+      if (timeStepFailed) {
+        if (!is_null(integrationObserver_))
+          integrationObserver_->observeCompletedTimeStep(
+            *stepper_, stepCtrlInfo, currTimeStepIndex_
+            );
+      }
+
       // Allow the IntegrationControlStrategy object to suggest another
       // timestep when a timestep fails.
       if (timeStepFailed && integrationControlStrategy_->handlesFailedTimeSteps())

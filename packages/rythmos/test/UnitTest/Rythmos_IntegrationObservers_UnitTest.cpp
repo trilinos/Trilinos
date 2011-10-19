@@ -47,6 +47,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveFailedTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
@@ -63,6 +64,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
     observer->cloneIntegrationObserver();
     observer->resetIntegrationObserver(timeRange);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+    observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
     observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
     observer->resetIntegrationObserver(timeRange);
@@ -94,6 +96,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
+  call_stack.push_back(observer->nameObserveFailedTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
   call_stack.push_back(observer->nameObserveCompletedTimeStep_);
   call_stack.push_back(observer->nameResetIntegrationObserver_);
@@ -106,6 +109,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   observer->cloneIntegrationObserver();
   observer->resetIntegrationObserver(timeRange);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
   observer->resetIntegrationObserver(timeRange);
@@ -116,6 +120,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   TEST_EQUALITY(counters.find(observer->nameCloneIntegrationObserver_)->second, 1);
   TEST_EQUALITY(counters.find(observer->nameResetIntegrationObserver_)->second, 2);
   TEST_EQUALITY(counters.find(observer->nameObserveCompletedTimeStep_)->second, 3);
+  TEST_EQUALITY(counters.find(observer->nameObserveFailedTimeStep_)->second, 1);
 
   TEUCHOS_ASSERT(order.size() == call_stack.size());
   std::list<std::string>::const_iterator observer_order = order.begin();  
@@ -127,6 +132,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   TEST_EQUALITY(counters.find(observer->nameCloneIntegrationObserver_)->second, 0);
   TEST_EQUALITY(counters.find(observer->nameResetIntegrationObserver_)->second, 0);
   TEST_EQUALITY(counters.find(observer->nameObserveCompletedTimeStep_)->second, 0);
+  TEST_EQUALITY(counters.find(observer->nameObserveFailedTimeStep_)->second, 0);
   TEST_EQUALITY(order.size(), 0);
 
 }
@@ -140,6 +146,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   call_stack.push_back(mockObserver->nameCloneIntegrationObserver_);
   call_stack.push_back(mockObserver->nameResetIntegrationObserver_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
+  call_stack.push_back(mockObserver->nameObserveFailedTimeStep_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
   call_stack.push_back(mockObserver->nameObserveCompletedTimeStep_);
   call_stack.push_back(mockObserver->nameResetIntegrationObserver_);
@@ -163,6 +170,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   observer->cloneIntegrationObserver();
   observer->resetIntegrationObserver(timeRange);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
+  observer->observeFailedTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
   observer->observeCompletedTimeStep(stepper, stepControlInfo, 0);
   observer->resetIntegrationObserver(timeRange);
@@ -173,6 +181,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   TEST_EQUALITY(counters.find(loggingObserver->nameCloneIntegrationObserver_)->second, 1);
   TEST_EQUALITY(counters.find(loggingObserver->nameResetIntegrationObserver_)->second, 2);
   TEST_EQUALITY(counters.find(loggingObserver->nameObserveCompletedTimeStep_)->second, 3);
+  TEST_EQUALITY(counters.find(loggingObserver->nameObserveFailedTimeStep_)->second, 1);
 
   TEUCHOS_ASSERT(order.size() == call_stack.size());
   std::list<std::string>::const_iterator observer_order = order.begin();  

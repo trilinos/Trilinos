@@ -67,6 +67,12 @@ public:
     const int timeStepIter
     );
 
+  void observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   //@}
 
   /** \name string names logged in map 
@@ -78,6 +84,7 @@ public:
   const std::string nameCloneIntegrationObserver_;
   const std::string nameResetIntegrationObserver_;
   const std::string nameObserveCompletedTimeStep_;
+  const std::string nameObserveFailedTimeStep_;
 
   //@}
 
@@ -121,7 +128,8 @@ template<typename Scalar>
 LoggingIntegrationObserver<Scalar>::LoggingIntegrationObserver() :
   nameCloneIntegrationObserver_("cloneIntegrationObserver"),
   nameResetIntegrationObserver_("resetIntegrationObserver"),
-  nameObserveCompletedTimeStep_("observeCompletedTimeStep")
+  nameObserveCompletedTimeStep_("observeCompletedTimeStep"),
+  nameObserveFailedTimeStep_("observeFailedTimeStep")
 { 
   counters_ = Teuchos::rcp(new std::map<std::string,int>);
   order_ = Teuchos::rcp(new std::list<std::string>);
@@ -135,6 +143,7 @@ resetLogCounters()
   (*counters_)[nameCloneIntegrationObserver_] = 0;
   (*counters_)[nameResetIntegrationObserver_] = 0;
   (*counters_)[nameObserveCompletedTimeStep_] = 0;
+  (*counters_)[nameObserveFailedTimeStep_] = 0;
   order_->clear();
 }
 
@@ -164,6 +173,16 @@ void LoggingIntegrationObserver<Scalar>::observeCompletedTimeStep(
     )
 {
   logCall(nameObserveCompletedTimeStep_);
+}				
+
+template<typename Scalar>
+void LoggingIntegrationObserver<Scalar>::observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  logCall(nameObserveFailedTimeStep_);
 }				
 
 template<typename Scalar>

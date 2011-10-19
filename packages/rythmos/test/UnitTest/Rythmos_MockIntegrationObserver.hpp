@@ -62,6 +62,12 @@ public:
     const int timeStepIter
     );
 
+  void observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   //@}
 
   /** \name string names for call stack 
@@ -73,6 +79,7 @@ public:
   const std::string nameCloneIntegrationObserver_;
   const std::string nameResetIntegrationObserver_;
   const std::string nameObserveCompletedTimeStep_;
+  const std::string nameObserveFailedTimeStep_;
 
   //@}
 
@@ -114,7 +121,8 @@ template<typename Scalar>
 MockIntegrationObserver<Scalar>::MockIntegrationObserver() :
   nameCloneIntegrationObserver_("cloneIntegrationObserver"),
   nameResetIntegrationObserver_("resetIntegrationObserver"),
-  nameObserveCompletedTimeStep_("observeCompletedTimeStep")
+  nameObserveCompletedTimeStep_("observeCompletedTimeStep"),
+  nameObserveFailedTimeStep_("observeFailedTimeStep")
 { }
 
 template<typename Scalar>
@@ -150,6 +158,16 @@ void MockIntegrationObserver<Scalar>::observeCompletedTimeStep(
     )
 {
   this->verifyCallAndPop(nameObserveCompletedTimeStep_);
+}				
+
+template<typename Scalar>
+void MockIntegrationObserver<Scalar>::observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  this->verifyCallAndPop(nameObserveFailedTimeStep_);
 }				
 
 template<typename Scalar>

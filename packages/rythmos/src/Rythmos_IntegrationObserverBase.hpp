@@ -62,7 +62,7 @@ public:
    * \param stepper [in] The stepper object that was just stepped forward once
    * to integrate the transient ODE/DAE equations.  On the very first call and
    * every other call, this stepper should have a finite time range for a
-   * successfull step..
+   * successfull step.
    *
    * \param stepCtrlInfo [in] The info for the actual time step that was just
    * completed.
@@ -95,6 +95,46 @@ public:
     ) = 0;
 
   // ToDo: add observeFailedTimeStep(stepper, ...)
+  /** \brief Observer an integration step.
+   *
+   * \param stepper [in] The stepper object that was just stepped forward once
+   * to integrate the transient ODE/DAE equations.  On the very first call and
+   * every other call, this stepper should have a finite time range for a
+   * successfull step.
+   *
+   * \param stepCtrlInfo [in] The info for the actual time step that was just
+   * attempted.
+   *
+   * \param timeStepIter [in] The time step iteration counter.  In the first
+   * call to this function, this should be <tt>timeStepIter==0</tt> and it
+   * should be incremented on each call only once.  While the concrete
+   * implementation of <tt>*this</tt> could keep track of the this counter,
+   * putting it in the argument list helps to simplify logic and helps to
+   * validate correct usage.
+   *
+   * Warning! This function is *NOT* stateless.  It should be called once and
+   * only once per failed time step iteration.
+   *
+   * NOTE: The function <tt>resetIntegrationControlStrategy()</tt> must be
+   * called prior to even the first call to function.
+   *
+   * NOTE: If <tt>isInitialTimeStep(stepper->getTimeRange(), fullTimeRange) ==
+   * true</tt> then this is the first time step (where <tt>fullTimeRange</tt>
+   * was passed into <tt>resetIntegrationObserver()</tt>.
+   *
+   * NOTE: If <tt>isFinalTimeStep(stepper->getTimeRange(), fullTimeRange) ==
+   * true</tt> then this is the last time step (where <tt>fullTimeRange</tt>
+   * was passed into <tt>resetIntegrationObserver()</tt>.
+   *
+   * NOTE: This method should be pure virtual but has been given a
+   * default implementation for backwards compatibility.  We will make
+   * this pure virtual in the future.
+   */
+  virtual void observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
 
 };
 
@@ -129,6 +169,29 @@ bool isFinalTimeStep(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return compareTimeValues(currentTimeRange.upper(), fullTimeRange.upper()) >= ST::zero();
 }
+
+
+// /////////////////////////////////////////////////////////////
+/*  Default implementations for backwards compatibility
+
+   Some of the observer methods were added after rythmos was released.
+   Even though all methods should be pure virtual, we provide a
+   default implementation here for the recently added methods to
+   maintain backwards compatibility.  These should be removed in the
+   future.
+*/
+
+
+template<class Scalar>
+void IntegrationObserverBase<Scalar>::
+observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    )
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}    
 
 
 } // namespace Rythmos

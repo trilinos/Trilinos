@@ -81,6 +81,13 @@ public:
     const int timeStepIter
     );
 
+  /** \brief . */
+  virtual void observeFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter
+    );
+
   //@}
 
 private:
@@ -171,6 +178,27 @@ void CompositeIntegrationObserver<Scalar>::observeCompletedTimeStep(
     observer->setOStream(out);
     observer->setVerbLevel(verbLevel);
     observer->observeCompletedTimeStep(stepper,stepCtrlInfo,timeStepIter);
+  }
+}
+
+
+template<class Scalar>
+void CompositeIntegrationObserver<Scalar>::observeFailedTimeStep(
+  const StepperBase<Scalar> &stepper,
+  const StepControlInfo<Scalar> &stepCtrlInfo,
+  const int timeStepIter
+  )
+{
+  using Teuchos::as;
+
+  const RCP<FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  for (int i = 0; i < as<int>(observers_.size()); ++i ) {
+    RCP<IntegrationObserverBase<Scalar> > observer = observers_[i];
+    observer->setOStream(out);
+    observer->setVerbLevel(verbLevel);
+    observer->observeFailedTimeStep(stepper,stepCtrlInfo,timeStepIter);
   }
 }
 
