@@ -298,12 +298,12 @@ namespace Intrepid {
       break;
       
     case OPERATOR_CURL:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
     case OPERATOR_DIV:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
@@ -314,7 +314,7 @@ namespace Intrepid {
         z = inputPoints(i0,2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6) 
-        TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D2), std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D2), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): OPERATOR_D2 not yet coded");
         
       }
@@ -326,7 +326,7 @@ namespace Intrepid {
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
                 
-        TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D3), std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D3), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): OPERATOR_D3 not yet coded");
 
       }
@@ -337,7 +337,7 @@ namespace Intrepid {
         // Non-zero entries have Dk (derivative cardinality) indices {3,4,5,7,8,12}, all other entries are 0.
         // Intitialize array by zero and then fill only non-zero entries.
 
-        TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D4), std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D4), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): OPERATOR_D4 not yet coded");
 
       }
@@ -345,7 +345,7 @@ namespace Intrepid {
       
     case OPERATOR_D5:
     case OPERATOR_D6:
-      TEST_FOR_EXCEPTION( true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): operator not supported");
       break;
       
@@ -368,7 +368,7 @@ namespace Intrepid {
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): Invalid operator type");
     }
   }
@@ -380,7 +380,7 @@ namespace Intrepid {
                                                                           const ArrayScalar &    inputPoints,
                                                                           const ArrayScalar &    cellVertices,
                                                                           const EOperator        operatorType) const {
-    TEST_FOR_EXCEPTION( (true), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): FEM Basis calling an FVD member function");
   }
 
@@ -388,13 +388,13 @@ namespace Intrepid {
   void Basis_HGRAD_HEX_C2_Serendipity_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const {
 #ifdef HAVE_INTREPID_DEBUG
     // Verify rank of output array.
-    TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
                         ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM::getDofCoords) rank = 2 required for DofCoords array");
     // Verify 0th dimension of output array.
-    TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
                         ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
     // Verify 1st dimension of output array.
-    TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
                         ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 

@@ -330,7 +330,7 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
   //Get actual data
   Array<T> array = fromStringToArray<T>(curString);
 
-  TEST_FOR_EXCEPTION(array.size() != (typename Array<T>::size_type)(numRows*numCols),
+  TEUCHOS_TEST_FOR_EXCEPTION(array.size() != (typename Array<T>::size_type)(numRows*numCols),
     InvalidArrayStringRepresentation,
     "Error: You've specified an TwoDArray as having the dimensions of "
     << numRows << "x" << numCols << ". This means you should have " <<

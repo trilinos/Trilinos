@@ -29,7 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 template <typename OrdinalType, typename FadType>
 Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
@@ -66,7 +66,7 @@ Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
 ~ArrayTraits()
 {
 // #ifdef SACADO_DEBUG
-//   TEST_FOR_EXCEPTION(workspace_pointer != workspace,
+//   TEUCHOS_TEST_FOR_EXCEPTION(workspace_pointer != workspace,
 // 		     std::logic_error,
 // 		     "ArrayTraits::~ArrayTraits(): " <<
 // 		     "Destructor called with non-zero used workspace. " <<
@@ -272,7 +272,7 @@ unpack(FadType& a, OrdinalType& n_dot, OrdinalType& final_n_dot, ValueType& val,
   n_dot = a.size();
   val = a.val();
 #ifdef SACADO_DEBUG
-  TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
+  TEUCHOS_TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
 		     std::logic_error,
 		     "ArrayTraits::unpack(): FadType has wrong number of " <<
 		     "derivative components.  Got " << n_dot << 
@@ -311,7 +311,7 @@ unpack(FadType* a, OrdinalType n, OrdinalType inc, OrdinalType& n_dot,
   n_dot = a[0].size();
   bool is_contiguous = is_array_contiguous(a, n, n_dot);
 #ifdef SACADO_DEBUG
-  TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
+  TEUCHOS_TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
 		     std::logic_error,
 		     "ArrayTraits::unpack(): FadType has wrong number of " <<
 		     "derivative components.  Got " << n_dot << 
@@ -373,7 +373,7 @@ unpack(FadType* A, OrdinalType m, OrdinalType n, OrdinalType lda,
   n_dot = A[0].size();
   bool is_contiguous = is_array_contiguous(A, m*n, n_dot);
 #ifdef SACADO_DEBUG
-  TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
+  TEUCHOS_TEST_FOR_EXCEPTION(n_dot > 0 && final_n_dot > 0 && final_n_dot != n_dot,
 		     std::logic_error,
 		     "ArrayTraits::unpack(): FadType has wrong number of " <<
 		     "derivative components.  Got " << n_dot << 
@@ -553,7 +553,7 @@ allocate_array(OrdinalType size) const
     return new ValueType[size];
 
 #ifdef SACADO_DEBUG
-  TEST_FOR_EXCEPTION(workspace_pointer + size - workspace > workspace_size,
+  TEUCHOS_TEST_FOR_EXCEPTION(workspace_pointer + size - workspace > workspace_size,
 		     std::logic_error,
 		     "ArrayTraits::allocate_array(): " <<
 		     "Requested workspace memory beyond size allocated. " <<
@@ -640,7 +640,7 @@ SCAL(const OrdinalType n, const FadType& alpha, FadType* x,
 
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_x_dot != n_dot && n_x_dot != 0),
 		     std::logic_error,
 		     "BLAS::SCAL(): All arguments must have " <<
@@ -724,7 +724,7 @@ AXPY(const OrdinalType n, const alpha_type& alpha, const x_type* x,
 
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_x_dot != n_dot && n_x_dot != 0) ||
 		     (n_y_dot != n_dot && n_y_dot != 0),
 		     std::logic_error,
@@ -918,7 +918,7 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
 
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_A_dot != n_dot && n_A_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_x_dot != n_dot && n_x_dot != 0),
 		     std::logic_error,
 		     "BLAS::TRMV(): All arguments must have " <<
@@ -1310,7 +1310,7 @@ Fad_DOT(const OrdinalType n,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_x_dot != n_z_dot && n_x_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_x_dot != n_z_dot && n_x_dot != 0) ||
 		     (n_y_dot != n_z_dot && n_y_dot != 0),
 		     std::logic_error,
 		     "BLAS::Fad_DOT(): All arguments must have " <<
@@ -1375,7 +1375,7 @@ Fad_GEMV(Teuchos::ETransp trans,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_x_dot != n_dot && n_x_dot != 0) ||
 		     (n_beta_dot != n_dot && n_beta_dot != 0) ||
@@ -1468,7 +1468,7 @@ Fad_GER(const OrdinalType m,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_x_dot != n_dot && n_x_dot != 0) ||
 		     (n_y_dot != n_dot && n_y_dot != 0),
@@ -1529,7 +1529,7 @@ Fad_GEMM(Teuchos::ETransp transa,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_B_dot != n_dot && n_B_dot != 0) ||
 		     (n_beta_dot != n_dot && n_beta_dot != 0) ||
@@ -1650,7 +1650,7 @@ Fad_SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_B_dot != n_dot && n_B_dot != 0) ||
 		     (n_beta_dot != n_dot && n_beta_dot != 0) ||
@@ -1758,7 +1758,7 @@ Fad_TRMM(Teuchos::ESide side,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_B_dot != n_dot && n_B_dot != 0),
 		     std::logic_error,
@@ -1866,7 +1866,7 @@ Fad_TRSM(Teuchos::ESide side,
 {
 #ifdef SACADO_DEBUG
   // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
+  TEUCHOS_TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
 		     (n_A_dot != n_dot && n_A_dot != 0) ||
 		     (n_B_dot != n_dot && n_B_dot != 0),
 		     std::logic_error,

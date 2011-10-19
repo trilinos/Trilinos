@@ -64,7 +64,7 @@ ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry)
 RCP<const ParameterEntryXMLConverter> 
 ParameterEntryXMLConverterDB::getConverter(const XMLObject& xmlObject)
 { 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !xmlObject.hasAttribute(ParameterEntryXMLConverter::getTypeAttributeName()), 
     NoTypeAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
@@ -78,7 +78,7 @@ ParameterEntryXMLConverterDB::getConverter(const XMLObject& xmlObject)
     ParameterEntryXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(parameterType);
 
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindParameterEntryConverterException,
     "Can't find converter for parameter entry of type: " <<
     xmlObject.getRequired(ParameterEntryXMLConverter::getTypeAttributeName()) <<

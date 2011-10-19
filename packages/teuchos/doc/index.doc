@@ -224,19 +224,19 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <ul>
 
-  <li> <em>Testing for Exceptions</em>: The TEST_FOR_EXCEPTION() macro accepts
+  <li> <em>Testing for Exceptions</em>: The TEUCHOS_TEST_FOR_EXCEPTION() macro accepts
   a
   logical test, an exception handler, and a
   message.  It then throws an "intelligent" exception informing the
   user of the file, line, and message where
-  the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
+  the exception was thrown.  The macro TEUCHOS_TEST_FOR_EXCEPT() is a shorter
   macro that just accepts a logic test and is therefore easier to write.
-  Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).</li>
+  Please use TEUCHOS_TEST_FOR_EXCEPT(!test) as an alternative to assert(test).</li>
 
   <li> <em>Stack Tracing</em>: When a debug build is enabled
   (CMAKE_BUILD_TYPE=DEBUG OR Trilinos_ENABLE_DEBUG=ON) and when using GCC and
   when enabling BinUtils (TPL_ENABLE_BinUtils=ON) then the
-  TEST_FOR_EXCEPTION() family of macros
+  TEUCHOS_TEST_FOR_EXCEPTION() family of macros
   will take snapshopts of the stacktrace when exceptions are thrown.  These
   stacktraces can be printed out after an exception is thrown using the
   funciton Teuchos::get_stored_stacktrace().  The standard catch macro
@@ -249,7 +249,7 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   options Teuchos_ENABLE_STACKTRACE and Teuchos_ENABLE_DEFAULT_STRACTRACE.
   When Teuchos_ENABLE_STACKTRACE=ON, then stracktracing of exceptions can be
   turned on and off at runtime using the function
-  TestForException_setEnableStacktrace().  The configure varible
+  Teuchos::TestForException_setEnableStacktrace().  The configure varible
   Teuchos_ENABLE_DEFAULT_STRACTRACE determines if stack tracing is on or off
   by defualt at runtime.
 

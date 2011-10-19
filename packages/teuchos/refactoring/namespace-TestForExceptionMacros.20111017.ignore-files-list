@@ -4,4 +4,4 @@ TestForException_throwTest.cpp
 Teuchos_Assert.cpp
 Teuchos_Assert.hpp
 Teuchos_StandardCatchMacros.hpp
-Teuchos_TestForException.hpp
+Teuchos_Assert.hpp

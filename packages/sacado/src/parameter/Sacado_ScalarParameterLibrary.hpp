@@ -36,7 +36,7 @@
 #include "Sacado_ScalarParameterFamily.hpp"
 #include "Sacado_ScalarParameterVector.hpp"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace Sacado {
 
@@ -121,7 +121,7 @@ Sacado::ScalarParameterLibrary<EvalTypeTraits>::
 setRealValueForAllTypes(const std::string& name, double value)
 {
   typename BaseT::FamilyMap::iterator it = this->library.find(name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
      it == this->library.end(), 
      std::logic_error,
      std::string("Sacado::ScalararameterLibrary::setRealValueForAllTypes():  ")
@@ -136,7 +136,7 @@ Sacado::ScalarParameterLibrary<EvalTypeTraits>::
 setRealValue(const std::string& name, double value)
 {
   typename BaseT::FamilyMap::iterator it = this->library.find(name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
      it == this->library.end(), 
      std::logic_error,
      std::string("Sacado::ScalarParameterLibrary::setValueAsConstant():  ")
@@ -153,7 +153,7 @@ setValue(
       const typename EvalTypeTraits::template apply<EvalType>::type& value)
 {
   typename BaseT::FamilyMap::iterator it = this->library.find(name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       it == this->library.end(), 
       std::logic_error,
       std::string("Sacado::ScalarParameterLibrary::setValueAsIndependent():  ")
@@ -168,7 +168,7 @@ Sacado::ScalarParameterLibrary<EvalTypeTraits>::
 getRealValue(const std::string& name) const
 {
   typename BaseT::FamilyMap::const_iterator it = this->library.find(name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
 		 it == this->library.end(), 
 		 std::logic_error,
 		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
@@ -183,7 +183,7 @@ Sacado::ScalarParameterLibrary<EvalTypeTraits>::
 getValue(const std::string& name) const
 {
   typename BaseT::FamilyMap::const_iterator it = this->library.find(name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
 		 it == this->library.end(), 
 		 std::logic_error,
 		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
@@ -203,7 +203,7 @@ fillVector(const Teuchos::Array<std::string>& names,
   // Fill in parameters
   for (unsigned int i=0; i<names.size(); i++) {
     it = this->library.find(names[i]);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
 		   it == this->library.end(), 
 		   std::logic_error,
 		   std::string("Sacado::ParameterLibraryBase::fillVector():  ")

@@ -42,7 +42,7 @@
 #ifndef TEUCHOS_AS_HPP
 #define TEUCHOS_AS_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>

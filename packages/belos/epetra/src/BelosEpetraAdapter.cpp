@@ -109,7 +109,7 @@ namespace Belos {
       } else if (trans == CONJTRANS) {
 	return "CONJTRANS";
       }
-      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
 			 "Invalid ETrans value trans = " << trans << ".");
     }
 
@@ -163,7 +163,7 @@ namespace Belos {
 	// state of Op.  It shouldn't have, but if it did, then Op is
 	// broken.
 	const bool currentTransposedState = Op.UseTranspose();
-	TEST_FOR_EXCEPTION(currentTransposedState != transposed, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(currentTransposedState != transposed, std::logic_error,
 			   "implementsApplyTranspose: Op.SetUseTranspose(true) "
 			   "failed (with error code " << transposeFailed << "), "
 			   "but nevertheless managed to change the transposed "
@@ -180,7 +180,7 @@ namespace Belos {
       {
 	const int errcode = 
 	  const_cast<Epetra_Operator&>(Op).SetUseTranspose (false);
-	TEST_FOR_EXCEPTION(errcode != 0, std::logic_error, 
+	TEUCHOS_TEST_FOR_EXCEPTION(errcode != 0, std::logic_error, 
 			   "implementsApplyTranspose: Op.SetUseTranspose(true) "
 			   "succeeded, but Op.SetUseTranspose(false) failed with "
 			   "error code " << errcode << ".  This likely indicates "
@@ -412,7 +412,7 @@ EpetraMultiVec::SetBlock (const MultiVec<double>& A,
       index2[i] = i;
     EpetraMultiVec *tmp_vec = 
       dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
 		       "Belos::EpetraMultiVec::SetBlock: Dynamic cast from "
 		       "Belos::MultiVec<double> to Belos::EpetraMultiVec "
 		       "failed.");
@@ -477,7 +477,7 @@ void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
   // Check to make sure the input vector of scale factors has the same
   // number of entries as the number of columns in the multivector.
   int numvecs = this->NumVectors();
-  TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
 		     "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale: "
 		     "Vector (alpha) of scaling factors has length " 
 		     << alpha.size() << ", which is different than the number "
@@ -488,7 +488,7 @@ void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
   for (int i=0; i<numvecs; i++) {
     Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
     ret = temp_vec.Scale( alpha[i] );
-    TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
 		       "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale: "
 		       "Call to Epetra_MultiVector::Scale() returned a nonzero "
 		       "error code " << ret << ".");
@@ -526,12 +526,12 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
                      "Belos::EpetraMultiVec::MvDot: Dynamic cast from Belos::"
 		     "MultiVec<double> to Belos::EpetraMultiVec failed.");
   if (A_vec && ( (int)b.size() >= A_vec->NumVectors() ) ) {
      int info = this->Dot( *A_vec, &b[0] );
-     TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+     TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			"Belos::EpetraMultiVec::MvDot: Call to Epetra_Multi"
 			"Vector::Dot() returned a nonzero error code " 
 			<< info << ".");
@@ -558,13 +558,13 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
       info = NormInf(&normvec[0]);
       break;
     default:
-      TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			 "Belos::EpetraMultiVec::MvNorm: Invalid norm_type " 
 			 << norm_type << ".  The current list of valid norm "
 			 "types is {OneNorm, TwoNorm, InfNorm}.");
       break;
     }
-    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+    TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 		       "Belos::EpetraMultiVec::MvNorm: Call to Epetra_Multi"
 		       "Vector::Norm() returned a nonzero error code " 
 		       << info << ".");
@@ -610,7 +610,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-  TEST_FOR_EXCEPTION(vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
 		     "Belos::EpetraOp::Apply: x and/or y could not be "
 		     "dynamic cast to an Epetra_MultiVector.");
 
@@ -625,7 +625,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
 
   // Apply the operator to x and put the result in y.
   const int info = Epetra_Op->Apply (*vec_x, *vec_y);
-  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
 		     "Belos::EpetraOp::Apply: The Epetra_Operator's Apply() "
 		     "method returned a nonzero error code of " << info << ".");
 }

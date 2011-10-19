@@ -69,7 +69,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 
 /*! 	\class Teuchos::SerialDenseMatrix
@@ -961,10 +961,10 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 
 template<typename OrdinalType, typename ScalarType>
 inline void SerialDenseMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const {
-  TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRows_, std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRows_, std::out_of_range,
     "SerialDenseMatrix<T>::checkIndex: "
     "Row index " << rowIndex << " out of range [0, "<< numRows_ << ")");
-  TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numCols_, std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numCols_, std::out_of_range,
     "SerialDenseMatrix<T>::checkIndex: "
     "Col index " << colIndex << " out of range [0, "<< numCols_ << ")");
 }

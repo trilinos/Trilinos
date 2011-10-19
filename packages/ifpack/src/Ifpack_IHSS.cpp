@@ -27,7 +27,7 @@ Ifpack_IHSS::Ifpack_IHSS(Epetra_RowMatrix* A):
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
-  TEST_FOR_EXCEPT(!Acrs) 
+  TEUCHOS_TEST_FOR_EXCEPT(!Acrs) 
   A_=rcp(Acrs,false);
 }
 

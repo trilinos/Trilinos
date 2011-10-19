@@ -87,11 +87,11 @@ namespace Teuchos
 
         //if (index < data_.size())
         {
-          //TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          //TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
           //VERIFY_OP_ON(index, <,  data_.size(), std::runtime_error, "100" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_));
-          TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
           Array<HashPair<Key, Value> >& candidates = data_[index];
-          //TEST_FOR_EXCEPTION(index >= data_.size() && candidates.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );      
+          //TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.size() && candidates.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );      
           for (int i=0; i<candidates.length(); i++)
             {
               HashPair<Key, Value>& c = candidates[i];
@@ -117,17 +117,17 @@ namespace Teuchos
               index = hashCodeOfKey % capacity_;
             }
       
-          //TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
-          TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          //TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.capacity(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
 
           Array<HashPair<Key, Value> > & data_ref = data_[index];
-          //TEST_FOR_EXCEPTION(index >= data_.size() && data_ref.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
+          //TEUCHOS_TEST_FOR_EXCEPTION(index >= data_.size() && data_ref.size(), std::runtime_error, "100 hashCodeOfKey, capacity_, index, sz=" << Teuchos::toString(hashCodeOfKey) << " " << Teuchos::toString(capacity_) << " " << Teuchos::toString(index) << " " << Teuchos::toString(data_.size()) );
 
           int length = data_ref.length();
           data_ref.append(HashPair<Key, Value>(key, default_value_));
           accumulateAvgFill(length+1);
 
-          TEST_FOR_EXCEPTION(length >= data_ref.size(), std::runtime_error, "3 " << Teuchos::toString(length) << "  " << Teuchos::toString(data_ref.size()));
+          TEUCHOS_TEST_FOR_EXCEPTION(length >= data_ref.size(), std::runtime_error, "3 " << Teuchos::toString(length) << "  " << Teuchos::toString(data_ref.size()));
           return data_ref[length].value_;
         }
       }
@@ -361,7 +361,7 @@ namespace Teuchos
   template<class Key, class Value> inline
     const Value& Teuchos_Hashtable<Key, Value>::get(const Key& key) const
     {
-      TEST_FOR_EXCEPTION(!containsKey(key),
+      TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
                          "Teuchos_Hashtable<Key, Value>::get: key " 
                          << Teuchos::toString(key) 
@@ -388,7 +388,7 @@ namespace Teuchos
   template<class Key, class Value> inline
     void Teuchos_Hashtable<Key, Value>::remove(const Key& key)
     {
-      TEST_FOR_EXCEPTION(!containsKey(key),
+      TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
                          "Teuchos_Hashtable<Key, Value>::remove: key " 
                          << Teuchos::toString(key) 

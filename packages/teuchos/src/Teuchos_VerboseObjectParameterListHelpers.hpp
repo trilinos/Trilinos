@@ -137,8 +137,8 @@ void Teuchos::readVerboseObjectSublist(
   ParameterList* paramList, VerboseObject<ObjectType> *verboseObject
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
-  TEST_FOR_EXCEPT(0==verboseObject);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==verboseObject);
   const EVerbosityLevel bogusVerbLevel = static_cast<EVerbosityLevel>(-50);
   RCP<FancyOStream> oStream = null;
   EVerbosityLevel verbLevel = bogusVerbLevel;

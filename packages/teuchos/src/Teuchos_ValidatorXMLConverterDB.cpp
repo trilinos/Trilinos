@@ -61,7 +61,7 @@ RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 {
   ConverterMap::const_iterator it = getConverterMap().find(validator.getXMLTypeName());
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for validator type " <<
      validator.getXMLTypeName() << std::endl <<
@@ -78,7 +78,7 @@ ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::string validatorType = xmlObject.getRequired(
     ValidatorXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(validatorType);
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for type " << validatorType <<
     std::endl << 

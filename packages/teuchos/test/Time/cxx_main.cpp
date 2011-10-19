@@ -186,7 +186,7 @@ double sqrtFunc()
 
   for (int i=0; i<10000; i++) 
   {
-    TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot(as<double>(i)) > 1000.0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot(as<double>(i)) > 1000.0, std::runtime_error,
       "throw an std::exception");
     sum += ScalarTraits<double>::squareroot(as<double>(i));
   }
@@ -216,7 +216,7 @@ double exceptFunc()
   double sum = 0.0;
   for (int i=0; i<10000; i++)
   {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ScalarTraits<double>::squareroot(as<double>(i)) > 60.0, std::runtime_error,
       "throw an std::exception");
     sum += ScalarTraits<double>::squareroot(as<double>(i));

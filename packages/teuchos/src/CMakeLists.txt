@@ -152,7 +152,7 @@ APPEND_SET(HEADERS
   Teuchos_TableEntry.hpp
   Teuchos_TableFormat.hpp
   Teuchos_TabularOutputter.hpp
-  Teuchos_TestForException.hpp
+  Teuchos_Assert.hpp
   Teuchos_TestingHelpers.hpp
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp

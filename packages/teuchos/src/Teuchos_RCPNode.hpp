@@ -92,7 +92,7 @@ inline void debugAssertStrength(ERCPStrength strength)
       return; // Fine
     case RCP_STRENGTH_INVALID:
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 #endif
 }
@@ -120,7 +120,7 @@ public:
       }
       // Should never get here!
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       return "";
       // 2009/06/30: rabartl: The above logic avoid a warning from the Intel
@@ -513,7 +513,7 @@ public:
   ~RCPNodeTmpl()
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION( ptr_!=0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( ptr_!=0, std::logic_error,
         "Error, the underlying object must be explicitly deleted before deleting"
         " the node object!" );
 #endif
@@ -571,7 +571,7 @@ public:
     const void* rcp_obj_ptr
     ) const
     {
-      TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
       const T* deleted_ptr =
 #ifdef TEUCHOS_DEBUG
         deleted_ptr_
@@ -580,7 +580,7 @@ public:
 #endif
         ;
       TEUCHOS_ASSERT(rcp_node_ptr);
-      TEST_FOR_EXCEPTION( true, DanglingReferenceError,
+      TEUCHOS_TEST_FOR_EXCEPTION( true, DanglingReferenceError,
         "Error, an attempt has been made to dereference the underlying object\n"
         "from a weak smart pointer object where the underling object has already\n"
         "been deleted since the strong count has already gone to zero.\n"
