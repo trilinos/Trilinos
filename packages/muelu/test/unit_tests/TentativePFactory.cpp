@@ -333,33 +333,43 @@ namespace MueLuTests {
     Teuchos::ParameterList status;
     status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
 
-    /*SmootherFactory coarseSolveFact(smooProto);
-    H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
-
-    // Define RHS
-    RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-    RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
-
-    X->randomize();
-    Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-
-    // Use AMG directly as an iterative method
-    {
-      X->putScalar( (SC) 0.0);
-
-      H->Iterate(*RHS,its,*X);
-    }
-
     RCP<Level> coarseLevel = H->GetLevel(1);
-    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+    TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("R",Rfact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsAvailable("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
+    RCP<Level> coarseLevel2 = H->GetLevel(2);
+    TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsRequested("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
 
-    RCP<CrsOperator> crsP1 = Teuchos::rcp_dynamic_cast<CrsOperator>(P1);
-    RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
-    RCP<Xpetra::EpetraCrsMatrix> epMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
-    RCP<Epetra_CrsMatrix> epP1 = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(epMat->getEpetra_CrsMatrix());
-
-    std::cout << *epP1 << std::endl;*/
   }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
