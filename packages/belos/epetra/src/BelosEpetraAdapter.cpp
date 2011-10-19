@@ -231,6 +231,13 @@ namespace Belos {
 	// If necessary, set (or unset) the transpose flag to the value
 	// corresponding to 'trans'.
 	if (newTransposeFlag_ != originalTransposeFlag_) {
+
+	  using std::endl;
+	  std::ostream& err = *(getErrStream (Op_));
+	  err << "---- EpetraOperatorTransposeScopeGuard constructor:" << endl
+	      << "------ Toggling transpose flag from " << originalTransposeFlag_ 
+	      << " to " << newTransposeFlag_ << endl;
+
 	  // Toggle the transpose flag.  The destructor will restore
 	  // its original value.
 	  const int info = 
@@ -256,6 +263,13 @@ namespace Belos {
 	// SetUseTranspose() changes the state of the operator, so if
 	// applicable, we have to change the state back.
 	if (newTransposeFlag_ != originalTransposeFlag_) {
+
+	  using std::endl;
+	  std::ostream& err = *(getErrStream (Op_));
+	  err << "---- EpetraOperatorTransposeScopeGuard destructor:" << endl
+	      << "------ Toggling transpose flag from " << newTransposeFlag_
+	      << " to " << originalTransposeFlag_ << endl;
+
 	  const int info = 
 	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (originalTransposeFlag_);
 	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure,
