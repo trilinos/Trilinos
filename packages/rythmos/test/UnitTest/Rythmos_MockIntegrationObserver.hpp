@@ -214,7 +214,7 @@ template<typename Scalar>
 void MockIntegrationObserver<Scalar>::verifyCallAndPop(const std::string call) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(expectedCallStack_.size() == 0, std::logic_error, "Registered the call\"" << call << "\" but the expected stack is empty! The time integration logic has broken the expected behavior of this mock time integration observer!");
-  TEUCHOS_TEST_FOR_EXCEPTION(call != *expectedCallStack_.begin(), std::logic_error, "The expected IntegrationObserver call, \"" << *expectedCallStack_.begin() << "\" is not equal to the actual call made, \"" << call << "\".  The time integration logic has broken the expected behavior of this mock time integration observer!");
+  TEUCHOS_TEST_FOR_EXCEPTION(call != *expectedCallStack_.begin(), std::logic_error, "The expected IntegrationObserver call, \"" << *expectedCallStack_.begin() << "\" is not equal to the actual call recieved, \"" << call << "\".  The time integration logic has broken the expected behavior of this mock time integration observer!");
   expectedCallStack_.pop_front();
 }
 
