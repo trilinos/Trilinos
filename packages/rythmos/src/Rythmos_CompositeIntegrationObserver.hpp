@@ -102,7 +102,7 @@ private:
  * \relates CompositeIntegrationObserver
  */
 template<class Scalar>
-RCP<CompositeIntegrationObserver<Scalar> > compositeIntegratorObserver()
+RCP<CompositeIntegrationObserver<Scalar> > createCompositeIntegrationObserver()
 {
   RCP<CompositeIntegrationObserver<Scalar> >
     frsco(new CompositeIntegrationObserver<Scalar>());
@@ -141,7 +141,7 @@ CompositeIntegrationObserver<Scalar>::cloneIntegrationObserver() const
 {
   using Teuchos::as;
   RCP<CompositeIntegrationObserver<Scalar> >
-    compositeObserver = compositeIntegratorObserver<Scalar>();
+    compositeObserver = createCompositeIntegrationObserver<Scalar>();
   for (int i = 0; i < as<int>(observers_.size()); ++i ) {
     compositeObserver->addObserver(observers_[i]->cloneIntegrationObserver());
   }

@@ -41,7 +41,7 @@ namespace Rythmos {
 TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
   
   RCP<MockIntegrationObserver<double> > 
-    observer(new MockIntegrationObserver<double>);
+    observer = createMockIntegrationObserver<double>();
 
   std::list<std::string> call_stack;
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, MockIntegrationObserver) {
 TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
   
   RCP<LoggingIntegrationObserver<double> > 
-    observer(new LoggingIntegrationObserver<double>);
+    observer = createLoggingIntegrationObserver<double>();
 
   std::list<std::string> call_stack;
   call_stack.push_back(observer->nameCloneIntegrationObserver_);
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, LoggingIntegrationObserver) {
 TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   
   RCP<MockIntegrationObserver<double> > 
-    mockObserver(new MockIntegrationObserver<double>);
+    mockObserver = createMockIntegrationObserver<double>();
 
   std::list<std::string> call_stack;
   call_stack.push_back(mockObserver->nameCloneIntegrationObserver_);
@@ -154,10 +154,10 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegrationObservers, CompositeIntegrationObserver) {
   mockObserver->setCallStack(call_stack);
 
   RCP<LoggingIntegrationObserver<double> > 
-    loggingObserver(new LoggingIntegrationObserver<double>);
+    loggingObserver = createLoggingIntegrationObserver<double>();
 
   RCP<CompositeIntegrationObserver<double> > 
-    observer(new CompositeIntegrationObserver<double>);
+    observer = createCompositeIntegrationObserver<double>();
 
   observer->addObserver(mockObserver);
   observer->addObserver(loggingObserver);
