@@ -794,7 +794,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       // Notify observer of a failed time step
       if (timeStepFailed) {
         if (!is_null(integrationObserver_))
-          integrationObserver_->observeCompletedTimeStep(
+          integrationObserver_->observeFailedTimeStep(
             *stepper_, stepCtrlInfo, currTimeStepIndex_
             );
       }
