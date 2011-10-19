@@ -150,6 +150,7 @@ void FEMMetaData::internal_declare_known_cell_topology_parts()
 
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()), m_element_rank);
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()), m_element_rank);
+    register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()), m_element_rank);
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()), m_element_rank);
 
     register_cell_topology(fem::CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()), m_element_rank);

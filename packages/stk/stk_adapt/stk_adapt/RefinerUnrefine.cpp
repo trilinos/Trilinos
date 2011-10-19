@@ -103,7 +103,7 @@ namespace stk {
 
     void Refiner::removeDeletedNodes(NodeSetType& deleted_nodes)
     {
-      std::cout << "P["<< m_eMesh.getRank() << "] removeDeletedNodes deleted_nodes.size()= " << deleted_nodes.size() << std::endl;
+      //std::cout << "P["<< m_eMesh.getRank() << "] removeDeletedNodes deleted_nodes.size()= " << deleted_nodes.size() << std::endl;
       for(SetOfEntities::iterator node_it = deleted_nodes.begin();
           node_it != deleted_nodes.end(); ++node_it)
         {

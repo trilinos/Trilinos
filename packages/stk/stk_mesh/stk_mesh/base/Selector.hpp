@@ -117,7 +117,7 @@ private:
   void verify_compatible( const Bucket & B ) const;
 
   /** \brief . */
-  bool apply(
+  bool bucket_has_part(
       unsigned part_id ,
       const Bucket & candidate
       ) const;

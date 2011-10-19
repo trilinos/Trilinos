@@ -156,7 +156,7 @@ void Selector::verify_compatible( const Bucket & B ) const
 }
 
 
-bool Selector::apply(
+bool Selector::bucket_has_part(
     unsigned part_id,
     const Bucket & candidate
     ) const
@@ -178,7 +178,7 @@ bool Selector::apply(
       i += i->m_count ;
     }
     else { // Test for containment of bucket in this part, or not in
-      result = i->m_unary ^ apply( i->m_part_id , candidate );
+      result = i->m_unary ^ bucket_has_part( i->m_part_id , candidate );
       ++i ;
     }
   }

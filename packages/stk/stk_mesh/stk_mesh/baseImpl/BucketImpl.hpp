@@ -94,8 +94,8 @@ class BucketImpl {
   //  key[ key[0] ] == counter
   unsigned bucket_counter() const { return m_key[ *m_key ]; }
 
-  Bucket * last_bucket_in_family();
-  Bucket * first_bucket_in_family();
+  Bucket * last_bucket_in_family() const;
+  Bucket * first_bucket_in_family() const;
   void set_last_bucket_in_family( Bucket * last_bucket );
   void set_first_bucket_in_family( Bucket * first_bucket );
   DataMap * get_field_map();
@@ -103,8 +103,9 @@ class BucketImpl {
   void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
   void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
   const Bucket * get_bucket_family_pointer() const { return m_bucket; }
+
   bool equivalent( const BucketImpl& other_bucket ) const {
-    return m_bucket == other_bucket.m_bucket;
+    return first_bucket_in_family() == other_bucket.first_bucket_in_family();
   }
 
   private:
@@ -131,7 +132,7 @@ class BucketImpl {
     }
     return ptr ;
   }
-  Bucket * last_bucket_in_family_impl();
+  Bucket * last_bucket_in_family_impl() const;
 };
 
 
