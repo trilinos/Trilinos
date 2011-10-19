@@ -68,8 +68,33 @@ namespace MueLuTests {
     l.Release("Graph", factory.get());
     TEST_EQUALITY(l.IsRequested("Graph", factory.get()), false);
     TEST_EQUALITY(l.IsAvailable("Graph", factory.get()), false);
-
   }
+
+#ifdef TO_BE_FIXED
+  TEUCHOS_UNIT_TEST(Level, RequestReleaseFactory)
+  {
+    Level l;
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    l.Set("A", A);
+
+    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
+    
+    l.Request("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+
+    l.Release("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+  }
+#endif
 
 } // namespace MueLuTests
 
