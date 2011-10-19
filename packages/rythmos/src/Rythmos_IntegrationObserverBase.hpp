@@ -190,7 +190,7 @@ observeFailedTimeStep(
     const int timeStepIter
     )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  //TEUCHOS_TEST_FOR_EXCEPT(true);
 }    
 
 
