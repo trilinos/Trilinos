@@ -988,6 +988,16 @@ namespace Belos {
     /// transpose (not the "transpose of the transpose").  Thus, trans
     /// has its literal meaning.  However, we leave Op on exit of this
     /// routine with the same transpose setting that it had on entry.
+    ///
+    /// \note If you want to implement an operator that applies the
+    ///   transpose to an existing operator A in a reversed sense
+    ///   (i.e., "transposed" means not transposed, and "not
+    ///   transposed" means transposed), you should write a class
+    ///   implementing Epetra_Operator that wraps A.  This class
+    ///   should implement `Epetra_Operator::UseTranspose()` by
+    ///   returning `!(A->UseTranspose())`, and should implement
+    ///   `Epetra_Operator::SetUseTranspose(useTrans)` by calling
+    ///   `A->SetUseTranspose(!useTrans)`.
     static void 
     Apply (const Epetra_Operator& Op, 
 	   const Epetra_MultiVector& x, 

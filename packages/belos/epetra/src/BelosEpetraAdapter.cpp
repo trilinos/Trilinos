@@ -45,8 +45,22 @@
 */
 
 #include "BelosEpetraAdapter.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Epetra_Comm.h"
+
+// mfh 19 Oct 2011: Enabling this compile-time option might help you
+// debug tricky issues involving Epetra operators and preconditioners.
+// For example, today we used this option to figure out that a user's
+// wrapped preconditioner was not correctly initializing its
+// UseTranspose() flag.
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+#  undef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+#  include "Teuchos_oblackholestream.hpp"
+// We have to include this file, because we're calling a member
+// function of Epetra_Comm.
+#  include "Epetra_Comm.h"
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
 
 namespace Belos {
@@ -55,22 +69,7 @@ namespace Belos {
   // this file.
   namespace {
 
-    //! Indent level for the stream returned by \c getErrStream().
-    int indentLevel;
-
-    //! Indentation string for current line of error output.
-    std::string
-    getErrIndent ()
-    {
-      TEST_FOR_EXCEPTION(indentLevel < 0, std::logic_error, 
-			 "indentLevel = " << indentLevel << " < 0.");
-      if (indentLevel == 0) {
-	return "";
-      } else {
-	return std::string (static_cast<size_t> (2*indentLevel), '-') + " ";
-      }
-    }
-
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
     /// \fn getErrStream
     /// \brief Get a stream for debugging output that prints only on MPI Rank 0.
     ///
@@ -85,13 +84,10 @@ namespace Belos {
       using Teuchos::rcp;
       using Teuchos::rcpFromRef;
 
-      /// The static data make this function NOT reentrant.
+      // The static object makes this function NOT reentrant.
       static RCP<std::ostream> errStream;
 
       if (errStream.is_null()) {
-	// Initialize the indent level.
-	indentLevel = 0;
-
 	if (Op.Comm().MyPID() == 0) {
 	  errStream = rcpFromRef (std::cerr);
 	} else {
@@ -100,6 +96,7 @@ namespace Belos {
       }
       return errStream;
     }
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
     //! Return a string representation of the given transpose enum value.
     std::string
@@ -232,11 +229,13 @@ namespace Belos {
 	// corresponding to 'trans'.
 	if (newTransposeFlag_ != originalTransposeFlag_) {
 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 	  using std::endl;
 	  std::ostream& err = *(getErrStream (Op_));
 	  err << "---- EpetraOperatorTransposeScopeGuard constructor:" << endl
 	      << "------ Toggling transpose flag from " << originalTransposeFlag_ 
 	      << " to " << newTransposeFlag_ << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
 	  // Toggle the transpose flag.  The destructor will restore
 	  // its original value.
@@ -264,11 +263,13 @@ namespace Belos {
 	// applicable, we have to change the state back.
 	if (newTransposeFlag_ != originalTransposeFlag_) {
 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 	  using std::endl;
 	  std::ostream& err = *(getErrStream (Op_));
 	  err << "---- EpetraOperatorTransposeScopeGuard destructor:" << endl
 	      << "------ Toggling transpose flag from " << newTransposeFlag_
 	      << " to " << originalTransposeFlag_ << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
 	  const int info = 
 	    const_cast<Epetra_Operator &>(Op_).SetUseTranspose (originalTransposeFlag_);
@@ -314,26 +315,27 @@ namespace Belos {
 
   } // namespace (anonymous)
 
-  // ///////////////////////////////////////////////////////////////////
-  // Construction/Destruction
-  // ///////////////////////////////////////////////////////////////////
   
-  
-EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, 
-			       const int numvecs, const int stride)
+EpetraMultiVec::EpetraMultiVec (const Epetra_BlockMap& Map_in, 
+				double * array, 
+			        const int numvecs, 
+				const int stride)
   : Epetra_MultiVector(Copy, Map_in, array, stride, numvecs) 
 {
 }
 
 
-EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, const int numvecs, bool zeroOut)
+EpetraMultiVec::EpetraMultiVec (const Epetra_BlockMap& Map_in, 
+				const int numvecs, 
+				bool zeroOut)
   : Epetra_MultiVector(Map_in, numvecs, zeroOut) 
 {
 }
 
 
-EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV_in, const Epetra_MultiVector& P_vec, 				
-			       const std::vector<int>& index )
+EpetraMultiVec::EpetraMultiVec (Epetra_DataAccess CV_in, 
+				const Epetra_MultiVector& P_vec,
+				const std::vector<int>& index )
   : Epetra_MultiVector(CV_in, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
 {
 }
@@ -364,7 +366,7 @@ MultiVec<double>* EpetraMultiVec::Clone ( const int numvecs ) const
 }
 //
 //  the following is a virtual copy constructor returning
-//  a pointer to the pure virtual class. std::vector values are
+//  a pointer to the pure virtual class. vector values are
 //  copied.
 //
 
@@ -389,14 +391,17 @@ MultiVec<double>* EpetraMultiVec::CloneViewNonConst ( const std::vector<int>& in
 }
   
 
-const MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) const
+const MultiVec<double>* 
+EpetraMultiVec::CloneView (const std::vector<int>& index) const
 {
   EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
   return ptr_apv; // safe upcast.
 }
   
 
-void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
+void 
+EpetraMultiVec::SetBlock (const MultiVec<double>& A, 
+			  const std::vector<int>& index) 
 {	
   EpetraMultiVec temp_vec(View, *this, index);
   
@@ -405,9 +410,12 @@ void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>
     std::vector<int> index2( numvecs );
     for(int i=0; i<numvecs; i++)
       index2[i] = i;
-    EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
-                       "Belos::EpetraMultiVec::SetBlock cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
+    EpetraMultiVec *tmp_vec = 
+      dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+    TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
+		       "Belos::EpetraMultiVec::SetBlock: Dynamic cast from "
+		       "Belos::MultiVec<double> to Belos::EpetraMultiVec "
+		       "failed.");
     EpetraMultiVec A_vec(View, *tmp_vec, index2);
     temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
   }
@@ -466,17 +474,24 @@ void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A,
 //-------------------------------------------------------------
 void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
 {
-  // Check to make sure the vector is as long as the multivector has columns.
+  // Check to make sure the input vector of scale factors has the same
+  // number of entries as the number of columns in the multivector.
   int numvecs = this->NumVectors();
-  TEUCHOS_TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
-			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale scaling vector (alpha) not same size as number of input vectors (mv).");
+  TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+		     "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale: "
+		     "Vector (alpha) of scaling factors has length " 
+		     << alpha.size() << ", which is different than the number "
+		     "of columns " << numvecs << " in the input multivector "
+		     "(mv).");
   int ret = 0;
   std::vector<int> tmp_index( 1, 0 );
   for (int i=0; i<numvecs; i++) {
     Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
     ret = temp_vec.Scale( alpha[i] );
-    TEUCHOS_TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
-                      "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
+    TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+		       "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale: "
+		       "Call to Epetra_MultiVector::Scale() returned a nonzero "
+		       "error code " << ret << ".");
     tmp_index[0]++;
   }
 }
@@ -511,12 +526,15 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-  TEUCHOS_TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
-                     "Belos::EpetraMultiVec::MvDot cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
+  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+                     "Belos::EpetraMultiVec::MvDot: Dynamic cast from Belos::"
+		     "MultiVec<double> to Belos::EpetraMultiVec failed.");
   if (A_vec && ( (int)b.size() >= A_vec->NumVectors() ) ) {
      int info = this->Dot( *A_vec, &b[0] );
-     TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
-			"Belos::EpetraMultiVec::MvDot call to Dot() returned a nonzero value.");   
+     TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			"Belos::EpetraMultiVec::MvDot: Call to Epetra_Multi"
+			"Vector::Dot() returned a nonzero error code " 
+			<< info << ".");
   }
 }
 
@@ -540,10 +558,16 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
       info = NormInf(&normvec[0]);
       break;
     default:
+      TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+			 "Belos::EpetraMultiVec::MvNorm: Invalid norm_type " 
+			 << norm_type << ".  The current list of valid norm "
+			 "types is {OneNorm, TwoNorm, InfNorm}.");
       break;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
-		       "Belos::EpetraMultiVec::MvNorm call to Norm() returned a nonzero value.");
+    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+		       "Belos::EpetraMultiVec::MvNorm: Call to Epetra_Multi"
+		       "Vector::Norm() returned a nonzero error code " 
+		       << info << ".");
   }
 }
 
@@ -556,12 +580,14 @@ void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type )
 EpetraOp::EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op ) 
   : Epetra_Op(Op)
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
   err << "Belos::EpetraOp constructor" << endl;
   err << "-- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 }
 
 void 
@@ -569,6 +595,7 @@ EpetraOp::Apply (const MultiVec<double>& x,
 		 MultiVec<double>& y, 
 		 ETrans trans) const 
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
@@ -577,34 +604,39 @@ EpetraOp::Apply (const MultiVec<double>& x,
       << "---- trans input = " << etransToString (trans) << endl
       << "---- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-  TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
-		      "Belos::EpetraOp::Apply: x and/or y could not be "
-		      "dynamic cast to an Epetra_MultiVector.");
+  TEST_FOR_EXCEPTION(vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+		     "Belos::EpetraOp::Apply: x and/or y could not be "
+		     "dynamic cast to an Epetra_MultiVector.");
 
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   err << "---- Before calling Apply: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   // Apply the operator to x and put the result in y.
   const int info = Epetra_Op->Apply (*vec_x, *vec_y);
-  TEUCHOS_TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
 		     "Belos::EpetraOp::Apply: The Epetra_Operator's Apply() "
-		     "method returned a nonzero value of " << info << ".");
+		     "method returned a nonzero error code of " << info << ".");
 }
 
 bool 
 EpetraOp::HasApplyTranspose() const
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   std::ostream& err = *(getErrStream (*Epetra_Op));
   err << "-- Belos::EpetraOp::HasApplyTranspose" << std::endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   return implementsApplyTranspose (*Epetra_Op);
 }
@@ -619,12 +651,14 @@ EpetraOp::HasApplyTranspose() const
 EpetraPrecOp::EpetraPrecOp (const Teuchos::RCP<Epetra_Operator> &Op) 
   : Epetra_Op(Op)
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
   err << "-- Belos::EpetraPrecOp constructor" << endl
       << "---- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 }
 
 // The version of Apply() that takes an optional 'trans' argument and
@@ -634,6 +668,7 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
 		     MultiVec<double>& y, 
 		     ETrans trans) const 
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
@@ -642,6 +677,7 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
       << "---- trans input = " << etransToString (trans) << endl
       << "---- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   MultiVec<double>&  temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -657,8 +693,10 @@ EpetraPrecOp::Apply (const MultiVec<double>& x,
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (*Epetra_Op, trans);
 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   err << "---- Before calling ApplyInverse: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   // EpetraPrecOp's Apply() methods apply the inverse of the
   // underlying operator.  This may not succeed for all
@@ -678,6 +716,7 @@ int
 EpetraPrecOp::Apply (const Epetra_MultiVector &X, 
 		     Epetra_MultiVector &Y) const 
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
@@ -686,10 +725,15 @@ EpetraPrecOp::Apply (const Epetra_MultiVector &X,
       << "---- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl
       << "---- Calling Epetra_Op->ApplyInverse (X, Y)" << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   // This operation computes Y = A^{-1}*X.
   const int info = Epetra_Op->ApplyInverse( X, Y );
+
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   err << "---- Epetra_Op->ApplyInverse (X, Y) returned info = " << info << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+
   return info;
 }
 
@@ -698,6 +742,7 @@ int
 EpetraPrecOp::ApplyInverse (const Epetra_MultiVector &X, 
 			    Epetra_MultiVector &Y) const
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (*Epetra_Op));
@@ -706,18 +751,25 @@ EpetraPrecOp::ApplyInverse (const Epetra_MultiVector &X,
       << "---- On input: Epetra_Op->UseTranspose() = " 
       << Epetra_Op->UseTranspose() << endl
       << "---- Calling Epetra_Op->Apply (X, Y)" << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   // This operation computes Y = A*X.
   const int info = Epetra_Op->Apply( X, Y );
+
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   err << "---- Epetra_Op->Apply (X, Y) returned info = " << info << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
+
   return info;
 }
 
 bool 
 EpetraPrecOp::HasApplyTranspose() const
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   std::ostream& err = *(getErrStream (*Epetra_Op));
   err << "-- Belos::EpetraPrecOp::HasApplyTranspose" << std::endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   return implementsApplyTranspose (*Epetra_Op);
 }
@@ -736,6 +788,7 @@ Apply (const Epetra_Operator& Op,
        Epetra_MultiVector& y,
        ETrans trans)
 { 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   using std::endl;
 
   std::ostream& err = *(getErrStream (Op));
@@ -744,13 +797,16 @@ Apply (const Epetra_Operator& Op,
       << "-- trans input = " << etransToString (trans) << endl
       << "-- On input: Op.UseTranspose() = " 
       << Op.UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   // Temporarily set the transpose state of Op, if it's not the same
   // as trans, and restore it on exit of this scope.
   EpetraOperatorTransposeScopeGuard guard (Op, trans);
 
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   err << "-- Before calling Op.Apply: Op.UseTranspose() = " 
       << Op.UseTranspose() << endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   const int info = Op.Apply (x, y);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraOpFailure, 
@@ -764,9 +820,11 @@ bool
 OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::
 HasApplyTranspose (const Epetra_Operator& Op)
 {
+#ifdef BELOS_EPETRA_AGGRESSIVE_DEBUGGING
   std::ostream& err = *(getErrStream (Op));
   err << "Belos::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>::"
     "HasApplyTranspose" << std::endl;
+#endif // BELOS_EPETRA_AGGRESSIVE_DEBUGGING
 
   return implementsApplyTranspose (Op);
 }
