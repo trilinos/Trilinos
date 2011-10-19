@@ -25,7 +25,7 @@ namespace MueLu {
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
       //setObjectLabel(objectLabel); 
     }
-    ~Graph() {}
+    virtual ~Graph() {}
     
     inline size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
     inline size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
