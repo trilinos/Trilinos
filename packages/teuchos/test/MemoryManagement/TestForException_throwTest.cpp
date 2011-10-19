@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

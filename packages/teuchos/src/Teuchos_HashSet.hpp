@@ -241,7 +241,7 @@ namespace Teuchos
   template<class Key> inline
     void HashSet<Key>::remove(const Key& key)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
+      TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
                          "HashSet<Key>::remove: key " 
                          << Teuchos::toString(key) 

@@ -92,28 +92,28 @@ bool test_ArrayRCP_iterators(
     out << "\nChecking ++itr and < ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr < ptr+size; ++i, ++itr )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr++ and <= ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr <= ptr+size-1; ++i, itr++ )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr+=1 and != ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr != ptr+size; ++i, itr+=1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr=itr+1 and == ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; !( itr == ptr+size ); ++i, itr=itr+1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
   // Pointer --
@@ -122,28 +122,28 @@ bool test_ArrayRCP_iterators(
     out << "\nChecking --itr and >= ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr >= ptr; --i, --itr )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr-- and > ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 > ptr; i--, itr-- )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr-=1 and != ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 != ptr; i--, itr-=1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking itr=itr-1 and == ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; !( itr+1 == ptr ); i--, itr=itr-1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
   // Iterator - Iterator
@@ -159,28 +159,28 @@ bool test_ArrayRCP_iterators(
     out << "\nChecking iterator ++itr and < ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr < ptr.end(); ++i, ++itr )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr++ and <= ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr <= ptr.end()-1; ++i, itr++ )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr+=1 and != ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr != ptr.end(); ++i, itr+=1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr=itr+1 and == ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; !( itr == ptr.end() ); ++i, itr=itr+1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
   // Iterator --
@@ -189,28 +189,28 @@ bool test_ArrayRCP_iterators(
     out << "\nChecking iterator --itr and >= ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr >= ptr.begin(); --i, --itr )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr-- and > ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 > ptr.begin(); i--, itr-- )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr-=1 and != ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 != ptr.begin(); i--, itr-=1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
     out << "\nChecking iterator itr=itr-1 and == ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
-      TEUCHOS_TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+      TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
   return success;
@@ -253,8 +253,8 @@ bool test_ArrayRCP(
       ptr[i] = i;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPT( !(&*ptr == ptr.get()) );
-  TEUCHOS_TEST_FOR_EXCEPT( !(&*ptr == ptr.getRawPtr()) );
+  TEST_FOR_EXCEPT( !(&*ptr == ptr.get()) );
+  TEST_FOR_EXCEPT( !(&*ptr == ptr.getRawPtr()) );
 
   result = test_ArrayRCP_iterators(ptr,out);
   if (!result) success = false;
@@ -401,11 +401,11 @@ int main( int argc, char* argv[] )
 
     *out << "\nchar_ptr1 = " << char_ptr1 << "\n";
 
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.size() == total_bytes) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
+    TEST_FOR_EXCEPT( !(char_ptr1.size() == total_bytes) );
+    TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
 #ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
+    TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
 #endif
     result = test_ArrayRCP(char_ptr1,*out);
     if (!result) success = false;
@@ -415,10 +415,10 @@ int main( int argc, char* argv[] )
 
     *out << "\nchar_ptr2 = " << char_ptr2 << "\n";
 
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.size() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
+    TEST_FOR_EXCEPT( !(char_ptr2.size() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
 #ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.count() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2.count() == 0) );
 #endif
 
     ArrayRCP<char>
@@ -426,33 +426,33 @@ int main( int argc, char* argv[] )
 
     *out << "\nchar_ptr2b = " << char_ptr2b << "\n";
 
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.size() == total_bytes) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.size() == total_bytes) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
 #ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
 #endif
     result = test_ArrayRCP(char_ptr2b,*out);
     if (!result) success = false;
 
     char_ptr2b = null;
 
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.size() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.size() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
 #ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr2b.count() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.count() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
 #endif
 
     ArrayRCP<char>
       char_ptr3 = char_ptr1.persistingView(total_bytes/2,total_bytes/2);
 
 #ifndef __sun
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 2) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.count() == 2) );
+    TEST_FOR_EXCEPT( !(char_ptr1.count() == 2) );
+    TEST_FOR_EXCEPT( !(char_ptr3.count() == 2) );
 #endif
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.lowerOffset() == 0) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr3.upperOffset() == total_bytes/2-1) );
+    TEST_FOR_EXCEPT( !(char_ptr3.lowerOffset() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr3.upperOffset() == total_bytes/2-1) );
     result = test_ArrayRCP(char_ptr3,*out);
     if (!result) success = false;
 
@@ -472,10 +472,10 @@ int main( int argc, char* argv[] )
     // 2007/11/30: rabartl: Even to this day, the Sun compiler (version CC:
     // Sun C++ 5.7 Patch 117830-07 2006/03/15 on sass9000) does not destroy
     // objects as required by the C++ standard!  This is unbelievelable!
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 3) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
+    TEST_FOR_EXCEPT( !(char_ptr1.count() == 3) );
+    TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
 #endif
-    TEUCHOS_TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
+    TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
 
     result = test_ArrayRCP(double_ptr1,*out);
     if (!result) success = false;
@@ -490,10 +490,10 @@ int main( int argc, char* argv[] )
 
 #ifndef __sun
     // 2007/11/30: rabartl: See comment above
-    TEUCHOS_TEST_FOR_EXCEPT( !(char_ptr1.count() == 4) );
-    TEUCHOS_TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
+    TEST_FOR_EXCEPT( !(char_ptr1.count() == 4) );
+    TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
 #endif
-    TEUCHOS_TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
+    TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
 
     result = test_ArrayRCP(int_ptr1,*out);
     if (!result) success = false;
@@ -607,10 +607,10 @@ int main( int argc, char* argv[] )
       // RAB: 2006/07/12: The sun compiler declares this call to
       // get_std_vector(...) to be ambiguous (which is nonsense based on
       // everything I know about C++)!
-      TEUCHOS_TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr1)->size() != static_cast<size_t>(total_bytes) );
+      TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr1)->size() != static_cast<size_t>(total_bytes) );
 #endif
-      TEUCHOS_TEST_FOR_EXCEPT( vchar_ptr1.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
-      TEUCHOS_TEST_FOR_EXCEPT( vchar_ptr2.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
+      TEST_FOR_EXCEPT( vchar_ptr1.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
+      TEST_FOR_EXCEPT( vchar_ptr2.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
       
     }
 

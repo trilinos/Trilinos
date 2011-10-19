@@ -229,7 +229,7 @@ void ObjectBuilder<ObjectType>::setObjectFactory(
   const std::string &objectName
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT( objectName.length() == 0 );
+  TEST_FOR_EXCEPT( objectName.length() == 0 );
   validObjectNames_.push_back(objectName);
   objectArray_.push_back(objectFactory);
   defaultObject_name_ = objectName;
@@ -371,7 +371,7 @@ ObjectBuilder<ObjectType>::create(
   if (s_idx != 0) {
     // Create the uninitialized object
     object = objectArray_[s_idx-1]->create(); 
-    TEUCHOS_TEST_FOR_EXCEPTION( is_null(object), std::logic_error,
+    TEST_FOR_EXCEPTION( is_null(object), std::logic_error,
         (std::string("Error!  ObjectBuilder attempted to create an object of type ") 
          + validObjectNames_[s_idx] + " and it came back as a null RCP!").c_str()
         );
@@ -401,7 +401,7 @@ void ObjectBuilder<ObjectType>::setObjectName(
     const std::string &objectName
     )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(objectName.length() == 0);
+  TEST_FOR_EXCEPT(objectName.length() == 0);
   object_name_ = objectName;
   validParamList_ = null;
 }
@@ -412,7 +412,7 @@ void ObjectBuilder<ObjectType>::setObjectTypeName(
     const std::string &objectTypeName
     )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(objectTypeName.length() == 0);
+  TEST_FOR_EXCEPT(objectTypeName.length() == 0);
   objectType_name_ = objectTypeName;
   validParamList_ = null;
 }

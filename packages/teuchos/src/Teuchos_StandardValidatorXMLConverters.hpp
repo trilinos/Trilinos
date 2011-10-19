@@ -174,7 +174,7 @@ StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
   Array<IntegralType> integralValues;
   for (int i=0; i<xmlObj.numChildren(); ++i) {
     XMLObject currentChild = xmlObj.getChild(i);
-    TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
+    TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
       BadTagException,  
       "Error converting xmlObject to "
       "StringToIntegralParameterEntryValidator." << std::endl << 
@@ -608,7 +608,7 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
         rcp_dynamic_cast<ValidatorType>(result->second, true);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,
+      TEST_FOR_EXCEPTION(true,
         MissingValidatorDefinitionException,
         "Could not find prototype validator with id: "
         << xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(

@@ -53,7 +53,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
   const XMLObject &xmlObj) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
       BadParameterEntryXMLConverterTypeException,
       "Error: this Parameter Entry XML tag has a type different than "
@@ -66,7 +66,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
       std::endl <<std::endl);
   #endif
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     !xmlObj.hasAttribute(getValueAttributeName()), 
     NoValueAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
@@ -112,7 +112,7 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
   const ValidatortoIDMap& validatorIDsMap) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     (entry->getAny().typeName() != getTypeAttributeValue()) 
     &&
     (
@@ -138,7 +138,7 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
   toReturn.addBool(getDefaultAttributeName(), entry->isDefault());
   toReturn.addBool(getUsedAttributeName(), entry->isUsed());
   if(nonnull(entry->validator())){
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       validatorIDsMap.find(entry->validator()) == validatorIDsMap.end(),
       MissingValidatorDefinitionException,
       "Could not find validator in given ValidatorIDsMap! " << 

@@ -100,7 +100,7 @@ const std::string AlgorithmA::toString( AlgorithmA::EAlgoType algoType )
     case ALGO_BOB: return "Bob";
     case ALGO_JOHN: return "John";
     case ALGO_HARRY: return "Harry";
-    default: TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
+    default: TEST_FOR_EXCEPT("Should never get here!");
   }
   return ""; // never be called!
 }
@@ -117,7 +117,7 @@ void AlgorithmA::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
+  TEST_FOR_EXCEPT(is_null(paramList));
   // Validate and set the parameter defaults.  Here, the parameters are
   // validated and the state of *this is not changed unless the parameter
   // validation succeeds.  Also, any validators that are defined for various

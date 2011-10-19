@@ -57,7 +57,7 @@
 
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Ptr.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_Exceptions.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
@@ -847,7 +847,7 @@ Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
   RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
       p.access_private_node().node_ptr());
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name()
     << "," << TypeNameTraits<T>::name() << ">(p): "

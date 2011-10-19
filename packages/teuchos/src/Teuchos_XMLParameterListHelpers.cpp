@@ -53,7 +53,7 @@ void Teuchos::updateParametersFromXmlFile(
   ParameterList *paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
+  TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
@@ -67,7 +67,7 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
   const Comm<int> &comm
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
+  TEST_FOR_EXCEPT(paramList==NULL);
   if (comm.getSize()==1)
     updateParametersFromXmlFile(xmlFileName,paramList);
   else {
@@ -119,7 +119,7 @@ void Teuchos::updateParametersFromXmlString(
   ParameterList *paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
+  TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();

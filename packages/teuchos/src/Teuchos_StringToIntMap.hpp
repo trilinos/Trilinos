@@ -42,7 +42,7 @@
 #ifndef TEUCHOS_STRING_TO_INT_MAP_HPP
 #define TEUCHOS_STRING_TO_INT_MAP_HPP
 
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
 

@@ -42,12 +42,12 @@
 */
 
 #include "SimpleThrowFunctions.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 
 void func_a()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "This is an exception I throw!");
+  TEST_FOR_EXCEPTION(true, std::logic_error, "This is an exception I throw!");
 }
 
 

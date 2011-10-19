@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_RCPNode.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_Exceptions.hpp"
 
 
@@ -216,7 +216,7 @@ void RCPNode::set_extra_data(
   const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
   extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     (itr != extra_data_map_->end() && force_unique), std::invalid_argument
     ,"Error, the type:name pair \'" << type_and_name
     << "\' already exists and force_unique==true!" );
@@ -236,7 +236,7 @@ void RCPNode::set_extra_data(
 any& RCPNode::get_extra_data( const std::string& type_name, const std::string& name )
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     extra_data_map_==NULL, std::invalid_argument
     ,"Error, no extra data has been set yet!" );
 #endif
@@ -244,7 +244,7 @@ any& RCPNode::get_extra_data( const std::string& type_name, const std::string& n
 #ifdef TEUCHOS_DEBUG
   if (!extra_data) {
     const std::string type_and_name( type_name + std::string(":") + name );
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       extra_data == NULL, std::invalid_argument
       ,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
   }
@@ -305,7 +305,7 @@ void RCPNodeTracer::setTracingActiveRCPNodes(bool tracingActiveNodes)
 int RCPNodeTracer::numActiveRCPNodes()
 {
   // This list always exists, no matter debug or not so just access it.
-  TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+  TEST_FOR_EXCEPT(0==rcp_node_list());
   return rcp_node_list()->size();
   return 0;
 }
@@ -352,7 +352,7 @@ void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
     << " rcp_node_list.size() = " << rcp_node_list().size() << "\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   if (loc_isTracingActiveRCPNodes()) {
-    TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+    TEST_FOR_EXCEPT(0==rcp_node_list());
     if (rcp_node_list()->size() > 0) {
       out << getActiveRCPNodeHeaderString();
       // Create a sorted-by-insertionNumber list
@@ -412,7 +412,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
       << convertRCPNodeToString(rcp_node) << " ...\n";
 #endif
 
-    TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+    TEST_FOR_EXCEPT(0==rcp_node_list());
 
     const void * const map_key_void_ptr = get_map_key_void_ptr(rcp_node);
     
@@ -430,7 +430,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
         break;
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       rcp_node_already_exists && rcp_node->has_ownership() && previous_rcp_node_has_ownership,
       DuplicateOwningRCPError,
       "RCPNodeTracer::addNewRCPNode(rcp_node): Error, the client is trying to create a new\n"
@@ -474,7 +474,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
 
 
 #define TEUCHOS_RCPNODE_REMOVE_RCPNODE(CONDITION, RCPNODE) \
-  TEUCHOS_TEST_FOR_EXCEPTION((CONDITION), \
+  TEST_FOR_EXCEPTION((CONDITION), \
     std::logic_error, \
     "RCPNodeTracer::removeRCPNode(node_ptr): Error, the " \
     << convertRCPNodeToString(RCPNODE) << " is not found in the list of" \
@@ -634,7 +634,7 @@ ActiveRCPNodesSetup::~ActiveRCPNodesSetup()
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
-    TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+    TEST_FOR_EXCEPT(0==rcp_node_list());
     RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics =
       RCPNodeTracer::getRCPNodeStatistics();
     if (rcpNodeStatistics.maxNumRCPNodes
@@ -714,7 +714,7 @@ void RCPNodeHandle::unbindOne()
 
 void Teuchos::throw_null_ptr_error( const std::string &type_name )
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     true, NullReferenceError, 
     type_name << " : You can not call operator->() or operator*()"
     <<" if getRawPtr()==0!" );

@@ -375,7 +375,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   bool showIf,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
+  TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
     "A NumberVisualDependency can only have 1 dependee!" <<
     std::endl << std::endl);
@@ -724,7 +724,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
 {
 
   int result = xmlObj.findFirstChild(getRangesAndValidatorsTag()); 
-  TEUCHOS_TEST_FOR_EXCEPTION(result == -1,
+  TEST_FOR_EXCEPTION(result == -1,
     MissingRangesAndValidatorsTagException,
     "Error: All RangeValidatorDependencies must have a " << 
     getRangesAndValidatorsTag() << " tag!" << std::endl << std::endl);
@@ -741,7 +741,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
       child.getRequired<ParameterEntryValidator::ValidatorID>(
           getValidatorIdAttributeName());
       
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       validatorIDsMap.find(currentID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find validator in given ValidatorIDsMap! " << std::endl <<
@@ -759,7 +759,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     ParameterEntryValidator::ValidatorID defaultValiID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getDefaultValidatorIdAttributeName());
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       validatorIDsMap.find(defaultValiID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find a validator (for the default validator) " <<
@@ -837,7 +837,7 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
   const IDtoValidatorMap& validatorIDsMap) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
+  TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
     "A ArrayModifierDependency can only have 1 dependee!" <<
     std::endl << std::endl);

@@ -48,7 +48,7 @@
 /// \warning The contents of this file have been DEPRECATED.
 ///
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 /*! \defgroup ErrorPolling_grp Utility code for synchronizing std::exception detection across processors. 
 */
@@ -126,7 +126,7 @@ namespace Teuchos
    * @param comm [in] The communicator on which polling will be done
    */
 #define TEUCHOS_POLL_FOR_FAILURES(comm)                                  \
-  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ErrorPolling::pollForFailures(comm), \
+  TEST_FOR_EXCEPTION(Teuchos::ErrorPolling::pollForFailures(comm), \
                      std::runtime_error,                                     \
                      "off-processor error detected by proc=" << (comm).getRank());
 }

@@ -42,7 +42,7 @@
 
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 

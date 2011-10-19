@@ -108,11 +108,11 @@ void set_reduct_op( const Teuchos::RCP<const Teuchos::MpiReductionOpBase>& reduc
 {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
+  TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
 #endif
   if(!the_mpi_op.get()) {
     MPI_Op mpi_op = MPI_OP_NULL;
-    TEUCHOS_TEST_FOR_EXCEPT(
+    TEST_FOR_EXCEPT(
       0!=MPI_Op_create( &Teuchos_MPI_reduction_op ,1 ,&mpi_op ) // Assume op is commutative?
       );
     the_mpi_op = Teuchos::opaqueWrapper(mpi_op,Teuchos_MPI_Op_free);
@@ -142,7 +142,7 @@ MpiReductionOpSetter::MpiReductionOpSetter(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!reduct_op.get())
+  TEST_FOR_EXCEPT(!reduct_op.get())
 #endif
   set_reduct_op(reduct_op);
 }

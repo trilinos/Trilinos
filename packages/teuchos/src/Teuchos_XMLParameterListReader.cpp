@@ -41,7 +41,7 @@
 
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_DependencyXMLConverterDB.hpp"
@@ -56,7 +56,7 @@ XMLParameterListReader::XMLParameterListReader()
 RCP<ParameterList> XMLParameterListReader::toParameterList(
   const XMLObject& xml, RCP<DependencySheet> depSheet) const 
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     xml.getTag() 
     != 
     XMLParameterListWriter::getParameterListTagName(), 
@@ -90,7 +90,7 @@ RCP<ParameterList> XMLParameterListReader::toParameterList(
 ParameterList 
 XMLParameterListReader::toParameterList(const XMLObject& xml) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     xml.getTag() 
     != 
     XMLParameterListWriter::getParameterListTagName(), 
@@ -159,7 +159,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
   RCP<ParameterList> parentList,
   EntryIDsMap& entryIDsMap, const IDtoValidatorMap& validatorIDsMap) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
     BadParameterListElementException,
     "XMLParameterListReader expected tag " << 
@@ -176,7 +176,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
 
       XMLObject child = xml.getChild(i);
       
-      TEUCHOS_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         child.getTag() != XMLParameterListWriter::getParameterListTagName() 
         &&
         child.getTag() != ParameterEntry::getTagName()
@@ -197,7 +197,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
         child.getTag() == ParameterEntry::getTagName()
         )
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(
+        TEST_FOR_EXCEPTION(
           !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()),
           NoNameAttributeExecption,
           "All child nodes of a ParameterList must have a name attribute!" <<
@@ -217,7 +217,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
             IDtoValidatorMap::const_iterator result = validatorIDsMap.find(
               child.getRequired<ParameterEntryValidator::ValidatorID>(
                 ValidatorXMLConverter::getIdAttributeName()));
-            TEUCHOS_TEST_FOR_EXCEPTION(result == validatorIDsMap.end(), 
+            TEST_FOR_EXCEPTION(result == validatorIDsMap.end(), 
               MissingValidatorDefinitionException,
               "Could not find validator with id: "
               << child.getRequired(
@@ -238,7 +238,7 @@ void XMLParameterListReader::testForDuplicateValidatorIDs(
   ParameterEntryValidator::ValidatorID potentialNewID,
   const IDtoValidatorMap& currentMap) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(currentMap.find(potentialNewID) != currentMap.end(),
+  TEST_FOR_EXCEPTION(currentMap.find(potentialNewID) != currentMap.end(),
   DuplicateValidatorIDsException,
   "Validators with duplicate ids found!" << std::endl <<
   "Bad ID: " << potentialNewID);
@@ -273,7 +273,7 @@ void XMLParameterListReader::insertEntryIntoMap(
      ParameterEntry::ParameterEntryID xmlID = 
        xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
           ParameterEntryXMLConverter::getIdAttributeName());
-     TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(xmlID) != entryIDsMap.end(),
+     TEST_FOR_EXCEPTION(entryIDsMap.find(xmlID) != entryIDsMap.end(),
         DuplicateParameterIDsException,
        "Parameters/ParameterList with duplicate ids found!" << std::endl <<
        "Bad ID: " << xmlID << std::endl << std::endl);

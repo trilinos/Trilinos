@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
 
@@ -60,14 +60,14 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // initialize MPI
 	int mpiHasBeenStarted = 0, mpierr = 0;
 	MPI_Initialized(&mpiHasBeenStarted);
-	TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+	TEST_FOR_EXCEPTION_PRINT(
     mpiHasBeenStarted, std::runtime_error
     ,"Error, you can only call this constructor once!"
     ,out
     );
 
   mpierr = ::MPI_Init (argc, (char ***) argv);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in GlobalMPISession::GlobalMPISession(argc,argv)"
     ,out
@@ -78,7 +78,7 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   int nameLen;
 	char procName[MPI_MAX_PROCESSOR_NAME];
   mpierr = ::MPI_Get_processor_name(procName,&nameLen);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Get_processor_name()"
     ,out
@@ -116,7 +116,7 @@ GlobalMPISession::~GlobalMPISession()
   mpiIsFinalized_ = true;
 #ifdef HAVE_MPI
   int mpierr = ::MPI_Finalize();
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Finalize()"
     ,&std::cerr
@@ -177,14 +177,14 @@ void GlobalMPISession::initialize( std::ostream *out )
   // Get the state of MPI
 	
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
     ,out
     );
   
   mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, std::runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Comm_size()"
     ,out

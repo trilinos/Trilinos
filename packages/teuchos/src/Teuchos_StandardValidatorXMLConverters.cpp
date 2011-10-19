@@ -135,7 +135,7 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
   if(xmlObj.numChildren()!=0){
     for(int i=0; i<xmlObj.numChildren(); ++i){
       XMLObject currentChild = xmlObj.getChild(i);
-      TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
+      TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
         BadTagException,  
         "Error converting xmlObject to StringValidator." << std::endl << 
 		    "Unrecognized tag: " << currentChild.getTag());

@@ -133,7 +133,7 @@ namespace Teuchos {
       std::string packedString;
       Array<size_t> offsets;
       packStringsForSend (packedString, offsets, strings);
-      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
+      TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
 			 "packStringsForSend() returned a zero-length offsets "
 			 "array on MPI Proc " << comm.getRank() << ", to be "
 			 "sent to Proc " << destRank << ".  The offsets array "
@@ -183,7 +183,7 @@ namespace Teuchos {
 	  out << "], packedString = " << packedString << endl;
 	  cerr << out.str();
 	}
-      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
+      TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
 			 "The offsets array has length zero, which does not "
 			 "make sense.  Even when sending / receiving zero "
 			 "strings, the offsets array should have one entry "
@@ -210,7 +210,7 @@ namespace Teuchos {
       // least 1 offset.
       Array<size_t>::size_type numOffsets = 0;
       receive (comm, sourceRank, &numOffsets);
-      TEUCHOS_TEST_FOR_EXCEPTION(numOffsets == 0, std::logic_error, 
+      TEST_FOR_EXCEPTION(numOffsets == 0, std::logic_error, 
 			 "Invalid number of offsets numOffsets=" << numOffsets 
 			 << " received on MPI Rank " << comm.getRank() 
 			 << " from Rank " << sourceRank << ".  Please report "
@@ -370,7 +370,7 @@ namespace Teuchos {
 			    otherNames.begin(), otherNames.end(),
 			    std::back_inserter (newNames));
 	  else
-	    TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
+	    TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
 			       std::logic_error,
 			       "Invalid set operation enum value.  Please "
 			       "report this bug to the Teuchos developers.");
@@ -379,7 +379,7 @@ namespace Teuchos {
       else if (myRank == mid)
 	sendStrings (comm, localNames, left);
       else
-	TEUCHOS_TEST_FOR_EXCEPTION(myRank != left && myRank != mid, 
+	TEST_FOR_EXCEPTION(myRank != left && myRank != mid, 
 			   std::logic_error,
 			   "myRank=" << myRank << " is neither left=" << left
 			   << " nor mid=" << mid << ".  Please report this "

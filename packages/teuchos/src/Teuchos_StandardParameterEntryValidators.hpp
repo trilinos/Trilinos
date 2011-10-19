@@ -1279,7 +1279,7 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(T),
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(T),
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << 
     paramName << "\"" <<
@@ -1296,7 +1296,7 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
   bool isValueInRange; 
   any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
     ? isValueInRange = true : isValueInRange=false;
-  TEUCHOS_TEST_FOR_EXCEPTION(!(isValueInRange),
+  TEST_FOR_EXCEPTION(!(isValueInRange),
     Exceptions::InvalidParameterValue,
     "Aww shoot! Sorry bud, but it looks like the \"" << 
     paramName << "\"" <<
@@ -1677,7 +1677,7 @@ void TwoDArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const
 {
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
-  TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(TwoDArray<EntryType>),
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(TwoDArray<EntryType>),
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" <<
     paramName << "\"" <<
@@ -1868,7 +1868,7 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
 {
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
-  TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(Array<EntryType>),
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(Array<EntryType>),
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" <<
     paramName << "\"" <<
@@ -2029,7 +2029,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     const bool unique = map_.insert( val_t( strings[i], (IntegralType)i ) ).second;
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       !unique, std::logic_error
       ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
       << defaultParameterName_ << "\"."
@@ -2050,7 +2050,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
   std::logic_error,
   "Error, strings and integraValues must be of the same length."
@@ -2058,7 +2058,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       !unique, std::logic_error
       ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
       << defaultParameterName_ << "\""
@@ -2081,12 +2081,12 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
   std::logic_error,
   "Error, strings and integraValues must be of the same length."
   );
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     strings.size() != stringsDocs.size(),
   std::logic_error,
   "Error, strings and stringsDocs must be of the same length."
@@ -2094,7 +2094,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       !unique, std::logic_error
       ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
       << defaultParameterName_ << "\""
@@ -2114,7 +2114,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ) const
 {
   typename map_t::const_iterator itr = map_.find(str);
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     itr == map_.end(), Exceptions::InvalidParameterValue
     ,"Error, the value \"" << str << "\" is not recognized for the parameter \""
     << ( paramName.length() ? paramName : defaultParameterName_ ) << "\""
@@ -2136,7 +2136,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ) const
 {
   const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     !validType, Exceptions::InvalidParameterType
     ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
     << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
@@ -2359,7 +2359,7 @@ void Teuchos::setStringToIntegralParameter(
   )
 {
   typedef ParameterEntryValidator PEV;
-  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
     rcp_implicit_cast<const PEV>(
@@ -2382,7 +2382,7 @@ void Teuchos::setStringToIntegralParameter(
   )
 {
   typedef ParameterEntryValidator PEV;
-  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
     rcp_implicit_cast<const PEV>(
@@ -2407,7 +2407,7 @@ void Teuchos::setStringToIntegralParameter(
 
 {
   typedef ParameterEntryValidator PEV;
-  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
     rcp_implicit_cast<const PEV>(
@@ -2460,7 +2460,7 @@ Teuchos::getStringToIntegralParameterEntryValidator(
 {
   RCP<const ParameterEntryValidator>
     validator = entry.validator();
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     is_null(validator), Exceptions::InvalidParameterType,
     "Error!  The parameter \""<<paramName<<"\" exists\n"
     "in the parameter (sub)list \""<<paramList.name()<<"\"\n"
@@ -2473,7 +2473,7 @@ Teuchos::getStringToIntegralParameterEntryValidator(
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator<IntegralType> >(
       validator
       );
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     is_null(integralValidator), Exceptions::InvalidParameterType,
     "Error!  The parameter \""<<paramName<<"\" exists\n"
     "in the parameter (sub)list \""<<paramList.name()<<"\"\n"

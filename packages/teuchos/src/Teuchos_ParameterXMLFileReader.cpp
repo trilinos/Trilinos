@@ -41,7 +41,7 @@
 
 #include "Teuchos_ParameterXMLFileReader.hpp"	
 #include "Teuchos_XMLParameterListReader.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 
 namespace Teuchos {

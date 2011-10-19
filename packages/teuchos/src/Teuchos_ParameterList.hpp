@@ -49,7 +49,7 @@
 
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_ParameterEntry.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_map.hpp"
@@ -897,7 +897,7 @@ void ParameterList::validateEntryType(
   const ParameterEntry &entry_in
   ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     entry_in.getAny().type() != typeid(T), Exceptions::InvalidParameterType
     ,"Error!  An attempt was made to access parameter \""<<name_in<<"\""
     " of type \""<<entry_in.getAny().typeName()<<"\""
@@ -1017,7 +1017,7 @@ void setStringParameterFromArray(
   ,ParameterList        *paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!paramList);
+  TEST_FOR_EXCEPT(!paramList);
   paramList->set(paramName,toString(array));
 }
   
@@ -1112,7 +1112,7 @@ Array<T> getArrayFromStringParameter(
     a = fromStringToArray<T>(arrayStr);
   }
   catch( const InvalidArrayStringRepresentation&) {
-    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    TEST_FOR_EXCEPTION_PURE_MSG(
       true, Exceptions::InvalidParameterValue
       ,"Error!  The parameter \""<<paramName<<"\"\n"
       "in the sublist \""<<paramList.name()<<"\"\n"
@@ -1123,7 +1123,7 @@ Array<T> getArrayFromStringParameter(
       "is not a valid array represntation!"
       );
   }
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     ( ( a.size()>0 && arrayDim>=0 ) && static_cast<int>(a.size())!=arrayDim )
     ,Exceptions::InvalidParameterValue
     ,"Error!  The parameter \""<<paramName<<"\"\n"

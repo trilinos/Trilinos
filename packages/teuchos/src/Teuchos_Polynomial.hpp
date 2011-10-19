@@ -99,7 +99,7 @@ Teuchos::RCP<CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) 
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::getCoefficient(i): " << 
 		     "Error, coefficient i = " << i << 
@@ -113,7 +113,7 @@ Teuchos::RCP<const CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::getCoefficient(i): " << 
 		     "Error, coefficient i = " << i << 
@@ -127,12 +127,12 @@ void
 Teuchos::Polynomial<CoeffT>::setCoefficient(unsigned int i, const CoeffT& v) 
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::setCoefficient(i,v): " << 
 		     "Error, coefficient i = " << i << 
 		     " is not in range, degree = " << d << "." );
-  TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
+  TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
 		     std::runtime_error,
 		     "Polynomial<CoeffT>::setCoefficient(i,v): " << 
 		     "Error, coefficient i = " << i << " is null!");
@@ -147,7 +147,7 @@ Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 	                          const Teuchos::RCP<CoeffT>& v)
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::setCoefficientPtr(i,v): " << 
 		     "Error, coefficient i = " << i << 
@@ -166,7 +166,7 @@ Teuchos::Polynomial<CoeffT>::evaluate(
 
 #ifdef TEUCHOS_DEBUG
   for (unsigned int i=0; i<=d; i++)
-    TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
+    TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
 		       std::runtime_error,
 		       "Polynomial<CoeffT>::evaluate(): " << 
 		       "Error, coefficient i = " << i << " is null!");

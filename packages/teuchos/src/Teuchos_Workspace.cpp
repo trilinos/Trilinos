@@ -102,7 +102,7 @@ WorkspaceStore::~WorkspaceStore() {
 
 void WorkspaceStore::protected_initialize(size_t num_bytes)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     curr_ws_ptr_ != workspace_begin_, std::logic_error
     ,"WorkspaceStore::set_workspace_size(...) : Error, "
     "You can not reset the workspace size when any RawWorkspace objects "
@@ -160,7 +160,7 @@ RawWorkspace::~RawWorkspace()
   }
   else {
     if(workspace_store_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
         ,"RawWorkspace::~RawWorkspace(...): Error, "
         "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );

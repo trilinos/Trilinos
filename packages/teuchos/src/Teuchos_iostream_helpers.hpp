@@ -48,7 +48,7 @@
 */
 
 
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 
 namespace Teuchos {

@@ -156,7 +156,7 @@ int main( int argc, char *argv[] )
     Teuchos::OSTab tab(cout);
     const Teuchos::ParameterEntry
       *paramEntry = PL_Main.getEntryPtr("Direction");
-    TEUCHOS_TEST_FOR_EXCEPT(0==paramEntry);
+    TEST_FOR_EXCEPT(0==paramEntry);
     const std::string extracted_Direction_Doc = paramEntry->docString();
     if (verbose) tab.o() << "Expected doc std::string = \"" << Direction_Doc << "\"\n";
     if (verbose) tab.o() << "Extracted doc std::string = \"" << extracted_Direction_Doc << "\"\n";
@@ -715,7 +715,7 @@ int main( int argc, char *argv[] )
     void *someIntPtr = &someInt;
     pl.set("Some Pointer", someIntPtr);
     void *someIntPtrRtn = getParameter<void*>(pl, "Some Pointer");
-    TEUCHOS_TEST_FOR_EXCEPT(someIntPtrRtn != someIntPtr);
+    TEST_FOR_EXCEPT(someIntPtrRtn != someIntPtr);
     if (verbose)
       cout << "someIntPtrRtn = " << someIntPtrRtn << " == " << someIntPtr << " : ";
     if (someIntPtrRtn == someIntPtr) {
@@ -1218,7 +1218,7 @@ int main( int argc, char *argv[] )
         Polynomial_sublist.set("Max Iters",(std::string)("3"));
         break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        TEST_FOR_EXCEPT(true);
     }
 
     // Extract using external validator
@@ -1417,7 +1417,7 @@ int main( int argc, char *argv[] )
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
         break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        TEST_FOR_EXCEPT(true);
     }
 
     // Extract using nonmember functions (which should use the internal validator)
@@ -1535,7 +1535,7 @@ int main( int argc, char *argv[] )
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
         break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        TEST_FOR_EXCEPT(true);
     }
 
     // Extract using nonmember functions (which should use the internal validator)

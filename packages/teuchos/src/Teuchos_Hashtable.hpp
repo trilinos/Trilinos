@@ -277,7 +277,7 @@ namespace Teuchos
   template<class Key, class Value> inline
     const Value& Hashtable<Key, Value>::get(const Key& key) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
+      TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
                          "Hashtable<Key, Value>::get: key " 
                          << Teuchos::toString(key) 
@@ -304,7 +304,7 @@ namespace Teuchos
   template<class Key, class Value> inline
     void Hashtable<Key, Value>::remove(const Key& key)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
+      TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
                          "Hashtable<Key, Value>::remove: key " 
                          << Teuchos::toString(key) 

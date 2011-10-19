@@ -48,7 +48,7 @@
    \brief Modified boost::any class for holding a templated value
 */
 
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
 //
@@ -265,20 +265,20 @@ template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
   const std::string ValueTypeName = TypeNameTraits<ValueType>::name();
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     operand.type() != typeid(ValueType), bad_any_cast
     ,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
     << "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
     << typeName(*operand.access_content()) << "!"
     );
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     !operand.access_content(), bad_any_cast
     ,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
     << "any::holder<"<<ValueTypeName<<"> failed because the content is NULL"
     );
   any::holder<ValueType>
     *dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     !dyn_cast_content, std::logic_error
     ,"any_cast<"<<ValueTypeName <<">(operand): Error, cast to type "
     << "any::holder<"<<ValueTypeName<<"> failed but should not have and the actual underlying type is \'"

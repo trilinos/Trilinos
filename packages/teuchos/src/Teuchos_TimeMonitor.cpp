@@ -79,7 +79,7 @@ namespace Teuchos {
 	// logic_error suggests a bug in the implementation of
 	// TimeMonitor.  Calling zeroOutTimers() when a timer is
 	// running is not TimeMonitor's fault.
-	TEUCHOS_TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
+	TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
 			   "The timer i = " << i << " with name \"" 
 			   << timer.name() << "\" is currently running and may not "
 			   "be reset.");
@@ -347,12 +347,12 @@ namespace Teuchos {
 		       outArg (minNumGlobalNames));
 	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalNames, 
 		       outArg (maxNumGlobalNames));
-	    TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
+	    TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
 			       std::logic_error,
 			       "Min # global timer names = " << minNumGlobalNames 
 			       << " != max # global timer names = " << maxNumGlobalNames
 			       << ".  Please report this bug to the Teuchos developers.");
-	    TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
+	    TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
 			       std::logic_error,
 			       "My # global timer names = " << myNumGlobalNames 
 			       << " != min # global timer names = " << minNumGlobalNames
@@ -434,12 +434,12 @@ namespace Teuchos {
 		       outArg (minNumGlobalTimers));
 	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalTimers, 
 		       outArg (maxNumGlobalTimers));
-	    TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
+	    TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
 			       std::logic_error,
 			       "Min # global timers = " << minNumGlobalTimers 
 			       << " != max # global timers = " << maxNumGlobalTimers
 			       << ".  Please report this bug to the Teuchos developers.");
-	    TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
+	    TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
 			       std::logic_error,
 			       "My # global timers = " << myNumGlobalTimers 
 			       << " != min # global timers = " << minNumGlobalTimers

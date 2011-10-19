@@ -73,7 +73,7 @@ EvilBase<T>::createEvil(const std::string& concreteEvilName)
     return bEvil<T>();
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPT(true);
   }
   return Teuchos::null; // Never be executed
 }

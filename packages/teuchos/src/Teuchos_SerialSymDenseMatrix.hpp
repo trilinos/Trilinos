@@ -51,7 +51,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 /*! \class Teuchos::SerialSymDenseMatrix
     \brief This class creates and provides basic support for symmetric, positive-definite dense matrices of templated type.
@@ -998,10 +998,10 @@ void SerialSymDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) cons
 
 template<typename OrdinalType, typename ScalarType>
 inline void SerialSymDenseMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRowCols_, std::out_of_range,
+  TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRowCols_, std::out_of_range,
     "SerialSymDenseMatrix<T>::checkIndex: "
     "Row index " << rowIndex << " out of range [0, "<< numRowCols_ << ")");
-  TEUCHOS_TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numRowCols_, std::out_of_range,
+  TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numRowCols_, std::out_of_range,
     "SerialSymDenseMatrix<T>::checkIndex: "
     "Col index " << colIndex << " out of range [0, "<< numRowCols_ << ")");
 }

@@ -505,15 +505,15 @@ int SerialDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseM
 							   const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
 {
   // Check that these new vectors are consistent.
-  TEUCHOS_TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
+  TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
 		     "SerialDenseSolver<T>::setVectors: X and B are not the same size!");
-  TEUCHOS_TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
+  TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
 		     "SerialDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
-  TEUCHOS_TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
+  TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
 		     "SerialDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
-  TEUCHOS_TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
+  TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
 		     "SerialDenseSolver<T>::setVectors: B has an invalid stride!");
-  TEUCHOS_TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
+  TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
 		     "SerialDenseSolver<T>::setVectors: X has an invalid stride!");
 
   resetVectors(); 
@@ -538,7 +538,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (factored()) return(0); // Already factored
 
-  TEUCHOS_TEST_FOR_EXCEPTION(inverted(), std::logic_error,
+  TEST_FOR_EXCEPTION(inverted(), std::logic_error,
 		     "SerialDenseSolver<T>::factor: Cannot factor an inverted matrix!");
 
   ANORM_ = Matrix_->normOne(); // Compute 1-Norm of A
@@ -589,11 +589,11 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
   }
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
-  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) , 
+  TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) , 
                      std::logic_error, "SerialDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
-  TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument, 
+  TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument, 
                      "SerialDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
-  TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument, 
+  TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument, 
                      "SerialDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
   if (shouldEquilibrate() && !equilibratedA_)
@@ -601,7 +601,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
 
   if (inverted()) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument, 
+    TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument, 
                         "SerialDenseSolver<T>::solve: X and B must be different vectors if matrix is inverted.");
 
     INFO_ = 0;
@@ -638,9 +638,9 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseSolver<OrdinalType,ScalarType>::applyRefinement()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!solved(), std::logic_error,
+  TEST_FOR_EXCEPTION(!solved(), std::logic_error,
 		     "SerialDenseSolver<T>::applyRefinement: Must have an existing solution!");
-  TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
+  TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
 		     "SerialDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
   OrdinalType NRHS = RHS_->numCols();

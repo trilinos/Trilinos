@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_HashUtils.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 using namespace Teuchos;
 
@@ -56,7 +56,7 @@ const int HashUtils::primes_[]
 
 int HashUtils::nextPrime(int newCapacity) 
 {
-	TEUCHOS_TEST_FOR_EXCEPTION(newCapacity > primes_[primeCount_-1],
+	TEST_FOR_EXCEPTION(newCapacity > primes_[primeCount_-1],
                      std::logic_error,
                      "HashUtils::nextPrime() overflow");
 
@@ -68,7 +68,7 @@ int HashUtils::nextPrime(int newCapacity)
 				}
 		}
 
-  TEUCHOS_TEST_FOR_EXCEPTION(true,
+  TEST_FOR_EXCEPTION(true,
                      std::logic_error,
                      "unexpected case in HashUtils::nextPrime()");
 	return 0;

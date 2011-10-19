@@ -41,13 +41,13 @@
 
 
 #include "Teuchos_Ptr.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_Exceptions.hpp"
 
 
 void Teuchos::PtrPrivateUtilityPack::throw_null( const std::string &type_name )
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION(
     true, NullReferenceError,
     "Ptr<"<<type_name<<">::assert_not_null() : You can not"
     " call operator->() or operator*() if get()==NULL!" );

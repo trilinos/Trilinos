@@ -62,7 +62,7 @@ DependencyXMLConverterDB::getConverter(const Dependency& dependency)
 {
   ConverterMap::const_iterator it = 
     getConverterMap().find(dependency.getTypeAttributeValue());
-  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency with "
     "attribute tag " << dependency.getTypeAttributeValue() << 
@@ -90,7 +90,7 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
   "";
   #endif
 
-  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency of type " <<
     dependencyType << "!" << std::endl <<

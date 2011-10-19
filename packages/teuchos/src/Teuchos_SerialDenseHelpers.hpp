@@ -49,7 +49,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"	
 #include "Teuchos_SerialSymDenseMatrix.hpp"	
 #include "Teuchos_SerialDenseVector.hpp"	
@@ -81,10 +81,10 @@ void symMatTripleProduct( ETransp transw, const ScalarType alpha, const SerialSy
   bool isBUpper = B.upper();
 
   // Check for consistent dimensions.
-  TEUCHOS_TEST_FOR_EXCEPTION( B_nrowcols != B.numRows(), std::out_of_range,
+  TEST_FOR_EXCEPTION( B_nrowcols != B.numRows(), std::out_of_range,
     "Teuchos::symMatTripleProduct<>() : "
     "Num Rows/Cols B (" << B.numRows() << ") inconsistent with W ("<< B_nrowcols << ")");
-  TEUCHOS_TEST_FOR_EXCEPTION( A_nrowcols != W_nrows, std::out_of_range,
+  TEST_FOR_EXCEPTION( A_nrowcols != W_nrows, std::out_of_range,
     "Teuchos::symMatTripleProduct<>() : "
     "Num Rows/Cols A (" << A_nrowcols << ") inconsistent with W ("<< W_nrows << ")");
 

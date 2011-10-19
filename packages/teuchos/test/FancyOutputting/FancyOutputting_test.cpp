@@ -87,7 +87,7 @@ public:
     {
       // Get the verbosity level for AlgorithmA
       Teuchos::EVerbosityLevel verbLevel = Teuchos::VerboseObject<AlgorithmA>::getDefaultVerbLevel();
-      TEUCHOS_TEST_FOR_EXCEPT_PRINT(verbLevel!=Teuchos::VERB_DEFAULT,&std::cerr);
+      TEST_FOR_EXCEPT_PRINT(verbLevel!=Teuchos::VERB_DEFAULT,&std::cerr);
       // Print to the default default OStream to make sure that the initialization
       // trick worked!
       *Teuchos::VerboseObjectBase::getDefaultOStream()

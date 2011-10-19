@@ -87,7 +87,7 @@ functions that include the macro:
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 /*! \class Teuchos::BLAS
     \brief The Templated BLAS Wrapper Class.
@@ -1024,7 +1024,7 @@ namespace Teuchos
     y_type y_zero = ScalarTraits<y_type>::zero();
     bool BadArgument = false;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
 	    "Teuchos::BLAS::GER() does not currently support complex data types.");
 
     // Quick return if there is nothing to do!
@@ -1489,7 +1489,7 @@ namespace Teuchos
     bool BadArgument = false;
     bool Upper = (EUploChar[uplo] == 'U');
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       Teuchos::ScalarTraits<ScalarType>::isComplex
       && (trans == CONJ_TRANS),
       std::logic_error,

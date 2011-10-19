@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 
 // Define this if you want to force name demangling if supported
 //#define HAVE_TEUCHOS_DEMANGLE
@@ -59,7 +59,7 @@ std::string Teuchos::demangleName( const std::string &mangledName )
 #ifdef TEUCHOS_DEBUG
     std::string nullstr("NULL");
     const char* demangle_output = _demangledName ? _demangledName : nullstr.c_str();
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "Error, name demangling with g++ has been enabled but the function "
       "abi::__cxa_demangle("<<mangledName<<") returned returnVal = "<<demangle_output

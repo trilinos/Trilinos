@@ -103,7 +103,7 @@ void TableFormat::writeRow(
   const Array<RCP<TableEntry> >& entries
   ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(entries.size() != columnWidths_.size() 
+  TEST_FOR_EXCEPT(entries.size() != columnWidths_.size() 
     && columnWidths_.size() != 0);
 
   for (Array<RCP<TableEntry> >::size_type i=0; i<entries.size(); i++)

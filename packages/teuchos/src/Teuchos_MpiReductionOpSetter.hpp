@@ -175,12 +175,12 @@ void MpiReductionOp<Ordinal>::reduce(
 {
   (void)datatype;
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!invec);
-  TEUCHOS_TEST_FOR_EXCEPT(!inoutvec);
-  TEUCHOS_TEST_FOR_EXCEPT(!len);
-  TEUCHOS_TEST_FOR_EXCEPT(!(*len>0));
-  TEUCHOS_TEST_FOR_EXCEPT(!datatype);
-  //TEUCHOS_TEST_FOR_EXCEPT(!(*datatype==MPI_CHAR));
+  TEST_FOR_EXCEPT(!invec);
+  TEST_FOR_EXCEPT(!inoutvec);
+  TEST_FOR_EXCEPT(!len);
+  TEST_FOR_EXCEPT(!(*len>0));
+  TEST_FOR_EXCEPT(!datatype);
+  //TEST_FOR_EXCEPT(!(*datatype==MPI_CHAR));
   // We also allow datatypes that are blocks of chars!
 #endif
   reductOp_->reduce(

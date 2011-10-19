@@ -308,7 +308,7 @@ public:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT(bytes!=fromCountToIndirectBytes(count));
+      TEST_FOR_EXCEPT(bytes!=fromCountToIndirectBytes(count));
 #endif
       const char *_buffer = convertToCharPtr(buffer);
       std::copy(_buffer,_buffer+bytes,charBuffer);
@@ -320,7 +320,7 @@ public:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT(count!=fromIndirectBytesToCount(bytes));
+      TEST_FOR_EXCEPT(count!=fromIndirectBytesToCount(bytes));
 #endif
       char *_buffer = convertToCharPtr(buffer);
       std::copy(charBuffer,charBuffer+bytes,_buffer);

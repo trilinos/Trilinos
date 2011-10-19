@@ -86,7 +86,7 @@ const char* toString( const EReductionType reductType )
     case REDUCE_MIN: return "REDUCE_MIN";
     case REDUCE_MAX: return "REDUCE_MAX";
     case REDUCE_AND: return "REDUCE_AND";
-    default: TEUCHOS_TEST_FOR_EXCEPT(true);
+    default: TEST_FOR_EXCEPT(true);
   }
   return 0; // Will never be called
 }
@@ -632,7 +632,7 @@ public:
     Packet[]
     )
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         true,std::logic_error,
         "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support comparison operations!"
@@ -669,7 +669,7 @@ public:
     Packet[]
     )
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         true,std::logic_error,
         "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support comparison operations!"
@@ -706,7 +706,7 @@ public:
     Packet[]
     )
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         true,std::logic_error,
         "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support logical AND operations!"
@@ -802,12 +802,12 @@ createOp( const EReductionType reductType )
       break;
     }
     case REDUCE_MIN: {
-      TEUCHOS_TEST_FOR_EXCEPT(!ST::isComparable);
+      TEST_FOR_EXCEPT(!ST::isComparable);
       return new MinValueReductionOp<Ordinal,Packet>();
       break;
     }
     case REDUCE_MAX: {
-      TEUCHOS_TEST_FOR_EXCEPT(!ST::isComparable);
+      TEST_FOR_EXCEPT(!ST::isComparable);
       return new MaxValueReductionOp<Ordinal,Packet>();
       break;
     }
@@ -816,7 +816,7 @@ createOp( const EReductionType reductType )
       break;
     }
     default:
-      TEUCHOS_TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true);
   }
   return 0; // Will never be called!
 }
@@ -970,7 +970,7 @@ void Teuchos::gatherAll(
   const Ordinal recvCount, Packet*const recvBuffer[]
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
 
@@ -1071,7 +1071,7 @@ void Teuchos::reduceAllAndScatter(
   Ordinal sumRecvCounts = 0;
   for( Ordinal i = 0; i < size; ++i )
     sumRecvCounts += recvCounts[static_cast<ptrdiff_t>(i)];
-  TEUCHOS_TEST_FOR_EXCEPT(!(sumRecvCounts==sendCount));
+  TEST_FOR_EXCEPT(!(sumRecvCounts==sendCount));
 #endif
 
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1126,7 +1126,7 @@ void Teuchos::reduceAllAndScatter(
   const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
 
@@ -1188,7 +1188,7 @@ void Teuchos::scan(
   const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
 
@@ -1228,7 +1228,7 @@ void Teuchos::send(
   const Ordinal count, const Packet*const sendBuffer[], const int destRank
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
 template<typename Ordinal, typename Packet>
@@ -1267,7 +1267,7 @@ int Teuchos::receive(
   const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
 
