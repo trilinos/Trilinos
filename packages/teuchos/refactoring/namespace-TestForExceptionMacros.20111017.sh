@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # This script is run to update all client code to replace the non-namespaced
-# macros in Teuchos_Assert.hpp to the namespaced macros in
+# macros in Teuchos_TestForException.hpp to the namespaced macros in
 # Teuchos_Assert.hpp.
 #
 # WARNING: Do not run this script on the teuchos directory itself or it will
-# mess up the core files Teuchos_Assert.*pp and Teuchos_Assert.hpp.
+# mess up the core files Teuchos_Assert.*pp and Teuchos_TestForException.hpp.
 
 # Get the directory for this scirpt which will give us the Trilinos base
 # directory
