@@ -44,13 +44,8 @@ OBJSC  = tokenize.o  GetLongOpt.o smart_assert.o timer.o to_string.o adler.o
 OBJSc  = addlog.o wildcmp.o add_to_log.o
 
 OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
-         cknone.o ckwhol.o copint.o cpuifc.o cpyint.o cpylog.o \
-         cpyrea.o cpyrgt.o cpystr.o dberr.o  dbieb1.o dbielb.o \
-         dbiess.o dbiini.o dbimap.o dbinam.o dbinm1.o dbinps.o \
-         dbiqa.o  dbist1.o dbist2.o dbiste.o dbitim.o dbiv0.o  \
-         dbixyz.o dboeb1.o dboelb.o dboess.o dboini.o dbomap.o \
-         dbonam.o dbonm1.o dbonps.o dboqa.o  dboste.o dboxyz.o \
-         dbpelb.o dbpini.o dbpnam.o dbpqa.o  dbptim.o dbvini.o \
+         cknone.o ckwhol.o copint.o cpuifc.o cpyint.o cpylog.o dbpini.o \
+         cpyrea.o cpyrgt.o cpystr.o dberr.o  dbpqa.o  dbiv0.o dbvini.o \
          engnot.o engstr.o ffaddc.o ffaddi.o ffaddo.o ffaddr.o \
          ffaddv.o ffchar.o ffexst.o ffintg.o ffmatc.o ffneed.o \
          ffnumb.o ffonof.o ffreal.o ffrrng.o ffvrng.o hunt.o   \

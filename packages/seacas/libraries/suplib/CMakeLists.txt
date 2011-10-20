@@ -11,32 +11,21 @@ SET(SUPLIB_VERSION_FULL "${SUPLIB_VERSION}.${SUPLIB_VERSION_PATCH}")
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
-  "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 SET(HEADERS  argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
 
 SET(SOURCES
-	tokenize.C	  add_to_log.c      GetLongOpt.C      smart_assert.C    timer.C           to_string.C       adler.C
-	cpyrgt.f          dboelb.f          flush.f           locint.f          pltond.f
-	cpystr.f          dboess.f          argparse.f        gslibv.f          locrea.f          pltone.f
-	dberr.f           dboini.f          help.f            locstr.f          prterr.f
-	dbieb1.f          dbomap.f          ffaddc.f          logerr.f          
-	abrstr.f          dbielb.f          dbonam.f          ffaddi.f          lowstr.f          scneof.f
-	addlog.c          dbiess.f          dbonm1.f          ffaddo.f          idblnk.f          matstr.f          screrr.f
-	addv.f            dbiini.f          dbonps.f          ffaddr.f          iengrx.f          memerr.f          shocmd.f
-	banner.f          dbimap.f          dboqa.f           ffaddv.f          indexr.f          minmax.f          sqzstr.f
-	bannr2.f          dbinam.f          dboste.f          ffchar.f          inigrd.f          minmxl.f          strtup.f
-	batch.f           dbinm1.f          dboxyz.f          ffexst.f          iniint.f          minmxs.f          subv.f
-	dbinps.f          dbpelb.f          ffintg.f          inilog.f          num2ix.f          ckexod.f          dbiqa.f
-	dbpini.f          ffmatc.f          inirea.f          numeqi.f          
-	cknone.f          dbist1.f          dbpnam.f          ffneed.f          inistr.f          numeql.f          wheneq.f
-	ckwhol.f          dbist2.f          dbpqa.f           ffnumb.f          intadd.f          numstr.f
-	copint.f          dbiste.f          dbptim.f          ffonof.f          intstr.f          okabrt.f          wrapup.f
-	cpuifc.f          dbitim.f          dbvini.f          ffreal.f          iowdsz.f          opnfil.f          zeroin.f
-	cpyint.f          dbiv0.f           ffrrng.f          ismax.f           packt.f
-	cpylog.f          dbixyz.f          engnot.f          ismin.f           pcklab.f          indexn.f          indexx.f
-	cpyrea.f          dboeb1.f          engstr.f          ffvrng.f          lenstr.f          pckstr.f)
+	abrstr.f    copint.f    dbpini.f    ffaddv.f    ffrrng.f    indexi.f    intadd.f    logerr.f    numeql.f    prterr.f    wrapup.f
+	addv.f      cpuifc.f    dbpqa.f     ffchar.f    ffvrng.f    indexn.f    intstr.f    lowstr.f    numstr.f    ran1.f      zeroin.f
+	argparse.f  cpyint.f    dbvini.f    ffexst.f    flush.f     indexr.f    iowdsz.f    matstr.f    okabrt.f    scneof.f
+	banner.f    cpylog.f    engnot.f    ffintg.f    gslibv.f    indexx.f    ismax.f     memerr.f    opnfil.f    screrr.f
+	bannr2.f    cpyrea.f    engstr.f    ffmatc.f    heap_sort.f inigrd.f    ismin.f     minmax.f    packt.f     shocmd.f
+	batch.f     cpyrgt.f    ffaddc.f    ffneed.f    help.f      iniint.f    lenstr.f    minmxl.f    pcklab.f    sqzstr.f
+	ckexod.f    cpystr.f    ffaddi.f    ffnumb.f    hunt.f      inilog.f    locint.f    minmxs.f    pckstr.f    strtup.f
+	cknone.f    dberr.f     ffaddo.f    ffonof.f    idblnk.f    inirea.f    locrea.f    num2ix.f    pltond.f    subv.f
+	ckwhol.f    dbiv0.f     ffaddr.f    ffreal.f    iengrx.f    inistr.f    locstr.f    numeqi.f    pltone.f    wheneq.f
+	add_to_log.c addlog.c	GetLongOpt.C   adler.C        smart_assert.C timer.C        to_string.C    tokenize.C)
 
 PACKAGE_ADD_LIBRARY(
 	suplib
@@ -44,3 +33,4 @@ PACKAGE_ADD_LIBRARY(
 	SOURCES ${SOURCES}
 	DEPLIBS supes
 )
+
