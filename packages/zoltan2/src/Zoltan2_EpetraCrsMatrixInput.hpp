@@ -28,6 +28,13 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int lid_t;
   typedef int gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsMatrix";}
+  static inline RCP<const Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> >
+    convertToXpetra(const RCP<const Epetra_CrsMatrix> &a)
+    {
+      return rcp(new Xpetra::EpetraCrsMatrix(
+                             rcp_const_cast<Epetra_CrsMatrix>(a)));
+    }
 };
 
 /*! Zoltan2::EpetraCrsMatrixInput
@@ -38,7 +45,7 @@ template <typename User>
 class EpetraCrsMatrixInput : public XpetraCrsMatrixInput<User>{
 private:
 
-    RCP<const User> inmatrix_;
+    //KDDRCP<const User> inmatrix_;
 public:
 
   typedef typename InputAdapter<User>::scalar_t scalar_t;
@@ -55,10 +62,9 @@ public:
   /*! Constructor
    */
   EpetraCrsMatrixInput(const RCP<const User> &matrix):
-    XpetraCrsMatrixInput<User> (
-      rcp(new Xpetra::EpetraCrsMatrix(rcp_const_cast<User>(matrix)))) 
+    XpetraCrsMatrixInput<User> (matrix)
   {
-    inmatrix_ = matrix;
+    //KDDinmatrix_ = matrix;
   }
 };
 

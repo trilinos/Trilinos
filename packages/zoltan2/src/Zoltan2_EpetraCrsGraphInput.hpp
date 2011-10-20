@@ -28,6 +28,13 @@ struct InputTraits<Epetra_CrsGraph>
   typedef int   lid_t;
   typedef int   gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsGraph";}
+  static inline RCP<const Xpetra::CrsGraph<lno_t,gno_t,node_t> >
+    convertToXpetra(const RCP<const Epetra_CrsGraph> &a)
+    {
+      return rcp(new Xpetra::EpetraCrsGraph(
+                             rcp_const_cast<Epetra_CrsGraph>(a)));
+    }
 };
 
 /*! Zoltan2::EpetraCrsGraphInput
@@ -75,8 +82,7 @@ public:
       \param graph  the graph represented by this input adapter
    */
   EpetraCrsGraphInput(const RCP<const User> &graph):
-    XpetraCrsGraphInput<User> (
-      rcp(new Xpetra::EpetraCrsGraph(rcp_const_cast<User>(graph))))
+    XpetraCrsGraphInput<User>(graph)
   {
     ingraph_ = graph;
   }

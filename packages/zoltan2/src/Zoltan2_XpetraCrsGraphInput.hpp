@@ -32,6 +32,13 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsGraph";}
+  static inline RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> >
+    convertToXpetra(
+      const RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> > &a)
+    {
+      return a;
+    }
 };
 
 
@@ -60,6 +67,8 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
+  typedef Xpetra::EpetraCrsGraph xegraph_t;
 
   /*! Name of input adapter type   TODO make this a trait
    */
@@ -69,13 +78,16 @@ public:
    */
   ~XpetraCrsGraphInput() { }
 
-  /*! Constructor with a Xpetra::CrsGraph
+  /*! Constructor
    */
-  XpetraCrsGraphInput(const RCP<const xgraph_t> &graph):
-    graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
+  XpetraCrsGraphInput(const RCP<const User> &ingraph):
+    ingraph_(ingraph),
+    graph_(),
+    rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
   {
+    graph_ = InputTraits<User>::convertToXpetra(ingraph);
     makeOffsets();
   }
 
@@ -399,6 +411,7 @@ public:
 private:
 
 
+  RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > colMap_;

@@ -31,6 +31,18 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsGraph";}
+
+  // Traits specific to Tpetra::CrsGraph
+  typedef typename Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef typename Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
+  typedef typename Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
+
+  static inline RCP<const xgraph_t> convertToXpetra(
+    const RCP<const tgraph_t> &a)
+    {
+      return rcp(new xtgraph_t(rcp_const_cast<tgraph_t>(a)));
+    }
 };
 
 /*! Zoltan2::TpetraCrsGraphInput
@@ -67,9 +79,8 @@ public:
 
   /*! Constructor
    */
-  TpetraCrsGraphInput(const RCP<const User> &graph): XpetraCrsGraphInput<User>(
-    rcp(new Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t>(
-      rcp_const_cast<User>(graph)))) 
+  TpetraCrsGraphInput(const RCP<const User> &graph): 
+    XpetraCrsGraphInput<User>(graph)
   {
     ingraph_ = graph;
   }

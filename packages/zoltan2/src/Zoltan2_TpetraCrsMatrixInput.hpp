@@ -31,6 +31,18 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsMatrix";}
+
+  // Traits specific to Tpetra::CrsMatrix
+  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
+  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t> xtmatrix_t;
+  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
+
+  static inline RCP<const xmatrix_t> convertToXpetra(
+    const RCP<const tmatrix_t> &a)
+    {
+      return rcp(new xtmatrix_t(rcp_const_cast<tmatrix_t>(a)));
+    }
 };
 
 /*! Zoltan2::TpetraCrsMatrixInput
@@ -62,9 +74,7 @@ public:
   /*! Constructor 
    */
   TpetraCrsMatrixInput(const RCP<const User> &matrix):
-    XpetraCrsMatrixInput<User>(rcp_implicit_cast<const xmatrix_t>(
-      rcp(new xtmatrix_t(rcp_const_cast<User>(matrix)))))
-
+    XpetraCrsMatrixInput<User>(matrix)
   {
     inmatrix_ = matrix;
   }

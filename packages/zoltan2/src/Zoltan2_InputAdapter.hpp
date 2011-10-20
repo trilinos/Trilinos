@@ -74,6 +74,7 @@ struct InputTraits {
   typedef int   lid_t;
   typedef long  gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "InputAdapter";}
 };
 
 template <typename User>

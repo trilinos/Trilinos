@@ -78,6 +78,8 @@ template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO> xtcrsMatrix_t;
@@ -85,8 +87,8 @@ private:
     typedef Xpetra::CrsGraph<LNO, GNO> xcrsGraph_t;
     typedef Tpetra::Map<LNO, GNO> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
+    typedef Zoltan2::EpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
     typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
     typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
@@ -349,6 +351,8 @@ template <>
 class TestAdapters<double,int,int,int,int,Kokkos::DefaultNode::DefaultNodeType>
 {
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<double, int, int> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<double, int, int> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<double, int, int> xtcrsMatrix_t;
@@ -356,8 +360,8 @@ private:
     typedef Xpetra::CrsGraph<int, int> xcrsGraph_t;
     typedef Tpetra::Map<int, int> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
+    typedef Zoltan2::EpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
     typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
     typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
