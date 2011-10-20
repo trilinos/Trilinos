@@ -243,14 +243,14 @@ template<class Scalar>
 void IntegrationObserverBase<Scalar>::
 observeStartTimeIntegration(const StepperBase<Scalar> &stepper)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+
 }    
 
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
 observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+
 }    
 
 template<class Scalar>
@@ -261,7 +261,7 @@ observeStartTimeStep(
     const int timeStepIter
     )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+
 }    
 
 template<class Scalar>
@@ -272,7 +272,7 @@ observeFailedTimeStep(
     const int timeStepIter
     )
 {
-  //TEUCHOS_TEST_FOR_EXCEPT(true);
+
 }    
 
 
