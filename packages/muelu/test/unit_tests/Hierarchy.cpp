@@ -308,12 +308,25 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_KeepAggregates)
   RCP<RFactory> RFact = rcp(new TransPFactory());
   RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
 
-  H.GetLevel(0)->Keep("Aggregates",UCAggFact.get());
-
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
+#if 0
+  H.GetLevel(0)->Keep("Aggregates",UCAggFact.get()); // not working since no FactoryManager available
   H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
+#else
+  FactoryManager M;
+  M.SetFactory("A",            AcFact);
+  M.SetFactory("P",            PFact);
+  M.SetFactory("R",            RFact);
+  M.SetFactory("Aggregates",   UCAggFact);
+  M.SetFactory("Smoother",     SmooFact);
+  M.SetFactory("CoarseSolver", SmooFact);
+
+  H.GetLevel(0)->SetFactoryManager(Teuchos::rcpFromRef(M));
+  H.GetLevel(0)->Keep("Aggregates",UCAggFact.get());
+  H.Setup(M);
+#endif
 #endif
 
   for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
