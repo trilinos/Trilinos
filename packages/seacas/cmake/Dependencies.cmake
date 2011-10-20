@@ -18,6 +18,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exotxt      applications/exotxt     SS  REQUIRED
   Gjoin       applications/gjoin      SS  REQUIRED
   Grope       applications/grope      SS  REQUIRED
+  Mapvarlib   libraries/mapvarlib     SS  REQUIRED
   Mapvar      applications/mapvar     SS  REQUIRED
   Mapvar-kd   applications/mapvar-kd  SS  REQUIRED
   Mat2exo     applications/mat2exo    SS  OPTIONAL

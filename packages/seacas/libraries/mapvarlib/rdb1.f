@@ -31,31 +31,31 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C************************************************************************
-      subroutine version (qainfo)
-C************************************************************************
-
-      include 'exodusII.inc'
-      character*(mxstln) qainfo(6)
-
-C      --QAINFO - the current program QA information:
-C      --   (1) = program name
-C      --   (2) = revision date
-C      --   (3) = version as "QA xx.xx" or "X  xx.xx" or "   xx.xx"
-C      --   (4) = program name with version appended
-C      --   (5) = date of current run
-C      --   (6) = time of current run
-
-      
-      qainfo(1) = 'mapvar                          '
-      qainfo(2) = '2011/10/07                      '
-      qainfo(3) = ' 1.16                           '
-      qainfo(4) = '                                '
-      qainfo(5) = '                                '
-      qainfo(6) = '                                '
-      call exdate(qainfo(5))
-      call extime(qainfo(6))
-
-      return
-      end
-
+c 
+C======================================================================
+*DECK,RDB1
+      SUBROUTINE RDB1(XB,YB,ZB)
+C
+C     *****************************************************************
+C
+C     READS MESH-B
+C
+C     Called by MAPVAR
+C
+C     *****************************************************************
+C
+C     XB,etc  Original coordinates read from Mesh-B
+C
+C     *****************************************************************
+C
+      include 'ex2tp.blk'
+C
+      DIMENSION XB(*),YB(*),ZB(*)
+C     *****************************************************************
+C
+C read coordinates
+C
+      CALL EXGCOR (NTP3EX,XB,YB,ZB,IERR)
+C
+      RETURN
+      END

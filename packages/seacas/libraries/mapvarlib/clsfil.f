@@ -31,31 +31,28 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C************************************************************************
-      subroutine version (qainfo)
-C************************************************************************
-
-      include 'exodusII.inc'
-      character*(mxstln) qainfo(6)
-
-C      --QAINFO - the current program QA information:
-C      --   (1) = program name
-C      --   (2) = revision date
-C      --   (3) = version as "QA xx.xx" or "X  xx.xx" or "   xx.xx"
-C      --   (4) = program name with version appended
-C      --   (5) = date of current run
-C      --   (6) = time of current run
-
-      
-      qainfo(1) = 'mapvar                          '
-      qainfo(2) = '2011/10/07                      '
-      qainfo(3) = ' 1.16                           '
-      qainfo(4) = '                                '
-      qainfo(5) = '                                '
-      qainfo(6) = '                                '
-      call exdate(qainfo(5))
-      call extime(qainfo(6))
-
-      return
-      end
-
+C=======================================================================
+*DECK,CLSFIL
+      SUBROUTINE CLSFIL
+C
+C     ******************************************************************
+C
+C     SUBROUTINE TO CLOSE PREVIOUSLY OPENED DISK FILES
+C
+C     Called by ERROR, MAPVAR
+C
+C     ******************************************************************
+C
+      include 'ex2tp.blk'
+      include 'tapes.blk'
+      include 'ntpdat.blk'
+C
+C     ******************************************************************
+C
+      IF (IFILES(1).EQ.1) CLOSE (UNIT=NTPOUT, STATUS='keep')
+      IF (IFILES(3).EQ.1) call exclos (ntp2ex,ierr)
+      IF (IFILES(4).EQ.1) call exclos (ntp3ex,ierr)
+      IF (IFILES(5).EQ.1) call exclos (ntp4ex,ierr)
+C
+      RETURN
+      END

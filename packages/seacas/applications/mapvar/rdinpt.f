@@ -52,7 +52,7 @@ C
 C     ******************************************************************
 C
       include 'exodusII.inc'
-      CHARACTER*10 CVALUE
+      CHARACTER*10 CVAL
 C
       include 'amesh.blk'
       include 'bmesh.blk'
@@ -63,7 +63,7 @@ C
       include 'steps.blk'
       include 'tapes.blk'
 C
-      DIMENSION KVALUE(6),CVALUE(6),IVALUE(6),RVALUE(6)
+      DIMENSION KVALUE(6),CVAL(6),IVALUE(6),RVALUE(6)
       DIMENSION TIMES(*),IDA(*),IDB(*),MP(3,*)
 C
 C     ******************************************************************
@@ -109,35 +109,37 @@ C
       OUTTIM = -1.
       ISTEP = NUMTIM
       RTIME = TIMES(NUMTIM)
-    4 WRITE (NOUT, 1060)
+    4 CONTINUE
+      WRITE (NOUT, 1060)
       WRITE (NOUT, 1061)
 C
-    5 CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVALUE,     
+    5 CONTINUE
+      CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVAL,     
      1IVALUE,RVALUE)
 C
       IF (KVALUE(1)      .NE. 0)     GO TO 10
-      IF (CVALUE(1)(1:3) .EQ. 'HEL') GO TO 20
-      IF (CVALUE(1)(1:3) .EQ. 'TIM') GO TO 30
-      IF (CVALUE(1)(1:3) .EQ. 'STE') GO TO 35
-      IF (CVALUE(1)(1:3) .EQ. 'OUT') GO TO 39
-      IF (CVALUE(1)(1:3) .EQ. 'LIS') GO TO 40
-      IF (CVALUE(1)(1:3) .EQ. 'SCH') GO TO 50
-      IF (CVALUE(1)(1:3) .EQ. 'SEA') GO TO 60
-      IF (CVALUE(1)(1:3) .EQ. 'DEF') GO TO 70
-      IF (CVALUE(1)(1:3) .EQ. 'MAP') GO TO 80
-      IF (CVALUE(1)(1:3) .EQ. 'CHE') GO TO 89
-      IF (CVALUE(1)(1:3) .EQ. 'STO') GO TO 90
-      IF (CVALUE(1)(1:3) .EQ. 'END') GO TO 100
-      IF (CVALUE(1)(1:3) .EQ. 'QUI') GO TO 100
-      IF (CVALUE(1)(1:3) .EQ. 'EXI') GO TO 100
-      IF (CVALUE(1)(1:3) .EQ. 'RUN') GO TO 100
+      IF (CVAL(1)(1:3) .EQ. 'HEL') GO TO 20
+      IF (CVAL(1)(1:3) .EQ. 'TIM') GO TO 30
+      IF (CVAL(1)(1:3) .EQ. 'STE') GO TO 35
+      IF (CVAL(1)(1:3) .EQ. 'OUT') GO TO 39
+      IF (CVAL(1)(1:3) .EQ. 'LIS') GO TO 40
+      IF (CVAL(1)(1:3) .EQ. 'SCH') GO TO 50
+      IF (CVAL(1)(1:3) .EQ. 'SEA') GO TO 60
+      IF (CVAL(1)(1:3) .EQ. 'DEF') GO TO 70
+      IF (CVAL(1)(1:3) .EQ. 'MAP') GO TO 80
+      IF (CVAL(1)(1:3) .EQ. 'CHE') GO TO 89
+      IF (CVAL(1)(1:3) .EQ. 'STO') GO TO 90
+      IF (CVAL(1)(1:3) .EQ. 'END') GO TO 100
+      IF (CVAL(1)(1:3) .EQ. 'QUI') GO TO 100
+      IF (CVAL(1)(1:3) .EQ. 'EXI') GO TO 100
+      IF (CVAL(1)(1:3) .EQ. 'RUN') GO TO 100
 C
    10 CONTINUE
 C
 C Bad input
 C
-      WRITE (NOUT,1100) CVALUE(1)
-      WRITE (NTPOUT,1100) CVALUE(1)
+      WRITE (NOUT,1100) CVAL(1)
+      WRITE (NTPOUT,1100) CVAL(1)
       GO TO 5
 C
    20 CONTINUE
@@ -146,27 +148,27 @@ C Help
 C
       IF (NFIELD .EQ. 1)THEN
         GO TO 4
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'TIM') THEN 
+      ELSE IF (CVAL(2)(1:3) .EQ. 'TIM') THEN 
         WRITE(NOUT,2000)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'LIS') THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'LIS') THEN
         WRITE(NOUT,2010)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'SCH') THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'SCH') THEN
         WRITE(NOUT,2020)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'DEF')THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'DEF')THEN
         WRITE(NOUT,2030)
         WRITE(NOUT,2040)
         WRITE(NOUT,2045)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'SEA')THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'SEA')THEN
         WRITE(NOUT,2050)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'MAP')THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'MAP')THEN
         WRITE(NOUT,2060)
         GO TO 5
-      ELSE IF (CVALUE(2)(1:3) .EQ. 'CHE')THEN
+      ELSE IF (CVAL(2)(1:3) .EQ. 'CHE')THEN
         WRITE(NOUT,2070)
         GO TO 5
       END IF
@@ -176,13 +178,13 @@ C
 C Time
 C
       IF (KVALUE(2) .NE. 1 .AND. KVALUE(2) .NE. 2)THEN
-        IF(CVALUE(2)(1:3) .EQ. 'ALL')THEN
+        IF(CVAL(2)(1:3) .EQ. 'ALL')THEN
           ISTEP = -1
           IDEF = 0
           WRITE(NOUT,3000)
           GO TO 40
         ELSE
-          WRITE(NOUT,3010)CVALUE(2)
+          WRITE(NOUT,3010)CVAL(2)
           GO TO 5
         END IF
       ELSE
@@ -207,13 +209,13 @@ C
 C Step
 C
       IF (KVALUE(2) .NE. 1 .AND. KVALUE(2) .NE. 2)THEN
-        IF(CVALUE(2)(1:3) .EQ. 'ALL')THEN
+        IF(CVAL(2)(1:3) .EQ. 'ALL')THEN
           ISTEP = -1
           IDEF = 0
           WRITE(NOUT,3005)
           GO TO 40
         ELSE
-          WRITE(NOUT,3015)CVALUE(2)
+          WRITE(NOUT,3015)CVAL(2)
           GO TO 5
         END IF
       ELSE
@@ -237,7 +239,7 @@ C
       ELSE IF (KVALUE(2) .EQ. 1 .OR. KVALUE(2) .EQ. 2)THEN
         OUTTIM = RVALUE(2)
       ELSE
-        WRITE(NOUT,3030)CVALUE(2),CVALUE(3)
+        WRITE(NOUT,3030)CVAL(2),CVAL(3)
       END IF
       GO TO 5
 C
@@ -254,7 +256,7 @@ C
 C Scheme
 C
       IF (KVALUE(2) .NE. 2)THEN
-        WRITE(NOUT,5000)CVALUE(2)
+        WRITE(NOUT,5000)CVAL(2)
         GO TO 5
       END IF
       ISCHEM = IVALUE(2)
@@ -284,7 +286,7 @@ C
         TOLHEX = RVALUE(2)
         WRITE(NOUT,6000)TOLSHL
       ELSE
-        WRITE(NOUT,6010)CVALUE(2)
+        WRITE(NOUT,6010)CVAL(2)
       END IF
       GO TO 5
 C
@@ -293,7 +295,7 @@ C
 C Deformed vs undeformed processing
 C
       IF (KVALUE(2) .NE. 2)THEN
-        WRITE(NOUT,7000)CVALUE(2)
+        WRITE(NOUT,7000)CVAL(2)
         GO TO 5
       END IF
       IDEF = IVALUE(2)
@@ -318,18 +320,18 @@ C
 C
 C Map definition - donor mesh e-block to recipient mesh e-block
 C
-      IF (KVALUE(2) .EQ. 0 .AND. CVALUE(2) .EQ. 'ALL')THEN
-        IF (CVALUE(3) .NE. 'TO')THEN
+      IF (KVALUE(2) .EQ. 0 .AND. CVAL(2) .EQ. 'ALL')THEN
+        IF (CVAL(3) .NE. 'TO')THEN
           WRITE(NOUT,8010)
           WRITE(NTPOUT,8010)
           GO TO 5
         END IF
         IF (KVALUE(4) .NE. 1 .AND. KVALUE(4) .NE. 2)THEN
-          WRITE(NOUT,8020)CVALUE(4)
-          WRITE(NTPOUT,8020)CVALUE(4)
+          WRITE(NOUT,8020)CVAL(4)
+          WRITE(NTPOUT,8020)CVAL(4)
           GO TO 5
         END IF
-        IF (KVALUE(5) .EQ. 0 .AND. CVALUE(5)(1:3) .EQ. 'SCH' .AND.
+        IF (KVALUE(5) .EQ. 0 .AND. CVAL(5)(1:3) .EQ. 'SCH' .AND.
      &      (KVALUE(6) .EQ. 1 .OR. KVALUE(6) .EQ. 2))THEN
           IF (IVALUE(6) .GE. 0 .AND. IVALUE(6) .LE. 3) THEN
             ISCHEM = IVALUE(6)
@@ -349,18 +351,18 @@ C ... Check for valid id
    82   CONTINUE
         IMP = NBLKSA
         GO TO 5
-      ELSE IF (KVALUE(4) .EQ. 0 .AND. CVALUE(4) .EQ. 'ALL')THEN
-        IF (CVALUE(3) .NE. 'TO')THEN
+      ELSE IF (KVALUE(4) .EQ. 0 .AND. CVAL(4) .EQ. 'ALL')THEN
+        IF (CVAL(3) .NE. 'TO')THEN
           WRITE(NOUT,8010)
           WRITE(NTPOUT,8010)
           GO TO 5
         END IF
         IF (KVALUE(2) .NE. 1 .AND. KVALUE(2) .NE. 2)THEN
-          WRITE(NOUT,8030)CVALUE(2)
-          WRITE(NTPOUT,8030)CVALUE(2)
+          WRITE(NOUT,8030)CVAL(2)
+          WRITE(NTPOUT,8030)CVAL(2)
           GO TO 5
         END IF
-        IF (KVALUE(5) .EQ. 0 .AND. CVALUE(5)(1:3) .EQ. 'SCH' .AND.
+        IF (KVALUE(5) .EQ. 0 .AND. CVAL(5)(1:3) .EQ. 'SCH' .AND.
      &      (KVALUE(6) .EQ. 1 .OR. KVALUE(6) .EQ. 2))THEN
           IF (IVALUE(6) .GE. 0 .AND. IVALUE(6) .LE. 3) THEN
             ISCHEM = IVALUE(6)
@@ -384,12 +386,12 @@ C ... Check for valid id
         GO TO 5
       ELSE IF (KVALUE(2) .EQ. 1 .OR. KVALUE(2) .EQ. 2 .AND.
      &         KVALUE(4) .EQ. 1 .OR. KVALUE(4) .EQ. 2)THEN
-        IF (CVALUE(3) .NE. 'TO')THEN
+        IF (CVAL(3) .NE. 'TO')THEN
           WRITE(NOUT,8010)
           WRITE(NTPOUT,8010)
           GO TO 5
         END IF
-        IF (KVALUE(5) .EQ. 0 .AND. CVALUE(5)(1:3) .EQ. 'SCH' .AND.
+        IF (KVALUE(5) .EQ. 0 .AND. CVAL(5)(1:3) .EQ. 'SCH' .AND.
      &      (KVALUE(6) .EQ. 1 .OR. KVALUE(6) .EQ. 2))THEN
           IF (IVALUE(6) .GE. 0 .AND. IVALUE(6) .LE. 3) THEN
             ISCHEM = IVALUE(6)
@@ -426,8 +428,8 @@ C ... Check for valid ids
    88   CONTINUE
         GO TO 5
       ELSE
-        WRITE(NOUT,8060)CVALUE(2)
-        WRITE(NTPOUT,8060)CVALUE(2)
+        WRITE(NOUT,8060)CVAL(2)
+        WRITE(NTPOUT,8060)CVAL(2)
         GO TO 5
       END IF
 C
@@ -437,8 +439,8 @@ C Read integer flag for accuracy checks (comparison of
 C various quantities between donor and recipient meshes
 C
       IF (KVALUE(2) .NE. 2) THEN
-        WRITE (NOUT,8900)CVALUE(2)
-        WRITE (NTPOUT,8900)CVALUE(2)
+        WRITE (NOUT,8900)CVAL(2)
+        WRITE (NTPOUT,8900)CVAL(2)
         GO TO 5
       END IF
       IACCU = IVALUE(2)
