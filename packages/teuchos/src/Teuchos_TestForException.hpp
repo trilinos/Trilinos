@@ -49,10 +49,10 @@
 #include "Teuchos_Assert.hpp"
 
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && TEUCHOS_SHOW_DEPRECATED_WARNINGS
 
 #  warning The non-namespaced macros in the included file \
- Teuchos_Assert.hpp are deprecated. \
+ Teuchos_TestForException.hpp are deprecated. \
  Please use the namespaced macros in the file Teuchos_Assert.hpp.
 
 #endif
@@ -60,7 +60,7 @@
 
 /** \brief Deprecated. */
 TEUCHOS_DEPRECATED inline
-void Teuchos::TestForException_incrThrowNumber()
+void TestForException_incrThrowNumber()
 {
   Teuchos::TestForException_incrThrowNumber();
 }
@@ -68,7 +68,7 @@ void Teuchos::TestForException_incrThrowNumber()
 
 /** \brief Deprecated. */
 TEUCHOS_DEPRECATED inline
-int Teuchos::TestForException_getThrowNumber()
+int TestForException_getThrowNumber()
 {
   return Teuchos::TestForException_getThrowNumber();
 }
@@ -76,7 +76,7 @@ int Teuchos::TestForException_getThrowNumber()
 
 /** \brief Deprecated. */
 TEUCHOS_DEPRECATED inline
-void Teuchos::TestForException_break( const std::string &msg )
+void TestForException_break( const std::string &msg )
 {
   Teuchos::TestForException_break(msg);
 }
@@ -84,7 +84,7 @@ void Teuchos::TestForException_break( const std::string &msg )
 
 /** \brief Deprecated. */
 TEUCHOS_DEPRECATED inline
-void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
+void TestForException_setEnableStacktrace(bool enableStrackTrace)
 {
   Teuchos::TestForException_setEnableStacktrace(enableStrackTrace);
 }
@@ -92,44 +92,44 @@ void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
 
 /** \brief Deprecated. */
 TEUCHOS_DEPRECATED inline
-bool Teuchos::TestForException_getEnableStacktrace()
+bool TestForException_getEnableStacktrace()
 {
   return Teuchos::TestForException_getEnableStacktrace();
 }
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+#define TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
   TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
+#define TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
+#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPT(throw_exception_test) \
+#define TEST_FOR_EXCEPT(throw_exception_test) \
   TEUCHOS_TEST_FOR_EXCEPT(throw_exception_test)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
+#define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
   TEUCHOS_TEST_FOR_EXCEPT_MSG(throw_exception_test, msg)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
+#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
   TEUCHOS_TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr)
 
 
 /** \brief Deprecated. */
-#define TEUCHOS_TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
+#define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
   TEUCHOS_TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr)
 
 
