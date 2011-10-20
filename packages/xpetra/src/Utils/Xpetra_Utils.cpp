@@ -1,3 +1,5 @@
+#include <Teuchos_TestForException.hpp>
+
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Exceptions.hpp"
 

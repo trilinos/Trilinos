@@ -1,6 +1,8 @@
 #ifndef MUELU_NOFACTORY_HPP
 #define MUELU_NOFACTORY_HPP
 
+#include <Teuchos_TestForException.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FactoryBase.hpp"

@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <Teuchos_Exceptions.hpp>
+#include <Teuchos_TestForException.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 
