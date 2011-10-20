@@ -20,6 +20,80 @@
 
 namespace Zoltan2 {
 
+//////////////////////////////////////////////////////////////////////////////
+// Specialization of InputTraits for Xpetra matrices.
+
+// Xpetra::CrsMatrix
+// KDDKDD:  Do we need specializations for Xpetra::EpetraCrsMatrix and
+// KDDKDD:  Xpetra::TpetraCrsMatrix
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsMatrix";}
+  static inline RCP<const Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
+    convertToXpetra(
+      const RCP<const Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > &a)
+    {
+      return a;
+    }
+};
+
+// Tpetra::CrsMatrix
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsMatrix";}
+
+  // Traits specific to Tpetra::CrsMatrix
+  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
+  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t> xtmatrix_t;
+  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
+
+  static inline RCP<const xmatrix_t> convertToXpetra(
+    const RCP<const tmatrix_t> &a)
+    {
+      return rcp(new xtmatrix_t(rcp_const_cast<tmatrix_t>(a)));
+    }
+};
+
+// Epetra_CrsMatrix
+template < >
+struct InputTraits<Epetra_CrsMatrix>
+{
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef int lid_t;
+  typedef int gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsMatrix";}
+  static inline RCP<const Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> >
+    convertToXpetra(const RCP<const Epetra_CrsMatrix> &a)
+    {
+      return rcp(new Xpetra::EpetraCrsMatrix(
+                             rcp_const_cast<Epetra_CrsMatrix>(a)));
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
 
@@ -27,8 +101,7 @@ namespace Zoltan2 {
                 objects that are not FillCompleted.
 
     The template parameter is the user's input object - an Epetra
-    matrix or a templated Tpetra matrix (through sub classes
-    EpetraCrsMatrixInput or TpetraCrsMatrixInput respectively),
+    matrix or a templated Tpetra matrix 
     or a templated Xpetra::CrsMatrix.
 */
 
@@ -43,7 +116,11 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
 
+  typedef Epetra_CrsMatrix ematrix_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
+  typedef Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t> xtmatrix_t;
+  typedef Xpetra::EpetraCrsMatrix xematrix_t;
 
   // TODO - add this value to the traits.
   enum InputAdapterType inputAdapterType() {return XpetraCrsMatrixAdapterType;}
@@ -58,33 +135,41 @@ public:
 
   /*! Constructor   
    */
-  XpetraCrsMatrixInput(const RCP<const xmatrix_t> &matrix):
-    matrix_(matrix), rowMap_(), colMap_(), base_(), offset_(), columnIds_()
+  // Constructor 
+  XpetraCrsMatrixInput(const RCP<const User> &inmatrix):
+    inmatrix_(inmatrix), 
+    matrix_(),
+    rowMap_(),
+    colMap_(),
+    base_(),
+    offset_(),
+    columnIds_()
   {
-   rowMap_ = matrix_->getRowMap();
-   colMap_ = matrix_->getColMap();
-   base_ = rowMap_->getIndexBase();
+    matrix_ = InputTraits<User>::convertToXpetra(inmatrix);
+    rowMap_ = matrix_->getRowMap();
+    colMap_ = matrix_->getColMap();
+    base_ = rowMap_->getIndexBase();
 
-   size_t nrows = matrix_->getNodeNumRows();
-   size_t nnz = matrix_->getNodeNumEntries();
-
-   offset_.resize(nrows+1, lid_t(0));
-   columnIds_.resize(nnz);
-   ArrayView<const lid_t> indices;
-   ArrayView<const scalar_t> nzs;
-   lid_t next = 0;
-   for (size_t i=0; i < nrows; i++){
-     lid_t row = i + base_;
-     lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
-     matrix_->getLocalRowView(row, indices, nzs);
-     for (lid_t j=0; j < nnz; j++){
-       // TODO - this will be slow
-       //   Is it possible that global columns ids might be stored in order?
-       columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
-     }
-     offset_[i+1] = offset_[i] + nnz;
-   } 
-  }
+    size_t nrows = matrix_->getNodeNumRows();
+    size_t nnz = matrix_->getNodeNumEntries();
+ 
+    offset_.resize(nrows+1, lid_t(0));
+    columnIds_.resize(nnz);
+    ArrayView<const lid_t> indices;
+    ArrayView<const scalar_t> nzs;
+    lid_t next = 0;
+    for (size_t i=0; i < nrows; i++){
+      lid_t row = i + base_;
+      lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
+      matrix_->getLocalRowView(row, indices, nzs);
+      for (lid_t j=0; j < nnz; j++){
+        // TODO - this will be slow
+        //   Is it possible that global columns ids might be stored in order?
+        columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
+      }
+      offset_[i+1] = offset_[i] + nnz;
+    } 
+  };
 
   ////////////////////////////////////////////////////
   // The MatrixInput interface.
@@ -204,12 +289,14 @@ public:
 
 private:
 
+  RCP<const User> inmatrix_;
   RCP<const xmatrix_t> matrix_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;
+
 };
   
 }  //namespace Zoltan2

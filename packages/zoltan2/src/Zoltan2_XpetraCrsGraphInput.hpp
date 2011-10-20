@@ -20,6 +20,82 @@
 
 namespace Zoltan2 {
 
+/////////////////////////////////////////////////////////////////////////////
+// Specializations of InputTraits for Xpetra, Epetra, and Tpetra graphs.
+
+// Xpetra::CrsGraph
+// KDDKDD:  Do we need specializations for Xpetra::EpetraCrsGraph and
+// KDDKDD:  Xpetra::TpetraCrsGraph
+template <typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef float         scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsGraph";}
+  static inline RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> >
+    convertToXpetra(
+      const RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> > &a)
+    {
+      return a;
+    }
+};
+
+
+// Tpetra::CrsGraph
+template <typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef float         scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsGraph";}
+
+  // Traits specific to Tpetra::CrsGraph
+  typedef typename Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef typename Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
+  typedef typename Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
+
+  static inline RCP<const xgraph_t> convertToXpetra(
+    const RCP<const tgraph_t> &a)
+    {
+      return rcp(new xtgraph_t(rcp_const_cast<tgraph_t>(a)));
+    }
+};
+
+
+// Epetra_CrsGraph
+template < >
+struct InputTraits<Epetra_CrsGraph>
+{
+  typedef float scalar_t;
+  typedef int   lno_t;
+  typedef int   gno_t;
+  typedef int   lid_t;
+  typedef int   gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsGraph";}
+  static inline RCP<const Xpetra::CrsGraph<lno_t,gno_t,node_t> >
+    convertToXpetra(const RCP<const Epetra_CrsGraph> &a)
+    {
+      return rcp(new Xpetra::EpetraCrsGraph(
+                             rcp_const_cast<Epetra_CrsGraph>(a)));
+    }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
@@ -28,8 +104,7 @@ namespace Zoltan2 {
                 objects that are not FillCompleted.
 
     The template parameter is the user's input object - an Epetra
-    graph or a templated Tpetra graph (through sub classes 
-    EpetraCrsGraphInput or TpetraCrsGraphInput respectively), 
+    graph or a templated Tpetra graph 
     or a templated Xpetra::CrsGraph.
 */
 
@@ -45,6 +120,8 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
+  typedef Xpetra::EpetraCrsGraph xegraph_t;
 
   /*! Name of input adapter type   TODO make this a trait
    */
@@ -54,13 +131,16 @@ public:
    */
   ~XpetraCrsGraphInput() { }
 
-  /*! Constructor with a Xpetra::CrsGraph
+  /*! Constructor
    */
-  XpetraCrsGraphInput(const RCP<const xgraph_t> &graph):
-    graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
+  XpetraCrsGraphInput(const RCP<const User> &ingraph):
+    ingraph_(ingraph),
+    graph_(),
+    rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
   {
+    graph_ = InputTraits<User>::convertToXpetra(ingraph);
     makeOffsets();
   }
 
@@ -368,9 +448,14 @@ public:
   /*! Access to xpetra graph 
    */ 
    
-  RCP<const xgraph_t> getGraph() const
+  RCP<const xgraph_t> getXpetraGraph() const
   {
     return graph_;
+  }
+
+  RCP<const User> getUserGraph() const
+  {
+    return ingraph_;
   }
 
 
@@ -384,6 +469,7 @@ public:
 private:
 
 
+  RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > colMap_;

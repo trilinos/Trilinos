@@ -101,11 +101,11 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Zoltan2 user data input adapters
 
-  typedef Zoltan2::EpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
-  typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
   typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
-  typedef Zoltan2::EpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
-  typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+  typedef Zoltan2::XpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+  typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
   typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
 
   // Test adapters

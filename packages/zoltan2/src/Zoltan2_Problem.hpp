@@ -5,10 +5,10 @@
 #include <Zoltan2_Environment.hpp>
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <Zoltan2_Model.hpp>
+#include <Zoltan2_GraphModel.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
 
@@ -26,16 +26,16 @@ namespace Zoltan2{
 //! \class Problem
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-template<typename User>
+template<typename Adapter>
 class Problem {
 public:
   
   // Constructors (there will be several to support novice interface)
   // Each will make sure the InputAdapter, parameters, etc. are set 
   // correctly before calling a common problem construction function.
-  //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
-  //KDDKDD How does simple interface work with User template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  Problem(InputAdapter<User> *,
+  //KDDKDD How does simple interface work with Adapter template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
+  //KDDKDD How does simple interface work with Adapter template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
+  Problem(Adapter *,
           Teuchos::ParameterList *params,
           const RCP<const Teuchos::Comm<int> > &comm = 
                        Teuchos::DefaultComm<int>::getComm());
@@ -48,8 +48,9 @@ public:
   virtual void redistribute() = 0;
 
 protected:
-  RCP<InputAdapter<User> > inputAdapter_;
-  RCP<Model<InputAdapter<User> > > model_;  
+  RCP<Adapter> inputAdapter_;
+  RCP<GraphModel<Adapter> > graphModel_;  
+  // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
   RCP<const Teuchos::Comm<int> > comm_;
   RCP<const Environment> env_;
@@ -59,31 +60,31 @@ private:
 };
 
 
-#if 0 // KDDKDD How does simple interface work with User template??
+#if 0 // KDDKDD How does simple interface work with Adapter template??
 ////////////////////////////////////////////////////////////////////////
 //! Problem class constructor:  Tpetra matrix input must be converted
 //! to XpetraMatrixAdapter.
-template <typename User>
-Problem<User>::Problem(
+template <typename Adapter>
+Problem<Adapter>::Problem(
   Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> &A,
   Teuchos::ParameterList &p
 ) 
 {
   HELLO;
-  inputAdapter_ = rcp(new TpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
+  inputAdapter_ = rcp(new XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
                                 (rcpFromRef(A)));
   params_ = rcpFromRef(p);
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() << " " << inputAdapter_->inputAdapterName() << endl;
 }
 #endif
 
-template <typename User>
-Problem<User>::Problem(
-  InputAdapter<User> *input,
+template <typename Adapter>
+Problem<Adapter>::Problem(
+  Adapter *input,
   Teuchos::ParameterList *params,
   const RCP<const Teuchos::Comm<int> > &comm
 ) :
-  inputAdapter_(RCP<InputAdapter<User> >(input,false)),
+  inputAdapter_(RCP<Adapter>(input,false)),
   params_(RCP<Teuchos::ParameterList>(params,false)),
   comm_(comm),
   env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
@@ -92,7 +93,7 @@ Problem<User>::Problem(
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
        << " " << inputAdapter_->inputAdapterName() 
        << " sizeof(scalar_t)= " 
-       << sizeof(typename InputAdapter<User>::scalar_t) 
+       << sizeof(typename Adapter::scalar_t) 
        << endl;
 }
 

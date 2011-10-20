@@ -24,6 +24,8 @@ struct InputTraits {
   //   gid_t    :  user type that represents a globally unique identifier
   //               for data items.
   //   node_t   :  Kokkos node.
+  //   name     :  Name of the User data being used; currently used
+  //               only for debugging.
   // 
   // Default typedefs are included here. If a specialization of User is
   // not provided, these types will be used.
@@ -33,7 +35,20 @@ struct InputTraits {
   typedef int   lid_t;
   typedef long  gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "InputAdapter";}
 };
+
+#ifdef KDDKDD_CAN_WE_LEAVE_SPECIALIZATIONS_IN_SPECIFIC_INPUT_ADAPTER_FILES
+// KDDKDD For now, I left the specializations in the same files as their
+// KDDKDD specific input adapters.  That way, I could add methods (e.g.,
+// KDDKDD convertToXpetra) to the InputTraits
+// KDDKDD for specific specializations (Epetra, Tpetra, Xpetra) without
+// KDDKDD this interface file becoming confusing for users (who might 
+// KDDKDD think they need to implement convertToXpetra for every input adapter.
+// KDDKDD Also, I envision users would implement their own Traits and Adapters
+// KDDKDD in one file, rather than edit this file.
+// KDDKDD If this idea is faulty, we can restore this code, adding the 
+// KDDKDD extra methods for Epetra, Tpetra and Xpetra specializations.
 
 template < >
 struct InputTraits<Epetra_CrsGraph>
@@ -111,6 +126,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
 };
 
+#endif  //KDDKDD_CAN_WE_LEAVE_SPECIALIZATIONS_IN_SPECIFIC_INPUT_ADAPTER_FILES
 }
 
 #endif

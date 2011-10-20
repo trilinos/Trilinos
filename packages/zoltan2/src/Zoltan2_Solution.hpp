@@ -23,7 +23,7 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <typename User>
+template <typename Adapter>
   class Solution
 {
 };

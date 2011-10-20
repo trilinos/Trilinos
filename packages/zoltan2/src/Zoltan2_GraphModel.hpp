@@ -159,10 +159,6 @@ public:
 // Graph model derived from XpetraCrsMatrixInput.
 //    We know that Xpetra input does not need an IdentifierMap
 //
-// TODO To build GraphModel from EpetraCrsMatrixInput<Epetra_CrsMatrix>
-//   we need to upcast to XpetraCrsMatrixInput<Epetra_CrsMatrix> and
-//   and similarly for TpetraCrsMatrixInput.  Should we create
-//   specializations for those two?  A trade off.
 ////////////////////////////////////////////////////////////////
 
 /*! Zoltan2::GraphModel<XpetraCrsMatrixInput>

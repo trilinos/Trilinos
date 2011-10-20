@@ -19,24 +19,24 @@ using Teuchos::rcp_dynamic_cast;
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-template<typename User>
-class PartitioningProblem : public Problem<User>
+template<typename Adapter>
+class PartitioningProblem : public Problem<Adapter>
 {
 protected:
   void createPartitioningProblem();
 
-  RCP<PartitioningSolution<User> > solution_;
+  RCP<PartitioningSolution<Adapter> > solution_;
 
 public:
 
   // Destructor
   virtual ~PartitioningProblem() {};
 
-#if 0  // KDDKDD Don't know how to use shortcut with User template
+#if 0  // KDDKDD Don't know how to use shortcut with Adapter template
   //! Constructor with Tpetra Matrix interface.
   PartitioningProblem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
     ParameterList &p
-  ) : Problem<User>(A, p) 
+  ) : Problem<Adapter>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
@@ -44,8 +44,8 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(InputAdapter<User> *A, Teuchos::ParameterList *p) 
-                      : Problem<User>(A, p) 
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) 
+                      : Problem<Adapter>(A, p) 
   {
     HELLO;
     createPartitioningProblem();
@@ -58,20 +58,20 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-template <typename User>
-void PartitioningProblem<User>::solve()
+template <typename Adapter>
+void PartitioningProblem<Adapter>::solve()
 {
   HELLO;
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  // AlgScotch<User> alg(this->model_, this->solution_, this->params_);
+  // AlgScotch<Adapter> alg(this->model_, this->solution_, this->params_);
 }
 
 ////////////////////////////////////////////////////////////////////////
-template <typename User>
-void PartitioningProblem<User>::redistribute()
+template <typename Adapter>
+void PartitioningProblem<Adapter>::redistribute()
 {
   HELLO;
 }
@@ -82,15 +82,13 @@ void PartitioningProblem<User>::redistribute()
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
 
-template <typename User>
-void PartitioningProblem<User>::createPartitioningProblem()
+template <typename Adapter>
+void PartitioningProblem<Adapter>::createPartitioningProblem()
 {
   HELLO;
   cout << __func__ << " input adapter type " 
        << this->inputAdapter_->inputAdapterType() << " " 
        << this->inputAdapter_->inputAdapterName() << endl;
-
-  InputAdapterType adapterType = this->inputAdapter_->inputAdapterType();
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
@@ -108,57 +106,11 @@ void PartitioningProblem<User>::createPartitioningProblem()
 
   case GraphModelType:
 
-    switch (adapterType) {
+    cout << __func__ << "Xpetra matrix adapter switch" << endl;
 
-    case XpetraCrsMatrixAdapterType: {
-      cout << __func__ << "Xpetra matrix adapter switch" << endl;
-
-      GraphModel<XpetraCrsMatrixInput<User> > *model =
-         new GraphModel<XpetraCrsMatrixInput<User> >(
-                        rcp_dynamic_cast<const XpetraCrsMatrixInput<User> >
-                                        (this->inputAdapter_, true),
-                        this->comm_,
-                        this->env_);
-      delete model;  //KDDKDD REMOVE LATER WHEN HAVE RCPs WORKING.
-
-      //KDDKDD NOT WORKING YET RCP<GraphModel<XpetraCrsMatrixInput<User> > > rcpmodel = rcp(model);
-
-      //KDDKDD NOT WORKING YET this->model_ = rcp_dynamic_cast<GraphModel<InputAdapter<User> > >(rcpmodel, true);
-                       
-      // KDDKDD Question:  Not clear on use of RCPs here; compiler complains
-      // KDDKDD that it cannot do conversions when I use GraphModel and 
-      // KDDKDD XpetraCrsMatrixInput.
-      break;
-    }
-
-    case MatrixAdapterType: {
-      cout << __func__ << " Matrix adapter switch" << endl;
-      GraphModel<MatrixInput<User> > *model = 
-           new GraphModel<MatrixInput<User> >(//KDD No GraphModel 
-                                              //KDD constructor yet.
-                                              //KDD this->inputAdapter_,
-                                              //KDD this->comm_,
-                                              //KDD this->env_
-                                              );
-      //KDDKDD NOT WORKING YET this->model_ = RCP<GraphModel<MatrixInput<User> > >(model);
-      break;
-    }
-
-    case GraphAdapterType:
-    case MeshAdapterType:
-    case CoordAdapterType:
-    case IdAdapterType:
-      cout << __func__ 
-           << " PartitioningProblem not yet implemented for this input adapter "
-           << this->inputAdapter_->inputAdapterName() << endl;
-      break;
-
-    default:
-      cout << "Invalid adapter type; this condition should never happen." 
-           << endl;
-      break;
-    }
-
+    this->graphModel_ = RCP<GraphModel<Adapter> > 
+                        (new GraphModel<Adapter>(this->inputAdapter_,
+                                                 this->comm_, this->env_));
     break;
 
   case HypergraphModelType:

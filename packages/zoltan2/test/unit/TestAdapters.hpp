@@ -28,10 +28,6 @@
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_EpetraUtils.hpp>
 
-#include <Zoltan2_EpetraCrsGraphInput.hpp>
-#include <Zoltan2_TpetraCrsGraphInput.hpp>
-#include <Zoltan2_EpetraCrsMatrixInput.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 
@@ -78,6 +74,8 @@ template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO> xtcrsMatrix_t;
@@ -85,10 +83,10 @@ private:
     typedef Xpetra::CrsGraph<LNO, GNO> xcrsGraph_t;
     typedef Tpetra::Map<LNO, GNO> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
-    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
     typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
@@ -349,6 +347,8 @@ template <>
 class TestAdapters<double,int,int,int,int,Kokkos::DefaultNode::DefaultNodeType>
 {
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<double, int, int> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<double, int, int> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<double, int, int> xtcrsMatrix_t;
@@ -356,10 +356,10 @@ private:
     typedef Xpetra::CrsGraph<int, int> xcrsGraph_t;
     typedef Tpetra::Map<int, int> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
-    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
     typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
@@ -521,7 +521,7 @@ public:
         RCP<EpetraCrsGraphInput> graphAdapter = 
           getEpetraCrsGraphInputAdapter();
 
-        RCP<const Epetra_CrsGraph> egraph = graphAdapter->getGraph();
+        RCP<const Epetra_CrsGraph> egraph = graphAdapter->getUserGraph();
 
         RCP<Epetra_CrsMatrix> matrix = rcp(
           new Epetra_CrsMatrix(Copy, *egraph));

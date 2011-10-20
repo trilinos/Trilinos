@@ -8,7 +8,7 @@
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 
 using Teuchos::RCP;
 using namespace std;
@@ -30,6 +30,8 @@ typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
+
+typedef Zoltan2::XpetraCrsMatrixInput<SparseMatrix> SparseMatrixAdapter;
 
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
@@ -87,10 +89,10 @@ int main(int narg, char** arg)
   params.set("GRAPH_PACKAGE", "PTSCOTCH");
 
   ////// Create an input adapter for the Tpetra matrix.
-  Zoltan2::TpetraCrsMatrixInput<SparseMatrix> adapter(origMatrix);
+  SparseMatrixAdapter adapter(origMatrix);
 
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<SparseMatrix> problem(&adapter, &params);
+  Zoltan2::PartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
   problem.redistribute();
 
