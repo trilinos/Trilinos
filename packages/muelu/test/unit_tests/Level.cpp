@@ -70,7 +70,6 @@ namespace MueLuTests {
     TEST_EQUALITY(l.IsAvailable("Graph", factory.get()), false);
   }
 
-#ifdef TO_BE_FIXED
   TEUCHOS_UNIT_TEST(Level, RequestReleaseFactory)
   {
     Level l;
@@ -94,7 +93,6 @@ namespace MueLuTests {
     TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
     TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
   }
-#endif
 
 } // namespace MueLuTests
 

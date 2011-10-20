@@ -188,6 +188,22 @@ namespace MueLu {
       return false;
     }
 
+    //! returns how often factory is generating factory of requested variables in Needs
+    //! used to decide whether Level.Release(factory) for releasing factory dependencies can
+    //! be called safely
+    int CountRequestedFactory(const FactoryBase* factory) {
+      int cnt = 0;
+      std::vector<std::string> ekeys = RequestedKeys();
+      for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
+        std::vector<const FactoryBase*> ehandles = RequestedFactories(*it);
+        for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
+          if (*kt == factory) // factory is generating factory of requested variable '*it'
+            cnt++;
+        }
+      }
+      return cnt;
+    }
+
     //! Test whether a factory is among the generating factories of data that is already available
     bool IsAvailableFactory(const FactoryBase* factory) {
       std::vector<std::string> ekeys = dataTable_.GetKeyList();
