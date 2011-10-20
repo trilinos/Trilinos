@@ -16,6 +16,10 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+// Epetra
+#include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_VectorIn.h>
+
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -43,9 +47,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Aggregates.hpp"
-
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
 
 //
 typedef double Scalar;

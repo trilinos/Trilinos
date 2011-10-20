@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
   ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
-    std::cout << "||Residual|| = " << std::setiosflags(ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
+    std::cout << "||Residual|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
 
   return EXIT_SUCCESS;
 
