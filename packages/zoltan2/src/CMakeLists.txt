@@ -62,6 +62,7 @@ APPEND_SET(HEADERS
       Zoltan2_IdentifierMap.hpp
       Zoltan2_IdentifierTraits.hpp
       Zoltan2_InputAdapter.hpp
+      Zoltan2_InputTraits.hpp
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
       Zoltan2_Model.hpp

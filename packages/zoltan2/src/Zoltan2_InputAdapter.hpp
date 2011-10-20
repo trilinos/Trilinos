@@ -16,6 +16,7 @@
 #define _ZOLTAN2_INPUTADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_InputTraits.hpp>
 
 namespace Zoltan2 {
 
@@ -49,32 +50,6 @@ enum InputAdapterType {
   CoordAdapterType,
   IdAdapterType,
   XpetraCrsMatrixAdapterType  // Special case for performance with Epetra/Tpetra
-};
-
-template <typename User>
-struct InputTraits {
-  // Input Adapter implementations must provide the following typedefs
-  // for use in Zoltan2:
-  //   scalar_t :  weights and coordinates
-  //   lno_t    :  ordinal (e.g., int, long, int64_t) that can represent
-  //               the number of local data items.
-  //   gno_t    :  ordinal (e.g., int, long, int64_t) that can represent
-  //               the number of global data items.
-  //   lid_t    :  user type that represents a locally unique identifier 
-  //               for data items.
-  //   gid_t    :  user type that represents a globally unique identifier 
-  //               for data items.
-  //   node_t   :  Kokkos node.
-  //
-  // Default typedefs are included here. If a specialization of User is
-  // not provided, these types will be used.
-  typedef float scalar_t;
-  typedef int   lno_t;
-  typedef long  gno_t;
-  typedef int   lid_t;
-  typedef long  gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
-  static inline std::string name() {return "InputAdapter";}
 };
 
 template <typename User>

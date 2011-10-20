@@ -41,7 +41,6 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
     }
 };
 
-
 /*! Zoltan2::XpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
