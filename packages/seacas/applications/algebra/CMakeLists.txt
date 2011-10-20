@@ -12,7 +12,7 @@ INCLUDE_DIRECTORIES(
 
 SET(HEADERS "")
 SET(SOURCES 
-   addvar.f   chkpar.f   dbinam.f   dbpqa.f    dooper.f   lnksto.f   myamod.f   postfx.f   rweval.f   sordel.f   unode.f
+   addvar.f   chkpar.f   dbinam.f   dooper.f   lnksto.f   myamod.f   postfx.f   rweval.f   sordel.f   unode.f
    chksyn.f   dbiqa.f    dbptim.f   eval.f     lnkvar.f   mymax.f    princ3.f   rwmap.f    sortid.f   wconat.f
    alicmd.f   cmdtim.f   dbivtt.f   dbvini.f   filtel.f   loceqv.f   mymin.f    prtdeb.f   rwnmap.f   store.f    welb.f
    aparse.f   cnvnum.f   dblist.f   delcmd.f   fixone.f   locnam.f   mysign.f   pxn.f      rwxyz.f    svcord.f   wnam.f

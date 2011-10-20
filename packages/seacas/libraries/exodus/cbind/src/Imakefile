@@ -43,7 +43,7 @@ REQUIREDLIBS = -L$(SHLIBDIR) $(NETCDF)
 #define DoNormalLib YES
 #define DoSharedLib BuildSharedExodusLibrary
 #define LibName exodus
-SOREV = 4
+SOREV = 5
 #define SoRev SOREV
 
 DEFINES = $(PICFLAGS)

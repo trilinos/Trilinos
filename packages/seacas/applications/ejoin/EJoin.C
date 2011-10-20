@@ -1162,8 +1162,7 @@ namespace {
 				    const std::string &field_name)
   {
 
-    size_t isize = ige->get_field(field_name).get_size();
-    assert (isize == oge->get_field(field_name).get_size());
+    assert (ige->get_field(field_name).get_size() == oge->get_field(field_name).get_size());
 
     std::vector<double> data;
     ige->get_field_data(field_name, data);
