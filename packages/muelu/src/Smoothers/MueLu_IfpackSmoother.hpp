@@ -285,11 +285,12 @@ namespace MueLu {
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
 
-    //! pointer to Ifpack solver object
-    RCP<Ifpack_Preconditioner> prec_;
-
     //! Operator. Not used directly, but held inside of prec_. So we have to keep an RCP pointer to it!
     RCP<Operator> A_;
+
+    //! pointer to Ifpack solver object
+    // Note: prec_ must be destroyed before A_, so declaration of prec_ appears after declaration of A_
+    RCP<Ifpack_Preconditioner> prec_;
 
     //! A Factory
     RCP<FactoryBase> AFact_;
