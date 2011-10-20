@@ -32,9 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#include <Internals.h>
+#include <EP_Internals.h>
 
-#include <ExodusEntity.h>
+#include <EP_ExodusEntity.h>
 
 #include <algorithm>
 #include <cstring>

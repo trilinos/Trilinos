@@ -39,7 +39,7 @@
 
 #include <string>
 
-#include <ParallelDisks.h>
+#include <EP_ParallelDisks.h>
 #include <to_string.h>
 
 /*****************************************************************************/

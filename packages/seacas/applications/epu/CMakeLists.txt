@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(HEADERS "")
-SET(SOURCES ExodusFile.C Internals.C ParallelDisks.C SystemInterface.C )
+SET(SOURCES EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface.C )
 
 PACKAGE_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS suplib exodus)
 PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)

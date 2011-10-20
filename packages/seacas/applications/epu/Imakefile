@@ -11,7 +11,7 @@ LOCAL_LDFLAGS = -LANG:std
 
 LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm
 
-SRCS =	ExodusFile.C Internals.C ParallelDisks.C SystemInterface.C epu.C
+SRCS =	EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface.C epu.C
 
 OBJS = $(SRCS:.C=.o)
 

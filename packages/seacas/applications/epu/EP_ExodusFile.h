@@ -32,83 +32,48 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#ifndef SEACAS_Variables_H
-#define SEACAS_Variables_H
-#include <smart_assert.h>
+#ifndef SEACAS_ExodusFile_H
+#define SEACAS_ExodusFile_H
+
 #include <string>
-#include <cstring>
 #include <vector>
-#include "ObjectType.h"
 
 namespace Excn {
-  enum InOut {IN = 1, OUT = 2};
+
+  class SystemInterface;
+  class ExodusFile
+    {
+    public:
+      explicit ExodusFile(int processor);
+      ~ExodusFile();
   
-  typedef std::vector<int>  IntVector;
+      static bool initialize(const SystemInterface& si, int start_part, int part_count);
+      static bool create_output(const SystemInterface& si, int cycle);
+      static void close_all();
+      
+      static int  output();
+      static int  io_word_size() {return ioWordSize_;}
+      operator int () const;
+      static int  max_name_length() {return maximumNameLength_;}
   
-  struct Variables {
-    Variables(ObjectType otype) : objectType(otype), outputCount(0), addProcessorId(false)
-    {
-      SMART_ASSERT(otype == EBLK || otype == NSET || otype == SSET || otype == NODE || otype == GLOBAL);
-    }
-    
-    int count(InOut in_out = IN) const
-    {
-      int ret_val = 0;
-      switch (in_out) {
-      case IN:
-	ret_val = index_.size() - (addProcessorId ? 1 : 0);
-	break;
-      case OUT:
-	ret_val = outputCount;
-	break;
-      }
-      return ret_val;
-    }
+    private:
+      int myProcessor_;
+      static std::vector<std::string> filenames_;
+      static std::vector<int> fileids_;
+      static int processorCount_;
+      static int partCount_;
+      static int startPart_;
+      static int outputId_;
+      static int ioWordSize_;
+      static int cpuWordSize_;
+      static std::string outputFilename_;
+      static bool keepOpen_;
+      static int maximumNameLength_;
 
-    const char *label() const
-    {
-      switch(objectType) {
-      case EBLK:
-	return "element";
-      case NSET:
-	return "nodeset";
-      case GLOBAL:
-	return "global";
-      case NODE:
-	return "nodal";
-      case SSET:
-	return "sideset";
-      default:
-	return "UNKNOWN";
-      }
-    }
-
-    ex_entity_type type() const
-    {
-      switch(objectType) {
-      case EBLK:
-	return EX_ELEM_BLOCK;
-      case NSET:
-	return EX_NODE_SET;
-      case SSET:
-	return EX_SIDE_SET;
-      case NODE:
-	return EX_NODAL;
-      case GLOBAL:
-	return EX_GLOBAL;
-      default:
-	return EX_INVALID;
-      }
-    }
-
-    bool add_processor_id() const {return addProcessorId;}
-    
-    ObjectType objectType;
-    int outputCount;
-    bool addProcessorId;
-    IntVector index_;
-    std::string type_;
-  };
+      // Disable copying and assignment...
+      ExodusFile(const ExodusFile&);
+      ExodusFile operator=(const ExodusFile&);
+    };
 }
+#endif /* SEACAS_ExodusFil_H */
 
-#endif

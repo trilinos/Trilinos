@@ -32,55 +32,83 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
-#ifndef ParallelDisksH
-#define ParallelDisksH
-
-#include "CodeTypes.h"
+#ifndef SEACAS_Variables_H
+#define SEACAS_Variables_H
+#include <smart_assert.h>
 #include <string>
+#include <cstring>
+#include <vector>
+#include "EP_ObjectType.h"
 
-/*****************************************************************************/
 namespace Excn {
-  class ParallelDisks 
+  enum InOut {IN = 1, OUT = 2};
+  
+  typedef std::vector<int>  IntVector;
+  
+  struct Variables {
+    Variables(ObjectType otype) : objectType(otype), outputCount(0), addProcessorId(false)
     {
-      //: This class declares the unique, global object that represents the
-      //: disk farm on a parallel machine.  Its function is to map
-      //: processors onto disk files.
+      SMART_ASSERT(otype == EBLK || otype == NSET || otype == SSET || otype == NODE || otype == GLOBAL);
+    }
+    
+    int count(InOut in_out = IN) const
+    {
+      int ret_val = 0;
+      switch (in_out) {
+      case IN:
+	ret_val = index_.size() - (addProcessorId ? 1 : 0);
+	break;
+      case OUT:
+	ret_val = outputCount;
+	break;
+      }
+      return ret_val;
+    }
 
-    public:
+    const char *label() const
+    {
+      switch(objectType) {
+      case EBLK:
+	return "element";
+      case NSET:
+	return "nodeset";
+      case GLOBAL:
+	return "global";
+      case NODE:
+	return "nodal";
+      case SSET:
+	return "sideset";
+      default:
+	return "UNKNOWN";
+      }
+    }
 
-      ParallelDisks();
-      ~ParallelDisks();
+    ex_entity_type type() const
+    {
+      switch(objectType) {
+      case EBLK:
+	return EX_ELEM_BLOCK;
+      case NSET:
+	return EX_NODE_SET;
+      case SSET:
+	return EX_SIDE_SET;
+      case NODE:
+	return EX_NODAL;
+      case GLOBAL:
+	return EX_GLOBAL;
+      default:
+	return EX_INVALID;
+      }
+    }
 
-      void Number_of_Raids(int);
-      void Raid_Offset(int);
-
-      int Number_of_Raids() const;
-      int Raid_Offset() const;
-
-      static void Create_IO_Filename(std::string &, int num, int total_num);
-      int  IO_Node_Number(int) const;
-      int  Logical_Node_Number(int) const;
-
-      void rename_single_file_for_mp(const std::string& dir, std::string& name) const;
-      void rename_file_for_mp(const std::string& rootdir, const std::string& subdir, 
-			      std::string& name, int num, int total_num) const;
-      void rename_file_for_no_overwrite(std::string& name);
-
-    private:
-
-      std::string* disk_names;
-
-      int    number_of_raids;
-      int    raid_offset;
-
-
-      void create_disk_names();
-
-      // not defined (the parallel disks object is unique!)
-      ParallelDisks(const ParallelDisks&);
-      ParallelDisks& operator=(const ParallelDisks&);
-
-    };
+    bool add_processor_id() const {return addProcessorId;}
+    
+    ObjectType objectType;
+    int outputCount;
+    bool addProcessorId;
+    IntVector index_;
+    std::string type_;
+  };
 }
+
 #endif

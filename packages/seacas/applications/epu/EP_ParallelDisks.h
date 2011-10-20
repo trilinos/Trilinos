@@ -32,49 +32,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#ifndef SEACAS_ExodusFile_H
-#define SEACAS_ExodusFile_H
 
-#include "CodeTypes.h"
+#ifndef ParallelDisksH
+#define ParallelDisksH
+
 #include <string>
-#include <vector>
 
+/*****************************************************************************/
 namespace Excn {
-
-  class SystemInterface;
-  class ExodusFile
+  class ParallelDisks 
     {
-    public:
-      explicit ExodusFile(int processor);
-      ~ExodusFile();
-  
-      static bool initialize(const SystemInterface& si, int start_part, int part_count);
-      static bool create_output(const SystemInterface& si, int cycle);
-      static void close_all();
-      
-      static int  output();
-      static int  io_word_size() {return ioWordSize_;}
-      operator int () const;
-      static int  max_name_length() {return maximumNameLength_;}
-  
-    private:
-      int myProcessor_;
-      static std::vector<std::string> filenames_;
-      static std::vector<int> fileids_;
-      static int processorCount_;
-      static int partCount_;
-      static int startPart_;
-      static int outputId_;
-      static int ioWordSize_;
-      static int cpuWordSize_;
-      static std::string outputFilename_;
-      static bool keepOpen_;
-      static int maximumNameLength_;
+      //: This class declares the unique, global object that represents the
+      //: disk farm on a parallel machine.  Its function is to map
+      //: processors onto disk files.
 
-      // Disable copying and assignment...
-      ExodusFile(const ExodusFile&);
-      ExodusFile operator=(const ExodusFile&);
+    public:
+
+      ParallelDisks();
+      ~ParallelDisks();
+
+      void Number_of_Raids(int);
+      void Raid_Offset(int);
+
+      int Number_of_Raids() const;
+      int Raid_Offset() const;
+
+      static void Create_IO_Filename(std::string &, int num, int total_num);
+      int  IO_Node_Number(int) const;
+      int  Logical_Node_Number(int) const;
+
+      void rename_single_file_for_mp(const std::string& dir, std::string& name) const;
+      void rename_file_for_mp(const std::string& rootdir, const std::string& subdir, 
+			      std::string& name, int num, int total_num) const;
+      void rename_file_for_no_overwrite(std::string& name);
+
+    private:
+
+      std::string* disk_names;
+
+      int    number_of_raids;
+      int    raid_offset;
+
+
+      void create_disk_names();
+
+      // not defined (the parallel disks object is unique!)
+      ParallelDisks(const ParallelDisks&);
+      ParallelDisks& operator=(const ParallelDisks&);
+
     };
 }
-#endif /* SEACAS_ExodusFil_H */
-
+#endif

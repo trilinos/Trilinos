@@ -65,13 +65,13 @@ typedef std::vector<std::string> StringVector;
 typedef std::vector<int>    GlobalMap;
 typedef GlobalMap::iterator GMapIter;
 
-#include "Internals.h"
-#include "ExodusFile.h"
-#include "ExodusEntity.h"
-#include "SystemInterface.h"
-#include "Version.h"
-#include "Variables.h"
-#include "ObjectType.h"
+#include "EP_Internals.h"
+#include "EP_ExodusFile.h"
+#include "EP_ExodusEntity.h"
+#include "EP_SystemInterface.h"
+#include "EP_Version.h"
+#include "EP_Variables.h"
+#include "EP_ObjectType.h"
 
 #include <exodusII.h>
 

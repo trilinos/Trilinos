@@ -41,7 +41,7 @@
 #include <vector>
 #include <iostream>
 #include <string.h>
-#include "ObjectType.h"
+#include "EP_ObjectType.h"
 
 namespace Excn {
   typedef std::vector<int>  IntVector;
