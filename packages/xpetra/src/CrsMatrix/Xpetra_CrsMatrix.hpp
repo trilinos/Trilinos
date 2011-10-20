@@ -91,10 +91,10 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     virtual bool isLocallyIndexed() const = 0;
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     virtual bool isGloballyIndexed() const = 0;
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
@@ -106,7 +106,7 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
-    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
 
     //@}

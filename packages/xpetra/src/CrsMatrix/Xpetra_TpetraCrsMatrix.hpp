@@ -123,10 +123,10 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     size_t getNodeMaxNumRowEntries() const { return mtx_->getNodeMaxNumRowEntries(); }
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return mtx_->isLocallyIndexed(); }
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     bool isGloballyIndexed() const { return mtx_->isGloballyIndexed(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
@@ -241,7 +241,7 @@ namespace Xpetra {
     
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
-  }; // TpetraImport class
+  }; // TpetraCrsMatrix class
 
   // TODO: move that elsewhere
   // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
