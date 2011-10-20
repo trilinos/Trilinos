@@ -11,6 +11,7 @@
 //
 //    TODO test GraphModel for a matrix that is not Xpetra, that
 //         that global IDs that are not Teuchos::Ordinals.
+//    TODO test Epetra inputs
 
 #include <string>
 #include <vector>
@@ -163,20 +164,16 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   // Create graph models with different user objects and test them.
 
-  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixUpcast;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixUpcast;
 
   typedef Zoltan2::GraphModel<XpetraCrsMatrixInput> xGraphModel_t;
-  typedef Zoltan2::GraphModel<EpetraCrsMatrixUpcast> eGraphModel_t;
-  typedef Zoltan2::GraphModel<TpetraCrsMatrixUpcast> tGraphModel_t;
+  typedef Zoltan2::GraphModel<EpetraCrsMatrixInput> eGraphModel_t;
+  typedef Zoltan2::GraphModel<TpetraCrsMatrixInput> tGraphModel_t;
 
   int fail = 0;
   if (includeEpetra){
     eGraphModel_t *graph = NULL;
     try{
-      RCP<EpetraCrsMatrixUpcast> upcastEmi = 
-        Teuchos::rcp_implicit_cast<EpetraCrsMatrixUpcast>(emi);
-      graph = new eGraphModel_t(upcastEmi, comm, default_env);
+      graph = new eGraphModel_t(emi, comm, default_env);
     }
     catch (std::exception &e){
       std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -193,9 +190,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   tGraphModel_t *tgraph=NULL;
   try{
-    RCP<TpetraCrsMatrixUpcast> upcastTmi = 
-      Teuchos::rcp_implicit_cast<TpetraCrsMatrixUpcast>(tmi);
-    tgraph = new tGraphModel_t(upcastTmi, comm, default_env);
+    tgraph = new tGraphModel_t(tmi, comm, default_env);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;

@@ -9,7 +9,7 @@
 //
 // Basic testing of xpetra and tpetra matrix and graph input adapters
 //
-// TODO test other input adapters as well.
+// TODO Test with epetra matrix and graphs.
 
 #include <TestAdapters.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -128,18 +128,22 @@ template <typename Scalar, typename LNO, typename GNO>
   RCP<tcrsMatrix_t> M = input->getTpetraMatrix();
   RCP<const tcrsGraph_t> G = M->getCrsGraph();
 
+  cout << "Testing with Tpetra::CrsMatrix" << endl;
   tmi = input->getTpetraCrsMatrixInputAdapter();
   testMatrixAdapter<TpetraCrsMatrixInput, tcrsMatrix_t>(tmi, M, comm);
 
+  cout << "Testing with Tpetra::CrsGraph" << endl;
   tgi = input->getTpetraCrsGraphInputAdapter();
   testGraphAdapter<TpetraCrsGraphInput, tcrsGraph_t>(tgi, G, comm);
 
   RCP<xcrsMatrix_t> xM = input->getXpetraMatrix();
   RCP<const xcrsGraph_t> xG = xM->getCrsGraph();
 
+  cout << "Testing with Xpetra::TpetraCrsMatrix" << endl;
   xmi = input->getXpetraCrsMatrixInputAdapter();
   testMatrixAdapter<XpetraCrsMatrixInput, xcrsMatrix_t>(xmi, xM, comm);
 
+  cout << "Testing with Xpetra::TpetraCrsGraph" << endl;
   xgi = input->getXpetraCrsGraphInputAdapter();
   testGraphAdapter<XpetraCrsGraphInput, xcrsGraph_t>(xgi, xG, comm);
 
