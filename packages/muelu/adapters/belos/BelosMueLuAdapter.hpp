@@ -8,7 +8,7 @@
 #include "BelosEpetraAdapter.hpp"
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include "BelosTpetraAdapter.hpp"
 #endif
 
@@ -237,15 +237,18 @@ namespace Belos {
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuOp : 
-    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
-    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
+    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+#ifdef HAVE_XPETRA_TPETRA
+    , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
+#endif
     //,public OperatorT<Epetra_MultiVector>  jglonglong
   {  
     
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
     typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+#ifdef HAVE_XPETRA_TPETRA
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector;
-
+#endif
   public:
     
     //! @name Constructor/Destructor
@@ -276,6 +279,7 @@ namespace Belos {
       Op_->apply(x,y);
     }
 
+#ifdef HAVE_XPETRA_TPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -297,6 +301,7 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
+#endif
 
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
@@ -334,15 +339,18 @@ namespace Belos {
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuPrecOp : 
-    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >,
-    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+#ifdef HAVE_XPETRA_TPETRA
+    , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+#endif
     //,public OperatorT<Epetra_MultiVector>  jglonglong
   { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
     typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+#ifdef HAVE_XPETRA_TPETRA
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector; //TODO: remove for readability
-
+#endif
   public:
     
     //! @name Constructor/Destructor
@@ -375,7 +383,8 @@ namespace Belos {
       Hierarchy_->Iterate( x, 1, y , true);
       
     }
-  
+
+#ifdef HAVE_XPETRA_TPETRA  
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -398,6 +407,7 @@ namespace Belos {
       Hierarchy_->Iterate( tX, 1, tY , true);
       
     }
+#endif
 
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
@@ -414,7 +424,7 @@ namespace Belos {
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
       const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
+      Xpetra::EpetraMultiVector       tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);

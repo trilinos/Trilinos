@@ -1,7 +1,16 @@
+/* /!\ Implementation of the Xpetra::Multivector for Belos is not finished yet! */
+
+
+
+
+
+
 // This file is mostly a copy of belos/tpetra/src/BelosTpetraAdapter.hpp
 
 #ifndef BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP //TODO: mv into Xpetra ?
 #define BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
+
+#ifdef HAVE_XPETRA_TPETRA //Right now, there is Kokkos specific code on this file.
 
 #include <Kokkos_NodeTrace.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
@@ -548,3 +557,5 @@ namespace Belos { // should go to Belos or Xpetra?
 
 #endif 
 // end of file BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
+
+#endif
