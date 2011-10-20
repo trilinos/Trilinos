@@ -40,29 +40,31 @@ BISON = bison --yacc --defines
 FLEX = flex
 
 SRCS = \
-builtin.c  main.c     stat.c     getopt.c  getopt1.c \
-util.c     init.c     hash.c     liballoc.c units.c exodus.c
+ap_builtin.c  aprepro.c     ap_stat.c     \
+ap_util.c     ap_init.c     ap_hash.c     liballoc.c ap_units.c ap_exodus.c
 OSRCS = \
-aprepro.l  aprepro.y  my_aprepro.h  getopt.h 
+aprepro.l  aprepro.y  my_aprepro.h
 
 #else
 
 SRCS = \
-builtin.c  main.c     stat.c     getopt.c  getopt1.c \
-y.tab.c    lex.yy.c   util.c     init.c    hash.c    liballoc.c \
-exodus.c   units.c
+ap_builtin.c  aprepro.c     ap_stat.c     \
+y.tab.c    lex.yy.c   ap_util.c     ap_init.c    ap_hash.c    liballoc.c \
+ap_exodus.c   ap_units.c
 
 OSRCS = \
-aprepro.l  aprepro.y  my_aprepro.h  getopt.h
+aprepro.l  aprepro.y  my_aprepro.h
 
 #endif
 
 LIBS=$(SUPLIB) $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm 
 
 OBJS = \
-y.tab.o    builtin.o  main.o     stat.o    getopt.o  \
-getopt1.o  util.o     init.o     hash.o    liballoc.o  exodus.o \
-units.o  getline.o 
+y.tab.o    ap_builtin.o  aprepro.o     ap_stat.o   \
+ap_util.o  ap_init.o     ap_hash.o     liballoc.o  \
+ap_units.o ap_exodus.o 
+
+DEFINES = $(ALLOCA_DEFINES)
 
 NormalCTarget(aprepro,$(OBJS),NullParameter,NullParameter,$(LIBS))
 

@@ -13,9 +13,8 @@ INCLUDE_DIRECTORIES(
 ADD_DEFINITIONS(-DNO_EXODUSII)
 
 SET(HEADERS "")
-SET(SOURCES builtin.c  main.c     stat.c    getopt.c  getopt1.c
-	    y.tab.c    util.c     init.c    hash.c    liballoc.c
-	    units.c getline.c)
+SET(SOURCES ap_builtin.c  aprepro.c      ap_stat.c  y.tab.c  ap_util.c  ap_init.c
+	    ap_hash.c     ap_liballoc.c  ap_units.c)
 
 PACKAGE_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ${SOURCES} DEPLIBS suplib m)
 install_executable(aprepro)
