@@ -100,7 +100,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/README_old
     ${Trilinos_SOURCE_DIR}/sampleScripts/old_autotools
     ${Trilinos_SOURCE_DIR}/sampleScripts/git-profiles
-    ${Trilinos_SOURCE_DIR}/SIERRA/
+    ${Trilinos_SOURCE_DIR}/SIERRA
     ${Trilinos_SOURCE_DIR}/commonTools/test/coverage
     ${Trilinos_SOURCE_DIR}/commonTools/test/harness
     ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/README
