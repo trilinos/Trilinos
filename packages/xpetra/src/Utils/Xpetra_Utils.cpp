@@ -1,5 +1,3 @@
-#include <Teuchos_Assert.hpp>
-
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Exceptions.hpp"
 

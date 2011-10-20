@@ -8,27 +8,25 @@
 #ifndef XPETRA_BLOCKEDCRSOPERATOR_HPP_
 #define XPETRA_BLOCKEDCRSOPERATOR_HPP_
 
-
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_Exceptions.hpp>
-
-//#include "Xpetra_BlockMap.hpp"
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_CrsGraph.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixFactory.hpp>
-
-#include <Xpetra_MapExtractor.hpp>
-
-#include <Xpetra_Operator.hpp>
-
 #include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_Assert.hpp>
 #include <Teuchos_Hashtable.hpp>
+
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
+
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
+
+#include "Xpetra_MapExtractor.hpp"
+
+#include "Xpetra_Operator.hpp"
+
 
 /** \file Xpetra_Operator.hpp
 
