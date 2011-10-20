@@ -43,7 +43,7 @@ LOCAL_LDFLAGS = -LANG:std
 
 LIBS = $(SUPLIB) $(EXODUS) $(NETCDF) -lm
 
-SRCS =	ExodusFile.C Internals.C SystemInterface.C Conjoin.C
+SRCS =	CJ_ExodusFile.C CJ_Internals.C CJ_SystemInterface.C CJ_Conjoin.C
 
 OBJS = $(SRCS:.C=.o)
 

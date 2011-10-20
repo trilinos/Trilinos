@@ -35,7 +35,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
-#include <ObjectType.h>
+#include <CJ_ObjectType.h>
 
 namespace Excn {
   enum InOut {IN = 1, OUT = 2};

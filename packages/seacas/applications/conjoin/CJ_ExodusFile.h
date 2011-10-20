@@ -32,7 +32,7 @@
 #ifndef SEACAS_ExodusFile_H
 #define SEACAS_ExodusFile_H
 
-#include "CodeTypes.h"
+#include "CJ_CodeTypes.h"
 #include <string>
 #include <vector>
 

@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "ObjectType.h"
+#include "CJ_ObjectType.h"
 
 namespace Excn {
   typedef std::vector<int>  IntVector;

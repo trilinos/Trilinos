@@ -52,11 +52,17 @@
 #include <ctime>
 #include <sys/times.h>
 #include <ctype.h>
-#include "smart_assert.h"
-#include "adler.h"
 #include <sys/utsname.h>
 
+#include "smart_assert.h"
+#include "adler.h"
 #include "add_to_log.h"
+#include "to_string.h"
+#include <exodusII.h>
+
+#if EX_API_VERS_NODOT <= 467
+#error "Requires exodusII version 4.68 or later"
+#endif
 
 namespace {
 template <typename T>
@@ -118,20 +124,13 @@ typedef GlobalMap::iterator     GMapIter;
 typedef std::vector<std::pair<int, size_t> > GlobalElemMap;
 typedef GlobalElemMap::iterator GElemMapIter;
 
-#include "Internals.h"
-#include "ExodusFile.h"
-#include "ExodusEntity.h"
-#include "SystemInterface.h"
-#include "Version.h"
-#include "Variables.h"
-#include "ObjectType.h"
-
-#include "to_string.h"
-#include <exodusII.h>
-
-#if EX_API_VERS_NODOT <= 467
-#error "Requires exodusII version 4.68 or later"
-#endif
+#include "CJ_Internals.h"
+#include "CJ_ExodusFile.h"
+#include "CJ_ExodusEntity.h"
+#include "CJ_SystemInterface.h"
+#include "CJ_Version.h"
+#include "CJ_Variables.h"
+#include "CJ_ObjectType.h"
 
 extern double seacas_timer();
 

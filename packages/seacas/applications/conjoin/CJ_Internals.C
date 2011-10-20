@@ -33,7 +33,7 @@
  *
  */
 
-#include <Internals.h>
+#include <CJ_Internals.h>
 
 extern "C" {
 #define NO_NETCDF_2
@@ -42,7 +42,7 @@ extern "C" {
 #include <exodusII_int.h>
 }
 
-#include <ExodusEntity.h>
+#include <CJ_ExodusEntity.h>
 
 #include <algorithm>
 #include <cstring>

@@ -1,4 +1,4 @@
-#include "SystemInterface.h"
+#include "CJ_SystemInterface.h"
 
 #include <iostream>
 #include <algorithm>
@@ -9,8 +9,8 @@
 #include <limits.h>
 #include <string.h>
 
-#include "Version.h"
-#include "tokenize.h"
+#include "CJ_Version.h"
+#include "SL_tokenize.h"
 
 #if defined(__PUMAGON__)
 #define NPOS (size_t)-1
@@ -312,7 +312,7 @@ namespace {
     if (tokens != NULL) {
       std::string token_string(tokens);
       StringVector var_list;
-      tokenize(token_string, ",", var_list);
+      SLIB::tokenize(token_string, ",", var_list);
     
       // At this point, var_list is either a single string, or a string
       // separated from 1 or more block ids with ":" delimiter.
@@ -323,7 +323,7 @@ namespace {
       std::vector<std::string>::iterator I = var_list.begin();
       while (I != var_list.end()) {
 	StringVector name_id;
-	tokenize(*I, ":", name_id);
+	SLIB::tokenize(*I, ":", name_id);
 	std::string var_name = LowerCase(name_id[0]);
 	if (name_id.size() == 1) {
 	  (*variable_list).push_back(std::make_pair(var_name,0));
