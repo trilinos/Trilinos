@@ -31,11 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cmath>
 #include <float.h>
-#include "match_xyz.h"
-#include "vector3d.h"
-#include "index_sort.h"
+#include "EJ_match_xyz.h"
+#include "EJ_vector3d.h"
+#include "EJ_index_sort.h"
 #include "smart_assert.h"
-#include "mapping.h"
+#include "EJ_mapping.h"
 #include <Ioss_SubSystem.h>
 
 namespace {

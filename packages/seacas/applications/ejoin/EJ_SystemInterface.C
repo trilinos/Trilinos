@@ -1,5 +1,5 @@
-#include "SystemInterface.h"
-#include "vector3d.h"
+#include "EJ_SystemInterface.h"
+#include "EJ_vector3d.h"
 
 #include <iostream>
 #include <algorithm>
@@ -10,8 +10,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "Version.h"
-#include "tokenize.h"
+#include "EJ_Version.h"
+#include <SL_tokenize.h>
 
 #if defined(__PUMAGON__)
 #define NPOS (size_t)-1
@@ -497,7 +497,7 @@ namespace {
     if (tokens != NULL) {
       std::string token_string(tokens);
       StringVector var_list;
-      tokenize(token_string, ",", var_list);
+      SLIB::tokenize(token_string, ",", var_list);
     
       // At this point, var_list is either a single string, or a string
       // separated from 1 or more block ids with ":" delimiter.
@@ -508,7 +508,7 @@ namespace {
       std::vector<std::string>::iterator I = var_list.begin();
       while (I != var_list.end()) {
 	StringVector name_id;
-	tokenize(*I, ":", name_id);
+	SLIB::tokenize(*I, ":", name_id);
 	std::string var_name = LowerCase(name_id[0]);
 	if (name_id.size() == 1) {
 	  (*variable_list).push_back(std::make_pair(var_name,0));
@@ -532,7 +532,7 @@ namespace {
     if (tokens != NULL) {
       std::string token_string(tokens);
       StringVector var_list;
-      tokenize(token_string, ",", var_list);
+      SLIB::tokenize(token_string, ",", var_list);
     
       // At this point, var_list should contain 1,2,or 3 strings
       // corresponding to the x, y, and z coordinate offsets.
@@ -566,7 +566,7 @@ namespace {
 
       std::string token_string(tokens);
       StringVector part_list;
-      tokenize(token_string, ",", part_list);
+      SLIB::tokenize(token_string, ",", part_list);
     
       std::vector<std::string>::iterator I = part_list.begin();
       while (I != part_list.end()) {
@@ -589,7 +589,7 @@ namespace {
 
       std::string token_string(tokens);
       StringVector part_list;
-      tokenize(token_string, ",", part_list);
+      SLIB::tokenize(token_string, ",", part_list);
     
       std::vector<std::string>::iterator I = part_list.begin();
       while (I != part_list.end()) {
@@ -629,7 +629,7 @@ namespace {
     
     std::string token_string(tokens);
     StringVector part_block_list;
-    tokenize(token_string, ",", part_block_list);
+    SLIB::tokenize(token_string, ",", part_block_list);
 
     // Now, for each token in 'part_block_list', split by ":"
     // The result should be a string starting with 'p' followed by an
@@ -641,7 +641,7 @@ namespace {
     std::vector<std::string>::iterator I = part_block_list.begin();
     while (I != part_block_list.end()) {
       StringVector part_block;
-      tokenize(*I, ":", part_block);
+      SLIB::tokenize(*I, ":", part_block);
       if (part_block.empty() || (part_block[0][0] != 'p' && part_block[0][0] != 'P')) {
 	std::cerr << "ERROR: Bad syntax specifying the part number.  Use 'p' + part number\n"
 		  << "       For example -omit_blocks p1:1:2:3,p2:2:3:4\n";

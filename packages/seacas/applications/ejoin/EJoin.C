@@ -54,19 +54,20 @@
 
 #include "smart_assert.h"
 #include "to_string.h"
+#include "add_to_log.h"
 
-#include <Ionit_Initializer.h>
+#include <exodusII.h>
+
+#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Transform.h>
 
-#include "CodeTypes.h"
-#include "SystemInterface.h"
-#include "match_xyz.h"
-#include "mapping.h"
-#include "vector3d.h"
-#include "Version.h"
-
-#include "add_to_log.h"
+#include "EJ_CodeTypes.h"
+#include "EJ_SystemInterface.h"
+#include "EJ_match_xyz.h"
+#include "EJ_mapping.h"
+#include "EJ_vector3d.h"
+#include "EJ_Version.h"
 
 namespace {
   bool valid_variable(const std::string variable, int id, const StringIdVector &variable_list);
@@ -113,8 +114,6 @@ namespace {
 #endif
   }
 }
-
-#include <exodusII.h>
 
 namespace {
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);

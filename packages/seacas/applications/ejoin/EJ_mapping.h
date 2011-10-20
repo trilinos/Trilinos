@@ -32,7 +32,7 @@
 #ifndef EJOIN_MAPPING_H
 #define EJOIN_MAPPING_H
 
-#include "CodeTypes.h"
+#include "EJ_CodeTypes.h"
 
 void eliminate_omitted_nodes(RegionVector &part_mesh,
 			     Map &global_node_map,

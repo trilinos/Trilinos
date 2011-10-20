@@ -32,7 +32,7 @@
 #ifndef MATCY_XYZ_H
 #define MATCY_XYZ_H
 
-#include "CodeTypes.h"
+#include "EJ_CodeTypes.h"
 
 void match_node_xyz(RegionVector &part_mesh, double tolerance,
 		    Map &global_node_map, Map &local_node_map);

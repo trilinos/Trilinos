@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "mapping.h"
-#include "smart_assert.h"
+#include "EJ_mapping.h"
+#include <smart_assert.h>
 #include <Ioss_SubSystem.h>
 #include <algorithm>
 
