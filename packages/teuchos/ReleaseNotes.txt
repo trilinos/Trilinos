@@ -10,16 +10,9 @@ Trilinos 10.10:
 
 (*) Deprecated the non-namespaced family of TEST_FOR_EXCEPTION(...) macros in
 the file Teuchos_TestForException.hpp: There are now namespaced versions
-prefixed with TEUCHOS_ in the header Teuchos_Assert.hpp.  Client code that was
-explicitly including Teuchos_TestForException.hpp will still work but will get
-a compile warning when the file Teuchos_TestForException.hpp is included.
-However, existing client code that used the non-namespaced
-TEST_FOR_EXCEPTION(...) macros that was not explicitly including
-Teuchos_TestForException.hpp will likely no longer compiler.  (Note that this
-is no different than what happened when upgrading from GCC 4.x to 4.6 where
-they cleaned up their standard header files.)
+prefixed with TEUCHOS_.
 
-To upgrade client code to use the current macros, just run:
+To upgrade client code to use the new namespaced macros, just run:
 
    teuchos/refactoring/namespace-TestForExceptionMacros.20111017.sh
 
@@ -29,10 +22,9 @@ on your code as:
      $ $TRILINOS_HOME/packages/teuchos/refactoring/namespace-TestForExceptionMacros.20111017.sh
 
 If client code needs to maintain backward compatibility with older versions of
-Trilinos, just explicitly include Teuchos_TestForException.hpp and client code
-will compile and run just fine.  This approach, however, will generate
-deprecated warnings.
-
+Trilinos, just leave the code as is and client code will compile and run just
+fine without any changes.  This approach, however, will generate deprecated
+warnings (unless you turn them off at configure time).
 
 
 

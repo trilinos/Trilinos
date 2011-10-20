@@ -39,7 +39,12 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
+
+
+//
+// ToDo: Make these functions thread-safe!
+//
 
 
 namespace {
