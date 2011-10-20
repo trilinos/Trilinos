@@ -89,17 +89,9 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/cmake/CMakeKitwareBacklog.txt
     ${Trilinos_SOURCE_DIR}/cmake/TODO
     ${Trilinos_SOURCE_DIR}/packages/ITAPS
-    ${Trilinos_SOURCE_DIR}/packages/aristos
-    ${Trilinos_SOURCE_DIR}/packages/claps
     ${Trilinos_SOURCE_DIR}/packages/external
     ${Trilinos_SOURCE_DIR}/packages/jpetra
-    ${Trilinos_SOURCE_DIR}/packages/new_package
-    ${Trilinos_SOURCE_DIR}/packages/rbgen
-    ${Trilinos_SOURCE_DIR}/packages/WebTrilinos
     ${Trilinos_SOURCE_DIR}/packages/cmmlib
-    ${Trilinos_SOURCE_DIR}/packages/meros
-    ${Trilinos_SOURCE_DIR}/packages/phdmesh
-    ${Trilinos_SOURCE_DIR}/demos/FEApp
     ${Trilinos_SOURCE_DIR}/packages/configure.ac
     ${Trilinos_SOURCE_DIR}/packages/configure
     ${Trilinos_SOURCE_DIR}/packages/Makefile.am
@@ -128,6 +120,41 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/bootstrap
     ${Trilinos_SOURCE_DIR}/config
   )
+  
+  #removing any packages not enabled from the tarball
+  set(ENABLED_FLAG OFF)
+  set(INCLUDE_EMPTY TRUE)
+  PACKAGE_ARCH_GET_ENABLED_LIST(${PROJECT_NAME}_PACKAGES ${PROJECT_NAME} ${ENABLED_FLAG} ${INCLUDE_EMPTY} 
+    NON_ENABLED_PACKAGES NUM_NON_ENABLED)
+  STRING(REPLACE " " ";" NON_ENABLED_PACKAGES "${NON_ENABLED_PACKAGES}")
+
+  FOREACH(PACKAGE ${NON_ENABLED_PACKAGES})
+    #if the package is the TrilinosFramework we do not want to exclude it from the tarball
+    #because that would exclude the cmake directory and the entire build system. So as a
+    #special case we do not remove the TrilinosFramework from the tarball
+    IF(NOT ${PACKAGE} STREQUAL "TrilinosFramework")
+      LIST(FIND ${PROJECT_NAME}_PACKAGES ${PACKAGE} PACKAGE_IDX)
+      LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+      
+      #checking if we have a relative path to the package's files. Since the exclude is a
+      #regular expression any "../" will be interpretted as <any char><any char>/ which
+      #would never match the package's actual directory. There isn't a direct way in cmake
+      #to convert a relative path into an absolute path with string operations so as a way
+      #of making sure that we get the correct path of the package we use a find_path for the
+      #CMakeLists.txt file for the package. Since the package has to have this file to work
+      #correctly it should be guaranteed to be there.
+      STRING(REGEX MATCH "[.][.]/" IS_RELATIVE_PATH ${PACKAGE_DIR})
+      IF("${IS_RELATIVE_PATH}" STREQUAL "")
+        SET(CPACK_SOURCE_IGNORE_FILES ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_DIR} ${CPACK_SOURCE_IGNORE_FILES})
+      ELSE()
+        FIND_PATH(ABSOLUTE_PATH CMakeLists.txt PATHS ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_DIR} NO_DEFAULT_PATH)
+        IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
+          MESSAGE(AUTHOR_WARNING "Relative path found for disabled package ${PACKAGE} but package was missing a CMakeLists.txt file. This disabled package will likely not be excluded from a source release")
+        ENDIF()
+        SET(CPACK_SOURCE_IGNORE_FILES ${ABSOLUTE_PATH} ${CPACK_SOURCE_IGNORE_FILES})
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("Exclude files when building source packages")
@@ -171,8 +198,10 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
   SET(CPACK_COMPONENTS_ALL ${Trilinos_PACKAGES} Unspecified)
   
-  PACKAGE_ARCH_GET_ENABLED_LIST( Trilinos_PACKAGES Trilinos ON
-    FALSE ENABLED_PACKAGES NUM_ENABLED)
+  set(ENABLED_FLAG ON)
+  set(INCLUDE_EMPTY FALSE)
+  PACKAGE_ARCH_GET_ENABLED_LIST( Trilinos_PACKAGES Trilinos ${ENABLED_FLAG}
+    ${INCLUDE_EMPTY} ENABLED_PACKAGES NUM_ENABLED)
   string(REPLACE " " ";" ENABLED_PACKAGES "${ENABLED_PACKAGES}")
   
   #message("ENABLED PACKAGES: ${ENABLED_PACKAGES} ${NUM_ENABLED}")
