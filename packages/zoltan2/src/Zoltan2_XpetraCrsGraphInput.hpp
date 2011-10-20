@@ -140,6 +140,9 @@ public:
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
   {
+    cout << __func__ << " getting Traits from "
+         << InputTraits<User>::name() << endl;
+
     graph_ = InputTraits<User>::convertToXpetra(ingraph);
     makeOffsets();
   }

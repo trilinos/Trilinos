@@ -54,8 +54,6 @@ APPEND_SET(HEADERS
       Zoltan2_AlltoAll.hpp
       Zoltan2_DebugManager.hpp
       Zoltan2_Environment.hpp
-      Zoltan2_EpetraCrsGraphInput.hpp
-      Zoltan2_EpetraCrsMatrixInput.hpp
       Zoltan2_Exceptions.hpp
       Zoltan2_GraphInput.hpp
       Zoltan2_GraphModel.hpp
@@ -73,8 +71,6 @@ APPEND_SET(HEADERS
       Zoltan2_Solution.hpp
       Zoltan2_Standards.hpp
       Zoltan2_TemplateMacros.hpp
-      Zoltan2_TpetraCrsGraphInput.hpp
-      Zoltan2_TpetraCrsMatrixInput.hpp
       Zoltan2_Util.hpp
       Zoltan2_XpetraCrsGraphInput.hpp
       Zoltan2_XpetraCrsMatrixInput.hpp
