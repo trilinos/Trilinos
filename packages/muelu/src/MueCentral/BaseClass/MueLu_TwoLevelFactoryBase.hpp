@@ -34,7 +34,7 @@ namespace MueLu {
 
     //!
     virtual void CallDeclareInput(Level & requestedLevel) const {
-      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
+      TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
       DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
@@ -49,7 +49,7 @@ namespace MueLu {
 
     //!
     virtual void CallBuild(Level & requestedLevel) const {
-      TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
+      TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 

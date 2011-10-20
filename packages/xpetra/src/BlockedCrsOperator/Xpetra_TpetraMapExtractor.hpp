@@ -136,7 +136,7 @@ namespace Xpetra
     virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block) const
     {
       XPETRA_RCP_DYNAMIC_CAST(const TpetraVectorClass, full, tfull, "Xpetra::TpetraMapextractor constructors only accepts Xpetra::TpetraMap as input arguments.");
-      TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
       const Teuchos::RCP<TpetraVectorClass> ret = Teuchos::rcp(new TpetraVectorClass(getMap(block),true));
       ExtractVector(*tfull,block,*ret);
@@ -146,7 +146,7 @@ namespace Xpetra
     virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<VectorClass>& full, size_t block) const
     {
       XPETRA_RCP_DYNAMIC_CAST(TpetraVectorClass, full, tfull, "Xpetra::TpetraMapextractor constructors only accepts Xpetra::TpetraMap as input arguments.");
-      TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
       const Teuchos::RCP<TpetraVectorClass> ret = Teuchos::rcp(new TpetraVectorClass(getMap(block),true));
       ExtractVector(*tfull,block,*ret);
@@ -187,7 +187,7 @@ namespace Xpetra
     virtual Teuchos::RCP<MultiVectorClass> ExtractVector(Teuchos::RCP<const MultiVectorClass>& full, size_t block) const
     {
       XPETRA_RCP_DYNAMIC_CAST(const TpetraMultiVectorClass, full, tfull, "Xpetra::TpetraMapextractor constructors only accepts Xpetra::TpetraMap as input arguments.");
-      TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
       const Teuchos::RCP<TpetraMultiVectorClass> ret = Teuchos::rcp(new TpetraMultiVectorClass(getMap(block),full->getNumVectors(),true));
       ExtractVector(*tfull,block,*ret);
@@ -197,7 +197,7 @@ namespace Xpetra
     virtual Teuchos::RCP<MultiVectorClass> ExtractVector(Teuchos::RCP<MultiVectorClass>& full, size_t block) const
     {
       XPETRA_RCP_DYNAMIC_CAST(TpetraMultiVectorClass, full, tfull, "Xpetra::TpetraMapextractor constructors only accepts Xpetra::TpetraMap as input arguments.");
-      TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( maps_[block] == Teuchos::null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "]=Teuchos::null" );
       const Teuchos::RCP<TpetraMultiVectorClass> ret = Teuchos::rcp(new TpetraMultiVectorClass(getMap(block),full->getNumVectors(),true));
       ExtractVector(*tfull,block,*ret);

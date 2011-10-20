@@ -704,7 +704,7 @@ namespace MueLu {
             // Tentatively assign vertex to best_agg. 
             if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) { 
 
-              TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::UCAggregationFactory internal error"); // should never happen
+              TEUCHOS_TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::UCAggregationFactory internal error"); // should never happen
 
               vertex2AggId[i] = best_agg;
               weights[i] = best_score;

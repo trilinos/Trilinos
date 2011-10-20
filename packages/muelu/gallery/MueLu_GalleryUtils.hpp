@@ -5,7 +5,7 @@
 #define MUELU_GALLERYUTILS_HPP
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef XPETRA_ENABLED
 // needed for the specialized traits:

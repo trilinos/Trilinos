@@ -34,7 +34,7 @@ namespace MueLu {
     DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
       : lib_(lib), type_(type), paramList_(paramList), AFact_(AFact)
     { 
-      TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
+      TEUCHOS_TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
     }
     
     //! Destructor
@@ -56,13 +56,13 @@ namespace MueLu {
 
     //! DirectSolver cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
     void Setup(Level &currentLevel) {
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Setup(): DirectSolver objects are only prototypes and DirectSolver::Setup() cannot be called. Use Copy() to create an Amesos or Amesos2 smoother.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Setup(): DirectSolver objects are only prototypes and DirectSolver::Setup() cannot be called. Use Copy() to create an Amesos or Amesos2 smoother.");
     }
 
     //! DirectSolver cannot be applied. Apply() always returns a RuntimeError exception.
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Apply(): Setup() has not been called");
     }
 
     //@}
@@ -73,7 +73,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_AMESOS2
         return rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
         //#if defined(HAVE_MUELU_AMESOS2)
@@ -83,15 +83,15 @@ namespace MueLu {
 #if defined(HAVE_MUELU_AMESOS)
         return MueLu::GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_, AFact_);
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when done.
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when done.
         return Teuchos::null;
 #endif
 
       } else {
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       }
 
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
     }
 
     //! @name Overridden from Teuchos::Describable 

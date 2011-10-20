@@ -46,7 +46,7 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS2_KLU)
       type_ = "Klu";
 #endif
-      TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without KLU and SuperLU. Cannot define a solver by default for this Amesos2Smoother object");
+      TEUCHOS_TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without KLU and SuperLU. Cannot define a solver by default for this Amesos2Smoother object");
 
     }
 
@@ -79,7 +79,7 @@ namespace MueLu {
       RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
   
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
-      TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
+      TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
       //TODO      prec_->setParameters(paramList_);
       //TODO
@@ -102,7 +102,7 @@ namespace MueLu {
     */
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
       RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
       MultiVector & BNonC = const_cast<MultiVector&>(B);

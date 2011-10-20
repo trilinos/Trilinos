@@ -22,7 +22,7 @@ namespace MueLu {
     virtual ~FakeSmootherPrototype() {}
 
     virtual RCP<SmootherPrototype> Copy() const { 
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "Not a prototype. Do not copy"); // test not mandatory, but it is the only use case that we need.
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "Not a prototype. Do not copy"); // test not mandatory, but it is the only use case that we need.
       return rcp(new FakeSmootherPrototype(*this)); 
     }
 
@@ -38,7 +38,7 @@ namespace MueLu {
     }
 
     void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) const { 
-      TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
     }
     
     void SetParam(int param) { param_ = param; }

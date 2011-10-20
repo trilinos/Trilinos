@@ -154,7 +154,7 @@ namespace MueLu {
     */
     void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
       // Forward the InitialGuessIsZero option to Ifpack2
       //  TODO: It might be nice to switch back the internal
@@ -184,7 +184,7 @@ namespace MueLu {
         // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
         // we should remove the if/else/elseif and just test if this
         // option is supported by current ifpack2 preconditioner
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
       }
       prec_->setParameters(paramList);
 

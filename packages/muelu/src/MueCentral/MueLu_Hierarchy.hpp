@@ -98,7 +98,7 @@ namespace MueLu {
 
     //! Retrieve a certain level from hierarchy.
     RCP<Level> & GetLevel(const int levelID = 0) {
-      TEST_FOR_EXCEPTION(levelID < 0 || levelID > LastLevelID(), Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value: LevelID = " << levelID);
+      TEUCHOS_TEST_FOR_EXCEPTION(levelID < 0 || levelID > LastLevelID(), Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value: LevelID = " << levelID);
       return Levels_[levelID];
     }
 
@@ -172,12 +172,12 @@ namespace MueLu {
       Monitor h(*this, "Setup");
       Xpetra::global_size_t sumCoarseNnz = 0;
 
-      TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");
+      TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");
 
       //TODO: check Levels_[startLevel] exists.
 
       // Check for fine level matrix A
-      TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+      TEUCHOS_TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): no fine level matrix A! Set fine level matrix A using Level.Set()");
 
       // Check coarse levels
       // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
@@ -204,11 +204,11 @@ namespace MueLu {
         }
 
         Level & level = *Levels_[iLevel];
-        TEST_FOR_EXCEPTION(level.GetLevelID() != iLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level ID");
+        TEUCHOS_TEST_FOR_EXCEPTION(level.GetLevelID() != iLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level ID");
 
         //
         if (iLevel != startLevel) {
-          TEST_FOR_EXCEPTION(level.GetPreviousLevel() != Levels_[iLevel-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
+          TEUCHOS_TEST_FOR_EXCEPTION(level.GetPreviousLevel() != Levels_[iLevel-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
 
           rapFactory.Build(*level.GetPreviousLevel(), level);
           //std::cout << "Level " << iLevel << ": Release RAP" << std::endl; std::cout.flush();

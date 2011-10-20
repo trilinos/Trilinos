@@ -1,4 +1,4 @@
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -11,7 +11,7 @@ namespace Xpetra {
     } else if (lib == Xpetra::UseEpetra) {
       return "Epetra";
     } else {
-      TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
     }
   }
 
@@ -24,7 +24,7 @@ namespace Xpetra {
     if (ls == Tpetra::IDNotPresent)
       return Xpetra::IDNotPresent;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LookupStatus"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LookupStatus"); 
     
   }
 
@@ -35,7 +35,7 @@ namespace Xpetra {
     if (pt == Xpetra::DynamicProfile)
       return Tpetra::DynamicProfile;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
 
   }
 
@@ -46,7 +46,7 @@ namespace Xpetra {
     if (os == Xpetra::DoNotOptimizeStorage)
       return Tpetra::DoNotOptimizeStorage;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
 
   }
 
@@ -62,7 +62,7 @@ namespace Xpetra {
       return Tpetra::ABSMAX;
     }
   
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
 
   }
 
@@ -73,7 +73,7 @@ namespace Xpetra {
     if (lg == Xpetra::GloballyDistributed)
       return Tpetra::GloballyDistributed;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LocalGlobal"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LocalGlobal"); 
 
   }
 
@@ -92,7 +92,7 @@ namespace Xpetra {
     if (pt == Xpetra::DynamicProfile)
       return false;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
   }
 
   bool toEpetra(Xpetra::OptimizeOption os) {
@@ -102,7 +102,7 @@ namespace Xpetra {
     if (os == Xpetra::DoNotOptimizeStorage)
       return false;
     
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
 
   }
   
@@ -118,7 +118,7 @@ namespace Xpetra {
     if (cm == Xpetra::ABSMAX)
       return AbsMax;
   
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
 
   }
 

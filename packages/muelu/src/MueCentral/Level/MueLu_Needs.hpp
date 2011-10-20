@@ -87,7 +87,7 @@ namespace MueLu {
     //! Decrement the storage counter.
     void Release(const std::string & ename, const FactoryBase* factory) {
       // We can only release data if the key 'ename' exists in countTable (and dataTable)
-      TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Release(): " + ename + " not found. Do a request first.");
+      TEUCHOS_TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Release(): " + ename + " not found. Do a request first.");
 
       // Decrement reference counter
       int currentCount = countTable_.Get(ename, factory);
@@ -113,7 +113,7 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
-      TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
       return Teuchos::getValue<T>(dataTable_.Get(ename, factory));
     }
 
@@ -171,7 +171,7 @@ namespace MueLu {
     // (if a factory is called, at least one ename of the factory is requested but maybe not all of them)
     // Note2: this tells nothing about whether the data actually exists.
     bool IsRequested(const std::string & ename, const FactoryBase* factory) const {
-      TEST_FOR_EXCEPTION(countTable_.IsKey(ename, factory) && (countTable_.Get(ename, factory) == 0), Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+      TEUCHOS_TEST_FOR_EXCEPTION(countTable_.IsKey(ename, factory) && (countTable_.Get(ename, factory) == 0), Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
       return countTable_.IsKey(ename, factory);
     }
 
@@ -221,7 +221,7 @@ namespace MueLu {
     //!  Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or hasn't been saved.
     int NumRequests(const std::string & ename, const FactoryBase* factory) const {
       //FIXME should we return 0 instead of throwing an exception?
-      TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found in countTable_");
+      TEUCHOS_TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found in countTable_");
       return countTable_.Get(ename, factory);
     }
 

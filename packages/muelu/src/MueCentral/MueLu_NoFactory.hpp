@@ -1,7 +1,7 @@
 #ifndef MUELU_NOFACTORY_HPP
 #define MUELU_NOFACTORY_HPP
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -32,7 +32,7 @@ namespace MueLu {
     
     //!
     void CallBuild(Level & requestedLevel) const {  
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
     }
 
     //!

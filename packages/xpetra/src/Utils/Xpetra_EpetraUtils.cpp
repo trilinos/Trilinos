@@ -33,7 +33,7 @@ namespace Xpetra {
       if ((Teuchos::rcp_dynamic_cast<const Teuchos::SerialComm<int> >(comm) != Teuchos::null))
         return Teuchos::rcp(new Epetra_SerialComm());
       else
-        TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert a Teuchos::Comm to an Epetra_Comm: The exact type of the Teuchos::Comm object is unknown"); 
+        TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert a Teuchos::Comm to an Epetra_Comm: The exact type of the Teuchos::Comm object is unknown"); 
   }
 
   const RCP<const Teuchos::Comm<int> > toXpetra(const Epetra_Comm & comm) {
@@ -48,7 +48,7 @@ namespace Xpetra {
       serialComm.NumProc(); // avoid compilation warning
       return Teuchos::rcp(new Teuchos::SerialComm<int>());
     } catch (std::bad_cast & b) {
-      TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert an Epetra_Comm to a Teuchos::Comm: The exact type of the Epetra_Comm object is unknown");
+      TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert an Epetra_Comm to a Teuchos::Comm: The exact type of the Epetra_Comm object is unknown");
     }
   }
 
@@ -58,7 +58,7 @@ namespace Xpetra {
     else if (trans == Teuchos::TRANS)
       return true;
     else { 
-      TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Cannot convert Teuchos::ETransp to a boolean.");
+      TEUCHOS_TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Cannot convert Teuchos::ETransp to a boolean.");
     }
     
     return false; // to skip a compilation warning msg.

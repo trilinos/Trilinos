@@ -33,8 +33,8 @@ namespace MueLu {
     TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null)
       : lib_(lib), type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     { 
-      TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
-      TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
+      TEUCHOS_TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
+      TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
     }
     
     //! Destructor
@@ -56,12 +56,12 @@ namespace MueLu {
 
     //! TrilinosSmoother cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
     void Setup(Level &currentLevel) {
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TrilinosSmoother::Setup(): TrilinosSmoother objects are only prototypes and TrilinosSmoother::Setup() cannot be called. Use Copy() to create an Ifpack or Ifpack2 smoother.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TrilinosSmoother::Setup(): TrilinosSmoother objects are only prototypes and TrilinosSmoother::Setup() cannot be called. Use Copy() to create an Ifpack or Ifpack2 smoother.");
     }
 
     //! TrilinosSmoother cannot be applied. Apply() always returns a RuntimeError exception.
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const {
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TrilinosSmoother::Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TrilinosSmoother::Apply(): Setup() has not been called");
     }
 
     //@}
@@ -72,19 +72,19 @@ namespace MueLu {
 #ifdef HAVE_MUELU_IFPACK2
         return rcp( new Ifpack2Smoother(type_, paramList_, overlap_, AFact_) );
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif
       } else if (lib_ == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
         return GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
 #else
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
 #endif
       } else {
-        TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
       }
 
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
     }
 
     //! Convert an Ifpack2 preconditioner name to Ifpack
@@ -94,7 +94,7 @@ namespace MueLu {
       if (type == "RELAXATION") { return "point relaxation stand-alone"; }
       if (type == "CHEBYSHEV")  { return "Chebyshev"; }
     
-      TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
     }
 
     //! Convert an Ifpack2 parameter list to Ifpack

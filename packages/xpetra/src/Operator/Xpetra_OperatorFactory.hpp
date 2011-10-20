@@ -31,7 +31,7 @@ namespace Xpetra {
 
       // else
 
-      // TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
+      // TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
     }
     
   };

@@ -19,7 +19,7 @@ namespace MueLu {
         case Teuchos::VERB_EXTREME:
           return Extreme;
         default:  
-          TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Unknown enum value found.");  
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Unknown enum value found.");  
         }  
   }
 

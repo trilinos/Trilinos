@@ -53,19 +53,19 @@ namespace Xpetra {
     //! @name View management methods
     //@{
     void CreateView(viewLabel_t viewLabel, const RCP<const Map> & rowMap, const RCP<const Map> & colMap) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): a view labeled '" + viewLabel + "' already exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): a view labeled '" + viewLabel + "' already exist.");
       RCP<OperatorView> view = rcp(new OperatorView(rowMap, colMap));
       operatorViewTable_.put(viewLabel, view);
     }
     
     void RemoveView(const viewLabel_t viewLabel) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
-      TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
       operatorViewTable_.remove(viewLabel);
     }
     
     const viewLabel_t SwitchToView(const viewLabel_t viewLabel) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.SwitchToView(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.SwitchToView(): view '" + viewLabel + "' does not exist.");
       viewLabel_t oldViewLabel = GetCurrentViewLabel();
       currentViewLabel_ = viewLabel;
       return oldViewLabel;
@@ -140,7 +140,7 @@ namespace Xpetra {
 
     //! Returns the Map that describes the row distribution in this matrix.
     virtual const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetRowMap(); 
     }
 
@@ -150,7 +150,7 @@ namespace Xpetra {
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     virtual const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
+      TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetColMap(); 
     }
 

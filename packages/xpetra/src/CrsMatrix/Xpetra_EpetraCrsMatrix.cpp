@@ -33,7 +33,7 @@ namespace Xpetra {
     int    * eIndices;
       
     XPETRA_ERR_CHECK(mtx_->ExtractGlobalRowView(GlobalRow, numEntries, eValues, eIndices));
-    if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+    if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     indices = ArrayView<const int>(eIndices, numEntries);
     values  = ArrayView<const double>(eValues, numEntries);
@@ -45,23 +45,23 @@ namespace Xpetra {
     int    * eIndices;
       
     XPETRA_ERR_CHECK(mtx_->ExtractMyRowView(LocalRow, numEntries, eValues, eIndices));
-    if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+    if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     indices = ArrayView<const int>(eIndices, numEntries);
     values  = ArrayView<const double>(eValues, numEntries);
   }
 
   void EpetraCrsMatrix::apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp mode, double alpha, double beta) const { 
-    TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
+    TEUCHOS_TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
       
     XPETRA_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
     XPETRA_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
 
-    TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
+    TEUCHOS_TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
     bool eTrans = toEpetra(mode);
 
     // /!\ UseTranspose value
-    TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Xpetra::Exceptions::NotImplemented, "An exception is throw to let you know that Xpetra::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Xpetra::Exceptions::NotImplemented, "An exception is throw to let you know that Xpetra::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
       
     XPETRA_ERR_CHECK(mtx_->Multiply(eTrans, *eX.getEpetra_MultiVector(), *eY.getEpetra_MultiVector()));
   }
@@ -250,7 +250,7 @@ namespace Xpetra {
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
@@ -261,7 +261,7 @@ namespace Xpetra {
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source,
@@ -272,7 +272,7 @@ namespace Xpetra {
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
 
   }
 
@@ -284,7 +284,7 @@ namespace Xpetra {
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
 }

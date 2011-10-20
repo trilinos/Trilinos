@@ -8,7 +8,7 @@
 #ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_
 #define MUELU_THRESHOLDAFILTERFACTORY_HPP_
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -76,7 +76,7 @@ namespace MueLu {
         Teuchos::ArrayView<const Scalar> vals;
         Ain->getLocalRowView(row, indices, vals);
 
-        TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
+        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
         Teuchos::ArrayRCP<LocalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<LocalOrdinal>::zero());
         Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());

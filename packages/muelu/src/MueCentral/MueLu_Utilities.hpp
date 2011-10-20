@@ -490,7 +490,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
         return result;
 #else // no MUELU_ML
-        TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
                          "HAVE_MUELU_ML compiler flag not set. no ML multiply available." );
         return Teuchos::null;
 #endif
@@ -549,7 +549,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         Cij->fillComplete(B->getDomainMap(j), A->getRangeMap(i));
 
         RCP<CrsOperator> crsCij = Teuchos::rcp_dynamic_cast<CrsOperator>(Cij);
-        TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
+        TEUCHOS_TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
                  "OperatorFactory failed in generating a CrsOperator." );
 
         RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
@@ -1203,7 +1203,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
 template<class SC,class LO,class GO,class NO, class LMO>
 RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
-   TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
    return Teuchos::null;
 }
 

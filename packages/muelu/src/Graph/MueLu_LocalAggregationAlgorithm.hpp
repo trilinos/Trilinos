@@ -209,7 +209,7 @@ namespace MueLu {
                 try {
                   supernode->list = Teuchos::arcp<int>(length+1);
                 } catch (std::bad_alloc&) {
-                  TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::LocalAggregationAlgorithm::CoarsenUncoupled(): Error: couldn't allocate memory for supernode! length=" + Teuchos::toString(length));
+                  TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::LocalAggregationAlgorithm::CoarsenUncoupled(): Error: couldn't allocate memory for supernode! length=" + Teuchos::toString(length));
                 }
 
                 supernode->maxLength = length;

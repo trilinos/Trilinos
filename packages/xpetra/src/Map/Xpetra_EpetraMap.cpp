@@ -43,16 +43,16 @@ namespace Xpetra {
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
         else {
           // logic error on our part
-          TEST_FOR_EXCEPTION(true,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                              errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
@@ -127,29 +127,29 @@ namespace Xpetra {
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "numLocal is not valid on at least one node (possibly node "
                              << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "numGlobal is not valid on at least one node (possibly node "
                              << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "numGlobal doesn't match sum of numLocal (== "
                              << global_sum << ") on at least one node (possibly node "
                              << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 4) {
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                              errPrefix << "indexBase is not the same on all nodes (examine node "
                              << globalChecks[0] << ").");
         }
         else {
           // logic error on my part
-          TEST_FOR_EXCEPTION(true,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                              errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }

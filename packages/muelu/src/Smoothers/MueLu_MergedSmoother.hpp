@@ -29,7 +29,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false)
       : smootherList_(smootherList), reverseOrder_(false), verbose_(verbose), out_(this->getOStream())
     {
-      // TODO: check that on each method TEST_FOR_EXCEPTION(smootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "");
+      // TODO: check that on each method TEUCHOS_TEST_FOR_EXCEPTION(smootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "");
 
       SmootherPrototype::SetType("MergedSmoother");
       SmootherPrototype::IsSetup(false);
@@ -105,7 +105,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     */
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:Apply(): Setup() has not been called");
 
       if (verbose_)
         *out_ << "MueLu::MergedSmoother<>::Apply(): reverseOrder_==" << reverseOrder_ << std::endl;
@@ -162,8 +162,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
         //TODO        const ArrayRCP<const RCP<const SmootherPrototype> > & srcSmootherList  = srcMergedSmoother->GetSmootherList();
         const ArrayRCP<const RCP< SmootherPrototype> > & srcSmootherList  = srcMergedSmoother->GetSmootherList();
         const ArrayRCP<const RCP<SmootherPrototype> >       & thisSmootherList = smootherList_;
-        TEST_FOR_EXCEPTION(srcSmootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): thisSmootherList == Teuchos::null"); // might be allowed later if useful
-        TEST_FOR_EXCEPTION(srcSmootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): srcSmootherList == Teuchos::null");
+        TEUCHOS_TEST_FOR_EXCEPTION(srcSmootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): thisSmootherList == Teuchos::null"); // might be allowed later if useful
+        TEUCHOS_TEST_FOR_EXCEPTION(srcSmootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): srcSmootherList == Teuchos::null");
 
         // If the smootherList of 'this' and 'src' contains the same type of smoothers, we can transfert parameters from src to 'this' in order to tentatively reuse the current setup information of each smoothers.
         // Note that the reuse of the setup phase of the MergedSmoother 'src' can be implemented for a larger set of cases (and more complicated cases), but it does not seems useful for now.
@@ -179,7 +179,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
           for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++) {
 
             // Following test should never throw in our use cases because 'src' is a prototype and 'this' is a real smoother so they don't share any data. We may allow such case later if useful.
-            TEST_FOR_EXCEPTION((thisSmootherList[i] == srcSmootherList[i]) && (thisSmootherList[i] != Teuchos::null) , MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): internal logic error");
+            TEUCHOS_TEST_FOR_EXCEPTION((thisSmootherList[i] == srcSmootherList[i]) && (thisSmootherList[i] != Teuchos::null) , MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): internal logic error");
 
             reuse = reuse && ((thisSmootherList[i] == Teuchos::null && srcSmootherList[i] == Teuchos::null) ||
                               thisSmootherList[i]->GetType() == srcSmootherList[i]->GetType());
@@ -197,7 +197,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
           // Call CopyParameters for each smoothers and update IsSetup status of the MergedSmoother
           for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++) {
             if (srcSmootherList[i] != Teuchos::null) {
-              TEST_FOR_EXCEPTION(srcSmootherList[i] == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): internal logic error");
+              TEUCHOS_TEST_FOR_EXCEPTION(srcSmootherList[i] == Teuchos::null, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:CopyParameters(): internal logic error");
 
               thisSmootherList[i]->CopyParameters(srcSmootherList[i]);
               isSetup = isSetup && thisSmootherList[i]->IsSetup();

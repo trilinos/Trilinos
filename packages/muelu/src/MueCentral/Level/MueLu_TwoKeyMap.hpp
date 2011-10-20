@@ -44,11 +44,11 @@ namespace MueLu {
 
        const Value & Get(const Key1 & key1, const Key2 & key2) const {
         // Get SubMap
-        TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", *) does not exist.");
+        TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", *) does not exist.");
         const SubMap & subMap = map_.find(key1)->second;
         
         // Get Value
-        TEST_FOR_EXCEPTION(subMap.count(key2) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", " << key2 << ") does not exist.");
+        TEUCHOS_TEST_FOR_EXCEPTION(subMap.count(key2) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", " << key2 << ") does not exist.");
         return subMap.find(key2)->second;
       }
 
@@ -58,12 +58,12 @@ namespace MueLu {
 
       void Remove(const Key1 & key1, const Key2 & key2) {
         // Get SubMap
-        TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Remove(): Key (" << key1 << ", *) does not exist.");
+        TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Remove(): Key (" << key1 << ", *) does not exist.");
         SubMap & subMap = map_.find(key1)->second;
 
         // Erase SubMap. If subMap[key2] do not exist, then subMap.erase() returns 0.
         int nElementErased = subMap.erase(key2);
-        TEST_FOR_EXCEPTION(nElementErased != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Remove(): Key (" << key1 << ", " << key2 << ") does not exist.");
+        TEUCHOS_TEST_FOR_EXCEPTION(nElementErased != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Remove(): Key (" << key1 << ", " << key2 << ") does not exist.");
 
         // Check if there exist other instances of 'key1' (with another key2 than 'key2')
         if (subMap.size() == 0)
@@ -90,7 +90,7 @@ namespace MueLu {
       }
 
       std::vector<Key2> GetKey2List(const Key1 & key1) const {
-        TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::GetKey2List(): Key (" << key1 << ", *) does not exist.");
+        TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::GetKey2List(): Key (" << key1 << ", *) does not exist.");
 
         std::vector<Key2> v;
         const SubMap & subMap = map_.find(key1)->second;
