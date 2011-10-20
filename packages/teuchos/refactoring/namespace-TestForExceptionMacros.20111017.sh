@@ -8,7 +8,7 @@
 # even safe to run on the teuchos directory that contain these files (because
 # of the file ignore list).
 
-# Get the directory for this scirpt which will give us the Trilinos base
+# Get the directory for this script which will give us the Trilinos base
 # directory
 _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
 _TRILINOS_HOME=$_SCRIPT_DIR/../../..
