@@ -8,7 +8,7 @@
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 
 using Teuchos::RCP;
 using namespace std;

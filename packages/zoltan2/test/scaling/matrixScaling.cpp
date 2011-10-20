@@ -23,7 +23,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_GraphModel.hpp>
 
 #include <MueLu_MatrixFactory.hpp>
@@ -165,8 +165,7 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////
   // Create in input adapter for Zoltan2
 
-  typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> inputAdapter_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> inputAdapterUpcast_t;
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> inputAdapter_t;
 
   RCP<const inputAdapter_t> adapter;
   RCP<const tcrsMatrix_t> constMatrix = 
@@ -186,20 +185,17 @@ int main(int argc, char *argv[])
 
   TEST_FAIL_AND_RETURN(*comm, fail==0, "Creating an input adapter", 1)
 
-  RCP<const inputAdapterUpcast_t> baseAdapter = 
-     Teuchos::rcp_implicit_cast<const inputAdapterUpcast_t >(adapter);
-
   ///////////////////////////////////////////////////
   // Create the graph model suitable for an algorithm
 
-  typedef Zoltan2::GraphModel<inputAdapterUpcast_t> graphModel_t;
+  typedef Zoltan2::GraphModel<inputAdapter_t> graphModel_t;
 
   RCP<graphModel_t> model;
 
   START_MEMCOUNT
   try{
     START_TIMER;
-    model = Teuchos::rcp(new graphModel_t(baseAdapter, comm, env));
+    model = Teuchos::rcp(new graphModel_t(adapter, comm, env));
     END_TIMER("Create graph model");
   }
   catch(std::exception &e){

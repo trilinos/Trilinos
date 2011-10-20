@@ -5,7 +5,7 @@
 #include <Zoltan2_Environment.hpp>
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
@@ -71,7 +71,7 @@ Problem<Adapter>::Problem(
 ) 
 {
   HELLO;
-  inputAdapter_ = rcp(new TpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
+  inputAdapter_ = rcp(new XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
                                 (rcpFromRef(A)));
   params_ = rcpFromRef(p);
   cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() << " " << inputAdapter_->inputAdapterName() << endl;
