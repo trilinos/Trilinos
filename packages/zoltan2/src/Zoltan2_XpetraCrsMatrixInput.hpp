@@ -290,6 +290,133 @@ public:
     return nrows;
   }
 
+  /*! Apply a partitioning solution to the matrix.
+   */
+  int applyPartitioningSolution(const User &in, User *&out,
+    lno_t numIds, lno_t numParts, gid_t *gid, lid_t *lid, lno_t *partition)
+  {
+    RCP<User> inptr = rcp(&in, false);
+    std::string userType(InputTraits<User>::name());
+
+    bool isEpetra = (userType == std::string("Epetra_CrsMatrix"));
+    bool isTpetra = (userType == std::string("Tpetra::CrsMatrix"));
+    bool isXpetra = (userType == std::string("Xpetra::CrsMatrix"));
+
+    RCP<xmatrix_t> inMatrix;
+
+    if (isEpetra){
+      RCP<xematrix_t> ematrix = rcp(new xematrix_t(inptr));
+      inMatrix = rcp_implicit_cast<xmatrix_t>(ematrix);
+    }
+    else if (isTpetra){
+      RCP<xtmatrix_t > tmatrix = rcp(new xtmatrix_t(inptr));
+      inMatrix = rcp_implicit_cast<xmatrix_t>(tmatrix);
+    }
+    else if (isXpetra){
+      inMatrix = inptr;
+    }
+    else{
+      throw std::logic_error("should be epetra, tpetra or xpetra");
+    }
+
+    RCP<const Comm<int> > comm = inMatrix->getComm();
+    size_t numLocalRows = inMatrix->getNodeNumRows();
+    size_t numGlobalRows = inMatrix->getGlobalNumRows();
+    gno_t base = inMatrix->getRowMap()->getIndexBase();
+    size_t numNewRows = 0;
+
+    ArrayRCP<lno_t> rowSizes(numIds);
+    for (lno_t i=0; i < numIds; i++){
+      rowSizes[i] = inMatrix->getNumEntriesInLocalRow(lid[i]);
+    }
+
+    ArrayRCP<lno_t> partArray(partition, 0, numLocalRows);
+    ArrayRCP<gid_t> gidArray(gid, 0, numLocalRows);
+    ArrayRCP<gid_t> newGidArray;
+    ArrayRCP<const size_t> newRowSizes;   // Epetra uses int, Tpetra uses size_t.
+  
+    try{
+      numNewRows = convertPartitionListToImportList(comm,
+        partArray, gidArray, rowSizes, newGidArray, newRowSizes);
+    }
+    catch (std::exception &e){
+      Z2_THROW_ZOLTAN2_ERROR(env, e);
+    }
+
+    // We work with the underlying Tpetra or Epetra object.  This
+    // is because when we create xpetra maps and importers and
+    // a new matrix, they must be of a concrete type, not of type Xpetra.
+
+    if (isXpetra){
+      Xpetra::UnderlyingLib l = inMatrix->getRowMap()->lib();
+      if (l == Xpetra::UseEpetra)
+        isEpetra = true;
+      else
+        isTpetra = true;
+    }
+
+    if (isEpetra){
+      const RCP<const Epetra_Comm> ecomm = Xpetra::toEpetra(comm);
+    
+      // source map
+      RCP<xematrix_t> xematrix = rcp_dynamic_cast<xematrix_t>(inMatrix);
+      RCP<const Epetra_CrsMatrix> ematrix = xematrix->getEpetra_CrsMatrix();
+      const Epetra_Map &sMap = ematrix->RowMap();
+
+      // target map
+      Epetra_BlockMap tMap(numGlobalRows, numNewRows, newGidArray.getRawPtr(),
+        1, base, ecomm);
+
+      // target matrix
+    
+      Array<int> intRowSizes;
+      int *nnz=NULL;
+    
+      if (sizeof(size_t) != sizeof(int)){
+        intRowSizes = Array<int>(numNewRows);
+        for (lno_t i=0; i < numNewRows; i++){
+          intRowSizes[i] = static_cast<int>(newRowSizes[i]);
+        }
+        nnz = intRowSizes.getRawPtr();
+      }
+      else{ 
+        nnz = static_cast<int *>(newRowSizes.getRawPtr());
+      }
+
+      Epetra_CrsMatrix *M = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
+
+      Epetra_Import importer(tMap, sMap);
+
+      M->Import(*ematrix, importer, Insert);
+
+      out = M;
+    }
+    else{
+      typedef typename Tpetra::Map<lno_t,gno_t,node_t> tmap_t;
+
+      // source map
+      RCP<xtmatrix_t> xtmatrix = rcp_dynamic_cast<xtmatrix_t>(inMatrix);
+      RCP<const tmatrix_t> tmatrix = xtmatrix->getTpetra_CrsMatrix();
+      const RCP<const tmap_t> &sMap = tmatrix->getRowMap();
+
+      // target map
+      RCP<const tmap_t> tMap =
+        rcp(new tmap_t(numGlobalRows, newGidArray.view(0, numNewRows), base, comm));
+
+      // target matrix
+
+      tmatrix_t *M = new tmatrix_t(tMap, newRowSizes, Tpetra::StaticProfile);
+
+      Tpetra::Import<lno_t, gno_t, node_t> importer(sMap, tMap);
+
+      M->doImport(*tmatrix, importer, Tpetra::INSERT);
+
+      out = M;
+    }
+    return;
+  }
+
+
 private:
 
   RCP<const User> inmatrix_;

@@ -42,12 +42,12 @@ private:
 
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
 
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
@@ -110,8 +110,42 @@ public:
 
   virtual size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds, 
     const lno_t *&offsets, const gid_t *& colIds) const = 0;
+
+  /*! Apply the solution to a partitioning problem to an input.  
+   *
+   *  This is not a required part of the MatrixInput interface.  However
+   *  if the PartitioningProblem::redistribute() method is called, it 
+   *  will use this method to redistribute the data.  If the user has 
+   *  no intention of calling redistribute(), then it is not necessary to 
+   *  define applyPartitioningSolution in the InputAdapter.
+   *
+   *  \param in  An input object with a structure and assignment of
+   *           of global Ids to processes that matches that of the input
+   *           data that instantiated this InputAdapter.
+   *  \param out On return this should point to a newly created object 
+   *            with the specified partitioning.
+   *  \param numIds  The number of ids in the gid and partition lists.
+   *  \param numParts  The global number of partitions.  Partitions are 
+   *     numbered from 0 through numParts-1. 
+   *  \param gid     A list of object global Ids.
+   *  \param lid     A corresponding list of object local Ids, if the
+   *      InputAdapter had supplied local Ids.
+   *  \param partition  A corresponding list of partitions.  gid[i]
+   *            has been assigned to partition[i].
+   *  \return   Return 0 on success, non-zero on error.
+   *
+   * TODO - A solution needs to be more than a list of partitions, but
+   *   also how those partitions map to processes.  For now it's
+   *   process "p" gets part "p".
+   */
+
+  int applyPartitioningSolution(const User &in, User *out,
+    lno_t numIds, lno_t numParts, gid_t *gid, lid_t *lid, lno_t *partition)
+  {
+    return 0;
+  }
+
 };
-  
   
 }  //namespace Zoltan2
   

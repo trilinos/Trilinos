@@ -90,7 +90,7 @@ template <typename AppLID, typename AppGID>
   test1.gids = gids;
   test1.lids = lids;
 
-  Zoltan2::IdentifierMap<testdata_t> idmap;
+  Zoltan2::IdentifierMap<AppLID, AppGID, AppLID, AppGID> idmap;
 
   try {
     idmap.initialize(comm, envPtr, test1.gids, test1.lids, consecutiveGnosAreRequired);

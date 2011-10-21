@@ -160,6 +160,20 @@ public:
     edgeID = NULL;
     return 0;
   }
+
+  int applyPartitioningSolution(const User &in, User &out,
+    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
+  {
+    return 0;
+  }
+
+  int applyPartitioningSolution(User &in,
+    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
+  {
+    return 0;
+  } 
+ 
+
 };
   
   

@@ -59,6 +59,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef int   lid_t;
   typedef int   gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsGraph";}
 };
 
 template < >
@@ -70,6 +71,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int lid_t;
   typedef int gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t; 
+  static inline std::string name() {return "Epetra_CrsMatrix";}
 };  
 
 template <typename LocalOrdinal,
@@ -83,6 +85,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsGraph";}
 };  
 
 template <typename Scalar,
@@ -97,6 +100,7 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsMatrix";}
 };
 
 template <typename LocalOrdinal,
@@ -110,6 +114,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsGraph";}
 };
 
 template <typename Scalar, 
@@ -124,6 +129,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef LocalOrdinal  lid_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsMatrix";}
 };
 
 #endif  //KDDKDD_CAN_WE_LEAVE_SPECIALIZATIONS_IN_SPECIFIC_INPUT_ADAPTER_FILES

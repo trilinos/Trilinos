@@ -91,7 +91,6 @@ public:
    */
   virtual bool haveConsecutiveLocalIds(size_t &base) const = 0;
 
-protected:
 };
   
   

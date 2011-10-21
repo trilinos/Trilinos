@@ -45,21 +45,21 @@ enum TranslationType {
            replace new/delete with memory wrappers
            exception handling
            use Kokkos node 
+
+    lid_t  is the data type used by application for local IDs, which are optional.
+    gid_t  is the data type used by application for globls IDs
+    lno_t  is the data type used by Zoltan2 for local counts and indexes.
+    gno_t  is the integral data type used by Zoltan2 for global counts.
 */
 
 ////////////////////////////////////////////////////////////////////
 // Declarations
 ////////////////////////////////////////////////////////////////////
 
-template<typename User>
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
     class IdentifierMap{
 
 public:
-
-  typedef typename InputTraits<User>::gno_t gno_t;
-  typedef typename InputTraits<User>::lno_t lno_t;
-  typedef typename InputTraits<User>::gid_t gid_t;
-  typedef typename InputTraits<User>::lid_t lid_t;
 
   /*! Constructor - Must be called by all processes 
    *
@@ -103,6 +103,9 @@ public:
    *           or third party library requires consective ids
    *           If necessary the IdentifierMap will map the application's
    *           global IDs to integral IDs beginning at zero.
+   *
+   *  If lids is an empty array, and lid_t is integral, we assume local
+   *  ids are consecutive and begin a zero.
    */
   void initialize(const RCP<const Comm<int> > &incomm_,
                   const RCP<Environment > &env,
@@ -163,7 +166,7 @@ public:
 
   /*! Map application global IDs to internal global numbers.
 
-      \param in_gid input, an array of the Caller's global IDs
+      \param in_gid input, an array of the global IDs
       \param out_gno output, an optional array of the corresponding 
           global numbers used by Zoltan2.  If out_gno.size() is zero,
           we assume global numbers are not needed.
@@ -227,8 +230,8 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////////
 
-template<typename User> 
-  IdentifierMap<User>::IdentifierMap(
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t> 
+  IdentifierMap<lid_t,gid_t,lno_t,gno_t>::IdentifierMap(
     const RCP<const Comm<int> > &incomm_, const RCP<Zoltan2::Environment> &env,
     const ArrayRCP<gid_t> &gids, const ArrayRCP<lid_t> &lids,
     bool idsMustBeConsecutive) 
@@ -243,8 +246,8 @@ template<typename User>
 }
 
   /*! Constructor */
-template<typename User>
-  IdentifierMap<User>::IdentifierMap()  
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  IdentifierMap<lid_t,gid_t,lno_t,gno_t>::IdentifierMap()  
          : comm_(), env_(), myGids_(), myLids_(),
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
            myRank_(0), numProcs_(0), userGidsAreTeuchosOrdinal_(false),
@@ -254,28 +257,30 @@ template<typename User>
 }
 
   /*! Destructor */
-template<typename User>
-  IdentifierMap<User>::~IdentifierMap() 
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  IdentifierMap<lid_t,gid_t,lno_t,gno_t>::~IdentifierMap() 
   {
   }
 
+#if 0
   /*! Copy Constructor */
-template<typename User>
-  IdentifierMap<User>::IdentifierMap(const IdentifierMap &id)
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  IdentifierMap<lid_t,gid_t,lno_t,gno_t::IdentifierMap(const IdentifierMap &id)
 {
     //TODO    default should work, shouldn't it?
 }
 
   /*! Assignment operator */
-template<typename User>
-  IdentifierMap<User> &
-    IdentifierMap<User>::operator=(const IdentifierMap<User> &id)
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  IdentifierMap<lid_t,gid_t,lno_t,gno_t &
+    IdentifierMaplid_t,gid_t,lno_t,gno_t>::operator=(const IdentifierMap<User> &id)
 {
     //TODO
 }
+#endif
 
-template<typename User>
-  void IdentifierMap<User>::initialize(
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::initialize(
     const RCP<const Comm<int> > &incomm_, 
     const RCP<Zoltan2::Environment> &env,
     const ArrayRCP<gid_t> &gids, const ArrayRCP<lid_t> &lids,
@@ -307,26 +312,26 @@ template<typename User>
   setupMap();
 }
 
-template<typename User>
-  bool IdentifierMap<User>::gnosAreGids() const
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  bool IdentifierMap<lid_t,gid_t,lno_t,gno_t>::gnosAreGids() const
 {
   return userGidsAreZoltan2Gids_;
 }
 
-template<typename User>
-  bool IdentifierMap<User>::gnosAreConsecutive() const
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  bool IdentifierMap<lid_t,gid_t,lno_t,gno_t>::gnosAreConsecutive() const
 {
   return zoltan2GidsAreConsecutive_;
 }
 
-template<typename User>
-  bool IdentifierMap<User>::consecutiveGnosAreRequired() const
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  bool IdentifierMap<lid_t,gid_t,lno_t,gno_t>::consecutiveGnosAreRequired() const
 {
   return consecutiveGidsAreRequired_;
 }
 
-template<typename User>
-  void IdentifierMap<User>::getConsecutiveGidBase(gno_t &base) const
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::getConsecutiveGidBase(gno_t &base) const
 {
   if (gnoDist_.size() > 0) 
     base = gnoDist_[0];
@@ -334,8 +339,8 @@ template<typename User>
     base = 0;   // error or not?
 }
 
-template<typename User>
-  void IdentifierMap<User>::gidTranslate(
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::gidTranslate(
     ArrayView<gid_t> gid, 
     ArrayView<gno_t> gno,
     TranslationType tt) const
@@ -398,8 +403,8 @@ template<typename User>
   return;
 }
 
-template<typename User>
-  void IdentifierMap<User>::lidTranslate(
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::lidTranslate(
     ArrayView<lid_t> lid, 
     ArrayView<gno_t> gno, 
     TranslationType tt) const
@@ -475,8 +480,8 @@ template<typename User>
   }
 }
 
-template<typename User>
-  void IdentifierMap<User>::gidGlobalTranslate(
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t>
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::gidGlobalTranslate(
     ArrayView<const gid_t> in_gid,
     ArrayView<gno_t> out_gno,
     ArrayView<int> out_proc) const
@@ -848,8 +853,8 @@ template<typename User>
 }
 
 
-template<typename User> 
-  void IdentifierMap<User>::setupMap(void)
+template<typename lid_t, typename gid_t, typename lno_t, typename gno_t> 
+  void IdentifierMap<lid_t,gid_t,lno_t,gno_t>::setupMap(void)
 {
   numProcs_ = comm_->getSize(); 
   myRank_ = comm_->getRank(); 

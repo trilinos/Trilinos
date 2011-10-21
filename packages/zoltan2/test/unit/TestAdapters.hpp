@@ -68,6 +68,7 @@ using Teuchos::ArrayView;
 using Teuchos::Array;
 using Teuchos::Comm;
 using Teuchos::rcp_implicit_cast;
+using Teuchos::rcp_const_cast;
 using Teuchos::rcp;
 
 template <Z2CLASS_TEMPLATE>
@@ -547,7 +548,9 @@ public:
         }
         matrix->FillComplete();
 
-        emi_ = rcp(new EpetraCrsMatrixInput(matrix));
+        RCP<const Epetra_CrsMatrix> m = rcp_const_cast<const Epetra_CrsMatrix>(matrix);
+
+        emi_ = rcp(new EpetraCrsMatrixInput(m));
       }
       return emi_;
     }
