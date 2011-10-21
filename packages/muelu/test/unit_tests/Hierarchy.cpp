@@ -311,7 +311,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_KeepAggregates)
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-#if 0
+#if 1
   H.GetLevel(0)->Keep("Aggregates",UCAggFact.get()); // not working since no FactoryManager available
   H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
 #else

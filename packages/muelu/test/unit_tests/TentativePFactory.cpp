@@ -335,15 +335,20 @@ namespace MueLuTests {
 
     RCP<Level> coarseLevel = H->GetLevel(1);
     TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel->IsRequested("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel->IsRequested("R",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel->IsAvailable("A",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel->IsAvailable("P",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsKept("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsKept("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel->IsKept("R",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
     TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
     TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",SmooFact.get()), false);
@@ -352,10 +357,14 @@ namespace MueLuTests {
     TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",SmooFact.get()), false);
     TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
     TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsKept("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel->IsKept("R",Rfact.get()), false);
     RCP<Level> coarseLevel2 = H->GetLevel(2);
-    TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel2->IsRequested("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsRequested("R",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel2->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel2->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("A",MueLu::NoFactory::get()), true);
@@ -363,12 +372,21 @@ namespace MueLuTests {
     TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsKept("A",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsKept("P",MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("R",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("P",Pfact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("P",Pfact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",SmooFact.get()), false);
+    TEST_EQUALITY(coarseLevel2->IsKept("R",Rfact.get()), false);
 
   }
 
