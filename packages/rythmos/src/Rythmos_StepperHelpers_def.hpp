@@ -94,7 +94,7 @@ bool setDefaultInitialConditionFromNominalValues(
     // IC has x, we will assume that initCont.get_t() is the valid start time.
     // Therefore, we just need to check that x_dot is also set or we will
     // create a zero x_dot
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
       *model.get_x_space(), *initCond.get_x()->space() );
 #endif
@@ -105,7 +105,7 @@ bool setDefaultInitialConditionFromNominalValues(
         assign(x_dot.ptr(), ST::zero());
       }
       else {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
         THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
           *model.get_x_space(), *initCond.get_x_dot()->space() );
 #endif
@@ -125,9 +125,9 @@ bool setDefaultInitialConditionFromNominalValues(
 template<class Scalar>
 void restart( StepperBase<Scalar> *stepper )
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(0==stepper);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   typedef Thyra::ModelEvaluatorBase MEB;
   const Rythmos::StepStatus<double>
     stepStatus = stepper->getStepStatus();

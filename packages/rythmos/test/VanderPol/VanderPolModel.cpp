@@ -173,7 +173,7 @@ VanderPolModel::getExactSensSolution(int j, double t) const
       "Error, setParameterList must be called first!\n"
       );
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
 
@@ -471,7 +471,7 @@ RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_p_space(int l) co
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_;
@@ -482,7 +482,7 @@ RCP<const Teuchos::Array<std::string> > VanderPolModel::get_p_names(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   RCP<Teuchos::Array<std::string> > p_strings = 
@@ -493,7 +493,7 @@ RCP<const Teuchos::Array<std::string> > VanderPolModel::get_p_names(int l) const
 
 RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_g_space(int j) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_;

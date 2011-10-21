@@ -685,7 +685,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
       "Error, the W from the state time step must be non-null!"
       );
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
@@ -725,7 +725,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
@@ -912,12 +912,10 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   //
   
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
       "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices",
       RythmosFSIMEmain
       );
-#endif
     computeDerivativeMatrices(inArgs);
   }
 
@@ -965,11 +963,9 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
 
   if(nonnull(F_sens)) {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
       "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens",
       Rythmos_FSIME);
-#endif
 
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
     RCP<Thyra::MultiVectorBase<Scalar> >

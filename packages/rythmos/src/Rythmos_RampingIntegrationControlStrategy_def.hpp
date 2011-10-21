@@ -205,7 +205,7 @@ RampingIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain.length() > ST::zero());
 #endif
   integrationTimeDomain_ = integrationTimeDomain;
@@ -228,7 +228,7 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain_.length() > ST::zero());
 #endif
   

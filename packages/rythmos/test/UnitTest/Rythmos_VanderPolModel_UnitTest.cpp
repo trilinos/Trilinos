@@ -165,9 +165,9 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, p_names ) {
   pl->set("Accept model parameters", true);
   model->setParameterList(pl);
   RCP<const Teuchos::Array<std::string> > p_names;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( p_names = model->get_p_names(1), std::logic_error );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   p_names = model->get_p_names(0);
   TEST_EQUALITY_CONST( Teuchos::as<int>(p_names->size()), 1 );
   TEST_EQUALITY_CONST( (*p_names)[0], "Model Coefficient:  epsilon" );
@@ -182,9 +182,9 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, spaces ) {
     TEST_EQUALITY_CONST( f_space->dim(), 2 );
     //RCP<const Thyra::VectorSpaceBase<double> > g_space = explicit_model->get_g_space(0);
     //TEST_EQUALITY_CONST( g_space->dim(), 0 );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     //TEST_THROW( explicit_model->get_g_space(1), std::logic_error );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
     RCP<const Thyra::VectorSpaceBase<double> > p_space = explicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( is_null(p_space), true );
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -192,9 +192,9 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, spaces ) {
     explicit_model->setParameterList(pl);
     p_space = explicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( p_space->dim(), 1 );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW( explicit_model->get_p_space(1), std::logic_error );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -206,18 +206,18 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, spaces ) {
     TEST_EQUALITY_CONST( f_space->dim(), 2 );
     //RCP<const Thyra::VectorSpaceBase<double> > g_space = implicit_model->get_g_space(0);
     //TEST_EQUALITY_CONST( g_space->dim(), 0 );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     //TEST_THROW( implicit_model->get_g_space(1), std::logic_error );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
     RCP<const Thyra::VectorSpaceBase<double> > p_space = implicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( is_null(p_space), true );
     pl->set("Accept model parameters",true);
     implicit_model->setParameterList(pl);
     p_space = implicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( p_space->dim(), 1 );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW( implicit_model->get_p_space(1), std::logic_error );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
 }
 

@@ -60,9 +60,9 @@ void HermiteInterpolator<Scalar>::interpolate(
   //TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   assertInterpolatePreconditions((*nodes_),t_values,data_out);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"HI::interpolator");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {

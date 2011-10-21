@@ -64,7 +64,7 @@ public:
     )
     :t_(t), g_(g), DgDp_(DgDp)
     {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(is_null(g));
       TEUCHOS_TEST_FOR_EXCEPT(is_null(DgDp));
       THYRA_ASSERT_VEC_SPACES("Rythmos::ResponseAndFwdSensPoint()",

@@ -142,7 +142,7 @@ void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
   const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
   )
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(integrationControlStrategy));
 #endif
   integrationControlStrategy_ = integrationControlStrategy;
@@ -168,7 +168,7 @@ void DefaultIntegrator<Scalar>::setIntegrationObserver(
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
   )
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(integrationObserver));
 #endif
   integrationObserver_ = integrationObserver;
@@ -377,10 +377,8 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::getFwdPoints",
+  RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::getFwdPoints",
     TopLevel);
-#endif
 
   using Teuchos::incrVerbLevel;
 #ifndef _MSC_VER
@@ -439,9 +437,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   //
 
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints");
     // 2007/10/05: rabartl: ToDo: Get points from trailingInterpBuffer_ first!
     getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
   }
@@ -458,9 +454,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
     const Scalar t = time_vec[nextTimePointIndex];
     bool advanceStepperToTimeSucceeded = false;
     {
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: advanceStepperToTime");
-#endif
+      RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: advanceStepperToTime");
       advanceStepperToTimeSucceeded= advanceStepperToTime(t);
     }
     if (!advanceStepperToTimeSucceeded) {
@@ -479,9 +473,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
     
     // Extract the next set of points (perhaps just one) from the stepper
     {
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints (fwd)");
-#endif
+      RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints (fwd)");
       getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
     }
     
@@ -604,10 +596,8 @@ template<class Scalar>
 bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::advanceStepperToTime",
+  RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::advanceStepperToTime",
     TopLevel);
-#endif
 
   using std::endl;
   typedef std::numeric_limits<Scalar> NL;
@@ -672,9 +662,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
     if (stepCtrlInfoLast_.limitedByBreakPoint) {
       if ( stepCtrlInfoLast_.breakPointType == BREAK_POINT_TYPE_HARD ) {
-#ifdef ENABLE_RYTHMOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::restart");
-#endif
+        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::restart");
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
           *out << "\nAt a hard-breakpoint, restarting time integrator ...\n";
         restart(&*stepper_);
@@ -705,9 +693,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       StepControlInfo<Scalar> trialStepCtrlInfo;
       {
-#ifdef ENABLE_RYTHMOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
-#endif
+        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
         if (!is_null(integrationControlStrategy_)) {
           // Let an external strategy object determine the step size and type.
           // Note that any breakpoint info is also related through this call.
@@ -784,9 +770,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       // Take step
       Scalar stepSizeTaken;
       {
-#ifdef ENABLE_RYTHMOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
-#endif
+        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
         stepSizeTaken = stepper_->takeStep(
           trialStepCtrlInfo.stepSize, trialStepCtrlInfo.stepType
           );
@@ -880,9 +864,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
-#endif
+        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
       
         // Print our own brief output
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
