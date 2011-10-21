@@ -1048,9 +1048,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep");
 
   if (!is_null(stateIntegrator_)) {
     return takeDecoupledStep(dt,stepType);
@@ -1137,7 +1135,7 @@ void ForwardSensitivityStepper<Scalar>::getPoints(
 
   using Teuchos::as;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
 #endif
 
@@ -1366,10 +1364,8 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:ForwardSensitivityStepper::takeStep: synced",
+  RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:ForwardSensitivityStepper::takeStep: synced",
     TopLevel);
-#endif
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1402,9 +1398,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
 
   Scalar state_dt = -1.0;
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: stateStep");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: stateStep");
     VOTSIBB stateStepper_outputTempState(stateStepper_,out,verbLevel);
     state_dt = stateStepper_->takeStep(dt,stepType);
   }
@@ -1416,9 +1410,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
   }
 
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
     // Set up the sensitivity model for this timestep
     sensModel_->initializePointState(Teuchos::inOutArg(*stateStepper_),forceUpToDateW_);
   } 
@@ -1436,9 +1428,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
 
   Scalar sens_dt = -1.0;
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: sensStep");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: sensStep");
     // Copy the step control data to make sure that the sensStepper takes the
     // same type of step that the statStepper took.  This is needed to ensure
     // that the W matrix is the same for one.
@@ -1485,9 +1475,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeDecoupledStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: decoupled");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: decoupled");
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;

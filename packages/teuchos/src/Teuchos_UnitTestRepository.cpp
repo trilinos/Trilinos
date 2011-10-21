@@ -407,6 +407,8 @@ int UnitTestRepository::runUnitTestsFromMain( int argc, char* argv[] )
   else
     *out << "\nEnd Result: TEST FAILED" << std::endl;
 
+  clp.printFinalTimerSummary(out.ptr());
+
   return (success ? 0 : 1);
 
 }
@@ -452,7 +454,7 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "details", &getData().showTestDetails,
     numShowTestDetails, showTestDetailsValues, showTestDetailsNames,
-    "Short for --details"
+    "Short for --show-test-details"
     );
 
   clp->setOption(

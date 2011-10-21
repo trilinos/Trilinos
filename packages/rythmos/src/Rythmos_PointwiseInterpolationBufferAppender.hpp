@@ -111,9 +111,9 @@ void PointwiseInterpolationBufferAppender<Scalar>::append(
   ) 
 {
   TEUCHOS_ASSERT( !is_null(interpBuffSink) );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   this->assertAppendPreconditions(interpBuffSource,appendRange,*interpBuffSink);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"PointwiseInterpolationBufferAppender::append");

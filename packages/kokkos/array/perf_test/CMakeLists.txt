@@ -7,6 +7,15 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
 
+IF(Kokkos_ENABLE_DevicePthread)
+  LIST(APPEND SOURCES
+    PerfTestPthread.cpp
+  )
+  LIST(APPEND LIBRARIES
+    kokkosdevicepthread
+  )
+ENDIF()
+
 IF(Kokkos_ENABLE_DeviceTPI)
   LIST(APPEND SOURCES
     PerfTestTPI.cpp

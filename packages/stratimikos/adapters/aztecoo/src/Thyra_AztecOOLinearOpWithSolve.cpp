@@ -541,9 +541,7 @@ AztecOOLinearOpWithSolve::solveImpl(
   typedef SolveCriteria<double> SC;
   typedef SolveStatus<double> SS;
 
-#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: AztecOOLOWS");
-#endif
+  THYRA_FUNC_TIME_MONITOR("Stratimikos: AztecOOLOWS");
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
@@ -629,9 +627,7 @@ AztecOOLinearOpWithSolve::solveImpl(
 
   for( int j = 0; j < m; ++j ) {
 
-#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AztecOOLOWS:SingleSolve", SingleSolve);
-#endif
+    THYRA_FUNC_TIME_MONITOR_DIFF("Stratimikos: AztecOOLOWS:SingleSolve", SingleSolve);
 
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)

@@ -382,19 +382,19 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
     )
 {
   TEUCHOS_ASSERT( Teuchos::nonnull(stateStepper) );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializePointState(...)"
     );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   Scalar curr_t = stateStepper->getStepStatus().time;
   RCP<const Thyra::VectorBase<Scalar> > x;
   x = get_x(*stateStepper,curr_t);
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( Teuchos::is_null(x) );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
       
   stateBasePoint_ = stateStepper->getInitialCondition(); // set parameters
   stateBasePoint_.set_x( x );
@@ -504,12 +504,10 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
   //
   
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
         "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeMatrices",
         Rythmos_FSEME
         );
-#endif
     computeDerivativeMatrices(inArgs);
   }
 
@@ -542,12 +540,10 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
 
   if(!is_null(F_sens)) {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
         "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeSens",
         Rythmos_FSEME
         );
-#endif
     
     // Form the residual:  df/dx * S + df/dp
     // F_sens = df/dx * S

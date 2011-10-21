@@ -85,31 +85,5 @@ void DeviceTPI::finalize()
 
 /*--------------------------------------------------------------------------*/
 
-unsigned int DeviceTPI::m_launching_kernel = false ;
-
-void DeviceTPI::set_dispatch_functor()
-{
-  if ( m_launching_kernel ) {
-    std::string msg ;
-    msg.append( "Kokkos::DeviceTPI::set_dispatch_functor FAILED: " );
-    msg.append( "kernel dispatch is already in progress, " );
-    msg.append( "a recursive call or forgotten 'clear_dispatch_kernel" );
-    throw std::runtime_error( msg );
-  }
-  m_launching_kernel = true ;
-}
-
-void DeviceTPI::clear_dispatch_functor()
-{
-  if ( ! m_launching_kernel ) {
-    std::string msg ;
-    msg.append( "Kokkos::DeviceTPI::clear_dispatch_functor FAILED: " );
-    msg.append( "no kernel dispatch in progress." );
-    throw std::runtime_error( msg );
-  }
-  m_launching_kernel = false ;
-}
-
-
 } // namespace Kokkos
 

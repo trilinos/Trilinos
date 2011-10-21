@@ -111,11 +111,11 @@ public:
 
     if ( grid_max < grid.x ) grid.x = grid_max ;
 
-    DeviceCuda::set_dispatch_functor();
+    DeviceCuda::memory_space::set_dispatch_functor();
 
     const self_type driver( functor , work_count , block.x * grid.x );
 
-    DeviceCuda::clear_dispatch_functor();
+    DeviceCuda::memory_space::clear_dispatch_functor();
 
     if ( KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY ) {
       // Copy functor to constant memory on the device

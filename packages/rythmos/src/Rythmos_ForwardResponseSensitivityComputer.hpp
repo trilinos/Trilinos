@@ -416,9 +416,7 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
   // C.1.c) Evaluate the response function k
 
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardResponseSensitivityComputer::evalModel: evalResponse");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardResponseSensitivityComputer::evalModel: evalResponse");
     responseFunc_->evalModel( responseInArgs, responseOutArgs );
   }
   
@@ -451,9 +449,7 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
   
   if (computeSens) {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardResponseSensitivityComputer::evalModel: computeSens");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardResponseSensitivityComputer::evalModel: computeSens");
     
     if (trace)
       *out << "\nD_g_hat_D_p = DgDx_dot * S_dot + DgDx * S + DgDp ...\n";
