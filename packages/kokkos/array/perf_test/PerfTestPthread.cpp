@@ -37,53 +37,47 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#include <gtest/gtest.h>
 
-/*--------------------------------------------------------------------------*/
+#include <Kokkos_DeviceHost.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_DeviceHost_ValueView.hpp>
 
-namespace Kokkos {
+#include <Kokkos_DevicePthread.hpp>
+#include <Kokkos_DevicePthread_ValueView.hpp>
+#include <Kokkos_DevicePthread_MultiVectorView.hpp>
+#include <Kokkos_DevicePthread_MDArrayView.hpp>
+#include <Kokkos_DevicePthread_ParallelFor.hpp>
+#include <Kokkos_DevicePthread_ParallelReduce.hpp>
 
-namespace {
+#include <Kokkos_DevicePthread_macros.hpp>
+#include <PerfTestHexGrad.hpp>
+#include <PerfTestGramSchmidt.hpp>
+#include <PerfTestDriver.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
-class DeviceTPI_Impl {
-public:
+namespace Test {
 
-  ~DeviceTPI_Impl();
-
-  static DeviceTPI_Impl & singleton();
+class pthread : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+      Kokkos::DevicePthread::initialize( 12 );
+    }
+    static void TearDownTestCase() {
+      Kokkos::DevicePthread::finalize();
+    }
 };
 
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
-{
-  static DeviceTPI_Impl self ;
-  return self ;
+TEST_F( pthread, hexgrad ) {
+  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::DevicePthread>( 10, 20 ));
 }
 
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
-
+TEST_F( pthread, gramschmidt ) {
+  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::DevicePthread>( 10, 20 ));
 }
 
-/*--------------------------------------------------------------------------*/
+} // namespace Test
 
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
-} // namespace Kokkos
 

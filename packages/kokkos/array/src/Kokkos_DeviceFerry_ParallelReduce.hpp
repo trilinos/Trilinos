@@ -119,13 +119,13 @@ public:
                        const FunctorType & functor ,
                        const FinalizeType & finalize )
   {
-    DeviceFerry::set_dispatch_functor();
+    DeviceFerry::memory_space::set_dispatch_functor();
     // Make a locally owned copy for consistent behavior
     // across all devices.
 
     ParallelReduce driver( functor , finalize);
 
-    DeviceFerry::clear_dispatch_functor();
+    DeviceFerry::memory_space::clear_dispatch_functor();
     
     ParallelReduce *tmp_driver = &driver;
 

@@ -73,11 +73,11 @@ public:
                 const FunctorType & functor ,
                       value_type  & result )
   {
-    DeviceHost::set_dispatch_functor();
+    DeviceHost::memory_space::set_dispatch_functor();
 
     const ParallelReduce driver( work_count , functor );
 
-    DeviceHost::clear_dispatch_functor();
+    DeviceHost::memory_space::clear_dispatch_functor();
 
     FunctorType::init( result );
 
@@ -115,11 +115,11 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
-    DeviceHost::set_dispatch_functor();
+    DeviceHost::memory_space::set_dispatch_functor();
 
     ParallelReduce driver( work_count , functor , finalize );
 
-    DeviceHost::clear_dispatch_functor();
+    DeviceHost::memory_space::clear_dispatch_functor();
 
     value_type result ;
 

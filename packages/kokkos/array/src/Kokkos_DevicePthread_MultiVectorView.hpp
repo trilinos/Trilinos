@@ -37,53 +37,52 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
+#ifndef KOKKOS_DEVICEPTHREAD_MULTIVECTORVIEW_HPP
+#define KOKKOS_DEVICEPTHREAD_MULTIVECTORVIEW_HPP
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#include <Kokkos_MultiVectorView.hpp>
 
-/*--------------------------------------------------------------------------*/
+#include <Kokkos_DevicePthread_macros.hpp>
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace Kokkos {
+namespace Impl {
 
-namespace {
-
-class DeviceTPI_Impl {
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DevicePthread , DeviceHost ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
+{
 public:
-
-  ~DeviceTPI_Impl();
-
-  static DeviceTPI_Impl & singleton();
+  static void run( const MultiVectorView< ValueType , DevicePthread >  & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    parallel_for( dst.length() * dst.count() ,
+                  DeepCopyContiguous< ValueType , DevicePthread >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
+  }
 };
 
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DevicePthread ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
 {
-  static DeviceTPI_Impl self ;
-  return self ;
-}
+public:
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DevicePthread >  & src )
+  {
+    parallel_for( dst.length() * dst.count() ,
+                  DeepCopyContiguous< ValueType , DevicePthread >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
+  }
+};
 
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
-
-}
-
-/*--------------------------------------------------------------------------*/
-
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
+} // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_DEVICEPTHREAD_MULTIVECTORVIEW_HPP */
 

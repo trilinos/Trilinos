@@ -37,53 +37,70 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
+#ifndef KOKKOS_DEVICEPTHREAD_PARALLELFOR_HPP
+#define KOKKOS_DEVICEPTHREAD_PARALLELFOR_HPP
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#include <Kokkos_ParallelFor.hpp>
 
-/*--------------------------------------------------------------------------*/
+#include <algorithm>
+#include <vector>
 
 namespace Kokkos {
+namespace Impl {
 
-namespace {
-
-class DeviceTPI_Impl {
+template< class FunctorType >
+class ParallelFor< FunctorType , DevicePthread > : public DevicePthreadWorker {
 public:
 
-  ~DeviceTPI_Impl();
+  typedef DevicePthread::size_type size_type ;
 
-  static DeviceTPI_Impl & singleton();
+  const FunctorType m_work_functor ;
+
+private:
+
+  virtual
+  void execute_on_thread( Impl::DevicePthreadController & this_thread ) const
+  {
+    // Iterate this thread's work
+    size_type iwork = DevicePthreadWorker::m_work_portion * this_thread.rank();
+
+    const size_type work_end =
+      std::min( iwork + DevicePthreadWorker::m_work_portion ,
+                        DevicePthreadWorker::m_work_count );
+
+    for ( ; iwork < work_end ; ++iwork ) {
+      m_work_functor( iwork );
+    }
+
+    this_thread.barrier();
+  }
+
+  ParallelFor( const size_type work_count ,
+               const FunctorType & functor )
+    : DevicePthreadWorker( work_count )
+    , m_work_functor( functor )
+    {}
+
+public:
+
+  static void execute( const size_type     work_count ,
+                       const FunctorType & functor )
+  {
+    DevicePthread::memory_space::set_dispatch_functor();
+
+    ParallelFor driver( work_count , functor );
+
+    DevicePthread::memory_space::clear_dispatch_functor();
+
+    DevicePthread::execute( driver );
+  }
 };
 
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
-{
-  static DeviceTPI_Impl self ;
-  return self ;
-}
-
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
-
-}
-
-/*--------------------------------------------------------------------------*/
-
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
+} // namespace Impl
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_DEVICEPTHREAD_PARALLELFOR_HPP */
 

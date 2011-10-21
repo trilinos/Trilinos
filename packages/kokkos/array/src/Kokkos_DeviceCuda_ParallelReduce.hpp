@@ -478,13 +478,13 @@ public:
     const size_type shmem_size =
       sizeof(size_type) * ( ValueWordStride * (WarpStride * block.y - 1) + 1 );
 
-    device_type::set_dispatch_functor();
+    device_type::memory_space::set_dispatch_functor();
 
     self_type driver( functor , finalize ,
                       work_count , work_stride , 0 ,
                       grid.x , grid.x , 0 , 0 );
 
-    device_type::clear_dispatch_functor();
+    device_type::memory_space::clear_dispatch_functor();
 
 #if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
 
@@ -612,7 +612,7 @@ public:
     const size_type work_stride =
       block.x * block.y * grid.x * base_type::m_stream_count ;
 
-    DeviceCuda::set_dispatch_functor();
+    DeviceCuda::memory_space::set_dispatch_functor();
 
     driver_type driver( m_functor , finalize ,
                         m_work_count , work_stride , block_offset ,
@@ -620,7 +620,7 @@ public:
                         std::min( global_block_count , stream_block_count ),
                         stream_block_offset , stream_block_recycle );
 
-    device_type::clear_dispatch_functor();
+    device_type::memory_space::clear_dispatch_functor();
 
 #if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
     throw std::runtime_error( std::string("Multi-functor reduce not supported with CUDA constant memory") );

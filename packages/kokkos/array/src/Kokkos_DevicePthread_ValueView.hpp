@@ -37,53 +37,46 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
+#ifndef KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP
+#define KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#include <Kokkos_ValueView.hpp>
 
-/*--------------------------------------------------------------------------*/
+#include <Kokkos_DevicePthread_macros.hpp>
+#include <impl/Kokkos_ValueView_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace Kokkos {
+namespace Impl {
 
-namespace {
-
-class DeviceTPI_Impl {
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DevicePthread , DeviceHost > {
 public:
 
-  ~DeviceTPI_Impl();
+  static void run( const ValueView< ValueType , DevicePthread > & dst ,
+                   const ValueType & src )
+  { *dst = src ; }
 
-  static DeviceTPI_Impl & singleton();
+  static void run( const ValueView< ValueType , DevicePthread >  & dst ,
+                   const ValueView< ValueType , DeviceHost > & src )
+  { *dst = *src ; }
 };
 
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
-{
-  static DeviceTPI_Impl self ;
-  return self ;
-}
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceHost , DevicePthread > {
+public:
 
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
+  static void run( ValueType & dst ,
+                   const ValueView< ValueType , DevicePthread >  & src )
+  { dst = *src ; }
 
-}
+  static void run( const ValueView< ValueType , DeviceHost > & dst ,
+                   const ValueView< ValueType , DevicePthread >  & src )
+  { *dst = *src ; }
+};
 
-/*--------------------------------------------------------------------------*/
-
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
+} // namespace Impl
 } // namespace Kokkos
+
+#endif /* KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP */
 

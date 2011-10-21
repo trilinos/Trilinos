@@ -37,53 +37,60 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
+#ifndef KOKKOS_DEVICEPTHREAD_HPP
+#define KOKKOS_DEVICEPTHREAD_HPP
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#include <Kokkos_DeviceHost.hpp>
+
+#define KOKKOS_DEVICE_PTHREAD  Kokkos::DevicePthread
+
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+class DevicePthreadWorker ;
+class DevicePthreadController ;
+}
+}
 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 
-namespace {
-
-class DeviceTPI_Impl {
+class DevicePthread {
 public:
 
-  ~DeviceTPI_Impl();
+  /** \brief  On the Pthread device use size_t for indexing */
+  typedef size_t                size_type ;
 
-  static DeviceTPI_Impl & singleton();
+  /** \brief  The Pthread device uses the Host memory space */
+  typedef HostMemory            memory_space ;
+
+  /** \brief  Default mdarray map is index from right */
+  typedef Impl::MDArrayIndexMapRight  mdarray_map ;
+
+  /*--------------------------------*/
+
+  static void wait_functor_completion() {}
+
+  static void execute( const Impl::DevicePthreadWorker & );
+
+  /*--------------------------------*/
+
+  static void initialize( size_type nthreads );
+  static void finalize();
+
+  static void block();
+  static void unblock();
 };
 
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
-{
-  static DeviceTPI_Impl self ;
-  return self ;
-}
-
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
-
-}
-
-/*--------------------------------------------------------------------------*/
-
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
 } // namespace Kokkos
+
+#include <DevicePthread/Kokkos_DevicePthread_Impl.hpp>
+
+#include <Kokkos_DevicePthread_macros.hpp>
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+
+#endif /* #define KOKKOS_DEVICEPTHREAD_HPP */
 

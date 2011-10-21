@@ -103,11 +103,11 @@ public:
                        const FunctorType & functor ,
                              value_type  & result )
   {
-    DeviceTPI::set_dispatch_functor();
+    DeviceTPI::memory_space::set_dispatch_functor();
 
     ParallelReduce driver( work_count , functor );
 
-    DeviceTPI::clear_dispatch_functor();
+    DeviceTPI::memory_space::clear_dispatch_functor();
 
     ReduceTraits::init( result );
 

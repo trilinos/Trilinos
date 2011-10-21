@@ -37,53 +37,28 @@
  *************************************************************************
  */
 
-#include <stdlib.h>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
+#if ! defined( KOKKOS_DEVICE_PTHREAD ) || \
+    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOS_MACRO_DEVICE ) || \
+    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#include <TPI.h>
-#include <Kokkos_DeviceTPI.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
+#error "Including <Kokkos_DevicePthread_macros.hpp> with macros already defined"
 
-/*--------------------------------------------------------------------------*/
+#else
 
-namespace Kokkos {
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                       Kokkos::DevicePthread
+#define KOKKOS_MACRO_DEVICE_MEMORY                Kokkos::HostMemory
+#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
 
-namespace {
+#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
+#define KOKKOS_MACRO_CHECK( expr )  /* */
+#else
+#define KOKKOS_MACRO_CHECK( expr )  expr
+#endif
 
-class DeviceTPI_Impl {
-public:
-
-  ~DeviceTPI_Impl();
-
-  static DeviceTPI_Impl & singleton();
-};
-
-DeviceTPI_Impl & DeviceTPI_Impl::singleton()
-{
-  static DeviceTPI_Impl self ;
-  return self ;
-}
-
-DeviceTPI_Impl::~DeviceTPI_Impl()
-{}
-
-}
-
-/*--------------------------------------------------------------------------*/
-
-void DeviceTPI::initialize( size_type nthreads )
-{
-  TPI_Init( nthreads );
-}
-
-void DeviceTPI::finalize()
-{
-  TPI_Finalize();
-}
-
-/*--------------------------------------------------------------------------*/
-
-} // namespace Kokkos
+#endif
 
