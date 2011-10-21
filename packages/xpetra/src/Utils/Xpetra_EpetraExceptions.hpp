@@ -26,7 +26,7 @@
     {                                                                   \
       int globalFailure = 0; /* 0 == success */                         \
       Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, localFailure, Teuchos::outArg(globalFailure)); \
-      TEST_FOR_EXCEPTION(globalFailure != 0, std::invalid_argument, "Epetra threw exception"); \
+      TEUCHOS_TEST_FOR_EXCEPTION(globalFailure != 0, std::invalid_argument, "Epetra threw exception"); \
     }                                                                   \
   }
 #endif

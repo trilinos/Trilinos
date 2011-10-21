@@ -5,7 +5,7 @@
 #define MUELU_MATRIXFACTORY_HPP
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "MueLu_MatrixTypes.hpp"
 
@@ -41,7 +41,7 @@ namespace MueLu {
             GlobalOrdinal n = map->getGlobalNumElements();
             nx = (GlobalOrdinal)sqrt((Scalar)n);
             ny = nx;
-            TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
+            TEUCHOS_TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
           }
 
         returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
@@ -94,7 +94,7 @@ namespace MueLu {
             GlobalOrdinal n = map->getGlobalNumElements();
             nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
             ny = nx; nz = nx;
-            TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+            TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 
 
         returnMatrix = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
@@ -109,7 +109,7 @@ namespace MueLu {
             GlobalOrdinal n = map->getGlobalNumElements();
             nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
             ny = nx; nz = nx;
-            TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+            TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 
 
         returnMatrix = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
@@ -121,7 +121,7 @@ namespace MueLu {
 
       } else {
 
-        TEST_FOR_EXCEPTION(true,
+        TEUCHOS_TEST_FOR_EXCEPTION(true,
                            std::logic_error,
                            "`MatrixType' has incorrect value (" << MatrixType
                            << ") in input to function CreateCrsMatrix()."

@@ -2,7 +2,7 @@
 #define MUELU_EXCEPTIONS_HPP
 
 #include <Teuchos_Exceptions.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 

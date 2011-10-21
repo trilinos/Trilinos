@@ -60,7 +60,7 @@ namespace Xpetra {
 //       using Teuchos::VERB_EXTREME;
 //       Teuchos::EVerbosityLevel vl = verbLevel;
 
-//       TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+//       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
 
 //       if (vl == VERB_DEFAULT) vl = VERB_LOW;
 //       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();

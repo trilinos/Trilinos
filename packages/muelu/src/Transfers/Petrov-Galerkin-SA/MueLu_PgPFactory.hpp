@@ -8,7 +8,7 @@
 #ifndef MUELU_PGPFACTORY_HPP_
 #define MUELU_PGPFACTORY_HPP_
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -281,7 +281,7 @@ private:
 
       Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);
       RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, GID2localgid);
-      TEST_FOR_EXCEPTION(Numerator->size() != Numerator2->size(), Exceptions::RuntimeError, "PgPFactory::ComputeRowBasedOmegas: size of Numerator and Numerator2 different. Error");
+      TEUCHOS_TEST_FOR_EXCEPTION(Numerator->size() != Numerator2->size(), Exceptions::RuntimeError, "PgPFactory::ComputeRowBasedOmegas: size of Numerator and Numerator2 different. Error");
       for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
         (*Numerator)[i] += (*Numerator2)[i];
       Denominator = MultiplyAll(DinvAPtent,DinvADinvAP0, GID2localgid);
@@ -331,7 +331,7 @@ private:
 
     // mark all local row based omegas as "not assigned"
     RowBasedOmegas.assign(Op->getNodeNumRows(), -666*Teuchos::ScalarTraits<Scalar>::one());
-    //TEST_FOR_EXCEPTION(RowBasedOmegas.size() != Teuchos::as<size_t>(Op->getNodeNumRows()), Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: initial assignement of RowBasedOmegas failed. Error.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(RowBasedOmegas.size() != Teuchos::as<size_t>(Op->getNodeNumRows()), Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: initial assignement of RowBasedOmegas failed. Error.");
 
     // loop over local rows of Op and extract row information
     for(size_t row=0; row<Op->getNodeNumRows(); row++)
@@ -342,7 +342,7 @@ private:
       Teuchos::ArrayView<const Scalar> vals;
       Op->getLocalRowView(row, indices, vals);
 
-      TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: number of nonzeros not equal to number of indices? Error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PgPFactory::TransformCol2RowBasedOmegas: number of nonzeros not equal to number of indices? Error.");
 
       if(nnz == 0)
       {
@@ -404,8 +404,8 @@ private:
   {
 
 
-    TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
-    TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
 
     // test
     /*Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));

@@ -47,7 +47,7 @@ namespace Xpetra {
   void EpetraMultiVector::meanValue(const Teuchos::ArrayView<double> &means) const {  vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
 
   std::string EpetraMultiVector::description() const {  
-    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
     return "TODO"; 
   }
 
@@ -62,7 +62,7 @@ namespace Xpetra {
 
     RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Import<int, int>& importer, CombineMode CM) {
@@ -72,7 +72,7 @@ namespace Xpetra {
 
     RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraMultiVector::doImport(const DistObject<double,int,int> &source, const Export<int, int>& exporter, CombineMode CM) {
@@ -82,7 +82,7 @@ namespace Xpetra {
 
     RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Export<int, int>& exporter, CombineMode CM) {
@@ -92,7 +92,7 @@ namespace Xpetra {
 
     RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
-    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   // TODO: move that elsewhere

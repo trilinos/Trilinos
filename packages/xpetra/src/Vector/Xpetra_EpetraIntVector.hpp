@@ -167,7 +167,7 @@ namespace Xpetra {
     RCP< Epetra_IntVector > getEpetra_IntVector() const {  return vec_; }
 
     const RCP<const Comm<int> > getComm() const {
-      TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
     }
 
     // Implementing DistObject

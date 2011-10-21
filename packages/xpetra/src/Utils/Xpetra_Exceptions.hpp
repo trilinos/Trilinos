@@ -3,7 +3,7 @@
 
 #include <exception>
 #include <Teuchos_Exceptions.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 
@@ -11,24 +11,24 @@
 // If the dynamic cast failed, throw an exception of type Xpetra::Exception::Bad_Cast (using the message exceptionMsg).
 #define XPETRA_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)           \
   type * newObj ## _pt = dynamic_cast<type *>(&obj);                    \
-  TEST_FOR_EXCEPTION(newObj ## _pt == NULL, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); \
+  TEUCHOS_TEST_FOR_EXCEPTION(newObj ## _pt == NULL, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); \
   type & newObj = *newObj ## _pt;
 
 // Dynamically cast the RCP 'obj' to 'RCP<type> newObj'. newObj is declared inside of the macro.
 // If the dynamic cast failed, throw an exception of type Xpetra::Exception::Bad_Cast (using the message exceptionMsg).
 #define XPETRA_RCP_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)       \
   const RCP<type > & newObj = Teuchos::rcp_dynamic_cast<type >(obj);    \
-  TEST_FOR_EXCEPTION(newObj == Teuchos::null, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
+  TEUCHOS_TEST_FOR_EXCEPTION(newObj == Teuchos::null, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
 
 #ifdef HAVE_XPETRA_EPETRA
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)                            \
   if ((lib) == UseEpetra)                                               \
-        TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
 #else
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)
 #endif
 
-#define XPETRA_FACTORY_END TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
+#define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
 
 namespace Xpetra {
   namespace Exceptions {

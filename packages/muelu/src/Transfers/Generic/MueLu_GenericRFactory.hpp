@@ -41,7 +41,7 @@ namespace MueLu {
     GenericRFactory(RCP<PFactory> PFact = Teuchos::null)
       : PFact_(PFact)
     {
-        TEST_FOR_EXCEPTION(PFact_==Teuchos::null, MueLu::Exceptions::RuntimeError, "GenericRFactory: no valid PFactory provided.");
+        TEUCHOS_TEST_FOR_EXCEPTION(PFact_==Teuchos::null, MueLu::Exceptions::RuntimeError, "GenericRFactory: no valid PFactory provided.");
     }
 
     //! Destructor.

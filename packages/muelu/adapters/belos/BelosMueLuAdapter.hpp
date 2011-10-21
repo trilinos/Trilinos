@@ -106,7 +106,7 @@ namespace Belos {
     // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, EpetraOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, EpetraOpFailure, 
                          "Belos::MueLuEpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
@@ -130,7 +130,7 @@ namespace Belos {
       const Epetra_MultiVector* vec_x = dynamic_cast<const Epetra_MultiVector*>(&x);
       Epetra_MultiVector*       vec_y = dynamic_cast<Epetra_MultiVector*>(&y);
 
-      TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
                           "Belos::MueLuEpetraPrecOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
 
       Apply(*vec_x, *vec_y, trans);
@@ -270,7 +270,7 @@ namespace Belos {
       indicated by an std::exception being thrown.
     */
     void Apply ( const MultiVector& x, MultiVector& y, ETrans trans=NOTRANS ) const {
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
@@ -287,7 +287,7 @@ namespace Belos {
       indicated by an std::exception being thrown.
     */
     void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
 
 
@@ -311,7 +311,7 @@ namespace Belos {
     */
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
 
 
@@ -374,7 +374,7 @@ namespace Belos {
     // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
     void Apply ( const MultiVector& x, MultiVector& y, ETrans trans=NOTRANS ) const {
 
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
@@ -393,7 +393,7 @@ namespace Belos {
     */
     void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
 
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
@@ -418,7 +418,7 @@ namespace Belos {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
-      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);

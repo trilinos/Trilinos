@@ -84,7 +84,7 @@ namespace MueLu {
         if (varName == "PreSmoother")   return GetFactory("Smoother");
         if (varName == "PostSmoother")  return GetFactory("Smoother");
 
-        TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }
       
     }
@@ -103,7 +103,7 @@ namespace MueLu {
     //TODO factory->setObjectLabel("Default " + varName + "Factory");
 
     const RCP<const FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
-      TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
       GetOStream(Warnings0,  0) << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
       GetOStream(Warnings00, 0) << "        using default factory: ";

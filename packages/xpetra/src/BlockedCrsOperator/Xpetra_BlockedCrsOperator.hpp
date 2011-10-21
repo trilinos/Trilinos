@@ -8,27 +8,25 @@
 #ifndef XPETRA_BLOCKEDCRSOPERATOR_HPP_
 #define XPETRA_BLOCKEDCRSOPERATOR_HPP_
 
-
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_Exceptions.hpp>
-
-//#include "Xpetra_BlockMap.hpp"
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_CrsGraph.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixFactory.hpp>
-
-#include <Xpetra_MapExtractor.hpp>
-
-#include <Xpetra_Operator.hpp>
-
 #include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_TestForException.hpp>
 #include <Teuchos_Hashtable.hpp>
+
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
+
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
+
+#include "Xpetra_MapExtractor.hpp"
+
+#include "Xpetra_Operator.hpp"
+
 
 /** \file Xpetra_Operator.hpp
 
@@ -117,7 +115,7 @@ public:
   */
   void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals)
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "insertGlobalValues not supported by BlockedCrsOperator!" );
   }
 
@@ -139,7 +137,7 @@ public:
     */
   void fillComplete(const RCP<const MapClass> &domainMap, const RCP<const MapClass> &rangeMap, OptimizeOption os = DoOptimizeStorage)
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "fillComplete with arguments not supported for block matrices!" );
   }
 
@@ -267,7 +265,7 @@ public:
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getNumEntriesInLocalRow not supported by BlockedCrsOperator!" );
     return 0;
   }
@@ -277,7 +275,7 @@ public:
    */
   global_size_t getGlobalNumDiags() const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getGlobalNumDiags() not supported by BlockedCrsOperator!" );
     return 0;
   }
@@ -287,7 +285,7 @@ public:
    */
   size_t getNodeNumDiags() const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getNodeNumDiags() not supported by BlockedCrsOperator!" );
     return 0;
   }
@@ -297,7 +295,7 @@ public:
    */
   size_t getGlobalMaxNumRowEntries() const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getGlobalMaxNumRowEntries() not supported by BlockedCrsOperator!" );
     return 0;
   }
@@ -307,7 +305,7 @@ public:
    */
   size_t getNodeMaxNumRowEntries() const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getNodeMaxNumRowEntries() not supported by BlockedCrsOperator!" );
     return 0;
   }
@@ -364,7 +362,7 @@ public:
                                  size_t &NumEntries
                                  ) const
     {
-      TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
           "getLocalRowCopy not supported by BlockedCrsOperator!" );
     }
 
@@ -380,7 +378,7 @@ public:
   */
   void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getGlobalRowView not supported by BlockedCrsOperator!" );
   }
 
@@ -396,7 +394,7 @@ public:
   */
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getLocalRowView not supported by BlockedCrsOperator!" );
   }
 
@@ -405,7 +403,7 @@ public:
     the zero and non-zero diagonals owned by this node. */
   void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getLocalDiagCopy not supported by BlockedCrsOperator!" );
   }
 
@@ -482,7 +480,7 @@ public:
       }
     }
     else
-      TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
           "apply() only supports NO_TRANS and TRANS." );
 
   }
@@ -582,7 +580,7 @@ public:
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const
   {
-    TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "getCrsGraph() not supported by BlockedCrsOperator!" );
     return Teuchos::null;
   }
@@ -606,12 +604,12 @@ public:
   {
     // TODO: if filled -> return error
 
-    TEST_FOR_EXCEPTION( r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big" );
-    TEST_FOR_EXCEPTION( c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big" );
+    TEUCHOS_TEST_FOR_EXCEPTION( r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big" );
+    TEUCHOS_TEST_FOR_EXCEPTION( c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big" );
 
     // check row map
     //if (!rangemaps_->Map(r)->isSameAs(mat->getRowMap()))
-    //  TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError, "Error. row maps do not fit." );
+    //  TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError, "Error. row maps do not fit." );
 
     // set matrix
     blocks_[r*Cols()+c] = mat;
@@ -653,7 +651,7 @@ private:
    */
   void Add(Teuchos::RCP<CrsMatrixClass>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrixClass>& B, const Scalar scalarB) const
   {
-    TEST_FOR_EXCEPTION( !A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION( !A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
         "Matrix A is not completed" );
 
     B->scale(scalarB);

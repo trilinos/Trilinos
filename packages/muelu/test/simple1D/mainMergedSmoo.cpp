@@ -99,7 +99,7 @@ RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::st
         coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
 #else
         std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
-        //TODO        TEST_FOR_EXCEPTION
+        //TODO        TEUCHOS_TEST_FOR_EXCEPTION
         return Teuchos::null;
 #endif
     } else {

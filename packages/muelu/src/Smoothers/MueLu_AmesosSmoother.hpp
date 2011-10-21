@@ -78,9 +78,9 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS_KLU)
       type_ = "Klu";
 #endif
-      TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU and SuperLU. Cannot define a solver by default for this AmesosSmoother object");
+      TEUCHOS_TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU and SuperLU. Cannot define a solver by default for this AmesosSmoother object");
 
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
     }
 
     //! Destructor
@@ -116,12 +116,12 @@ namespace MueLu {
 
       Amesos factory;
       prec_ = rcp(factory.Create(type_, *linearProblem_));
-      TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Solver '" + type_ + "' not supported by Amesos");
+      TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Solver '" + type_ + "' not supported by Amesos");
 
       prec_->SetParameters(paramList_);
 
       int r = prec_->NumericFactorization();
-      TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " + Teuchos::Utils::toString(r) + " during NumericFactorization()");
+      TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " + Teuchos::Utils::toString(r) + " during NumericFactorization()");
 
       SmootherPrototype::IsSetup(true);
     }
@@ -136,7 +136,7 @@ namespace MueLu {
     */
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero = false) const
     {
-      TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
+      TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
       Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
       Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
@@ -201,20 +201,28 @@ namespace MueLu {
 
   private:
 
+    // Important note: 
+    // linearProblem_ must be destroyed before A_, because destructor of linearProblem_ is using A_.
+    // In C++, destructor of member objects are called in the reverse order they appear within the declaration for the class. 
+    // ==18029== Invalid read of size 8
+    // ==18029==    at 0xC0780A: Epetra_LinearProblem::GetOperator() const (Epetra_LinearProblem.h:173)
+    // ==18029==    by 0xC5EC27: Amesos_Superlu::PrintTiming() const (Amesos_Superlu.cpp:664)
+    // ==18029==    by 0xC628C6: Amesos_Superlu::~Amesos_Superlu() (Amesos_Superlu.cpp:108)
+
     //! amesos-specific key phrase that denote smoother type
     std::string type_;
 
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList paramList_;
 
-    //! pointer to Amesos solver object
-    RCP<Amesos_BaseSolver> prec_;
+    //! Operator. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
+    RCP<Operator> A_;
 
     //! Problem that Amesos uses internally.
     RCP<Epetra_LinearProblem> linearProblem_;
 
-    //! Operator. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
-    RCP<Operator> A_;
+    //! pointer to Amesos solver object
+    RCP<Amesos_BaseSolver> prec_;
 
     //! A Factory
     RCP<FactoryBase> AFact_;
@@ -225,7 +233,7 @@ namespace MueLu {
   //! This function simplifies the usage of AmesosSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null) { 
-    TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
   //

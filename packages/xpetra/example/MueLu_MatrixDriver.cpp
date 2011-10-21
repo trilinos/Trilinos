@@ -4,7 +4,7 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_VerboseObject.hpp>

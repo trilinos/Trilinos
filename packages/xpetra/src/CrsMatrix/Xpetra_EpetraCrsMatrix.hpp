@@ -122,10 +122,10 @@ namespace Xpetra {
     //! Returns the maximum number of entries across all rows/columns on this node.
     size_t getNodeMaxNumRowEntries() const { return mtx_->MaxNumEntries(); }
 
-    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return mtx_->IndicesAreLocal(); }
 
-    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     bool isGloballyIndexed() const { return mtx_->IndicesAreGlobal(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
@@ -140,7 +140,7 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const;
 
-    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
 
     //@}

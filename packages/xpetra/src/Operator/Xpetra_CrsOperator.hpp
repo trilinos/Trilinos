@@ -332,7 +332,7 @@ public:
   
   //! \brief Returns the Map that describes the column distribution in this matrix.
   const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
-    TEST_FOR_EXCEPTION(Operator::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Operator::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
     updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsOperator::fillComplete(), the default view is updated.
     return Operator::operatorViewTable_.get(viewLabel)->GetColMap(); 
   }
