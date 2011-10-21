@@ -112,7 +112,7 @@ namespace MueLuTests {
 
             // test some basic multigrid data
             RCP<Level> coarseLevel = H->GetLevel(1);
-            TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true);
+            TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
             TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), false);
             TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
             TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);

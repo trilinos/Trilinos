@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   // test some basic multigrid data
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(out);
-  TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
 
   RCP<Level> coarseLevel = H->GetLevel(1);
-  TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true); // why
+  TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsKept("R",Rfact.get()), false);
   RCP<Level> coarseLevel2 = H->GetLevel(2);
-  TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false); // why
+  TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("R",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
@@ -447,7 +447,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
 
       // test some basic multigrid data
       RCP<Level> coarseLevel = H->GetLevel(1);
-      TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), true); // why?
+      TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel->IsRequested("P",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
@@ -479,7 +479,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
       TEST_EQUALITY(R1->getGlobalNumRows(), 21);
       TEST_EQUALITY(R1->getGlobalNumCols(), 63);
       RCP<Level> coarseLevel2 = H->GetLevel(2);
-      TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false); // why?
+      TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel2->IsRequested("R",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel2->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);

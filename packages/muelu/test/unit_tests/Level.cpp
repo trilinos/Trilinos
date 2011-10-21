@@ -94,5 +94,73 @@ namespace MueLuTests {
     TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
   }
 
+  TEUCHOS_UNIT_TEST(Level, KeepFactory)
+  {
+    Level l;
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    l.Set("A", A);
+
+    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
+
+    l.Keep("Aggregates", aggFact.get());      // set keep flag
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+    l.Request("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsKept     ("Graph",      aggFact.get()),   false);
+
+    l.Release("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+  }
+
+  TEUCHOS_UNIT_TEST(Level, KeepAndBuildFactory)
+  {
+    Level l;
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    l.Set("A", A);
+
+    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
+
+    l.Keep("Aggregates", aggFact.get());      // set keep flag
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+    l.Request("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+
+    aggFact->Build(l);
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.IsKept     ("Graph",      aggFact.get()),   false);
+
+    l.Release("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsKept     ("Aggregates", aggFact.get()),   true );
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsKept     ("Graph",      graphFact.get()), false);
+  }
+
 } // namespace MueLuTests
 
