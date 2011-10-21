@@ -665,6 +665,7 @@ private:
   typedef std::vector< MemberType * > MemberVector ;
 
   MemberVector m_member_functors ;
+  FinalizeType m_finalize ;
   size_type    m_shmem_size ;
   size_type    m_stream_count ; ///< Total number of streams
   size_type    m_warps_per_block ;
@@ -673,16 +674,14 @@ private:
 
 public:
 
-  FinalizeType result ;
-
-  MultiFunctorParallelReduce()
+  MultiFunctorParallelReduce( const FinalizeType & finalize )
     : m_member_functors()
+    , m_finalize( finalize )
     , m_shmem_size( 0 )
     , m_warps_per_block( device_type::maximum_warp_count() )
     , m_stream_count( device_type::stream_count() )
     , m_threads_per_block( 0 )
     , m_blocks_per_stream( 0 )
-    , result()
   {
     typedef MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceCuda > self_type ;
 
@@ -772,7 +771,8 @@ public:
 
         cudaStream_t & s = device_type::stream( stream_offset );
 
-        member.execute( result , m_blocks_per_stream , work_block_offset ,
+        member.execute( m_finalize ,
+                        m_blocks_per_stream , work_block_offset ,
                         m_warps_per_block , m_shmem_size , s ,
                         global_block_count ,
                         stream_block_count ,
@@ -783,36 +783,6 @@ public:
 };
 
 //----------------------------------------------------------------------------
-
-template < class ReduceTraits >
-class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceCuda > {
-private:
-  typedef typename ReduceTraits::value_type    value_type ;
-  typedef ValueView< value_type , DeviceCuda > view_type ;
-
-  MultiFunctorParallelReduce< ReduceTraits , view_type , DeviceCuda > m_reduce ;
-
-public:
-
-  typedef DeviceCuda::size_type size_type ;
-
-  value_type result ;
-
-  MultiFunctorParallelReduce()
-    : m_reduce()
-    , result()
-    { m_reduce.result = create_value< value_type , DeviceCuda >(); }
-
-  template< class FunctorType >
-  void push_back( const size_type work_count , const FunctorType & f )
-  { m_reduce.push_back< FunctorType>( work_count , f ); }
-
-  void execute()
-  {
-    m_reduce.execute();
-    deep_copy( result , m_reduce.result );
-  }
-};
 
 } // namespace Kokkos
 

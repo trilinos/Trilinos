@@ -54,15 +54,11 @@ protected:
   /** \brief  Virtual method called by the pthread */
   virtual void execute_on_thread( DevicePthreadController & ) const ;
 
-  typedef DevicePthread::size_type size_type ;
-
-  const size_type m_work_count ;
-  const size_type m_work_portion ;
-
   virtual ~DevicePthreadWorker() {}
 
-  DevicePthreadWorker( const size_type work_count );
-  DevicePthreadWorker() : m_work_count(0), m_work_portion(0) {}
+  DevicePthreadWorker() {}
+
+  static DevicePthread::size_type work_per_thread( DevicePthread::size_type );
 
 private:
 

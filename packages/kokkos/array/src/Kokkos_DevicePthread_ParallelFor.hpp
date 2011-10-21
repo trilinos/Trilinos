@@ -50,23 +50,22 @@ namespace Impl {
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DevicePthread > : public DevicePthreadWorker {
-public:
+private:
 
   typedef DevicePthread::size_type size_type ;
 
   const FunctorType m_work_functor ;
-
-private:
+  const size_type   m_work_count ;
+  const size_type   m_work_per_thread ;
 
   virtual
   void execute_on_thread( Impl::DevicePthreadController & this_thread ) const
   {
     // Iterate this thread's work
-    size_type iwork = DevicePthreadWorker::m_work_portion * this_thread.rank();
+    size_type iwork = m_work_per_thread * this_thread.rank();
 
     const size_type work_end =
-      std::min( iwork + DevicePthreadWorker::m_work_portion ,
-                        DevicePthreadWorker::m_work_count );
+      std::min( iwork + m_work_per_thread , m_work_count );
 
     for ( ; iwork < work_end ; ++iwork ) {
       m_work_functor( iwork );
@@ -77,8 +76,10 @@ private:
 
   ParallelFor( const size_type work_count ,
                const FunctorType & functor )
-    : DevicePthreadWorker( work_count )
+    : DevicePthreadWorker()
     , m_work_functor( functor )
+    , m_work_count( work_count )
+    , m_work_per_thread( DevicePthreadWorker::work_per_thread( work_count ) )
     {}
 
 public:
@@ -101,6 +102,113 @@ public:
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType >
+class DevicePthreadMultiFunctorParallelForMember ;
+
+template<>
+class DevicePthreadMultiFunctorParallelForMember<void> {
+public:
+  DevicePthreadMultiFunctorParallelForMember() {}
+
+  virtual ~DevicePthreadMultiFunctorParallelForMember() {}
+
+  virtual void execute_on_thread( DevicePthread::size_type thread_rank ) const = 0 ;
+};
+
+template< class FunctorType >
+class DevicePthreadMultiFunctorParallelForMember
+  : public DevicePthreadMultiFunctorParallelForMember<void> {
+public:
+  typedef DevicePthread::size_type size_type ;
+
+  const FunctorType m_work_functor ;
+  const size_type   m_work_count ;
+  const size_type   m_work_per_thread ;
+
+  ~DevicePthreadMultiFunctorParallelForMember() {}
+
+  DevicePthreadMultiFunctorParallelForMember(
+    const FunctorType & work_functor ,
+    const size_type work_count ,
+    const size_type work_per_thread )
+    : m_work_functor( work_functor )
+    , m_work_count(   work_count )
+    , m_work_per_thread( work_per_thread )
+    {}
+
+  void execute_on_thread( size_type thread_rank ) const
+  {
+    // Iterate this thread's work
+    size_type iwork = m_work_per_thread * thread_rank ;
+
+    const size_type work_end = std::min( iwork + m_work_per_thread , m_work_count );
+
+    for ( ; iwork < work_end ; ++iwork ) {
+      m_work_functor( iwork );
+    }
+  }
+};
+
+} // namespace Impl
+
+template<>
+class MultiFunctorParallelFor< DevicePthread > : public Impl::DevicePthreadWorker {
+private:
+  typedef DevicePthread::size_type size_type ;
+  
+  typedef Impl::DevicePthreadMultiFunctorParallelForMember<void> MemberType ;
+
+  typedef std::vector< MemberType * > MemberContainer ;
+
+  typedef MemberContainer::const_iterator MemberIterator ;
+
+  MemberContainer m_member_functors ;
+
+  // Virtual method defined in DevicePthreadWorker
+  void execute_on_thread( Impl::DevicePthreadController & this_thread ) const
+  {
+    const size_type thread_rank = this_thread.rank();
+
+    for ( MemberIterator m  = m_member_functors.begin() ;
+                         m != m_member_functors.end() ; ++m ) {
+      (*m)->execute_on_thread( thread_rank );
+    }
+
+    this_thread.barrier();
+  }
+  
+public: 
+
+  MultiFunctorParallelFor() : m_member_functors() {}
+    
+  ~MultiFunctorParallelFor()
+  { 
+    while ( ! m_member_functors.empty() ) {
+      delete m_member_functors.back();
+      m_member_functors.pop_back();
+    }
+  }
+  
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & functor )
+  {
+    typedef Impl::DevicePthreadMultiFunctorParallelForMember<FunctorType> member_work_type ;
+
+    DevicePthread::memory_space::set_dispatch_functor();
+    MemberType * const m = new member_work_type( functor , work_count , Impl::DevicePthreadWorker::work_per_thread( work_count ) );
+    DevicePthread::memory_space::clear_dispatch_functor();
+
+    m_member_functors.push_back( m );
+  }
+
+  void execute() const { DevicePthread::execute( *this ); }
+};
+
+} // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEPTHREAD_PARALLELFOR_HPP */
 

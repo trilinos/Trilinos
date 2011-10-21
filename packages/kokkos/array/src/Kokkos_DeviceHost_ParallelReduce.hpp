@@ -180,26 +180,27 @@ public:
 
 } // namespace Impl
 
-template< class ReduceTraits >
-class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceHost > {
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceHost > {
 private:
   typedef          DeviceHost  ::size_type   size_type ;
   typedef typename ReduceTraits::value_type value_type ;
 
-  typedef MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceHost > self_type ;
   typedef Impl::MultiFunctorParallelReduceMember<void,ReduceTraits,value_type,DeviceHost> MemberType ;
+
   typedef std::vector< MemberType * > MemberContainer ;
   typedef typename MemberContainer::const_iterator MemberIterator ;
 
   MemberContainer m_member_functors ;
+  FinalizeType    m_finalize ;
 
 public:
 
   value_type result ;
 
-  MultiFunctorParallelReduce()
+  MultiFunctorParallelReduce( const FinalizeType & finalize )
     : m_member_functors()
-    , result()
+    , m_finalize( finalize )
     {}
 
   ~MultiFunctorParallelReduce()
@@ -219,35 +220,19 @@ public:
 
   void execute()
   {
+    DeviceHost::memory_space::set_dispatch_functor();
+
+    value_type result ;
     ReduceTraits::init( result );
+
     for ( MemberIterator m  = m_member_functors.begin();
                          m != m_member_functors.end(); ++m ) {
       (*m)->execute( result );
     }
-  }
-};
 
-template< class ReduceTraits , class FinalizeType >
-class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceHost > {
-private:
+    m_finalize( result );
 
-  MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceHost > m_impl ;
-
-public:
-
-  FinalizeType result ;
-
-  MultiFunctorParallelReduce() : m_impl() {}
-
-  template< class FunctorType >
-  void push_back( const DeviceHost::size_type work_count ,
-                  const FunctorType & functor )
-  { m_impl.push_back( work_count , functor ); }
-
-  void execute()
-  {
-    m_impl.execute();
-    result( m_impl.result );
+    DeviceHost::memory_space::clear_dispatch_functor();
   }
 };
 

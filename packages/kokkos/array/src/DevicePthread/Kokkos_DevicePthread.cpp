@@ -98,9 +98,6 @@ public:
   size_type                   m_thread_count ;
   DevicePthreadController     m_thread[ THREAD_COUNT_MAX + 1 ];
 
-  inline
-  size_type work_per_thread( size_type work_count ) const
-  { return ( work_count + m_thread_count - 1 ) / m_thread_count ; }
 
   ~DevicePthreadPool() { pthread_mutex_destroy( & m_lock ); }
 
@@ -372,11 +369,13 @@ void DevicePthreadWorkerBlock::execute_on_thread(
 
 //----------------------------------------------------------------------------
 
-DevicePthreadWorker::DevicePthreadWorker(
-  const DevicePthreadWorker::size_type work_count )
-  : m_work_count( work_count )
-  , m_work_portion( DevicePthreadPool::singleton().work_per_thread(work_count) )
-  {}
+DevicePthread::size_type
+DevicePthreadWorker::work_per_thread( DevicePthread::size_type work_count )
+{
+  const DevicePthread::size_type
+    thread_count = DevicePthreadPool::singleton().m_thread_count ;
+  return ( work_count + thread_count - 1 ) / thread_count ;
+}
 
 // Default driver performs the synchronization barrier
 void DevicePthreadWorker::execute_on_thread(

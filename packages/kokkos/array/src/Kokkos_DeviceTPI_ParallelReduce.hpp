@@ -194,19 +194,20 @@ public:
 
 } // namespace Impl
 
-template< class ReduceTraits >
-class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceTPI > {
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > {
 private:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type value_type ;
 
-  typedef MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceTPI > self_type ;
+  typedef MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > self_type ;
   typedef Impl::MultiFunctorParallelReduceMember<void,ReduceTraits,value_type,DeviceTPI> MemberType ;
 
   typedef std::vector< MemberType * > MemberContainer ;
   typedef typename MemberContainer::const_iterator MemberIterator ;
 
   MemberContainer m_member_functors ;
+  FinalizeType    m_finalize ;
 
   // self.m_work_count == total work count
   // work->count       == number of threads
@@ -238,11 +239,9 @@ private:
 
 public:
 
-  value_type result ;
-
-  MultiFunctorParallelReduce()
+  MultiFunctorParallelReduce( const FinalizeType & finalize )
     : m_member_functors()
-    , result()
+    , m_finalize( finalize )
     {} 
 
   ~MultiFunctorParallelReduce()
@@ -262,6 +261,10 @@ public:
 
   void execute()
   {
+    DeviceTPI::memory_space::set_dispatch_functor();
+
+    value_type result ;
+
     ReduceTraits::init( result );
 
     TPI_Run_threads_reduce( & run_work_on_tpi , this  ,
@@ -269,34 +272,10 @@ public:
                             & run_init_on_tpi ,
                             sizeof(value_type) ,
                             & result );
-  }
-};
 
-template< class ReduceTraits , class FinalizeType >
-class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > {
-public:
+    m_finalize( result );
 
-  typedef          DeviceTPI   ::size_type   size_type ;
-  typedef typename ReduceTraits::value_type value_type ;
-
-private:
-
-  MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceTPI > m_impl ;
-
-public:
-
-  FinalizeType result ;
-
-  MultiFunctorParallelReduce() : m_impl() {} 
-
-  template< class FunctorType >
-  void push_back( const size_type work_count , const FunctorType & functor )
-  { m_impl.push_back( work_count , functor ); }
-
-  void execute()
-  {
-    m_impl.execute();
-    result( m_impl.result );
+    DeviceTPI::memory_space::clear_dispatch_functor();
   }
 };
 

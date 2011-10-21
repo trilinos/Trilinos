@@ -56,6 +56,7 @@
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
+#include <UnitTestMultiReduce.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
 namespace Test {
@@ -124,11 +125,9 @@ TEST_F( pthread, double_reduce) {
   UnitTestReduce< double ,   Kokkos::DevicePthread >( 1000000 );
 }
 
-/*
 TEST_F( pthread, long_multi_reduce) {
   UnitTestReduceMulti< long , Kokkos::DevicePthread >( 1000000 , 7 );
 }
-*/
 
 } // namespace test
 
