@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
     bool            dumpAll                = false;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
+    clp.addOutputSetupOptions(true);
     clp.setOption( "input-file", &inputFile, "Input file [Required].", true );
     clp.setOption( "extra-params", &extraParams, "Extra parameters overriding the parameters read in from --input-file");
     clp.setDocString(
