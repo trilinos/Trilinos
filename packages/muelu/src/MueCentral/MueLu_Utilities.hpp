@@ -365,6 +365,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       return C;
     } //TwoMatrixMultiply()
 
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
    // Michael Gee's MLMultiply
    static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
             RCP<Epetra_CrsMatrix> epB)
@@ -495,6 +496,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         return Teuchos::null;
 #endif
     }
+#endif //ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
