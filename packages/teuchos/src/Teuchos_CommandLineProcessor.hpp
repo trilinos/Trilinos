@@ -53,6 +53,7 @@
 #include "Teuchos_map.hpp"
 #include "Teuchos_any.hpp"
 #include "Teuchos_CompileTimeAssert.hpp"
+#include "Teuchos_Ptr.hpp"
 
 /*! \class Teuchos::CommandLineProcessor
  * \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.
@@ -119,6 +120,10 @@ public:
     ,bool   recogniseAllOptions   = true
     ,bool   addOutputSetupOptions = false
     );
+
+  /** \brief Destructor.
+   */
+  ~CommandLineProcessor();
 
   //@}
 
@@ -346,6 +351,13 @@ public:
    */
    void printHelpMessage( const char program_name[], std::ostream &out ) const;
 
+  /** \brief Call to print timers so that they don't get printed in the
+   * destructor.
+   *
+   * Calling this function after the first call has no effect.
+   */
+  void printFinalTimerSummary(const Ptr<std::ostream> &out = null);
+
   //@}
 
 public:
@@ -455,6 +467,9 @@ private:
   bool  output_show_proc_rank_;
   int   output_to_root_rank_only_;
   bool  print_rcpnode_statistics_on_exit_;
+  bool  show_timer_summary_on_exit_;
+
+  bool printed_timer_summary_;
 
   bool  added_extra_output_setup_options_;
   bool  in_add_extra_output_setup_options_;
@@ -465,6 +480,7 @@ private:
   static const bool  output_show_proc_rank_default_;
   static const int   output_to_root_rank_only_default_;
   static const bool  print_rcpnode_statistics_on_exit_default_;
+  static const bool  show_timer_summary_on_exit_default_;
 
   // /////////////////////////////////
   // Private member functions

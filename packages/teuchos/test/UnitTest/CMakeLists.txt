@@ -1,6 +1,11 @@
 
 INCLUDE(PackageAddExecutableAndTest)
 
+
+#
+# UnitTest_UnitTests
+#
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   UnitTest_UnitTests
   SOURCES
@@ -9,7 +14,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     vector_UnitTests.cpp
     Teuchos_StandardUnitTestMain.cpp
   NUM_MPI_PROCS 1
-  COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
@@ -25,13 +29,38 @@ ENDIF()
 
 PACKAGE_ADD_TEST(
   UnitTest_UnitTests
-  NAME UnitTest_UnitTests_minus_one
-  ARGS
-    "--not-unit-test=vector_float_constAt_UnitTest"
+  NAME_POSTFIX minus_one
+  ARGS "--not-unit-test=vector_float_constAt_UnitTest"
   NUM_MPI_PROCS 1
-  COMM serial mpi
   PASS_REGULAR_EXPRESSION "${PASS_STRING}"
   )
+
+
+#
+# UnitTest_TimeMonitor_UnitTests
+#
+
+PACKAGE_ADD_EXECUTABLE(
+  UnitTest_TimeMonitor_UnitTests
+  SOURCES
+    TimeMonitor_UnitTests.cpp
+    Teuchos_StandardUnitTestMain.cpp
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
+  UnitTest_TimeMonitor_UnitTests
+  TEST_0 EXEC UnitTest_TimeMonitor_UnitTests
+    ARGS --test=someFunction_timed --show-timer-summary
+    PASS_REGULAR_EXPRESSION_ALL
+      "someFunction1"
+      "someFunction2"
+  OVERALL_NUM_MPI_PROCS 1
+  )
+
+
+#
+# UnitTest_BadUnitTest
+#
 
 PACKAGE_ADD_EXECUTABLE(
   UnitTest_BadUnitTest
