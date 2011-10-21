@@ -37,46 +37,49 @@
  *************************************************************************
  */
 
+#include <sstream>
 #include <iostream>
-#include <cstdlib>
+#include <math.h>
+
+#include <Kokkos_DeviceHost.hpp>
+#include <Kokkos_DeviceHost_ValueView.hpp>
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#include <Kokkos_DeviceHost_ParallelFor.hpp>
+#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+
+#include <Kokkos_DevicePthread.hpp>
+#include <Kokkos_DevicePthread_ValueView.hpp>
+#include <Kokkos_DevicePthread_MultiVectorView.hpp>
+#include <Kokkos_DevicePthread_MDArrayView.hpp>
+#include <Kokkos_DevicePthread_ParallelFor.hpp>
+#include <Kokkos_DevicePthread_ParallelReduce.hpp>
+
+#include <Kokkos_DevicePthread_macros.hpp>
+#include <Element.hpp>
+#include <CRSMatrixGatherFill.hpp>
+#include <Dirichlet.hpp>
+#include <CG_Solve.hpp>
+#include <driver.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace Test{
-  void test_Host(int beg, int end, int r);
-  void test_TPI (int beg, int end, int r, int t);
-  void test_Pthread (int beg, int end, int r, int t);
-  void test_TBB(int beg, int end, int r, int t);
-  void test_Cuda(int beg, int end, int r);
-}
 
-int main(int argc, char ** argv)
+void test_Pthread( int beg, int end, int runs, int threads )
 {
-  int beg = 10 ;
-  int end = 15 ;
-  int runs = 1 ;
-  int threads = 4;
+  Kokkos::DevicePthread::initialize( threads );
 
-  if ( argc == 5) {
-    beg = atoi(argv[1]);
-    end = atoi(argv[2]);
-    runs = atoi(argv[3]);
-    threads = atoi(argv[4]);
-  }
+  std::ostringstream label_double , label_float;
+  label_double << "Pthread[" << threads << "]-double" ;
+  label_float  << "Pthread[" << threads << "]-float" ;
 
-#ifdef TEST_KOKKOS_HOST
-  Test::test_Host(beg, end, runs);
-#endif
-#ifdef TEST_KOKKOS_PTHREAD
-  Test::test_Pthread (beg, end, runs, threads);
-#endif
-#ifdef TEST_KOKKOS_TPI
-  Test::test_TPI (beg, end, runs, threads);
-#endif
-#ifdef TEST_KOKKOS_TBB
-  Test::test_TBB (beg, end, runs, threads);
-#endif
-#ifdef TEST_KOKKOS_CUDA
-  Test::test_Cuda(beg , end, runs);
-#endif
+  MiniImplTherm< double , Kokkos::DevicePthread >::driver( label_double.str().c_str(), beg , end , runs );
+  MiniImplTherm< float  , Kokkos::DevicePthread >::driver( label_float.str().c_str() , beg , end , runs );
 
-  return 0;
-}
+  Kokkos::DevicePthread::finalize();
+
+}//test_Pthread
+
+}// namespace
+
+
