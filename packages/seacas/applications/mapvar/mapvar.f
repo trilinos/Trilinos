@@ -1619,11 +1619,6 @@ C
       call wrapup(qainfo(1))
       STOP
 C
-  210 FORMAT (//,3X,'DATA FOR RECTANGULAR GRID USED IN COARSE SEARCH -',
-     1//,10X,'NUMBER OF ZONES (X COORDINATE) - ',I7,/,10X,'NUMBER OF ZON
-     2ES (Y COORDINATE) - ',I7,/,10X,'NUMBER OF ZONES (Z COORDINATE) - '
-     3,I7,/,10X,'TOTAL NUMBER OF ZONES (BINS) -   ',I7,/,10X,'NUMBER OF 
-     4ELEMENTS ALLOWED IN EACH BIN - ',I7,/)
   270 FORMAT (3X,'DATA FROM MESH "A" FILE-',//,10X,'HEADING - ',A,/)
   280 FORMAT (10x,I1,'-DIMENSIONAL MODEL',/
      &       ,10X,'NUMBER OF NODES IN MESH A (nodesa) -      ',I9,/
@@ -1634,30 +1629,8 @@ C
      &       ,10X,'NUMBER OF NODES IN MESH B (nodesb) -      ',I7,/
      &       ,10X,'NUMBER OF ELEMENTS IN MESH B (numelb) -   ',I7,/
      &       ,10X,'NUMBER OF ELEMENT BLOCKS IN B (nblksb) -  ',I7)
-  310 FORMAT (10x,'MESH-B INCOMPATIBLE WITH MESH-A',/
-     &       ,10X,'NUMBER OF BLOCKS IN MESH-A (nblksa)',I7,/
-     &       ,10X,'NUMBER OF BLOCKS IN MESH-B (nblksb)',I7,/
-     &       ,10X,'****THIS IS ONLY A WARNING****')
   320 FORMAT (10X,'CORRESPONDS TO MESH-A ELEMENT BLOCK ID',I7,/)
   321 FORMAT (10X,'USING SEARCH BOX TOLERANCE            ',F14.6,/)
   330 FORMAT (10X,'WORKING ON MESH-B ELEMENT BLOCK       ',I7,/
      &       ,10X,'ELEMENT BLOCK ID                      ',I7)
-  410 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHS')
-  420 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHS')
-  430 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHQ')
-  440 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHQ')
-  450 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHH')
-  460 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHH')
       END

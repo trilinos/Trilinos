@@ -132,6 +132,5 @@ C
  1010 FORMAT(5X,'Block Number ', i7, /,
      1  'Element Block ID ', i7,/,
      2  'Has unset truth table entry for variable ',i7)
- 1020 format('BLK = ', i3, ' Id = ', i4,:,/,(10i2))
       RETURN
       END

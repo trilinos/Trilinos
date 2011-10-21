@@ -20,8 +20,8 @@ SET(HEADERS  aexds1.blk amesh.blk  contrl.blk ex2tp.blk  ntpdat.blk steps.blk  t
 SET(SOURCES
 	avg.f    bldsrf.f cntr.f   elton1.f extq.f   frge.f   intrpe.f   jacobn.f mkei.f   qadsrc.f rdb1.f
 	seton1.f sintpn.f tranab.f wrtc.f   bldpte.f bs.f     elgrad.f   error.f  exts.f   hexsrc.f intrpn.f
-	lenstr.f node.f   rda1.f   rdb2.f   shapef.f stran.f  trutbl.f   bldptn.f clsfil.f elton0.f exth.f
-	flgrad.f intrp3.f invcon.f mke.f    opnfil.f rda2.f   seton0.f   shlsrc.f tetsrc.f vol.f    ininod.f
+	node.f   rda1.f   rdb2.f   shapef.f stran.f  trutbl.f bldptn.f   clsfil.f elton0.f exth.f
+	flgrad.f intrp3.f invcon.f mke.f    mvopnfil.f rda2.f   seton0.f   shlsrc.f tetsrc.f vol.f    ininod.f
 	initlz.f debug.f  inielt.f sintpe.f rdinpt.f )
 
 PACKAGE_ADD_LIBRARY(mapvarlib HEADERS ${HEADERS} SOURCES ${SOURCES} DEPLIBS exodus_for suplib)
