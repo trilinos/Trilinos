@@ -230,7 +230,7 @@ namespace {
   test (int argc,
 	char* argv[],
 	const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	const Teuchos::RCP<const Kokkos::SerialNode>& node,
+	const Teuchos::RCP<Kokkos::SerialNode>& node,
 	const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
@@ -310,7 +310,7 @@ main (int argc, char* argv[])
   using std::endl;
 
 #ifdef HAVE_MPI
-  typedef RCP< const Teuchos::Comm<int> > comm_ptr;
+  typedef RCP<const Teuchos::Comm<int> > comm_ptr;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
@@ -334,7 +334,7 @@ main (int argc, char* argv[])
 
   RCP<ParameterList> nodeParams = 
     TSQR::Test::getValidNodeParameters<Kokkos::SerialNode> ();
-  RCP<const Kokkos::SerialNode> node =
+  RCP<Kokkos::SerialNode> node =
     TSQR::Test::getNode<Kokkos::SerialNode> (nodeParams);
 
   const bool success = test (argc, argv, comm, node, allowedToPrint);

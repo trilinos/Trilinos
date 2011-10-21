@@ -58,77 +58,90 @@ namespace TSQR {
     ///
     /// \note Unless you need to change the interface between Trilinos
     ///   and TSQR, you don't need to do anything with TsqrFactory or
-    ///   its subclasses.  Just choose the appropriate subclass of
+    ///   its subclasses.  Just choose the appropriate subclass of \c
     ///   \c TsqrAdaptor.  TsqrFactory and its subclasses don't have
     ///   anything to do with any of the Trilinos multivector classes.
     ///
     /// \note If you have implemented a new intranode TSQR
-    ///   factorization type, you'll need to create a subclass (not
-    ///   specialization) of TsqrFactory that knows how to instantiate
-    ///   that intranode TSQR class.
+    ///   factorization type (NodeTsqrType), you <i>may</i> need to
+    ///   create a subclass (not specialization) of TsqrFactory that
+    ///   knows how to instantiate that intranode TSQR class.
+    ///   Alternately, you could write NodeTsqrType so that the
+    ///   provided default implementation of \c makeNodeTsqr() works.
     ///
     /// \note If you have implemented a new internode TSQR
-    ///   factorization type, you'll need to create a subclass (not
-    ///   specialization) of TsqrFactory that knows how to instantiate
-    ///   that internode TSQR class.
+    ///   factorization type (DistTsqrType), you <i>may</i> need to
+    ///   create a subclass (not specialization) of TsqrFactory that
+    ///   knows how to instantiate that internode TSQR class.
+    ///   Alternately, you could write DistTsqrType so that the
+    ///   provided default implementation of \c makeDistTsqr() works.
     ///
     /// \note If you want to change which TSQR implementation is
     ///   invoked for a particular multivector (MV) class, you don't
     ///   need to do anything with this class, as long as the
     ///   appropriate subclass of TsqrFactory for the desired
     ///   NodeTsqrType and DistTsqrType exists.  Just change the
-    ///   factory_type typedef in the specialization of \c
+    ///   factory_type typedef in the specialization of \c \c
     ///   TsqrTypeAdaptor for the MV class.
     template<class LO, class S, class NodeTsqrType, class DistTsqrType>
     class TsqrFactory {
     public:
-      typedef NodeTsqrType                        node_tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >      node_tsqr_ptr;
+      typedef LO local_ordinal_type;
+      typedef S scalar_type;
+      typedef NodeTsqrType node_tsqr_type;
+      typedef DistTsqrType dist_tsqr_type;
 
-      typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
-      typedef DistTsqrType                        dist_tsqr_type;
-      typedef Teuchos::RCP< dist_tsqr_type >      dist_tsqr_ptr;
+      typedef MessengerBase<S> scalar_messenger_type;
+      typedef Tsqr<LO, S, node_tsqr_type> tsqr_type;
 
-      typedef Tsqr< LO, S, node_tsqr_type > tsqr_type;
-      typedef Teuchos::RCP< tsqr_type >     tsqr_ptr;
-
-      /// Instantiate and return the two TSQR implementation objects.
+      /// \brief Instantiate and return the TSQR implementation.
       ///
-      /// \param plist [in] Parameter list (keys depend on the
-      ///   subclass; keys are accessed in the subclass' makeNodeTsqr() 
-      ///   method)
-      /// \param scalar_messenger_ptr [in] Pointer to the underlying
-      ///   internode communication handler, as initialized by
-      ///   TSQR::Trilinos::CommFactory.
-      /// \param node_tsqr [out] On output, points to the
+      /// \param plist [in/out] Parameter list (keys depend on the
+      ///   subclass; keys are accessed in the subclass'
+      ///   makeNodeTsqr() method).  On output: On output: Missing
+      ///   parameters are filled in with default values.
+      ///
+      /// \param nodeTsqr [out] On output, points to the
       ///   node_tsqr_type object that TSQR will use for the intranode
       ///   part of its computations.
-      /// \param tsqr [out] On output, points to the node_tsqr_type
-      ///   object that TSQR will use for the internode part of its
-      ///   computations.
-      virtual void
-      makeTsqr (const Teuchos::ParameterList& plist,
-		const scalar_messenger_ptr& messenger,
-		tsqr_ptr& tsqr) const
+      ///
+      /// \param distTsqr [out] On output, points to the
+      ///   dist_tsqr_type object that TSQR will use for the internode
+      ///   part of its computations.
+      ///
+      /// \return The node_tsqr_type instance that implements TSQR.
+      Teuchos::RCP<tsqr_type>
+      makeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		Teuchos::RCP<node_tsqr_type>& nodeTsqr,
+		Teuchos::RCP<dist_tsqr_type>& distTsqr)
       {
-	node_tsqr_ptr nodeTsqr = makeNodeTsqr (plist);
-	dist_tsqr_ptr distTsqr = makeDistTsqr (messenger, plist);
-	tsqr = Teuchos::rcp (new tsqr_type (nodeTsqr, distTsqr));
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+
+	nodeTsqr = makeNodeTsqr (plist);
+	distTsqr = makeDistTsqr (plist);
+	return rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
+
+      void
+      prepareTsqr
+
+		const Teuchos::RCP<scalar_messenger_type>& messenger,
 
       //! Virtual destructor for memory safety of derived classes.
       virtual ~TsqrFactory () {};
 
     private:
-      /// \brief Instantiate and return TSQR's intranode object
+      /// \brief Instantiate and return the TSQR's intranode object.
       ///
-      /// \param plist [in] Same as the epinonymous input of makeTsqr()
+      /// \param plist [in/out] Same as the epinonymous input of 
+      ///   \c makeTsqr().
       ///
-      /// \return (Smart) pointer to the node_tsqr_type object that
-      ///   TSQR will use for the intranode part of its computations
+      /// \return The node_tsqr_type object that TSQR will use for the
+      ///   intranode part of its computations.
       ///
-      /// \note For implementers: this and makeDistTsqr are the two
-      ///   interesting methods.  makeTsqr()'s implementation is
+      /// \note For implementers: this and \c makeDistTsqr() are the
+      ///   two methods to implement.  makeTsqr()'s implementation is
       ///   "generic"; it does not depend on node_tsqr_type or
       ///   dist_tsqr_type.  The implementation of makeNodeTsqr()
       ///   varies for different node_tsqr_type types.  This pattern
@@ -138,27 +151,35 @@ namespace TSQR {
       ///   template parameters) are private, and the "nonvirtual"
       ///   methods (here, the methods that are the same for different
       ///   template parameters) are part of the public interface.
-      virtual node_tsqr_ptr
-      makeNodeTsqr (const Teuchos::ParameterList& plist) const = 0;
+      virtual Teuchos::RCP<node_tsqr_type>
+      makeNodeTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist) const
+      {
+	return Teuchos::rcp (new node_tsqr_type (plist));
+      }
 
-      /// \brief Instantiate and return TSQR's internode object
+      /// \brief Instantiate and return TSQR's internode object.
       ///
       /// \param messenger [in] Object used by TSQR for communicating
-      ///   between MPI processes
+      ///   between MPI processes.
       ///
-      /// \param plist [in] Same as the epinonymous input of makeTsqr()
+      /// \param plist [in/out] Same as the epinonymous input of 
+      ///   \c makeTsqr().
       ///
-      /// \return (Smart) pointer to the dist_tsqr_type object that
-      ///   TSQR will use for the internode part of its computations
+      /// \return The dist_tsqr_type object that TSQR will use for the
+      ///   internode part of its computations.
       ///
-      /// \note For implementers: this and makeNodeTsqr() are the two
-      ///   interesting methods.  makeTsqr()'s implementation is
+      /// \note For implementers: this and \c makeNodeTsqr() are the
+      ///   two interesting methods.  makeTsqr()'s implementation is
       ///   "generic"; it does not depend on node_tsqr_type or
       ///   dist_tsqr_type.  The implementation of makeDistTsqr()
-      ///   varies for different dist_tsqr_type types.  
-      virtual dist_tsqr_ptr
-      makeDistTsqr (const scalar_messenger_ptr& messenger,
-		    const Teuchos::ParameterList& plist) const = 0;
+      ///   varies for different dist_tsqr_type types.
+      virtual Teuchos::RCP<dist_tsqr_type>
+      makeDistTsqr (const Teuchos::RCP<scalar_messenger_type>& messenger,
+		    const Teuchos::RCP<Teuchos::ParameterList>& plist) const
+      {
+	(void) plist;
+	return Teuchos::rcp (new dist_tsqr_type (messenger));
+      }
     };
   } // namespace Trilinos
 } // namespace TSQR

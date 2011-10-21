@@ -59,9 +59,6 @@ using Teuchos::rcp;
 using Teuchos::rcp_implicit_cast;
 using Teuchos::Tuple;
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 
 template< class Ordinal, class Scalar >
 class MessengerPairMaker {
@@ -69,29 +66,31 @@ public:
   typedef int ordinal_type;
   typedef Scalar scalar_type;
 
-  typedef std::pair< RCP< MessengerBase< ordinal_type > >, RCP< MessengerBase< scalar_type > > > pair_type;
+  typedef std::pair<RCP<MessengerBase<ordinal_type> >, RCP<MessengerBase<scalar_type> > > pair_type;
 
   static pair_type
   makePair (const RCP< const Teuchos::Comm<int> >& comm)
   {
-    RCP< TeuchosMessenger< ordinal_type > > derivedOrdinalComm (new TeuchosMessenger< ordinal_type > (comm));
-    RCP< MessengerBase< ordinal_type > > ordinalComm = rcp_implicit_cast< MessengerBase< ordinal_type > > (derivedOrdinalComm);
-
-    RCP< TeuchosMessenger< scalar_type > > derivedScalarComm (new TeuchosMessenger< scalar_type > (comm));
-    RCP< MessengerBase< scalar_type > > scalarComm = rcp_implicit_cast< MessengerBase < scalar_type > > (derivedScalarComm);
+    RCP<TeuchosMessenger<ordinal_type> > derivedOrdinalComm = 
+      rcp (new TeuchosMessenger<ordinal_type> (comm));
+    RCP<MessengerBase<ordinal_type> > ordinalComm = 
+      rcp_implicit_cast<MessengerBase<ordinal_type> > (derivedOrdinalComm);
+    RCP<TeuchosMessenger<scalar_type> > derivedScalarComm =
+      rcp (new TeuchosMessenger<scalar_type> (comm));
+    RCP<MessengerBase<scalar_type> > scalarComm = 
+      rcp_implicit_cast<MessengerBase<scalar_type> > (derivedScalarComm);
 
     return std::make_pair (ordinalComm, scalarComm);
   }
 };
 
 
-
 #define TSQR_TEST_DIST_TSQR( ScalarType, typeString )			\
 do {							         	\
   typedef int ordinal_type;						\
   typedef ScalarType scalar_type;					\
-  typedef MessengerPairMaker< ordinal_type, scalar_type >::pair_type pair_type; \
-  typedef DistTsqrVerifier< int, scalar_type > verifier_type;		\
+  typedef MessengerPairMaker<ordinal_type, scalar_type>::pair_type pair_type; \
+  typedef DistTsqrVerifier<int, scalar_type> verifier_type;		\
 									\
   std::string scalarTypeName (typeString);				\
   pair_type messPair = MessengerPairMaker< ordinal_type, scalar_type >::makePair (comm); \
@@ -112,7 +111,7 @@ do {									\
   typedef RCP< base_messenger_type > base_messenger_ptr;		\
   typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
   typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
-  typedef DistTsqrBenchmarker< int, scalar_type, timer_type >		\
+  typedef DistTsqrBenchmarker<int, scalar_type, timer_type>		\
     benchmarker_type;							\
 									\
   std::string scalarTypeName (typeString);				\

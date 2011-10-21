@@ -34,6 +34,8 @@
 
 #include <TbbTsqr_TbbParallelTsqr.hpp>
 #include <Tsqr_TimeStats.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListExceptions.hpp>
 #include <Teuchos_Time.hpp>
 // #include <TbbRecursiveTsqr.hpp>
 
@@ -42,8 +44,6 @@
 #include <utility> // std::pair
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace TBB {
@@ -72,8 +72,13 @@ namespace TSQR {
       /// the control flow of TbbParallelTsqr.  If you do this, you
       /// should also change the FactorOutput public typedef.
       ///
-      /// \note This is NOT a use of the pImpl idiom.  
-      TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_;
+      /// \note This is NOT a use of the pImpl idiom, because the
+      ///   point of the pImpl idiom is to avoid including the
+      ///   implementation details of the header file of the
+      ///   implementation class.  Here, the implementation class is
+      ///   templated, so we have to include the implementation class'
+      ///   implementation details.
+      TbbParallelTsqr<LocalOrdinal, Scalar, TimerType> impl_;
 
       // Collected running statistcs on various computations
       mutable TimeStats factorStats_;
@@ -91,7 +96,7 @@ namespace TSQR {
 
     public:
       typedef Scalar scalar_type;
-      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       typedef LocalOrdinal ordinal_type;
 
       /// \typedef FactorOutput
@@ -103,21 +108,7 @@ namespace TSQR {
       /// do this, you should also change the type of \c impl_ above.
       typedef typename TbbParallelTsqr<LocalOrdinal, Scalar, TimerType>::FactorOutput FactorOutput;
 
-      //! (Max) number of cores used for the factorization.
-      size_t ncores() const { return impl_.ncores(); }
-
-      //! Cache size hint (in bytes) used for the factorization.
-      size_t cache_size_hint() const { return impl_.cache_size_hint(); }
-
-      /// \brief Cache size hint (in bytes) used for the factorization.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c cache_size_hint() instead.
-      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
-	return impl_.cache_size_hint(); 
-      }
-
-      /// \brief Constructor; sets up tuning parameters.
+      /// \brief Constructor.
       ///
       /// \param numCores [in] Maximum number of processing cores to use
       ///   when factoring the matrix.  Fewer cores may be used if the
@@ -140,11 +131,88 @@ namespace TSQR {
 	unCacheBlockTimer_ ("TbbTsqr::un_cache_block")
       {}
 
+      /// \brief Constructor (that takes a parameter list).
+      ///
+      /// \param plist [in/out] On input: list of TbbTsqr parameters.
+      ///   On output: missing parameters are filled in with default
+      ///   values.
+      ///
+      /// For a list of accepted parameters and thei documentation,
+      /// see the parameter list returned by \c getValidParameters().
+      TbbTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+	impl_ (plist),
+	factorTimer_ ("TbbTsqr::factor"),
+	applyTimer_ ("TbbTsqr::apply"),
+	explicitQTimer_ ("TbbTsqr::explicit_Q"),
+	cacheBlockTimer_ ("TbbTsqr::cache_block"),
+	unCacheBlockTimer_ ("TbbTsqr::un_cache_block")
+      {}
+
+      /// \brief Constructor (that uses default parameters).
+      ///
+      /// \param plist [in/out] On input: list of TbbTsqr parameters.
+      ///   On output: missing parameters are filled in with default
+      ///   values.
+      ///
+      /// For a list of accepted parameters and thei documentation,
+      /// see the parameter list returned by \c getValidParameters().
+      TbbTsqr () :
+	impl_ (Teuchos::null),
+	factorTimer_ ("TbbTsqr::factor"),
+	applyTimer_ ("TbbTsqr::apply"),
+	explicitQTimer_ ("TbbTsqr::explicit_Q"),
+	cacheBlockTimer_ ("TbbTsqr::cache_block"),
+	unCacheBlockTimer_ ("TbbTsqr::un_cache_block")
+      {}
+      
+      Teuchos::RCP<const Teuchos::ParameterList>
+      getValidParameters () const
+      {
+	return impl_.getValidParameters ();
+      }
+
+      void 
+      setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+      {
+	impl_.setParameterList (plist);
+      }
+
+      /// \brief Number of tasks that TSQR will use to solve the problem.
+      /// 
+      /// This is the number of subproblems into which to divide the
+      /// main problem, in order to solve it in parallel.  
+      size_t ntasks() const { return impl_.ntasks(); }
+
+      /// \brief Number of tasks that TSQR will use to solve the problem.
+      /// 
+      /// This is the number of subproblems into which to divide the
+      /// main problem, in order to solve it in parallel.  
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c ntasks() instead.
+      size_t TEUCHOS_DEPRECATED ncores() const { return impl_.ncores(); }
+
+      //! Cache size hint (in bytes) used for the factorization.
+      size_t cache_size_hint() const { return impl_.cache_size_hint(); }
+
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return impl_.cache_size_hint(); 
+      }
+
       /// Whether or not this QR factorization produces an R factor
       /// with all nonnegative diagonal entries.
       static bool QR_produces_R_factor_with_nonnegative_diagonal() {
 	typedef TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_type;
 	return impl_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      }
+
+      //! Whether this object is ready to perform computations.
+      bool ready() const {
+	return true;
       }
 
       /// \brief One-line description of this object.
@@ -439,7 +507,6 @@ namespace TSQR {
 	labels[3] = cacheBlockTimer_.name();
 	labels[4] = unCacheBlockTimer_.name();
       }
-
     }; // class TbbTsqr
 
   } // namespace TBB

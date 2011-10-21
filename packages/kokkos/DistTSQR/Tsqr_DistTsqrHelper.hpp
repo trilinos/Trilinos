@@ -39,18 +39,16 @@
 #include <stdexcept>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \class DistTsqrHelper
-  /// \brief Implementation of the internode part of TSQR
+  /// \brief Implementation of the internode part of TSQR.
   ///
   /// Implementation of the internode part of TSQR (used by DistTsqr).
   /// The only reason to mess with this class is if you want to change
   /// how the internode part of TSQR is implemented.
-  template< class LocalOrdinal, class Scalar >
+  template<class LocalOrdinal, class Scalar>
   class DistTsqrHelper {
   public:
     DistTsqrHelper () {}
@@ -61,10 +59,10 @@ namespace TSQR {
 		 const LocalOrdinal P_mine,
 		 const LocalOrdinal P_other,
 		 const LocalOrdinal tag, 
-		 MessengerBase< Scalar >* const messenger,
-		 std::vector< std::vector< Scalar > >& Q_factors,
-		 std::vector< std::vector< Scalar > >& tau_arrays,
-		 std::vector< Scalar >& work) 
+		 MessengerBase<Scalar>* const messenger,
+		 std::vector<std::vector<Scalar> >& Q_factors,
+		 std::vector<std::vector<Scalar> >& tau_arrays,
+		 std::vector<Scalar >& work) 
     {
       using std::endl;
       using std::ostringstream;

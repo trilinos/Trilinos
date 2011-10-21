@@ -40,7 +40,7 @@
 //@HEADER
 
 /// \file BelosTsqrOrthoManagerImpl.hpp
-/// \brief Orthogonalization manager back end based on TSQR
+/// \brief Orthogonalization manager back end based on Tall Skinny QR (TSQR)
 ///
 #ifndef __BelosTsqrOrthoManagerImpl_hpp
 #define __BelosTsqrOrthoManagerImpl_hpp
@@ -49,8 +49,10 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOrthoManager.hpp" // OrthoError, etc.
 
+#include "Teuchos_as.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -62,8 +64,7 @@ namespace Belos {
   /// \class TsqrOrthoError
   /// \brief TsqrOrthoManager(Impl) error
   /// \author Mark Hoemmen
-  class TsqrOrthoError : public OrthoError
-  {
+  class TsqrOrthoError : public OrthoError {
   public: 
     TsqrOrthoError (const std::string& what_arg) : 
       OrthoError (what_arg) {}
@@ -88,8 +89,7 @@ namespace Belos {
   /// \note This is not a (subclass of) TsqrOrthoError, because the
   ///   latter is a logic or runtime bug, whereas a TsqrOrthoFault is
   ///   a property of the input and admits recovery.
-  class TsqrOrthoFault : public OrthoError
-  {
+  class TsqrOrthoFault : public OrthoError {
   public: 
     TsqrOrthoFault (const std::string& what_arg) : 
       OrthoError (what_arg) {}
@@ -128,8 +128,8 @@ namespace Belos {
   ///   matrix.
   ///
   template<class Scalar, class MV>
-  class TsqrOrthoManagerImpl
-  {
+  class TsqrOrthoManagerImpl : 
+    public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
@@ -144,27 +144,19 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
     typedef MultiVecTraits<Scalar, MV> MVT;
     typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
-    typedef Teuchos::RCP<tsqr_adaptor_type> tsqr_adaptor_ptr;
 
   public:
-    /// \brief Get default parameters for TsqrOrthoManagerImpl.
+    /// \brief Default valid parameter list.
     ///
     /// Get a (pointer to a) default list of parameters for
-    /// configuring a TsqrOrthoManager or TsqrMatOrthoManager
-    /// instance.  The same parameters work for both.
-    ///
-    /// \note To get nondefault behavior, a good thing to do is to
-    ///   make a deep copy of the returned parameter list, and then
-    ///   modify individual entries as desired.
+    /// configuring a TsqrOrthoManagerImpl instance.
     ///
     /// \note TSQR implementation configuration options are stored
-    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
-    ///   sublist() to get them; call get().)
-    ///
-    /// \warning This method is not reentrant.  It should only be
-    ///   called by one thread at a time.
-    ///
-    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters ();
+    ///   under "TSQR implementation" as a sublist.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
+
+    //! Set parameters from the given parameter list.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Get "fast" parameters for TsqrOrthoManagerImpl.
     ///
@@ -175,40 +167,59 @@ namespace Belos {
     /// null space basis).
     ///
     /// \note TSQR implementation configuration options are stored
-    ///   under "TsqrImpl" as an RCP<const ParameterList>.  (Don't call
-    ///   sublist() to get them; call get().)
-    ///
-    /// \warning This method is not reentrant.  It should only be
-    ///   called by one thread at a time.
-    ///
-    static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters ();
+    ///   under "TSQR implementation" as a sublist.
+    Teuchos::RCP<const Teuchos::ParameterList> getFastParameters ();
 
-    /// \brief Constructor
+    /// \brief Constructor (that sets user-specified parameters).
     ///
-    /// \param params [in] Configuration parameters, both for this
-    ///   orthogonalization manager, and for TSQR itself (as an
-    ///   RCP<const ParameterList> under "TsqrImpl").  Call the
-    ///   getDefaultParameters() class method for default parameters
-    ///   and their documentation, including TSQR implementation
-    ///   parameters.  Call the getFastParameters() class method to
-    ///   get documented parameters for faster computation, possibly
-    ///   at the expense of accuracy and robustness.  If params is
-    ///   null, then getDefaultParameters() is used.  Otherwise, we
-    ///   make and store a deep copy of params, so that after the
-    ///   constructor returns, you may change params without affecting
-    ///   the configuration of this TsqrOrthoManagerImpl instance.
+    /// \param params [in/out] Configuration parameters, both for this
+    ///   orthogonalization manager, and for TSQR itself (as the "TSQR
+    ///   implementation" sublist).  This can be null, in which case
+    ///   default parameters will be set for now; you can always call
+    ///   \c setParameterList() later to change these.
     ///
     /// \param label [in] Label for timers.  This only matters if the
     ///   compile-time option for enabling timers is set.
     ///
-    TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
+    /// Call \c getValidParameters() for default parameters and their
+    /// documentation, including TSQR implementation parameters.  Call
+    /// \c getFastParameters() to get documented parameters for faster
+    /// computation, possibly at the expense of accuracy and
+    /// robustness.
+    TsqrOrthoManagerImpl (const Teuchos::RCP<Teuchos::ParameterList>& params,
 			  const std::string& label);
 
-    //! Set the label for timers (if timers are enabled).
-    void setLabel (const std::string& label) { label_ = label; }
+    /// \brief Constructor (that sets default parameters).
+    ///
+    /// \param label [in] Label for timers.  This only matters if the
+    ///   compile-time option for enabling timers is set.
+    TsqrOrthoManagerImpl (const std::string& label);
+
+    /// \brief Set the label for timers.
+    ///
+    /// This only matters if timers are enabled.  If timers are
+    /// enabled and the label changes, this method will clear the old
+    /// timers and replace them with new ones.  The old timers will
+    /// not appear in the list of timers shown by \c
+    /// Teuchos::TimeMonitor::summarize().
+    void setLabel (const std::string& label) { 
+      if (label != label_) {
+	label_ = label; 
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+	clearTimer (label, "All orthogonalization");
+	clearTimer (label, "Projection");
+	clearTimer (label, "Normalization");
+
+	timerOrtho_ = makeTimer (label, "All orthogonalization");
+	timerProject_ = makeTimer (label, "Projection");
+	timerNormalize_ = makeTimer (label, "Normalization");
+#endif // BELOS_TEUCHOS_TIME_MONITOR	
+      }
+    }
 
     //! Get the label for timers (if timers are enabled).
-    const std::string& getLabel () { return label_; }
+    const std::string& getLabel () const { return label_; }
 
     /// \brief Euclidean inner product.
     ///
@@ -226,9 +237,10 @@ namespace Belos {
 
     /// \brief Compute the 2-norm of each column j of X.
     ///
-    /// \param X [in] Multivector for which to compute column norms
-    /// \param normvec [out] On output: normvec[j] is the 2-norm of
-    ///   column j of X.  normvec is resized if necessary so that it
+    /// \param X [in] Multivector for which to compute column norms.
+    ///
+    /// \param normVec [out] On output: normvec[j] is the 2-norm of
+    ///   column j of X.  normVec is resized if necessary so that it
     ///   has at least as many entries as there are columns of X.
     ///
     /// \note Performance of this method depends on how MultiVecTraits
@@ -241,15 +253,7 @@ namespace Belos {
     ///   perhaps for small rounding differences due to a different
     ///   order of operations.
     void
-    norm (const MV& X, std::vector<magnitude_type>& normVec) const
-    {
-      const int numCols = MVT::GetNumberVecs (X);
-      // std::vector<T>::size_type is unsigned; int is signed.  Mixed
-      // unsigned/signed comparisons trigger compiler warnings.
-      if (normVec.size() < static_cast<size_t>(numCols))
-	normVec.resize (numCols); // Resize normvec if necessary.
-      MVT::MvNorm (X, normVec);
-    }
+    norm (const MV& X, std::vector<magnitude_type>& normVec) const;
 
     /// \brief Compute \f$C := Q^* X\f$ and \f$X := X - Q C\f$.
     ///
@@ -299,31 +303,7 @@ namespace Belos {
     ///   avoid excessive copying of vectors when using TSQR for
     ///   orthogonalization.
     int 
-    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B)
-    {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-      Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-
-      if (MVT::GetNumberVecs(X) == 1)
-	{
-	  using Teuchos::Range1D;
-	  using Teuchos::RCP;
-	  using Teuchos::rcp;
-
-	  // Normalize X in place (faster than TSQR for one column).
-	  const int rank = normalizeOne (X, B);
-	  // Copy results to first column of Q.
-	  RCP<MV> Q_0 = MVT::CloneViewNonConst (Q, Range1D(0,0));
-	  MVT::Assign (X, *Q_0);
-	  return rank;
-	}
-      else
-	// "true" means the output vectors go into Q, and the contents
-	// of X are overwritten with invalid values.
-	return normalizeImpl (X, Q, B, true);
-    }
+    normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B);
 
     /// \brief Project X against Q and normalize X.
     ///
@@ -349,7 +329,7 @@ namespace Belos {
       return projectAndNormalizeImpl (X, X, false, C, B, Q);
     }
 
-    /// \brief Project and normalize X_in into X_out; overwrite X_in
+    /// \brief Project and normalize X_in into X_out; overwrite X_in.
     ///
     /// Project X_in against Q, storing projection coefficients in C,
     /// and normalize X_in into X_out, storing normalization
@@ -367,7 +347,7 @@ namespace Belos {
     /// \return Rank of X_in after projection
     ///
     /// \note We expose this interface to applications for the same
-    ///   reason that we expose normalizeOutOfPlace().
+    ///   reason that we expose \c normalizeOutOfPlace().
     int 
     projectAndNormalizeOutOfPlace (MV& X_in, 
 				   MV& X_out,
@@ -380,7 +360,7 @@ namespace Belos {
       return projectAndNormalizeImpl (X_in, X_out, true, C, B, Q);
     }
     
-    /// \brief Return \f$ \| I - X^* \cdot X \|_F \f$
+    /// \brief Return \f$ \| I - X^* \cdot X \|_F \f$.
     ///
     /// Return the Frobenius norm of I - X^* X, which is an absolute
     /// measure of the orthogonality of the columns of X.
@@ -391,12 +371,13 @@ namespace Belos {
       const int ncols = MVT::GetNumberVecs(X);
       mat_type XTX (ncols, ncols);
       innerProd (X, X, XTX);
-      for (int k = 0; k < ncols; ++k)
+      for (int k = 0; k < ncols; ++k) {
 	XTX(k,k) -= ONE;
+      }
       return XTX.normFrobenius();
     }
 
-    //! Return the Frobenius norm of the inner product of X1 and X1
+    //! Return the Frobenius norm of the inner product of X1 with itself.
     magnitude_type 
     orthogError (const MV &X1, 
 		 const MV &X2) const
@@ -419,23 +400,29 @@ namespace Belos {
 
   private:
     //! Configuration parameters.
-    Teuchos::RCP<const Teuchos::ParameterList> params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
+
+    //! Default configuration parameters.
+    mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
 
     //! Label for timers (if timers are used).
     std::string label_;
 
     //! Interface to TSQR implementation.
-    tsqr_adaptor_ptr tsqrAdaptor_;
+    tsqr_adaptor_type tsqrAdaptor_;
 
-    /// \brief Scratch space for TSQR
+    /// \brief Scratch space for TSQR.
     ///
-    /// Allocated lazily; only allocated if normalize() is called.  We
-    /// do our best to avoid allocation and recycle this space
-    /// whenever possible.  normalizeOutOfPlace() does _not_ allocate
-    /// Q_, which you can use to your advantage.
+    /// This multivector scratch space is allocated lazily, only if
+    /// normalize() is called with a multivector input having more
+    /// than one column.  We do our best to avoid reallocation and
+    /// recycle this space whenever possible.  The \c
+    /// normalizeOutOfPlace() method does <i>not</i> allocate Q_,
+    /// which you can use to your advantage if you already have
+    /// scratch space allocated.
     Teuchos::RCP<MV> Q_;
 
-    //! Machine precision for Scalar
+    //! Machine precision for Scalar.
     magnitude_type eps_;
 
     /// \brief Whether to fill null space vectors with random data.
@@ -443,7 +430,11 @@ namespace Belos {
     /// If so, this happens after normalization.
     bool randomizeNullSpace_;
 
-    //! Whether to reorthogonalize blocks at all.
+    /// \brief Whether to reorthogonalize blocks at all.
+    ///
+    /// Reorthogonalization is conditional, based on the block
+    /// reorthogonalization threshold.  Tests for reorthogonalization
+    /// only happen if this Boolean is set.
     bool reorthogonalizeBlocks_;
 
     /// \brief Whether to throw an exception on a orthogonalization fault.
@@ -468,12 +459,14 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     //! Timer for all orthogonalization operations
     Teuchos::RCP<Teuchos::Time> timerOrtho_;
+
     //! Timer for projection operations
     Teuchos::RCP<Teuchos::Time> timerProject_;
+
     //! Timer for normalization operations
     Teuchos::RCP<Teuchos::Time> timerNormalize_;
 
-    /// Instantiate and return a timer with an appropriate label
+    /// Instantiate and return a timer with an appropriate label.
     ///
     /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
     /// \param timerName [in] Name of the timer, or what the timer
@@ -487,202 +480,29 @@ namespace Belos {
     {
       const std::string timerLabel = 
 	prefix.empty() ? timerName : (prefix + ": " + timerName);
-      return Teuchos::TimeMonitor::getNewTimer (timerLabel);
+      return Teuchos::TimeMonitor::getNewCounter (timerLabel);
+    }
+
+    /// Clear the timer with the given name.
+    ///
+    /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
+    /// \param timerName [in] Name of the timer, or what the timer
+    ///   is timing, e.g., "Projection" or "Normalization"
+    void
+    clearTimer (const std::string& prefix, 
+		const std::string& timerName)
+    {
+      const std::string timerLabel = 
+	prefix.empty() ? timerName : (prefix + ": " + timerName);
+      Teuchos::TimeMonitor::clearCounter (timerLabel);
     }
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    //! Throw a reorthgonalization fault exception.
+    //! Throw an exception indicating a reorthgonalization fault.
     void
     raiseReorthogFault (const std::vector<magnitude_type>& normsAfterFirstPass,
 			const std::vector<magnitude_type>& normsAfterSecondPass,
 			const std::vector<int>& faultIndices);
-
-    /// Try to return a boolean parameter with the given key.  If no
-    /// parameter with that key exists, return the value of the
-    /// corresponding default parameter (using getDefaultParameters(),
-    /// and caching the returned RCP from that function, so the
-    /// function is only called once).
-    bool 
-    getBoolParamWithDefault (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
-			     const std::string& key)
-    {
-      using Teuchos::Exceptions::InvalidParameterName;
-      using Teuchos::Exceptions::InvalidParameterType;
-      // Note: We don't try to catch an exception when reading from
-      // the default parameters, since they key had better be there.
-      // (I guess we could catch and rethrow std::logic_error...)
-      Teuchos::RCP<const Teuchos::ParameterList> defaultParams = 
-	getDefaultParameters();
-      if (params.is_null())
-	return defaultParams->get< bool >(key);
-      else
-	{
-	  try {
-	    // No validation is necessary or even sensible; validating
-	    // a boolean value would mean it's not really an option!
-	    return params->get< bool >(key);
-	  } catch (InvalidParameterName&) {
-	    return defaultParams->get< bool >(key);
-	  } catch (InvalidParameterType&) {
-	    std::ostringstream os;
-	    os << "The value of parameter \"" << key << "\" to Tsqr(Mat)"
-	      "OrthoManager(Impl) must be a boolean truth value.  Here "
-	      "is the documentation for that parameter:" << std::endl
-	       << defaultParams->getEntry(key).docString();
-	    throw std::invalid_argument (os.str());
-	  }
-	}
-    }
-
-    /// Try to return a nonnegative magnitude_type-valued parameter
-    /// with the given key.  If no parameter with that key exists,
-    /// return the value of the corresponding default parameter (using
-    /// getDefaultParameters(), and caching the returned RCP from that
-    /// function, so the function is only called once).
-    magnitude_type
-    getMagParamWithDefault (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
-			    const std::string& key)
-    {
-      using Teuchos::Exceptions::InvalidParameterName;
-      using Teuchos::Exceptions::InvalidParameterType;
-      // Note: We don't try to catch an exception when reading from
-      // the default parameters, since they key had better be there.
-      // (I guess we could catch and rethrow std::logic_error...)
-      Teuchos::RCP<const Teuchos::ParameterList> defaultParams = 
-	getDefaultParameters();
-      if (params.is_null())
-	return defaultParams->get< magnitude_type >(key);
-      else
-	{
-	  try {
-	    const magnitude_type value = params->get< magnitude_type >(key);
-	    if (value >= magnitude_type(0)) // Validate
-	      return value;
-	    else
-	      {
-		std::ostringstream os;
-		os << "You specified " << key << " = " << value
-		   << ", but that parameter must be a nonnegative real "
-		   << "floating-point value.  Here is the documentation " 
-		   << "for that parameter:" << std::endl
-		   << defaultParams->getEntry(key).docString();
-		throw std::invalid_argument (os.str());
-	      }
-	  } catch (InvalidParameterName&) { 
-	    return defaultParams->get< magnitude_type >(key);
-	  } catch (InvalidParameterType&) {
-	    std::ostringstream os;
-	    os << "The value of parameter \"" << key << "\" to Tsqr(Mat)OrthoMa"
-	      "nager(Impl) must be a nonnegative real floating-point value.  "
-	      "Here is the documentation for that parameter:" << std::endl
-	       << defaultParams->getEntry(key).docString();
-	    throw std::invalid_argument (os.str());
-	  }
-	}
-    }
-
-    //! Set parameters from the given parameter list.
-    void
-    readParams (const Teuchos::RCP<const Teuchos::ParameterList>& params)
-    {
-      randomizeNullSpace_ = 
-	getBoolParamWithDefault (params, "randomizeNullSpace");
-      reorthogonalizeBlocks_ = 
-	getBoolParamWithDefault (params, "reorthogonalizeBlocks");
-      throwOnReorthogFault_ = 
-	getBoolParamWithDefault (params, "throwOnReorthogFault");
-      blockReorthogThreshold_ = 
-	getMagParamWithDefault (params, "blockReorthogThreshold");
-      relativeRankTolerance_ = 
-	getMagParamWithDefault (params, "relativeRankTolerance");
-      forceNonnegativeDiagonal_ = 
-	getBoolParamWithDefault (params, "forceNonnegativeDiagonal");
-    }
-
-    /// \brief Initialize the TSQR adaptor and scratch space
-    ///
-    /// Initialize the TSQR adaptor and scratch space for TSQR.  Both
-    /// require a specific MV object, so we have to delay their
-    /// initialization until we get an X input (for normalize(), since
-    /// only that method uses the TSQR adaptor and the scratch space).
-    /// (Hence, "lazy," for delayed initialization.)
-    void
-    lazyInit (const MV& X)
-    {
-      using Teuchos::Exceptions::InvalidParameter;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::rcpFromRef;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-
-      // TSQR parameters.  They are stored as an RCP<const
-      // ParameterList>, so we don't have to worry about the sublist
-      // going out of scope.
-      RCP<const ParameterList> tsqrParams;
-      bool gotTsqrParams = false;
-      try {
-	tsqrParams = params_->get<RCP<const ParameterList> >("TsqrImpl");
-	gotTsqrParams = true;
-      } catch (InvalidParameter&) {
-	// We'll try to fetch "TsqrImpl" as a sublist instead.
-      }
-      if (! gotTsqrParams) {
-	try {
-	  // We don't need to make a deep copy, since the
-	  // tsqrAdaptor_ which receives this sublist will fall out
-	  // of scope at the same time as params_, and params_ will
-	  // protect the sublist from falling out of scope.
-	  tsqrParams = rcpFromRef (params_->sublist ("TsqrImpl"));
-	  gotTsqrParams = true;
-	} catch (InvalidParameter&) {
-	  // We'll try to fetch "TsqrImpl" from the default parameter
-	  // list instead.
-	}
-      } if (! gotTsqrParams) {
-	RCP<const ParameterList> defaultParams = getDefaultParameters();
-	try {
-	  tsqrParams = defaultParams->get<RCP<const ParameterList> >("TsqrImpl");
-	  gotTsqrParams = true;
-	} catch (InvalidParameter&) {
-	  // We'll try to fetch "TsqrImpl" as a sublist instead.
-	}
-      } if (! gotTsqrParams) {
-	RCP<const ParameterList> defaultParams = getDefaultParameters();
-	try {
-	  // We don't need to make a deep copy, since the
-	  // tsqrAdaptor_ which receives this sublist will fall out
-	  // of scope at the same time as params_, and params_ will
-	  // protect the sublist from falling out of scope.
-	  tsqrParams = rcpFromRef (defaultParams->sublist ("TsqrImpl"));
-	  gotTsqrParams = true;
-	} catch (InvalidParameter&) {
-	  // We've tried to get TsqrImpl in all the ways we could.
-	  // If we haven't gotten it yet, or if we only got null,
-	  // we'll throw an exception below.
-	}
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
-			 std::logic_error,
-			 "Belos::TsqrOrthoManagerImpl::lazyInit: Failed to find"
-			 " \"TsqrImpl\" parameter in either the input parameter"
-			 " list or in the default parameter list.  Please "
-			 "report this bug to the Belos developers.");
-      // The TSQR adaptor object requires a specific MV object for
-      // initialization.  As long as subsequent MV objects use the
-      // same communicator (e.g., the same Teuchos::Comm<int>), we
-      // don't need to reinitialize the adaptor.
-      //
-      // NOTE (mfh 15 Jul 2010) If tsqrAdaptor_ has already been
-      // initialized, we really should check to make sure that X has
-      // the same communicator as that of the the multivector with
-      // which tsqrAdaptor_ was previously initialized.
-      if (tsqrAdaptor_.is_null())
-	tsqrAdaptor_ = rcp (new tsqr_adaptor_type (X, tsqrParams));
-
-      // NOTE: We don't try to allocate the temporary workspace Q_
-      // here.  This is done on demand in normalize().
-    }
 
     /// Return through output arguments some relevant dimension
     /// information about X and Q.
@@ -825,36 +645,122 @@ namespace Belos {
     int normalizeImpl (MV& X, MV& Q, mat_ptr B, const bool outOfPlace);
   };
 
+  template<class Scalar, class MV>
+  void
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::sublist;
+    typedef magnitude_type M; // abbreviation.
 
+    RCP<const ParameterList> defaultParams = getValidParameters ();
+    // Sublist of TSQR implementation parameters; to get below.
+    RCP<ParameterList> tsqrParams;
+
+    RCP<ParameterList> theParams;
+    if (params.is_null()) {
+      theParams = parameterList (*defaultParams);
+    } else {
+      theParams = params;
+
+      // Don't call validateParametersAndSetDefaults(); we prefer to
+      // ignore parameters that we don't recognize, at least for now.
+      // However, we do fill in missing parameters with defaults.
+
+      randomizeNullSpace_ = 
+	theParams->get<bool> ("randomizeNullSpace", 
+			      defaultParams->get<bool> ("randomizeNullSpace"));
+      reorthogonalizeBlocks_ = 
+	theParams->get<bool> ("reorthogonalizeBlocks", 
+			      defaultParams->get<bool> ("reorthogonalizeBlocks"));
+      throwOnReorthogFault_ = 
+	theParams->get<bool> ("throwOnReorthogFault", 
+			      defaultParams->get<bool> ("throwOnReorthogFault"));
+      blockReorthogThreshold_ = 
+	theParams->get<M> ("blockReorthogThreshold",
+			   defaultParams->get<M> ("blockReorthogThreshold"));
+      relativeRankTolerance_ = 
+	theParams->get<M> ("relativeRankTolerance", 
+			   defaultParams->get<M> ("relativeRankTolerance"));
+      forceNonnegativeDiagonal_ = 
+	theParams->get<bool> ("forceNonnegativeDiagonal", 
+			      defaultParams->get<bool> ("forceNonnegativeDiagonal"));
+
+      // Get the sublist of TSQR implementation parameters.  Use the
+      // default sublist if one isn't provided.
+      if (! theParams->isSublist ("TSQR implementation")) {
+	theParams->set ("TSQR implementation", 
+			defaultParams->sublist ("TSQR implementation"));
+      }
+      tsqrParams = sublist (theParams, "TSQR implementation", true);
+    }
+
+    // Send the TSQR implementation parameters to the TSQR adaptor.
+    tsqrAdaptor_.setParameterList (tsqrParams);
+
+    // Save the input parameter list.
+    setMyParamList (theParams);
+  }
+ 
   template<class Scalar, class MV>
   TsqrOrthoManagerImpl<Scalar, MV>::
-  TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
+  TsqrOrthoManagerImpl (const Teuchos::RCP<Teuchos::ParameterList>& params,
 			const std::string& label) :
-    params_ (params.is_null() ? 
-	     getDefaultParameters() : 
-	     Teuchos::rcp_const_cast<const Teuchos::ParameterList> (Teuchos::parameterList (*params))),
     label_ (label),
-    tsqrAdaptor_ (Teuchos::null),     // Initialized on demand
-    Q_ (Teuchos::null),               // Scratch space for normalize()
+    Q_ (Teuchos::null),               // Initialized on demand
     eps_ (SCTM::eps()),               // Machine precision
-    randomizeNullSpace_ (true),       // Set later by readParams()
-    reorthogonalizeBlocks_ (true),    // Set later by readParams()
-    throwOnReorthogFault_ (false),    // Set later by readParams()
-    blockReorthogThreshold_ (0),      // Set later by readParams()
-    relativeRankTolerance_ (0),       // Set later by readParams()
-    forceNonnegativeDiagonal_ (false) // Set later by readParams()
+    randomizeNullSpace_ (true),
+    reorthogonalizeBlocks_ (true),
+    throwOnReorthogFault_ (false),
+    blockReorthogThreshold_ (0),
+    relativeRankTolerance_ (0),
+    forceNonnegativeDiagonal_ (false)
   {
+    setParameterList (params); // This also sets tsqrAdaptor_'s parameters.
+
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerOrtho_ = makeTimer (label, "All orthogonalization");
     timerProject_ = makeTimer (label, "Projection");
     timerNormalize_ = makeTimer (label, "Normalization");
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+  }
 
-    // Extract values for the parameters from the given parameter
-    // list.  Use default values if none are provided.  The "TSQR"
-    // sublist gets passed along to the underlying TSQR
-    // implementation.
-    readParams (params_);
+  template<class Scalar, class MV>
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl (const std::string& label) :
+    label_ (label),
+    Q_ (Teuchos::null),               // Initialized on demand
+    eps_ (SCTM::eps()),               // Machine precision
+    randomizeNullSpace_ (true),
+    reorthogonalizeBlocks_ (true),
+    throwOnReorthogFault_ (false),
+    blockReorthogThreshold_ (0),
+    relativeRankTolerance_ (0), 
+    forceNonnegativeDiagonal_ (false) 
+  {
+    setParameterList (Teuchos::null); // Set default parameters.
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    timerOrtho_ = makeTimer (label, "All orthogonalization");
+    timerProject_ = makeTimer (label, "Projection");
+    timerNormalize_ = makeTimer (label, "Normalization");
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+  }
+
+  template<class Scalar, class MV>
+  void
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  norm (const MV& X, std::vector<magnitude_type>& normVec) const
+  {
+    const int numCols = MVT::GetNumberVecs (X);
+    // std::vector<T>::size_type is unsigned; int is signed.  Mixed
+    // unsigned/signed comparisons trigger compiler warnings.
+    if (normVec.size() < static_cast<size_t>(numCols))
+      normVec.resize (numCols); // Resize normvec if necessary.
+    MVT::MvNorm (X, normVec);
   }
 
   template<class Scalar, class MV>
@@ -873,12 +779,6 @@ namespace Belos {
     // running in projectAndNormalize().
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
-
-    // Internal data used by this method require a specific MV object
-    // for initialization (e.g., to get a Map and/or communicator, and
-    // to initialize scratch space).  Thus, we delay (hence "lazy")
-    // initialization until we get an X.
-    lazyInit (X);
 
     int ncols_X, num_Q_blocks, ncols_Q_total;
     checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -954,12 +854,6 @@ namespace Belos {
     // recursive invocation by doing nothing.
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
-
-    // Internal data used by this method require a specific MV object
-    // for initialization (in particular, to get a Map / communicator
-    // object, and to initialize scratch space).  Thus, we delay
-    // (hence "lazy") initialization until we get an X.
-    lazyInit (X);
 
     // MVT returns int for this, even though the "local ordinal
     // type" of the MV may be some other type (for example,
@@ -1062,7 +956,38 @@ namespace Belos {
       }
   }
 
+  template<class Scalar, class MV>
+  int 
+  TsqrOrthoManagerImpl<Scalar, MV>::
+  normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B)
+  {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+    Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
+    const int numVecs = MVT::GetNumberVecs(X);
+    if (numVecs == 0) {
+      return 0; // Nothing to do.
+    } else if (numVecs == 1) {
+      // Special case for a single column; scale and copy over.
+      using Teuchos::Range1D;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // Normalize X in place (faster than TSQR for one column).
+      const int rank = normalizeOne (X, B);
+      // Copy results to first column of Q.
+      RCP<MV> Q_0 = MVT::CloneViewNonConst (Q, Range1D(0,0));
+      MVT::Assign (X, *Q_0);
+      return rank;
+    } else {
+      // The "true" argument to normalizeImpl() means the output
+      // vectors go into Q, and the contents of X are overwritten with
+      // invalid values.
+      return normalizeImpl (X, Q, B, true);
+    }
+  }
 
   template<class Scalar, class MV>
   int 
@@ -1415,65 +1340,69 @@ namespace Belos {
 
   template<class Scalar, class MV>
   Teuchos::RCP<const Teuchos::ParameterList>
-  TsqrOrthoManagerImpl<Scalar, MV>::getDefaultParameters ()
+  TsqrOrthoManagerImpl<Scalar, MV>::getValidParameters () const
   {
     using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using Teuchos::RCP;
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
 
-    // This part makes this class method non-reentrant.
-    static RCP<ParameterList> params;
-    if (! params.is_null())
-      return params;
-    params = Teuchos::parameterList();
+    if (defaultParams_.is_null()) {
+      RCP<ParameterList> params = parameterList ("TsqrOrthoManagerImpl");
+      //
+      // TSQR parameters (set as a sublist).
+      //
+      params->set ("TSQR implementation", *(tsqrAdaptor_.getValidParameters()),
+		   "TSQR implementation parameters.");
+      // 
+      // Orthogonalization parameters
+      //
+      const bool defaultRandomizeNullSpace = true;
+      params->set ("randomizeNullSpace", defaultRandomizeNullSpace, 
+		   "Whether to fill in null space vectors with random data.");
 
-    // 
-    // TSQR parameters
-    //
-    params->set ("TsqrImpl", tsqr_adaptor_type::getDefaultParameters(), 
-		 "TSQR implementation parameters.");
-    // 
-    // Orthogonalization parameters
-    //
-    const bool defaultRandomizeNullSpace = true;
-    params->set ("randomizeNullSpace", defaultRandomizeNullSpace, 
-		 "Whether to fill in null space vectors with random data.");
-    //const bool defaultReorthogonalizeBlocks = false;
-    const bool defaultReorthogonalizeBlocks = true;
-    params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
-		 "Whether to do block reorthogonalization.");
-    // This parameter corresponds to the "blk_tol_" parameter in
-    // Belos' DGKSOrthoManager.  We choose the same default value.
-    const magnitude_type defaultBlockReorthogThreshold = 
-      magnitude_type(10) * SCTM::squareroot (SCTM::eps());
-    params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
-		 "If reorthogonalizeBlocks==true, and if the norm of "
-		 "any column within a block decreases by this much or "
-		 "more after orthogonalization, we reorthogonalize.");
-    // This parameter corresponds to the "sing_tol_" parameter in
-    // Belos' DGKSOrthoManager.  We choose the same default value.
-    const magnitude_type defaultRelativeRankTolerance = 
-      magnitude_type(10) * SCTM::eps();
-    // If the relative rank tolerance is zero, then we will always
-    // declare blocks to be numerically full rank, as long as no
-    // singular values are zero.
-    params->set ("relativeRankTolerance", defaultRelativeRankTolerance,
-		 "Relative tolerance to determine the numerical rank of a "
-		 "block when normalizing.");
-    // See Stewart's 2008 paper on block Gram-Schmidt for a
-    // definition of "orthogonalization fault."
-    const bool defaultThrowOnReorthogFault = true;
-    params->set ("throwOnReorthogFault", defaultThrowOnReorthogFault,
-		 "Whether to throw an exception if an orthogonalization "
-		 "fault occurs.  This only matters if reorthogonalization "
-		 "is enabled (reorthogonalizeBlocks==true).");
-    const bool defaultForceNonnegativeDiagonal = false;
-    params->set ("forceNonnegativeDiagonal", defaultForceNonnegativeDiagonal,
-		 "Whether to force the R factor produced by the normalization "
-		 "step to have a nonnegative diagonal.");
-    return params;
+      const bool defaultReorthogonalizeBlocks = true;
+      params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
+		   "Whether to do block reorthogonalization as necessary.");
+
+      // This parameter corresponds to the "blk_tol_" parameter in
+      // Belos' DGKSOrthoManager.  We choose the same default value.
+      const magnitude_type defaultBlockReorthogThreshold = 
+	magnitude_type(10) * SCTM::squareroot (SCTM::eps());
+      params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
+		   "If reorthogonalizeBlocks==true, and if the norm of "
+		   "any column within a block decreases by this much or "
+		   "more after orthogonalization, we reorthogonalize.");
+
+      // This parameter corresponds to the "sing_tol_" parameter in
+      // Belos' DGKSOrthoManager.  We choose the same default value.
+      const magnitude_type defaultRelativeRankTolerance = 
+	Teuchos::as<magnitude_type>(10) * SCTM::eps();
+
+      // If the relative rank tolerance is zero, then we will always
+      // declare blocks to be numerically full rank, as long as no
+      // singular values are zero.
+      params->set ("relativeRankTolerance", defaultRelativeRankTolerance,
+		   "Relative tolerance to determine the numerical rank of a "
+		   "block when normalizing.");
+
+      // See Stewart's 2008 paper on block Gram-Schmidt for a definition
+      // of "orthogonalization fault."
+      const bool defaultThrowOnReorthogFault = true;
+      params->set ("throwOnReorthogFault", defaultThrowOnReorthogFault,
+		   "Whether to throw an exception if an orthogonalization "
+		   "fault occurs.  This only matters if reorthogonalization "
+		   "is enabled (reorthogonalizeBlocks==true).");
+
+      const bool defaultForceNonnegativeDiagonal = false;
+      params->set ("forceNonnegativeDiagonal", defaultForceNonnegativeDiagonal,
+		   "Whether to force the R factor produced by the normalization "
+		   "step to have a nonnegative diagonal.");
+
+      defaultParams_ = params;
+    }
+    return defaultParams_;
   }
-
 
   template<class Scalar, class MV>
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -1483,29 +1412,24 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    // This part makes this class method non-reentrant.
-    static RCP<ParameterList> params;
-    if (params.is_null())
-      {
-	RCP<const ParameterList> defaultParams = getDefaultParameters();
-	// Start with a clone of the default parameters
-	params = rcp (new ParameterList (*defaultParams));
+    RCP<const ParameterList> defaultParams = getValidParameters();
+    // Start with a clone of the default parameters.
+    RCP<ParameterList> params = rcp (new ParameterList (*defaultParams));
 	
-	// Disable reorthogonalization and randomization of the null
-	// space basis.  Reorthogonalization tolerances don't matter,
-	// since we aren't reorthogonalizing blocks in the fast
-	// settings.  We can leave the default values.  Also,
-	// (re)orthogonalization faults may only occur with
-	// reorthogonalization, so we don't have to worry about the
-	// "throwOnReorthogFault" setting.
-	const bool randomizeNullSpace = false;
-	params->set ("randomizeNullSpace", randomizeNullSpace);      
-	const bool reorthogonalizeBlocks = false;
-	params->set ("reorthogonalizeBlocks", reorthogonalizeBlocks);
-      }
+    // Disable reorthogonalization and randomization of the null
+    // space basis.  Reorthogonalization tolerances don't matter,
+    // since we aren't reorthogonalizing blocks in the fast
+    // settings.  We can leave the default values.  Also,
+    // (re)orthogonalization faults may only occur with
+    // reorthogonalization, so we don't have to worry about the
+    // "throwOnReorthogFault" setting.
+    const bool randomizeNullSpace = false;
+    params->set ("randomizeNullSpace", randomizeNullSpace);      
+    const bool reorthogonalizeBlocks = false;
+    params->set ("reorthogonalizeBlocks", reorthogonalizeBlocks);
+
     return params;
   }
-
 
   template<class Scalar, class MV>
   int
@@ -1519,10 +1443,10 @@ namespace Belos {
       // This call only computes the QR factorization X = Q B.
       // It doesn't compute the rank of X.  That comes from
       // revealRank() below.
-      tsqrAdaptor_->factorExplicit (X, Q, B, forceNonnegativeDiagonal_);
+      tsqrAdaptor_.factorExplicit (X, Q, B, forceNonnegativeDiagonal_);
       // This call will only modify *B if *B on input is not of full
       // numerical rank.
-      rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);
+      rank = tsqrAdaptor_.revealRank (Q, B, relativeRankTolerance_);
     } catch (std::exception& e) {
       throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
     }
@@ -1970,18 +1894,16 @@ namespace Belos {
     using Teuchos::ArrayView;
     using Teuchos::RCP;
     typedef typename ArrayView<RCP<const MV> >::const_iterator iter_type;
-    for (iter_type it = Q.begin(); it != Q.end(); ++it)
-      {
-	const MV& Qi = **it;
-	the_ncols_Q_total += MVT::GetNumberVecs (Qi);
-      }
+    for (iter_type it = Q.begin(); it != Q.end(); ++it) {
+      const MV& Qi = **it;
+      the_ncols_Q_total += MVT::GetNumberVecs (Qi);
+    }
 
     // Commit temporary values to the output arguments.
     ncols_X = the_ncols_X;
     num_Q_blocks = the_num_Q_blocks;
     ncols_Q_total = the_ncols_Q_total;
   }
-
 
 } // namespace Belos
 

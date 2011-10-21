@@ -108,7 +108,7 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
     }
 
-    //! Default constructor.
+    //! Constructor.
     OrthoManagerFactory () : theList_ (numOrthoManagers())
     {
       int index = 0;
@@ -148,12 +148,11 @@ namespace Belos {
 			 "Invalid number " << numValid << " of valid MatOrtho"
 			 "Manager names.  Please report this bug to the Belos "
 			 "developers." );
-      if (numValid > 1)
-	{
-	  for (int k = 0; k < numValid - 1; ++k)
-	    out << "\"" << theList_[k] << "\", ";
-	  out << "or ";
-	}
+      if (numValid > 1) {
+	for (int k = 0; k < numValid - 1; ++k)
+	  out << "\"" << theList_[k] << "\", ";
+	out << "or ";
+      }
       out << "\"" << theList_[numValid-1] << "\"";
       return out;
     }
@@ -183,7 +182,7 @@ namespace Belos {
     /// \param name [in] MatOrthoManager subclass short name, for
     ///   which isValidName(name) returns true.
     ///
-    /// \warning This method may not be thread-safe or reentrant,
+    /// \warning This method may not necessarily be reentrant,
     ///   depending on the MatOrthoManager subclass.  This is because
     ///   different subclasses may choose to cache the default
     ///   parameter list as static method data.
@@ -195,7 +194,14 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	return TsqrMatOrthoManager<Scalar, MV, OP>::getDefaultParameters();
+	// Make an instance to get its default parameters.  This
+	// doesn't allocate any scratch space and shouldn't be too
+	// expensive.  We don't cache the default parameter list, so
+	// every time you call this method with name == "TSQR", a new
+	// parameter list will be created.  You can save the parameter
+	// list yourself if you want to reuse it.
+	TsqrMatOrthoManager<Scalar, MV, OP> tsqr; 
+	return tsqr.getValidParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
@@ -220,7 +226,6 @@ namespace Belos {
       }
     }
 
-
     /// \brief "Fast" parameters for the given MatOrthoManager subclass.
     ///
     /// "Fast" usually means that accuracy and/or robustness (with
@@ -242,7 +247,10 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	return TsqrMatOrthoManager<Scalar, MV, OP>::getFastParameters();
+	// Make an instance to get its fast parameters.  This doesn't
+	// allocate any scratch space and shouldn't be too expensive.
+	TsqrMatOrthoManager<Scalar, MV, OP> tsqr; 
+	return tsqr.getFastParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
@@ -267,11 +275,11 @@ namespace Belos {
       }
     }
 
-
     /// \brief Return an instance of the specified MatOrthoManager subclass.
     ///
-    /// \param ortho [in] Name of the MatOrthoManager subclass.  The \c
-    ///   validNames() method returns a list of the supported names.
+    /// \param ortho [in] Name of the MatOrthoManager subclass
+    ///   instance to return.  The \c validNames() method returns a
+    ///   list of the supported names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
@@ -281,20 +289,17 @@ namespace Belos {
     /// \param label [in] Label for Belos-specific timers, if Belos
     ///   timers were enabled at compile time.  Otherwise, this
     ///   parameter's value doesn't matter.
-    /// \param params [in] Optional (null) list of parameters for
-    ///   setting up the specific MatOrthoManager subclass.  A default
+    /// \param params [in/out] Optional list of parameters for setting
+    ///   up the specific MatOrthoManager subclass.  A default
     ///   parameter list with embedded documentation is available for
     ///   each MatOrthoManager subclass that this factory knows how to
     ///   make.
-    ///
-    /// \return (Smart pointer to a) MatOrthoManager instance.
-    ///   
-    Teuchos::RCP< Belos::MatOrthoManager<Scalar, MV, OP> >
+    Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP> >
     makeMatOrthoManager (const std::string& ortho, 
 			 const Teuchos::RCP<const OP>& M,
 			 const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 			 const std::string& label,
-			 const Teuchos::RCP<const Teuchos::ParameterList>& params)
+			 const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
 #ifdef HAVE_BELOS_TSQR
       using Belos::TsqrMatOrthoManager;
@@ -306,71 +311,72 @@ namespace Belos {
       using Teuchos::rcp;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
-      TEUCHOS_TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
-			 "SimpleOrthoManager does not yet support the "
-			 "MatOrthoManager interface");
-
       if (ortho == "DGKS") {
 	int maxNumOrthogPasses;
 	magnitude_type blkTol, depTol, singTol;
 	readDgksParameters<Scalar> (params, maxNumOrthogPasses, blkTol, depTol, singTol);
-	return rcp (new DGKSOrthoManager<Scalar, MV, OP> (label, M, maxNumOrthogPasses, 
-							  blkTol, depTol, singTol));
+	typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;
+	return rcp (new dgks_type (label, M, maxNumOrthogPasses, 
+				   blkTol, depTol, singTol));
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {
 	// mfh 12 Jan 2011: TSQR knows how to read its own parameters.
 	// I didn't want to change the other OrthoManager subclasses'
 	// public interfaces to accept a parameter list input.
-	return rcp (new TsqrMatOrthoManager<Scalar, MV, OP> (params, label, M));
+	typedef TsqrMatOrthoManager<Scalar, MV, OP> tsqr_type;
+	return rcp (new tsqr_type (params, label, M));
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
 	int maxNumOrthogPasses;
 	magnitude_type blkTol, singTol;
 	readIcgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
-	return rcp (new ICGSOrthoManager<Scalar, MV, OP>(label, M, maxNumOrthogPasses, 
-							 blkTol, singTol));
+	typedef ICGSOrthoManager<Scalar, MV, OP> icgs_type;
+	return rcp (new icgs_type (label, M, maxNumOrthogPasses, blkTol, singTol));
       }
       else if (ortho == "IMGS") {
 	int maxNumOrthogPasses;
 	magnitude_type blkTol, singTol;
 	readImgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
-	return rcp (new IMGSOrthoManager<Scalar, MV, OP>(label, M, maxNumOrthogPasses,
-							 blkTol, singTol));
-      }
-      else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+	typedef IMGSOrthoManager<Scalar, MV, OP> imgs_type;
+	return rcp (new imgs_type (label, M, maxNumOrthogPasses, blkTol, singTol));
+      } else if (ortho == "Simple") {
+	TEUCHOS_TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
+				   "SimpleOrthoManager does not yet support "
+				   "the MatOrthoManager interface");
+      } 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			   "Invalid orthogonalization manager name: Valid names"
 			   " are " << validNamesString() << ".  For many of "
 			   "the test executables, the orthogonalization manager"
 			   " name often corresponds to the \"ortho\" command-"
 			   "line argument.");
-      }
+      return Teuchos::null; // Guard to avoid compiler warnings.
     }
 
-    /// Create and return the specified OrthoManager subclass
+    /// \brief Return an instance of the specified OrthoManager subclass.
     ///
-    /// \param ortho [in] Name of OrthoManager subclass.  The \c
-    ///   validNames() method returns a list of the supported names.
+    /// \param ortho [in] Name of the OrthoManager subclass instance
+    ///   to return.  The \c validNames() method returns a list of the
+    ///   supported names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
-    ///   orthogonalize with respect to the standard Euclidean 
-    ///   inner product.
+    ///   orthogonalize with respect to the standard Euclidean inner
+    ///   product.
     /// \param outMan [in/out] Output manager, which the OrthoManager
     ///   instance may use (but is not required to use) for various
-    ///   kinds of status output
-    /// \param label [in] Label for timers
-    /// \param params [in] Optional list of parameters for 
-    ///   setting up the specific OrthoManager subclass
+    ///   kinds of status output.
+    /// \param label [in] Label for timers.
+    /// \param params [in/out] Optional list of parameters for 
+    ///   setting up the specific OrthoManager subclass.
     ///
-    /// \return (Smart pointer to a) OrthoManager instance
-    ///   
+    /// \return OrthoManager instance.
     Teuchos::RCP<Belos::OrthoManager<Scalar, MV> >
     makeOrthoManager (const std::string& ortho, 
 		      const Teuchos::RCP<const OP>& M,
 		      const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 		      const std::string& label,
-		      const Teuchos::RCP<const Teuchos::ParameterList>& params)
+		      const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
 #ifdef HAVE_BELOS_TSQR
       using Belos::TsqrOrthoManager;
@@ -386,20 +392,20 @@ namespace Belos {
       // a MatOrthoManager is-an OrthoManager, so returning a
       // TsqrMatOrthoManager would still be correct; this is just an
       // optimization.
-      if (ortho == "TSQR" && M.is_null())
+      if (ortho == "TSQR" && M.is_null()) {
 	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
+      }
 #endif // HAVE_BELOS_TSQR
-
-      if (ortho == "Simple")
-	{
-	  TEUCHOS_TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
-			     "SimpleOrthoManager is not yet supported "
-			     "when the operator M is nontrivial (i.e., "
-			     "M != null).");
-	  return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
-	}
-      // A MatOrthoManager is-an OrthoManager.
-      return makeMatOrthoManager (ortho, M, outMan, label, params);
+      else if (ortho == "Simple") {
+	TEUCHOS_TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
+				   "SimpleOrthoManager is not yet supported "
+				   "when the operator M is nontrivial (i.e., "
+				   "M != null).");
+	return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
+      } else {
+	// A MatOrthoManager is-an OrthoManager.
+	return makeMatOrthoManager (ortho, M, outMan, label, params);
+      }
     }
   };
 

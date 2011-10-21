@@ -86,6 +86,7 @@ main (int argc, char *argv[])
   using Belos::OutputManager;
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -260,14 +261,12 @@ main (int argc, char *argv[])
   RCP<OrthoManager<scalar_type, MV> > orthoMan;
   {
     std::string label (orthoManName);
-    RCP<const ParameterList> params = factory.getDefaultParameters (orthoManName);
-    if (orthoManName == "Simple")
-      {
-	RCP<ParameterList> paramsCopy (new ParameterList (*params));
-	paramsCopy->set ("Normalization", normalization);
-	params = paramsCopy;
-	label = label + " (" + normalization + " normalization)";
-      }
+    RCP<ParameterList> params = 
+      parameterList (*(factory.getDefaultParameters (orthoManName)));
+    if (orthoManName == "Simple") {
+      params->set ("Normalization", normalization);
+      label = label + " (" + normalization + " normalization)";
+    }
     orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
   }
 

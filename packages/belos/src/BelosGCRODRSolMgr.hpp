@@ -833,42 +833,31 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // DGKS orthogonalization manager is to be used, the value of this
   // parameter will override DGKS's "depTol" parameter.
   //
-  // Users may supply the orthogonalization manager parameters either
-  // as a sublist, or as an RCP.  We test for both.  Note that setting
-  // the sublist as an RCP<const ParameterList> rather than a
-  // ParameterList means that you can't correctly serialize the solver
-  // manager's parameter list.
-  RCP<const ParameterList> orthoParams;
-  {
-    bool gotOrthoParams = false;
-    try { // Could it be an RCP?
-      orthoParams = 
-	params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
-      gotOrthoParams = true;
+  // Users must supply the orthogonalization manager parameters as a
+  // sublist (supplying it as an RCP<ParameterList> would make the
+  // resulting parameter list not serializable).
+  RCP<ParameterList> orthoParams;
+  { // The nonmember function returns an RCP<ParameterList>, 
+    // which is what we want here.
+    using Teuchos::sublist;
+    // Abbreviation to avoid typos.
+    const std::string paramName ("Orthogonalization Parameters");
+
+    try {
+      orthoParams = sublist (params_, paramName, true);
     } catch (InvalidParameter&) {
-      // We didn't get orthoParams; gotOrthoParams stays false.
+      // We didn't get the parameter list from params, so get a
+      // default parameter list from the OrthoManagerFactory.
+      // Modify params_ so that it has the default parameter list,
+      // and set orthoParams to ensure it's a sublist of params_
+      // (and not just a copy of one).
+      params_->set (paramName, orthoFactory_.getDefaultParameters (orthoType_));
+      orthoParams = sublist (params_, paramName, true);
     }
-    if (! gotOrthoParams) {
-      try { // Could it be a sublist?
-	const ParameterList& _orthoParams = 
-	  params_->sublist("Orthogonalization Parameters");
-	// A deep copy is the only safe way to ensure that
-	// orthoParams doesn't "go away," since params doesn't
-	// belong to the solution manager and may fall out of
-	// scope.
-	orthoParams = rcp (new ParameterList (_orthoParams));
-	gotOrthoParams = true;
-      } catch (InvalidParameter&) {
-	// We didn't get orthoParams; gotOrthoParams stays false.
-      }
-    }
-    // We didn't get the parameter list from params, so get a default
-    // parameter list from the OrthoManagerFactory.
-    if (! gotOrthoParams)
-      orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
-    // Update parameter in our list.
-    params_->set ("Orthogonalization Parameters", orthoParams);
   }
+  TEUCHOS_TEST_FOR_EXCEPTION(! orthoParams.is_null(), std::logic_error, 
+			     "Failed to get orthogonalization parameters.  "
+			     "Please report this bug to the Belos developers.");
 
   // Check if the desired orthogonalization method changed, or if the
   // orthogonalization manager has not yet been instantiated.  If
@@ -887,18 +876,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // instance.  
   //
   // The most general way to fix this issue would be to supply each
-  // orthogonalization manager class with a setParameters() method
+  // orthogonalization manager class with a setParameterList() method
   // that takes a parameter list input, and changes the parameters as
   // appropriate.  A less efficient but correct way would be simply to
   // reinstantiate the OrthoManager every time, whether or not the
   // orthogonalization method name or parameters have changed.
-  if (ortho_.is_null() || changedOrthoType)
-    {
-      // Create orthogonalization manager.  This requires that the
-      // OutputManager (printer_) already be initialized.
-      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_, 
-						  label_, orthoParams);
-    }
+  if (ortho_.is_null() || changedOrthoType) {
+    // Create orthogonalization manager.  This requires that the
+    // OutputManager (printer_) already be initialized.
+    ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_, 
+						label_, orthoParams);
+  }
 
   // The DGKS orthogonalization accepts a "Orthogonalization Constant"
   // parameter (also called kappa in the code, but not in the

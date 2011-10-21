@@ -91,6 +91,15 @@ namespace TSQR {
     //! Virtual destructor, for memory safety of derived classes.
     virtual ~NodeTsqr() {}
 
+    /// \brief Whether this object is ready to perform computations.
+    ///
+    /// Some NodeTsqr subclasses require additional initialization
+    /// after construction, before they can perform computations.
+    /// Call this method to make sure that the subclass instance is
+    /// fully initialized, before calling any of its computational
+    /// methods.
+    virtual bool ready() const = 0;
+
     /// \brief Cache size hint (in bytes) used for the factorization.
     ///
     /// This method is deprecated, because the name is misleading.
