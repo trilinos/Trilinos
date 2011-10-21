@@ -52,7 +52,7 @@ C   --                  (4) - the analysis time
 C   --   NINFO  - IN  - the number of information records; <0 if end-of-file
 C   --   INFO   - OUT - the information records (if OPTION)
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       INTEGER NDB
       CHARACTER*(*) OPTION

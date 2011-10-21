@@ -64,7 +64,7 @@ C   --   EXUPCS - (SUPES) Convert to uppercase and blank non-standard
 C   --   MDRSRV - (SUPES) Reserve dynamic memory
 C   --   PCKSTR - (STRLIB) Remove embedded blanks
 
-      include 'namlen.blk'
+      include 'ag_namlen.blk'
 
       INTEGER NDB
       CHARACTER*1 C(*)
@@ -119,7 +119,7 @@ C     NAMGV  - OUT - Returned character array with global variable names
 C     NAMNV  - OUT - Returned character array with nodal variable names
 C     NAMEV  - OUT - Returned character array with element variable names
 
-      include 'namlen.blk'
+      include 'ag_namlen.blk'
 
       character*(namlen) namgv(*), namnv(*), namev(*)
 

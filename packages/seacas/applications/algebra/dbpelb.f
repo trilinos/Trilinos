@@ -58,8 +58,8 @@ C   --   ISEVOK - IN - the element block variable truth table;
 C   --      variable i of block j exists iff ISEVOK(j,i)
 C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
 
-      include 'params.blk'
-      include 'namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
       
       CHARACTER*(*) OPTION
       INTEGER IDELB(*)

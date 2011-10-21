@@ -510,7 +510,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASSuplib" dir="seacas/libraries/suplib" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -690,7 +690,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASMapvarlib" dir="seacas/libraries/mapvarlib" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

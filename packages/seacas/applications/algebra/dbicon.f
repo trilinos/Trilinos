@@ -52,7 +52,7 @@ C   --Routines Called:
 C   --   EXUPCS - (SUPES) Convert to uppercase and blank non-standard
 C   --   PCKSTR - (STRLIB) Remove embedded blanks
 
-      include 'namlen.blk'
+      include 'ag_namlen.blk'
       PARAMETER (MAXDIM=6)
 
       INTEGER NDB
@@ -61,8 +61,8 @@ C   --   PCKSTR - (STRLIB) Remove embedded blanks
 
 C     Read and pack coordinate names
       IF (NDIM .GT. MAXDIM) THEN
-         write(6, '(A)')'Too many coordinate names in the database'
-         IOERR = 1
+         CALL PRTERR ('WARNING',
+     &   'Too many coordinate names in the database')
          RETURN
       END IF
 

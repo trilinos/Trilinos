@@ -16,11 +16,11 @@
 #include <cstring>
 #include <time.h>
 
-#include "CodeTypes.h"
-#include "SystemInterface.h"
+#include "EML_CodeTypes.h"
+#include "EML_SystemInterface.h"
 
 #include <Ioss_CodeTypes.h>
-#include <Ionit_Initializer.h>
+#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>

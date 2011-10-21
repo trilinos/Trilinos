@@ -48,11 +48,11 @@ C   --Common Variables:
 C   --   Uses NUMEQN, NUMENT, NAMENT, TYPENT, INXENT, VALENT, VSZENT of /ENT../
 C   --   Uses NUMINP, IXLHS, NAMVAR, TYPVAR, IDVAR, ISTVAR of /VAR../
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'ent.blk'
-      include 'var.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_ent.blk'
+      include 'ag_var.blk'
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
       CHARACTER*(*) OPTION

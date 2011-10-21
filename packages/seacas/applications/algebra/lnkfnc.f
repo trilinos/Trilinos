@@ -50,11 +50,11 @@ C   --   Sets ITMENT of /ENT../
 C   --   Uses NUMEQN, NUMENT, TYPENT, INXENT of /ENT../
 C   --   Uses FNCSTO of /FNCTB./
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'ent.blk'
-      include 'fnctbc.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_ent.blk'
+      include 'ag_fnctbc.blk'
 
 C   --Allocate storage for time functions
 

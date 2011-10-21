@@ -46,7 +46,7 @@ C   --
 C   --Common Variables:
 C   --   Uses NUMNP, NUMEL of /DBNUMS/
 
-      include 'dbnums.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER VTYP
 

@@ -52,10 +52,10 @@ C   --Common Variables:
 C   --   Sets NUMINP, IXLHS of /VAR../
 C   --   Uses NVARHI, NVARGL, NVARNP, NVAREL of /DBNUMS/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER*(*) INLINE
       INTEGER INTYP(*)

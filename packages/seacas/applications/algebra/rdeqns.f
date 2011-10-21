@@ -83,17 +83,17 @@ C   --   Sets NPTIMS, TMIN, TMAX, DELT, NINTV, WHONLY of /TIMES/
 C   --   Sets ISZOOM of /ZOOM/
 C   --   Sets EQNLIN of /EQNLNS/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'ent.blk'
-      include 'var.blk'
-      include 'times.blk'
-      include 'dbnums.blk'
-      include 'zoom.blk'
-      include 'filter.blk'
-      include 'remove.blk'
-      include 'eqnlns.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_ent.blk'
+      include 'ag_var.blk'
+      include 'ag_times.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_zoom.blk'
+      include 'ag_filter.blk'
+      include 'ag_remove.blk'
+      include 'ag_eqnlns.blk'
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
@@ -436,9 +436,6 @@ c      CALL MDGET (NELBLK * MAXEV)
          RETURN
       END IF
 
-
-
-  190 CONTINUE
 C     Simulate error so that no output file is generated
       IF (RETVRB .EQ. 'QUIT') MERR =  1
       RETURN

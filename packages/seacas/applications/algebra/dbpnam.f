@@ -52,7 +52,7 @@ C   --   NAMEGV - IN - the global variable names (if OPTION)
 C   --   NAMENV - IN - the nodal variable names (if OPTION)
 C   --   NAMEEV - IN - the element variable names (if OPTION)
 
-      include 'namlen.blk'
+      include 'ag_namlen.blk'
 
       CHARACTER*(*) OPTION
       INTEGER NVARGL, NVARNP, NVAREL

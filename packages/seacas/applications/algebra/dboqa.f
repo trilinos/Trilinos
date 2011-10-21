@@ -50,7 +50,7 @@ C   --                 (4) - the analysis time
 C   --   NINFO  - IN - the number of information records; written only if >= 0
 C   --   INFO   - IN - the information records
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       INTEGER NDB
       CHARACTER*(MXSTLN)  QAINFO(6)

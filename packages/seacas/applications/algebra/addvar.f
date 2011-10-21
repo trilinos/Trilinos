@@ -57,8 +57,8 @@ C   --Common Variables:
 C   --   Sets NUMINP, IXLHS, NAMVAR, TYPVAR, IDVAR, ISTVAR, IEVVAR of /VAR../
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
-      include 'namlen.blk'
-      include 'var.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
       
       CHARACTER*(*) NAMEQV(*)
       CHARACTER TYPEQV

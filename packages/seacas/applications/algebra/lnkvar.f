@@ -52,11 +52,11 @@ C   --   Sets INXENT, VALENT of /ENT../
 C   --   Uses NAMENT, TYPENT of /ENT../
 C   --   Uses NAMVAR, TYPVAR, IDVAR, ISTVAR, NUMINP, IXLHS of /VAR../
 
-      include 'namlen.blk'
-      include 'params.blk'
-      include 'numeqn.blk'
-      include 'ent.blk'
-      include 'var.blk'
+      include 'ag_namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_numeqn.blk'
+      include 'ag_ent.blk'
+      include 'ag_var.blk'
       
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 

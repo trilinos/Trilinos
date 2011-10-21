@@ -19,7 +19,7 @@ SET(HEADERS "")
 SET(SOURCES elb_allo.c       elb_elem.c       elb_err.c        elb_exo_util.c
 	    elb_graph.c      elb_groups.c     elb_inp.c        elb_loadbal.c
 	    elb_output.c     elb_time.c       elb_util.c
-	    getopt.c         md_getsubopt.c)
+	    md_getsubopt.c)
 
 CHECK_INCLUDE_FILE( sys/resource.h HAS_GETRUSAGE )
 

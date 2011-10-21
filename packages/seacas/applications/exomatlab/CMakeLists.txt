@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(HEADERS "")
-SET(SOURCES SystemInterface.C)
+SET(SOURCES EML_SystemInterface.C)
 
 PACKAGE_ADD_LIBRARY(exomatlab_app_lib SOURCES ${SOURCES} DEPLIBS Ioss suplib)
 PACKAGE_ADD_EXECUTABLE(exomatlab NOEXEPREFIX NOEXESUFFIX SOURCES exomatlab.C DEPLIBS exomatlab_app_lib COMM serial)

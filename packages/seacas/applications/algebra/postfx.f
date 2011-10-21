@@ -60,8 +60,8 @@ C   --   VALENT - IN/OUT - based on TYPENT (as in /ENT../)
 C   --   ITMENT - IN/OUT - based on TYPENT (as in /ENT../)
 C   --   NERR - IN/OUT - the number of errors in the equation, may be set
 
-      include 'namlen.blk'
-      include 'numeqn.blk'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
       CHARACTER*(*) NAMENT(*)

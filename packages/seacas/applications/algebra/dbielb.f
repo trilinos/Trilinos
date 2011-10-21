@@ -67,7 +67,7 @@ C   --   IEATR  - OUT - the size of the attribute array
 C   --   IOERR  - OUT - error flag
 C   --
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       INTEGER NDB
       CHARACTER*(*) OPTION

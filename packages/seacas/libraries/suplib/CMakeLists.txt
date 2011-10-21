@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-SET(HEADERS  argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
+SET(HEADERS  argparse.inc add_to_log.h SL_tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
 
 SET(SOURCES
 	abrstr.f    copint.f    dbpini.f    ffaddv.f    ffrrng.f    indexi.f    intadd.f    logerr.f    numeql.f    prterr.f    wrapup.f
@@ -25,7 +25,7 @@ SET(SOURCES
 	ckexod.f    cpystr.f    ffaddi.f    ffnumb.f    hunt.f      inilog.f    locint.f    minmxs.f    pckstr.f    strtup.f
 	cknone.f    dberr.f     ffaddo.f    ffonof.f    idblnk.f    inirea.f    locrea.f    num2ix.f    pltond.f    subv.f
 	ckwhol.f    dbiv0.f     ffaddr.f    ffreal.f    iengrx.f    inistr.f    locstr.f    numeqi.f    pltone.f    wheneq.f
-	add_to_log.c addlog.c	GetLongOpt.C   adler.C        smart_assert.C timer.C        to_string.C    tokenize.C)
+	add_to_log.c addlog.c	GetLongOpt.C   adler.C        smart_assert.C timer.C        to_string.C    SL_tokenize.C)
 
 PACKAGE_ADD_LIBRARY(
 	suplib

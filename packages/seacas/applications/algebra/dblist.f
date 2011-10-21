@@ -65,13 +65,13 @@ C   --   Uses NDIM, NUMNP, NUMEL, NELBLK, NVARNP, NVAREL, NVARGL
 C   --      of /DBNUMS/
 C   --   Uses NQAREC, NINFO of /DBNUMQ/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'dbase.blk'
-      include 'dbtitl.blk'
-      include 'dbnums.blk'
-      include 'dbnumg.blk'
-      include 'dbnumq.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_dbase.blk'
+      include 'ag_dbtitl.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbnumg.blk'
+      include 'ag_dbnumq.blk'
 
       CHARACTER*(*) TYPE
       DIMENSION A(*)
@@ -113,8 +113,8 @@ C   --changing the table.
       IF (SHOTYP .EQ. 'VARS') THEN
           CALL DBPINI ('TISV', NDBIN, TITLE,
      &         NDIM, NUMNP, NUMEL, NELBLK,
-     &         NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
-     &         LESSDF, NVARGL, NVARNP, NVAREL)
+     &         NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL,
+     &         LESSDF, NVARGL, NVARNP, NVAREL, ' ')
 
       ELSE IF ((SHOTYP .EQ. 'BLOCKS')
      &    .OR. (SHOTYP .EQ. 'MATERIAL')) THEN

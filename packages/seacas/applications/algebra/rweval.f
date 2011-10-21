@@ -66,22 +66,22 @@ C   --   Uses TITLEO of /DBTITL/
 C   --   Uses NDIM, NUMNP, NUMEL, NSTEPS of /DBNUMS/
 C   --   Uses ISZOOM of /ZOOM/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'progqa.blk'
-      include 'ent.blk'
-      include 'var.blk'
-      include 'dbtitl.blk'
-      include 'dbout.blk'
-      include 'dbxvar.blk'
-      include 'dbnums.blk'
-      include 'dbnumg.blk'
-      include 'dbnumq.blk'
-      include 'zoom.blk'
-      include 'filter.blk'
-      include 'remove.blk'
-      include 'dbws.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_progqa.blk'
+      include 'ag_ent.blk'
+      include 'ag_var.blk'
+      include 'ag_dbtitl.blk'
+      include 'ag_dbout.blk'
+      include 'ag_dbxvar.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbnumg.blk'
+      include 'ag_dbnumq.blk'
+      include 'ag_zoom.blk'
+      include 'ag_filter.blk'
+      include 'ag_remove.blk'
+      include 'ag_dbws.blk'
       
       DIMENSION A(1)
       integer   ia(1)

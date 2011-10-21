@@ -72,28 +72,6 @@ C   --Definition for the ENTRY routine parameters
 C=======================================================================
       ENTRY DBVTYP (IIX, TYP, ID)
 C=======================================================================
-C$Id: dbvini.f,v 1.2 2008/03/14 13:45:27 gdsjaar Exp $
-C$Log: dbvini.f,v $
-CRevision 1.2  2008/03/14 13:45:27  gdsjaar
-CAdded copyright information to top of all files.
-C
-CALGEBRA2 is now open-sourced under BSD license
-C
-CRevision 1.1  1995/10/03 21:43:40  mksmith
-CAdding files new to algII for algebra2
-C
-CRevision 1.2  1990/11/30 09:50:55  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:13:59  gdsjaar
-c Testing
-c 
-c Revision 1.1  90/08/14  16:13:58  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c 
 
 C   --*** DBVTYP *** (EXOLIB) Return the variable type and number
 C   --   Written by Amy Gilkey - revised 03/18/88
@@ -132,28 +110,6 @@ C   --   ID  - OUT - the variable number within the type
 C=======================================================================
       ENTRY DBVIX (ITYP, IID, IX)
 C=======================================================================
-C$Id: dbvini.f,v 1.2 2008/03/14 13:45:27 gdsjaar Exp $
-C$Log: dbvini.f,v $
-CRevision 1.2  2008/03/14 13:45:27  gdsjaar
-CAdded copyright information to top of all files.
-C
-CALGEBRA2 is now open-sourced under BSD license
-C
-CRevision 1.1  1995/10/03 21:43:40  mksmith
-CAdding files new to algII for algebra2
-C
-CRevision 1.2  1990/11/30 09:50:55  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.1.1.1  90/08/14  16:13:59  gdsjaar
-c Testing
-c 
-c Revision 1.1  90/08/14  16:13:58  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:20  gdsjaar
-c Initial revision
-c 
 
 C   --*** DBVIX *** (EXOLIB) Return the variable index
 C   --   Written by Amy Gilkey - revised 10/14/87

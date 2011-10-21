@@ -52,10 +52,10 @@ C   --   Uses IXLHS, NAMVAR of /VAR../
 C   --   Sets ISTVAR of /VAR../
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
-      include 'namlen.blk'
-      include 'var.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
 C     database type, num_of qa and info records
-      include 'dbnumq.blk'
+      include 'ag_dbnumq.blk'
 
       CHARACTER*(*) INLINE
       INTEGER INTYP(*)
@@ -96,7 +96,4 @@ C     database type, num_of qa and info records
       END IF
 
       RETURN
-
-  120 CONTINUE
-      RETURN 1
       END

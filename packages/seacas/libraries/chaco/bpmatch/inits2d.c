@@ -21,7 +21,7 @@ int    *sets;			/* set each vertex gets assigned to */
 {
     double    xmid, ymid;	/* median x and y values */
     double    val, bestval;	/* values for determining set preferences */
-    int     bestset;		/* set vertex wants to be in */
+    int     bestset = 0;	/* set vertex wants to be in */
     int       signx, signy;	/* sign values for different target points */
     int       nsets = 4;	/* number of different sets */
     int       i, j;		/* loop counters */

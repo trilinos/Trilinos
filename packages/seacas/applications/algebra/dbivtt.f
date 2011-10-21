@@ -49,13 +49,10 @@ C   --   ITMP   - OUT - temporary scratch array
 C   --   NELBLK - IN  - the number of element blocks
 C   --   NVAREL - IN  - the number of element variables;
 
-      include 'params.blk'
-
       INTEGER NDB
       INTEGER NELBLK, NVAREL
       LOGICAL ISEVOK(NELBLK, NVAREL)
       INTEGER ITMP(NVAREL, NELBLK)
-      LOGICAL LVALUE
 
 C     Read the element block variable truth table
 C     call exgvtt(fileid, num_elem_blks, num_elem_var,
@@ -65,13 +62,7 @@ C       isevok - num_elem_var cycles faster
          CALL EXGVTT(NDB, NELBLK, NVAREL, ITMP, IERR)
          DO 110 I = 1, NVAREL
             DO 100 IELB = 1, NELBLK
-               IF (ITMP(I,IELB) .EQ. 0) LVALUE = .FALSE.
-               IF (ITMP(I,IELB) .EQ. 1) LVALUE = .TRUE.
-               IF ((ITMP(I,IELB) .NE. 0) .AND.
-     &             (ITMP(I,IELB) .NE. 1)) THEN
-                WRITE(*,*)'Error reading element variable truth table'
-               END IF
-               ISEVOK(IELB,I) = LVALUE
+              ISEVOK(IELB,I) = (ITMP(I,IELB) .NE. 0)
  100        CONTINUE
  110     CONTINUE
       end if
