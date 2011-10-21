@@ -164,6 +164,11 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   SET(${PROJECT_NAME}_ENABLE_DEBUG ${${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT} CACHE BOOL
     "Enable debug checking for ${PROJECT_NAME} packages.  Off by default unless CMAKE_BUILD_TYPE=\"DEBUG\"." )
   
+  SET(${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR ON
+    CACHE BOOL
+    "Enable support for Teuchos Time Monitors in all Trilinos packages that support it."
+    )
+  
   ADVANCED_SET(${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS ON
     CACHE BOOL
     "Show warnings about deprecated code"
