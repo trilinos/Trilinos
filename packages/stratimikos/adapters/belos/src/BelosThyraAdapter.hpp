@@ -92,7 +92,7 @@ namespace Belos {
       // create the new multivector
       Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // copy the data from the source multivector to the new multivector
-      Thyra::assign(&*cc, mv);
+      Thyra::assign(cc.ptr(), mv);
       return cc;
     }
 
@@ -109,7 +109,7 @@ namespace Belos {
       // create a view to the relevant part of the source multivector
       Teuchos::RCP<const TMVB> view = mv.subView(index);
       // copy the data from the relevant view to the new multivector
-      Thyra::assign(&*cc, *view);
+      Thyra::assign(cc.ptr(), *view);
       return cc;
     }
 
@@ -122,8 +122,7 @@ namespace Belos {
       // Create a view to the relevant part of the source multivector
       Teuchos::RCP<const TMVB> view = mv.subView (index);
       // Copy the data from the view to the new multivector.
-      // &*cc converts cc from an RCP to a Ptr.
-      Thyra::assign (&*cc, *view);
+      Thyra::assign (cc.ptr(), *view);
       return cc;
     }
 
@@ -275,21 +274,17 @@ namespace Belos {
     static void MvAddMv( const ScalarType alpha, const TMVB& A, 
                          const ScalarType beta,  const TMVB& B, TMVB& mv )
     { 
-      ScalarType coef[2], zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      const TMVB * in[2];
+      typedef Teuchos::ScalarTraits<ScalarType> ST;
+      using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
 
-      in[0] = &A;
-      in[1] = &B;
-      coef[0] = alpha;
-      coef[1] = beta;
-
-      Thyra::linear_combination(2,coef,in,zero,&mv);
+      Thyra::linear_combination<ScalarType>(
+        tuple(alpha, beta)(), tuple(ptrInArg(A), ptrInArg(B))(), ST::zero(), inoutArg(mv));
     }
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
     static void MvScale ( TMVB& mv, const ScalarType alpha )
-    { Thyra::scale(alpha,&mv); }
+      { Thyra::scale(alpha, Teuchos::inoutArg(mv)); }
 
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
@@ -303,7 +298,7 @@ namespace Belos {
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
     */
     static void MvTransMv( const ScalarType alpha, const TMVB& A, const TMVB& mv, 
-                           Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+      Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { 
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
       // Create a multivector to hold the result (m by n)
@@ -325,7 +320,7 @@ namespace Belos {
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>& b )
-    { Thyra::dots(mv,A,&(b[0])); }
+      { Thyra::dots(mv, A, Teuchos::arrayViewFromVector(b)); }
 
     //@}
 
@@ -335,8 +330,9 @@ namespace Belos {
     /*! \brief Compute the 2-norm of each individual std::vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const TMVB& mv, std::vector<magType>& normvec, NormType type = TwoNorm )
-    { Thyra::norms_2(mv,&(normvec[0])); }
+    static void MvNorm( const TMVB& mv, std::vector<magType>& normvec,
+      NormType type = TwoNorm )
+      { Thyra::norms_2(mv, Teuchos::arrayViewFromVector(normvec)); }
 
     //@}
 
@@ -370,7 +366,7 @@ namespace Belos {
       // create a view to the relevant part of the destination multivector
       Teuchos::RCP< TMVB > reldest = mv.subView(index);
       // copy the data to the destination multivector subview
-      Thyra::assign(&*reldest, *relsource);
+      Thyra::assign(reldest.ptr(), *relsource);
     }
 
     static void 
@@ -420,9 +416,8 @@ namespace Belos {
       else
 	A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
 
-      // Copy the data to the destination multivector.  "&*" is a
-      // typical Thyra idiom for turning an RCP into a raw pointer.
-      Thyra::assign (&*mv_view, *A_view);
+      // Copy the data to the destination multivector.
+      Thyra::assign(mv_view.ptr(), *A_view);
     }
 
     static void 
@@ -448,9 +443,7 @@ namespace Belos {
 	{
 	  Teuchos::RCP<TMVB> mv_view = 
 	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  // "&*" is a typical Thyra idiom for turning an RCP into a
-	  // raw pointer.
-	  Thyra::assign (&*mv_view, A);
+	  Thyra::assign (mv_view.ptr(), A);
 	}
     }
 
@@ -460,15 +453,16 @@ namespace Belos {
     { 
       // Thyra::randomize generates via a uniform distribution on [l,u]
       // We will use this to generate on [-1,1]
-      Thyra::randomize(-Teuchos::ScalarTraits<ScalarType>::one(),
-                        Teuchos::ScalarTraits<ScalarType>::one(),
-                       &mv);
+      Thyra::randomize<ScalarType>(
+        -Teuchos::ScalarTraits<ScalarType>::one(),
+        Teuchos::ScalarTraits<ScalarType>::one(),
+        Teuchos::outArg(mv));
     }
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
      */
     static void MvInit( TMVB& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
-    { Thyra::assign(&mv,alpha); }
+      { Thyra::assign(Teuchos::outArg(mv), alpha); }
 
     //@}
 
