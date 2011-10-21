@@ -1,0 +1,77 @@
+#ifndef MUELU_REPARTITIONFACTORY_HPP
+#define MUELU_REPARTITIONFACTORY_HPP
+
+namespace MueLu {
+
+/*!
+  @class RepartitionFactory
+  @brief Factory for creating a permutation operator to redistribute data across processors.
+
+  The permutation operator can be applied to a vector (operator) to repartition it across processes.
+  This is useful for load-balancing and moving data to a smaller number of processes.
+*/
+
+template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType,
+          class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+class RepartitionFactory : public SingleLevelFactory {
+#include "MueLu_UseShortNamesOrdinal.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    //! Constructor.
+    RepartitionFactory() {}
+
+    //! Destructor.
+    virtual ~RepartitionFactory() {}
+
+    //@}
+
+    //! Input
+    //@{
+
+    //! Registers what data are required by this factory, and what factories can produce the data.
+    void DeclareInput(Level &currentLevel) const {}
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    void Build(Level &currentLevel) const {
+
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+      currentLevel.Release("A",AFact_.get());
+      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      currentLevel.Set("Graph", graph, this);
+
+    } //Build
+
+    //@}
+
+    //! @name Set/Get methods. *FIXME* I guess these should go away in favor of the HashTable?
+    //@{
+
+    void SetPartitioningAlgorithm(std::string const &partitionAlg) {
+      partitionAlgorithm_ = partitionAlg;
+    }
+
+    std::string GetPartitioningAlgorithm() const {
+      return partitionAlgorithm_;
+    }
+
+    //@}
+
+  private:
+
+    RCP<SingleLevelFactoryBase> AFact_; //! A Factory
+    std::string partitionAlgorithm_;    //! partitioning algorithm
+
+};  //MueLu_RepartitionFactory
+
+} //namespace MueLu
+
+#define MUELU_REPARTITIONFACTORY_SHORT
+
+#endif //ifndef MUELU_REPARTITIONFACTORY_HPP

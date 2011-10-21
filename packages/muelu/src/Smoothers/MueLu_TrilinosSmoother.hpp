@@ -139,21 +139,21 @@ namespace MueLu {
       MUELU_DESCRIBE;
 
       if (verbLevel & Parameters0) {
-        out0 << "Prec. type: " << type_ << endl;
+        out0 << "Prec. type: " << type_ << std::endl;
       }
       
       if (verbLevel & Parameters1) { 
-        out0 << "Linear Algebra: " << toString(lib_) << endl;
-        out0 << "PrecType: " << type_ << endl;
-        out0 << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-        out0 << "Overlap: " << overlap_ << endl;
+        out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+        out0 << "PrecType: " << type_ << std::endl;
+        out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        out0 << "Overlap: " << overlap_ << std::endl;
       }
       
       if (verbLevel & Debug) {
-        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl
-             << "-" << endl
+        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
+             << "-" << std::endl
              << "Epetra PrecType: " << Ifpack2ToIfpack1Type(type_) << std::endl
-             << "Epetra Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << Ifpack2ToIfpack1Param(paramList_); }
+             << "Epetra Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << Ifpack2ToIfpack1Param(paramList_); }
       }
     }
 

@@ -124,7 +124,7 @@ namespace MueLu {
       MUELU_DESCRIBE;
       
       if (verbLevel & Statistics0) {
-        out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << endl;
+        out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
       }
       
     }

@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
   }
 
   // test some basic multigrid data
-  RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+  RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(std::cout));
   Finest->print(*fos);
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*fos);

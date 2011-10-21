@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   using std::cout;
   using std::endl;
 
-  RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+  RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
 
   //
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 //   //  fos->pushLinePrefix("Lvl 1: Smoother");
 
 //   //  fos->setTabIndentStr("my line");
-//   *fos << "Hello" << endl << "Hello";
+//   *fos << "Hello" << std::endl << "Hello";
 
 //   return 0;
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
-  cout << endl << endl;
+  std::cout << std::endl << std::endl;
   //
   //
   //
@@ -113,9 +113,9 @@ int main(int argc, char *argv[]) {
 
   //ifpackSmoo.describe(*fos, verbLevel);
 
-  cout << endl << endl;  
+  std::cout << std::endl << std::endl;  
   ifpackSmoo.Setup(l);
-  cout << endl << endl;
+  std::cout << std::endl << std::endl;
   
   //ifpackSmoo.describe(*fos, verbLevel);
   ifpackSmoo.print(*fos, verbLevel);
@@ -130,26 +130,26 @@ int main(int argc, char *argv[]) {
 
 // setVerbLevel(Teuchos::VERB_HIGH);
 
-//   cout << "---------- description() ---------- " << endl
+//   std::cout << "---------- description() ---------- " << std::endl
 //        << ifpackSmoo.description()
-//        << endl;
+//        << std::endl;
 
-//   cout << "---------- << operator ---------- " << endl
+//   std::cout << "---------- << operator ---------- " << std::endl
 //        << ifpackSmoo;
 
-//   cout << "---------- describe(NONE) ---------- " << endl;
+//   std::cout << "---------- describe(NONE) ---------- " << std::endl;
 //   ifpackSmoo.describe(*fos, Teuchos::VERB_NONE);
 
-//   cout << "---------- describe(LOW) ---------- " << endl;
+//   std::cout << "---------- describe(LOW) ---------- " << std::endl;
 //   ifpackSmoo.describe(*fos, Teuchos::VERB_LOW);
 
-//   cout << "---------- describe(MEDIUM) ---------- " << endl;
+//   std::cout << "---------- describe(MEDIUM) ---------- " << std::endl;
 //   ifpackSmoo.describe(*fos, Teuchos::VERB_MEDIUM);
 
-//   cout << "---------- describe(HIGH) ---------- " << endl;
+//   std::cout << "---------- describe(HIGH) ---------- " << std::endl;
 //   ifpackSmoo.describe(*fos, Teuchos::VERB_HIGH);
 
-//   cout << "---------- describe(EXTREME) ---------- " << endl;
+//   std::cout << "---------- describe(EXTREME) ---------- " << std::endl;
 //   ifpackSmoo.describe(*fos, Teuchos::VERB_EXTREME);
 
-//   cout << "-----------" << endl;
+//   std::cout << "-----------" << std::endl;

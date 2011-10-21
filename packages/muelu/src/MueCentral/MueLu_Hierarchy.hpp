@@ -77,7 +77,7 @@ namespace MueLu {
       int levelID = LastLevelID() + 1; // ID of the inserted level
 
       if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
-        GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << endl
+        GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
                                  << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
 
       Levels_.push_back(level);

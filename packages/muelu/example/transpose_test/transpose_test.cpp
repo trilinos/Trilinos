@@ -90,7 +90,7 @@ Epetra_CrsMatrix* TridiagMatrix(const Epetra_Map* Map, const double a, const dou
 int main(int argc, char *argv[])
 {
 
-  cout << Epetra_Version() << endl << endl;
+  std::cout << Epetra_Version() << std::endl << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-  Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(cout));
+  Teuchos::RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
   // Construct a Map with NumElements and index base of 0
   Teuchos::RCP<Epetra_Map> rgMap = Teuchos::rcp(new Epetra_Map(63, 0, Comm));

@@ -177,11 +177,11 @@ namespace MueLu {
       MUELU_DESCRIBE;
 
       if (verbLevel & Parameters0) {
-        out0 << "Prec. type: " << type_ << endl;
+        out0 << "Prec. type: " << type_ << std::endl;
       }
       
       if (verbLevel & Parameters1) { 
-        out0 << "Parameter list: " << endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
       }
       
       if (verbLevel & External) {
@@ -189,8 +189,8 @@ namespace MueLu {
       }
 
       if (verbLevel & Debug) {
-        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << endl
-             << "-" << endl
+        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
+             << "-" << std::endl
              << "RCP<A_>: " << A_ << std::endl
              << "RCP<linearProblem__>: " << linearProblem_ << std::endl
              << "RCP<prec_>: " << prec_ << std::endl;
