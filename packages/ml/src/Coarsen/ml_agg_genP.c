@@ -2530,7 +2530,12 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    int R_is_Ptranspose;
    
 #ifdef ML_TIMING
-   double t0;
+   double trap,    /*RAP*/
+          tpart,   /*repartitioning: Zoltan, migrating Acoarse, prolongator, restrictor*/
+          tprol,   /*prolongator generation (e.g., agg+QR)*/
+          trest,   /*restriction generation (e.g., agg+QR)*/
+          tmisc,   /*any operations not accounted for elsewhere*/
+          ttotal;  /*entire level*/
 #endif
 
    ml->ML_finest_level = fine_level;
@@ -2541,17 +2546,27 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
+#    ifdef ML_TIMING
+     ttotal = GetClock();
+#    endif
      Amat = &(ml->Amat[level]);
      if (Amat->to != NULL && Amat->to->Grid != NULL)
        grid_info =(ML_Aggregate_Viz_Stats *) Amat->to->Grid->Grid;
      else 
        grid_info = NULL;
+
+     if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+       printf("-----------------------------------------------------------------------\n");
+       printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen Restriction and Prolongator\n", level );
+       printf("-----------------------------------------------------------------------\n");
+     }
+
      aux_flag = (ml->Amat[fine_level].aux_data->enable && 
                  level <= ml->Amat[fine_level].aux_data->max_level);
 
      if (aux_flag)
      {
-       if (ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
+       if (ml->comm->ML_mypid == 0 && 6 < ML_Get_PrintLevel()) 
        {
          printf("ML_Gen_MultiLevelHierarchy (level %d) : Using auxiliary matrix\n",
                 level);
@@ -2562,11 +2577,13 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
        ML_Init_Aux(ml, level);
      }
 
-      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
-         printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen Restriction and Prolongator \n",
-		level );
-
+#     ifdef ML_TIMING
+      tprol = GetClock();
+#     endif
       flag = (*user_gen_prolongator)(ml, level, next, user_data);
+#     ifdef ML_TIMING
+      tprol = GetClock() - tprol;
+#     endif
 
       if (flag < 0) break;
 
@@ -2590,12 +2607,12 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       ML_gsum_scalar_int(&bail_flag,&j,ml->comm);
       if (bail_flag)
       {
-         if (Pmat->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+         if (Pmat->comm->ML_mypid == 0 && 6 < ML_Get_PrintLevel()) {
             printf("(%d) In ML_Gen_MultiLevelHierarchy: Bailing from AMG hierarchy build on level %d, where fine level = %d ........\n",
                    Pmat->comm->ML_mypid,level,fine_level);
             fflush(stdout);
          }
-         if (ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+         if (ml->comm->ML_mypid == 0 && 6 < ML_Get_PrintLevel()) {
             printf("(%d) In ML_Gen_MultiLevelHierarchy: Nlevels = %d fine_level = %d  coarsest_level = %d\n",
                ml->comm->ML_mypid,fine_level-count+1,fine_level,count);
             fflush(stdout);
@@ -2608,7 +2625,13 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       /* reduce memory usage */
       ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
 
+#     ifdef ML_TIMING
+      trest = GetClock();
+#     endif
       (*user_gen_restriction)(ml, level, next,user_data);
+#     ifdef ML_TIMING
+      trest = GetClock() - trest;
+#     endif
 
       /* reduce memory usage */
       /* ML_Operator_ChangeToSinglePrecision(&(ml->Rmat[level])); */
@@ -2619,10 +2642,12 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
      }
 
 #ifdef ML_TIMING
-      t0 = GetClock();
+      trap = GetClock();
 #endif
-
       ML_Gen_AmatrixRAP(ml, level, next);
+#ifdef ML_TIMING
+      trap = GetClock() - trap;
+#endif
 
       ag = (ML_Aggregate*) user_data;
       /* project the coordinates (if any) to the next coarser level */
@@ -2634,7 +2659,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
       if (grid_info) {
         if (grid_info->x != NULL) {
-          if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
+          if (ML_Get_PrintLevel() > 6 && ml->comm->ML_mypid == 0)
             printf("ML_Gen_MultilevelHierarchy: Projecting node coordinates from level %d to level %d\n",
                    level,next);
           ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
@@ -2651,22 +2676,22 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          energy minimization isn't checked for here, as it only runs in serial (as of 8/4/09). */
       if (ag->minimizing_energy == 1 || ag->minimizing_energy == 2 || ag->minimizing_energy == 3)
         R_is_Ptranspose = ML_FALSE;
+#     ifdef ML_TIMING
+      tpart = GetClock();
+#     endif
       if (ML_Repartition_Get_StartLevel(ml) <= k)
         ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, R_is_Ptranspose, ML_FALSE);
-      else if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
+      else if (ML_Get_PrintLevel() > 6 && ml->comm->ML_mypid == 0)
         printf("ML_Gen_MultilevelHierarchy (level %d): repartitioning suppressed until level %d\n",next,ML_Repartition_Get_StartLevel(ml));
+#     ifdef ML_TIMING
+      tpart = GetClock() - tpart;
+#     endif
 
       if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"after_repartition");
         ML_Operator_Profile(ml->Amat+next,str);
       }
       ML_Comm_Barrier(ml->comm);
-
-#ifdef ML_TIMING
-      t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
-#endif
 
 #if 0
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]), &(ml->Pmat[next]), ML_TRUE);
@@ -2692,14 +2717,29 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       if (aux_flag)
         ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
 
+#     ifdef ML_TIMING
+      ttotal = GetClock() - ttotal;
+      if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5 ) {
+        printf("Timing summary (in seconds) for set up of level %d\n",level);
+        printf("     (level %d) P creation time  = %3.2e\n", level, tprol);
+        printf("     (level %d) R creation time  = %3.2e\n", level, trest);
+        printf("     (level %d) RAP time         = %3.2e\n", level, trap);
+        printf("     (level %d) repartition time = %3.2e\n", level, tpart);
+        tmisc = ttotal - tprol - trest - trap - tpart;
+        printf("     (level %d) misc. time       = %3.2e\n", level, tmisc);
+        printf("     -------------------------------------\n");
+        printf("     (level %d) total time       = %3.2e\n\n", level, ttotal);
+      }
+#     endif
+
       level = next;
       ml->LevelID[k++] = next;
       next  = user_next_level(ml, next, user_data);
 
       count++;
-   }
+   } /*while (next >= 0)*/
    return(count);
-}
+} /*ML_Gen_MultiLevelHierarchy()*/
 
 /* ************************************************************************* */
 /* generate smooth prolongator                                               */
