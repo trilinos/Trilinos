@@ -84,6 +84,8 @@ INCLUDE(PrintVar)
 #     [CATEGORIES <category1> <category2> ...]
 #     [HOST <host1> <host2> ...]
 #     [XHOST <host1> <host2> ...]
+#     [HOSTTYPE <hosttype1> <hosttype2> ...]
+#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     )
 #
