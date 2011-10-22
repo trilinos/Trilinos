@@ -8,6 +8,7 @@
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_LineMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_MultiBlockMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -422,9 +423,18 @@ namespace panzer_stk {
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
 
       int dimension = mesh_params.sublist("Inline Mesh").get<int>("Mesh Dimension");
+      std::string typeStr = "";
+      if(mesh_params.sublist("Inline Mesh").isParameter("Type")) 
+         typeStr = mesh_params.sublist("Inline Mesh").get<std::string>("Type");
 
       if (dimension == 1) {
 	mesh_factory = Teuchos::rcp(new panzer_stk::LineMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if (dimension == 2 && typeStr=="Tri") {
+	mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
 	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
 	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
 	mesh_factory->setParameterList(in_mesh);
