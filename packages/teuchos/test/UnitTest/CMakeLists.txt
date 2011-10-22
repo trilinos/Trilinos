@@ -55,6 +55,7 @@ PACKAGE_ADD_ADVANCED_TEST(
       "someFunction1"
       "someFunction2"
   OVERALL_NUM_MPI_PROCS 1
+  XHOSTTYPE AIX
   )
 
 
