@@ -80,7 +80,7 @@ IterativePreconditionerFactory::IterativePreconditionerFactory(unsigned int corr
   */
 LinearOp IterativePreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
 {
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::IterativePreconditionerFactory::buildPreconditionerOperator requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
@@ -117,7 +117,7 @@ void IterativePreconditionerFactory::initializeFromParameterList(const Teuchos::
    if(settings.isParameter("Iteration Count"))
       correctionNum_ = settings.get<int>("Iteration Count");
  
-   TEST_FOR_EXCEPTION(not settings.isParameter("Preconditioner Type"),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not settings.isParameter("Preconditioner Type"),std::runtime_error,
                       "Parameter \"Preconditioner Type\" is required by a Teko::IterativePreconditionerFactory");
       
    // grab library and preconditioner name
@@ -126,7 +126,7 @@ void IterativePreconditionerFactory::initializeFromParameterList(const Teuchos::
 
    // build preconditioner factory
    precFactory_ = il->getInverseFactory(precName);
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"Preconditioner Type\" = " << precName 
                    << " could not be found");
 }
@@ -136,7 +136,7 @@ void IterativePreconditionerFactory::initializeFromParameterList(const Teuchos::
   */
 Teuchos::RCP<Teuchos::ParameterList> IterativePreconditionerFactory::getRequestedParameters() const
 {
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::IterativePreconditionerFactory::getRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
@@ -147,7 +147,7 @@ Teuchos::RCP<Teuchos::ParameterList> IterativePreconditionerFactory::getRequeste
   */
 bool IterativePreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
-   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::IterativePreconditionerFactory::updateRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 

@@ -89,9 +89,9 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   ) const
 {
   using Teuchos::outArg;
-  TEST_FOR_EXCEPT(Op==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
   RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
   const EpetraLinearOpBase &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
   RCP<const Epetra_Operator> epetraFwdOp;
@@ -130,7 +130,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   ) const
 {
   using Teuchos::get_extra_data;
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
   DefaultDiagonalLinearOpWithSolve<double>
     &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
   RCP< const VectorBase<double> >

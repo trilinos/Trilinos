@@ -37,6 +37,10 @@ Int KLU_tsolve
     Int *Q, *R, *Pnum, *Offp, *Offi, *Lip, *Uip, *Llen, *Ulen ;
     Unit **LUbx ;
     Int k1, k2, nk, k, block, pend, n, p, nblocks, chunk, nr, i ;
+#ifdef KLU_ENABLE_OPENMP
+    Entry *X1 ;
+    int tid ;
+#endif
 
     /* ---------------------------------------------------------------------- */
     /* check inputs */
@@ -82,15 +86,28 @@ Int KLU_tsolve
     Udiag = Numeric->Udiag ;
 
     Rs = Numeric->Rs ;
+#ifdef KLU_ENABLE_OPENMP
+    X1 = (Entry *) Numeric->Xwork ;
+#else
     X = (Entry *) Numeric->Xwork ;
+#endif
     ASSERT (KLU_valid (n, Offp, Offi, Offx)) ;
 
     /* ---------------------------------------------------------------------- */
     /* solve in chunks of 4 columns at a time */
     /* ---------------------------------------------------------------------- */
 
+#ifdef KLU_ENABLE_OPENMP
+#pragma omp parallel for schedule(guided) private(tid, nr, k, block, k1, k2, nk, pend, p, s, i, Bz, X, x, offik, rs) 
+#endif
     for (chunk = 0 ; chunk < nrhs ; chunk += 4)
     {
+#ifdef KLU_ENABLE_OPENMP
+        Bz  = ((Entry *) B) + d*chunk ;
+        tid = omp_get_thread_num();
+        X = X1 + (tid * n * 4);
+#endif
+
 
 	/* ------------------------------------------------------------------ */
 	/* get the size of the current chunk */
@@ -459,7 +476,9 @@ Int KLU_tsolve
 	/* go to the next chunk of B */
 	/* ------------------------------------------------------------------ */
 
+#ifndef KLU_ENABLE_OPENMP
 	Bz  += d*4 ;
+#endif
     }
     return (TRUE) ;
 }

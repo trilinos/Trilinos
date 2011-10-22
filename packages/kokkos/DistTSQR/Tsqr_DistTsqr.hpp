@@ -67,8 +67,8 @@ namespace TSQR {
 
     /// \brief Constructor.
     ///
-    /// \param messenger [in/out] Wrapper of communication operations
-    ///   between MPI processes.
+    /// \param messenger [in/out] Smart pointer to a wrapper handling
+    ///   communication between MPI process(es).
     DistTsqr (const Teuchos::RCP<MessengerBase<scalar_type> >& messenger) :
       messenger_ (messenger),
       reduceBroadcastImpl_ (messenger)
@@ -127,10 +127,18 @@ namespace TSQR {
     ///   block of this process' entire Q factor, fill the rest of Q
     ///   with zeros, and call intranode TSQR's apply() on it, to get
     ///   the final explicit Q factor.)
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
     void
-    factorExplicit (matview_type R_mine, matview_type Q_mine)
+    factorExplicit (matview_type R_mine, 
+		    matview_type Q_mine,
+		    const bool forceNonnegativeDiagonal=false)
     {
-      reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine);
+      reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine, 
+					   forceNonnegativeDiagonal);
     }
 
     /// \brief Get cumulative timings for \c factorExplicit().

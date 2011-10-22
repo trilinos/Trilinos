@@ -308,14 +308,14 @@ namespace Anasazi {
     , timerReortho_(Teuchos::TimeMonitor::getNewTimer("Anasazi::BasicOrthoManager::Re-orthogonalization"))
 #endif
   {
-    TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
         "Anasazi::BasicOrthoManager::BasicOrthoManager(): argument \"eps\" must be non-negative.");
     if (eps_ == 0) {
       Teuchos::LAPACK<int,MagnitudeType> lapack;
       eps_ = lapack.LAMCH('E');
       eps_ = Teuchos::ScalarTraits<MagnitudeType>::pow(eps_,.75);
     }
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         tol_ < SCT::magnitude(SCT::zero()) || tol_ > SCT::magnitude(SCT::one()),
         std::invalid_argument,
         "Anasazi::BasicOrthoManager::BasicOrthoManager(): argument \"tol\" must be in [0,1].");
@@ -426,19 +426,19 @@ namespace Anasazi {
     int mxr = MVT::GetVecLength( *MX );
 
     // check size of X and Q w.r.t. common sense
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectMat(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectMat(): Size of X not consistent with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Anasazi::BasicOrthoManager::projectMat(): Q lengths not mutually consistent" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
-      TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
                           "Anasazi::BasicOrthoManager::projectMat(): Q has less rows than columns" );
       baslen += qcs[i];
 
@@ -447,7 +447,7 @@ namespace Anasazi {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
                            "Anasazi::BasicOrthoManager::projectMat(): Size of Q not consistent with size of C" );
       }
     }
@@ -585,13 +585,13 @@ namespace Anasazi {
     int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
 
     // check size of C, B
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::normalizeMat(): X must be non-empty" );
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::normalizeMat(): Size of X not consistent with size of B" );
-    TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::normalizeMat(): Size of X not consistent with size of MX" );
-    TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::normalizeMat(): Size of X not feasible for normalization" );
 
     return findBasis(X, MX, *B, true );
@@ -651,7 +651,7 @@ namespace Anasazi {
     int mxc = MVT::GetNumberVecs( *MX );
     int mxr = MVT::GetVecLength( *MX );
 
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): X must be non-empty" );
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): X must be non-empty" );
 
     int numbas = 0;
     for (int i=0; i<nq; i++) {
@@ -659,16 +659,16 @@ namespace Anasazi {
     }
 
     // check size of B
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): Size of X must be consistent with size of B" );
     // check size of X and MX
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX 
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): Size of X must be consistent with size of MX" );
     // check feasibility
-    TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
                         "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): Orthogonality constraints not feasible" );
 
     // orthogonalize all of X against Q
@@ -727,7 +727,7 @@ namespace Anasazi {
         break;
       }
       else {
-        TEST_FOR_EXCEPTION( rank < oldrank, OrthoError,   
+        TEUCHOS_TEST_FOR_EXCEPTION( rank < oldrank, OrthoError,   
                             "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): basis lost rank; this shouldn't happen");
 
         if (rank != oldrank) {
@@ -775,7 +775,7 @@ namespace Anasazi {
     } while (1);
 
     // this should never raise an exception; but our post-conditions oblige us to check
-    TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
                         "Anasazi::BasicOrthoManager::projectAndNormalizeMat(): Debug error in rank variable." );
 
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
@@ -831,9 +831,9 @@ namespace Anasazi {
     /*******************************************************
      *  If _hasOp == false, we will not reference MX below *
      *******************************************************/
-    TEST_FOR_EXCEPTION(this->_hasOp == true && MX == Teuchos::null, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(this->_hasOp == true && MX == Teuchos::null, std::logic_error,
         "Anasazi::BasicOrthoManager::findBasis(): calling routine did not specify MS.");
-    TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::logic_error, 
                         "Anasazi::BasicOrthoManager::findBasis(): Invalid howMany parameter" );
 
     /* xstart is which column we are starting the process with, based on howMany
@@ -1057,7 +1057,7 @@ namespace Anasazi {
 
       // if rankDef == true, then quit and notify user of rank obtained
       if (rankDef == true) {
-        TEST_FOR_EXCEPTION( rankDef && completeBasis, OrthoError, 
+        TEUCHOS_TEST_FOR_EXCEPTION( rankDef && completeBasis, OrthoError, 
                             "Anasazi::BasicOrthoManager::findBasis(): Unable to complete basis" );
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
         *out << "Returning early, rank " << j << " from Anasazi::BasicOrthoManager::findBasis(...)\n";

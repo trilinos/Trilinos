@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Stokhos_BasisFactory.hpp"
 #include "Stokhos_TensorProductQuadrature.hpp"
@@ -82,14 +82,14 @@ create(Teuchos::ParameterList& sgParams)
 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<ordinal_type,value_type>(
 		       product_basis));
 #else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 
 		       "Error!  Stokhos::QuadratureFactory::create():  " <<
 		       "Sparse Grid Quadrature requires Dakota!" << std::endl);
 #endif
   }
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 
 		       "Error!  Stokhos::QuadratureFactory::create():  " <<
 		       "Invalid quadrature type  " << quad_type << std::endl);

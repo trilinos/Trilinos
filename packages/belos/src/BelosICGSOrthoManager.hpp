@@ -611,7 +611,7 @@ namespace Belos {
         else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
         {
           int err = C[k]->reshape (numRows, numCols);
-          TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
               "IMGS orthogonalization: failed to reshape "
               "C[" << k << "] (the array of block "
               "coefficients resulting from projecting X "
@@ -636,7 +636,7 @@ namespace Belos {
     int mxr = MVT::GetVecLength( *MX );
 
     // short-circuit
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Belos::ICGSOrthoManager::projectAndNormalize(): X must be non-empty" );
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Belos::ICGSOrthoManager::projectAndNormalize(): X must be non-empty" );
 
     int numbas = 0;
     for (int i=0; i<nq; i++) {
@@ -644,16 +644,16 @@ namespace Belos {
     }
 
     // check size of B
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
     // check size of X and MX
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX 
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
     // check feasibility
-    //TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
+    //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
     //                    "Belos::ICGSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
 
     // Some flags for checking dependency returns from the internal orthogonalization methods
@@ -728,7 +728,7 @@ namespace Belos {
     } // if (xc == 1) {
 
     // this should not raise an std::exception; but our post-conditions oblige us to check
-    TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Debug error in rank variable." );
 
     // Return the rank of X.
@@ -810,19 +810,19 @@ namespace Belos {
     int mxr = MVT::GetVecLength( *MX );
 
     // check size of X and Q w.r.t. common sense
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::project(): Size of X not consistant with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Belos::ICGSOrthoManager::project(): Q lengths not mutually consistant" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
-      TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
                           "Belos::ICGSOrthoManager::project(): Q has less rows than columns" );
       baslen += qcs[i];
 
@@ -831,7 +831,7 @@ namespace Belos {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
                            "Belos::ICGSOrthoManager::project(): Size of Q not consistant with size of C" );
       }
     }
@@ -904,15 +904,15 @@ namespace Belos {
     int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
 
     // check size of C, B
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): X must be non-empty" );
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of B" );
-    TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
-    TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not feasible for normalization" );
-    TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Invalid howMany parameter" );
 
     /* xstart is which column we are starting the process with, based on howMany
@@ -965,7 +965,7 @@ namespace Belos {
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
       MVT::MvDot( *Xj, *MXj, oldDot );
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
-      TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
           "Belos::ICGSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
 
       if (numX > 0) {

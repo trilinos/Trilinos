@@ -342,7 +342,7 @@ private:
   // index in this mulit-period model.
   int period_l(const int l) const
     {
-      TEST_FOR_EXCEPT( !( 0 <= l && l < Np_) );
+      TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= l && l < Np_) );
       return period_l_map_[l];
     }
 
@@ -405,16 +405,16 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( N <= 0 );
-  TEST_FOR_EXCEPT( implicit_cast<int>(periodModels.size()) != N );
+  TEUCHOS_TEST_FOR_EXCEPT( N <= 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( implicit_cast<int>(periodModels.size()) != N );
   MEB::InArgs<Scalar> periodInArgs = periodModels[0]->createInArgs();
   MEB::OutArgs<Scalar> periodOutArgs = periodModels[0]->createOutArgs();
   for ( int k = 0; k < implicit_cast<int>(z_indexes.size()); ++k ) {
-    TEST_FOR_EXCEPT( !( 0 <= z_indexes[k] && z_indexes[k] < periodInArgs.Np() ) );
+    TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= z_indexes[k] && z_indexes[k] < periodInArgs.Np() ) );
   }
-  TEST_FOR_EXCEPT( implicit_cast<int>(z.size())!=N );
-  TEST_FOR_EXCEPT( !( 0 <= g_index && g_index < periodOutArgs.Ng() ) );
-  TEST_FOR_EXCEPT( implicit_cast<int>(g_weights.size())!=N );
+  TEUCHOS_TEST_FOR_EXCEPT( implicit_cast<int>(z.size())!=N );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= g_index && g_index < periodOutArgs.Ng() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( implicit_cast<int>(g_weights.size())!=N );
   // ToDo: Assert that the different period models are compatible!
 
   Np_ = periodInArgs.Np() - z_indexes.size();
@@ -435,7 +435,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
   
   if ( periodInArgs.supports(MEB::IN_ARG_x) ) {
     if( !is_null(x_bar_space) ) {
-      TEST_FOR_EXCEPT(!(x_bar_space->numBlocks()==N));
+      TEUCHOS_TEST_FOR_EXCEPT(!(x_bar_space->numBlocks()==N));
       // ToDo: Check the constituent spaces more carefully against models[]->get_x_space().
       x_bar_space_ = x_bar_space;
     }
@@ -447,7 +447,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
 
   if ( periodOutArgs.supports(MEB::OUT_ARG_f) ) {
     if( !is_null(f_bar_space) ) {
-      TEST_FOR_EXCEPT(!(f_bar_space->numBlocks()==N));
+      TEUCHOS_TEST_FOR_EXCEPT(!(f_bar_space->numBlocks()==N));
       // ToDo: Check the constituent spaces more carefully against models[]->get_f_space().
       f_bar_space_ = f_bar_space;
     }
@@ -485,14 +485,14 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::reset_z(
   const int N = z_.size();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( N == 0 && "Error, must have called initialize() first!" );
-  TEST_FOR_EXCEPT( implicit_cast<int>(z.size()) != N ); 
+  TEUCHOS_TEST_FOR_EXCEPT( N == 0 && "Error, must have called initialize() first!" );
+  TEUCHOS_TEST_FOR_EXCEPT( implicit_cast<int>(z.size()) != N ); 
 #endif 
 
   for( int i = 0; i < N; ++i ) {
     const Array<RCP<const VectorBase<Scalar> > >  &z_i = z[i];
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( z_i.size() != z_indexes_.size() ); 
+    TEUCHOS_TEST_FOR_EXCEPT( z_i.size() != z_indexes_.size() ); 
 #endif 
     z_[i] = z_i;
   }
@@ -553,7 +553,7 @@ template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return periodModel_->get_g_space(g_index_);
 }
 
@@ -643,7 +643,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DfDp_op_impl(int l) const
 {
-  TEST_FOR_EXCEPT("This class does not support DfDp(l) as a linear operator yet.");
+  TEUCHOS_TEST_FOR_EXCEPT("This class does not support DfDp(l) as a linear operator yet.");
   return Teuchos::null;
 }
 
@@ -652,7 +652,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_dot_op_impl(int j) const
 {
-  TEST_FOR_EXCEPT("This class does not support DgDx_dot(j) as a linear operator yet.");
+  TEUCHOS_TEST_FOR_EXCEPT("This class does not support DgDx_dot(j) as a linear operator yet.");
   return Teuchos::null;
 }
 
@@ -661,7 +661,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_op_impl(int j) const
 {
-  TEST_FOR_EXCEPT("This class does not support DgDx(j) as a linear operator yet.");
+  TEUCHOS_TEST_FOR_EXCEPT("This class does not support DgDx(j) as a linear operator yet.");
   return Teuchos::null;
 }
 
@@ -670,7 +670,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
-  TEST_FOR_EXCEPT("This class does not support DgDp(j,l) as a linear operator yet.");
+  TEUCHOS_TEST_FOR_EXCEPT("This class does not support DgDp(j,l) as a linear operator yet.");
   return Teuchos::null;
 }
 
@@ -778,7 +778,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   if (inArgs.supports(MEB::IN_ARG_x)) {
     x_bar = rcp_dynamic_cast<const ProductVectorBase<Scalar> >(
       inArgs.get_x(), true );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(x_bar), std::logic_error,
       "Error, if x is supported, it must be set!"
       );
@@ -803,7 +803,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
       DfDp_bar[l] = DfDp_bar_l;
       DfDp_bar_mv[l] = rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(
         DfDp_bar_l.getMultiVector(), true );
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         (
           !DfDp_bar_l.isEmpty()
           &&
@@ -835,7 +835,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     DgDx_dot_bar = outArgs.get_DgDx_dot(0);
     DgDx_dot_bar_mv = rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(
       DgDx_dot_bar.getMultiVector(), true );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       (
         !DgDx_dot_bar.isEmpty()
         &&
@@ -856,7 +856,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     DgDx_bar = outArgs.get_DgDx(0);
     DgDx_bar_mv = rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(
       DgDx_bar.getMultiVector(), true );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       (
         !DgDx_bar.isEmpty()
         &&
@@ -879,7 +879,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
         DgDp_bar_l = outArgs.get_DgDp(0,l);
       DgDp_bar[l] = DgDp_bar_l;
       DgDp_bar_mv[l] = DgDp_bar_l.getMultiVector();
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !DgDp_bar_l.isEmpty() && is_null(DgDp_bar_mv[l]),
         std::logic_error,
         "Error, we currently can only handle DgDp as some type of multi-vector!"
@@ -1039,7 +1039,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::set_z_indexes_and_create_period_l
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( Np_ <= 0 && "Error, Np must be set!" );
+  TEUCHOS_TEST_FOR_EXCEPT( Np_ <= 0 && "Error, Np must be set!" );
 #endif
   z_indexes_ = z_indexes;
   period_l_map_.resize(0);
@@ -1057,14 +1057,14 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::set_z_indexes_and_create_period_l
       // This is a "fixed" period parameter subvector so increment
       // z_indexes iterator.
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT( k != *z_indexes_itr && "This should never happen!" );
+      TEUCHOS_TEST_FOR_EXCEPT( k != *z_indexes_itr && "This should never happen!" );
 #endif
       const int tmp_last_z_index = *z_indexes_itr;
       ++z_indexes_itr;
       if ( z_indexes_itr != z_indexes_end ) {
 #ifdef TEUCHOS_DEBUG
         if ( last_z_index >= 0 ) {
-          TEST_FOR_EXCEPTION(
+          TEUCHOS_TEST_FOR_EXCEPTION(
             *z_indexes_itr <= last_z_index, std::logic_error,
             "Error, the z_indexes array = " << toString(z_indexes_)
             << " is not sorted or contains duplicate entries!"

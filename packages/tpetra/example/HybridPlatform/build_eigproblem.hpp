@@ -55,12 +55,12 @@ build_eigproblem_mm(Teuchos::ParameterList& test_params,
     problem->setPrec(prec);
   }
   else if (ifpack2_precond != "not specified") {
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
   problem->setHermitian(false);
   problem->setNEV(NEV);
-  TEST_FOR_EXCEPTION( problem->setProblem() != true, std::runtime_error, "build_eigproblem_mm(): error returned finalizing BasicEigenproblem.");
+  TEUCHOS_TEST_FOR_EXCEPTION( problem->setProblem() != true, std::runtime_error, "build_eigproblem_mm(): error returned finalizing BasicEigenproblem.");
 
   return problem;
 }

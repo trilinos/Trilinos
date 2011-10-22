@@ -83,7 +83,7 @@ BuildLOCAStepper()
   if (comm->MyPID()==0) std::cout << std::endl << "Building the LOCA stepper..." << std::endl;
 
   // Make sure the problem has been set
-  TEST_FOR_EXCEPTION( problem == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null, 
       std::logic_error,
       "ContinuationManager has not been given a valid ProblemLOCAPrototype");
 
@@ -146,7 +146,7 @@ BuildLOCAStepper()
 #endif
   else
   {
-    TEST_FOR_EXCEPTION(true, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, 
 	std::logic_error, "Continuation manager: " + 
 			  linearSolverType + " is not a valid linear solver");
   }
@@ -244,7 +244,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
   if (comm->MyPID()==0) cout << endl << "Building the LOCA stepper..." << endl;
 
   // Make sure the problem has been set
-  TEST_FOR_EXCEPTION( problem == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null, 
       std::logic_error,
       "ContinuationManager has not been given a valid ProblemLOCAPrototype");
 
@@ -402,7 +402,7 @@ ValidateLOCAStepper()
   osstream << maxAllowedSteps;
   string errString = "iniStepLabel + Max number of continuation steps must not exceed " + 
     osstream.str();
-  TEST_FOR_EXCEPTION( numSteps > maxAllowedSteps, 
+  TEUCHOS_TEST_FOR_EXCEPTION( numSteps > maxAllowedSteps, 
       std::logic_error,
       errString);
 

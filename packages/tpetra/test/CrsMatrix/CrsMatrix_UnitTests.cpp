@@ -25,6 +25,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
@@ -128,6 +131,10 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
+#endif
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
@@ -229,6 +236,18 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
   }
 #endif
 
@@ -546,7 +565,7 @@ namespace {
     // * that the matrix uses this col map
     // * that it performs filtering during insertions
     // * that we can perform local or global insertions
-    const size_t numLocal = 10; TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
+    const size_t numLocal = 10; TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
     // these maps are equalivalent, but we should keep two distinct maps just to verify the general use case.
     RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
@@ -2024,6 +2043,13 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
 #else
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OMPNODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OMPNODE(LO, GO, SCALAR)
 #endif
 
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node

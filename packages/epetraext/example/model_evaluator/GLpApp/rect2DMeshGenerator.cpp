@@ -45,7 +45,7 @@
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseMatrix.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -76,16 +76,16 @@ void GLpApp::rect2DMeshGenerator(
   // Validate input
   //
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(len_x <= 0.0);
-  TEST_FOR_EXCEPT(len_y <= 0.0);
-  TEST_FOR_EXCEPT(local_nx <= 0);
-  TEST_FOR_EXCEPT(local_ny <= 0);
-  TEST_FOR_EXCEPT(ipindx_out==NULL);
-  TEST_FOR_EXCEPT(ipcoords_out==NULL);
-  TEST_FOR_EXCEPT(pindx_out==NULL);
-  TEST_FOR_EXCEPT(pcoords_out==NULL);
-  TEST_FOR_EXCEPT(t_out==NULL);
-  TEST_FOR_EXCEPT(e_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(len_x <= 0.0);
+  TEUCHOS_TEST_FOR_EXCEPT(len_y <= 0.0);
+  TEUCHOS_TEST_FOR_EXCEPT(local_nx <= 0);
+  TEUCHOS_TEST_FOR_EXCEPT(local_ny <= 0);
+  TEUCHOS_TEST_FOR_EXCEPT(ipindx_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(ipcoords_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(pindx_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(pcoords_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(t_out==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(e_out==NULL);
 #endif
   //
   // Get local references
@@ -153,7 +153,7 @@ void GLpApp::rect2DMeshGenerator(
     }
   }
   tab.incrTab(-1);
-  TEST_FOR_EXCEPT(node_i != nump);
+  TEUCHOS_TEST_FOR_EXCEPT(node_i != nump);
   // Locally owned only
   for( int i = 0; i < numip; ++i ) {
     ipindx(i) = pindx(i);
@@ -186,7 +186,7 @@ void GLpApp::rect2DMeshGenerator(
     ++global_node_id;
   }
   tab.incrTab(-1);
-  TEST_FOR_EXCEPT(ele_k != numelems);
+  TEUCHOS_TEST_FOR_EXCEPT(ele_k != numelems);
   //
   // Set the edges
   //
@@ -251,5 +251,5 @@ void GLpApp::rect2DMeshGenerator(
     }
     tab.incrTab(-1);
   }
-  TEST_FOR_EXCEPT(edge_j != numedges);
+  TEUCHOS_TEST_FOR_EXCEPT(edge_j != numedges);
 }

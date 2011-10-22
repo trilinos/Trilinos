@@ -60,7 +60,7 @@ RCP<const ConditionXMLConverter>
 ConditionXMLConverterDB::getConverter(const Condition& condition){
   ConverterMap::const_iterator it = 
     getConverterMap().find(condition.getTypeAttributeValue());
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindConditionConverterException,
     "Could not find a ConditionXMLConverter for a condition of type " <<
     condition.getTypeAttributeValue() << " when writing out a condition to " <<
@@ -76,7 +76,7 @@ ConditionXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::string conditionType = xmlObject.getRequired(
     ConditionXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(conditionType);
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+  TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindConditionConverterException,
     "Could not find a ConditionXMLConverter for a condition of type " <<
     conditionType << " when reading in a condition from " <<

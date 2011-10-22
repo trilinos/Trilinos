@@ -33,7 +33,7 @@
 #include <iterator>
 #include <algorithm>
 #include <Teuchos_Utils.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -46,7 +46,7 @@
   if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && (throw_exception_test)) {                                  \
     std::cerr << err << std::endl;                                                                    \
   }                                                                                                   \
-  TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
+  TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
 }
 #else
 //! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
@@ -64,7 +64,7 @@
   if (TPETRA_PRINTS_ABUSE_WARNINGS && (throw_exception_test)) {                                \
     std::cerr << err << std::endl;                                                             \
   }                                                                                            \
-  TEST_FOR_EXCEPTION(TPETRA_THROWS_ABUSE_WARNINGS && (throw_exception_test), Exception, err);  \
+  TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_ABUSE_WARNINGS && (throw_exception_test), Exception, err);  \
 }
 #else
 //! Handle an abuse warning, according to HAVE_TPETRA_THROW_ABUSE_WARNINGS and HAVE_TPETRA_PRINT_ABUSE_WARNINGS
@@ -73,7 +73,7 @@
 
 
 /** Shared test for exception
-   Just like Teuchos TEST_FOR_EXCEPTION, but with the assurance that all nodes test and throw the exception together.
+   Just like Teuchos TEUCHOS_TEST_FOR_EXCEPTION, but with the assurance that all nodes test and throw the exception together.
  */
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
@@ -81,21 +81,21 @@
     const int lcl_throw_exception = (throw_exception_test) ? Teuchos::rank(comm)+1 : 0; \
     int gbl_throw; \
     Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,outArg(gbl_throw)); \
-    TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
+    TEUCHOS_TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
                        msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG
-//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEST_FOR_EXCEPTION
+//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEUCHOS_TEST_FOR_EXCEPTION
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \
 }
 #else 
-//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEST_FOR_EXCEPTION
+//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEUCHOS_TEST_FOR_EXCEPTION
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
-    TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
+    TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
 }
 #endif
 

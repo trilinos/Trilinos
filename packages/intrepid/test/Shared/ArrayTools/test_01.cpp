@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
   int errorFlag = 0;
 #ifdef HAVE_INTREPID_DEBUG
-  int beginThrowNumber = TestForException_getThrowNumber();
+  int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 81;
 #endif
 
@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
   };
 
 #ifdef HAVE_INTREPID_DEBUG
-  if (TestForException_getThrowNumber() != endThrowNumber)
+  if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
 #endif
 

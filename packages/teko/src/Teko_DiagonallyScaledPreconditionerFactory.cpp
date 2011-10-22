@@ -78,7 +78,7 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
    using Teuchos::rcp_dynamic_cast;
    Teko_DEBUG_SCOPE("DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator",10);
 
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator requires that an "
                    << "inverse factory has been set. Currently it is null!");
 
@@ -111,7 +111,7 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
   */
 void DiagonallyScaledPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
-   TEST_FOR_EXCEPTION(not settings.isParameter("Inverse Factory"),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not settings.isParameter("Inverse Factory"),std::runtime_error,
                       "Parameter \"Inverse Factory\" is required by a Teko::DiagonallyScaledPreconditionerFactory");
       
    // grab library and preconditioner name
@@ -120,7 +120,7 @@ void DiagonallyScaledPreconditionerFactory::initializeFromParameterList(const Te
    // build preconditioner factory
    Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
    invFactory_ = il->getInverseFactory(invName);
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"Inverse Factory\" = " << invName
                    << " could not be found");
    

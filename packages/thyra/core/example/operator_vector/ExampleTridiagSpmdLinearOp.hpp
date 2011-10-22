@@ -237,7 +237,7 @@ void ExampleTridiagSpmdLinearOp<Scalar>::initialize(
   const Teuchos::ArrayView<const Scalar> &upper
   )
 {
-  TEST_FOR_EXCEPT( localDim < 2 );
+  TEUCHOS_TEST_FOR_EXCEPT( localDim < 2 );
   comm_ = comm;
   space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, -1);
   lower_ = lower;

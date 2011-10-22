@@ -3067,6 +3067,7 @@ namespace {
       }
       return ex_put_names(exoid, nc_type, &names[0]);
     }
+    return EX_NOERR;
   }
 
   int conditional_define_variable(int exodusFilePtr, const char *var, int dimid, int *varid,  nc_type type)

@@ -336,6 +336,9 @@ public:
   /** \brief  The allocation size, in bytes, of this bucket */
   unsigned allocation_size() const { return m_bucketImpl.allocation_size() ; }
 
+  /** \brief  A method to assist in unit testing - accesses private data as necessary. */
+  bool assert_correct() const;
+
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.

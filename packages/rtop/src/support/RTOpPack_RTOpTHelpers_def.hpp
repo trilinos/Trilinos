@@ -90,20 +90,20 @@ void RTOpPack::validate_apply_op(
   const std::string op_name_str = "op.name() = " + op.op_name();
 
   if (allowed_num_sub_vecs >= 0) {
-    TEST_FOR_EXCEPTION( allowed_num_sub_vecs != as<int>(sub_vecs.size()),
+    TEUCHOS_TEST_FOR_EXCEPTION( allowed_num_sub_vecs != as<int>(sub_vecs.size()),
       InvalidNumVecs,
       op_name_str<<": Error, sub_vecs.size()="<<sub_vecs.size()
       <<" != allowed_num_sub_vecs="<<allowed_num_sub_vecs<<"!" );
   }
 
   if (allowed_num_targ_sub_vecs >= 0) {
-    TEST_FOR_EXCEPTION( allowed_num_targ_sub_vecs != as<int>(targ_sub_vecs.size()),
+    TEUCHOS_TEST_FOR_EXCEPTION( allowed_num_targ_sub_vecs != as<int>(targ_sub_vecs.size()),
       InvalidNumTargVecs,
       op_name_str<<": Error, targ_sub_vecs.size()="<<targ_sub_vecs.size()
       <<" != allowed_num_targ_sub_vecs="<<allowed_num_targ_sub_vecs<<"!" );
   }
   
-  TEST_FOR_EXCEPTION( sub_vecs.size() == 0 && targ_sub_vecs.size() == 0,
+  TEUCHOS_TEST_FOR_EXCEPTION( sub_vecs.size() == 0 && targ_sub_vecs.size() == 0,
     InvalidNumVecs,
     op_name_str<<": Error, apply_op(...) must be passed some vectors!"
     );
@@ -115,7 +115,7 @@ void RTOpPack::validate_apply_op(
     (sub_vecs.size() ? sub_vecs[0].globalOffset() : targ_sub_vecs[0].globalOffset());
   
   for (int k = 0; k < num_sub_vecs; ++k ) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       sub_vecs[k].subDim() != subDim || sub_vecs[k].globalOffset() != globalOffset,
       IncompatibleVecs,
       op_name_str<<": Error, sub_vec["<<k<<"] "
@@ -125,7 +125,7 @@ void RTOpPack::validate_apply_op(
   }
   
   for (int k = 0; k < num_targ_sub_vecs; ++k ) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       targ_sub_vecs[k].subDim() != subDim || targ_sub_vecs[k].globalOffset() != globalOffset,
       IncompatibleVecs,
       op_name_str<<": Error, sub_vec["<<k<<"] "
@@ -136,7 +136,7 @@ void RTOpPack::validate_apply_op(
   
   if (expect_reduct_obj) {
     
-    TEST_FOR_EXCEPTION( is_null(reduct_obj),
+    TEUCHOS_TEST_FOR_EXCEPTION( is_null(reduct_obj),
       IncompatibleReductObj,
       op_name_str<<": Error, expected a reduction target object!"
       );
@@ -146,7 +146,7 @@ void RTOpPack::validate_apply_op(
     const std::type_info &reduct_obj_type = typeid(*reduct_obj);
     const std::type_info &dummy_reduct_obj_type = typeid(*dummy_reduct_obj);
     
-    TEST_FOR_EXCEPTION( reduct_obj_type != dummy_reduct_obj_type,
+    TEUCHOS_TEST_FOR_EXCEPTION( reduct_obj_type != dummy_reduct_obj_type,
       IncompatibleReductObj,
       op_name_str<<": Error, the type of the input reduct_obj = "
       <<Teuchos::demangleName(reduct_obj_type.name())<<" is not equal to"

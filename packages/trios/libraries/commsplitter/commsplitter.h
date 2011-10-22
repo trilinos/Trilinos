@@ -1,5 +1,4 @@
-
-typedef struct mpics_t {
+typedef struct commsplitter_t {
     char *app_pathname;
     int   debug_level;
 
@@ -10,10 +9,10 @@ typedef struct mpics_t {
     int enabled;
 
     MPI_Comm split_comm;
-} mpics_t;
+} commsplitter_t;
 
 
-extern mpics_t mpics_data;
+extern commsplitter_t commsplitter_data;
 
 
-void mpics_log(char *fmt, ...);
+void commsplitter_log(char *fmt, ...);

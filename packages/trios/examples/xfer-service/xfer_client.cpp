@@ -610,7 +610,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     data_array_t array;
     double start_time;
     FILE *result_fp = stdout;
-    log_level debug_level = LOG_UNDEFINED;
+    log_level debug_level = LOG_ALL;
     int client_rank, client_size;
 
     /* the array of results (for async experiments) */

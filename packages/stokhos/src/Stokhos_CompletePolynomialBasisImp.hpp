@@ -635,7 +635,7 @@ compute_index(const Teuchos::Array<ordinal_type>& term) const
   ordinal_type ord = 0;
   for (ordinal_type i=0; i<d; i++)
     ord += term[i];
-  TEST_FOR_EXCEPTION(ord < 0 || ord > p, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(ord < 0 || ord > p, std::logic_error,
 		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
 		     "Term has invalid order " << ord);
 
@@ -657,7 +657,7 @@ compute_index(const Teuchos::Array<ordinal_type>& term) const
     found = found_term;
     ++k;
   }
-  TEST_FOR_EXCEPTION(k >= k_max && !found, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(k >= k_max && !found, std::logic_error,
 		     "Stokhos::CompletePolynomialBasis::compute_index(): " <<
 		     "Could not find specified term.");
 

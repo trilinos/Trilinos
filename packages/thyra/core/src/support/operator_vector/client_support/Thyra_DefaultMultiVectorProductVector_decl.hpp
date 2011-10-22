@@ -273,7 +273,7 @@ multiVectorProductVector(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(productSpace));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(productSpace));
 #endif
   return multiVectorProductVector(
     productSpace,

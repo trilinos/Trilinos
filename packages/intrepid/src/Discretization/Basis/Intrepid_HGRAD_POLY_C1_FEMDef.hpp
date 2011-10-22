@@ -53,7 +53,7 @@ namespace Intrepid{
   void Basis_HGRAD_POLY_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar& outputValues,
 							       const ArrayScalar& inputPoints,
 							       const EOperator operatorType) const{
-    TEST_FOR_EXCEPTION ( true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION ( true, std::logic_error,
 			 ">>>ERROR (Basis_HGRAD_POLY_C1_FEM): Polygonal basis calling FEM member function");
   }
 
@@ -112,12 +112,12 @@ namespace Intrepid{
     case OPERATOR_D9:
     case OPERATOR_D10:
       {
-	TEST_FOR_EXCEPTION ( true, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION ( true, std::invalid_argument, 
 			     ">>> ERROR (Basis_HGRAD_POLY_C1_FEM): operator not implemented yet");
       }
       break;
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType)), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType)), std::invalid_argument,
 			  ">>> ERROR (Basis_HGRAD_POLY_C1_FEM): Invalid operator type");
       break;
     }
@@ -178,7 +178,7 @@ namespace Intrepid{
 	else if ( this->basisCellTopology_.getNodeMap(1,i,1) == k )
 	  adjIndex2 = this->basisCellTopology_.getNodeMap(1,i,0);
       }
-      TEST_FOR_EXCEPTION( (adjIndex1 == -1 || adjIndex2 == -1), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (adjIndex1 == -1 || adjIndex2 == -1), std::invalid_argument,
 			  ">>> ERROR (Intrepid_HGRAD_POLY_C1_FEM): cannot find adjacent nodes when evaluating Wachspress weight function.");
       FieldContainer<Scalar1> p1(spaceDim);
       FieldContainer<Scalar1> p2(spaceDim);

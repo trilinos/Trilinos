@@ -45,7 +45,7 @@
 #ifndef PHX_SCALAR_CONTAINER_DEF_HPP
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include <sstream>
@@ -143,7 +143,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
 		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
 #endif
 
@@ -156,7 +156,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
 		      "You must call post registration setup for each evaluation type before calling the preEvaluate() method for that type!");
 #endif
 
@@ -169,7 +169,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
 		      "You must call post registration setup for each evaluation type before calling the postEvaluate() method for that type!");
 #endif
 

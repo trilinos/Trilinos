@@ -45,7 +45,7 @@
 #ifndef PHX_DATA_CONTAINER_BASE_DEF_HPP
 #define PHX_DATA_CONTAINER_BASE_DEF_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 // **************************************************************************
 template<typename Traits>

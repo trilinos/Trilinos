@@ -57,30 +57,5 @@
   </ParameterList> <!-- end arc130.mtx -->
 
   <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
-  <ParameterList name="young1c.mtx">
-    <!-- <Parameter name="complex" type="bool" value="true"/> -->
-    <ParameterList name="LAPACK">
-      <ParameterList name="tpetra">
-	<ParameterList name="run0">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="Equilibrate" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="run1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="double"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="Equilibrate" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList> <!-- end young1c.mtx -->
+  <!-- ETB: Removing complex type tests until complex fixed in Teuchos::SerialDenseSolver.  See bug 5309 -->
 </ParameterList>

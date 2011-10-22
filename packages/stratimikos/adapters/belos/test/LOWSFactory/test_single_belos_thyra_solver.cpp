@@ -98,7 +98,7 @@ bool Thyra::test_single_belos_thyra_solver(
         precFactory->setParameterList(rcp(precPL,false));
       lowsFactory->setPreconditionerFactory(precFactory,"Ifpack");
 #else
-      TEST_FOR_EXCEPT(usePreconditioner);
+      TEUCHOS_TEST_FOR_EXCEPT(usePreconditioner);
 #endif
     }
     

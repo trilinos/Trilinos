@@ -47,7 +47,7 @@
 #include <algorithm>
 #include "LinearObjectFactory.hpp"
 #include "Element_Linear2D.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Epetra_Export.h"
 
 //**********************************************************************

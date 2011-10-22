@@ -165,7 +165,7 @@ namespace Stokhos {
 	std::cout << "i = " << i 
 		  << " alpha = " << alpha[i] << " beta = " << beta[i]
 		  << " nrm = " << nrm_sqrd[i] << std::endl;
-        TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
 	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
 		           << " Polynomial " << i << " out of " << k
 		           << " has norm " << nrm_sqrd[i] << "!");
@@ -222,7 +222,7 @@ namespace Stokhos {
 	std::cout << "i = " << i 
 		  << " alpha = " << alpha[i] << " beta = " << beta[i]
 		  << " nrm = " << nrm_sqrd[i] << std::endl;
-        TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
 	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
 		           << " Polynomial " << i << " out of " << k
 		           << " has norm " << nrm_sqrd[i] << "!");

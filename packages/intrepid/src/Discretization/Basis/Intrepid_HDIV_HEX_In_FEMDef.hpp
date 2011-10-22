@@ -388,12 +388,12 @@ namespace Intrepid {
       }
       break;
     case OPERATOR_CURL:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
 			  ">>> ERROR (Basis_HDIV_HEX_In_FEM): CURL is invalid operator for HDIV Basis Functions");
       break;
       
     case OPERATOR_GRAD:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
 			  ">>> ERROR (Basis_HDIV_HEX_In_FEM): GRAD is invalid operator for HDIV Basis Functions");
       break;
       
@@ -407,7 +407,7 @@ namespace Intrepid {
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
 			    (operatorType == OPERATOR_D2)    ||
 			    (operatorType == OPERATOR_D3)    ||
 			    (operatorType == OPERATOR_D4)    ||
@@ -422,7 +422,7 @@ namespace Intrepid {
       break;
       
     default:
-      TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
 			    (operatorType != OPERATOR_GRAD)  &&
 			    (operatorType != OPERATOR_CURL)  &&
 			    (operatorType != OPERATOR_DIV)   &&
@@ -448,7 +448,7 @@ namespace Intrepid {
 							      const ArrayScalar &    inputPoints,
 							      const ArrayScalar &    cellVertices,
 							      const EOperator        operatorType) const {
-    TEST_FOR_EXCEPTION( (true), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
 			">>> ERROR (Basis_HDIV_HEX_In_FEM): FEM Basis calling an FVD member function");
   }
 

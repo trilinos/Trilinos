@@ -266,7 +266,7 @@ inline
 void DefaultMultiVectorProductVectorSpace<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(space_) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(space_) );
 #endif
 }
 

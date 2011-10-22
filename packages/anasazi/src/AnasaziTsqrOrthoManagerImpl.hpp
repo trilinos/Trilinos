@@ -487,7 +487,7 @@ namespace Anasazi {
 	RCP<const ParameterList> defaultParams = getDefaultParameters();
 	tsqrParams = defaultParams->get< RCP<const ParameterList> >("TsqrImpl");
       }	
-      TEST_FOR_EXCEPTION(tsqrParams.is_null(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(tsqrParams.is_null(), std::logic_error,
 			 "Should never get here!");
       // The TSQR adaptor object requires a specific MV object for
       // initialization.  As long as subsequent MV objects use the
@@ -527,7 +527,7 @@ namespace Anasazi {
       for (int i = 0; i < num_Q_blocks; ++i)
 	{
 	  const int nrows_Q = MVT::GetVecLength (*Q[i]);
-	  TEST_FOR_EXCEPTION( (nrows_Q != nrows_X), 
+	  TEUCHOS_TEST_FOR_EXCEPTION( (nrows_Q != nrows_X), 
 			      std::invalid_argument,
 			      "Anasazi::TsqrOrthoManagerImpl::checkProjectionDims(): "
 			      "Size of X not consistant with size of Q" );
@@ -1169,7 +1169,7 @@ namespace Anasazi {
 	// normalization.  In that case, we could try another set of
 	// random data, but instead for now we just raise an
 	// exception.
-	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
+	TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			   TsqrOrthoError, 
 			   "Anasazi::TsqrOrthoManagerImpl::projectAndNormalize()"
 			   ": After projecting and normalizing the random vect"
@@ -1331,7 +1331,7 @@ namespace Anasazi {
     const int numCols = MVT::GetNumberVecs (X);
     if (numCols == 0)
       return 0; // Fast exit for an empty input matrix
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, std::invalid_argument, 
 		       "Anasazi::TsqrOrthoManagerImpl::normaliz"
 		       "eImplNoCopy(...): Q has " << MVT::GetNumberVecs(Q) 
 		       << " columns, which is too few, since X has " 
@@ -1434,7 +1434,7 @@ namespace Anasazi {
 	// space basis rank from the previous iteration.  The rank
 	// has to decrease each time, or the recursion may go on
 	// forever.
-	TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols,
+	TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols,
 			   TsqrOrthoError,
 			   "Random vectors after projection have rank " 
 			   << nullSpaceBasisRank << ", but should have rank "
@@ -1467,7 +1467,7 @@ namespace Anasazi {
     checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
 
     // Make sure that X_out has at least as many columns as X_in.
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < ncols_X, 
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < ncols_X, 
 		       std::invalid_argument, 
 		       "Anasazi::TsqrOrthoManagerImpl::projectAndNormalizeNoCopy("
 		       "...): X_out has " << MVT::GetNumberVecs(X_out) << " col"
@@ -1563,7 +1563,7 @@ namespace Anasazi {
 	// after projection and normalization.  In that case, we could
 	// try another set of random data and recurse as necessary,
 	// but instead for now we just raise an exception.
-	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
+	TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
 			   TsqrOrthoError, 
 			   "Anasazi::TsqrOrthoManagerImpl::projectAndNormalize"
 			   "NoCopy(): After projecting and normalizing the "

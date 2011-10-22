@@ -56,7 +56,7 @@
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_FECrsGraph.h"
@@ -106,7 +106,7 @@ EpetraExt::XMLReader::XMLReader(const Epetra_Comm& comm, const std::string& File
 void EpetraExt::XMLReader::
 Read(const std::string& Label, Epetra_CrsGraph*& Graph)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   Graph = 0;
@@ -154,7 +154,7 @@ Read(const std::string& Label, Epetra_CrsGraph*& Graph)
 void EpetraExt::XMLReader::
 Read(const std::string& Label, Epetra_CrsMatrix*& matrix)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   matrix = 0;
@@ -205,7 +205,7 @@ Read(const std::string& Label, Epetra_CrsMatrix*& matrix)
 void EpetraExt::XMLReader::
 Read(const std::string& Label, Epetra_MultiVector*& MultiVector)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   MultiVector = 0;
@@ -238,7 +238,7 @@ Read(const std::string& Label, Epetra_MultiVector*& MultiVector)
 
           if (tokens.size() == 0) continue;
 
-          TEST_FOR_EXCEPTION(tokens.size() != (unsigned) NumVectors, std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(tokens.size() != (unsigned) NumVectors, std::logic_error,
                              "wrong number of tokens in line; "
                              << "tokens.size() = " << tokens.size() 
                              << ", NumVectors = " << NumVectors);
@@ -263,7 +263,7 @@ Read(const std::string& Label, Epetra_MultiVector*& MultiVector)
 void EpetraExt::XMLReader::
 Read(const std::string& Label, Epetra_Map*& Map)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   Map = 0;
@@ -282,7 +282,7 @@ Read(const std::string& Label, Epetra_Map*& Map)
         int IndexBase = child.getRequiredInt("IndexBase");
         int NumProc = child.getRequiredInt("NumProc");
 
-        TEST_FOR_EXCEPTION(NumProc != Comm_.NumProc(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(NumProc != Comm_.NumProc(), std::logic_error,
                            "Requested map defined with different number of processors, "
                            << "NumProc = " << NumProc << " while "
                            << "Comm.NumProc() = " << Comm_.NumProc());
@@ -330,7 +330,7 @@ Read(const std::string& Label, Epetra_Map*& Map)
 void EpetraExt::XMLReader::
 Read(const std::string& Label, std::vector<std::string>& Content)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   for (int i = 0; i < fileXML_->numChildren(); ++i)
@@ -357,7 +357,7 @@ Read(const std::string& Label, std::vector<std::string>& Content)
 void EpetraExt::XMLReader::
 Read(const std::string& Label, Teuchos::ParameterList& List)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   for (int i = 0; i < fileXML_->numChildren(); ++i)

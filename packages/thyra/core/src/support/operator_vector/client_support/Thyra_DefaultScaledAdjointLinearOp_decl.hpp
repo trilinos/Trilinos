@@ -617,7 +617,7 @@ inline
 void DefaultScaledAdjointLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( origOp_.getConstObj().get() == NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( origOp_.getConstObj().get() == NULL );
 #endif
 }
 

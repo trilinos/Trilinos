@@ -111,7 +111,7 @@ namespace Amesos2 {
 
     int factor_ierr = solver_.factor();
 
-    TEST_FOR_EXCEPTION( factor_ierr != 0,
+    TEUCHOS_TEST_FOR_EXCEPTION( factor_ierr != 0,
 			std::runtime_error,
 			"Lapack factor routine returned error code "
 			<< factor_ierr );
@@ -161,7 +161,7 @@ namespace Amesos2 {
 			  rcpFromRef(rhs_dense_mat) );
     
       int solve_ierr = solver_.solve();
-      TEST_FOR_EXCEPTION( solve_ierr != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( solve_ierr != 0,
 			  std::runtime_error,
 			  "Lapack solver solve method returned with error code "
 			  << solve_ierr );
@@ -171,7 +171,7 @@ namespace Amesos2 {
        * and RHS were not equilibrated, then this is a no-op
        */
       int unequilibrate_ierr = solver_.unequilibrateLHS();
-      TEST_FOR_EXCEPTION( unequilibrate_ierr != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( unequilibrate_ierr != 0,
 			  std::runtime_error,
 			  "Lapack solver returned with error code "
 			  << unequilibrate_ierr

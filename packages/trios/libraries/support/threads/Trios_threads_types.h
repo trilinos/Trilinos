@@ -50,6 +50,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include <stdint.h>
 
+
 #ifdef HAVE_TRIOS_PTHREAD
 
 #include <pthread.h>
@@ -91,6 +92,8 @@ typedef struct {
 #endif
 #include <time.h>
 
+typedef uint64_t nthread_id_t;
+
 typedef struct {
     uint64_t thread;
 } nthread_t;
@@ -127,6 +130,8 @@ typedef struct {
 #else
 
 #include <time.h>
+
+typedef uint64_t nthread_id_t;
 
 typedef struct {
     uint32_t thread;

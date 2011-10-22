@@ -207,7 +207,7 @@ namespace Anasazi {
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
-    TEST_FOR_EXCEPTION(n > MVT::GetNumberVecs(Q), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): argument n larger than width of input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(n > MVT::GetNumberVecs(Q), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): argument n larger than width of input multivector.");
 
     // We want to recover the elementary permutations (individual swaps) 
     // from the permutation vector. Do this by constructing the inverse
@@ -221,7 +221,7 @@ namespace Anasazi {
           // found it at index j
           break;
         }
-        TEST_FOR_EXCEPTION(j == n-1, std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): permutation index invalid.");
+        TEUCHOS_TEST_FOR_EXCEPTION(j == n-1, std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): permutation index invalid.");
       }
       //
       // Swap two scalars
@@ -266,7 +266,7 @@ namespace Anasazi {
     const int n = perm.size();
     const int m = Q.numRows();
     
-    TEST_FOR_EXCEPTION(n != Q.numCols(), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): size of permutation vector not equal to number of columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION(n != Q.numCols(), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): size of permutation vector not equal to number of columns.");
 
     // Sort the primitive ritz vectors
     Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Q );
@@ -305,13 +305,13 @@ namespace Anasazi {
       workMV = MVT::CloneViewNonConst(*workMV,first);
     }
     else {
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*workMV) < 1,std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): work multivector was empty.");
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*workMV) < 1,std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): work multivector was empty.");
     }
     // Q = H_1 ... H_k is square, with as many rows as V has vectors
     // however, H need only have k columns, one each for the k reflectors.
-    TEST_FOR_EXCEPTION( H.numCols() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): H must have at least k columns.");
-    TEST_FOR_EXCEPTION( (int)tau.size() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): tau must have at least k entries.");
-    TEST_FOR_EXCEPTION( H.numRows() != MVT::GetNumberVecs(V), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,V are inconsistent.");
+    TEUCHOS_TEST_FOR_EXCEPTION( H.numCols() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): H must have at least k columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (int)tau.size() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): tau must have at least k entries.");
+    TEUCHOS_TEST_FOR_EXCEPTION( H.numRows() != MVT::GetNumberVecs(V), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,V are inconsistent.");
 
     // perform the loop
     // flops: Sum_{i=0:k-1} 4 m (n-i) == 4mnk - 2m(k^2- k)
@@ -498,11 +498,11 @@ namespace Anasazi {
             }
           }
           // U = 0*U + 1*MMcopy*KKcopy = MMcopy * KKcopy
-          TEST_FOR_EXCEPTION( 
+          TEUCHOS_TEST_FOR_EXCEPTION( 
               U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero) != 0,
               std::logic_error, "Anasazi::SolverUtils::directSolver() call to Teuchos::SerialDenseMatrix::multiply() returned an error.");
           // MMcopy = 0*MMcopy + 1*KKcopy^H*U = KKcopy^H * MMcopy * KKcopy
-          TEST_FOR_EXCEPTION( 
+          TEUCHOS_TEST_FOR_EXCEPTION( 
               MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero) != 0,
               std::logic_error, "Anasazi::SolverUtils::directSolver() call to Teuchos::SerialDenseMatrix::multiply() returned an error.");
           MagnitudeType maxNorm = SCT::magnitude(zero);
@@ -643,7 +643,7 @@ namespace Anasazi {
     int xc = MVT::GetNumberVecs(X);
     int mxc = MVT::GetNumberVecs(MX);
     
-    TEST_FOR_EXCEPTION(xc != mxc,std::invalid_argument,"Anasazi::SolverUtils::errorEquality(): input multivecs have different number of columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xc != mxc,std::invalid_argument,"Anasazi::SolverUtils::errorEquality(): input multivecs have different number of columns.");
     if (xc == 0) {
       return maxDiff;
     }

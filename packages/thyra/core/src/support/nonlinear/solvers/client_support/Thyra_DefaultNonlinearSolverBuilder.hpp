@@ -148,7 +148,7 @@ void setNonlinearSolverFactory(
   const Ptr<DefaultNonlinearSolverBuilder<Scalar> > &defaultNonlinearSolverBuilder
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 

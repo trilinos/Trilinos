@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 // Define this to throw exceptions when any Teuchos::ScalarTraits function
 // encounters a NaN or an Inf.
@@ -65,7 +65,7 @@ double returnDoubleZero() { return 0.0; }
 void Teuchos::throwScalarTraitsNanInfError( const std::string &errMsg )
 {
 #ifdef TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
-  TEST_FOR_EXCEPTION( true, std::runtime_error, errMsg );
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, errMsg );
 #endif
 }
 

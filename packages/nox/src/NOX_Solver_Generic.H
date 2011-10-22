@@ -55,7 +55,7 @@ namespace NOX {
   }
 }
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace NOX {
 
@@ -131,7 +131,7 @@ public:
   //! Return a RCP to the solution group
   virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const
   {
-     TEST_FOR_EXCEPTION(true,std::logic_error,
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 			"NOX::Generic::Solver::getSolutionGroupPtr() not implemented!");
      return Teuchos::null;
   }
@@ -139,7 +139,7 @@ public:
   //! Return a RCP to the previous solution group
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const
   {
-    TEST_FOR_EXCEPTION(true,std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 		       "NOX::Generic::Solver::getPreviousSolutionGroupPtr() not implemented!");
      return Teuchos::null;
   }
@@ -147,7 +147,7 @@ public:
   //! Return a RCP to the solver parameters.
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const
   {
-    TEST_FOR_EXCEPTION(true,std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 		       "NOX::Generic::Solver::getListPtr() not implemented!");
      return Teuchos::null;
   }

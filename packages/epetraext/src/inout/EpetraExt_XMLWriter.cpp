@@ -55,7 +55,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 using namespace Teuchos;
 
@@ -98,7 +98,7 @@ void EpetraExt::XMLWriter:: Close()
 void EpetraExt::XMLWriter::
 Write(const std::string& Label, const std::vector<std::string>& Content)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   if (Comm_.MyPID()) return;
@@ -119,7 +119,7 @@ Write(const std::string& Label, const std::vector<std::string>& Content)
 void EpetraExt::XMLWriter::
 Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   int Rows = Matrix.NumGlobalRows();
@@ -175,7 +175,7 @@ Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
 void EpetraExt::XMLWriter::
 Write(const std::string& Label, const Epetra_MultiVector& MultiVector)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   int Length = MultiVector.GlobalLength();
@@ -222,7 +222,7 @@ Write(const std::string& Label, const Epetra_MultiVector& MultiVector)
 void EpetraExt::XMLWriter::
 Write(const std::string& Label, const Epetra_Map& Map)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   int NumGlobalElements = Map.NumGlobalElements();
@@ -290,7 +290,7 @@ Write(const std::string& Label, const Epetra_Map& Map)
 void EpetraExt::XMLWriter::
 Write(const std::string& Label, Teuchos::ParameterList& List)
 {
-  TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
   if (Comm_.MyPID()) return;

@@ -51,8 +51,6 @@
 // matrix is nontrivial.
 #include "BelosDGKSOrthoManager.hpp" 
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Belos {
 
@@ -60,44 +58,47 @@ namespace Belos {
   /// \brief Mixin for out-of-place orthogonalization 
   /// \author Mark Hoemmen
   ///
-  /// Abstract interface for multiple inheritance ("mixin") for
-  /// special orthogonalization methods that normalize "out-of-place."
-  /// OrthoManager and MatOrthoManager both normalize (and
-  /// projectAndNormalize) multivectors "in place," meaning that the
-  /// input and output multivectors are the same (X, in both cases).
-  /// Gram-Schmidt (modified or classical) is an example of an
-  /// orthogonalization method that can normalize (and
+  /// This class presents an abstract interface for multiple
+  /// inheritance ("mixin") for special orthogonalization methods that
+  /// normalize "out-of-place."  OrthoManager and MatOrthoManager both
+  /// normalize (and projectAndNormalize) multivectors "in place,"
+  /// meaning that the input and output multivectors are the same (X,
+  /// in both cases).  Gram-Schmidt (modified or classical) is an
+  /// example of an orthogonalization method that can normalize (and
   /// projectAndNormalize) in place.  TSQR (the Tall Skinny QR
   /// factorization, see \c TsqrOrthoManager.hpp for references) is an
   /// orthogonalization method which cannot normalize (or
-  /// projectAndNormalize) in place.  For TSQR, we provide this mixin,
-  /// so that iterative methods can exploit TSQR's unique interface to
-  /// avoid one multivector copy.
+  /// projectAndNormalize) in place.
+  ///
+  /// Tsqr(Mat)OrthoManager implements (Mat)OrthoManager's normalize()
+  /// and projectAndNormalize() methods with scratch space and
+  /// copying.  However, if you handle Tsqr(Mat)OrthoManager through
+  /// this mixin, you can exploit TSQR's unique interface to avoid
+  /// copying back and forth between scratch space.
   template<class Scalar, class MV>
   class OutOfPlaceNormalizerMixin {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-    //! \typedef Multivector type with which this class was specialized
+    /// \typedef multivector_type
+    /// \brief Multivector type with which this class was specialized.
     typedef MV multivector_type;
 
     typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
     typedef Teuchos::RCP<mat_type>                  mat_ptr;
 
-    /// \brief Normalize X into Q*B, possibly overwriting X
+    /// \brief Normalize X into Q*B.
     ///
-    /// Normalize X into Q*B.  X may be overwritten with invalid
-    /// values.
+    /// \param X [in/out] On input: Multivector to normalize.  On
+    ///   output: Possibly overwritten with invalid values.
+    /// \param Q [out] On output: Normalized multivector.
+    /// \param B [out] On output: Normalization coefficients.
     ///
-    /// \param X [in/out] Vector(s) to normalize
-    /// \param Q [out] Normalized vector(s)
-    /// \param B [out] Normalization coefficients
-    ///
-    /// \return Rank of X
+    /// \return Rank of the input multivector X.
     virtual int 
     normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const = 0;
 
-    /// \brief Project and normalize X_in into X_out; overwrite X_in
+    /// \brief Project and normalize X_in into X_out.
     ///
     /// Project X_in against Q, storing projection coefficients in C,
     /// and normalize X_in into X_out, storing normalization
@@ -128,9 +129,10 @@ namespace Belos {
 
   /// \class TsqrOrthoManager
   /// \brief TSQR-based OrthoManager subclass
+  /// \author Mark Hoemmen
   ///
-  /// This is the actual subclass of OrthoManager, implemented using
-  /// TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
+  /// Subclass of OrthoManager, implemented using TsqrOrthoManagerImpl
+  /// (TSQR + Block Gram-Schmidt).
   template<class Scalar, class MV>
   class TsqrOrthoManager : 
     public OrthoManager<Scalar, MV>, 
@@ -341,15 +343,17 @@ namespace Belos {
 
   /// \class TsqrMatOrthoManager
   /// \brief MatOrthoManager subclass using TSQR or DGKS
+  /// \author Mark Hoemmen
   ///
-  /// Subclass of MatOrthoManager.  When getOp() == null (Euclidean
-  /// inner product), uses TSQR + Block Gram-Schmidt for
-  /// orthogonalization.  When getOp() != null, uses DGKSOrthoManager
-  /// (Classical Gram-Schmidt with reorthogonalization) for
-  /// orthogonalization.  Avoids communication only in the TSQR case.
-  /// Initialization of either orthogonalization manager is "lazy," so
-  /// you don't have to pay for scratch space if you don't use it.
-  ///
+  /// When the inner product matrix has not been set, this class uses
+  /// TSQR + Block Gram-Schmidt (via \c TsqrOrthoManagerImpl).  If the
+  /// inner product matrix <i>has</i> been set, then this class uses
+  /// classical Gram-Schmidt with reorthogonalization (via \c
+  /// DGKSOrthoManager).  
+  /// 
+  /// TSQR uses multivector scratch space.  However, the
+  /// initialization of each implementation method is "lazy," so
+  /// scratch space will not be allocated if TSQR is not used.
   template<class Scalar, class MV, class OP>
   class TsqrMatOrthoManager : 
     public MatOrthoManager<Scalar, MV, OP>,

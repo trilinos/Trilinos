@@ -74,7 +74,7 @@ void EpetraOperatorViewExtractorStd::getNonconstEpetraOpView(
     const Ptr<double> &epetraOpScalar
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   // ToDo: Implement once this is needed by just copying what is below and
   // removing the 'const' in the right places!
 }

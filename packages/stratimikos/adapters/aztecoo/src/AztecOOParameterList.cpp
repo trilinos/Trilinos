@@ -93,8 +93,8 @@ void setAztecOOParameters(
 {
   using Teuchos::getIntegralValue;
   using Teuchos::getParameter;
-  TEST_FOR_EXCEPT(pl==NULL);
-  TEST_FOR_EXCEPT(solver==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(pl==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(solver==NULL);
   // Validate the parameters and set their defaults!  This also sets the
   // validators needed to read in the parameters in an integral form.
   pl->validateParametersAndSetDefaults(*getValidAztecOOParameters());
@@ -143,7 +143,7 @@ void setAztecOOParameters(
       solver->SetAztecOption(AZ_poly_ord,getParameter<int>(*pl,PolynomialOrder_name));
       break;
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
   // RCM Reordering (in conjunction with domain decomp preconditioning)
   solver->SetAztecOption(

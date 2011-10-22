@@ -168,15 +168,15 @@ namespace Belos {
 	using Teuchos::TimeMonitor;
 	using std::endl;
 	      
-	TEST_FOR_EXCEPTION(orthoMan.is_null(), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(orthoMan.is_null(), std::invalid_argument,
 			   "orthoMan is null");
-	TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
 			   "X is null");
-	TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(numCols < 1, std::invalid_argument, 
 			   "numCols = " << numCols << " < 1");
-	TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(numBlocks < 1, std::invalid_argument, 
 			   "numBlocks = " << numBlocks << " < 1");
-	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument, 
 			   "numTrials = " << numTrials << " < 1");
 	// Debug output stream
 	std::ostream& debugOut = outMan->stream(Debug);
@@ -405,7 +405,7 @@ namespace Belos {
 	  // one or two arguments, whereas Belos' normalize() requires
 	  // two arguments.
 	  const int initialX1Rank = OM->normalize(*X1, Teuchos::null);
-	  TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
 			     std::runtime_error, 
 			     "normalize(X1) returned rank "
 			     << initialX1Rank << " from " << sizeX1
@@ -413,7 +413,7 @@ namespace Belos {
 	  debugOut << "done." << endl 
 		   << "Calling orthonormError() on X1... ";
 	  err = OM->orthonormError(*X1);
-	  TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
 			     "After normalize(X1), orthonormError(X1) = " 
 			     << err << " > TOL = " << TOL);
 	  debugOut << "done: ||<X1,X1> - I|| = " << err << endl;
@@ -441,7 +441,7 @@ namespace Belos {
 	    initialX2Rank = 
 	      OM->projectAndNormalize (*X2, C, B, tuple<RCP<const MV> >(X1));
 	  }
-	  TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
 			     std::runtime_error, 
 			     "projectAndNormalize(X2,X1) returned rank " 
 			     << initialX2Rank << " from " << sizeX2 
@@ -449,14 +449,14 @@ namespace Belos {
 	  debugOut << "done." << endl
 		   << "Calling orthonormError() on X2... ";
 	  err = OM->orthonormError (*X2);
-	  TEST_FOR_EXCEPTION(err > TOL,
+	  TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,
 			     std::runtime_error,
 			     "projectAndNormalize(X2,X1) did not meet tolerance: "
 			     "orthonormError(X2) = " << err << " > TOL = " << TOL);
 	  debugOut << "done: || <X2,X2> - I || = " << err << endl
 		   << "Calling orthogError(X2, X1)... ";
 	  err = OM->orthogError (*X2, *X1);
-	  TEST_FOR_EXCEPTION(err > TOL,
+	  TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,
 			     std::runtime_error,
 			     "projectAndNormalize(X2,X1) did not meet tolerance: "
 			     "orthogError(X2,X1) = " << err << " > TOL = " << TOL);
@@ -494,14 +494,14 @@ namespace Belos {
 		     << "Calling normalizeOutOfPlace(*X1_in, *X1_out, null)... ";
 	    const int initialX1Rank = 
 	      tsqr->normalizeOutOfPlace(*X1_in, *X1_out, Teuchos::null);
-	    TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, std::runtime_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, std::runtime_error,
 			       "normalizeOutOfPlace(*X1_in, *X1_out, null) "
 			       "returned rank " << initialX1Rank << " from " 
 			       << sizeX1 << " vectors. Cannot continue.");
 	    debugOut << "done." << endl 
 		     << "Calling orthonormError() on X1_out... ";
 	    err = OM->orthonormError(*X1_out);
-	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
 			       "After calling normalizeOutOfPlace(*X1_in, "
 			       "*X1_out, null), orthonormError(X1) = " 
 			       << err << " > TOL = " << TOL);
@@ -533,7 +533,7 @@ namespace Belos {
 		tsqr->projectAndNormalizeOutOfPlace (*X2_in, *X2_out, C, B, 
 						     tuple<RCP<const MV> >(X1_out));
 	    }
-	    TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+	    TEUCHOS_TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
 			       std::runtime_error, 
 			       "projectAndNormalizeOutOfPlace(*X2_in, "
 			       "*X2_out, C, B, tuple(X1_out)) returned rank "
@@ -542,7 +542,7 @@ namespace Belos {
 	    debugOut << "done." << endl
 		     << "Calling orthonormError() on X2_out... ";
 	    err = OM->orthonormError (*X2_out);
-	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
 			       "projectAndNormalizeOutOfPlace(*X2_in, *X2_out, "
 			       "C, B, tuple(X1_out)) did not meet tolerance: "
 			       "orthonormError(X2_out) = " 
@@ -550,7 +550,7 @@ namespace Belos {
 	    debugOut << "done: || <X2_out,X2_out> - I || = " << err << endl
 		     << "Calling orthogError(X2_out, X1_out)... ";
 	    err = OM->orthogError (*X2_out, *X1_out);
-	    TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
 			       "projectAndNormalizeOutOfPlace(*X2_in, *X2_out, "
 			       "C, B, tuple(X1_out)) did not meet tolerance: "
 			       "orthogError(X2_out, X1_out) = " 
@@ -773,7 +773,7 @@ namespace Belos {
 
 	const scalar_type ONE = SCT::one();
 	const int numCols = MVT::GetNumberVecs(X);
-	TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != numCols),
+	TEUCHOS_TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != numCols),
 			    std::logic_error,
 			    "MVDiff: X and Y should have the same number of columns."
 			    "  X has " << numCols << " column(s) and Y has " 

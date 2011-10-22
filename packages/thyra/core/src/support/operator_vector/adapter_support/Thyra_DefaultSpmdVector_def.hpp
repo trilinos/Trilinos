@@ -79,9 +79,9 @@ void DefaultSpmdVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(spmdSpace_in));
-  TEST_FOR_EXCEPT(spmdSpace_in->localSubDim() > 0 && localValues.get()==NULL);
-  TEST_FOR_EXCEPT(stride==0);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(spmdSpace_in));
+  TEUCHOS_TEST_FOR_EXCEPT(spmdSpace_in->localSubDim() > 0 && localValues.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(stride==0);
 #endif
   spmdSpace_ = spmdSpace_in;
   localValues_ = localValues;

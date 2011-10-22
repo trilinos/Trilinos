@@ -150,7 +150,7 @@ private:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         primitiveObjs.size()!=ScalarPrimitiveTypeTraits::numPrimitiveObjs()
         || indexObjs.size()!=1
         || charObjs.size()!=0 );

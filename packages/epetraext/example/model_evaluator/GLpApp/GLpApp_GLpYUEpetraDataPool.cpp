@@ -67,7 +67,7 @@
 #include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 #ifdef HAVE_MPI
@@ -488,7 +488,7 @@ int GLpYUEpetraDataPool::solveAugsys(
     y->Update(-1.0, ap, -1.0, np, 1.0);
   }
 */
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return 0;
 }
 
@@ -1567,12 +1567,12 @@ int GLpApp::meshreader(const Epetra_Comm & Comm,
 
   const int FileNameSize = 120;
   char FileName[FileNameSize];
-  TEST_FOR_EXCEPT(static_cast<int>(std::strlen(geomFileBase) + 5) > FileNameSize);
+  TEUCHOS_TEST_FOR_EXCEPT(static_cast<int>(std::strlen(geomFileBase) + 5) > FileNameSize);
   sprintf(FileName, "%s.%03d", geomFileBase, MyPID);
 
   {
     std::ifstream file_in(FileName);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       file_in.eof(), std::logic_error
       ,"Error, the file \""<<FileName<<"\" could not be opened for input!"
       );

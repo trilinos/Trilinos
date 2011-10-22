@@ -67,7 +67,7 @@
 # All include and module paths are relative to this assumed directory
 # structure.
 #
-# This script can be run from anywhere by by default and will find the
+# This script can be run from anywhere by default and will find the
 # right related CMake files to run but it requires that the client set
 # CTEST_DASHBOARD_ROOT (or override this in the env) before running
 # this script.  The varible CTEST_DASHBOARD_ROOT determines where the

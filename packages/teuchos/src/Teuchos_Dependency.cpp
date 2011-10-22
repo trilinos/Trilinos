@@ -106,14 +106,14 @@ void Dependency::print(std::ostream& out) const{
 void Dependency::checkDependeesAndDependents(){
   ConstParameterEntryList::iterator it1 = dependees_.begin(); 
   for(; it1 != dependees_.end(); ++it1){
-    TEST_FOR_EXCEPTION((*it1).is_null(),
+    TEUCHOS_TEST_FOR_EXCEPTION((*it1).is_null(),
       InvalidDependencyException,
       "Cannot have a null dependee!" << std::endl << std::endl);
    }
 
   ParameterEntryList::iterator it2 = dependents_.begin(); 
   for(; it2 != dependents_.end(); ++it2){
-    TEST_FOR_EXCEPTION((*it2).is_null(),
+    TEUCHOS_TEST_FOR_EXCEPTION((*it2).is_null(),
       InvalidDependencyException,
       "Cannot have a null dependent!" << std::endl << std::endl);
   }

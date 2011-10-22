@@ -144,6 +144,8 @@ struct ScalarTraits<char>
   static inline std::string name() { return "char"; }
   static inline char squareroot(char x) { return (char) std::sqrt((double) x); }
   static inline char pow(char x, char y) { return (char) std::pow((double)x,(double)y); }
+  static inline char log(char x) { return static_cast<char> (std::log (static_cast<double> (x))); }
+  static inline char log10(char x) { return static_cast<char> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -178,6 +180,8 @@ struct ScalarTraits<short int>
   static inline std::string name() { return "short int"; }
   static inline short int squareroot(short int x) { return (short int) std::sqrt((double) x); }
   static inline short int pow(short int x, short int y) { return (short int) std::pow((double)x,(double)y); }
+  static inline short int log(short int x) { return static_cast<short int> (std::log (static_cast<double> (x))); }
+  static inline short int log10(short int x) { return static_cast<short int> (std::log10 (static_cast<double> (x))); }
 };
 
 template<>
@@ -211,6 +215,8 @@ struct ScalarTraits<unsigned short int>
   static inline std::string name() { return "unsigned short int"; }
   static inline unsigned short int squareroot(unsigned short int x) { return (unsigned short int) std::sqrt((double) x); }
   static inline unsigned short int pow(unsigned short int x, unsigned short int y) { return (unsigned short int) std::pow((double)x,(double)y); }
+  static inline unsigned short int log(unsigned short int x) { return static_cast<unsigned short int> (std::log (static_cast<double> (x))); }
+  static inline unsigned short int log10(unsigned short int x) { return static_cast<unsigned short int> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -245,6 +251,8 @@ struct ScalarTraits<int>
   static inline std::string name() { return "int"; }
   static inline int squareroot(int x) { return (int) std::sqrt((double) x); }
   static inline int pow(int x, int y) { return (int) std::pow((double)x,(double)y); }
+  static inline int log(int x) { return static_cast<int> (std::log (static_cast<double> (x))); }
+  static inline int log10(int x) { return static_cast<int> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -278,6 +286,8 @@ struct ScalarTraits<unsigned int>
   static inline std::string name() { return "unsigned int"; }
   static inline unsigned int squareroot(unsigned int x) { return (unsigned int) std::sqrt((double) x); }
   static inline unsigned int pow(unsigned int x, unsigned int y) { return (unsigned int) std::pow((double)x,(double)y); }
+  static inline unsigned int log(unsigned int x) { return static_cast<unsigned int> (std::log (static_cast<double> (x))); }
+  static inline unsigned int log10(unsigned int x) { return static_cast<unsigned int> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -311,6 +321,10 @@ struct ScalarTraits<long int>
   static inline std::string name() { return "long int"; }
   static inline long int squareroot(long int x) { return (long int) std::sqrt((double) x); }
   static inline long int pow(long int x, long int y) { return (long int) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in long int, the cast from
+  // long int to double may not be exact.
+  static inline long int log(long int x) { return static_cast<long int> (std::log (static_cast<double> (x))); }
+  static inline long int log10(long int x) { return static_cast<long int> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -344,6 +358,10 @@ struct ScalarTraits<long unsigned int>
   static inline std::string name() { return "long unsigned int"; }
   static inline long unsigned int squareroot(long unsigned int x) { return (long unsigned int) std::sqrt((double) x); }
   static inline long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in long unsigned int, the
+  // cast from long unsigned int to double may not be exact.
+  static inline long unsigned int log(long unsigned int x) { return static_cast<long unsigned int> (std::log (static_cast<double> (x))); }
+  static inline long unsigned int log10(long unsigned int x) { return static_cast<long unsigned int> (std::log10 (static_cast<double> (x))); }
 };
 
 
@@ -378,6 +396,10 @@ struct ScalarTraits<long long int>
   static inline std::string name() { return "long long int"; }
   static inline long long int squareroot(long long int x) { return (long long int) std::sqrt((double) x); }
   static inline long long int pow(long long int x, long long int y) { return (long long int) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in long long int, the cast
+  // from long long int to double may not be exact.
+  static inline long long int log(long long int x) { return static_cast<long long int> (std::log (static_cast<double> (x))); }
+  static inline long long int log10(long long int x) { return static_cast<long long int> (std::log10 (static_cast<double> (x))); }
 };
 
 template<>
@@ -410,6 +432,10 @@ struct ScalarTraits<unsigned long long int>
   static inline std::string name() { return "unsigned long long int"; }
   static inline unsigned long long int squareroot(unsigned long long int x) { return (unsigned long long int) std::sqrt((double) x); }
   static inline unsigned long long int pow(unsigned long long int x, unsigned long long int y) { return (unsigned long long int) std::pow((double)x,(double)y); }
+  // Note: Depending on the number of bits in unsigned long long int,
+  // the cast from unsigned long long int to double may not be exact.
+  static inline unsigned long long int log(unsigned long long int x) { return static_cast<unsigned long long int> (std::log (static_cast<double> (x))); }
+  static inline unsigned long long int log10(unsigned long long int x) { return static_cast<unsigned long long int> (std::log10 (static_cast<double> (x))); }
 };
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
@@ -505,6 +531,8 @@ struct ScalarTraits<float>
       return rtn;
     }
   static inline float pow(float x, float y) { return std::pow(x,y); }
+  static inline float log(float x) { return std::log(x); }
+  static inline float log10(float x) { return std::log10(x); }
 };
 
 
@@ -614,6 +642,8 @@ struct ScalarTraits<double>
       return rtn;
     }
   static inline double pow(double x, double y) { return std::pow(x,y); }
+  static inline double log(double x) { return std::log(x); }
+  static inline double log10(double x) { return std::log10(x); }
 };
 
 
@@ -679,6 +709,9 @@ struct ScalarTraits<dd_real>
       return sqrt(x);
   }
   static inline dd_real pow(dd_real x, dd_real y) { return pow(x,y); }
+  // dd_real puts its transcendental functions in the global namespace.
+  static inline dd_real log(dd_real x) { return log(x); }
+  static inline dd_real log10(dd_real x) { return log10(x); }
 };
 
 
@@ -737,6 +770,9 @@ struct ScalarTraits<qd_real>
       return sqrt(x);
   }
   static inline qd_real pow(qd_real x, qd_real y) { return pow(x,y); }
+  // qd_real puts its transcendental functions in the global namespace.
+  static inline qd_real log(qd_real x) { return log(x); }
+  static inline qd_real log10(qd_real x) { return log10(x); }
 };
 
 

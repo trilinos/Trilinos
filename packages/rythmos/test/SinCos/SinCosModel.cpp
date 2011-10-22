@@ -129,7 +129,7 @@ void SinCosModel::setImplicitFlag(bool implicit)
 
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -162,14 +162,14 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 //
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
   if (!acceptModelParams_) {
     return inArgs;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
   double exact_t = t;
@@ -230,7 +230,7 @@ SinCosModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   return nominalValues_;
@@ -339,7 +339,7 @@ void SinCosModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
 
@@ -429,7 +429,7 @@ RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_p_space(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_;
@@ -440,7 +440,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   RCP<Teuchos::Array<std::string> > p_strings = 
@@ -453,7 +453,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
 
 RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_g_space(int j) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_;
@@ -539,7 +539,7 @@ void SinCosModel::setupInOutArgs_() const
 void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   // 06/16/09 tscoffe:  TODO:  Only set the parameters that explicitely show up
   // in the new parameter list I.e.  Save all the previous options that have

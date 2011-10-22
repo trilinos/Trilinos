@@ -52,7 +52,7 @@
 #include "Shards_Array.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
       // test operator ==
       cout << "Are nodal and qp fields equal (should be false)? = " 
 	   << (nodal_density == qp_density) << endl;
-      TEST_FOR_EXCEPTION(nodal_density == qp_density, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(nodal_density == qp_density, std::logic_error,
 			 "operator==() failed!");
       
       // New constructor that should be same as nodal_density
@@ -123,30 +123,30 @@ int main(int argc, char *argv[])
 
       cout << "Are nodal and nodal copy fields equal (should be true)? = " 
 	   << (nodal_density == nodal_density_copy) << endl;
-      TEST_FOR_EXCEPTION(!(nodal_density == nodal_density_copy), 
+      TEUCHOS_TEST_FOR_EXCEPTION(!(nodal_density == nodal_density_copy), 
 			 std::logic_error,
 			 "operator==() failed for unique copy comparison!");
       
       cout << "Are scalar and vector fields "
 	   << "equal (should be false)? = " 
 	   << (qp_density == grad_qp_density) << endl;
-      TEST_FOR_EXCEPTION(qp_density == grad_qp_density, 
+      TEUCHOS_TEST_FOR_EXCEPTION(qp_density == grad_qp_density, 
 			 std::logic_error,
 			 "operator==() failed for data layout comparison !");
       
       // test operator =
       cout << "Testing operator=()...";
       Tag<double> op_eq("Garbage", node4);
-      TEST_FOR_EXCEPTION(op_eq == nodal_density, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(op_eq == nodal_density, std::logic_error, 
 			 "Comparison failed.  Should be different!");
       op_eq = dynamic_cast< Tag<double>& >(nodal_density);
-      TEST_FOR_EXCEPTION(op_eq != nodal_density, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(op_eq != nodal_density, std::logic_error, 
 			 "operator=() failed.  Tags should be the same!");
       cout << "Passed." << endl;
 
       // name() accessor
       cout << "Testing name() accessor...";
-      TEST_FOR_EXCEPTION( (nodal_density.name() != std::string("density") ), 
+      TEUCHOS_TEST_FOR_EXCEPTION( (nodal_density.name() != std::string("density") ), 
 			 std::logic_error,
 			 "name() accessor failed!");
       cout << "Passed." << endl;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
       // dataLayout() accessor
       const DataLayout& tmp = *node4;
       cout << "Testing dataLayout() accessor...";
-      TEST_FOR_EXCEPTION(nodal_density.dataLayout() != tmp, 
+      TEUCHOS_TEST_FOR_EXCEPTION(nodal_density.dataLayout() != tmp, 
 			 std::logic_error,
 			 "dataLayout() accessor failed!");
       cout << "Passed." << endl;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
       // clone()
       cout << "Testing clone()...";
       RCP<FieldTag> my_copy = rcp_nodal_density->clone();
-      TEST_FOR_EXCEPTION( *my_copy != *rcp_nodal_density , 
+      TEUCHOS_TEST_FOR_EXCEPTION( *my_copy != *rcp_nodal_density , 
 			 std::logic_error,
 			 "name() accessor failed!");
       cout << "Passed." << endl;
@@ -184,13 +184,13 @@ int main(int argc, char *argv[])
 	rcp(new Tag<MyVector<double> >("density", quad4));
       
       // Make sure we can create a field tag and access matching map entry
-      TEST_FOR_EXCEPTION(my_map[tmp_rcp_nodal_density] != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION(my_map[tmp_rcp_nodal_density] != 0,
 			 std::logic_error,
 			 "Failed to find correct FieldTag(0)!");
-      TEST_FOR_EXCEPTION(my_map[tmp_rcp_qp_density] != 1,
+      TEUCHOS_TEST_FOR_EXCEPTION(my_map[tmp_rcp_qp_density] != 1,
 			 std::logic_error,
 			 "Failed to find correct FieldTag(1)!");
-      TEST_FOR_EXCEPTION(my_map[tmp_rcp_grad_qp_density] != 2,
+      TEUCHOS_TEST_FOR_EXCEPTION(my_map[tmp_rcp_grad_qp_density] != 2,
 			 std::logic_error,
 			 "Failed to find correct FieldTag(2)!");
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 	std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
 	  std::find_if(vec.begin(), vec.end(), pred);
 	
-	TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
+	TEUCHOS_TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
 			   std::logic_error, 
 			   "FTPredRef failed to locate correct FieldTag!");
       }
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 	std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
 	  std::find_if(vec.begin(), vec.end(), pred);
 	
-	TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
+	TEUCHOS_TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
 			   std::logic_error, 
 			   "FTPred failed to locate correct FieldTag!");
       }

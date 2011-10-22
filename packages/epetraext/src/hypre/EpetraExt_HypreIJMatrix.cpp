@@ -47,7 +47,7 @@
 #include "Epetra_MultiVector.h"
 #include "EpetraExt_HypreIJMatrix.h"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include <set>
 
@@ -72,7 +72,7 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
   // Initialize default values for global variables
   int ierr = 0;
   ierr += InitializeDefaults();
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't initialize default values.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't initialize default values.");
   
   // Create array of global row ids
   Teuchos::Array<int> GlobalRowIDs;  GlobalRowIDs.resize(NumMyRows_);
@@ -90,7 +90,7 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
   for(int i = 0; i < NumMyRows_; i++){
     ierr += HYPRE_ParCSRMatrixGetRow(ParMatrix_, i+MyRowStart_, &num_entries, &indices, &values);
     ierr += HYPRE_ParCSRMatrixRestoreRow(ParMatrix_, i+MyRowStart_,&num_entries,&indices,&values);
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get row of matrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get row of matrix.");
     entries = num_entries;
     for(int j = 0; j < num_entries; j++){
       // Insert column ids from this row into set
@@ -120,21 +120,21 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
   // The vectors will be reused in Multiply(), so that they aren't recreated every time.   
   MPI_Comm comm;
   ierr += HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get communicator from Hypre Matrix.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get communicator from Hypre Matrix.");
   
   ierr += HYPRE_IJVectorCreate(comm, MyRowStart_, MyRowEnd_, &X_hypre);
   ierr += HYPRE_IJVectorSetObjectType(X_hypre, HYPRE_PARCSR);
   ierr += HYPRE_IJVectorInitialize(X_hypre);
   ierr += HYPRE_IJVectorAssemble(X_hypre);
   ierr += HYPRE_IJVectorGetObject(X_hypre, (void**) &par_x);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't create Hypre X vector.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't create Hypre X vector.");
 
   ierr += HYPRE_IJVectorCreate(comm, MyRowStart_, MyRowEnd_, &Y_hypre);
   ierr += HYPRE_IJVectorSetObjectType(Y_hypre, HYPRE_PARCSR);
   ierr += HYPRE_IJVectorInitialize(Y_hypre);
   ierr += HYPRE_IJVectorAssemble(Y_hypre);
   ierr += HYPRE_IJVectorGetObject(Y_hypre, (void**) &par_y);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't create Hypre Y vector.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't create Hypre Y vector.");
 
   x_vec = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) X_hypre));
   x_local = hypre_ParVectorLocalVector(x_vec);
@@ -162,18 +162,18 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
 EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
   int ierr = 0;
   ierr += HYPRE_IJVectorDestroy(X_hypre);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the X Vector.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the X Vector.");
   ierr += HYPRE_IJVectorDestroy(Y_hypre);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Y Vector.");
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Y Vector.");
 
   /* Destroy solver and preconditioner */
   if(IsSolverSetup_[0] == true){
     ierr += SolverDestroyPtr_(Solver_);
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Solver.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Solver.");
   }
   if(IsPrecondSetup_[0] == true){
     ierr += PrecondDestroyPtr_(Preconditioner_);
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Preconditioner.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Preconditioner.");
   }
   delete[] IsSolverSetup_;
   delete[] IsPrecondSetup_;
@@ -706,7 +706,7 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
     for(int j = 0; j < num_entries; j++){
       // Multiply column j with jth element
       int index = RowMatrixColMap().LID(indices[j]);
-      TEST_FOR_EXCEPTION(index < 0, std::logic_error, "Index is negtive.");
+      TEUCHOS_TEST_FOR_EXCEPTION(index < 0, std::logic_error, "Index is negtive.");
       new_values[j] = values[j] * Import_Vector[index];
       new_indices[j] = indices[j];
     }
@@ -728,7 +728,7 @@ int EpetraExt_HypreIJMatrix::InitializeDefaults(){
   EPETRA_CHK_ERR(HYPRE_IJMatrixGetObjectType(Matrix_, &my_type));
   MatType_ = my_type;
   // Currently only ParCSR is supported
-  TEST_FOR_EXCEPTION(MatType_ != HYPRE_PARCSR, std::logic_error, "Object is not type PARCSR");
+  TEUCHOS_TEST_FOR_EXCEPTION(MatType_ != HYPRE_PARCSR, std::logic_error, "Object is not type PARCSR");
 
   // Get the actual ParCSR object from the IJ matrix
   EPETRA_CHK_ERR(HYPRE_IJMatrixGetObject(Matrix_, (void**) &ParMatrix_));

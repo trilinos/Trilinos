@@ -186,7 +186,7 @@ namespace Belos {
 	      // Make sure that loadedNumRows has a sensible value,
 	      // since we'll need to allocate an std::vector with that
 	      // many elements.
-	      TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
+	      TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
 				 "Harwell-Boeing sparse matrix file reports that "
 				 "the matrix has # rows = " << loadedNumRows 
 				 << " < 0.");
@@ -222,17 +222,17 @@ namespace Belos {
 	  Teuchos::broadcast (*pComm, 0, &info);
 	  Teuchos::broadcast (*pComm, 0, &nnz);
 
-	  TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
 			     "Error reading Harwell-Boeing sparse matrix file \"" 
 			     << filename << "\"" << std::endl);
 	
-	  TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
 			     "Harwell-Boeing sparse matrix file \"" 
 			     << filename << "\" reports having negative nnz "
 			     << "(= " << nnz << ")"
 			     << std::endl);
 	
-	  TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
 			     "Test matrix in Harwell-Boeing sparse matrix file '" 
 			     << filename << "' " << "has zero nonzero values, which "
 			     << "means it does not define a valid inner product." 
@@ -242,7 +242,7 @@ namespace Belos {
 	  Teuchos::broadcast (*pComm, 0, &numCols);
 	  Teuchos::broadcast (*pComm, 0, &rnnzmax);
 
-	  TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
 			     "Test matrix in Harwell-Boeing sparse matrix file '" 
 			     << filename << "' " << "is not square: it is " 
 			     << loadedNumRows << " by " << numCols << std::endl);

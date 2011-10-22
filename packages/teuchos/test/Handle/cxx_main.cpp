@@ -121,8 +121,8 @@ public:
   {
     const VecA* va = dynamic_cast<const VecA*>(other);
     VecA* vr = dynamic_cast<VecA*>(result.get());
-    TEST_FOR_EXCEPT(va==0);
-    TEST_FOR_EXCEPT(vr==0);
+    TEUCHOS_TEST_FOR_EXCEPT(va==0);
+    TEUCHOS_TEST_FOR_EXCEPT(vr==0);
     for (unsigned int i=0; i<x_.size(); i++) 
       {
         vr->x_[i] = x_[i] + va->x_[i];
@@ -133,7 +133,7 @@ public:
   {
     double rtn = 0.0;
     const VecA* va = dynamic_cast<const VecA*>(other);
-    TEST_FOR_EXCEPT(va==0);
+    TEUCHOS_TEST_FOR_EXCEPT(va==0);
     for (unsigned int i=0; i<x_.size(); i++) 
       {
         rtn += x_[i] * va->x_[i];
@@ -153,7 +153,7 @@ public:
   {
     RCP<VecBase> rtn = space()->create(space());
     VecA* va = dynamic_cast<VecA*>(rtn.get());
-    TEST_FOR_EXCEPT(va==0);
+    TEUCHOS_TEST_FOR_EXCEPT(va==0);
     for (unsigned int i=0; i<x_.size(); i++) 
       {
         va->x_[i] = x_[i];

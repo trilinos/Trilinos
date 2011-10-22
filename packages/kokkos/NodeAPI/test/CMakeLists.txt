@@ -40,6 +40,21 @@ IF (Kokkos_ENABLE_TBB)
   APPEND_SET(TIMING_INSTALLS Kokkos_TBBNodeTestAndTiming)
 ENDIF()
 
+IF (Kokkos_ENABLE_OpenMP)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    OpenMPNodeTestAndTiming
+    SOURCES 
+      NodeTest
+      OpenMPNodeTest
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    DEPLIBS kokkosnodeapi
+    )
+  APPEND_SET(TIMING_INSTALLS Kokkos_OpenMPNodeTestAndTiming)
+ENDIF()
+
 IF (Kokkos_ENABLE_ThreadPool)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     TPINodeTestAndTiming

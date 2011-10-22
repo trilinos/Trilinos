@@ -129,7 +129,7 @@ Scalar DefaultStackedStepperStepStrategy<Scalar>::evaluateStep(
     dt_taken_ = local_dt_taken;
   }
   else {
-    TEST_FOR_EXCEPTION( local_dt_taken != dt_taken_, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( local_dt_taken != dt_taken_, std::logic_error,
         "Error!  sub-stepper["<<i<<"] did not take the same "
         "size step as the base stepper!"
         );
@@ -229,7 +229,7 @@ Scalar ForwardSensitivityStackedStepperStepStrategy<Scalar>::evaluateStep(
     dt_taken_ = local_dt_taken;
   }
   else {
-    TEST_FOR_EXCEPTION( local_dt_taken != dt_taken_, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( local_dt_taken != dt_taken_, std::logic_error,
         "Error!  sub-stepper["<<i<<"] did not take the same "
         "size step as the base stepper!"
         );
@@ -493,7 +493,7 @@ void StackedStepper<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   Teuchos::readVerboseObjectSublist(&*paramList,this);
@@ -527,7 +527,7 @@ void StackedStepper<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
     "Error, this stepper subclass does not accept a model"
     " as defined by the StepperBase interface!");
 }
@@ -538,7 +538,7 @@ void StackedStepper<Scalar>::setNonconstModel(
   const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
     "Error, this stepper subclass does not accept a model"
     " as defined by the StepperBase interface!");
 }
@@ -548,7 +548,7 @@ template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 StackedStepper<Scalar>::getModel() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -557,7 +557,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 StackedStepper<Scalar>::getNonconstModel() 
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -567,7 +567,7 @@ void StackedStepper<Scalar>::setInitialCondition(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stacked_ic
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
  
 
@@ -575,7 +575,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 StackedStepper<Scalar>::getInitialCondition() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs;
   return inArgs;
 }
@@ -589,15 +589,13 @@ StackedStepper<Scalar>::takeStep(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEST_FOR_EXCEPTION( stepperArray_.size() == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperArray_.size() == 0, std::logic_error,
      "Error!  Rythmos::StackedStepper::takeStep: "
      "addStepper must be called at least once before takeStep!" 
      );
   this->setupSpaces_();
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:StackedStepper::takeStep");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:StackedStepper::takeStep");
   
   if (Teuchos::is_null(stackedStepperStepStrategy_)) {
     stackedStepperStepStrategy_ = defaultStackedStepperStepStrategy<Scalar>();
@@ -620,7 +618,7 @@ StackedStepper<Scalar>::takeStep(
   //  // 07/27/09 tscoffe:  This line should be handled by a strategy object
   //  stepperArray_[i]->setStepControlData(*baseStepper);
   //  Scalar local_dt_taken = stepperArray_[i]->takeStep(dt,stepType);
-  //  TEST_FOR_EXCEPTION( local_dt_taken != dt_taken, std::logic_error,
+  //  TEUCHOS_TEST_FOR_EXCEPTION( local_dt_taken != dt_taken, std::logic_error,
   //      "Error!  sub-stepper["<<i<<"] did not take the same "
   //      "size step as the base stepper!"
   //      );
@@ -633,7 +631,7 @@ template<class Scalar>
 const StepStatus<Scalar>
 StackedStepper<Scalar>::getStepStatus() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   const StepStatus<Scalar> stepStatus;
   return stepStatus;
 
@@ -648,7 +646,7 @@ RCP<const Thyra::VectorSpaceBase<Scalar> >
 StackedStepper<Scalar>::get_x_space() const
 {
   this->setupSpaces_();
-  TEST_FOR_EXCEPTION( is_null(x_bar_space_), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(x_bar_space_), std::logic_error,
       "Rythmos::StackedStepper::get_x_space():  "
       "addStepper must be called at least once before get_x_space()!"
       );
@@ -663,7 +661,7 @@ void StackedStepper<Scalar>::addPoints(
   const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
       "Not implemented addPoints(...) yet but we could if we wanted!"
       );
 }
@@ -673,7 +671,7 @@ template<class Scalar>
 TimeRange<Scalar>
 StackedStepper<Scalar>::getTimeRange() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   TimeRange<Scalar> tr;
   return tr;
 }
@@ -689,7 +687,7 @@ void StackedStepper<Scalar>::getPoints(
 {
   using Teuchos::as;
   this->setupSpaces_();
-  TEST_FOR_EXCEPTION( stepperArray_.size() == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperArray_.size() == 0, std::logic_error,
       "Rythmos::StackedStepper:getPoints:  Error!  "
       "addStepper must be called at least once before getPoints!"
       );
@@ -771,7 +769,7 @@ void StackedStepper<Scalar>::getNodes(
   Array<Scalar>* time_vec
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -780,14 +778,14 @@ void StackedStepper<Scalar>::removeNodes(
   Array<Scalar>& time_vec
   )
 {
-  TEST_FOR_EXCEPT("Not implemented yet but we can!");
+  TEUCHOS_TEST_FOR_EXCEPT("Not implemented yet but we can!");
 }
 
 
 template<class Scalar> 
 int StackedStepper<Scalar>::getOrder() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return -1;
 }
 

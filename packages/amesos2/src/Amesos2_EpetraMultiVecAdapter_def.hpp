@@ -211,10 +211,10 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   
 #ifdef HAVE_AMESOS2_DEBUG
   const size_t requested_vector_length = distribution_map->getNodeNumElements();
-  TEST_FOR_EXCEPTION( lda < requested_vector_length,
+  TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
 		      std::invalid_argument,
 		      "Given stride is not large enough for local vector length" );
-  TEST_FOR_EXCEPTION( as<size_t>(av.size()) < (num_vecs-1) * lda + requested_vector_length,
+  TEUCHOS_TEST_FOR_EXCEPTION( as<size_t>(av.size()) < (num_vecs-1) * lda + requested_vector_length,
 		      std::invalid_argument,
 		      "MultiVector storage not large enough given leading dimension "
 		      "and number of vectors" );
@@ -238,12 +238,12 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_t>
 MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
 {
-  // TEST_FOR_EXCEPTION( !this->isConstantStride(),
+  // TEUCHOS_TEST_FOR_EXCEPTION( !this->isConstantStride(),
   //   std::logic_error,
   //   "get1dViewNonConst() : can only get 1d view if stride is constant");
 
   // if( local ){
-  //   TEST_FOR_EXCEPTION(
+  //   TEUCHOS_TEST_FOR_EXCEPTION(
   //     true,
   //     std::logic_error,
   //     "Amesos2::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
@@ -280,7 +280,7 @@ MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
   //     mv_->ExtractView(&values, &lda);
   //   }
 
-  //   TEST_FOR_EXCEPTION( lda != Teuchos::as<int>(this->getStride()),
+  //   TEUCHOS_TEST_FOR_EXCEPTION( lda != Teuchos::as<int>(this->getStride()),
   //     std::logic_error,
   //     "Stride reported during extraction not consistent with what multivector reports");
 

@@ -171,7 +171,7 @@ namespace Belos {
     void
     applyFlexibleOp (const MV& v_prv, MV& z_cur, MV& v_cur)
     {
-      TEST_FOR_EXCEPTION(! M_left_.is_null(), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(! M_left_.is_null(), std::logic_error,
 			 "Flexible GMRES only works with a right "
 			 "preconditioner, not a left or split "
 			 "preconditioner.");

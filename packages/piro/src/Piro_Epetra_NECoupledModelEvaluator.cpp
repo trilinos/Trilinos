@@ -4,7 +4,7 @@
 
 #include "Epetra_LocalMap.h"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
@@ -122,11 +122,11 @@ NECoupledModelEvaluator(
   f_overlap = Teuchos::rcp(new Epetra_Vector(*f_overlap_map));
 
   // Do some consistency checking
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !p_map_A->SameAs(*g_map_B), std::logic_error,
     "Model A parameter map for index " << pIndexA << " must be the same " <<
     "map as model B response map for index " << gIndexB << "!");
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !p_map_B->SameAs(*g_map_A), std::logic_error,
     "Model B parameter map for index " << pIndexB << " must be the same " <<
     "map as model A response map for index " << gIndexA << "!");
@@ -279,7 +279,7 @@ Teuchos::RCP<const Epetra_Map>
 Piro::Epetra::NECoupledModelEvaluator::
 get_p_map(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
     std::endl <<
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_map():  " <<
@@ -294,7 +294,7 @@ Teuchos::RCP<const Epetra_Map>
 Piro::Epetra::NECoupledModelEvaluator::
 get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     j >= num_responses_total || j < 0, Teuchos::Exceptions::InvalidParameter,
     std::endl <<
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_g_map():  " <<
@@ -309,7 +309,7 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Piro::Epetra::NECoupledModelEvaluator::
 get_p_names(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
     std::endl <<
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_names():  " <<
@@ -324,7 +324,7 @@ Teuchos::RCP<const Epetra_Vector>
 Piro::Epetra::NECoupledModelEvaluator::
 get_p_init(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     j >= num_params_total || j < 0, Teuchos::Exceptions::InvalidParameter,
     std::endl <<
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_init():  " <<

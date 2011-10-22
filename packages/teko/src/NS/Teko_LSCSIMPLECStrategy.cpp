@@ -254,7 +254,7 @@ void LSCSIMPLECStrategy::initializeFromParameterList(const Teuchos::ParameterLis
       useLDU = pl.get<bool>("Use LDU");
    if(pl.isParameter("Scaling Type")) {
       scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
-      TEST_FOR_EXCEPT(scaleType_==NotDiag);
+      TEUCHOS_TEST_FOR_EXCEPT(scaleType_==NotDiag);
    }
 
    Teko_DEBUG_MSG_BEGIN(0)

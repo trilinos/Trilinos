@@ -345,7 +345,7 @@ inline
 void DefaultInverseLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !lows_.getConstObj().get() );
+  TEUCHOS_TEST_FOR_EXCEPT( !lows_.getConstObj().get() );
 #endif
 }
 

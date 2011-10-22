@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
       stepper_ptr->setParameterList(Teuchos::rcp(&etpParams,false));
     }
     else {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
     stepper.setInitialCondition(model_ic);

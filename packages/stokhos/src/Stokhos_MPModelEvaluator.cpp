@@ -29,7 +29,7 @@
 #include "Stokhos_MPModelEvaluator.hpp"
 
 #include <algorithm>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_MPPreconditionerFactory.hpp"
@@ -184,7 +184,7 @@ Stokhos::MPModelEvaluator::get_f_map() const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::MPModelEvaluator::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_map(l);
@@ -197,7 +197,7 @@ Stokhos::MPModelEvaluator::get_p_map(int l) const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::MPModelEvaluator::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp, std::logic_error,
 		     "Error!  Invalid g map index " << j);
   return mp_g_map[j];
 }
@@ -205,7 +205,7 @@ Stokhos::MPModelEvaluator::get_g_map(int j) const
 Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::MPModelEvaluator::get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_names(l);
@@ -224,7 +224,7 @@ Stokhos::MPModelEvaluator::get_x_init() const
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::MPModelEvaluator::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_mp, std::logic_error,
 		     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_init(l);
@@ -269,7 +269,7 @@ Stokhos::MPModelEvaluator::create_WPrec() const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
 {
-  TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp || !supports_x, 
+  TEUCHOS_TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp || !supports_x, 
 		     std::logic_error,
 		     "Error:  dg/dx index " << j << " is not supported!");
   
@@ -304,7 +304,7 @@ Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
 		     mp_mv_blocks, true));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_mp, " << j
 		       << ").none() is true!");
   
@@ -319,7 +319,7 @@ Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
 {
-  TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp || !supports_x, 
+  TEUCHOS_TEST_FOR_EXCEPTION(j < 0 || j >= num_g_mp || !supports_x, 
 		     std::logic_error,
 		     "Error:  dg/dx_dot index " << j << " is not supported!");
   
@@ -355,7 +355,7 @@ Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
 		     mp_mv_blocks, true));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  me_outargs.supports(OUT_ARG_DgDx_dot_mp, " 
 		       << j << ").none() is true!");
   
@@ -370,7 +370,7 @@ Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     j < 0 || j >= num_g_mp || i < 0 || i >= num_p+num_p_mp, 
     std::logic_error,
     "Error:  dg/dp index " << j << "," << i << " is not supported!");
@@ -389,7 +389,7 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
       return mp_blocks;
     }
     else
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
 	true, std::logic_error,
 	"Error:  Underlying model evaluator must support DERIV_LINER_OP " << 
 	"to create operator for dg/dp index " << j << "," << i << "!");
@@ -426,7 +426,7 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
 		       mp_mv_blocks, true));
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DgDp_mp, " << jj
 			 << "," << ii << ").none() is true!");
 
@@ -444,7 +444,7 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
 {
-  TEST_FOR_EXCEPTION(i < 0 || i >= num_p+num_p_mp, 
+  TEUCHOS_TEST_FOR_EXCEPTION(i < 0 || i >= num_p+num_p_mp, 
                      std::logic_error,
                      "Error:  df/dp index " << i << " is not supported!");
 
@@ -460,7 +460,7 @@ Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
       return mp_blocks;
     }
     else
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
 	true, std::logic_error,
 	"Error:  Underlying model evaluator must support DERIV_LINER_OP " << 
 	"to create operator for df/dp index " << i << "!");
@@ -497,7 +497,7 @@ Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
 		       mp_mv_blocks, true));
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error!  me_outargs.supports(OUT_ARG_DfDp_mp, " << ii 
 			 << ").none() is true!");
 
@@ -717,7 +717,7 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 	      ii, MPDerivative(dfdp_mp, DERIV_TRANS_MV_BY_ROW));
 	}
       }
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
 	dfdp.getLinearOp() == Teuchos::null && dfdp.isEmpty() == false, 
 	std::logic_error,
 	"Error!  Stokhos::MPModelEvaluator::evalModel: " << 
@@ -761,7 +761,7 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 							DERIV_TRANS_MV_BY_ROW));
 	}
       }
-      TEST_FOR_EXCEPTION(dgdx_dot.getLinearOp() == Teuchos::null &&
+      TEUCHOS_TEST_FOR_EXCEPTION(dgdx_dot.getLinearOp() == Teuchos::null &&
 			 dgdx_dot.isEmpty() == false, 
 			 std::logic_error,
 			 "Error!  Stokhos::MPModelEvaluator::evalModel: " << 
@@ -792,7 +792,7 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 						    DERIV_TRANS_MV_BY_ROW));
 	}
       }
-      TEST_FOR_EXCEPTION(dgdx.getLinearOp() == Teuchos::null &&
+      TEUCHOS_TEST_FOR_EXCEPTION(dgdx.getLinearOp() == Teuchos::null &&
 			 dgdx.isEmpty() == false, 
 			 std::logic_error,
 			 "Error!  Stokhos::MPModelEvaluator::evalModel: " << 
@@ -851,7 +851,7 @@ Stokhos::MPModelEvaluator::evalModel(const InArgs& inArgs,
 		ii, jj, MPDerivative(dgdp_mp, DERIV_TRANS_MV_BY_ROW));
 	  }
 	}
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 	  dgdp.getLinearOp() == Teuchos::null && dgdp.isEmpty() == false, 
 	  std::logic_error,
 	  "Error!  Stokhos::MPModelEvaluator::evalModel: " << 
@@ -957,7 +957,7 @@ Stokhos::MPModelEvaluator::create_p_mp(int l, Epetra_DataAccess CV,
   Teuchos::Array<int>::const_iterator it = std::find(mp_p_index_map.begin(),
 						     mp_p_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == mp_p_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_p_index_map.end(), std::logic_error,
 		     "Error!  Invalid p map index " << l);
   int ll = it - mp_p_index_map.begin();
   if (v == NULL)
@@ -1012,7 +1012,7 @@ Stokhos::MPModelEvaluator::create_g_mp(int l, Epetra_DataAccess CV,
   Teuchos::Array<int>::const_iterator it = std::find(mp_g_index_map.begin(),
 						     mp_g_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == mp_g_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_g_index_map.end(), std::logic_error,
 		     "Error!  Invalid g map index " << l);
   int ll = it - mp_g_index_map.begin();
   if (v == NULL)
@@ -1037,7 +1037,7 @@ Stokhos::MPModelEvaluator::create_g_mv_mp(int l, int num_vecs,
   Teuchos::Array<int>::const_iterator it = std::find(mp_g_index_map.begin(),
 						     mp_g_index_map.end(), 
 						     l);
-  TEST_FOR_EXCEPTION(it == mp_g_index_map.end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_g_index_map.end(), std::logic_error,
 		     "Error!  Invalid g map index " << l);
   int ll = it - mp_g_index_map.begin();
   if (v == NULL)

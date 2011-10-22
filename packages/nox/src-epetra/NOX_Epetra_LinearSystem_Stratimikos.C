@@ -801,7 +801,7 @@ NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(
 void
 NOX::Epetra::LinearSystemStratimikos::setStratimikosPreconditioner() const
 {
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
      "NOX::Epetra::LinearSystemStratimikos::setStratimikosPreconditioner()\n"
      << " NOT IMPLEMENTED ");
 }
@@ -825,7 +825,7 @@ precError(int error_code,
     msg << "NOX::Epetra::LinearSystemStratimikos::" << nox_function << " - The " << prec_type << " preconditioner has returned a nonzero error code of " << error_code << " for the function \"" << prec_function << "\".  Please consult the preconditioner documentation for this error type.";
     
     if (throwErrorOnPrecFailure) {
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
     }
     else
       utils.out() << msg.str() << endl; 

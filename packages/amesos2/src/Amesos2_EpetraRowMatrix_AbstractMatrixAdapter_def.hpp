@@ -92,7 +92,7 @@ namespace Amesos2 {
 				     nnz_ret,
 				     vals.getRawPtr(),
 				     indices.getRawPtr());
-    TEST_FOR_EXCEPTION( rowmatrix_return_val != 0,
+    TEUCHOS_TEST_FOR_EXCEPTION( rowmatrix_return_val != 0,
 			std::runtime_error,
 			"Epetra_RowMatrix object returned error code "
 			<< rowmatrix_return_val << " from ExtractMyRowCopy." );
@@ -114,7 +114,7 @@ namespace Amesos2 {
 				       const ArrayView<scalar_t>& vals,
 				       size_t& nnz) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -156,7 +156,7 @@ namespace Amesos2 {
     Epetra_RowMatrix,
     DerivedMat>::getMaxColNNZ_impl() const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -172,7 +172,7 @@ namespace Amesos2 {
     // check whether row is local, then transform to local index
     Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
     int gid = Teuchos::as<int>(row);
-    TEST_FOR_EXCEPTION( !rowmap.MyGID(gid),
+    TEUCHOS_TEST_FOR_EXCEPTION( !rowmap.MyGID(gid),
 			std::invalid_argument,
 			"The specified global row id does not belong to me" );
     int lid = rowmap.LID(gid);
@@ -189,7 +189,7 @@ namespace Amesos2 {
   {
     Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
     int lid = Teuchos::as<int>(row);
-    TEST_FOR_EXCEPTION( !rowmap.MyLID(lid),
+    TEUCHOS_TEST_FOR_EXCEPTION( !rowmap.MyLID(lid),
 			std::invalid_argument,
 			"The specified local row id does not beloing to me" );
     int num_entries = 0;
@@ -203,7 +203,7 @@ namespace Amesos2 {
     Epetra_RowMatrix,
     DerivedMat>::getGlobalColNNZ_impl(global_ordinal_t col) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -216,7 +216,7 @@ namespace Amesos2 {
     Epetra_RowMatrix,
     DerivedMat>::getLocalColNNZ_impl(local_ordinal_t col) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );

@@ -40,14 +40,14 @@
 // @HEADER
 
 #include "Teuchos_FileInputStream.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 using namespace Teuchos;
 
 FileInputStream::FileInputStream(const std::string& filename)
 	: XMLInputStream(), file_(std::fopen(filename.c_str(), "rb"))
 {
-  TEST_FOR_EXCEPTION(file_ == NULL,
+  TEUCHOS_TEST_FOR_EXCEPTION(file_ == NULL,
                      std::runtime_error,
                      "FileInputStream ctor failed to open file: " 
                      << filename);
@@ -76,7 +76,7 @@ unsigned int FileInputStream::readBytes(unsigned char* const toFill,
 #endif
     ;
 
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
     n < 0 || (n<(int) maxToRead && !is_eof),
     std::runtime_error,
     "FileInputStream::readBytes error"

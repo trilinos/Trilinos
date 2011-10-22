@@ -35,7 +35,7 @@
 #include "ObserveSolution_Epetra.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
       }
       else
 #endif
-        TEST_FOR_EXCEPTION(true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error: Unknown Piro Solver : " << solver);
 
       // Now the (somewhat cumbersome) setting of inputs and outputs

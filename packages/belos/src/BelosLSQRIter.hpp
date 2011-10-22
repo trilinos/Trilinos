@@ -202,7 +202,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   //! \brief Set the blocksize to be used by the iterative solver to solve this linear problem.
   //This is unique to single vector methods.
   void setBlockSize(int blockSize) {
-    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 		       "LSQRIter::setBlockSize(): Cannot use a block size that is not one.");
   }
 
@@ -319,8 +319,8 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
         // using the LHS and RHS from lp_.
 	if (U_ == Teuchos::null) {
 	  // Get the multivectors.
-	  TEST_FOR_EXCEPTION(rhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify right hand multivector to clone from.");
-	  TEST_FOR_EXCEPTION(lhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify left hand multivector to clone from.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(rhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify right hand multivector to clone from.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(lhsMV == Teuchos::null, std::invalid_argument, "LSQRIter::setStateSize(): linear problem does not specify left hand multivector to clone from.");
 
 	  U_ = MVT::Clone( *rhsMV, 1 ); // LeftPrecond * rhs
 	  V_ = MVT::Clone( *lhsMV, 1 ); // zero, overwrittein in 
@@ -345,7 +345,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "LSQRIter::initialize(): Cannot initialize state storage!");
     
     std::string errstr("LSQRIter::initialize(): Specified multivectors must have a consistent length and width.");
@@ -464,7 +464,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
 
     // Check that the current solution vector only has one column. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, LSQRIterateFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, LSQRIterateFailure,
                         "LSQRIter::iterate(): current linear system has more than one vector!" );
 
     // In initializeLSQR among other things V = A' U.

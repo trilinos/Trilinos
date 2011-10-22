@@ -105,7 +105,7 @@ template<class Scalar>
 bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k].isConst();
 }
@@ -116,7 +116,7 @@ RCP<LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k].getNonconstObj();
 }
@@ -127,7 +127,7 @@ RCP<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k];
 }
@@ -212,7 +212,7 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -304,7 +304,7 @@ void DefaultMultipliedLinearOp<Scalar>::validateOps()
   try {
     const int nOps = Ops_.size();
     for( int k = 0; k < nOps; ++k ) {
-      TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
+      TEUCHOS_TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
       if( k < nOps-1 ) {
         THYRA_ASSERT_LINEAR_OP_TIMES_LINEAR_OP_SPACES_NAMES(
           "DefaultMultipliedLinearOp<Scalar>::initialize(...)"

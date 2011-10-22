@@ -79,7 +79,7 @@ Teuchos::RCP<const Epetra_Map> Simple_ModelEval::get_f_map() const
 
 Teuchos::RCP<const Epetra_Map> Simple_ModelEval::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -89,7 +89,7 @@ Teuchos::RCP<const Epetra_Map> Simple_ModelEval::get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map> Simple_ModelEval::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(j != 0, std::logic_error,
                      std::endl <<
                      "Error!  Simple_ModelEval::get_g_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -104,7 +104,7 @@ Teuchos::RCP<const Epetra_Vector> Simple_ModelEval::get_x_init() const
 
 Teuchos::RCP<const Epetra_Vector> Simple_ModelEval::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<

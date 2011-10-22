@@ -263,7 +263,7 @@ namespace Teuchos {
   template<typename OrdinalType, typename ScalarType>
   ScalarType SerialDenseVector<OrdinalType, ScalarType>::dot( const SerialDenseVector<OrdinalType, ScalarType> &x) const
   {
-    TEST_FOR_EXCEPTION(this->numRows_!= x.numRows_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(this->numRows_!= x.numRows_, std::invalid_argument,
     "SerialDenseVector<T>::dot : " << 
     "Number of rows " << this->numRows_ << " not equal to x.numRows_ "<< x.numRows() );
    

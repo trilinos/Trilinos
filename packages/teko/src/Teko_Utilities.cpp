@@ -206,7 +206,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
       }
 
       // insert row data into graph Laplacian matrix
-      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
+      TEUCHOS_TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
    }
 
    gl->FillComplete();
@@ -286,7 +286,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
       }
 
       // insert row data into graph Laplacian matrix
-      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
+      TEUCHOS_TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
    }
 
    gl->FillComplete();
@@ -661,7 +661,7 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
    // build Thyra diagonal operator
    return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
@@ -695,7 +695,7 @@ const MultiVector getDiagonal(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
    return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
 }
@@ -748,7 +748,7 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
    diag->Reciprocal(*diag);
 
    // build Thyra diagonal operator
@@ -978,11 +978,11 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
 const LinearOp explicitTranspose(const LinearOp & op)
 {
    RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
-   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
                              "Teko::explicitTranspose Not an Epetra_Operator");
    RCP<const Epetra_RowMatrix> eRowMatrixOp 
          = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
-   TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
                              "Teko::explicitTranspose Not an Epetra_RowMatrix");
 
    // we now have a delete transpose operator
@@ -1252,7 +1252,7 @@ ModifiableLinearOp getDiagonalOp(const Teko::LinearOp & A,const DiagonalType & d
       return getAbsRowSumMatrix(A);  
    case NotDiag:
    default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
    };
 
    return Teuchos::null;
@@ -1277,7 +1277,7 @@ ModifiableLinearOp getInvDiagonalOp(const Teko::LinearOp & A,const Teko::Diagona
       return getAbsRowSumInvMatrix(A);  
    case NotDiag:
    default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
    };
 
    return Teuchos::null;
@@ -1338,7 +1338,7 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
   prober.probe(Mwrap,*Mat);
   return Thyra::epetraLinearOp(Mat);    
 #else
-  TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
 #endif
 }
 

@@ -174,7 +174,7 @@ void RTOpPack::deserialize(
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_values_off], 1, &num_values);
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_indexes_off], 1, &num_indexes);
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_chars_off], 1, &num_chars);
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     !(
       num_values==num_values_in && num_indexes==num_indexes_in
       && num_chars==num_chars_in )
@@ -230,10 +230,10 @@ void ReductTargetSerializer<Scalar>::serialize(
   ) const
 {
 #ifdef RTOP_DEBUG
-  TEST_FOR_EXCEPT( !(count > 0) );
-  TEST_FOR_EXCEPT( !reduct_objs );
-  TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
-  TEST_FOR_EXCEPT( !charBuffer );
+  TEUCHOS_TEST_FOR_EXCEPT( !(count > 0) );
+  TEUCHOS_TEST_FOR_EXCEPT( !reduct_objs );
+  TEUCHOS_TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
+  TEUCHOS_TEST_FOR_EXCEPT( !charBuffer );
 #endif
   Ordinal offset = 0;
   for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
@@ -261,10 +261,10 @@ void ReductTargetSerializer<Scalar>::deserialize(
   ) const
 {
 #ifdef RTOP_DEBUG
-  TEST_FOR_EXCEPT( !(bytes > 0) );
-  TEST_FOR_EXCEPT( !charBuffer );
-  TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
-  TEST_FOR_EXCEPT( !reduct_objs );
+  TEUCHOS_TEST_FOR_EXCEPT( !(bytes > 0) );
+  TEUCHOS_TEST_FOR_EXCEPT( !charBuffer );
+  TEUCHOS_TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
+  TEUCHOS_TEST_FOR_EXCEPT( !reduct_objs );
 #endif
   Ordinal offset = 0;
   for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
@@ -485,7 +485,7 @@ void RTOpPack::SPMD_apply_op(
     }
     else {
       // Check the preconditions for excluding empty target vectors.
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         ( ( num_vecs && !sub_vecs) || ( num_targ_vecs && !sub_targ_vecs) ) && !( !sub_vecs && !sub_targ_vecs )
         ,std::logic_error
         ,"SPMD_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs

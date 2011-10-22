@@ -29,7 +29,7 @@
 #ifndef TPETRA_RTI_detail_HPP
 #define TPETRA_RTI_detail_HPP
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 
@@ -259,7 +259,7 @@ namespace Tpetra {
         op.setData(out_ptr, in_ptr);
         const size_t N = mv_inout.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::binary_transform(): multivectors must share the same node.");
 #endif
         node->template parallel_for(0, N, op);
@@ -283,7 +283,7 @@ namespace Tpetra {
         op.setData(out_ptr, in_ptr2, in_ptr3);
         const size_t N = mv_inout.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode() || mv_in3.getNode() != mv_in2.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode() || mv_in3.getNode() != mv_in2.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::tertiary_transform(): multivectors must share the same node.");
 #endif
         node->template parallel_for(0, N, op);
@@ -307,7 +307,7 @@ namespace Tpetra {
         op.setData( in_ptr1, in_ptr2 );
         const size_t N = mv_in1.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::reduce(): multivectors must share the same node.");
 #endif
         // compute local reduction
@@ -339,7 +339,7 @@ namespace Tpetra {
         op.setData( in_ptr1, in_ptr2, in_ptr3 );
         const size_t N = mv_in1.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode() || mv_in2.getNode() != mv_in3.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode() || mv_in2.getNode() != mv_in3.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::reduce(): multivectors must share the same node.");
 #endif
         // compute local reduction
@@ -369,7 +369,7 @@ namespace Tpetra {
         op.setData( in_ptr1, in_ptr2 );
         const size_t N = mv_inout.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_inout.getNode() != mv_in2.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_inout.getNode() != mv_in2.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::transform_reduce(): multivectors must share the same node.");
 #endif
         // compute local reduction
@@ -401,7 +401,7 @@ namespace Tpetra {
         op.setData( in_ptr1, in_ptr2, in_ptr3 );
         const size_t N = mv_inout.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION( mv_inout.getNode() != mv_in2.getNode() && mv_inout.getNode() != mv_in3.getNode(), std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( mv_inout.getNode() != mv_in2.getNode() && mv_inout.getNode() != mv_in3.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::transform_transform(): multivectors must share the same node.");
 #endif
         // compute local reduction

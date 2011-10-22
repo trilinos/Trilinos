@@ -73,9 +73,9 @@ void DelayedLinearOpWithSolve<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEST_FOR_EXCEPT(!is_null(prec) && !is_null(approxFwdOpSrc));
-  TEST_FOR_EXCEPT(is_null(lowsf));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(!is_null(prec) && !is_null(approxFwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif  
   fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;

@@ -191,7 +191,7 @@ public:
    */
   template<class T>
   void addAttribute(const std::string& name, T value) {
-  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");
   ptr_->addAttribute(name, Teuchos::toString(value));
   }

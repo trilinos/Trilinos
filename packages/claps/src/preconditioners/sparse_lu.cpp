@@ -218,7 +218,11 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   NLNZ=XLNZ[N];
   //  cout << "number of nonzeros in LU factorization = " << NLNZ << endl;
   //  cout << "NLNZ = " << NLNZ << endl;
-  LNZ = new double[NLNZ];
+
+  // later, sparsepak will call dgemm on some of the "panels" in this data. We need to have
+  // memory on the end of the array to ensure we don't overrun. Without the extra "N", we
+  // may not have all of the last column allocated.
+  LNZ = new double[NLNZ+N];
   for (int i=0;i<NLNZ;i++) LNZ[i]=0;
   for (int i=0;i<N;i++) DEF[i]=0;
   NDEF=0;

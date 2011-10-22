@@ -49,7 +49,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
       
       int size = quad_vector->size();
 
-      TEST_FOR_EXCEPTION(size != dims[0]*dims[1]*dims[2], std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(size != dims[0]*dims[1]*dims[2], std::runtime_error, 
 			 "Size mismatch on MDField!");
 
       ArrayRCP<double> a_mem = arcp<double>(size);

@@ -19,6 +19,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
@@ -94,6 +97,10 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
+#endif
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
@@ -162,6 +169,18 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",1);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
   }
 #endif
 
@@ -308,9 +327,9 @@ namespace {
     Tuple<size_t,4> inView2 = tuple<size_t>(6,0,4,3);
     Tuple<size_t,4> exView2 = tuple<size_t>(1,2,5,7);
     const size_t numView = 4;
-    TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
-    TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
-    TEST_FOR_EXCEPTION(numView != as<size_t>(inView2.size()), std::logic_error, "Someone ruined a test invariant.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numView != as<size_t>(inView2.size()), std::logic_error, "Someone ruined a test invariant.");
     {
       // test dot, all norms, randomize
       MV mvOrig1(map,numVecs), mvOrig2(map,numVecs+1), mvWeights(map,numVecs);
@@ -428,7 +447,7 @@ namespace {
         }
       }
       {
-        TEST_FOR_EXCEPTION(inView1.size() != 4, std::logic_error, "Someone ruined a test invariant.");
+        TEUCHOS_TEST_FOR_EXCEPTION(inView1.size() != 4, std::logic_error, "Someone ruined a test invariant.");
         Tuple<size_t,4> reorder = tuple<size_t>(3,1,0,2);
         RCP<MV> dvA = mvViewA->subViewNonConst(reorder);
         RCP<MV> dvB = mvViewB->subViewNonConst(reorder);
@@ -939,7 +958,7 @@ namespace {
     MV A(map,numVectors,false);
     {
       A.randomize();
-      TEST_FOR_EXCEPT(numVectors != 13);
+      TEUCHOS_TEST_FOR_EXCEPT(numVectors != 13);
       Range1D inds1(8,12);
       // get a subview and a subcopy of certain vectors of A
       // check that the norms are the same
@@ -982,7 +1001,7 @@ namespace {
     }
     {
       A.randomize();
-      TEST_FOR_EXCEPT(numVectors != 13);
+      TEUCHOS_TEST_FOR_EXCEPT(numVectors != 13);
       Tuple<size_t,5> inds = tuple<size_t>(0,5,6,7,12);
       // get a subview and a subcopy of certain vectors of A
       // check that the norms are the same
@@ -1026,7 +1045,7 @@ namespace {
       A.randomize();
       Array<Mag> Anorms(numVectors);
       A.norm2(Anorms());
-      TEST_FOR_EXCEPT(numVectors != 13);
+      TEUCHOS_TEST_FOR_EXCEPT(numVectors != 13);
       for (size_t vc=0; vc < 2; ++vc) {
         // vc == 0 -> view
         // vc == 1 -> copy
@@ -1153,7 +1172,7 @@ namespace {
     const size_t numVectors = 6;
     Array<size_t> even(tuple<size_t>(1,3,5));
     Array<size_t>  odd(tuple<size_t>(0,2,4));
-    TEST_FOR_EXCEPTION( even.size() != odd.size(), std::logic_error, "Test setup assumption violated.");
+    TEUCHOS_TEST_FOR_EXCEPTION( even.size() != odd.size(), std::logic_error, "Test setup assumption violated.");
     RCP<const Map<Ordinal,Ordinal,Node> > fullMap = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     RCP<const Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal1,comm,node);
     RCP<const Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal2,comm,node);
@@ -1401,7 +1420,7 @@ namespace {
     // * get 1-vector subview(Range1D), MultiVector::operator=
     // * get 1-vector subview(ArrayView), MultiVector::operator=
     // * get data view, assign
-    TEST_FOR_EXCEPT(numVectors < 4);
+    TEUCHOS_TEST_FOR_EXCEPT(numVectors < 4);
     for (size_t j = 0; j < numVectors; ++j) {
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
@@ -1591,7 +1610,7 @@ namespace {
       MV mvorig(map,numVectors);
       mvorig.randomize();
       // create non-const subview, test copy constructor
-      TEST_FOR_EXCEPT(numVectors != 7);
+      TEUCHOS_TEST_FOR_EXCEPT(numVectors != 7);
       Tuple<size_t,3> inds = tuple<size_t>(1,3,5);
       RCP<MV> mvview = mvorig.subViewNonConst(inds);
       Array<Mag> norig(numVectors), nsub(inds.size()), ncopy(inds.size());
@@ -2164,6 +2183,13 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OMPNODE(ORDINAL, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OMPNODE(ORDINAL, SCALAR)
+#endif
+
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
 #if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
 // float
@@ -2205,7 +2231,8 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_ALLCPUNODES(ORDINAL, SCALAR) \
     UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
     UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TPINODE(ORDINAL, SCALAR)
+    UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
+    UNIT_TEST_OMPNODE(ORDINAL, SCALAR)
 
 #define UNIT_TEST_FLOAT(ORDINAL) \
     UNIT_TEST_ALLCPUNODES(ORDINAL, float) \

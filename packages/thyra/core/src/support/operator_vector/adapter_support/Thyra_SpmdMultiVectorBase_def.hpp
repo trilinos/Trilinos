@@ -109,7 +109,7 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument,
     "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...): Error, this method is"
     " being entered recursively which is a clear sign that one of the methods"
@@ -343,18 +343,18 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
     &Y_range = *Y->range(),
     &X_range = *X.range();
 //	std::cout << "SpmdMultiVectorBase<Scalar>::apply(...): comm = " << comm << std::endl;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ( globalDim_ > localSubDim_ ) && comm.get()==NULL, std::logic_error
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
   // ToDo: Write a good general validation function that I can call that will replace
-  // all of these TEST_FOR_EXCEPTION(...) uses
+  // all of these TEUCHOS_TEST_FOR_EXCEPTION(...) uses
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==NOTRANS && !spmdSpc.isCompatible(Y_range), Exceptions::IncompatibleVectorSpaces
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==TRANS && !spmdSpc.isCompatible(X_range), Exceptions::IncompatibleVectorSpaces
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
@@ -391,12 +391,12 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   std::cout << "\nSpmdMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
 #endif
 #ifdef TEUCHOS_DEBUG		
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==NOTRANS && ( M_local.numSubCols() != X_local.subDim() || X_local.numSubCols() != Y_local.numSubCols() )
     , Exceptions::IncompatibleVectorSpaces
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==TRANS && ( M_local.subDim() != X_local.subDim() || X_local.numSubCols() != Y_local.numSubCols() )
     , Exceptions::IncompatibleVectorSpaces
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
@@ -486,14 +486,14 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       case NOTRANS: t_transp = Teuchos::NO_TRANS; break;
       case TRANS: t_transp = Teuchos::TRANS; break;
       case CONJTRANS: t_transp = Teuchos::CONJ_TRANS; break;
-      default: TEST_FOR_EXCEPT(true);
+      default: TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
   else {
     switch(real_trans(M_trans)) {
       case NOTRANS: t_transp = Teuchos::NO_TRANS; break;
       case TRANS: t_transp = Teuchos::TRANS; break;
-      default: TEST_FOR_EXCEPT(true);
+      default: TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
   if (M_local.numSubCols() > 0) {
@@ -594,7 +594,7 @@ Range1D SpmdMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in 
 {
   const Range1D rowRng = Teuchos::full_range(rowRng_in,0,globalDim_-1);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= rowRng.lbound() && rowRng.ubound() < globalDim_ ), std::invalid_argument
     ,"SpmdMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not "
@@ -610,7 +610,7 @@ Range1D SpmdMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in 
 {
   const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
     ,"SpmdMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not "

@@ -167,10 +167,10 @@ void StepperAsModelEvaluator<Scalar>::initialize(
   )
 {
 
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(stepper));
-  TEST_FOR_EXCEPT(is_null(stepper->getModel()));
-  TEST_FOR_EXCEPT(is_null(integrator));
+#ifdef HAVE_RYTHMOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper->getModel()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(integrator));
 #endif
   stepper_ = stepper;
   integrator_ = integrator;
@@ -214,7 +214,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_[l];
@@ -225,7 +225,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_g_space(int j) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_[j];
@@ -290,11 +290,11 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
   RCP<Thyra::VectorBase<Scalar> >
     g_out = outArgs.get_g(0);
 
-  TEST_FOR_EXCEPT_MSG(
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
     is_null(g_out), "You must ask for g(0) when you call this function!"
     );
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
 
   THYRA_ASSERT_VEC_SPACES(
     "StepperAsModelEvaluator<Scalar>::evalModel(...)",

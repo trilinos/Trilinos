@@ -814,7 +814,7 @@ RCP<const SimpleFunctionObject<T> >
 template<class T>
 void NumberVisualDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !dependee->isType<T>(),
     InvalidDependencyException,
     "The dependee of a " <<
@@ -981,7 +981,7 @@ ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
 
 template<class DependeeType, class DependentType>
 void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     typeid(DependeeType) != getFirstDependee()->getAny().type(),
     InvalidDependencyException,
     "Ay no! The dependee parameter types don't match." << std::endl <<
@@ -998,7 +998,7 @@ void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
     newAmount = this->getFunctionObject()->runFunction(newAmount);
   }
 
-  TEST_FOR_EXCEPTION(newAmount < OrdinalTraits<DependeeType>::zero(),
+  TEUCHOS_TEST_FOR_EXCEPTION(newAmount < OrdinalTraits<DependeeType>::zero(),
     Exceptions::InvalidParameterValue,
     getBadDependentValueErrorMessage());
 
@@ -1176,7 +1176,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
     it != this->getDependents().end(); 
     ++it)
   {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::Array<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
         "Ay no! The dependent parameter types don't match." << std::endl <<
@@ -1729,14 +1729,14 @@ void RangeValidatorDependency<T>::evaluate(){
 template<class T>
 void RangeValidatorDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
-  TEST_FOR_EXCEPTION(dependee->getAny().type() != typeid(T),
+  TEUCHOS_TEST_FOR_EXCEPTION(dependee->getAny().type() != typeid(T),
     InvalidDependencyException,
     "The dependee of a RangeValidatorDependency must be the same type as " <<
     "The RangeValidatorDependency template type!" << std::endl <<
     "Dependee Type: " << dependee->getAny().typeName() << std::endl <<
     "Templated Type: " << TypeNameTraits<T>::name() << std::endl << std::endl);
   
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     rangesAndValidators_.size() < 1,
     InvalidDependencyException,
     "The rangesAndValidators map RangeValidatorDependency "
@@ -1747,11 +1747,11 @@ void RangeValidatorDependency<T>::validateDep() const{
   RCP<const ParameterEntryValidator> firstValidator = it->second;
   ++it;
   for(; it!=rangesAndValidators_.end(); ++it){
-    TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
+    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
       InvalidDependencyException,
       "Ay no! All of the validators in a RangeValidatorDependency "
       "must have the same type.");
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       it->first.first > it->first.second,
       InvalidDependencyException,
       "The Range " << it->first.first << " to " << it->first.second <<
@@ -1759,7 +1759,7 @@ void RangeValidatorDependency<T>::validateDep() const{
       );
   }
   
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(defaultValidator_) 
     && 
     typeid(*firstValidator) != typeid(*defaultValidator_),
@@ -1899,7 +1899,7 @@ TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep()
     it != this->getDependents().end(); 
     ++it)
   {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
         "Ay no! The dependent parameter types don't match." << std::endl <<

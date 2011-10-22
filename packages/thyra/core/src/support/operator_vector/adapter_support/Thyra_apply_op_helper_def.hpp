@@ -46,7 +46,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
 
@@ -63,7 +63,7 @@ void Thyra::apply_op_validate_input(
 {
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     global_offset_in < 0, std::logic_error
     ,func_name << " : Error! global_offset_in = "
     <<global_offset_in<<" is not valid" );
@@ -88,7 +88,7 @@ void Thyra::apply_op_validate_input(
 {
   using Teuchos::as;
   // Validate primary range arguments
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     primary_global_offset_in < 0, std::logic_error
     ,func_name << " : Error! primary_global_offset_in = "
     <<primary_global_offset_in<<" is not valid" );

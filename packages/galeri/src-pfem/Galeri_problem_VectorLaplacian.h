@@ -100,7 +100,7 @@ class VectorLaplacian // FIXME????? : public Base
       NE_ = rcp(new Galeri::quadrature::Hex(normDegree));
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                          "input elementType not recognized, " << elementType);
   }
 
@@ -126,7 +126,7 @@ class VectorLaplacian // FIXME????? : public Base
       ierr = A.InsertGlobalIndices(numVerticesPerElement, vertexList.Values(),
                                    numVerticesPerElement, vertexList.Values());
 
-      TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
                          "InsertGlobalIndices() returned a negative value, "
                          << ierr);
     }
@@ -171,7 +171,7 @@ class VectorLaplacian // FIXME????? : public Base
       {
         ierr = A.BeginSumIntoGlobalValues(vertexList[j], vertexList.Length(),
                                           vertexList.Values());
-        TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
                            "SubmitBlockEntry() returned a negative value, "
                            << ierr);
 
@@ -182,13 +182,13 @@ class VectorLaplacian // FIXME????? : public Base
               entry(ieq, jeq) = elementLHS(j * numPDEs_ + ieq, k * numPDEs_ + jeq);
 
           ierr = A.SubmitBlockEntry(entry.A(), numPDEs_, numPDEs_, numPDEs_);
-          TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
                              "SubmitBlockEntry() returned a negative value, "
                              << ierr);
         }
 
         ierr = A.EndSubmitEntries();
-        TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
                            "SubmitBlockEntry() returned a negative value, "
                            << ierr);
       }
@@ -270,7 +270,7 @@ class VectorLaplacian // FIXME????? : public Base
   {
     Epetra_FEVbrMatrix& A = dynamic_cast<Epetra_FEVbrMatrix&>(RowA);
 
-    TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
                        "input matrix must be filled");
 
     const Epetra_BlockMap& matrixMap = A.RowMatrixRowMap();

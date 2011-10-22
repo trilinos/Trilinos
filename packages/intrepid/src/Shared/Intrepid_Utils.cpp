@@ -80,7 +80,7 @@ int getFieldRank(const EFunctionSpace spaceType) {
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( isValidFunctionSpace(spaceType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( isValidFunctionSpace(spaceType) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::getFieldRank): Invalid function space type");
   }
   return fieldRank;
@@ -96,10 +96,10 @@ int getOperatorRank(const EFunctionSpace spaceType,
   
   // Verify arguments: field rank can be 0,1, or 2, spaceDim can be 1,2, or 3.
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( !( (0 <= fieldRank) && (fieldRank <= 2) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= fieldRank) && (fieldRank <= 2) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid::getOperatorRank): Invalid field rank");
-  TEST_FOR_EXCEPTION( !( (1 <= spaceDim ) && (spaceDim  <= 3) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= spaceDim ) && (spaceDim  <= 3) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid::getOperatorRank): Invalid space dimension");
 #endif
@@ -120,7 +120,7 @@ int getOperatorRank(const EFunctionSpace spaceType,
     
     // Only scalar fields are allowed in 1D
     else {
-      TEST_FOR_EXCEPTION( ( fieldRank > 0 ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( fieldRank > 0 ),
                           std::invalid_argument,
                           ">>> ERROR (getOperatorRank): Only scalar fields are allowed in 1D");  
     } // fieldRank == 0
@@ -162,7 +162,7 @@ int getOperatorRank(const EFunctionSpace spaceType,
           
           // If we are here, fieldRank=0, spaceDim=3: CURL is undefined for 3D scalar functions
           else {
-            TEST_FOR_EXCEPTION( ( (spaceDim == 3) && (fieldRank == 0) ), std::invalid_argument,
+            TEUCHOS_TEST_FOR_EXCEPTION( ( (spaceDim == 3) && (fieldRank == 0) ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::getOperatorRank): CURL cannot be applied to scalar fields in 3D");  
           }
         }
@@ -177,13 +177,13 @@ int getOperatorRank(const EFunctionSpace spaceType,
         
         // DIV cannot be applied to scalar fields except in 1D where it defaults to d/dx
         else {
-          TEST_FOR_EXCEPTION( ( (spaceDim > 1) && (fieldRank == 0) ), std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION( ( (spaceDim > 1) && (fieldRank == 0) ), std::invalid_argument,
                               ">>> ERROR (Intrepid::getOperatorRank): DIV cannot be applied to scalar fields in 2D and 3D");  
         }
         break;
         
       default:
-        TEST_FOR_EXCEPTION( !( isValidOperator(operatorType) ), std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( !( isValidOperator(operatorType) ), std::invalid_argument,
                             ">>> ERROR (Intrepid::getOperatorRank): Invalid operator type");
     } // switch
   }// 2D and 3D
@@ -222,7 +222,7 @@ int getOperatorOrder(const EOperator operatorType) {
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ),
                           std::invalid_argument,
                           ">>> ERROR (Intrepid::getOperatorOrder): Invalid operator type");
   }
@@ -239,7 +239,7 @@ int getDkEnumeration(const int xMult,
     
 #ifdef HAVE_INTREPID_DEBUG
     // We are in 1D: verify input - xMult is non-negative  and total order <= 10:
-    TEST_FOR_EXCEPTION( !( (0 <= xMult) && (xMult <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= xMult) && (xMult <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
                         ">>> ERROR (Intrepid::getDkEnumeration): Derivative order out of range");
 #endif
     
@@ -251,7 +251,7 @@ int getDkEnumeration(const int xMult,
       
 #ifdef HAVE_INTREPID_DEBUG
       // We are in 2D: verify input - xMult and yMult are non-negative and total order <= 10:
-      TEST_FOR_EXCEPTION( !( (0 <= xMult) && (0 <= yMult) && 
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= xMult) && (0 <= yMult) && 
                              ( (xMult + yMult) <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
                           ">>> ERROR (Intrepid::getDkEnumeration): Derivative order out of range");
 #endif
@@ -266,7 +266,7 @@ int getDkEnumeration(const int xMult,
       
 #ifdef HAVE_INTREPID_DEBUG
       // Verify input:  total order cannot exceed 10:
-      TEST_FOR_EXCEPTION(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) && 
+      TEUCHOS_TEST_FOR_EXCEPTION(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) && 
                               (order <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
                            ">>> ERROR (Intrepid::getDkEnumeration): Derivative order out of range");
 #endif
@@ -330,7 +330,7 @@ void getDkMultiplicities(Teuchos::Array<int>&  partialMult,
     
 #ifdef HAVE_INTREPID_DEBUG
   // Enumeration value must be between 0 and the cardinality of the derivative set
-  TEST_FOR_EXCEPTION( !( (0 <= derivativeEnum) && (derivativeEnum < getDkCardinality(operatorType,spaceDim) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= derivativeEnum) && (derivativeEnum < getDkCardinality(operatorType,spaceDim) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid::getDkMultiplicities): Invalid derivative enumeration value for this order and space dimension");
 #endif
@@ -353,7 +353,7 @@ void getDkMultiplicities(Teuchos::Array<int>&  partialMult,
       break;
       
     default:
-      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
                          ">>> ERROR (Intrepid::getDkMultiplicities): operator type Dk required for this method");
   }// switch
   
@@ -390,7 +390,7 @@ void getDkMultiplicities(Teuchos::Array<int>&  partialMult,
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::getDkMultiplicities): Invalid space dimension");          
   }
 }
@@ -418,7 +418,7 @@ int getDkCardinality(const EOperator operatorType,
       break;
       
     default:
-      TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
                         ">>> ERROR (Intrepid::getDkCardinality): operator type Dk required for this method");
   }// switch
 
@@ -438,7 +438,7 @@ int getDkCardinality(const EOperator operatorType,
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::getDkcardinality): Invalid space dimension");          
   }
   return cardinality;

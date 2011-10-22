@@ -325,7 +325,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,"Belos::GCRODRIter::setBlockSize(): Cannot use a block size that is not one.");
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,"Belos::GCRODRIter::setBlockSize(): Cannot use a block size that is not one.");
     }
 
     //! \brief Set the maximum number of blocks used by the iterative solver and the number of recycled vectors.
@@ -428,14 +428,14 @@ namespace Belos {
     B_              = Teuchos::null;
 
     // Get the maximum number of blocks allowed for this Krylov subspace
-    TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument, "Belos::GCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument, "Belos::GCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
-    TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,"Belos::GCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,"Belos::GCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
     int rb = Teuchos::getParameter<int>(params, "Recycled Blocks");
 
-    TEST_FOR_EXCEPTION(nb <= 0, std::invalid_argument, "Belos::GCRODRIter() was passed a non-positive argument for \"Num Blocks\".");
-    TEST_FOR_EXCEPTION(rb >= nb, std::invalid_argument, "Belos::GCRODRIter() the number of recycled blocks is larger than the allowable subspace.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nb <= 0, std::invalid_argument, "Belos::GCRODRIter() was passed a non-positive argument for \"Num Blocks\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(rb >= nb, std::invalid_argument, "Belos::GCRODRIter() the number of recycled blocks is larger than the allowable subspace.");
 
     numBlocks_ = nb;
     recycledBlocks_ = rb;
@@ -528,8 +528,8 @@ namespace Belos {
       B_      = newstate.B;
     }
     else {
-      TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have V initialized.");
-      TEST_FOR_EXCEPTION(newstate.H == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have H initialized.");
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have V initialized.");
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.H == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): GCRODRIterState does not have H initialized.");
     }
 
     // the solver is initialized
@@ -543,7 +543,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void GCRODRIter<ScalarType,MV,OP>::iterate() {
 
-    TEST_FOR_EXCEPTION( initialized_ == false, GCRODRIterInitFailure,"Belos::GCRODRIter::iterate(): GCRODRIter class not initialized." );
+    TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, GCRODRIterInitFailure,"Belos::GCRODRIter::iterate(): GCRODRIter class not initialized." );
 
     // Force call to setsize to ensure internal storage is correct dimension
     setSize( recycledBlocks_, numBlocks_ );
@@ -563,7 +563,7 @@ namespace Belos {
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 =
       Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
     int rank = ortho_->normalize( *Vnext, z0 );
-    TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
+    TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
     // Copy the scalar coefficient back into the z_ vector
     z_(0) = (*z0)(0,0);
 
@@ -616,7 +616,7 @@ namespace Belos {
         Teuchos::SerialDenseMatrix<int,ScalarType> subH2( Teuchos::View,*H_,lclDim+1,1,0,curDim_ );
         subR2.assign(subH2);
 
-        TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
 
         // Update the QR factorization of the upper Hessenberg matrix
         updateLSQR();
@@ -676,7 +676,7 @@ namespace Belos {
         Teuchos::SerialDenseMatrix<int,ScalarType> subH2( Teuchos::View,*H_,lclDim+1,1,0,curDim_ );
         subR2.assign(subH2);
       
-        TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure, "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
 
         // Update the QR factorization of the upper Hessenberg matrix
         updateLSQR();

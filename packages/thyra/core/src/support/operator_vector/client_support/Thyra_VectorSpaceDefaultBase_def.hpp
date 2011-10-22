@@ -115,7 +115,7 @@ VectorSpaceDefaultBase<Scalar>::createMemberView(
   const RTOpPack::SubVectorView<Scalar> &raw_v ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
+  TEUCHOS_TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
   RCP<VectorBase<Scalar> > v = this->createMember();
@@ -142,7 +142,7 @@ Teuchos::RCP<const VectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
+  TEUCHOS_TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
   RCP<VectorBase<Scalar> > v = this->createMember();
@@ -163,7 +163,7 @@ VectorSpaceDefaultBase<Scalar>::createMembersView(
   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
+  TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector
   RCP< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
@@ -192,7 +192,7 @@ VectorSpaceDefaultBase<Scalar>::createMembersView(
   const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
+  TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector
   RCP< MultiVectorBase<Scalar> > mv =

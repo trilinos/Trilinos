@@ -12,6 +12,5 @@
       call mpi_comm_rank(mpi_comm_world,rank,info)
       print *,'rank ',rank,' of ',np,' initialized'
       call mpi_finalize(info)
-      print *,'successfully called finalize'
 
       end

@@ -177,15 +177,15 @@ main (int argc, char *argv[])
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }
   //
   // Validate command-line arguments
   //
-  TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
 		     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
     
   // Declare an output manager for handling local output.  Initialize,
@@ -220,7 +220,7 @@ main (int argc, char *argv[])
     map = results.first;
     M = results.second;
   }
-  TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
   {

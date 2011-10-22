@@ -145,7 +145,7 @@ IF(NOT TriKota_ENABLE_DakotaCMake)
   SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
     ddace fsudace jega optpp
-    psuade newmat ncsuopt sparsegrid 
+    psuade ncsuopt sparsegrid 
     colin interfaces momh scolib pebbl tinyxml
     utilib 3po hopspack 
     cport amplsolver nidr dl 

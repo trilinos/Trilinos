@@ -145,7 +145,7 @@ void ListedMultiVectorRandomizer<Scalar>::randomizeImpl(
   const Ptr<MultiVectorBase<Scalar> > &mv)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( multiVecs_.size()==0 );
+  TEUCHOS_TEST_FOR_EXCEPT( multiVecs_.size()==0 );
 #endif
   const Teuchos::RCP<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
 #ifdef TEUCHOS_DEBUG

@@ -42,7 +42,6 @@
 /// \file BelosTsqrOrthoManagerImpl.hpp
 /// \brief Orthogonalization manager back end based on TSQR
 ///
-
 #ifndef __BelosTsqrOrthoManagerImpl_hpp
 #define __BelosTsqrOrthoManagerImpl_hpp
 
@@ -57,13 +56,12 @@
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 #include <algorithm>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Belos {
 
   /// \class TsqrOrthoError
   /// \brief TsqrOrthoManager(Impl) error
+  /// \author Mark Hoemmen
   class TsqrOrthoError : public OrthoError
   {
   public: 
@@ -73,6 +71,7 @@ namespace Belos {
 
   /// \class TsqrOrthoFault
   /// \brief Orthogonalization fault
+  /// \author Mark Hoemmen
   ///
   /// Stewart (SISC 2008) presents a Block Gram-Schmidt (BGS)
   /// algorithm with careful reorthogonalization.  He defines an
@@ -98,24 +97,28 @@ namespace Belos {
 
   /// \class TsqrOrthoManagerImpl
   /// \brief TSQR-based OrthoManager subclass implementation
-  /// 
-  /// TsqrOrthoManagerImpl implements the interface defined by
-  /// OrthoManager.  It doesn't actually inherit from OrthoManager,
-  /// which gives us a bit more freedom when defining the actual
-  /// subclass of OrthoManager (TsqrOrthoManager).  
+  /// \author Mark Hoemmen
+  ///
+  /// TsqrOrthoManagerImpl implements the interface defined by \c
+  /// OrthoManager, as well as the interface defined by \c
+  /// OutOfPlaceNormalizerMixin.  We use TsqrOrthoManagerImpl to
+  /// implement \c TsqrOrthoManager and \c TsqrMatOrthoManager.
+  ///
+  /// \tparam Scalar The type of matrix and (multi)vector entries.
+  /// \tparam MV The type of (multi)vector inputs and outputs.
   ///
   /// This class uses a combination of Tall Skinny QR (TSQR) and Block
-  /// Gram-Schmidt (BGS) to orthogonalize multivectors.
-  ///
-  /// The Block Gram-Schmidt procedure used here is inspired by that
-  /// of G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC
-  /// vol 31 #1 pp. 761--775, 2008), except that we use TSQR+SVD
-  /// instead of (Gram-Schmidt with reorthogonalization) to handle the
-  /// current block.  "Orthogonalization faults" may still happen, but
-  /// we do not handle them by default.  Rather, we make one BGS pass,
-  /// do TSQR+SVD, check the resulting column norms, and make a second
-  /// BGS pass (+ TSQR+SVD) if necessary.  If we then detect an
-  /// orthogonalization fault, we throw TsqrOrthoFault.
+  /// Gram-Schmidt (BGS) to orthogonalize multivectors.  The Block
+  /// Gram-Schmidt procedure used here is inspired by that of
+  /// G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC vol
+  /// 31 #1 pp. 761--775, 2008).  The difference is that we use
+  /// TSQR+SVD instead of Stewart's careful Gram-Schmidt with
+  /// reorthogonalization to handle the current block.
+  /// "Orthogonalization faults" (as defined by Stewart) may still
+  /// happen, but we do not handle them by default.  Rather, we make
+  /// one BGS pass, do TSQR+SVD, check the resulting column norms, and
+  /// make a second BGS pass (+ TSQR+SVD) if necessary.  If we then
+  /// detect an orthogonalization fault, we throw \c TsqrOrthoFault.
   ///
   /// \note Despite the "Impl" part of the name of this class, we
   ///   don't actually use it for the "pImpl" C++ idiom.  We just
@@ -144,7 +147,7 @@ namespace Belos {
     typedef Teuchos::RCP<tsqr_adaptor_type> tsqr_adaptor_ptr;
 
   public:
-    /// \brief Get default parameters for TsqrOrthoManagerImpl
+    /// \brief Get default parameters for TsqrOrthoManagerImpl.
     ///
     /// Get a (pointer to a) default list of parameters for
     /// configuring a TsqrOrthoManager or TsqrMatOrthoManager
@@ -163,7 +166,7 @@ namespace Belos {
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters ();
 
-    /// \brief Get "fast" parameters for TsqrOrthoManagerImpl
+    /// \brief Get "fast" parameters for TsqrOrthoManagerImpl.
     ///
     /// Get a (pointer to a) list of parameters for configuring a
     /// TsqrOrthoManager or TsqrMatOrthoManager instance for maximum
@@ -180,7 +183,7 @@ namespace Belos {
     ///
     static Teuchos::RCP<const Teuchos::ParameterList> getFastParameters ();
 
-    /// Constructor
+    /// \brief Constructor
     ///
     /// \param params [in] Configuration parameters, both for this
     ///   orthogonalization manager, and for TSQR itself (as an
@@ -201,13 +204,13 @@ namespace Belos {
     TsqrOrthoManagerImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 			  const std::string& label);
 
-    //! Set the label for timers (if timers are enabled)
+    //! Set the label for timers (if timers are enabled).
     void setLabel (const std::string& label) { label_ = label; }
 
-    //! Get the label for timers (if timers are enabled)
+    //! Get the label for timers (if timers are enabled).
     const std::string& getLabel () { return label_; }
 
-    /// \brief Euclidean inner product
+    /// \brief Euclidean inner product.
     ///
     /// Compute the Euclidean block inner product X^* Y, and store the
     /// result in Z.
@@ -221,7 +224,7 @@ namespace Belos {
       MVT::MvTransMv (SCT::one(), X, Y, Z);
     }
 
-    /// Compute the 2-norm of each column j of X
+    /// \brief Compute the 2-norm of each column j of X.
     ///
     /// \param X [in] Multivector for which to compute column norms
     /// \param normvec [out] On output: normvec[j] is the 2-norm of
@@ -262,7 +265,7 @@ namespace Belos {
 	     Teuchos::Array<mat_ptr> C, 
 	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q);
 
-    /// \brief Orthogonalize the columns of X in place
+    /// \brief Orthogonalize the columns of X in place.
     ///
     /// Orthogonalize the columns of X in place, storing the resulting
     /// coefficients in B.  Return the rank of X.  If X is full rank,
@@ -277,7 +280,7 @@ namespace Belos {
     /// \return Rank of X
     int normalize (MV& X, mat_ptr B);
 
-    /// \brief Normalize X into Q*B, overwriting X
+    /// \brief Normalize X into Q*B, overwriting X.
     ///
     /// Normalize X into Q*B, overwriting X with invalid values.
     ///
@@ -309,14 +312,9 @@ namespace Belos {
 	  using Teuchos::RCP;
 	  using Teuchos::rcp;
 
-	  // Make space for the normalization coefficient
-	  if (B.is_null())
-	    B = rcp (new mat_type (1, 1));
-	  else 
-	    B->shape (1, 1);
-	  // Normalize X in place (faster than TSQR for one column)
+	  // Normalize X in place (faster than TSQR for one column).
 	  const int rank = normalizeOne (X, B);
-	  // Copy results to first column of Q
+	  // Copy results to first column of Q.
 	  RCP<MV> Q_0 = MVT::CloneViewNonConst (Q, Range1D(0,0));
 	  MVT::Assign (X, *Q_0);
 	  return rank;
@@ -327,9 +325,12 @@ namespace Belos {
 	return normalizeImpl (X, Q, B, true);
     }
 
-    /// Equivalent (in exact arithmetic) to project(X,C,Q) followed by
-    /// normalize(X,B).  However, this method performs
-    /// reorthogonalization more efficiently and accurately.
+    /// \brief Project X against Q and normalize X.
+    ///
+    /// This method is equivalent (in exact arithmetic) to
+    /// project(X,C,Q) followed by normalize(X,B).  However, the
+    /// interface allows this method to implement reorthogonalization
+    /// more efficiently and accurately.
     ///
     /// \param X [in/out] The vectors to project against Q and normalize
     /// \param C [out] The projection coefficients 
@@ -417,12 +418,15 @@ namespace Belos {
     magnitude_type relativeRankTolerance() const { return relativeRankTolerance_; }
 
   private:
-    //! Configuration parameters
+    //! Configuration parameters.
     Teuchos::RCP<const Teuchos::ParameterList> params_;
-    //! Label for timers (if timers are used)
+
+    //! Label for timers (if timers are used).
     std::string label_;
-    //! Interface to TSQR implementation
+
+    //! Interface to TSQR implementation.
     tsqr_adaptor_ptr tsqrAdaptor_;
+
     /// \brief Scratch space for TSQR
     ///
     /// Allocated lazily; only allocated if normalize() is called.  We
@@ -434,18 +438,32 @@ namespace Belos {
     //! Machine precision for Scalar
     magnitude_type eps_;
 
-    /// Whether to fill in null space vectors (after normalization)
-    /// with random data.
+    /// \brief Whether to fill null space vectors with random data.
+    ///
+    /// If so, this happens after normalization.
     bool randomizeNullSpace_;
+
     //! Whether to reorthogonalize blocks at all.
     bool reorthogonalizeBlocks_;
-    /// Whether to throw an exception when an orthogonalization fault
-    /// occurs.  Recovery is possible, but expensive.
+
+    /// \brief Whether to throw an exception on a orthogonalization fault.
+    ///
+    /// Recovery is possible, but expensive.
     bool throwOnReorthogFault_;
+
     //! Relative reorthogonalization threshold in Block Gram-Schmidt.
     magnitude_type blockReorthogThreshold_;
+
     //! Relative tolerance for measuring the numerical rank of a matrix.
     magnitude_type relativeRankTolerance_;
+
+    /// \brief Force R factor of normalization to have a nonnegative diagonal.
+    ///
+    /// If true, then (if necessary) do extra work (modifying both the
+    /// Q and R factors) in the normalization step in order to force
+    /// the R factor of the current block to have a nonnegative
+    /// diagonal.
+    bool forceNonnegativeDiagonal_;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     //! Timer for all orthogonalization operations
@@ -473,7 +491,7 @@ namespace Belos {
     }
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    //! Throw a reorthgonalization fault exception
+    //! Throw a reorthgonalization fault exception.
     void
     raiseReorthogFault (const std::vector<magnitude_type>& normsAfterFirstPass,
 			const std::vector<magnitude_type>& normsAfterSecondPass,
@@ -563,7 +581,7 @@ namespace Belos {
 	}
     }
 
-    //! Set parameters from the given parameter list
+    //! Set parameters from the given parameter list.
     void
     readParams (const Teuchos::RCP<const Teuchos::ParameterList>& params)
     {
@@ -577,6 +595,8 @@ namespace Belos {
 	getMagParamWithDefault (params, "blockReorthogThreshold");
       relativeRankTolerance_ = 
 	getMagParamWithDefault (params, "relativeRankTolerance");
+      forceNonnegativeDiagonal_ = 
+	getBoolParamWithDefault (params, "forceNonnegativeDiagonal");
     }
 
     /// \brief Initialize the TSQR adaptor and scratch space
@@ -607,47 +627,42 @@ namespace Belos {
       } catch (InvalidParameter&) {
 	// We'll try to fetch "TsqrImpl" as a sublist instead.
       }
-      if (! gotTsqrParams)
-	{
-	  try {
-	    // We don't need to make a deep copy, since the
-	    // tsqrAdaptor_ which receives this sublist will fall out
-	    // of scope at the same time as params_, and params_ will
-	    // protect the sublist from falling out of scope.
-	    tsqrParams = rcpFromRef (params_->sublist ("TsqrImpl"));
-	    gotTsqrParams = true;
-	  } catch (InvalidParameter&) {
-	    // We'll try to fetch "TsqrImpl" from the default parameter
-	    // list instead.
-	  }
+      if (! gotTsqrParams) {
+	try {
+	  // We don't need to make a deep copy, since the
+	  // tsqrAdaptor_ which receives this sublist will fall out
+	  // of scope at the same time as params_, and params_ will
+	  // protect the sublist from falling out of scope.
+	  tsqrParams = rcpFromRef (params_->sublist ("TsqrImpl"));
+	  gotTsqrParams = true;
+	} catch (InvalidParameter&) {
+	  // We'll try to fetch "TsqrImpl" from the default parameter
+	  // list instead.
 	}
-      if (! gotTsqrParams)
-	{      
-	  RCP<const ParameterList> defaultParams = getDefaultParameters();
-	  try {
-	    tsqrParams = defaultParams->get<RCP<const ParameterList> >("TsqrImpl");
-	    gotTsqrParams = true;
-	  } catch (InvalidParameter&) {
-	    // We'll try to fetch "TsqrImpl" as a sublist instead.
-	  }
+      } if (! gotTsqrParams) {
+	RCP<const ParameterList> defaultParams = getDefaultParameters();
+	try {
+	  tsqrParams = defaultParams->get<RCP<const ParameterList> >("TsqrImpl");
+	  gotTsqrParams = true;
+	} catch (InvalidParameter&) {
+	  // We'll try to fetch "TsqrImpl" as a sublist instead.
 	}
-      if (! gotTsqrParams) 
-	{
-	  RCP<const ParameterList> defaultParams = getDefaultParameters();
-	  try {
-	    // We don't need to make a deep copy, since the
-	    // tsqrAdaptor_ which receives this sublist will fall out
-	    // of scope at the same time as params_, and params_ will
-	    // protect the sublist from falling out of scope.
-	    tsqrParams = rcpFromRef (defaultParams->sublist ("TsqrImpl"));
-	    gotTsqrParams = true;
-	  } catch (InvalidParameter&) {
-	    // We've tried to get TsqrImpl in all the ways we could.
-	    // If we haven't gotten it yet, or if we only got null,
-	    // we'll throw an exception below.
-	  }
+      } if (! gotTsqrParams) {
+	RCP<const ParameterList> defaultParams = getDefaultParameters();
+	try {
+	  // We don't need to make a deep copy, since the
+	  // tsqrAdaptor_ which receives this sublist will fall out
+	  // of scope at the same time as params_, and params_ will
+	  // protect the sublist from falling out of scope.
+	  tsqrParams = rcpFromRef (defaultParams->sublist ("TsqrImpl"));
+	  gotTsqrParams = true;
+	} catch (InvalidParameter&) {
+	  // We've tried to get TsqrImpl in all the ways we could.
+	  // If we haven't gotten it yet, or if we only got null,
+	  // we'll throw an exception below.
 	}
-      TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(!gotTsqrParams || tsqrParams.is_null(), 
 			 std::logic_error,
 			 "Belos::TsqrOrthoManagerImpl::lazyInit: Failed to find"
 			 " \"TsqrImpl\" parameter in either the input parameter"
@@ -819,14 +834,15 @@ namespace Belos {
 	     getDefaultParameters() : 
 	     Teuchos::rcp_const_cast<const Teuchos::ParameterList> (Teuchos::parameterList (*params))),
     label_ (label),
-    tsqrAdaptor_ (Teuchos::null),   // Initialized on demand
-    Q_ (Teuchos::null),             // Scratch space for normalize()
-    eps_ (SCTM::eps()),             // Machine precision
-    randomizeNullSpace_ (true),     // Set later by readParams()
-    reorthogonalizeBlocks_ (true),  // Set later by readParams()
-    throwOnReorthogFault_ (false),  // Set later by readParams()
-    blockReorthogThreshold_ (0),    // Set later by readParams()
-    relativeRankTolerance_ (0)      // Set later by readParams()
+    tsqrAdaptor_ (Teuchos::null),     // Initialized on demand
+    Q_ (Teuchos::null),               // Scratch space for normalize()
+    eps_ (SCTM::eps()),               // Machine precision
+    randomizeNullSpace_ (true),       // Set later by readParams()
+    reorthogonalizeBlocks_ (true),    // Set later by readParams()
+    throwOnReorthogFault_ (false),    // Set later by readParams()
+    blockReorthogThreshold_ (0),      // Set later by readParams()
+    relativeRankTolerance_ (0),       // Set later by readParams()
+    forceNonnegativeDiagonal_ (false) // Set later by readParams()
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerOrtho_ = makeTimer (label, "All orthogonalization");
@@ -849,7 +865,8 @@ namespace Belos {
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     // "Projection" only happens in rawProject(), so we only time
-    // projection inside rawProject().
+    // projection inside rawProject().  However, we count the time
+    // spend in project() as part of the whole orthogonalization.
     //
     // If project() is called from projectAndNormalize(), the
     // TimeMonitor won't start timerOrtho_, because it is already
@@ -858,8 +875,8 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // Internal data used by this method require a specific MV object
-    // for initialization (e.g., to get a Map / communicator, and to
-    // initialize scratch space).  Thus, we delay (hence "lazy")
+    // for initialization (e.g., to get a Map and/or communicator, and
+    // to initialize scratch space).  Thus, we delay (hence "lazy")
     // initialization until we get an X.
     lazyInit (X);
 
@@ -955,8 +972,9 @@ namespace Belos {
     // if all multivector inputs have only one column.  It also
     // avoids allocating Q_ scratch space and copying data when we
     // don't need to invoke TSQR at all.
-    if (numCols == 1)
+    if (numCols == 1) {
       return normalizeOne (X, B);
+    }
 
     // We use Q_ as scratch space for the normalization, since TSQR
     // requires a scratch multivector (it can't factor in place).  Q_
@@ -986,8 +1004,9 @@ namespace Belos {
     // reallocate Q_ for every X that comes in.  
     if (Q_.is_null() || 
 	MVT::GetVecLength(*Q_) != MVT::GetVecLength(X) ||
-	numCols > MVT::GetNumberVecs (*Q_))
+	numCols > MVT::GetNumberVecs (*Q_)) {
       Q_ = MVT::Clone (X, numCols);
+    }
 
     // normalizeImpl() wants the second MV argument to have the same
     // number of columns as X.  To ensure this, we pass it a view of
@@ -995,13 +1014,12 @@ namespace Belos {
     // previously called normalize() with a different multivector,
     // since we never reallocate Q_ if it has more columns than
     // necessary.)
-    if (MVT::GetNumberVecs(*Q_) == numCols)
+    if (MVT::GetNumberVecs(*Q_) == numCols) {
       return normalizeImpl (X, *Q_, B, false);
-    else
-      {
-	RCP<MV> Q_view = MVT::CloneViewNonConst (*Q_, Range1D(0, numCols-1));
-	return normalizeImpl (X, *Q_view, B, false);
-      }
+    } else {
+      RCP<MV> Q_view = MVT::CloneViewNonConst (*Q_, Range1D(0, numCols-1));
+      return normalizeImpl (X, *Q_view, B, false);
+    }
   }
 
   template<class Scalar, class MV>
@@ -1066,62 +1084,91 @@ namespace Belos {
     Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    if (outOfPlace)
-      { // Make sure that X_out has at least as many columns as X_in.
-	TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
-			   std::invalid_argument, 
-			   "Belos::TsqrOrthoManagerImpl::"
-			   "projectAndNormalizeOutOfPlace(...):"
-			   "X_out has " << MVT::GetNumberVecs(X_out) 
-			   << " columns, but X_in has "
-			   << MVT::GetNumberVecs(X_in) << " columns.");
-      }
+    if (outOfPlace) {
+      // Make sure that X_out has at least as many columns as X_in.
+      TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
+			 std::invalid_argument, 
+			 "Belos::TsqrOrthoManagerImpl::"
+			 "projectAndNormalizeOutOfPlace(...):"
+			 "X_out has " << MVT::GetNumberVecs(X_out) 
+			 << " columns, but X_in has "
+			 << MVT::GetNumberVecs(X_in) << " columns.");
+    }
     // Fetch dimensions of X_in and Q, and allocate space for first-
     // and second-pass projection coefficients (C resp. C2).
     int ncols_X, num_Q_blocks, ncols_Q_total;
     checkProjectionDims (ncols_X, num_Q_blocks, ncols_Q_total, X_in, Q);
 
-    // Test for quick exit: any dimension of X is zero.
-    if (ncols_X == 0)
+    // Test for quick exit: if any dimension of X is zero.
+    if (ncols_X == 0) {
       return 0;
+    }
     // If there are zero Q blocks or zero Q columns, just normalize!
-    if (num_Q_blocks == 0 || ncols_Q_total == 0)
-      {
-	if (outOfPlace)
-	  return normalizeOutOfPlace (X_in, X_out, B);
-	else
-	  return normalize (X_in, B);
+    if (num_Q_blocks == 0 || ncols_Q_total == 0) {
+      if (outOfPlace) {
+	return normalizeOutOfPlace (X_in, X_out, B);
+      } else {
+	return normalize (X_in, B);
       }
+    }
 
     // The typical case is that the entries of C have been allocated
     // before, so we attempt to recycle the allocations.  The call
-    // below will be correct regardless.
+    // below will reallocate if it cannot recycle.
     allocateProjectionCoefficients (C, Q, X_in, true);
 
     // If we are doing block reorthogonalization, then compute the
     // column norms of X before projecting for the first time.  This
     // will help us decide whether we need to reorthogonalize X.
     std::vector<magnitude_type> normsBeforeFirstPass (ncols_X, SCTM::zero());
-    if (reorthogonalizeBlocks_)
+    if (reorthogonalizeBlocks_) {
       MVT::MvNorm (X_in, normsBeforeFirstPass);
+    }
 
-    // First (Modified) Block Gram-Schmidt pass, in place in X_in
+    // First (Modified) Block Gram-Schmidt pass, in place in X_in.
     rawProject (X_in, Q, C);
 
-    // Before normalizing, be sure to allocate a new B matrix here.
-    // If we let the normalize() routine allocate, that storage will
-    // go away at the end of normalize().  (This is because it passes
-    // the RCP by value, not by reference.)
-    if (B.is_null())
-      B = rcp (new mat_type (ncols_X, ncols_X));
+    // Make space for the normalization coefficients.  This will
+    // either be a freshly allocated matrix (if B is null), or a view
+    // of the appropriately sized upper left submatrix of *B (if B is
+    // not null).
+    //
+    // Note that if we let the normalize() routine allocate (in the
+    // case that B is null), that storage will go away at the end of
+    // normalize().  (This is because it passes the RCP by value, not
+    // by reference.)
+    mat_ptr B_out;
+    if (B.is_null()) {
+      B_out = rcp (new mat_type (ncols_X, ncols_X));
+    } else {
+      // Make sure that B is no smaller than numCols x numCols.
+      TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < ncols_X || B->numCols() < ncols_X,
+			 std::invalid_argument,
+			 "normalizeOne: Input matrix B must be at "
+			 "least " << ncols_X << " x " << ncols_X 
+			 << ", but is instead " << B->numRows()
+			 << " x " << B->numCols() << ".");
+      // Create a view of the ncols_X by ncols_X upper left
+      // submatrix of *B.  TSQR will write the normalization
+      // coefficients there.
+      B_out = rcp (new mat_type (Teuchos::View, *B, ncols_X, ncols_X));
+    }
 
     // Rank of X(_in) after first projection pass.  If outOfPlace,
     // this overwrites X_in with invalid values, and the results go in
     // X_out.  Otherwise, it's done in place in X_in.
     const int firstPassRank = outOfPlace ? 
-      normalizeOutOfPlace (X_in, X_out, B) : 
-      normalize (X_in, B);
-    int rank = firstPassRank; // Current rank of X
+      normalizeOutOfPlace (X_in, X_out, B_out) : 
+      normalize (X_in, B_out);
+    if (B.is_null()) {
+      // The input matrix B is null, so assign B_out to it.  If B was
+      // not null on input, then B_out is a view of *B, so we don't
+      // have to do anything here.  Note that SerialDenseMatrix uses
+      // raw pointers to store data and represent views, so we have to
+      // be careful about scope.
+      B = B_out;
+    }
+    int rank = firstPassRank; // Current rank of X.
 
     // If X was not full rank after projection and randomizeNullSpace_
     // is true, then normalize(OutOfPlace)() replaced the null space
@@ -1137,224 +1184,208 @@ namespace Belos {
     // Note: We don't need to keep the new projection coefficients,
     // since they are multiplied by the "small" part of B
     // corresponding to the null space of the original X.
-    if (firstPassRank < ncols_X && randomizeNullSpace_)
-      {
-	const int numNullSpaceCols = ncols_X - firstPassRank;
-	const Range1D nullSpaceIndices (firstPassRank, ncols_X - 1);
+    if (firstPassRank < ncols_X && randomizeNullSpace_) {
+      const int numNullSpaceCols = ncols_X - firstPassRank;
+      const Range1D nullSpaceIndices (firstPassRank, ncols_X - 1);
 
-	// Space for projection coefficients (will be thrown away)
-	Teuchos::Array<mat_ptr> C_null (num_Q_blocks);
-	for (int k = 0; k < num_Q_blocks; ++k)
-	  {
-	    const int numColsQk = MVT::GetNumberVecs(*Q[k]);
-	    C_null[k] = rcp (new mat_type (numColsQk, numNullSpaceCols));
-	  }
-	// Space for normalization coefficients (will be thrown away).
-	RCP<mat_type> B_null (new mat_type (numNullSpaceCols, numNullSpaceCols));
-
-	int randomVectorsRank;
-	if (outOfPlace)
-	  {
-	    // View of the null space basis columns of X.
-	    // normalizeOutOfPlace() wrote them into X_out.
-	    RCP<MV> X_out_null = MVT::CloneViewNonConst (X_out, nullSpaceIndices);
-	    // Use X_in for scratch space.  Copy X_out_null into the
-	    // last few columns of X_in (X_in_null) and do projections
-	    // in there.  (This saves us a copy wen we renormalize
-	    // (out of place) back into X_out.)
-	    RCP<MV> X_in_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
-	    MVT::Assign (*X_out_null, *X_in_null);
-	    // Project the new random vectors against the Q blocks, and
-	    // renormalize the result into X_out_null.  
-	    rawProject (*X_in_null, Q, C_null);
-	    randomVectorsRank = normalizeOutOfPlace (*X_in_null, *X_out_null, B_null);
-	  }
-	else
-	  {
-	    // View of the null space columns of X.  
-	    // They live in X_in.
-	    RCP<MV> X_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
-	    // Project the new random vectors against the Q blocks,
-	    // and renormalize the result (in place).
-	    rawProject (*X_null, Q, C_null);
-	    randomVectorsRank = normalize (*X_null, B_null);
-	  }
-	// While unusual, it is still possible for the random data not
-	// to be full rank after projection and normalization.  In
-	// that case, we could try another set of random data and
-	// recurse as necessary, but instead for now we just raise an
-	// exception.
-	TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
-			   TsqrOrthoError, 
-			   "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
-			   "OutOfPlace(): After projecting and normalizing the "
-			   "random vectors (used to replace the null space "
-			   "basis vectors from normalizing X), they have rank "
-			   << randomVectorsRank << ", but should have full "
-			   "rank " << numNullSpaceCols << ".");
+      // Space for projection coefficients (will be thrown away)
+      Teuchos::Array<mat_ptr> C_null (num_Q_blocks);
+      for (int k = 0; k < num_Q_blocks; ++k) {
+	const int numColsQk = MVT::GetNumberVecs(*Q[k]);
+	C_null[k] = rcp (new mat_type (numColsQk, numNullSpaceCols));
       }
+      // Space for normalization coefficients (will be thrown away).
+      RCP<mat_type> B_null (new mat_type (numNullSpaceCols, numNullSpaceCols));
+
+      int randomVectorsRank;
+      if (outOfPlace) {
+	// View of the null space basis columns of X.
+	// normalizeOutOfPlace() wrote them into X_out.
+	RCP<MV> X_out_null = MVT::CloneViewNonConst (X_out, nullSpaceIndices);
+	// Use X_in for scratch space.  Copy X_out_null into the
+	// last few columns of X_in (X_in_null) and do projections
+	// in there.  (This saves us a copy wen we renormalize
+	// (out of place) back into X_out.)
+	RCP<MV> X_in_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
+	MVT::Assign (*X_out_null, *X_in_null);
+	// Project the new random vectors against the Q blocks, and
+	// renormalize the result into X_out_null.  
+	rawProject (*X_in_null, Q, C_null);
+	randomVectorsRank = normalizeOutOfPlace (*X_in_null, *X_out_null, B_null);
+      } else {
+	// View of the null space columns of X.  
+	// They live in X_in.
+	RCP<MV> X_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
+	// Project the new random vectors against the Q blocks,
+	// and renormalize the result (in place).
+	rawProject (*X_null, Q, C_null);
+	randomVectorsRank = normalize (*X_null, B_null);
+      }
+      // While unusual, it is still possible for the random data not
+      // to be full rank after projection and normalization.  In that
+      // case, we could try another set of random data and recurse as
+      // necessary, but instead for now we just raise an exception.
+      TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
+			 TsqrOrthoError, 
+			 "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
+			 "OutOfPlace(): After projecting and normalizing the "
+			 "random vectors (used to replace the null space "
+			 "basis vectors from normalizing X), they have rank "
+			 << randomVectorsRank << ", but should have full "
+			 "rank " << numNullSpaceCols << ".");
+    }
 
     // Whether or not X_in was full rank after projection, we still
     // might want to reorthogonalize against Q.
-    if (reorthogonalizeBlocks_)
-      {
-	// We are only interested in the column space basis of X
-	// resp. X_out.
-	std::vector<magnitude_type> normsAfterFirstPass (firstPassRank, magnitude_type(0));
-	std::vector<magnitude_type> normsAfterSecondPass (firstPassRank, magnitude_type(0));
+    if (reorthogonalizeBlocks_) {
+      // We are only interested in the column space basis of X
+      // resp. X_out.
+      std::vector<magnitude_type> 
+	normsAfterFirstPass (firstPassRank, SCTM::zero());
+      std::vector<magnitude_type> 
+	normsAfterSecondPass (firstPassRank, SCTM::zero());
 
-	// Compute post-first-pass (pre-normalization) norms.  We
-	// could have done that using MVT::MvNorm() on X_in after
-	// projecting, but before the first normalization.  However,
-	// that operation may be expensive.  It is also unnecessary:
-	// after calling normalize(), the 2-norm of B(:,j) is the
-	// 2-norm of X_in(:,j) before normalization, in exact
-	// arithmetic.
-	//
-	// NOTE (mfh 06 Nov 2010) This is one way that combining
-	// projection and normalization into a single kernel --
-	// projectAndNormalize() -- pays off.  In project(), we have
-	// to compute column norms of X before and after projection.
-	// Here, we get them for free from the normalization
-	// coefficients.
-	Teuchos::BLAS<int, Scalar> blas;
-	for (int j = 0; j < firstPassRank; ++j)
-	  {
-	    const Scalar* const B_j = &(*B)(0,j);
-	    // Teuchos::BLAS returns a magnitude_type result on
-	    // Scalar inputs.
-	    normsAfterFirstPass[j] = blas.NRM2 (firstPassRank, B_j, 1);
-	  }
-	// Test whether any of the norms dropped below the
-	// reorthogonalization threshold.
-	bool reorthogonalize = false;
-	for (int j = 0; j < firstPassRank; ++j)
-	  // If any column's norm decreased too much, mark this block
-	  // for reorthogonalization.  Note that this test will _not_
-	  // activate reorthogonalization if a column's norm before
-	  // the first project-and-normalize step was zero.  It _will_
-	  // activate reorthogonalization if the column's norm before
-	  // was not zero, but is zero now.
-	  if (normsAfterFirstPass[j] < blockReorthogThreshold() * normsBeforeFirstPass[j])
-	    {
-	      reorthogonalize = true; 
-	      break;
-	    }
+      // Compute post-first-pass (pre-normalization) norms.  We could
+      // have done that using MVT::MvNorm() on X_in after projecting,
+      // but before the first normalization.  However, that operation
+      // may be expensive.  It is also unnecessary: after calling
+      // normalize(), the 2-norm of B(:,j) is the 2-norm of X_in(:,j)
+      // before normalization, in exact arithmetic.
+      //
+      // NOTE (mfh 06 Nov 2010) This is one way that combining
+      // projection and normalization into a single kernel --
+      // projectAndNormalize() -- pays off.  In project(), we have to
+      // compute column norms of X before and after projection.  Here,
+      // we get them for free from the normalization coefficients.
+      Teuchos::BLAS<int, Scalar> blas;
+      for (int j = 0; j < firstPassRank; ++j) {
+	const Scalar* const B_j = &(*B_out)(0,j);
+	// Teuchos::BLAS::NRM2 returns a magnitude_type result on
+	// Scalar inputs.
+	normsAfterFirstPass[j] = blas.NRM2 (firstPassRank, B_j, 1);
+      }
+      // Test whether any of the norms dropped below the
+      // reorthogonalization threshold.
+      bool reorthogonalize = false;
+      for (int j = 0; j < firstPassRank; ++j) {
+	// If any column's norm decreased too much, mark this block
+	// for reorthogonalization.  Note that this test will _not_
+	// activate reorthogonalization if a column's norm before the
+	// first project-and-normalize step was zero.  It _will_
+	// activate reorthogonalization if the column's norm before
+	// was not zero, but is zero now.
+	const magnitude_type curThreshold = 
+	  blockReorthogThreshold() * normsBeforeFirstPass[j];
+	if (normsAfterFirstPass[j] < curThreshold) {
+	  reorthogonalize = true; 
+	  break;
+	}
+      }
+      // Perform another Block Gram-Schmidt pass if necessary.  "Twice
+      // is enough" (Kahan's theorem) for a Krylov method, unless
+      // (using Stewart's term) there is an "orthogonalization fault"
+      // (indicated by reorthogFault).
+      //
+      // NOTE (mfh 07 Nov 2010) For now, we include the entire block
+      // of X, including possible random data (that was already
+      // projected and normalized above).  It might make more sense
+      // just to process the first firstPassRank columns of X.
+      // However, the resulting reorthogonalization should still be
+      // correct regardless.
+      bool reorthogFault = false;
+      // Indices of X at which there was an orthogonalization fault.
+      std::vector<int> faultIndices;
+      if (reorthogonalize) {
+	using Teuchos::Copy;
+	using Teuchos::NO_TRANS;
 
-	// Perform another Block Gram-Schmidt pass if necessary.
-	// "Twice is enough" (Kahan's theorem) for a Krylov method,
-	// unless (using Stewart's term) there is an
-	// "orthogonalization fault" (indicated by reorthogFault).
-	//
-	// NOTE (mfh 07 Nov 2010) For now, we include the entire block
-	// of X, including possible random data (that was already
-	// projected and normalized above).  It might make more sense
-	// just to process the first firstPassRank columns of X.
-	// However, the resulting reorthogonalization should still be
-	// correct regardless.
-	bool reorthogFault = false;
-	// Indices of X at which there was an orthogonalization fault.
-	std::vector<int> faultIndices;
-	if (reorthogonalize)
-	  {
-	    using Teuchos::Copy;
-	    using Teuchos::NO_TRANS;
+	// If we're using out-of-place normalization, copy X_out
+	// (results of first project and normalize pass) back into
+	// X_in, for the second project and normalize pass.
+	if (outOfPlace)
+	  MVT::Assign (X_out, X_in);
 
-	    // If we're using out-of-place normalization, copy X_out
-	    // (results of first project and normalize pass) back into
-	    // X_in, for the second project and normalize pass.
-	    if (outOfPlace)
-	      MVT::Assign (X_out, X_in);
+	// C2 is only used internally, so we know that we are
+	// allocating fresh and not recycling allocations.  Stating
+	// this lets us save time checking dimensions.
+	Teuchos::Array<mat_ptr> C2;
+	allocateProjectionCoefficients (C2, Q, X_in, false);
 
-	    // C2 is only used internally, so we know that we are
-	    // allocating fresh and not recycling allocations.
-	    Teuchos::Array<mat_ptr> C2;
-	    allocateProjectionCoefficients (C2, Q, X_in, false);
-
-	    // Block Gram-Schmidt (again).  Delay updating the block
-	    // coefficients until we have the new normalization
-	    // coefficients, which we need in order to do the update.
-	    rawProject (X_in, Q, C2);
+	// Block Gram-Schmidt (again).  Delay updating the block
+	// coefficients until we have the new normalization
+	// coefficients, which we need in order to do the update.
+	rawProject (X_in, Q, C2);
 	    
-	    // Coefficients for (re)normalization of X_in
-	    RCP<mat_type> B2 (new mat_type (ncols_X, ncols_X));
+	// Coefficients for (re)normalization of X_in.
+	RCP<mat_type> B2 (new mat_type (ncols_X, ncols_X));
 
-	    // Normalize X_in (into X_out, if working out of place)
-	    const int secondPassRank = outOfPlace ? 
-	      normalizeOutOfPlace (X_in, X_out, B2) : 
-	      normalize (X_in, B2);
-	    rank = secondPassRank; // Current rank of X
+	// Normalize X_in (into X_out, if working out of place).
+	const int secondPassRank = outOfPlace ? 
+	  normalizeOutOfPlace (X_in, X_out, B2) : 
+	  normalize (X_in, B2);
+	rank = secondPassRank; // Current rank of X
 
-	    // Update normalization coefficients.  We begin with
-	    // copying B, since the BLAS doesn't like aliased input
-	    // arguments.
-	    mat_type B_copy (Copy, *B, B->numRows(), B->numCols());
-	    // B := B2 * B
-	    const int err = B->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
+	// Update normalization coefficients.  We begin with copying
+	// B_out, since the BLAS' _GEMM routine doesn't let us alias
+	// its input and output arguments.
+	mat_type B_copy (Copy, *B_out, B_out->numRows(), B_out->numCols());
+	// B_out := B2 * B_out (where input B_out is in B_copy).
+	const int err = B_out->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
 					 *B2, B_copy, SCT::zero());
-	    TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
-			       "Teuchos::SerialDenseMatrix::multiply "
-			       "returned err = " << err << " != 0");
-	    // Update the block coefficients from the projection step.
-	    // We use B_copy for this (a copy of the original B, the
-	    // first-pass normalization coefficients).
-	    for (int k = 0; k < num_Q_blocks; ++k)
-	      {
-		mat_type C_k_copy (Copy, *C[k], C[k]->numRows(), C[k]->numCols());
+	TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+			   "Teuchos::SerialDenseMatrix::multiply "
+			   "returned err = " << err << " != 0");
+	// Update the block coefficients from the projection step.  We
+	// use B_copy for this (a copy of B_out, the first-pass
+	// normalization coefficients).
+	for (int k = 0; k < num_Q_blocks; ++k) {
+	  mat_type C_k_copy (Copy, *C[k], C[k]->numRows(), C[k]->numCols());
 
-		// C[k] := C2[k]*B_copy + C[k] (where B_copy is a copy
-		// of the original B, the first-pass normalization
-		// coefficients).
-		const int err = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
-						*C2[k], B_copy, SCT::one());
-		TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
-				   "Teuchos::SerialDenseMatrix::multiply "
-				   "returned err = " << err << " != 0");
-	      }
-	    // Compute post-second-pass (pre-normalization) norms,
-	    // using B2 (the coefficients from the second normalize()
-	    // invocation) in the same way as with B before.
-	    for (int j = 0; j < rank; ++j)
-	      {
-		const Scalar* const B2_j = &(*B2)(0,j);
-		normsAfterSecondPass[j] = blas.NRM2 (rank, B2_j, 1);
-	      }
-	    // Test whether any of the norms dropped below the
-	    // reorthogonalization threshold.  If so, it's an
-	    // orthogonalization fault, which requires expensive
-	    // recovery.
-	    reorthogFault = false;
-	    for (int j = 0; j < rank; ++j)
-	      {
-		const magnitude_type relativeLowerBound = 
-		  blockReorthogThreshold() * normsAfterFirstPass[j];
-		if (normsAfterSecondPass[j] < relativeLowerBound)
-		  {
-		    reorthogFault = true; 
-		    faultIndices.push_back (j);
-		  }
-	      }
-	  } // if (reorthogonalize) // reorthogonalization pass
-
-	if (reorthogFault)
-	  {
-	    if (throwOnReorthogFault_)
-	      raiseReorthogFault (normsAfterFirstPass, normsAfterSecondPass, faultIndices);
-	    else 
-	      {
-		// NOTE (mfh 19 Jan 2011) We could handle the
-		// reorthogonalization fault here by slowly
-		// reorthogonalizing, one vector at a time, the
-		// offending vectors of X.  However, we choose not to
-		// implement this for now.  If it becomes a problem,
-		// let us know and we will prioritize implementing
-		// this.
-		TEST_FOR_EXCEPTION(true, std::logic_error, 
-				   "TsqrOrthoManagerImpl has not yet implemented"
-				   " recovery from an orthogonalization fault.");
-	      }
+	  // C[k] := C2[k]*B_copy + C[k].
+	  const int err = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
+					  *C2[k], B_copy, SCT::one());
+	  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+			     "Teuchos::SerialDenseMatrix::multiply "
+			     "returned err = " << err << " != 0");
+	}
+	// Compute post-second-pass (pre-normalization) norms, using
+	// B2 (the coefficients from the second normalization step) in
+	// the same way as with B_out before.
+	for (int j = 0; j < rank; ++j) {
+	  const Scalar* const B2_j = &(*B2)(0,j);
+	  normsAfterSecondPass[j] = blas.NRM2 (rank, B2_j, 1);
+	}
+	// Test whether any of the norms dropped below the
+	// reorthogonalization threshold.  If so, it's an
+	// orthogonalization fault, which requires expensive recovery.
+	reorthogFault = false;
+	for (int j = 0; j < rank; ++j) {
+	  const magnitude_type relativeLowerBound = 
+	    blockReorthogThreshold() * normsAfterFirstPass[j];
+	  if (normsAfterSecondPass[j] < relativeLowerBound) {
+	    reorthogFault = true; 
+	    faultIndices.push_back (j);
 	  }
-      } // if (reorthogonalizeBlocks_)
+	}
+      } // if (reorthogonalize) // reorthogonalization pass
+
+      if (reorthogFault) {
+	if (throwOnReorthogFault_) {
+	  raiseReorthogFault (normsAfterFirstPass, 
+			      normsAfterSecondPass, 
+			      faultIndices);
+	} else {
+	  // NOTE (mfh 19 Jan 2011) We could handle the fault here by
+	  // slowly reorthogonalizing, one vector at a time, the
+	  // offending vectors of X.  However, we choose not to
+	  // implement this for now.  If it becomes a problem, let us
+	  // know and we will prioritize implementing this.
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     "TsqrOrthoManagerImpl has not yet implemented"
+			     " recovery from an orthogonalization fault.");
+	}
+      }
+    } // if (reorthogonalizeBlocks_)
     return rank;
   }
 
@@ -1429,13 +1460,17 @@ namespace Belos {
     params->set ("relativeRankTolerance", defaultRelativeRankTolerance,
 		 "Relative tolerance to determine the numerical rank of a "
 		 "block when normalizing.");
-    const bool defaultThrowOnReorthogFault = true;
     // See Stewart's 2008 paper on block Gram-Schmidt for a
     // definition of "orthogonalization fault."
+    const bool defaultThrowOnReorthogFault = true;
     params->set ("throwOnReorthogFault", defaultThrowOnReorthogFault,
 		 "Whether to throw an exception if an orthogonalization "
 		 "fault occurs.  This only matters if reorthogonalization "
 		 "is enabled (reorthogonalizeBlocks==true).");
+    const bool defaultForceNonnegativeDiagonal = false;
+    params->set ("forceNonnegativeDiagonal", defaultForceNonnegativeDiagonal,
+		 "Whether to force the R factor produced by the normalization "
+		 "step to have a nonnegative diagonal.");
     return params;
   }
 
@@ -1484,7 +1519,7 @@ namespace Belos {
       // This call only computes the QR factorization X = Q B.
       // It doesn't compute the rank of X.  That comes from
       // revealRank() below.
-      tsqrAdaptor_->factorExplicit (X, Q, B);
+      tsqrAdaptor_->factorExplicit (X, Q, B, forceNonnegativeDiagonal_);
       // This call will only modify *B if *B on input is not of full
       // numerical rank.
       rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);
@@ -1500,42 +1535,70 @@ namespace Belos {
   normalizeOne (MV& X, 
 		Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B) const
   {
+    // Make space for the normalization coefficient.  This will either
+    // be a freshly allocated matrix (if B is null), or a view of the
+    // 1x1 upper left submatrix of *B (if B is not null).
+    mat_ptr B_out;
+    if (B.is_null()) {
+      B_out = rcp (new mat_type (1, 1));
+    } else {
+      const int numRows = B->numRows();
+      const int numCols = B->numCols();
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, 
+			 std::invalid_argument,
+			 "normalizeOne: Input matrix B must be at "
+			 "least 1 x 1, but is instead " << numRows
+			 << " x " << numCols << ".");
+      // Create a view of the 1x1 upper left submatrix of *B.
+      B_out = rcp (new mat_type (Teuchos::View, *B, 1, 1));
+    }
+
+    // Compute the norm of X, and write the result to B_out.
     std::vector<magnitude_type> theNorm (1, SCTM::zero());
     MVT::MvNorm (X, theNorm);
-    if (Teuchos::is_null(B))
-      B = Teuchos::rcp (new mat_type (1, 1));
-    (*B)(0,0) = theNorm[0];
-    if (theNorm[0] == SCTM::zero())
-      {
-	// Make a view of the first column of Q, fill it with random
-	// data, and normalize it.  Throw away the resulting norm.
-	if (randomizeNullSpace_)
-	  {
-	    MVT::MvRandom(X);
-	    MVT::MvNorm (X, theNorm);
-	    if (theNorm[0] == SCTM::zero())
-	      throw TsqrOrthoError("normalizeOne(): a supposedly random "
-				   "vector has norm zero!");
-	    else
-	      {
-		// NOTE (mfh 09 Nov 2010) I'm assuming that this
-		// operation that implicitly converts from a
-		// magnitude_type to a Scalar makes sense.
-		const Scalar alpha = SCT::one() / theNorm[0];
-		MVT::MvScale (X, alpha);
-	      }
-	  }
-	return 0;
+    (*B_out)(0,0) = theNorm[0];
+
+    if (B.is_null()) {
+      // The input matrix B is null, so assign B_out to it.  If B was
+      // not null on input, then B_out is a view of *B, so we don't
+      // have to do anything here.  Note that SerialDenseMatrix uses
+      // raw pointers to store data and represent views, so we have to
+      // be careful about scope.
+      B = B_out;
+    }
+
+    // Scale X by its norm, if its norm is zero.  Otherwise, do the
+    // right thing based on whether the user wants us to fill the null
+    // space with random vectors.
+    if (theNorm[0] == SCTM::zero()) {
+      // Make a view of the first column of Q, fill it with random
+      // data, and normalize it.  Throw away the resulting norm.
+      if (randomizeNullSpace_) {
+	MVT::MvRandom(X);
+	MVT::MvNorm (X, theNorm);
+	if (theNorm[0] == SCTM::zero()) {
+	  // It is possible that a random vector could have all zero
+	  // entries, but unlikely.  We could try again, but it's also
+	  // possible that multiple tries could result in zero
+	  // vectors.  We choose instead to give up.
+	  throw TsqrOrthoError("normalizeOne: a supposedly random "
+			       "vector has norm zero!");
+	} else {
+	  // NOTE (mfh 09 Nov 2010) I'm assuming that dividing a
+	  // Scalar by a magnitude_type is defined and that it results
+	  // in a Scalar.
+	  const Scalar alpha = SCT::one() / theNorm[0];
+	  MVT::MvScale (X, alpha);
+	}
       }
-    else
-      {
-	// NOTE (mfh 09 Nov 2010) I'm assuming that this operation
-	// that implicitly converts from a magnitude_type to a Scalar
-	// makes sense.
-	const Scalar alpha = SCT::one() / theNorm[0];
-	MVT::MvScale (X, alpha);
-	return 1;
-      }
+      return 0; // The rank of the matrix (actually just one vector) X.
+    } else {
+      // NOTE (mfh 09 Nov 2010) I'm assuming that dividing a Scalar by
+      // a magnitude_type is defined and that it results in a Scalar.
+      const Scalar alpha = SCT::one() / theNorm[0];
+      MVT::MvScale (X, alpha);
+      return 1; // The rank of the matrix (actually just one vector) X.
+    }
   }
 
 
@@ -1554,10 +1617,10 @@ namespace Belos {
     const int num_Q_blocks = Q.size();
     for (int i = 0; i < num_Q_blocks; ++i)
       {
-	// TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
+	// TEUCHOS_TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
 	// 		   "TsqrOrthoManagerImpl::rawProject(): C[" 
 	// 		   << i << "] is null");
-	// TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
+	// TEUCHOS_TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
 	// 		   "TsqrOrthoManagerImpl::rawProject(): Q[" 
 	// 		   << i << "] is null");
 	mat_type& Ci = *C[i];
@@ -1595,51 +1658,62 @@ namespace Belos {
     using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::ScalarTraits;
     using Teuchos::tuple;
-
     using std::cerr;
     using std::endl;
+    // Don't set this to true unless you want lots of debugging
+    // messages written to stderr on every MPI process.
+    const bool extraDebug = false;
 
     const int numCols = MVT::GetNumberVecs (X);
-    if (numCols == 0)
-      return 0; // Fast exit for an empty input matrix
+    if (numCols == 0) {
+      return 0; // Fast exit for an empty input matrix.
+    }
 
-    // We allow Q to have more columns than X, in which case we only
+    // We allow Q to have more columns than X.  In that case, we only
     // touch the first numCols columns of Q.
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
 		       std::invalid_argument, 
-		       "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): "
-		       "Q has " << MVT::GetNumberVecs(Q) << " columns, "
-		       "which is too few, since X has " << numCols 
-		       << " columns.");
-    // TSQR wants a Q with the same number of columns as X, so have
-    // it work on a nonconstant view of Q with the same number of
-    // columns as X.
+		       "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): Q has "
+		       << MVT::GetNumberVecs(Q) << " columns.  This is too "
+		       "few, since X has " << numCols << " columns.");
+    // TSQR wants a Q with the same number of columns as X, so have it
+    // work on a nonconstant view of Q with the same number of columns
+    // as X.
     RCP<MV> Q_view = MVT::CloneViewNonConst (Q, Range1D(0, numCols-1));
 
-    // TSQR's rank-revealing part doesn't work unless B is provided.
-    // If B is not provided, allocate a temporary B for use in TSQR.
-    // If it is provided, adjust dimensions as necessary.  Adjusting
-    // the dimensions of B may invalidate any data currently stored in
-    // it, but that data will be overwritten anyway.
-    if (B.is_null())
-      B = rcp (new mat_type (numCols, numCols));
-    else
-      B->shape (numCols, numCols);
+    // Make space for the normalization coefficients.  This will
+    // either be a freshly allocated matrix (if B is null), or a view
+    // of the appropriately sized upper left submatrix of *B (if B is
+    // not null).
+    mat_ptr B_out;
+    if (B.is_null()) {
+      B_out = rcp (new mat_type (numCols, numCols));
+    } else {
+      // Make sure that B is no smaller than numCols x numCols.
+      TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < numCols || B->numCols() < numCols,
+			 std::invalid_argument,
+			 "normalizeOne: Input matrix B must be at "
+			 "least " << numCols << " x " << numCols 
+			 << ", but is instead " << B->numRows()
+			 << " x " << B->numCols() << ".");
+      // Create a view of the numCols x numCols upper left submatrix
+      // of *B.  TSQR will write the normalization coefficients there.
+      B_out = rcp (new mat_type (Teuchos::View, *B, numCols, numCols));
+    }
 
-    if (false)
-      {
-	std::vector<magnitude_type> norms (numCols);
-	MVT::MvNorm (X, norms);
-	cerr << "Column norms of X before orthogonalization: ";
-	for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
-	     iter != norms.end(); ++iter)
-	  {
-	    cerr << *iter;
-	    if (iter+1 != norms.end())
-	      cerr << ", ";
-	  }
+    if (extraDebug) {
+      std::vector<magnitude_type> norms (numCols);
+      MVT::MvNorm (X, norms);
+      cerr << "Column norms of X before orthogonalization: ";
+      typedef typename std::vector<magnitude_type>::const_iterator iter_type;
+      for (iter_type iter = norms.begin(); iter != norms.end(); ++iter) {
+	cerr << *iter;
+	if (iter+1 != norms.end())
+	  cerr << ", ";
       }
+    }
 
     // Compute rank-revealing decomposition (in this case, TSQR of X
     // followed by SVD of the R factor and appropriate updating of the
@@ -1647,227 +1721,225 @@ namespace Belos {
     // with garbage, and Q_view contains the resulting explicit Q
     // factor.  Later, we will copy this back into X.
     //
-    // The matrix *B will only be upper triangular if X is of full
-    // numerical rank.
-    const int rank = rawNormalize (X, *Q_view, *B);
+    // The matrix *B_out will only be upper triangular if X is of full
+    // numerical rank.  Otherwise, the entries below the diagonal may
+    // be filled in as well.
+    const int rank = rawNormalize (X, *Q_view, *B_out);
+    if (B.is_null()) {
+      // The input matrix B is null, so assign B_out to it.  If B was
+      // not null on input, then B_out is a view of *B, so we don't
+      // have to do anything here.  Note that SerialDenseMatrix uses
+      // raw pointers to store data and represent views, so we have to
+      // be careful about scope.
+      B = B_out;
+    }
 
-    if (false)
-      {
-	std::vector<magnitude_type> norms (numCols);
-	MVT::MvNorm (*Q_view, norms);
-	cerr << "Column norms of Q_view after orthogonalization: ";
-	for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
-	     iter != norms.end(); ++iter)
-	  {
-	    cerr << *iter;
-	    if (iter+1 != norms.end())
-	      cerr << ", ";
-	  }
+    if (extraDebug) {
+      std::vector<magnitude_type> norms (numCols);
+      MVT::MvNorm (*Q_view, norms);
+      cerr << "Column norms of Q_view after orthogonalization: ";
+      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
+	   iter != norms.end(); ++iter) {
+	cerr << *iter;
+	if (iter+1 != norms.end())
+	  cerr << ", ";
       }
-
-    TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
 		       "Belos::TsqrOrthoManagerImpl::normalizeImpl: "
 		       "rawNormalize() returned rank = " << rank << " for a "
 		       "matrix X with " << numCols << " columns.  Please report"
 		       " this bug to the Belos developers.");
-    if (false && rank == 0)
-      {
-	// Sanity check: ensure that the columns of X are sufficiently
-	// small for X to be reported as rank zero.
-	const mat_type& B_ref = *B;
-	std::vector<magnitude_type> norms (B_ref.numCols());
-	for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j)
-	  {
-	    typedef typename mat_type::scalarType mat_scalar_type;
-	    mat_scalar_type sumOfSquares = Teuchos::ScalarTraits<mat_scalar_type>::zero();
-	    for (typename mat_type::ordinalType i = 0; i <= j; ++i)
-	      {
-		const mat_scalar_type B_ij = 
-		  Teuchos::ScalarTraits<mat_scalar_type>::magnitude (B_ref(i,j));
-		sumOfSquares += B_ij*B_ij;
-	      }
-	    norms[j] = Teuchos::ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares);
-	  }
-	bool anyNonzero = false;
-	typedef typename std::vector<magnitude_type>::const_iterator iter_type;
-	for (iter_type it = norms.begin(); it != norms.end(); ++it)
-	  if (*it > relativeRankTolerance_)
-	    anyNonzero = true;
-
-	using std::cerr;
-	using std::endl;
-	cerr << "Norms of columns of B after orthogonalization: ";
-	for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j)
-	  {
-	    cerr << norms[j];
-	    if (j != B_ref.numCols() - 1)
-	      cerr << ", ";
-	  }
-	cerr << endl;
+    if (extraDebug && rank == 0) {
+      // Sanity check: ensure that the columns of X are sufficiently
+      // small for X to be reported as rank zero.
+      const mat_type& B_ref = *B;
+      std::vector<magnitude_type> norms (B_ref.numCols());
+      for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j) {
+	typedef typename mat_type::scalarType mat_scalar_type;
+	mat_scalar_type sumOfSquares = ScalarTraits<mat_scalar_type>::zero();
+	for (typename mat_type::ordinalType i = 0; i <= j; ++i) {
+	  const mat_scalar_type B_ij = 
+	    ScalarTraits<mat_scalar_type>::magnitude (B_ref(i,j));
+	  sumOfSquares += B_ij*B_ij;
+	}
+	norms[j] = ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares);
       }
+      bool anyNonzero = false;
+      typedef typename std::vector<magnitude_type>::const_iterator iter_type;
+      for (iter_type it = norms.begin(); it != norms.end(); ++it) {
+	if (*it > relativeRankTolerance_) {
+	  anyNonzero = true;
+	}
+      }
+      using std::cerr;
+      using std::endl;
+      cerr << "Norms of columns of B after orthogonalization: ";
+      for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j) {
+	cerr << norms[j];
+	if (j != B_ref.numCols() - 1)
+	  cerr << ", ";
+      }
+      cerr << endl;
+    }
 
     // If X is full rank or we don't want to replace its null space
     // basis with random vectors, then we're done.
-    if (rank == numCols || ! randomizeNullSpace_)
-      {
-	// If we're supposed to be working in place in X, copy the
-	// results back from Q_view into X.
-	if (! outOfPlace)
-	  MVT::Assign (*Q_view, X);
-	return rank;
+    if (rank == numCols || ! randomizeNullSpace_) {
+      // If we're supposed to be working in place in X, copy the
+      // results back from Q_view into X.
+      if (! outOfPlace) {
+	MVT::Assign (*Q_view, X);
       }
+      return rank;
+    }
 
-    // Replace the null space basis of X (in the last numCols-rank
-    // columns of Q_view) with random data, project it against the
-    // first rank columns of Q_view, and normalize.
-    if (randomizeNullSpace_ && rank < numCols)
+    if (randomizeNullSpace_ && rank < numCols) {
+      // X wasn't full rank.  Replace the null space basis of X (in
+      // the last numCols-rank columns of Q_view) with random data,
+      // project it against the first rank columns of Q_view, and
+      // normalize.
+      //
+      // Number of columns to fill with random data.
+      const int nullSpaceNumCols = numCols - rank;
+      // Inclusive range of indices of columns of X to fill with
+      // random data.
+      Range1D nullSpaceIndices (rank, numCols-1);
+
+      // rawNormalize() wrote the null space basis vectors into
+      // Q_view.  We continue to work in place in Q_view by writing
+      // the random data there and (if there is a nontrival column
+      // space) projecting in place against the column space basis
+      // vectors (also in Q_view).
+      RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
+      // Replace the null space basis with random data.
+      MVT::MvRandom (*Q_null); 
+
+      // Make sure that the "random" data isn't all zeros.  This is
+      // statistically nearly impossible, but we test for debugging
+      // purposes.
       {
-	// Number of columns to fill with random data.
-	const int nullSpaceNumCols = numCols - rank;
-	// Inclusive range of indices of columns of X to fill with
-	// random data.
-	Range1D nullSpaceIndices (rank, numCols-1);
+	std::vector<magnitude_type> norms (MVT::GetNumberVecs(*Q_null));
+	MVT::MvNorm (*Q_null, norms);
 
-	// rawNormalize() wrote the null space basis vectors into
-	// Q_view.  We continue to work in place in Q_view by
-	// writing the random data there and (if there is a
-	// nontrival column space) projecting in place against the
-	// column space basis vectors (also in Q_view).
-	RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
-	// Replace the null space basis with random data.
-	MVT::MvRandom (*Q_null); 
-
-	// Make sure that the "random" data isn't all zeros.  This is
-	// statistically nearly impossible, but we test for debugging
-	// purposes.
-	{
-	  std::vector<magnitude_type> norms (MVT::GetNumberVecs(*Q_null));
-	  MVT::MvNorm (*Q_null, norms);
-
-	  bool anyZero = false;
-	  typedef typename std::vector<magnitude_type>::const_iterator iter_type;
-	  for (iter_type it = norms.begin(); it != norms.end(); ++it)
-	    if (*it == SCTM::zero())
-	      anyZero = true;
-
-	  if (anyZero)
-	    {
-	      std::ostringstream os;
-	      os << "TsqrOrthoManagerImpl::normalizeImpl: "
-		"We are being asked to randomize the null space, for a matrix "
-		"with " << numCols << " columns and reported column rank "
-		 << rank << ".  The inclusive range of columns to fill with "
-		"random data is [" << nullSpaceIndices.lbound() << "," 
-		 << nullSpaceIndices.ubound() << "].  After filling the null "
-		"space vectors with random numbers, at least one of the vectors"
-		" has norm zero.  Here are the norms of all the null space "
-		"vectors: [";
-	      for (iter_type it = norms.begin(); it != norms.end(); ++it)
-		{
-		  os << *it;
-		  if (it+1 != norms.end())
-		    os << ", ";
-		}
-	      os << "].)  There is a tiny probability that this could happen "
-		"randomly, but it is likely a bug.  Please report it to the "
-		"Belos developers, especially if you are able to reproduce the "
-		"behavior.";
-	      TEST_FOR_EXCEPTION(anyZero, TsqrOrthoError, os.str());
-	    }
+	bool anyZero = false;
+	typedef typename std::vector<magnitude_type>::const_iterator iter_type;
+	for (iter_type it = norms.begin(); it != norms.end(); ++it) {
+	  if (*it == SCTM::zero()) {
+	    anyZero = true;
+	  }
 	}
-
-	if (rank > 0)
-	  {
-	    // Project the random data against the column space
-	    // basis of X, using a simple block projection ("Block
-	    // Classical Gram-Schmidt").  This is accurate because
-	    // we've already orthogonalized the column space basis
-	    // of X nearly to machine precision via a QR
-	    // factorization (TSQR) with accuracy comparable to
-	    // Householder QR.
-	    RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
-
-	    // Temporary storage for projection coefficients.  We
-	    // don't need to keep them, since they represent the
-	    // null space basis (for which the coefficients are
-	    // logically zero).
-	    mat_ptr C_null (new mat_type (rank, nullSpaceNumCols));
-	    rawProject (*Q_null, Q_col, C_null);
+	if (anyZero) {
+	  std::ostringstream os;
+	  os << "TsqrOrthoManagerImpl::normalizeImpl: "
+	    "We are being asked to randomize the null space, for a matrix "
+	    "with " << numCols << " columns and reported column rank "
+	     << rank << ".  The inclusive range of columns to fill with "
+	    "random data is [" << nullSpaceIndices.lbound() << "," 
+	     << nullSpaceIndices.ubound() << "].  After filling the null "
+	    "space vectors with random numbers, at least one of the vectors"
+	    " has norm zero.  Here are the norms of all the null space "
+	    "vectors: [";
+	  for (iter_type it = norms.begin(); it != norms.end(); ++it) {
+	    os << *it;
+	    if (it+1 != norms.end())
+	      os << ", ";
 	  }
-	// Normalize the projected random vectors, so that they are
-	// mutually orthogonal (as well as orthogonal to the column
-	// space basis of X).  We use X for the output of the
-	// normalization: for out-of-place normalization (outOfPlace
-	// == true), X is overwritten with "invalid values" anyway,
-	// and for in-place normalization (outOfPlace == false), we
-	// want the result to be in X anyway.
-	RCP<MV> X_null = MVT::CloneViewNonConst (X, nullSpaceIndices);
-	// Normalization coefficients for projected random vectors.
-	// Will be thrown away.
-	mat_type B_null (nullSpaceNumCols, nullSpaceNumCols);
-	// Write the normalized vectors to X_null (in X).
-	const int nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, B_null);
-	  
-	// It's possible, but unlikely, that X_null doesn't have
-	// full rank (after the projection step).  We could
-	// recursively fill in more random vectors until we finally
-	// get a full rank matrix, but instead we just throw an
-	// exception.
-	//
-	// NOTE (mfh 08 Nov 2010) Perhaps we should deal with this
-	// case more elegantly.  Recursion might be one way to solve
-	// it, but be sure to check that the recursion will terminate.
-	// We could do this by supplying an additional argument to
-	// rawNormalize, which is the null space basis rank from the
-	// previous iteration.  The rank has to decrease each time, or
-	// the recursion may go on forever.
-	if (nullSpaceBasisRank < nullSpaceNumCols)
-	  {
-	    std::vector<magnitude_type> norms (MVT::GetNumberVecs(*X_null));
-	    MVT::MvNorm (*X_null, norms);
-	    std::ostringstream os;
-	    os << "TsqrOrthoManagerImpl::normalizeImpl: "
-	       << "We are being asked to randomize the null space, "
-	       << "for a matrix with " << numCols << " columns and "
-	       << "column rank " << rank << ".  After projecting and "
-	       << "normalizing the generated random vectors, they "
-	       << "only have rank " << nullSpaceBasisRank << ".  They"
-	       << " should have full rank " << nullSpaceNumCols 
-	       << ".  (The inclusive range of columns to fill with "
-	       << "random data is [" << nullSpaceIndices.lbound() 
-	       << "," << nullSpaceIndices.ubound() << "].  The "
-	       << "column norms of the resulting Q factor are: [";
-	    for (typename std::vector<magnitude_type>::size_type k = 0; 
-		 k < norms.size(); ++k)
-	      {
-		os << norms[k];
-		if (k != norms.size()-1)
-		  os << ", ";
-	      }
-	    os << "].)  There is a tiny probability that this could "
-	       << "happen randomly, but it is likely a bug.  Please "
-	       << "report it to the Belos developers, especially if "
-	       << "you are able to reproduce the behavior.";
-
-	    TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
-	                       TsqrOrthoError, os.str());
-	  }
-	// If we're normalizing out of place, copy the X_null
-	// vectors back into Q_null; the Q_col vectors are already
-	// where they are supposed to be in that case.
-	//
-	// If we're normalizing in place, leave X_null alone (it's
-	// already where it needs to be, in X), but copy Q_col back
-	// into the first rank columns of X.
-	if (outOfPlace)
-	  MVT::Assign (*X_null, *Q_null);
-	else if (rank > 0)
-	  { // MVT::Assign() doesn't accept empty ranges of columns.
-	    RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
-	    RCP<MV> X_col = MVT::CloneViewNonConst (X, Range1D(0, rank-1));
-	    MVT::Assign (*Q_col, *X_col);
-	  }
+	  os << "].)  There is a tiny probability that this could happen "
+	    "randomly, but it is likely a bug.  Please report it to the "
+	    "Belos developers, especially if you are able to reproduce the "
+	    "behavior.";
+	  TEUCHOS_TEST_FOR_EXCEPTION(anyZero, TsqrOrthoError, os.str());
+	}
       }
+
+      if (rank > 0) {
+	// Project the random data against the column space basis of
+	// X, using a simple block projection ("Block Classical
+	// Gram-Schmidt").  This is accurate because we've already
+	// orthogonalized the column space basis of X nearly to
+	// machine precision via a QR factorization (TSQR) with
+	// accuracy comparable to Householder QR.
+	RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
+
+	// Temporary storage for projection coefficients.  We don't
+	// need to keep them, since they represent the null space
+	// basis (for which the coefficients are logically zero).
+	mat_ptr C_null (new mat_type (rank, nullSpaceNumCols));
+	rawProject (*Q_null, Q_col, C_null);
+      }
+      // Normalize the projected random vectors, so that they are
+      // mutually orthogonal (as well as orthogonal to the column
+      // space basis of X).  We use X for the output of the
+      // normalization: for out-of-place normalization (outOfPlace ==
+      // true), X is overwritten with "invalid values" anyway, and for
+      // in-place normalization (outOfPlace == false), we want the
+      // result to be in X anyway.
+      RCP<MV> X_null = MVT::CloneViewNonConst (X, nullSpaceIndices);
+      // Normalization coefficients for projected random vectors.
+      // Will be thrown away.
+      mat_type B_null (nullSpaceNumCols, nullSpaceNumCols);
+      // Write the normalized vectors to X_null (in X).
+      const int nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, B_null);
+	  
+      // It's possible, but unlikely, that X_null doesn't have full
+      // rank (after the projection step).  We could recursively fill
+      // in more random vectors until we finally get a full rank
+      // matrix, but instead we just throw an exception.
+      //
+      // NOTE (mfh 08 Nov 2010) Perhaps we should deal with this case
+      // more elegantly.  Recursion might be one way to solve it, but
+      // be sure to check that the recursion will terminate.  We could
+      // do this by supplying an additional argument to rawNormalize,
+      // which is the null space basis rank from the previous
+      // iteration.  The rank has to decrease each time, or the
+      // recursion may go on forever.
+      if (nullSpaceBasisRank < nullSpaceNumCols) {
+	std::vector<magnitude_type> norms (MVT::GetNumberVecs(*X_null));
+	MVT::MvNorm (*X_null, norms);
+	std::ostringstream os;
+	os << "TsqrOrthoManagerImpl::normalizeImpl: "
+	   << "We are being asked to randomize the null space, "
+	   << "for a matrix with " << numCols << " columns and "
+	   << "column rank " << rank << ".  After projecting and "
+	   << "normalizing the generated random vectors, they "
+	   << "only have rank " << nullSpaceBasisRank << ".  They"
+	   << " should have full rank " << nullSpaceNumCols 
+	   << ".  (The inclusive range of columns to fill with "
+	   << "random data is [" << nullSpaceIndices.lbound() 
+	   << "," << nullSpaceIndices.ubound() << "].  The "
+	   << "column norms of the resulting Q factor are: [";
+	for (typename std::vector<magnitude_type>::size_type k = 0; 
+	     k < norms.size(); ++k) {
+	  os << norms[k];
+	  if (k != norms.size()-1) {
+	    os << ", ";
+	  }
+	}
+	os << "].)  There is a tiny probability that this could "
+	   << "happen randomly, but it is likely a bug.  Please "
+	   << "report it to the Belos developers, especially if "
+	   << "you are able to reproduce the behavior.";
+
+	TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
+			   TsqrOrthoError, os.str());
+      }
+      // If we're normalizing out of place, copy the X_null
+      // vectors back into Q_null; the Q_col vectors are already
+      // where they are supposed to be in that case.
+      //
+      // If we're normalizing in place, leave X_null alone (it's
+      // already where it needs to be, in X), but copy Q_col back
+      // into the first rank columns of X.
+      if (outOfPlace) {
+	MVT::Assign (*X_null, *Q_null);
+      } else if (rank > 0) {
+	// MVT::Assign() doesn't accept empty ranges of columns.
+	RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
+	RCP<MV> X_col = MVT::CloneViewNonConst (X, Range1D(0, rank-1));
+	MVT::Assign (*Q_col, *X_col);
+      }
+    }
     return rank;
   }
 

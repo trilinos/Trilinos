@@ -52,10 +52,6 @@
 namespace Kokkos {
 	
 class DeviceTBB {
-private:
- 
-  static unsigned m_launching_kernel ;
-
 public:
 
   /** \brief  On the TBB device use size_t for indexing */
@@ -75,8 +71,6 @@ public:
 
   /*--------------------------------*/
 
-  static void set_dispatch_functor();
-  static void clear_dispatch_functor();
   static void wait_functor_completion() {}
 
   /*--------------------------------*/

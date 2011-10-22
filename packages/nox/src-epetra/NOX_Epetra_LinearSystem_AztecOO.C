@@ -810,7 +810,7 @@ applyRightPreconditioning(bool useTranspose,
   if (errorCode != 0) {
     std::string msg = "Error - NOX::Epetra::LinearSystemAztecOO::applyRightPreconditioning() - A non-zero error code has been returned from the preconditioner.";
     if (throwErrorOnPrecFailure) {
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
     }
     else {
       if (utils.isPrintType(NOX::Utils::Warning))
@@ -1591,7 +1591,7 @@ precError(int error_code,
     msg << "NOX::Epetra::LinearSystemAztecOO::" << nox_function << " - The " << prec_type << " preconditioner has returned a nonzero error code of " << error_code << " for the function \"" << prec_function << "\".  Please consult the preconditioner documentation for this error type.";
     
     if (throwErrorOnPrecFailure) {
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
     }
     else
       utils.out() << msg.str() << endl; 

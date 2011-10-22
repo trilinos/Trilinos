@@ -77,11 +77,11 @@ void Multiply(
   //A and B should already be Filled.
   //(Should we go ahead and call FillComplete() on them if necessary?
   // or error out? For now, we choose to error out.)
-  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
     "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
     "\n\n MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error,
     "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
     "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
     "\n\n MatrixMatrix::Multiply(): Matrix B is not fill complete.");
@@ -120,7 +120,7 @@ void Multiply(
   global_size_t Bouter = transposeB ? B.getGlobalNumRows() : numBCols;
   global_size_t Ainner = transposeA ? A.getGlobalNumRows() : numACols;
   global_size_t Binner = transposeB ? numBCols : B.getGlobalNumRows();
-  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
     <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<std::endl);
@@ -129,7 +129,7 @@ void Multiply(
   //correct row-size. Don't check the number of columns because rectangular
   //matrices which were constructed with only one map can still end up
   //having the correct capacity and dimensions when filled.
-  TEST_FOR_EXCEPTION(Aouter > C.getGlobalNumRows(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Aouter > C.getGlobalNumRows(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
     "match dimensions of op(A) * op(B). C has "<<C.getGlobalNumRows()
      << " rows, should have at least "<<Aouter << std::endl);
@@ -140,7 +140,7 @@ void Multiply(
   //we'll error out later when trying to store result values.
   
   // CGB: However, matrix must be in active-fill
-  TEST_FOR_EXCEPT( C.isFillActive() == false );
+  TEUCHOS_TEST_FOR_EXCEPT( C.isFillActive() == false );
 
   //We're going to need to import remotely-owned sections of A and/or B
   //if more than 1 processor is performing this run, depending on the scenario.
@@ -214,11 +214,11 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   Scalar scalarB )
 {
-  TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
-  TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
     "MatrixMatrix::Add ERROR, input matrix B must not be fill complete!");
-  TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
     "MatrixMatrix::Add ERROR, input matrix B must have a dynamic profile!");
   //Convience typedef
   typedef CrsMatrix<
@@ -294,7 +294,7 @@ void Add(
   //A and B should already be Filled. C should be an empty pointer.
 
 
-  TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), std::runtime_error,
     "EpetraExt::MatrixMatrix::Add ERROR, input matrix A.Filled() or B.Filled() is false,"
     "they are required to be true. (Result matrix C should be an empty pointer)" << std::endl);
 
@@ -565,7 +565,7 @@ void import_and_extract_views(
   }
 
   if (numProcs < 2) {
-    TEST_FOR_EXCEPTION(Mview.numRemote > 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Mview.numRemote > 0, std::runtime_error,
       "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
     setMaxNumEntriesPerRow(Mview);
     //If only one processor we don't need to import any remote rows, so return.

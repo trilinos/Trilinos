@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n\n";
   
   int numTestException =16;
-  int beginThrowNumber = TestForException_getThrowNumber();
+  int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + numTestException;
   
   try{ // Outer try block contains all tests for exception
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
     
     
     // Check if number of caught exceptions matches the expected number
-    if (TestForException_getThrowNumber() != endThrowNumber) {
+    if (Teuchos::TestForException_getThrowNumber() != endThrowNumber) {
       errorFlag++;
       
     }

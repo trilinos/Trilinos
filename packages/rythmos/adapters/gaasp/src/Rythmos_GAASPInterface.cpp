@@ -62,7 +62,7 @@ GAASPInterface::GAASPInterface() {
 }
 
 void GAASPInterface::initialize() {
-  TEST_FOR_EXCEPTION(is_null(tModel_), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(tModel_), std::logic_error,
       "Error, no model has been set, this must be done before anything can be run!"
       );
 
@@ -101,7 +101,7 @@ void GAASPInterface::forwardSolve() {
 }
 
 void GAASPInterface::adjointSolve() {
-  TEST_FOR_EXCEPTION(!forwardSolveCompleted_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!forwardSolveCompleted_, std::logic_error,
       "Error, a forward solve must be completed before an adjoint solve can be run!"
       );
   if (!adjointSolveCompleted_) {
@@ -125,7 +125,7 @@ void GAASPInterface::adjointSolve() {
 }
 
 Teuchos::RCP<const GAASPErrorEstimate> GAASPInterface::computeErrorEstimate() {
-  TEST_FOR_EXCEPTION(!adjointSolveCompleted_, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(!adjointSolveCompleted_, std::logic_error, 
       "Error, an adjoint solve must be completed before an error estimate can be calculated!"
       );
   if (!errorEstimateCompleted_) {
@@ -161,7 +161,7 @@ Teuchos::RCP<const GAASPErrorEstimate> GAASPInterface::computeErrorEstimate() {
 }
 
 void GAASPInterface::refineMesh() {
-  TEST_FOR_EXCEPTION(!errorEstimateCompleted_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!errorEstimateCompleted_, std::logic_error,
       "Error, the mesh cannot be refined until an error estimate has been completed!"
       );
   if (!refineMeshCompleted_) {
@@ -193,7 +193,7 @@ void GAASPInterface::refineMesh() {
 }
 
 void GAASPInterface::setThyraModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<double> > tModel) {
-  TEST_FOR_EXCEPTION(is_null(tModel), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(tModel), std::logic_error,
       "Error, a null Model Evaluator was passed in!");
   tModel_ = tModel;
   // Get the initial condition to the ModelEvaluator
@@ -232,7 +232,7 @@ void GAASPInterface::describe(
 
 void GAASPInterface::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
   sTime_ = Teuchos::get<double>(*paramList_,sTime_name_);

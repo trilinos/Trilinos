@@ -31,7 +31,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -172,7 +172,7 @@ namespace Kokkos {
                          const ArrayRCP<const Ordinal>& indx)
 {
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::setPackedValues(): matrix is already initialized. Call clear() before reinitializing.");
 #endif
     isEmpty_ = (allvals == null);

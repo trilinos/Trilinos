@@ -66,7 +66,7 @@ namespace Belos {
   ReturnType 
   InnerSolveResult::validatedReturnType (const ReturnType ret)
   {
-    TEST_FOR_EXCEPTION(ret != Converged || ret != Unconverged,
+    TEUCHOS_TEST_FOR_EXCEPTION(ret != Converged || ret != Unconverged,
 		       std::invalid_argument,
 		       "Invalid ReturnType enum value " << ret << ".  "
 		       "Valid values are Converged=" << Converged << " and "
@@ -77,7 +77,7 @@ namespace Belos {
   int 
   InnerSolveResult::requireNonNegInt (const int k) 
   {
-    TEST_FOR_EXCEPTION(k < 0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(k < 0, std::invalid_argument, 
 		       "The given integer argument k=" << k 
 		       << " must be nonnegative.");
     return k;

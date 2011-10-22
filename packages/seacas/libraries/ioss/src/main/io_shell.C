@@ -949,6 +949,7 @@ namespace {
 
     data.resize(isize);
 
+    if (field_name == "connectivity_raw") return;
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }

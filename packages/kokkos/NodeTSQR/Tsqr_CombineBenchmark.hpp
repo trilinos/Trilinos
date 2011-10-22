@@ -141,11 +141,11 @@ namespace TSQR {
       typedef CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType> 
 	benchmarker_type;
 
-      TEST_FOR_EXCEPTION(cacheBlockNumTrials < 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(cacheBlockNumTrials < 1, std::invalid_argument,
 			 "The number of trials for the cache block benchmark "
 			 "must be positive, but you specified cacheBlockNum"
 			 "Trials = " << cacheBlockNumTrials << ".");
-      TEST_FOR_EXCEPTION(pairNumTrials < 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(pairNumTrials < 1, std::invalid_argument,
 			 "The number of trials for the pair benchmark must be "
 			 "positive, but you specified pairNumTrials = "
 			 << pairNumTrials << ".");
@@ -216,7 +216,7 @@ namespace TSQR {
       const int numRows = params.numRows;
       const int numCols = params.numCols;
 
-      TEST_FOR_EXCEPTION(timerResolution <= static_cast<double>(0), 
+      TEUCHOS_TEST_FOR_EXCEPTION(timerResolution <= static_cast<double>(0), 
 			 std::invalid_argument,
 			 "The timer resolution must be a positive number, "
 			 "but you specified timerResolution = " 
@@ -314,7 +314,7 @@ namespace TSQR {
 	const bool tooSlow = slowdown > params.allowance;
 	// FIXME (mfh 24 May 2011) Replace std::runtime_error with a
 	// more appropriately named exception.
-	TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow, 
+	TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow, 
 			   std::runtime_error,
 			   "CombineNative is too slow!  For cache block "
 			   "benchmark with numRows=" << numRows << " and numCols="
@@ -344,7 +344,7 @@ namespace TSQR {
 	const bool tooSlow = slowdown > params.allowance;
 	// FIXME (mfh 24 May 2011) Replace std::runtime_error with a
 	// more appropriately named exception.
-	TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow, 
+	TEUCHOS_TEST_FOR_EXCEPTION(params.strictPerfTests && tooSlow, 
 			   std::runtime_error,
 			   "CombineFortran is too slow!  For cache block "
 			   "benchmark with numRows=" << numRows << " and numCols="
@@ -416,13 +416,13 @@ namespace TSQR {
     benchmarkCombine (std::ostream& out,
 		      CombineBenchmarkParameters& params)
     {
-      TEST_FOR_EXCEPTION(params.numRows < 1 || params.numCols < 1, 
+      TEUCHOS_TEST_FOR_EXCEPTION(params.numRows < 1 || params.numCols < 1, 
 			 std::invalid_argument,
 			 "The test matrix must have a positive number of rows "
 			 "and columns, but you specified numRows = " 
 			 << params.numRows << " and numCols = "
 			 << params.numCols << ".");
-      TEST_FOR_EXCEPTION(! params.calibrate && params.numTrials < 1, 
+      TEUCHOS_TEST_FOR_EXCEPTION(! params.calibrate && params.numTrials < 1, 
 			 std::invalid_argument,
 			 "Since you specified no calibration is to be performed, "
 			 "the number of trials must be positive, but you specified "

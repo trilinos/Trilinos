@@ -75,31 +75,34 @@ c Probably need to put this into a DO LOOP over all element block id's
 c in mesh B. For now, assume that element blocks match if id's match. 
 c Only check element types.
 c
-      IF (TYP(1:3) .NE. TYPA(1:3))CALL ERROR('RDB2','ELEMENT TYPE 
-     &  MISMATCH - MESH-B DOES NOT MATCH MESH-A','ELEMENT BLOCK',
-     &  IDBLKA,' ',0,' ',' ',1)
-C
-C
+      IF (TYP(1:3) .NE. TYPA(1:3)) THEN
+        CALL ERROR('RDB2',
+     &    'ELEMENT TYPE MISMATCH - MESH-B DOES NOT MATCH MESH-A',
+     &    'ELEMENT BLOCK', IDBLKA,' ',0,
+     &    'Execution will continue, but verify that results are OK',
+     &    ' ',0)
+      END IF
+
       CALL EXGELC(NTP3EX,IDBLKB,ICONB(1,1),IERR)
-C
+
       DO 5 I = 1,NODESB
         NDLSTB(I) = 0
  5    CONTINUE
-C
+
       DO 10 IEL = 1, NUMEBB
         DO 20 INODE = 1, NELNDB
           NDLSTB(ICONB(INODE,IEL)) = 1
  20     CONTINUE
  10   CONTINUE
-C
+
       NUMNDB = 0
-C
+
       DO 30 I = 1, NODESB
         IF (NDLSTB(I) .EQ. 1)THEN
           NUMNDB = NUMNDB + 1
           NDLSTB(NUMNDB) = I
         END IF
  30   CONTINUE
-c
+
       RETURN
       END

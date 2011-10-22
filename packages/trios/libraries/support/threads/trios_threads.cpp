@@ -289,7 +289,17 @@ int nthread_lock(nthread_mutex_t *mutex)
     int rc=0;
 
 #ifdef HAVE_TRIOS_PTHREAD
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock: locking mutex(%p), pthread_mutex(%p)\n",
+            mutex, &mutex->mutex);
+    fflush(logger_get_file());
+#endif
     rc = pthread_mutex_lock(&mutex->mutex);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock: locked mutex(%p), pthread_mutex(%p)\n",
+            mutex, &mutex->mutex);
+    fflush(logger_get_file());
+#endif
 #elif HAVE_TRIOS_MTA
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_lock(threadid=%lu): locking mutex(%p), lock_count(%d), is_recursive(%u)\n",
@@ -332,7 +342,17 @@ int nthread_unlock(nthread_mutex_t *mutex)
     int rc=0;
 
 #ifdef HAVE_TRIOS_PTHREAD
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock: unlocking mutex(%p), pthread_mutex(%p)\n",
+            mutex, &mutex->mutex);
+    fflush(logger_get_file());
+#endif
     rc = pthread_mutex_unlock(&mutex->mutex);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock: unlocked mutex(%p), pthread_mutex(%p)\n",
+            mutex, &mutex->mutex);
+    fflush(logger_get_file());
+#endif
 #elif HAVE_TRIOS_MTA
 #ifdef _DEBUG_LOCKS_
     fprintf(stderr, "nthread_unlock(threadid=%lu): unlocking mutex(%p), lock_count(%d), is_recursive(%u)\n",
@@ -367,7 +387,7 @@ nthread_id_t nthread_self(void)
 
 //    log_debug(thread_debug_level, "nthread_self(STUB)");
 #ifdef HAVE_TRIOS_PTHREAD
-    rc = pthread_self();
+    rc = (nthread_id_t)pthread_self();
 #elif HAVE_TRIOS_MTA
 #if USING_MTGL
     rc = 1;
@@ -380,15 +400,16 @@ nthread_id_t nthread_self(void)
 
 void nthread_yield(void)
 {
-//#if defined(HAVE_TRIOS_PTHREAD_YIELD)
-//    log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield");
-//    pthread_yield();
+#if defined(HAVE_TRIOS_PTHREAD)
+    log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield");
+    pthread_yield();
 //#elif defined(HAVE_TRIOS_SCHED_YIELD) && !defined(__LIBCATAMOUNT__)
 //    log_debug(thread_debug_level, "nthread_yield(STUB) - sched_yield");
 //    sched_yield();
-//#else
+#else
     log_debug(thread_debug_level, "nthread_yield(STUB) - usleep");
     usleep(0);
+#endif
     return;
 }
 

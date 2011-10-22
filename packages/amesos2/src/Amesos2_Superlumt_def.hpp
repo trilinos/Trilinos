@@ -229,7 +229,7 @@ namespace Amesos2 {
 
 #ifdef HAVE_AMESOS2_DEBUG
     const int nprocs = data_.options.nprocs;
-    TEST_FOR_EXCEPTION( nprocs <= 0,
+    TEUCHOS_TEST_FOR_EXCEPTION( nprocs <= 0,
                         std::invalid_argument,
                         "The number of threads to spawn should be greater than 0." );
 #endif
@@ -245,7 +245,7 @@ namespace Amesos2 {
         function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
                             data_.C.getRawPtr(), &rowcnd, &colcnd,
                             &amax, &info);
-        TEST_FOR_EXCEPTION( info != 0,
+        TEUCHOS_TEST_FOR_EXCEPTION( info != 0,
                             std::runtime_error,
                             "SuperLU_MT gsequ returned with status " << info );
 
@@ -307,10 +307,10 @@ namespace Amesos2 {
 
     // Check output
     const global_size_type info_st = as<global_size_type>(info);
-    TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
+    TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
                         std::runtime_error,
                         "Factorization complete, but matrix is singular. Division by zero eminent");
-    TEST_FOR_EXCEPTION( (info_st > 0) && (info_st > this->globalNumCols_),
+    TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st > this->globalNumCols_),
                         std::runtime_error,
                         "Memory allocation failure in SuperLU_MT factorization");
     // The other option, that info_st < 0 denotes invalid parameters to
@@ -396,7 +396,7 @@ namespace Amesos2 {
     /* All processes should have the same error code */
     Teuchos::broadcast(*(this->getComm()),0,&info);
 
-    TEST_FOR_EXCEPTION( info < 0,
+    TEUCHOS_TEST_FOR_EXCEPTION( info < 0,
                         std::runtime_error,
                         "Argument " << -info << " to gstrs had an illegal value" );
 
@@ -612,7 +612,7 @@ namespace Amesos2 {
     }
 
     if( this->root_ ){
-      TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
                           std::runtime_error,
                           "rank=0 failed to get all nonzero values in getCcs()");
 
@@ -627,7 +627,7 @@ namespace Amesos2 {
                                           SLUMT::SLU_NC,
                                           dtype, SLUMT::SLU_GE);
 
-      TEST_FOR_EXCEPTION( data_.A.Store == NULL,
+      TEUCHOS_TEST_FOR_EXCEPTION( data_.A.Store == NULL,
                           std::runtime_error,
                           "Failed to allocate matrix store" );
     }

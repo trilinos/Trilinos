@@ -1453,7 +1453,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKOrder3 ) {
 
 // This test is just for diagnostic purposes to see the valid parameter list
 /*
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, FactoryGetValidPL ) {
   RCP<RKButcherTableauBuilder<double> > rkbtF = rKButcherTableauBuilder<double>();
   RCP<const ParameterList> pl = rkbtF->getValidParameters();
@@ -1461,7 +1461,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, FactoryGetValidPL ) {
   pl->print(std::cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(4));
   TEST_ASSERT( true );
 }
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 */
 
 } // namespace Rythmos

@@ -97,6 +97,11 @@ void parallel_for( const size_t work_count ,
   seconds = timer.seconds(); // Time since construction
 }
 
+//----------------------------------------------------------------------------
+
+template< class DeviceType >
+class MultiFunctorParallelFor ;
+
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */

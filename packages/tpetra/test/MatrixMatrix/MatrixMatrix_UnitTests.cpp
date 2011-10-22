@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     it != matrixSystems->end();
     ++it)
   {
-	  TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
       "All top level items in the matrix "
 	    "file names list must be ParameterLists! In otherwords, you always "
       "need to have matricies "
@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile(C_file, comm, node);
  
 
-    TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op << "!" << std::endl);
   
     if(op == "multiply"){
@@ -271,7 +271,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
 
 /*
  * This test was created at the request of Chris Seifert to verify
- * that some inexplicable behaviour in MueLue was not due to a faulty
+ * that some inexplicable behaviour in MueLu was not due to a faulty
  * assumption in the Matrix Matrix Multiply Kernel.
  * KLN 15/06/2011
  */

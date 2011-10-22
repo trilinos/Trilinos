@@ -107,9 +107,9 @@ private:
 
 
   RCP<const typename DataStore<Scalar>::DataStoreVector_t> nodes_;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   RCP<typename DataStore<Scalar>::DataStoreVector_t> nodes_copy_;
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   mutable CubicSplineCoeff<Scalar> splineCoeff_;
   mutable bool splineCoeffComputed_;

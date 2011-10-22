@@ -42,7 +42,7 @@
 // @HEADER
 
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
 // **********************************************************************
@@ -199,7 +199,7 @@ template<typename Traits>
 void GatherSolution<PHX::MyTraits::Jv, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Error: GatherSolution not implemented for \"Jv\" evaluation type!");
 }
 

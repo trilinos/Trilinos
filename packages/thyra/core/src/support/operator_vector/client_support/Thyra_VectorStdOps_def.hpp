@@ -73,7 +73,7 @@
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "RTOpPack_TOpReciprocal.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
 
 
@@ -691,9 +691,9 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
    \
   template void scale( const SCALAR& alpha, const Ptr<VectorBase<SCALAR > > &v_lhs );  \
    \
-  template void abs( const Ptr<VectorBase<SCALAR > > &y, const VectorBase<SCALAR >& x );  \
+  template void abs( const VectorBase< SCALAR > &x, const Ptr<VectorBase< SCALAR > > &y );  \
    \
-  template void reciprocal( const Ptr<VectorBase<SCALAR > > &y, const VectorBase<SCALAR >& x );  \
+  template void reciprocal( const VectorBase< SCALAR > &x, const Ptr<VectorBase< SCALAR > > &y );  \
    \
   template void ele_wise_prod(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \

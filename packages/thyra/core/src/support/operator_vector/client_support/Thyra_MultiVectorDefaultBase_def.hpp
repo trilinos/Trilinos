@@ -52,7 +52,7 @@
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
 #include "Teuchos_Workspace.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
 
@@ -152,14 +152,14 @@ MultiVectorDefaultBase<Scalar>::nonContigSubViewImpl(
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
   const Ordinal dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
-  TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
+  TEUCHOS_TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   // We have to create a view of a subset of the columns
   Workspace< RCP< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
@@ -188,14 +188,14 @@ MultiVectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl(
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
   const Ordinal dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
-  TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
+  TEUCHOS_TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   // We have to create a view of a subset of the columns
   Workspace< RCP< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
@@ -331,13 +331,13 @@ void MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
     rowRng = rowRng_in.full_range() ? Range1D(0,rangeDim-1) : rowRng_in,
     colRng = colRng_in.full_range() ? Range1D(0,domainDim-1) : colRng_in;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(rowRng.ubound() < rangeDim), std::out_of_range
     ,"MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(...): Error, rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not in the range = [0,"
     <<(rangeDim-1)<<"]!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(colRng.ubound() < domainDim), std::out_of_range
     ,"MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(...): Error, colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not in the range = [0,"
@@ -404,7 +404,7 @@ void MultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     sub_mv==NULL, std::logic_error,
     "MultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(...): Error!"
     );

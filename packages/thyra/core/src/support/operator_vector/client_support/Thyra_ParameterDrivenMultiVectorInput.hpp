@@ -318,9 +318,9 @@ void copy(
   )
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT(vec==0);
+  TEUCHOS_TEST_FOR_EXCEPT(vec==0);
   DetachedVectorView<Scalar> dVec(*vec);
-  TEST_FOR_EXCEPT(implicit_cast<int>(dVec.subDim())!=implicit_cast<int>(array.size())); // ToDo: Give a very good error message!
+  TEUCHOS_TEST_FOR_EXCEPT(implicit_cast<int>(dVec.subDim())!=implicit_cast<int>(array.size())); // ToDo: Give a very good error message!
   for( Ordinal i = 0; i < dVec.subDim(); ++i ) {
     dVec[i] = array[i];
   }
@@ -374,7 +374,7 @@ void ParameterDrivenMultiVectorInput<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(0==paramList.get());
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList.get());
   paramList->validateParameters(*getValidParameters());
   paramList_ = paramList;
   fileNameBase_ = paramList_->get(
@@ -460,7 +460,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
   ) const
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT(0==mv);
+  TEUCHOS_TEST_FOR_EXCEPT(0==mv);
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream>
@@ -480,12 +480,12 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
       // Call back to throw an exception with a better erro message!
       Teuchos::getArrayFromStringParameter<Scalar>(
         *paramList_,ExplicitArray_name_,vecSpc().dim(),false);
-      TEST_FOR_EXCEPT(!"Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT(!"Should never get here!");
     }
     if( out.get() && trace )
       *out << "\nSetting \"" << mvName << "\" directly from the parameter array "
            << explicitArray_ << " ...\n";
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       mv->domain()->dim()!=implicit_cast<Ordinal>(1), std::logic_error
       ,"Error! We can not handle reading in multi-vectors directly from"
       " the parameter list yet!"
@@ -514,7 +514,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readVector(
   ,Teuchos::RCP<Thyra::VectorBase<Scalar> >   *v
   ) const
 {
-  TEST_FOR_EXCEPT(0==v);
+  TEUCHOS_TEST_FOR_EXCEPT(0==v);
   bool vectorWasRead = false;
   if( fileNameBase_.length() || explicitArray_.size() ) {
     if(!(*v).get())

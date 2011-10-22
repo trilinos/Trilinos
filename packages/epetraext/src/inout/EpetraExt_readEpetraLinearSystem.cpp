@@ -60,7 +60,7 @@ void EpetraExt::readEpetraLinearSystem(
   Epetra_Vector    *readxexact;
 
   const std::string::size_type ext_dot = fileName.rfind(".");
-  TEST_FOR_EXCEPT( ext_dot == std::string::npos );
+  TEUCHOS_TEST_FOR_EXCEPT( ext_dot == std::string::npos );
   std::string ext = fileName.substr(ext_dot+1);
   //std::cout << "\nfileName = " << fileName << "\next = " << ext << std::endl;
 
@@ -68,7 +68,7 @@ void EpetraExt::readEpetraLinearSystem(
   
   if ( ext == "triU" ) { 
     const bool NonContiguousMap = true; 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra(
         hacked_file_str, false, comm, readMap, readA, readx, 
         readb, readxexact, NonContiguousMap
@@ -77,7 +77,7 @@ void EpetraExt::readEpetraLinearSystem(
   }
   else if ( ext == "triS" ) { 
     const bool NonContiguousMap = true; 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra(
         hacked_file_str, true, comm, readMap, readA, readx, 
         readb, readxexact, NonContiguousMap
@@ -85,7 +85,7 @@ void EpetraExt::readEpetraLinearSystem(
       );
   }
   else if( ext == "mtx" ) { 
-    TEST_FOR_EXCEPT(
+    TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadMatrixMarket2Epetra(
         hacked_file_str, comm, readMap, 
         readA, readx, readb, readxexact
@@ -99,7 +99,7 @@ void EpetraExt::readEpetraLinearSystem(
       ); // No error return???
   }
   else {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error
       ,"Error, the file = \'"<<hacked_file_str<<"\' has the extension "
       "\'*."<<ext<<"\' is not \'*.triU\', \'*.triS\', \'*.mtx\', or \'*.hb\'!"

@@ -83,7 +83,7 @@ RCP<Dependency> ValidatorDependencyXMLConverter::convertXML(
     const XMLParameterListReader::EntryIDsMap& /*entryIDsMap*/,
     const IDtoValidatorMap& validatorIDsMap) const
 {
-  TEST_FOR_EXCEPTION(dependees.size() > 1,
+  TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
     "A Validator Dependency can only have 1 dependee!" << 
     std::endl << std::endl);
@@ -132,7 +132,7 @@ StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   bool showIf,
   const XMLParameterListReader::EntryIDsMap& /*entryIDsMap*/) const
 {
-  TEST_FOR_EXCEPTION(dependees.size() > 1,
+  TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
     "A StringVisualDependency can only have 1 dependee!" << 
     std::endl << std::endl);
@@ -140,7 +140,7 @@ StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   StringVisualDependency::ValueList valueList;
   int valuesTagIndex = xmlObj.findFirstChild(getStringValuesTagName());
   
-  TEST_FOR_EXCEPTION(valuesTagIndex < 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(valuesTagIndex < 0,
     ValuesTagMissingException,
     "Couldn't find " << getStringValuesTagName() << " tag for a " <<
     "StringVisualDependency!" << std::endl <<std::endl);
@@ -174,7 +174,7 @@ BoolVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   bool showIf,
   const XMLParameterListReader::EntryIDsMap& /*entryIDsMap*/) const
 {
-  TEST_FOR_EXCEPTION(dependees.size() > 1,
+  TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
     "A BoolVisualDependency can only have 1 dependee!" <<
     std::endl << std::endl);
@@ -203,7 +203,7 @@ ConditionVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   const XMLParameterListReader::EntryIDsMap& entryIDsMap) const
 {
   int conditionIndex = xmlObj.findFirstChild(Condition::getXMLTagName());
-  TEST_FOR_EXCEPTION(conditionIndex < 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(conditionIndex < 0,
     MissingConditionTagException,
     "ConditionVisualDependencies must have a Condition tag!"
   );
@@ -263,7 +263,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   int valuesAndValidatorIndex = 
     xmlObj.findFirstChild(getValuesAndValidatorsTag()); 
     
-  TEST_FOR_EXCEPTION(valuesAndValidatorIndex < 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(valuesAndValidatorIndex < 0,
     MissingValuesAndValidatorsTagException,
     "Error: All StringValidatorDependencies must have a " << 
     getValuesAndValidatorsTag() << "tag!" << std::endl << std::endl);
@@ -275,7 +275,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
     ParameterEntryValidator::ValidatorID valiID = 
       child.getRequired<ParameterEntryValidator::ValidatorID>(
         getValidatorIdAttributeName());
-    TEST_FOR_EXCEPTION(validatorIDsMap.find(valiID) == validatorIDsMap.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(validatorIDsMap.find(valiID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find a validator corresponding to the ID " << valiID <<
       " in the given validatorIDsMap!" << std::endl << std::endl);
@@ -290,7 +290,7 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
     ParameterEntryValidator::ValidatorID defaultValiID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getDefaultValidatorIdAttributeName());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(defaultValiID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find a validator (for the default validator) " <<
@@ -356,7 +356,7 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getTrueValidatorIdAttributeName());
   
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(trueID)
       == 
       validatorIDsMap.end(),
@@ -375,7 +375,7 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getFalseValidatorIdAttributeName());
   
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(falseID)
       == 
       validatorIDsMap.end(),

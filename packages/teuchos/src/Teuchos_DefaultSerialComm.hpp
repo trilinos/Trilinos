@@ -134,6 +134,8 @@ public:
     const Ptr<RCP<CommRequest> > &request
     ) const;
   /** \brief . */
+  virtual RCP< Comm<Ordinal> > duplicate() const;
+  /** \brief . */
   virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
   /** brief . */
   virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int> & ranks) const;
@@ -222,7 +224,7 @@ void SerialComm<Ordinal>::gatherAll(
   (void)sendBuffer;
   (void)recvBuffer;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
+  TEUCHOS_TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,recvBuffer);
 }
@@ -254,7 +256,7 @@ void SerialComm<Ordinal>::reduceAllAndScatter(
   (void)myGlobalReducts;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( recvCounts==NULL || recvCounts[0] != sendBytes ); 
+  TEUCHOS_TEST_FOR_EXCEPT( recvCounts==NULL || recvCounts[0] != sendBytes ); 
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,myGlobalReducts);
 }
@@ -276,7 +278,7 @@ void SerialComm<Ordinal>::send(
   const Ordinal /*bytes*/, const char []/*sendBuffer*/, const int /*destRank*/
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"SerialComm<Ordinal>::send(...): Error, you can not call send(...) when you"
     " only have one process!"
@@ -289,7 +291,7 @@ int SerialComm<Ordinal>::receive(
   const int /*sourceRank*/, const Ordinal /*bytes*/, char []/*recvBuffer*/
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"SerialComm<Ordinal>::receive(...): Error, you can not call receive(...) when you"
     " only have one process!"
@@ -305,7 +307,7 @@ void SerialComm<Ordinal>::readySend(
   const int /*destRank*/
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"SerialComm<Ordinal>::readySend(...): Error, you can not call readySend(...) when you"
     " only have one process!"
@@ -319,7 +321,7 @@ RCP<CommRequest> SerialComm<Ordinal>::isend(
   const int /*destRank*/
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;
 }
 
@@ -330,7 +332,7 @@ RCP<CommRequest> SerialComm<Ordinal>::ireceive(
   const int /*sourceRank*/
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;
 }
 
@@ -340,7 +342,7 @@ void SerialComm<Ordinal>::waitAll(
   const ArrayView<RCP<CommRequest> > &/*requests*/
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -349,7 +351,14 @@ void SerialComm<Ordinal>::wait(
   const Ptr<RCP<CommRequest> > &/*request*/
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}
+
+template< typename Ordinal>
+RCP< Comm<Ordinal> >
+SerialComm<Ordinal>::duplicate() const
+{
+  return rcp(new SerialComm<Ordinal>(*this));
 }
 
 template<typename Ordinal>

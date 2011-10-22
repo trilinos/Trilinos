@@ -189,7 +189,7 @@ void DefaultProductVector<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -203,8 +203,8 @@ void DefaultProductVector<Scalar>::setBlock(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
-  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+  TEUCHOS_TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEUCHOS_TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
 #endif
   vecs_[i] = b;
 }
@@ -216,8 +216,8 @@ void DefaultProductVector<Scalar>::setNonconstBlock(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
-  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+  TEUCHOS_TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEUCHOS_TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
 #endif
   vecs_[i] = b;
 }
@@ -231,7 +231,7 @@ RCP<VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  TEUCHOS_TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
 #endif
   return vecs_[k].getNonconstObj();
 }
@@ -242,7 +242,7 @@ RCP<const VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getVectorBlock(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  TEUCHOS_TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
 #endif
   return vecs_[k].getConstObj();
 }
@@ -263,7 +263,7 @@ template <class Scalar>
 bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  TEUCHOS_TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
 #endif
   return vecs_[k].isConst();
 }
@@ -328,7 +328,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
   bool test_failed;
   for(int k = 0; k < num_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"]->space() = "
       <<vecs[k]->space()->description()<<"\' is not compatible with this "
@@ -337,7 +337,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
   }
   for(int k = 0; k < num_targ_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*targ_vecs[k]->space());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() = "
       <<targ_vecs[k]->space()->description()<<"\' is not compatible with this "
@@ -405,7 +405,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
     g_off += dim_k;
     num_elements_remaining -= dim_k;
   }
-  TEST_FOR_EXCEPT(!(num_elements_remaining==0));
+  TEUCHOS_TEST_FOR_EXCEPT(!(num_elements_remaining==0));
 
 }
 
@@ -427,7 +427,7 @@ void DefaultProductVector<Scalar>::acquireDetachedVectorViewImpl(
   Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if(
     rng.lbound() + rng.size()
@@ -461,7 +461,7 @@ void DefaultProductVector<Scalar>::releaseDetachedVectorViewImpl(
   Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if(
     sub_vec->globalOffset() + sub_vec->subDim()
@@ -490,7 +490,7 @@ void DefaultProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(
   Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if(
     rng.lbound() + rng.size()
@@ -524,7 +524,7 @@ void DefaultProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
   Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if(
     sub_vec->globalOffset() + sub_vec->subDim()
@@ -551,7 +551,7 @@ void DefaultProductVector<Scalar>::setSubVectorImpl(
   Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec.globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if(
     sub_vec.globalOffset() + sub_vec.subDim()

@@ -4,7 +4,7 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen)
+   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp

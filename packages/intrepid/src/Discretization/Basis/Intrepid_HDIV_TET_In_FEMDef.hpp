@@ -333,13 +333,13 @@ namespace Intrepid {
         }
         break;
       default:
-        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                             ">>> ERROR (Basis_HDIV_TET_In_FEM): Operator type not implemented");
         break;
       }
     }
     catch (std::invalid_argument &exception){
-      TEST_FOR_EXCEPTION( true , std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                           ">>> ERROR (Basis_HDIV_TET_In_FEM): Operator type not implemented");    
     }
 
@@ -352,7 +352,7 @@ namespace Intrepid {
                                                             const ArrayScalar &    inputPoints,
                                                             const ArrayScalar &    cellVertices,
                                                             const EOperator        operatorType) const {
-    TEST_FOR_EXCEPTION( (true), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HDIV_TET_In_FEM): FEM Basis calling an FVD member function");
   }
 

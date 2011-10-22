@@ -60,6 +60,7 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
+#include "Teuchos_as.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -387,15 +388,21 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
   // Set all the valid parameters and their default values.
   if (is_null (validParams_)) {
+    // We use Teuchos::as just in case MagnitudeType doesn't have a
+    // constructor that takes an int.  Otherwise, we could just write
+    // "MagnitudeType(10)".
+    const MagnitudeType ten = Teuchos::as<MagnitudeType> (10);
+    const MagnitudeType sqrtEps = STM::squareroot (STM::eps());
+
     const MagnitudeType lambda = STM::zero();
     RCP<std::ostream> outputStream = rcpFromRef (std::cout);
-    const MagnitudeType relRhsErr = MagnitudeType(10) * STM::squareroot (STM::eps());
-    const MagnitudeType relMatErr = MagnitudeType(10) * STM::squareroot (STM::eps());
+    const MagnitudeType relRhsErr = ten * sqrtEps;
+    const MagnitudeType relMatErr = ten * sqrtEps;
     const MagnitudeType condMax = STM::one() / STM::eps();
     const int maxIters = 1000;
     const int termIterMax = 1;
     const std::string orthoType ("DGKS");
-    const MagnitudeType orthoKappa (-1.0);
+    const MagnitudeType orthoKappa = Teuchos::as<MagnitudeType> (-1.0);
     const int verbosity = Belos::Errors;
     const int outputStyle = Belos::General;
     const int outputFreq = -1;
@@ -463,7 +470,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
-  TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
 		     "Belos::LSQRSolMgr::setParameters: "
 		     "the input ParameterList is null.");
   RCP<const ParameterList> defaultParams = getValidParameters ();
@@ -507,7 +514,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       if (oldSolveLabel != newSolveLabel) {
 	// Tell TimeMonitor to forget about the old timer.
 	// TimeMonitor lets you clear timers by name.
-	TimeMonitor::clearTimer (oldSolveLabel);
+	TimeMonitor::clearCounter (oldSolveLabel);
 	timerSolve_ = TimeMonitor::getNewCounter (newSolveLabel);
       }
     }
@@ -565,7 +572,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     printer_->setVerbosity (verbosity_);
     printer_->setOStream (outputStream_);
   }
-
 
   // Check if the orthogonalization changed, or if we need to
   // initialize it.
@@ -684,12 +690,12 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     setParameters (Teuchos::parameterList (*getValidParameters()));
   }
 
-  TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
 		     "The linear problem to solve is null.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
                      "LSQRSolMgr::solve(): The linear problem is not ready, "
 		     "as its setProblem() method has not been called.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
 		     LSQRSolMgrBlockSizeFailure, 
 		     "LSQRSolMgr::solve(): The current implementation of LSQR "
 		     "only knows how to solve problems with one right-hand "
@@ -771,11 +777,11 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     } else if (maxIterTest_->getStatus() == Belos::Passed) {
       isConverged = false;
     } else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "LSQRSolMgr::solve(): LSQRIteration::iterate() "
 			 "returned without either the convergence test or "
 			 "the maximum iteration count test passing."
-			 "Please report this bug to the Belos developers");
+			 "Please report this bug to the Belos developers.");
     }
   } catch (const std::exception &e) {
     printer_->stream(Belos::Errors) << "Error! Caught std::exception in LSQRIter::iterate() at iteration " 

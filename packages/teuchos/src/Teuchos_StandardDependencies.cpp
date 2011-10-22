@@ -166,7 +166,7 @@ std::string StringVisualDependency::getTypeAttributeValue() const{
 }
 
 void StringVisualDependency::validateDep() const{
-  TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "String Visual Dependency must be of type " 
@@ -212,7 +212,7 @@ std::string BoolVisualDependency::getTypeAttributeValue() const{
 }
 
 void BoolVisualDependency::validateDep() const{
-  TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "Bool Visual Dependency must be of type " << 
@@ -330,7 +330,7 @@ std::string StringValidatorDependency::getTypeAttributeValue() const{
 }
 
 void StringValidatorDependency::validateDep() const{
-  TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "String Validator Dependency must be of type " <<
@@ -338,7 +338,7 @@ void StringValidatorDependency::validateDep() const{
     "Type Encountered: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     valuesAndValidators_.size() < 1,
     InvalidDependencyException,
     "The valuesAndValidatord map for a string validator dependency must "
@@ -347,7 +347,7 @@ void StringValidatorDependency::validateDep() const{
   RCP<const ParameterEntryValidator> firstVali = (it->second);
   ++it;
   for(; it != valuesAndValidators_.end(); ++it){
-    TEST_FOR_EXCEPTION( typeid(*firstVali) != typeid(*(it->second)),
+    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*firstVali) != typeid(*(it->second)),
       InvalidDependencyException,
       "Ay no! All of the validators in a StringValidatorDependency "
       "must have the same type.");
@@ -425,7 +425,7 @@ std::string BoolValidatorDependency::getTypeAttributeValue() const{
 
 void BoolValidatorDependency::validateDep() const{
 
-  TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
+  TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "Bool Validator Dependency must be of type " <<
@@ -434,7 +434,7 @@ void BoolValidatorDependency::validateDep() const{
     std::endl << std::endl);
 
   if(!falseValidator_.is_null() && !trueValidator_.is_null()){
-    TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
+    TEUCHOS_TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
       InvalidDependencyException,
       "Ay no! The true and false validators of a Bool Validator Dependency "
       "must be the same type! " <<std::endl << std::endl);

@@ -174,7 +174,7 @@ void IntegratorBuilder<Scalar>::setStepperBuilder(
     const RCP<StepperBuilder<Scalar> > &stepperBuilder
     ) 
 {
-  TEST_FOR_EXCEPT(is_null(stepperBuilder));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(stepperBuilder));
   stepperBuilder_ = stepperBuilder;
   validPL_ = Teuchos::null;
 }
@@ -192,7 +192,7 @@ void IntegratorBuilder<Scalar>::setRKButcherTableauBuilder(
     const RCP<RKButcherTableauBuilder<Scalar> > & rkbtBuilder
     )
 {
-  TEST_FOR_EXCEPT(is_null(rkbtBuilder));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(rkbtBuilder));
   rkbtBuilder_ = rkbtBuilder;
   validPL_ = Teuchos::null;
 }
@@ -268,7 +268,7 @@ void IntegratorBuilder<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
 }
@@ -382,10 +382,10 @@ IntegratorBuilder<Scalar>::create(
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver
     ) const
 {
-  TEST_FOR_EXCEPTION( is_null(model), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(model), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The model passed in is null!"
       );
-  TEST_FOR_EXCEPTION( is_null(paramList_), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(paramList_), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  Please set a parameter list on this class before calling create."
       );
   RCP<ParameterList> integratorSettingsPL = sublist(paramList_,integratorSettings_name);
@@ -394,7 +394,7 @@ IntegratorBuilder<Scalar>::create(
   RCP<ParameterList> integratorSelectionPL = sublist(integratorSettingsPL,integratorSelection_name);
   integratorBuilder_->setParameterList(integratorSelectionPL);
   RCP<IntegratorBase<Scalar> > integrator = integratorBuilder_->create();
-  TEST_FOR_EXCEPTION( is_null(integrator), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(integrator), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The integrator came back null from the ObjectBuilder!"
       );
 
@@ -451,7 +451,7 @@ IntegratorBuilder<Scalar>::create(
   RCP<ParameterList> stepperSelectionPL = sublist(stepperSettingsPL,stepperSelection_name);
   stepperBuilder_->setParameterList(stepperSelectionPL);
   RCP<StepperBase<Scalar> > stepper = stepperBuilder_->create();
-  TEST_FOR_EXCEPTION( is_null(stepper), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(stepper), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The stepper came back null from the StepperBuilder!"
       );
 
@@ -499,7 +499,7 @@ IntegratorBuilder<Scalar>::create(
       sublist(stepperSettingsPL,rkButcherTableauSelection_name);
     rkbtBuilder_->setParameterList(rkButcherTableauSelectionPL);
     RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtBuilder_->create();
-    TEST_FOR_EXCEPTION( is_null(rkbt), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( is_null(rkbt), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The Stepper accepts a RK Butcher"
       " Tableau, but none were specified!"
       );
@@ -524,7 +524,7 @@ IntegratorBuilder<Scalar>::create(
   RCP<SolverAcceptingStepperBase<Scalar> > saStepper =
     Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(stepper,false);
   if(!is_null(saStepper)) {
-    TEST_FOR_EXCEPTION( is_null(nlSolver), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( is_null(nlSolver), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The nonlinear solver passed in is"
       " null and the stepper is implicit!"
       );

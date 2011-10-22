@@ -107,12 +107,32 @@ namespace Thyra {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
-    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    /// \brief Compute QR factorization [Q,R] = qr(A,0).
     ///
+    /// \param A [in/out] On input: the multivector to factor.
+    ///   Overwritten with garbage on output.
+    ///
+    /// \param Q [out] On output: the (explicitly stored) Q factor in
+    ///   the QR factorization of the (input) multivector A.
+    ///
+    /// \param R [out] On output: the R factor in the QR factorization
+    ///   of the (input) multivector A.
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
+    ///
+    /// \warning Currently, this method only works if A and Q have the
+    ///   same communicator and row distribution ("map," in Petra
+    ///   terms) as those of the multivector given to this TsqrAdaptor
+    ///   instance's constructor.  Otherwise, the result of this
+    ///   method is undefined.
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    dense_matrix_type& R)
+		    dense_matrix_type& R,
+		    const bool forceNonnegativeDiagonal=false)
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }

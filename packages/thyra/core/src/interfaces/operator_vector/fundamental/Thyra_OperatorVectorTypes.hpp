@@ -153,7 +153,7 @@ const char* toString(EConj conj)
   switch(conj) {
     case NONCONJ_ELE:    return "NONCONJ_ELE";
     case CONJ_ELE:       return "CONJ_ELE";
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return "BAD"; // Should never be called!
 }
@@ -198,7 +198,7 @@ const char* toString(EOpTransp transp)
     case CONJ:       return "CONJ";
     case TRANS:      return "TRANS";
     case CONJTRANS:  return "CONJTRANS";
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return "BAD"; // Should never be called!
 }
@@ -217,7 +217,7 @@ EOpTransp real_trans(EOpTransp transp)
     case CONJ:       return NOTRANS;
     case TRANS:      return TRANS;
     case CONJTRANS:  return TRANS;
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NOTRANS; // Will never be called!
 }
@@ -235,7 +235,7 @@ EOpTransp not_trans( EOpTransp transp )
     case CONJ:       return CONJTRANS;
     case TRANS:      return CONJ;
     case CONJTRANS:  return NOTRANS;
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NOTRANS; // Will never be called!
 }
@@ -261,7 +261,7 @@ EOpTransp trans_trans( EOpTransp trans1, EOpTransp trans2 )
   if( ( trans1 == CONJ && trans2 == CONJTRANS ) || ( trans2 == CONJ && trans1 == CONJTRANS ) )
     return TRANS;
   else
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   return NOTRANS; // Will never be executed!
 }
 
@@ -278,7 +278,7 @@ EConj transToConj( EOpTransp trans )
     case CONJ:       return CONJ_ELE;
     case TRANS:      return NONCONJ_ELE;
     case CONJTRANS:  return CONJ_ELE;
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NONCONJ_ELE; // Will never be called!
 }
@@ -293,7 +293,7 @@ EOpTransp applyConjToTrans( EConj conj )
   switch(conj) {
     case NONCONJ_ELE: return NOTRANS;
     case CONJ_ELE:    return CONJ;
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NOTRANS; // Will never be called!
 }
@@ -309,7 +309,7 @@ EOpTransp applyTransposeConjToTrans( EConj conj )
   switch(conj) {
     case NONCONJ_ELE: return TRANS;
     case CONJ_ELE:    return CONJTRANS;
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NOTRANS; // Will never be called!
 }

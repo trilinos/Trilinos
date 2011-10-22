@@ -191,10 +191,10 @@ void DefaultSpmdMultiVectorFileIO<Scalar>::readMultiVectorFromFile(
   ,Thyra::MultiVectorBase<Scalar>   *mv
   ) const
 {
-  TEST_FOR_EXCEPT(!mv);
+  TEUCHOS_TEST_FOR_EXCEPT(!mv);
   const std::string fileName = getLocalFileName(fileNameBase);
   std::ifstream in_file(fileName.c_str());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     in_file.eof(), std::logic_error
     ,"Error, the file \""<<fileName<<"\" could not be opened for input!"
     );

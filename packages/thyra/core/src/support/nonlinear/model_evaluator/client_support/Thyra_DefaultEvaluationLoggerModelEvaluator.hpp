@@ -174,7 +174,7 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::initialize(
   ,const RCP<std::ostream>             &tableOut
   )
 {
-  TEST_FOR_EXCEPT( tableOut.get()==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( tableOut.get()==NULL );
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
   tableOut_ = tableOut;
   timer_.start(true);

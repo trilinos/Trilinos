@@ -750,7 +750,7 @@ void IntrepidPolylib::TriQL(const int n, Scalar *d,Scalar *e) {
       }
       if (m != l) {
         if (iter++ == 50){
-          TEST_FOR_EXCEPTION((1),
+          TEUCHOS_TEST_FOR_EXCEPTION((1),
                              std::runtime_error,
                              ">>> ERROR (IntrepidPolylib): Too many iterations in TQLI.");
         }
@@ -828,7 +828,7 @@ Scalar IntrepidPolylib::gammaF(const Scalar x){
     }
   }
   else
-    TEST_FOR_EXCEPTION((1),
+    TEUCHOS_TEST_FOR_EXCEPTION((1),
                        std::invalid_argument,
                        ">>> ERROR (IntrepidPolylib): Argument is not of integer or half order.");
   return gamma;

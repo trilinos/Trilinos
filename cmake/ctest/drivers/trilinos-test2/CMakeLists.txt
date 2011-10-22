@@ -30,6 +30,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_DEV
   ctest_linux_nightly_serial_development_debug_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE dev
+  TIMEOUT_MINUTES 210
 )
 
 SET(INSTALLATION_DIR "${CMAKE_BINARY_DIR}/../installation/installed")

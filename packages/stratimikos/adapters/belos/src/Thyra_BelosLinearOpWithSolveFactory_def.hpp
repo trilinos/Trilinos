@@ -88,7 +88,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
   const std::string &precFactoryName
   )
 {
-  TEST_FOR_EXCEPT(!precFactory.get());
+  TEUCHOS_TEST_FOR_EXCEPT(!precFactory.get());
   RCP<const Teuchos::ParameterList>
     precFactoryValidPL = precFactory->getValidParameters();
   const std::string _precFactoryName =
@@ -213,7 +213,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   BelosLinearOpWithSolve<Scalar>
     &belosOp = Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
@@ -243,7 +243,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
   paramList_ = paramList;
   solverType_ =
@@ -460,9 +460,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   //typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
   //VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
   
-  TEST_FOR_EXCEPT(Op==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
   RCP<const LinearOpBase<Scalar> >
     fwdOp = fwdOpSrc->getOp(),
     approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
@@ -558,7 +558,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
     RCP<const LinearOpBase<Scalar> > left = prec->getLeftPrecOp();
     RCP<const LinearOpBase<Scalar> > right = prec->getRightPrecOp();
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( left.get() || right.get() || unspecified.get() ), std::logic_error
       ,"Error, at least one preconditoner linear operator objects must be set!"
       );
@@ -569,7 +569,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
     else {
       // Set a left, right or split preconditioner
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         left.get(),std::logic_error
         ,"Error, we can not currently handle a left preconditioner!"
         );
@@ -734,7 +734,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
     default:
     {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
 

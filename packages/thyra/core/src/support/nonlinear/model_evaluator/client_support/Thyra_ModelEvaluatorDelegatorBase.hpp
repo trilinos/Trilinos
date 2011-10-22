@@ -509,7 +509,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::setLocalVerbosityLevelValidatedParamet
     ParameterList *paramList
     ) const
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   if (is_null(LocalVerbosityLevel_validator_))
     LocalVerbosityLevel_validator_ =
       Teuchos::verbosityLevelParameterEntryValidator(

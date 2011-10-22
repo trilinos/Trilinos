@@ -9,45 +9,45 @@
 
 
 
-mpics_t mpics_data;
+commsplitter_t commsplitter_data;
 
 
-void mpics_getenv(void)
+void commsplitter_getenv(void)
 {
-    char *envstr=getenv("MPICS_DEBUG_LEVEL");
+    char *envstr=getenv("COMMSPLITTER_DEBUG_LEVEL");
     if (envstr != NULL) {
-        mpics_data.debug_level=atoi(envstr);
+        commsplitter_data.debug_level=atoi(envstr);
     }
 }
 
-void mpics_init(char *app_name)
+void commsplitter_init(char *app_name)
 {
     int   hostname_len;
     char  hostname[MPI_MAX_PROCESSOR_NAME];
 
-    mpics_data.enabled     = 1;
-    mpics_data.debug_level = 0;
-    mpics_data.split_comm  = MPI_COMM_NULL;
+    commsplitter_data.enabled     = 1;
+    commsplitter_data.debug_level = 0;
+    commsplitter_data.split_comm  = MPI_COMM_NULL;
 
-    PMPI_Comm_rank(MPI_COMM_WORLD, &mpics_data.grank);
-    PMPI_Comm_size(MPI_COMM_WORLD, &mpics_data.gsize);
+    PMPI_Comm_rank(MPI_COMM_WORLD, &commsplitter_data.grank);
+    PMPI_Comm_size(MPI_COMM_WORLD, &commsplitter_data.gsize);
     PMPI_Get_processor_name(hostname, &hostname_len);
 
-    mpics_getenv();
+    commsplitter_getenv();
 
-    if (mpics_data.grank == 0) {
-        mpics_log("\n");
-        mpics_log("mpics (comm splitter) initialized\n");
-        mpics_log("\n");
+    if (commsplitter_data.grank == 0) {
+        commsplitter_log("\n");
+        commsplitter_log("commsplitter initialized\n");
+        commsplitter_log("\n");
     }
 
-    mpics_log("app_name is %s\n", app_name);
-    mpics_log("successful init of grank=%d on %s\n", mpics_data.grank, hostname);
+    commsplitter_log("app_name is %s\n", app_name);
+    commsplitter_log("successful init of grank=%d on %s\n", commsplitter_data.grank, hostname);
 
     return;
 }
 
-void mpics_finalize()
+void commsplitter_finalize()
 {
     return;
 }

@@ -112,6 +112,12 @@ namespace Stokhos {
       evaluate(const Teuchos::Array<value_type>& point,
 	       const Teuchos::Array<rvar_type>& random_variables) const;
 
+      //! Evaluate mean of random field at a point
+      value_type evaluate_mean(const Teuchos::Array<value_type>& point) const;
+
+      //! Evaluate standard deviation of random field at a point
+      value_type evaluate_standard_deviation(const Teuchos::Array<value_type>& point) const;
+
       //! Evaluate given eigenfunction at a point
       value_type 
       evaluate_eigenfunction(const Teuchos::Array<value_type>& point, 

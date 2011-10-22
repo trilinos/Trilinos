@@ -248,7 +248,7 @@ void thyraVSToEpetraMap(std::vector<int> & myIndicies, int blockOffset, const Th
       // try to cast to an SPMD capable vector space
       const RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS 
             = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(rcpFromRef(vs));
-      TEST_FOR_EXCEPTION(spmdVS==Teuchos::null,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(spmdVS==Teuchos::null,std::runtime_error,
                          "thyraVSToEpetraMap requires all subblocks to be SPMD");
 
       // get local data storage information

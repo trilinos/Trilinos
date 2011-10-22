@@ -65,12 +65,22 @@ ReverseMapper::~ReverseMapper()
 {
 }
 
-EqnRecord ReverseMapper::getEqnRecord(int global_eqn) const
+EqnRecord ReverseMapper::getEqnRecord(int global_eqn, int option) const
 {
   std::map<int,EqnRecord>::const_iterator
     iter = eqnmap_.find(global_eqn);
 
   if (iter == eqnmap_.end()) {
+    if (option == 1) {
+      EqnRecord erec;
+      erec.IDType = -1;
+      erec.ID = -1;
+      erec.fieldID = -1;
+      erec.offset = -1;
+      erec.global_eqn = -1;
+      return erec;
+    }
+
     std::ostringstream osstr;
     osstr << "fei::ReverseMapper::getEqnRecord ERROR, global_eqn="<<global_eqn
        << " not found.";

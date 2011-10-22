@@ -122,7 +122,7 @@ namespace {
       else {
         MV mineParent(smap,2+numVectors),
            neigParent(tmap,2+numVectors);
-        TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
+        TEUCHOS_TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
         mvMine = mineParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
         mvWithNeighbors = neigParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
       }
@@ -229,7 +229,7 @@ namespace {
       else {
         MV mineParent(smap,2+numVectors),
            neigParent(tmap,2+numVectors);
-        TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
+        TEUCHOS_TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
         mvMine = mineParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
         mvWithNeighbors = neigParent.subViewNonConst(tuple<size_t>(0,6,3,4,5));
       }

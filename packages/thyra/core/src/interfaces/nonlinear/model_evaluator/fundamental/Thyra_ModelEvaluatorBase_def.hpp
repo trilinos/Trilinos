@@ -98,7 +98,7 @@ int ModelEvaluatorBase::InArgs<Scalar>::Np() const
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_
     <<"\': Error, arg="<<toString(arg)<<" is invalid!"
@@ -224,14 +224,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   if( inArgs.supports(IN_ARG_x_dot_poly) && inArgs.get_x_dot_poly().get() ) {
     if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported) {
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         cloneObjects && "Have not implemented cloning for x_dot_poly yet!" );
       set_x_dot_poly(inArgs.get_x_dot_poly());
     }
   }
   if( inArgs.supports(IN_ARG_x_poly) && inArgs.get_x_poly().get() ) {
     if(supports(IN_ARG_x_poly) || !ignoreUnsupported) {
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         cloneObjects && "Have not implemented cloning for x_poly yet!" );
       set_x_poly(inArgs.get_x_poly());
     }
@@ -265,7 +265,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assertSameSupport(
   for ( int inArg_i = 0; inArg_i < NUM_E_IN_ARGS_MEMBERS; ++inArg_i ) {
     const EInArgsMembers inArg_arg = static_cast<EInArgsMembers>(inArg_i);
     const std::string inArg_name = toString(inArg_arg);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       supports(inArg_arg) != inArgs.supports(inArg_arg), std::logic_error,
       "Error, the input argument "<<inArg_name<<" with support "<<inArgs.supports(inArg_arg)<<"\n"
       "in the InArgs object for the model:\n\n"
@@ -396,7 +396,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
   EInArgsMembers arg, bool supports_in
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_
     <<"\': Error, arg="<<toString(arg)<<" is invalid!");
@@ -430,7 +430,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
       break;
     }
     default:
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
@@ -445,7 +445,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(
   EInArgsMembers arg
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<"
     << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
@@ -458,7 +458,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<Scalar>::assert_l(l):\n\n"
     " model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -596,7 +596,7 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
   EOutArgsMembers arg
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_
     <<"\': Error, arg="<<toString(arg)<<" is invalid!"
@@ -1014,7 +1014,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assertSameSupport(
   for ( int outArg_i = 0; outArg_i < NUM_E_OUT_ARGS_MEMBERS; ++outArg_i ) {
     const EOutArgsMembers outArg_arg = static_cast<EOutArgsMembers>(outArg_i);
     const std::string outArg_name = toString(outArg_arg);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       supports(outArg_arg) != outArgs.supports(outArg_arg), std::logic_error,
       "Error, the output argument "<<outArg_name<<" with support "<<outArgs.supports(outArg_arg)<<"\n"
       "in the OutArgs object for the model:\n\n"
@@ -1033,7 +1033,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assertSameSupport(
 
   if (supports(OUT_ARG_f)) {
     for ( int l = 0; l < l_Np; ++l ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !supports(OUT_ARG_DfDp,l).isSameSupport(outArgs.supports(OUT_ARG_DfDp,l)),
         std::logic_error,
         "Error, the support for DfDp("<<l<<") is not the same for the models\n\n"
@@ -1046,7 +1046,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assertSameSupport(
   }
 
   for ( int j = 0; j < l_Ng; ++j ) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !supports(OUT_ARG_DgDx_dot,j).isSameSupport(outArgs.supports(OUT_ARG_DgDx_dot,j)),
       std::logic_error,
       "Error, the support for DgDx_dot("<<j<<") is not the same for the models\n\n"
@@ -1055,7 +1055,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assertSameSupport(
       "  "<<modelEvalDescription()<<"\n\n"
       "and these two OutArgs objects are not compatible!"
       );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !supports(OUT_ARG_DgDx,j).isSameSupport(outArgs.supports(OUT_ARG_DgDx,j)),
       std::logic_error,
       "Error, the support for DgDx("<<j<<") is not the same for the models\n\n"
@@ -1065,7 +1065,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assertSameSupport(
       "and these two OutArgs objects are not compatible!"
       );
     for ( int l = 0; l < l_Np; ++l ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         !supports(OUT_ARG_DgDp,j,l).isSameSupport(outArgs.supports(OUT_ARG_DgDp,j,l)),
         std::logic_error,
         "Error, the support for DgDp("<<j<<","<<l<<") is not the same for the models\n\n"
@@ -1247,7 +1247,7 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   EOutArgsMembers arg, bool supports_in )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_
     <<"\': Error, arg="<<toString(arg)<<" is invalid!"
@@ -1400,7 +1400,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
       break;
     }
     default:
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true ,std::logic_error,
         "Error, can not handle args other than IN_ARG_x yet!"
         );
@@ -1425,7 +1425,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
       break;
     }
     default:
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true ,std::logic_error,
         "Error, can not handle args other than OUT_ARG_f yet!"
         );
@@ -1441,7 +1441,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !this->supports(arg), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(arg):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1456,7 +1456,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
   ) const
 {
   const DerivativeSupport derivSupport = this->supports(arg,l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !deriv.isSupportedBy(derivSupport), std::logic_error,
     "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_DfDp,l):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1473,7 +1473,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
   ) const
 {
   const DerivativeSupport derivSupport = this->supports(arg,j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !deriv.isSupportedBy(derivSupport), std::logic_error,
     "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_DgDx_dot,j):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1490,7 +1490,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
   ) const
 {
   const DerivativeSupport derivSupport = this->supports(arg,j);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !deriv.isSupportedBy(derivSupport), std::logic_error,
     "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_DgDx,j):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1507,7 +1507,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
   ) const
 {
   const DerivativeSupport derivSupport = this->supports(arg,j,l);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !deriv.isSupportedBy(derivSupport), std::logic_error,
     "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_DgDp,j,l):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1521,7 +1521,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_l(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_l(l):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"
@@ -1534,7 +1534,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_l(int l) const
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_j(int j) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= j && j < Ng() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_j(j):\n\n"
     "model = \'"<<modelEvalDescription_<<"\':\n\n"

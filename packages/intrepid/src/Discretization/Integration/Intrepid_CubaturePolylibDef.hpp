@@ -50,7 +50,7 @@ namespace Intrepid {
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::CubaturePolylib(int degree, EIntrepidPLPoly poly_type, Scalar alpha, Scalar beta) {
-  TEST_FOR_EXCEPTION((degree < 0),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0),
                      std::out_of_range,
                      ">>> ERROR (CubaturePolylib): No cubature rule implemented for the desired polynomial degree.");
   degree_    = degree;
@@ -94,7 +94,7 @@ int CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
       np = (degree_+(int)4)/(int)2;
       break;
     default:
-      TEST_FOR_EXCEPTION((1),
+      TEUCHOS_TEST_FOR_EXCEPTION((1),
                          std::invalid_argument,
                          ">>> ERROR (CubaturePolylib): Unknown point type argument.");
   }
@@ -120,7 +120,7 @@ void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint & cu
   int numCubPoints = getNumPoints();
   int cellDim      = getDimension();
   // check size of cubPoints and cubWeights
-  TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cellDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cellDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
                       std::out_of_range,
                       ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
 
@@ -143,7 +143,7 @@ void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint & cu
       IntrepidPolylib::zwglj(&z[0], &w[0], numCubPoints, alpha_, beta_);
       break;
     default:
-      TEST_FOR_EXCEPTION((1),
+      TEUCHOS_TEST_FOR_EXCEPTION((1),
                          std::invalid_argument,
                          ">>> ERROR (CubaturePolylib): Unknown point type argument.");
   }

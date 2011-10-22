@@ -31,7 +31,7 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <stdexcept>
@@ -179,9 +179,9 @@ namespace Kokkos {
                                 MultiVector<RangeScalar,Node> &Y) const {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
-    TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -245,9 +245,9 @@ namespace Kokkos {
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
-    TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -317,9 +317,9 @@ namespace Kokkos {
                                 MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op;
     typedef DefaultBlockSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  OpT;
-    TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // X <= Y

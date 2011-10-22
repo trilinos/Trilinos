@@ -274,12 +274,12 @@ namespace Tpetra {
 	{
 	  if (! tolerant_)
 	    {
-	      TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > expectedNumRows_ || j > expectedNumCols_, 
+	      TEUCHOS_TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > expectedNumRows_ || j > expectedNumCols_, 
 				 std::invalid_argument, 
 				 "Matrix is " << expectedNumRows_ << " x " << expectedNumCols_ 
 				 << ", so entry A(" << i << "," << j << ") = " 
 				 << Aij << " is out of range.");
-	      TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
+	      TEUCHOS_TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
 				 std::invalid_argument,
 				 "Cannot add entry A(" << i << "," << j << ") = " 
 				 << Aij << " to matrix; already have expected "
@@ -474,7 +474,7 @@ namespace Tpetra {
 		}
 	    }
 	  Teuchos::broadcast (comm, 0, &readFile);
-	  TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
 			     "Failed to open input file \"" + filename + "\".");
 	  // Only Rank 0 will try to dereference "in".
 	  return read (comm, in, echo, tolerant, debug);
@@ -549,10 +549,10 @@ namespace Tpetra {
 			std::copy (result.second.begin(), result.second.end(),
 				   errMsg.begin());
 		      Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), &errMsg[0]);
-		      TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
+		      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
 		    }
 		  else
-		    TEST_FOR_EXCEPTION(! success, std::runtime_error, 
+		    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, 
 				       "Unknown error when reading Matrix "
 				       "Market sparse matrix file; the error "
 				       "is \"unknown\" because the error "
@@ -606,7 +606,7 @@ namespace Tpetra {
 	  do {
 	    // Try to read a line from the input stream.
 	    const bool readFailed = ! getline(in, line);
-	    TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+	    TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
 			       "Failed to get Matrix Market banner line "
 			       "from input, after reading " << numLinesRead
 			       << "line" << (numLinesRead != 1 ? "s." : "."));
@@ -622,7 +622,7 @@ namespace Tpetra {
 	  try {
 	    pBanner = rcp (new Banner (line, tolerant));
 	  } catch (std::exception& e) {
-	    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
 			       "Matrix Market banner line contains syntax "
 			       "error(s): " << e.what());
 	  }

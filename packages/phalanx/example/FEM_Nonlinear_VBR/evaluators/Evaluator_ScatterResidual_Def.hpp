@@ -42,7 +42,7 @@
 // @HEADER
 
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_TypeStrings.hpp"
@@ -219,7 +219,7 @@ evaluateFields(typename Traits::EvalData workset)
 		if ( block_indices[i] == (Jac->LCID(element->globalNodeId(node_col))) )
 		  block = matrices[i];
 	      }
-	      TEST_FOR_EXCEPTION(block == 0, std::logic_error,"Failed to find block column index for this entry!");
+	      TEUCHOS_TEST_FOR_EXCEPTION(block == 0, std::logic_error,"Failed to find block column index for this entry!");
 
 	      (*block)(eq_row,eq_col) += val[eq_row](cell,node_row).fastAccessDx(lcol); 
 	      
@@ -266,7 +266,7 @@ template<typename Traits>
 void ScatterResidual<PHX::MyTraits::Jv, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Error: GatherSolution not implemented for \"Jv\" evaluation type!");
 }
 

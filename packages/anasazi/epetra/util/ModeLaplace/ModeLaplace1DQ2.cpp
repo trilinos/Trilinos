@@ -27,7 +27,7 @@
 //**************************************************************************
 
 #include "ModeLaplace1DQ2.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 const int ModeLaplace1DQ2::dofEle = 3;
@@ -129,7 +129,7 @@ void ModeLaplace1DQ2::preProcess() {
 void ModeLaplace1DQ2::makeMap() {
 
   int globalSize = (2*nX - 1);
-  TEST_FOR_EXCEPTION(globalSize <= MyComm.NumProc(),std::logic_error,"Parameter error in ModeLaplace1DQ2.");
+  TEUCHOS_TEST_FOR_EXCEPTION(globalSize <= MyComm.NumProc(),std::logic_error,"Parameter error in ModeLaplace1DQ2.");
 
   // Create a uniform distribution of the unknowns across processors
   Map = new Epetra_Map(globalSize, 0, MyComm);
@@ -254,7 +254,7 @@ void ModeLaplace1DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
 
   for (i=0; i<localSize; ++i) {
     int info = K->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity+maxConnect*i);
-    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
         "ModeLaplace1DQ2::makeStiffness(): InsertGlobalValues() returned error code " << info);
   }
 
@@ -282,7 +282,7 @@ void ModeLaplace1DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
         numEntries += 1;
       }
       int info = K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
-      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
           "ModeLaplace1DQ2::makeStiffness(): SumIntoGlobalValues() returned error code " << info);
     }
   }
@@ -292,10 +292,10 @@ void ModeLaplace1DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
   delete[] indices;
 
   int info = K->FillComplete();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace1DQ2::makeStiffness(): FillComplete() returned error code " << info);
   info = K->OptimizeStorage();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace1DQ2::makeStiffness(): OptimizeStorage() returned error code " << info);
 
 }
@@ -326,7 +326,7 @@ void ModeLaplace1DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
     values[i] = 0.0;
   for (i=0; i<localSize; ++i) {
     int info = M->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity + maxConnect*i);
-    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
         "ModeLaplace1DQ2::makeMass(): InsertGlobalValues() returned error code " << info);
   }
 
@@ -354,7 +354,7 @@ void ModeLaplace1DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
         numEntries += 1;
       }
       int info = M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
-      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
           "ModeLaplace1DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
     }
   }
@@ -364,10 +364,10 @@ void ModeLaplace1DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   delete[] indices;
 
   int info = M->FillComplete();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace1DQ2::makeMass(): FillComplete() returned error code " << info);
   info = M->OptimizeStorage();
-  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
       "ModeLaplace1DQ2::makeMass(): OptimizeStorage() returned error code " << info);
 }
 

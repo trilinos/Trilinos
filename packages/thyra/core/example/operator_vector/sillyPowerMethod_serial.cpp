@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
     if (parse_return != CommandLineProcessor::PARSE_SUCCESSFUL)
       return parse_return;
 
-    TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
+    TEUCHOS_TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
     int maxNumIters = static_cast<int>(maxItersDimFactor*dim);
     

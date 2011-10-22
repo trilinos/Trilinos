@@ -108,7 +108,7 @@ Piro::Epetra::NOXSolver::NOXSolver(
     iJac = Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(A);
   }
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
                  "Error in Piro::Epetra::NOXSolver " <<
                  "Invalid value for parameter \" Jacobian Operator\"= " <<
                  jacobianSource << std::endl);
@@ -184,7 +184,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::NOXSolver::get_f_map() const
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::NOXSolver::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::NOXSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -194,7 +194,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::NOXSolver::get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::NOXSolver::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::NOXSolver::get_g_map():  " <<
                      "Invalid response index j = " <<
@@ -213,7 +213,7 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_x_init() const
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::NOXSolver::get_p_init():  " <<
                      "Invalid parameter index l = " <<
@@ -224,12 +224,12 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_p_init(int l) con
 Teuchos::RCP<Epetra_Operator>
 Piro::Epetra::NOXSolver::create_DgDp_op( int j, int l ) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::NOXSolver::create_DgDp_op():  " <<
                      "Invalid response index j = " <<
                      j << std::endl);
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::NOXSolver::create_DgDp_op():  " <<
                      "Invalid parameter index l = " <<
@@ -376,7 +376,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	if (outArgs.get_DgDp(j,i).getMultiVector() != Teuchos::null) {
 	  Teuchos::Array<int> p_indexes = 
 	    outArgs.get_DgDp(j,i).getDerivativeMultiVector().getParamIndexes();
-	  TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
+	  TEUCHOS_TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
 			     Teuchos::Exceptions::InvalidParameter,
 			     std::endl <<
 			     "Piro::Epetra::NOXSolver::evalModel():  " <<
@@ -410,7 +410,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	else if (ds.supports(DERIV_LINEAR_OP))
           dfdp_layout = OP;
         else
-	  TEST_FOR_EXCEPTION(
+	  TEUCHOS_TEST_FOR_EXCEPTION(
 	    true, std::logic_error, 
 	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
 	    "For df/dp(" << i <<") with forward sensitivities, " <<
@@ -427,7 +427,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	else if (ds.supports(DERIV_MV_BY_COL) && !p_dist)
           dfdp_layout = COL;
         else
-	  TEST_FOR_EXCEPTION(
+	  TEUCHOS_TEST_FOR_EXCEPTION(
 	    true, std::logic_error, 
 	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
 	    "For df/dp(" << i <<") with adjoint sensitivities, " <<
@@ -437,7 +437,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	    std::endl);
       }
       else
-        TEST_FOR_EXCEPTION(true, 
+        TEUCHOS_TEST_FOR_EXCEPTION(true, 
        		           Teuchos::Exceptions::InvalidParameter,
 		           std::endl <<
 		           "Piro::Epetra::NOXSolver::evalModel():  " <<
@@ -508,7 +508,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
         else if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !g_dist)
           dgdx_layout = ROW;
 	else
-	  TEST_FOR_EXCEPTION(
+	  TEUCHOS_TEST_FOR_EXCEPTION(
 	    true, std::logic_error, 
 	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
 	    "For dg/dx(" << j <<") with forward sensitivities, " <<
@@ -525,7 +525,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	else if (ds.supports(DERIV_LINEAR_OP))
           dgdx_layout = OP;
         else
-	  TEST_FOR_EXCEPTION(
+	  TEUCHOS_TEST_FOR_EXCEPTION(
 	    true, std::logic_error, 
 	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
 	    "For dg/dx(" << j <<") with adjoint sensitivities, " <<
@@ -535,7 +535,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	    std::endl);
       }
       else
-        TEST_FOR_EXCEPTION(true, 
+        TEUCHOS_TEST_FOR_EXCEPTION(true, 
        		           Teuchos::Exceptions::InvalidParameter,
 		           std::endl <<
 		           "Piro::Epetra::NOXSolver::evalModel():  " <<
@@ -594,7 +594,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	      model_outargs.set_DgDp(j,i,dmv_dgdp);
 	    }
 	    else
-	      TEST_FOR_EXCEPTION(
+	      TEUCHOS_TEST_FOR_EXCEPTION(
 		true, std::logic_error, 
 		std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
 		"For dg/dp(" << j << "," << i <<
@@ -652,7 +652,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	continue;
 
       if (!model_outargs.supports(OUT_ARG_DfDp, i).none()) {
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 	  model_outargs.get_DfDp(i).getLinearOp()!=Teuchos::null,
 	  std::logic_error,
 	  std::endl <<"Piro::Epetra::NOXSolver::evalModel():  " <<
@@ -697,7 +697,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 					 dxdp->NumVectors());
 		  dgdx_op->Apply(*dxdp, tmp);
 		  if (transpose) {
-		    TEST_FOR_EXCEPTION(
+		    TEUCHOS_TEST_FOR_EXCEPTION(
 		      dgdp_out->Map().DistributedGlobal(), 
 		      std::logic_error,
 		      std::endl << 
@@ -775,7 +775,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	continue;
 
       if (!model_outargs.supports(OUT_ARG_DgDx, j).none()) {
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 	  model_outargs.get_DgDx(j).getLinearOp()!=Teuchos::null,
 	  std::logic_error,
 	  std::endl << "Piro::Epetra::NOXSolver::evalModel():  " <<
@@ -828,7 +828,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		  dfdp_op->Apply(*xbar, tmp);
 		  dfdp_op->SetUseTranspose(false);
 		  if (transpose) {
-		    TEST_FOR_EXCEPTION(
+		    TEUCHOS_TEST_FOR_EXCEPTION(
 		      dgdp_out->Map().DistributedGlobal(), 
 		      std::logic_error,
 		      std::endl <<

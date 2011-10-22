@@ -357,7 +357,7 @@ Thyra::create_DfDp_mv(
   ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
   )
 {
-  TEST_FOR_EXCEPT(!(orientation==ModelEvaluatorBase::DERIV_MV_BY_COL));
+  TEUCHOS_TEST_FOR_EXCEPT(!(orientation==ModelEvaluatorBase::DERIV_MV_BY_COL));
   return createMembers( model.get_f_space(), model.get_p_space(l)->dim() );
 }
 
@@ -385,7 +385,7 @@ Thyra::create_DgDx_dot_mv(
           ,MEB::DERIV_TRANS_MV_BY_ROW
           );
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
 }
@@ -427,7 +427,7 @@ Thyra::create_DgDp_mv(
           ,MEB::DERIV_TRANS_MV_BY_ROW
           );
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
 }
@@ -440,7 +440,7 @@ Thyra::get_dmv(
   ,const std::string &derivName
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     deriv.getLinearOp().get()!=NULL, std::logic_error
     ,"Error, LinearOpBase type not expected for " << derivName <<"!"
     );
@@ -457,7 +457,7 @@ Thyra::get_mv(
   )
 {
   typedef ModelEvaluatorBase MEB;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     deriv.getLinearOp().get()!=NULL, std::logic_error
     ,"Error, LinearOpBase type not expected for " << derivName <<"!"
     );
@@ -466,7 +466,7 @@ Thyra::get_mv(
   RCP<MultiVectorBase<Scalar> >
     mv = dmv.getMultiVector();
   if( mv.get() ) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       dmv.getOrientation() != orientation, std::logic_error
       ,"Error, the orientation " << toString(dmv.getOrientation()) << " is not the"
       " expected orientation of " << toString(orientation)
@@ -535,7 +535,7 @@ void Thyra::assertDerivSpaces(
       }
 #ifdef TEUCHOS_DEBUG
       default:
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
     }
   }
@@ -560,7 +560,7 @@ void Thyra::assertInArgsOutArgsSetup(
   TEUCHOS_ASSERT_EQUALITY(outArgs.modelEvalDescription(), modelEvalDescription);
 
   // Np
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     inArgs.Np() != outArgs.Np(), std::logic_error,
     "Error: The underlying model " << modelEvalDescription << " incorrectly\n"
     "set inArgs.Np() = "<<inArgs.Np()<<" != outArgs.Np() = "
@@ -568,7 +568,7 @@ void Thyra::assertInArgsOutArgsSetup(
     );
 
   // x_dot
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     inArgs.supports(MEB::IN_ARG_x_dot) && !inArgs.supports(MEB::IN_ARG_x),
     std::logic_error,
     "Error: The underlying model " << modelEvalDescription << " supports\n"
@@ -576,7 +576,7 @@ void Thyra::assertInArgsOutArgsSetup(
     );
 
   // t
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     inArgs.supports(MEB::IN_ARG_x_dot) && !inArgs.supports(MEB::IN_ARG_t),
     std::logic_error,
     "Error: The underlying model " << modelEvalDescription << " supports\n"
@@ -584,7 +584,7 @@ void Thyra::assertInArgsOutArgsSetup(
     );
 
   // W and W_op
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     (
       ( outArgs.supports(MEB::OUT_ARG_W) || outArgs.supports(MEB::OUT_ARG_W_op) )
       &&
@@ -594,7 +594,7 @@ void Thyra::assertInArgsOutArgsSetup(
     "Error: The underlying model " << modelEvalDescription << " says that\n"
     "it supports W and/or W_op but it does not support x!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     (
       ( outArgs.supports(MEB::OUT_ARG_W) || outArgs.supports(MEB::OUT_ARG_W_op) )
       &&
@@ -614,7 +614,7 @@ void Thyra::assertInArgsOutArgsSetup(
     for ( int j = 0; j < Ng; ++j ) {
 
       // DgDx_dot(j)
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         ( !outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).none()
           && !inArgs.supports(MEB::IN_ARG_x_dot) ),
         std::logic_error,
@@ -623,7 +623,7 @@ void Thyra::assertInArgsOutArgsSetup(
         );
 
       // DgDx(j)
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         ( !outArgs.supports(MEB::OUT_ARG_DgDx,j).none()
           && !inArgs.supports(MEB::IN_ARG_x) ),
         std::logic_error,
@@ -743,10 +743,10 @@ void Thyra::assertOutArgsEvalObjects(
       // block is all zeros and I'm depending on the underlying model to
       // intelligently fill the block with zeros if both alpha and beta are
       // zero.  
-      //TEST_FOR_EXCEPT( inArgs->get_alpha() == ST::zero() && inArgs->get_beta() == ST::zero() );
+      //TEUCHOS_TEST_FOR_EXCEPT( inArgs->get_alpha() == ST::zero() && inArgs->get_beta() == ST::zero() );
     }
     else if ( inArgs->supports(MEB::IN_ARG_beta) ) {
-      TEST_FOR_EXCEPT( inArgs->get_beta() == ST::zero() );
+      TEUCHOS_TEST_FOR_EXCEPT( inArgs->get_beta() == ST::zero() );
     }
   }
 

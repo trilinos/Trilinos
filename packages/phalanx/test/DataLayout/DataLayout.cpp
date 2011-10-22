@@ -45,7 +45,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
       // identifier()
       {
 	cout << "Testing identifier() accessor...";
-	TEST_FOR_EXCEPTION(n_mat.identifier() != 
+	TEUCHOS_TEST_FOR_EXCEPTION(n_mat.identifier() != 
 			   std::string("MDA<Cell,Node,Spatial,Spatial>(100,4,2,2)"), 
 			   std::logic_error,
 			   "name() accessor failed!");
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
       // rank()
       {
 	cout << "Testing rank() accessor...";
-	TEST_FOR_EXCEPTION(n_mat.rank() != 4, 
+	TEUCHOS_TEST_FOR_EXCEPTION(n_mat.rank() != 4, 
 			   std::logic_error,
 			   "rank() accessor failed!");
 	cout << "passed!" << endl;
@@ -256,16 +256,16 @@ int main(int argc, char *argv[])
 	cout << "Testing dimensions() accessor...";
 	std::vector<PHX::DataLayout::size_type> dims;
 	n_mat.dimensions(dims);
-	TEST_FOR_EXCEPTION(dims[0] != 100, 
+	TEUCHOS_TEST_FOR_EXCEPTION(dims[0] != 100, 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(dims[1] != 4, 
+	TEUCHOS_TEST_FOR_EXCEPTION(dims[1] != 4, 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(dims[2] != 2, 
+	TEUCHOS_TEST_FOR_EXCEPTION(dims[2] != 2, 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(dims[3] != 2, 
+	TEUCHOS_TEST_FOR_EXCEPTION(dims[3] != 2, 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
 	cout << "passed!" << endl;
@@ -277,16 +277,16 @@ int main(int argc, char *argv[])
 	cout << "Testing names() accessor...";
 	std::vector<std::string> names;
 	n_mat.names(names);
-	TEST_FOR_EXCEPTION(names[0] != "Cell", 
+	TEUCHOS_TEST_FOR_EXCEPTION(names[0] != "Cell", 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(names[1] != "Node", 
+	TEUCHOS_TEST_FOR_EXCEPTION(names[1] != "Node", 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(names[2] != "Spatial", 
+	TEUCHOS_TEST_FOR_EXCEPTION(names[2] != "Spatial", 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
-	TEST_FOR_EXCEPTION(names[3] != "Spatial", 
+	TEUCHOS_TEST_FOR_EXCEPTION(names[3] != "Spatial", 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
 	cout << "passed!" << endl;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
       // size()
       {
 	cout << "Testing size() accessor...";
-	TEST_FOR_EXCEPTION(n_mat.size() != 1600, 
+	TEUCHOS_TEST_FOR_EXCEPTION(n_mat.size() != 1600, 
 			   std::logic_error,
 			   "size() accessor failed!");
 	cout << "passed!" << endl;
@@ -314,22 +314,22 @@ int main(int argc, char *argv[])
 	MDALayout<Cell,Quadrature,Spatial,Spatial> qp_mat(100,4,2,2);
 	
 	// same data layout, different object
-	TEST_FOR_EXCEPTION( (n_vec_b != n_vec_c), 
+	TEUCHOS_TEST_FOR_EXCEPTION( (n_vec_b != n_vec_c), 
 			    std::logic_error,
 			    "operator==() failed test 1!");
       
 	// same data layout, different dim sizes
-	TEST_FOR_EXCEPTION( (n_vec_a == n_vec_c), 
+	TEUCHOS_TEST_FOR_EXCEPTION( (n_vec_a == n_vec_c), 
 			    std::logic_error,
 			    "operator==() failed test 2!");
       
 	// different types, same rank, same dim sizes
-	TEST_FOR_EXCEPTION( (n_vec_a == qp_vec), 
+	TEUCHOS_TEST_FOR_EXCEPTION( (n_vec_a == qp_vec), 
 			    std::logic_error,
 			    "operator==() failed test 3!");
       
 	// different types
-	TEST_FOR_EXCEPTION( (n_vec_a == qp_mat), 
+	TEUCHOS_TEST_FOR_EXCEPTION( (n_vec_a == qp_mat), 
 			    std::logic_error,
 			    "operator==() failed test 4!");
 
@@ -340,84 +340,84 @@ int main(int argc, char *argv[])
       // dimension() 
       {
 	cout << "Testing dimension()...";
-	TEST_FOR_EXCEPTION(rank1.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank1.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 
-	TEST_FOR_EXCEPTION(rank2.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank2.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank2.dimension(1) != 2, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-
-	TEST_FOR_EXCEPTION(rank3.dimension(0) != 1, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank3.dimension(1) != 2, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank3.dimension(2) != 3, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank2.dimension(1) != 2, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 
-	TEST_FOR_EXCEPTION(rank4.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank4.dimension(1) != 2, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.dimension(1) != 2, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank4.dimension(2) != 3, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.dimension(2) != 3, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank4.dimension(3) != 4, std::logic_error,
+
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.dimension(3) != 4, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 			   
-	TEST_FOR_EXCEPTION(rank5.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank5.dimension(1) != 2, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.dimension(1) != 2, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank5.dimension(2) != 3, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.dimension(2) != 3, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank5.dimension(3) != 4, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.dimension(3) != 4, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank5.dimension(4) != 5, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-
-	TEST_FOR_EXCEPTION(rank6.dimension(0) != 1, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank6.dimension(1) != 2, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank6.dimension(2) != 3, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank6.dimension(3) != 4, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank6.dimension(4) != 5, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank6.dimension(5) != 6, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.dimension(4) != 5, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 
-	TEST_FOR_EXCEPTION(rank7.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(1) != 2, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(1) != 2, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(2) != 3, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(2) != 3, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(3) != 4, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(3) != 4, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(4) != 5, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(4) != 5, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(5) != 6, std::logic_error,
-			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank7.dimension(6) != 7, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.dimension(5) != 6, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 
-	TEST_FOR_EXCEPTION(rank8.dimension(0) != 1, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(0) != 1, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(1) != 2, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(1) != 2, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(2) != 3, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(2) != 3, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(3) != 4, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(3) != 4, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(4) != 5, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(4) != 5, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(5) != 6, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(5) != 6, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(6) != 7, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.dimension(6) != 7, std::logic_error,
 			   "dimension() failed to return correct dimension!");
-	TEST_FOR_EXCEPTION(rank8.dimension(7) != 8, std::logic_error,
+
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(4) != 5, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(5) != 6, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(6) != 7, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.dimension(7) != 8, std::logic_error,
 			   "dimension() failed to return correct dimension!");
 
 	cout << "passed!" << endl;
@@ -433,84 +433,84 @@ int main(int argc, char *argv[])
 
 
 
-	TEST_FOR_EXCEPTION(rank1.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank1.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
 
-	TEST_FOR_EXCEPTION(rank2.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank2.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank2.name(1) != "Ordinal2", std::logic_error,
-			   "name() failed to return correct name!");
-
-	TEST_FOR_EXCEPTION(rank3.name(0) != "Ordinal1", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank3.name(1) != "Ordinal2", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank3.name(2) != "Ordinal3", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank2.name(1) != "Ordinal2", std::logic_error,
 			   "name() failed to return correct name!");
 
-	TEST_FOR_EXCEPTION(rank4.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank4.name(1) != "Ordinal2", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.name(1) != "Ordinal2", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank4.name(2) != "Ordinal3", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank3.name(2) != "Ordinal3", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank4.name(3) != "Ordinal4", std::logic_error,
+
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank4.name(3) != "Ordinal4", std::logic_error,
 			   "name() failed to return correct name!");
 			   
-	TEST_FOR_EXCEPTION(rank5.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank5.name(1) != "Ordinal2", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.name(1) != "Ordinal2", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank5.name(2) != "Ordinal3", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.name(2) != "Ordinal3", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank5.name(3) != "Ordinal4", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.name(3) != "Ordinal4", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank5.name(4) != "Ordinal5", std::logic_error,
-			   "name() failed to return correct name!");
-
-	TEST_FOR_EXCEPTION(rank6.name(0) != "Ordinal1", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank6.name(1) != "Ordinal2", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank6.name(2) != "Ordinal3", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank6.name(3) != "Ordinal4", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank6.name(4) != "Ordinal5", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank6.name(5) != "Ordinal6", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank5.name(4) != "Ordinal5", std::logic_error,
 			   "name() failed to return correct name!");
 
-	TEST_FOR_EXCEPTION(rank7.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(1) != "Ordinal2", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(1) != "Ordinal2", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(2) != "Ordinal3", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(2) != "Ordinal3", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(3) != "Ordinal4", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(3) != "Ordinal4", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(4) != "Ordinal5", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(4) != "Ordinal5", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(5) != "Ordinal6", std::logic_error,
-			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank7.name(6) != "Ordinal7", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank6.name(5) != "Ordinal6", std::logic_error,
 			   "name() failed to return correct name!");
 
-	TEST_FOR_EXCEPTION(rank8.name(0) != "Ordinal1", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(0) != "Ordinal1", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(1) != "Ordinal2", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(1) != "Ordinal2", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(2) != "Ordinal3", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(2) != "Ordinal3", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(3) != "Ordinal4", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(3) != "Ordinal4", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(4) != "Ordinal5", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(4) != "Ordinal5", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(5) != "Ordinal6", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(5) != "Ordinal6", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(6) != "Ordinal7", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(rank7.name(6) != "Ordinal7", std::logic_error,
 			   "name() failed to return correct name!");
-	TEST_FOR_EXCEPTION(rank8.name(7) != "Ordinal8", std::logic_error,
+
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(4) != "Ordinal5", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(5) != "Ordinal6", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(6) != "Ordinal7", std::logic_error,
+			   "name() failed to return correct name!");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank8.name(7) != "Ordinal8", std::logic_error,
 			   "name() failed to return correct name!");
 
 	cout << "passed!" << endl;

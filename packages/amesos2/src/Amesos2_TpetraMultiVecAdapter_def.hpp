@@ -92,10 +92,10 @@ namespace Amesos2 {
 
 #ifdef HAVE_AMESOS2_DEBUG
     size_t requested_vector_length = distribution_map->getNodeNumElements();
-    TEST_FOR_EXCEPTION( lda < requested_vector_length,
+    TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
 			std::invalid_argument,
 			"Given stride is not large enough for local vector length" );
-    TEST_FOR_EXCEPTION( as<size_t>(av.size()) < as<size_t>((num_vecs-1) * lda + requested_vector_length),
+    TEUCHOS_TEST_FOR_EXCEPTION( as<size_t>(av.size()) < as<size_t>((num_vecs-1) * lda + requested_vector_length),
 			std::invalid_argument,
 			"MultiVector storage not large enough given leading dimension "
 			"and number of vectors" );
@@ -215,8 +215,7 @@ namespace Amesos2 {
 		LocalOrdinal,
 		GlobalOrdinal,
 		Node> >::describe(Teuchos::FancyOStream& os,
-				  const Teuchos::EVerbosityLevel verbLevel=
-				  Teuchos::Describable::verbLevel_default) const
+				  const Teuchos::EVerbosityLevel verbLevel) const
   {
 
   }

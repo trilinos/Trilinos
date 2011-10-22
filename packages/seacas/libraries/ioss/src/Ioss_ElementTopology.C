@@ -209,7 +209,8 @@ int Ioss::ElementTopology::number_boundaries() const
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
-      return number_faces();
+      // A shell has faces and edges in its boundary...
+      return number_faces() + number_edges();
     } else if (parametric_dimension() == 1) {
       return number_edges();
     }
@@ -233,7 +234,12 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) co
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
-      return face_connectivity(edge_number);
+      // A shell has faces and edges in its boundary...
+      if (edge_number > number_faces()) {
+	return edge_connectivity(edge_number - number_faces());
+      } else {
+	return face_connectivity(edge_number);
+      }
     } else if (parametric_dimension() == 1) {
       return edge_connectivity(edge_number);
     }
@@ -256,8 +262,15 @@ Ioss::ElementTopology* Ioss::ElementTopology::boundary_type(int face_number) con
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
+      // A shell has faces and edges in its boundary...
+      if (face_number == 0) return NULL;
+      
       assert(spatial_dimension() == 3);
-      return face_type(face_number);
+      if (face_number > number_faces()) {
+	return edge_type(face_number - number_faces());
+      } else {
+	return face_type(face_number);
+      }
     } else if (parametric_dimension() == 1) {
       return edge_type(face_number);
     }

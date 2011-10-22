@@ -9,6 +9,9 @@
 /* Define if want to build kokkos-debug */
 #cmakedefine HAVE_KOKKOS_DEBUG
 
+/* Define if want to build kokkos with OpenMP */
+#cmakedefine HAVE_KOKKOS_OPENMP
+
 /* Define if want to build kokkos-experimental */
 #cmakedefine HAVE_KOKKOS_EXPERIMENTAL
 

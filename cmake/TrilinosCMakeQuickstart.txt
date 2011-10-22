@@ -25,6 +25,7 @@ Section C: Configuring Trilinos
   --  Configuring with third party libraries (TPLS)
   --  Disabling tentatively enabled TPLs
   --  Getting verbose output
+  --  Enabling/disabling time monitors
   --  Enabling/disabling deprecated warnings
   --  Disable update of package dependency information
   --  Enable coverage testing
@@ -328,21 +329,20 @@ C) Configuring (Makefile Generator)
   
   c) Overriding debug/release compiler options:
   
-    To pass in compiler options that override the default debug or release
-    options use:
+    To pass in compiler options that override the default debug options use:
   
-      -D CMAKE_BUILD_TYPE:STRING=NONE \
-      -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
-      -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
+      -D CMAKE_C_FLAGS_DEBUG_OVERRIDE:STRING="-g -O1" \
+      -D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE:STRING="-g -O1"
+
+    and to override default release options use:
   
-    NOTES:
-
-    1) Using CMAKE_BUILD_TYPE:STRING=NONE allows you to take complete control
-    over what debug or release compiler optimizations or related flags that
-    are passed to the compiler.
-
-    2) Setting CMAKE_BUILD_TYPE:STRING=NONE will not remove internally set
-    flags in CMAKE_<LANG>_FLAGS.  To do that, see below.
+      -D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING="-04 -funroll-loops" \
+      -D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING="-03 -fexceptions"
+  
+    NOTES: The new CMake variable CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE is
+    used and not CMAKE_${LANG}_FLAGS_${BUILDTYPE} because the Trilinos CMake
+    wrappers redefine CMAKE_${LANG}_FLAGS_${BUILDTYPE} and it is impossible to
+    determine if the value defined is determined by a user or by CMake.
  
   d) Appending arbitrary link flags to every executable:
   
@@ -731,6 +731,15 @@ C) Configuring (Makefile Generator)
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
   NOTE: This will print a complete stack trace to show exactly where you are.
+
+
+(*) Enabling/disabling time monitors:
+
+   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
+
+  Above will enable Teuchos time monitors by default in all Trilinos packages
+  that support them.  To print the timers at the end of the program, call
+  Teuchos::TimeMonitor::summarize().
 
 
 (*) Enabling/disabling deprecated warnings:

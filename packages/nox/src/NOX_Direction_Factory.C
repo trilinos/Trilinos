@@ -108,12 +108,12 @@ buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
     }
     else {
       std::string msg = "Error - NOX::Direction::Factory::buildDirection() -  a \"User Defined\" direction was chosen for the \"Method\" in the \"Direction\" sublist, but a Teuchos::RCP<NOX::Direction::UserDefinedFactory> object was not found in the parameter list!";
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
     }
   }
   else {
     std::string msg = "Error - NOX::Direction::Facotry::buildDirection() - Invalid choice for \"Method\" in \"Direction\" sublist!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   return direction;

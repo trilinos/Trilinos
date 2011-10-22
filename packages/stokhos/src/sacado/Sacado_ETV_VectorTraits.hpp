@@ -127,7 +127,7 @@ namespace Sacado {
 #ifdef HAVE_SACADO_TEUCHOS
 #include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_apply.hpp"
 
 namespace Teuchos {

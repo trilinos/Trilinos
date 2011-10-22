@@ -30,7 +30,7 @@
 #include "Stokhos_ProductEpetraVector.hpp"
 #include "Stokhos_ProductEpetraMultiVector.hpp"
 #include "Stokhos_ProductEpetraOperator.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Epetra_Map.h"
 
 Stokhos::MPModelEvaluatorAdapter::

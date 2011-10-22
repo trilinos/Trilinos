@@ -199,7 +199,7 @@ namespace Tpetra {
     std::string description() const;
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
+    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

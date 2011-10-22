@@ -139,7 +139,7 @@ template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
 DiagonalScalarProd<Scalar>::getLinearOpImpl() const
 {
-  TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement when needed!")
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement when needed!")
   return Teuchos::null;
 }
 

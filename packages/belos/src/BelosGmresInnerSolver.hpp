@@ -215,7 +215,7 @@ namespace Belos {
       using std::vector;
 
       ReturnType result = solMgr_.solve ();
-      TEST_FOR_EXCEPTION(result != Converged && result != Unconverged,
+      TEUCHOS_TEST_FOR_EXCEPTION(result != Converged && result != Unconverged,
 			 std::logic_error,
 			 "The solver manager returned an invalid ResultType "
 			 "enum value " << result << ".  Valid values are "

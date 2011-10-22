@@ -179,7 +179,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
     MyComm.SumAll(&tmp, &alpha, 1);
     alpha = newRZ/alpha;
 
-    TEST_FOR_EXCEPTION(alpha <= 0.0, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(alpha <= 0.0, std::runtime_error, 
                          " !!! Non-positive value for p^TKp (" << alpha << ") !!!");
 
     callBLAS.AXPY(xr, alpha, p.Values(), 1, Y.Values(), 1);
@@ -400,7 +400,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
       // Compute the pseudo-inverse of the eigenvalues
       for (ii = 0; ii < blkSize; ++ii) {
-	TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
+	TEUCHOS_TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
 			   "eigenvalue for P^T K P: da[" << ii << "] = " 
 			   << da[ii] << ".");
 	da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];

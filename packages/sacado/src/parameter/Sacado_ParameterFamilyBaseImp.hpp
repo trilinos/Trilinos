@@ -29,7 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 template <typename EntryBase, typename EntryType>
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
@@ -127,7 +127,7 @@ getEntry() {
 
   // Find entry corresponding to this EvalType
   iterator it = family.find(evalTypeString);
-  TEST_FOR_EXCEPTION(it == family.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(it == family.end(), 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
@@ -136,7 +136,7 @@ getEntry() {
 
   // Cast entry to LOCA::Parameter::Entry<EvalType>
   Teuchos::RCP<  typename Sacado::mpl::apply<EntryType,EvalType>::type > entry = Teuchos::rcp_dynamic_cast< typename Sacado::mpl::apply<EntryType,EvalType>::type >((*it).second);
-  TEST_FOR_EXCEPTION(entry == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
@@ -157,7 +157,7 @@ getEntry() const {
 
   // Find entry corresponding to this EvalType
   const_iterator it = family.find(evalTypeString);
-  TEST_FOR_EXCEPTION(it == family.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(it == family.end(), 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
@@ -166,7 +166,7 @@ getEntry() const {
 
   // Cast entry to LOCA::Parameter::Entry<EvalType>
   Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type > entry = Teuchos::rcp_dynamic_cast< const typename Sacado::mpl::apply<EntryType,EvalType>::type >((*it).second);
-  TEST_FOR_EXCEPTION(entry == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name

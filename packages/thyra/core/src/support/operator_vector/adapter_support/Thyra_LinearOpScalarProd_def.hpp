@@ -75,7 +75,7 @@ void LinearOpScalarProd<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(op_in));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(op_in));
 #endif
   op_ = op_in;
 }

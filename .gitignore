@@ -94,3 +94,6 @@ packages/tpetra/doc/MatrixMatrixReport/matmatreport.pdf
 packages/tpetra/doc/MatrixMatrixReport/tpetraDevData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/allMatsData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
+
+rsync.*
+.project

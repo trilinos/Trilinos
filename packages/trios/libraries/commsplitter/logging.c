@@ -6,17 +6,17 @@
 #include "commsplitter.h"
 
 
-void mpics_log(char *fmt, ...)
+void commsplitter_log(char *fmt, ...)
 {
     va_list args;
     FILE *fp = stdout;
 
-    if (mpics_data.debug_level <= 0) {
+    if (commsplitter_data.debug_level <= 0) {
         return;
     }
 
     va_start (args, fmt);
-    fprintf (fp, "LOG (%d): ", mpics_data.grank);
+    fprintf (fp, "COMMSPLITTER (grank=%d): ", commsplitter_data.grank);
     vfprintf (fp, fmt, args);
     va_end (args);
     fflush (fp);

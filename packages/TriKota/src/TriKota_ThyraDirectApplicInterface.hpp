@@ -44,7 +44,7 @@
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //!  TriKota namespace
 namespace TriKota {

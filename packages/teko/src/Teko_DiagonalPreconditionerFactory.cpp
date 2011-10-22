@@ -104,7 +104,7 @@ void DiagonalPreconditionerFactory::initializeFromParameterList(const Teuchos::P
   diagonalType_ = BlkDiag;
   if(pl.isParameter("Diagonal Type")) {
      diagonalType_ = getDiagonalType(pl.get<std::string>("Diagonal Type"));
-     TEST_FOR_EXCEPT(diagonalType_==NotDiag);
+     TEUCHOS_TEST_FOR_EXCEPT(diagonalType_==NotDiag);
   }
 
   if(diagonalType_==BlkDiag) {

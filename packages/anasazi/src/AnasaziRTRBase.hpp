@@ -641,24 +641,24 @@ namespace Anasazi {
     rho_( MAT::nan() ),
     fx_( MAT::nan() )
   {
-    TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::constructor: user passed null problem pointer.");
-    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::constructor: user passed null sort manager pointer.");
-    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::constructor: user passed null output manager pointer.");
-    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::constructor: user passed null status test pointer.");
-    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::constructor: user passed null orthogonalization manager pointer.");
-    TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
         "Anasazi::RTRBase::constructor: problem is not set.");
-    TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
         "Anasazi::RTRBase::constructor: problem is not Hermitian.");
 
     // get the problem operators
     AOp_   = problem_->getOperator();
-    TEST_FOR_EXCEPTION(AOp_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(AOp_ == Teuchos::null, std::invalid_argument,
                        "Anasazi::RTRBase::constructor: problem provides no A matrix.");
     BOp_  = problem_->getM();
     Prec_ = problem_->getPrec();
@@ -666,7 +666,7 @@ namespace Anasazi {
     hasPrec_ = (Prec_ != Teuchos::null);
     olsenPrec_ = params.get<bool>("Olsen Prec", true);
 
-    TEST_FOR_EXCEPTION(orthman_->getOp() != BOp_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(orthman_->getOp() != BOp_,std::invalid_argument,
         "Anasazi::RTRBase::constructor: orthogonalization manager must use mass matrix for inner product.");
 
     // set the block size and allocate data
@@ -677,10 +677,10 @@ namespace Anasazi {
     leftMost_ = params.get("Leftmost",leftMost_);
 
     conv_kappa_ = params.get("Kappa Convergence",conv_kappa_);
-    TEST_FOR_EXCEPTION(conv_kappa_ <= 0 || conv_kappa_ >= 1,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(conv_kappa_ <= 0 || conv_kappa_ >= 1,std::invalid_argument,
                        "Anasazi::RTRBase::constructor: kappa must be in (0,1).");
     conv_theta_ = params.get("Theta Convergence",conv_theta_);
-    TEST_FOR_EXCEPTION(conv_theta_ <= 0,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(conv_theta_ <= 0,std::invalid_argument,
                        "Anasazi::RTRBase::constructor: theta must be strictly postitive.");
   }
 
@@ -710,11 +710,11 @@ namespace Anasazi {
     }
     else {
       tmp = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
           "Anasazi::RTRBase::setBlockSize(): Eigenproblem did not specify initial vectors to clone from");
     }
 
-    TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVT::GetVecLength(*tmp), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVT::GetVecLength(*tmp), std::invalid_argument, 
         "Anasazi::RTRBase::setBlockSize was passed a non-positive block size");
 
     // last chance to quit before causing side-effects
@@ -745,7 +745,7 @@ namespace Anasazi {
       std::vector<int> indQ(numAuxVecs_);
       for (int i=0; i<numAuxVecs_; i++) indQ[i] = i;
       // if numAuxVecs_ > 0, then necessarily blockSize_ > 0 (we have already been allocated once)
-      TEST_FOR_EXCEPTION(numAuxVecs_ > 0 && blockSize_ == 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_ > 0 && blockSize_ == 0, std::logic_error,
           "Anasazi::RTRBase::setSize(): logic error. Please contact Anasazi team.");
       // V
       if (numAuxVecs_ > 0) Q = MVT::CloneView(*V_,indQ);
@@ -964,7 +964,7 @@ namespace Anasazi {
   // Set a new StatusTest for the solver.
   template <class ScalarType, class MV, class OP>
   void RTRBase<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
-    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
         "Anasazi::RTRBase::setStatusTest() was passed a null StatusTest.");
     tester_ = test;
   }
@@ -1016,7 +1016,7 @@ namespace Anasazi {
         MVT::SetBlock(**v,ind,*V_);
         auxVecs_.push_back(MVT::CloneView(*Teuchos::rcp_static_cast<const MV>(V_),ind));
       }
-      TEST_FOR_EXCEPTION(numsofar != numAuxVecs_, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(numsofar != numAuxVecs_, std::logic_error,
           "Anasazi::RTRBase::setAuxVecs(): Logic error. Please contact Anasazi team.");
       // compute B*V, Prec*B*V
       if (hasBOp_) {
@@ -1102,10 +1102,10 @@ namespace Anasazi {
 
     // set up X, AX, BX: get them from "state" if user specified them
     if (newstate.X != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X),
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.X not correct." );
       // newstate.X must have blockSize_ vectors; any more will be ignored
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.X must have at least block size vectors.");
 
       // put data in X
@@ -1119,10 +1119,10 @@ namespace Anasazi {
         AX_ = Z_;
       }
       if (newstate.AX != Teuchos::null) {
-        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.AX) != MVT::GetVecLength(*X),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.AX) != MVT::GetVecLength(*X),
                             std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.AX not correct." );
         // newstate.AX must have blockSize_ vectors; any more will be ignored
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.AX) < blockSize_,
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.AX) < blockSize_,
                             std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.AX must have at least block size vectors.");
         MVT::SetBlock(*newstate.AX,bsind,*AX_);
       }
@@ -1142,10 +1142,10 @@ namespace Anasazi {
       // skinny solvers always allocate BX if hasB, so this is unconditionally appropriate
       if (hasBOp_) {
         if (newstate.BX != Teuchos::null) {
-          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.BX) != MVT::GetVecLength(*X),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.BX) != MVT::GetVecLength(*X),
                               std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.BX not correct." );
           // newstate.BX must have blockSize_ vectors; any more will be ignored
-          TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.BX) < blockSize_,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.BX) < blockSize_,
                               std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.BX must have at least block size vectors.");
           MVT::SetBlock(*newstate.BX,bsind,*BX);
         }
@@ -1163,7 +1163,7 @@ namespace Anasazi {
       }
       else {
         // the assignment BX_==X_ would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(BX != X, std::logic_error, "Anasazi::RTRBase::initialize(): solver invariant not satisfied (BX==X).");
+        TEUCHOS_TEST_FOR_EXCEPTION(BX != X, std::logic_error, "Anasazi::RTRBase::initialize(): solver invariant not satisfied (BX==X).");
       }
 
     }
@@ -1176,7 +1176,7 @@ namespace Anasazi {
 
       // generate something and projectAndNormalize
       Teuchos::RCP<const MV> ivec = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
                          "Anasazi::RTRBase::initialize(): Eigenproblem did not specify initial vectors to clone from.");
 
       int initSize = MVT::GetNumberVecs(*ivec);
@@ -1213,7 +1213,7 @@ namespace Anasazi {
       }
       else {
         // the assignment BX==X would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(BX != X, std::logic_error, "Anasazi::RTRBase::initialize(): solver invariant not satisfied (BX==X).");
+        TEUCHOS_TEST_FOR_EXCEPTION(BX != X, std::logic_error, "Anasazi::RTRBase::initialize(): solver invariant not satisfied (BX==X).");
       }
   
       // remove auxVecs from X and normalize it
@@ -1223,7 +1223,7 @@ namespace Anasazi {
 #endif
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
         int rank = orthman_->projectAndNormalizeMat(*X,auxVecs_,dummyC,Teuchos::null,BX);
-        TEST_FOR_EXCEPTION(rank != blockSize_, RTRInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_, RTRInitFailure,
                            "Anasazi::RTRBase::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
@@ -1231,7 +1231,7 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
         int rank = orthman_->normalizeMat(*X,Teuchos::null,BX);
-        TEST_FOR_EXCEPTION(rank != blockSize_, RTRInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_, RTRInitFailure,
                            "Anasazi::RTRBase::initialize(): Couldn't generate initial basis of full rank.");
       }
 
@@ -1252,7 +1252,7 @@ namespace Anasazi {
 
     // set up Ritz values
     if (newstate.T != Teuchos::null) {
-      TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.T must contain at least block size Ritz values.");
       for (int i=0; i<blockSize_; i++) {
         theta_[i] = (*newstate.T)[i];
@@ -1290,9 +1290,9 @@ namespace Anasazi {
 #endif
         ret = Utils::directSolver(blockSize_,AA,Teuchos::null,S,theta_,nevLocal_,10);
       }
-      TEST_FOR_EXCEPTION(ret != 0,RTRInitFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,RTRInitFailure,
           "Anasazi::RTRBase::initialize(): failure solving projected eigenproblem after retraction. LAPACK returns " << ret);
-      TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRInitFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
+      TEUCHOS_TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRInitFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
 
       // We only have blockSize_ ritz pairs, ergo we do not need to select.
       // However, we still require them to be ordered correctly
@@ -1318,7 +1318,7 @@ namespace Anasazi {
         int info;
         if (hasBOp_) {
           info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,BB,S,ZERO);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         }
         else {
           RR.assign(S);
@@ -1327,7 +1327,7 @@ namespace Anasazi {
           blas.SCAL(blockSize_,theta_[i],RR[i],1);
         }
         info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,AA,S,-ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<blockSize_; i++) {
           ritz2norms_[i] = blas.NRM2(blockSize_,RR[i],1);
         }
@@ -1375,9 +1375,9 @@ namespace Anasazi {
 
     // set up R
     if (newstate.R != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.R must have blockSize number of vectors." );
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.R not correct." );
       MVT::SetBlock(*newstate.R,bsind,*R_);
     }

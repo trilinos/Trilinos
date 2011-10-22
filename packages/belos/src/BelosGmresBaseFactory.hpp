@@ -110,9 +110,9 @@ namespace Belos {
       // TODO (mfh 16 Feb 2011) Fill in other GMRES implementations.
       const int maxIterCount = 20;
       const bool flexible = false;
-      TEST_FOR_EXCEPTION(lp.is_null(), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(lp.is_null(), std::logic_error, 
 			 prefix << "LinearProblem instance is null.");
-      TEST_FOR_EXCEPTION(ortho.is_null(), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(ortho.is_null(), std::logic_error, 
 			 prefix << "OrthoManager instance is null.");
       return rcp (new StandardGmres<Scalar, MV, OP> (lp, ortho, outMan, 
 						     maxIterCount, flexible));

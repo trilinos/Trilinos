@@ -35,7 +35,7 @@ LinearSystemAmesos(
 
   Amesos_BaseSolver * tmp = factory.Create(linearSolverParams.get("Amesos Solver","Amesos_Klu"), 
       *amesosProblem);
-  TEST_FOR_EXCEPTION ( tmp == 0, Teuchos::Exceptions::InvalidParameterValue, 
+  TEUCHOS_TEST_FOR_EXCEPTION ( tmp == 0, Teuchos::Exceptions::InvalidParameterValue, 
       "Invalid Amesos Solver: " << linearSolverParams.get<string>("Amesos Solver"));
   amesosSolver = Teuchos::rcp(tmp);
 

@@ -195,7 +195,7 @@ main (int argc, char *argv[])
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }
@@ -205,11 +205,11 @@ main (int argc, char *argv[])
   //
   // Validate command-line arguments
   //
-  TEST_FOR_EXCEPTION(numRowsPerProcess <= 0, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(numRowsPerProcess <= 0, std::invalid_argument, 
 		     "numRowsPerProcess <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument, 
 		     "numCols <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, 
 		     "numBlocks <= 0 is not allowed");  
     
   // Declare an output manager for handling local output.  Initialize,
@@ -240,13 +240,13 @@ main (int argc, char *argv[])
     map = results.first;
     M = results.second;
   }
-  TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
   if (M.is_null())
     {
       // Number of rows per process has to be >= number of rows.
-      TEST_FOR_EXCEPTION(numRowsPerProcess <= numCols,
+      TEUCHOS_TEST_FOR_EXCEPTION(numRowsPerProcess <= numCols,
 			 std::invalid_argument,
 			 "numRowsPerProcess <= numCols is not allowed");
     }

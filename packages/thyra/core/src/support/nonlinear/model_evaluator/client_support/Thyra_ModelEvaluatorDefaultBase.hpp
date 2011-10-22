@@ -870,7 +870,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op_impl(int l) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     outArgs.supports(MEB::OUT_ARG_DfDp,l).supports(MEB::DERIV_LINEAR_OP),
     std::logic_error,
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
@@ -889,7 +889,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op_impl(int j) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).supports(MEB::DERIV_LINEAR_OP),
     std::logic_error,
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
@@ -908,7 +908,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op_impl(int j) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     outArgs.supports(MEB::OUT_ARG_DgDx,j).supports(MEB::DERIV_LINEAR_OP),
     std::logic_error,
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
@@ -927,7 +927,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     outArgs.supports(MEB::OUT_ARG_DgDp,j,l).supports(MEB::DERIV_LINEAR_OP),
     std::logic_error,
     "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
@@ -1026,7 +1026,7 @@ ModelEvaluatorDefaultBase<Scalar>::createDefaultLinearOp(
         );
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
   return Teuchos::null; // Will never be called!
@@ -1086,7 +1086,7 @@ ModelEvaluatorDefaultBase<Scalar>::getOutArgImplForDefaultLinearOpSupport(
     }
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
 

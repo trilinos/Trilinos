@@ -293,7 +293,7 @@ E) Debugging problems:
 ======================
 
 Debugging the inner CTest dashbaords should be more straightforward as
-descrtibed in D.1 above.
+described in D.1 above.
 
 When first getting the outer TrilinosDriver script to run, there can
 be problems that you will have to debug.  The output to the console

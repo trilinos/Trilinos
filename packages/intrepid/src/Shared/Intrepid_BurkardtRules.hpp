@@ -53,7 +53,7 @@
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 //#include <fstream>
 //#include <string>
 

@@ -186,9 +186,9 @@ namespace {
 
       // Validate command-line options.  We provide default values
       // for unset options, so we don't have to validate those.
-      TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
 			 "Number of rows per process must be positive.");
-      TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
 			 "Number of columns must be positive.");
       return false; // Did not print help
     }

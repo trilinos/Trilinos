@@ -94,7 +94,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator::get_f_map() const
 Teuchos::RefCountPtr<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return map_p_;
 }
 
@@ -102,7 +102,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator::get_p_map(int l) const
 Teuchos::RefCountPtr<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
@@ -110,7 +110,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator::get_g_map(int j) const
 Teuchos::RefCountPtr<const Epetra_Vector>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return p0_;
 }
 

@@ -211,11 +211,11 @@ protected:
     const int numCols = cols.size(); \
     const Thyra::Ordinal dimDomain = this->domain()->dim(); \
     const std::string msgErr = this->description()+"::"+FUNCNAME; \
-    TEST_FOR_EXCEPTION( !( 1 <= numCols && numCols <= dimDomain ), \
+    TEUCHOS_TEST_FOR_EXCEPTION( !( 1 <= numCols && numCols <= dimDomain ), \
       std::invalid_argument, msgErr<<"Error!"); \
     for (int k = 0; k < numCols; ++k) { \
       const int col_k = cols[k]; \
-      TEST_FOR_EXCEPTION( \
+      TEUCHOS_TEST_FOR_EXCEPTION( \
         !( 0<= col_k && col_k < dimDomain ), std::out_of_range, \
         msgErr<<": col["<<k<<"] = " << col_k \
         << " is not in the range [0,"<<(dimDomain-1)<<"]!" \

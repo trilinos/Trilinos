@@ -682,6 +682,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, duplicate, Ordinal)
+{
+  RCP< const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  int initialRank = comm->getRank();
+  int initialSize = comm->getSize();
+
+  RCP< const Comm<Ordinal> > newComm = comm->duplicate();
+  TEST_EQUALITY(newComm->getSize(), initialSize);
+  TEST_EQUALITY(newComm->getRank(), initialRank);
+
+  // TODO Make sure the communication space is distinct.
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, split, Ordinal) {
   RCP< const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   int initialRank = comm->getRank();
@@ -795,6 +808,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultMpiComm, createSubcommunicator, Ordinal
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PAIROFPACKETS )
 
 #define UNIT_TEST_GROUP_ORDINAL_SUBCOMMUNICATORS( ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, duplicate, ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, split, ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, createSubcommunicator, ORDINAL )
 

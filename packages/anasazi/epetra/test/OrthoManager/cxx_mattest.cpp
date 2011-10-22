@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
       OM = rcp( new ICGSOrthoManager<ST,MV,OP>(M) );
     }
     else {
-      TEST_FOR_EXCEPTION(true,invalid_argument,"Command line parameter \"ortho\" must be \"SVQB\" or \"Basic\".");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,invalid_argument,"Command line parameter \"ortho\" must be \"SVQB\" or \"Basic\".");
     }
 
     // multivector to spawn off of
@@ -188,25 +188,25 @@ int main(int argc, char *argv[])
       // X1
       MVT::MvRandom(*X1);
       dummy = OM->normalize(*X1);
-      TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
           "normalize(X1) returned rank " << dummy << " from " 
           << sizeX1 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "normalize(X1) did meet tolerance: orthonormError(X1) == " << err);
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
       // X2
       MVT::MvRandom(*X2);
       dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
-      TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
           "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
           << sizeX2 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthonormError(X2) == " << err);
       err = OM->orthogError(*X2,*X1);
       MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthogError(X2,X1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X1> ||     : " << err << endl;
     }

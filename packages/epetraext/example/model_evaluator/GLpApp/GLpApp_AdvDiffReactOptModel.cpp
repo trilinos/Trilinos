@@ -190,7 +190,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
         Thyra::scale(double(numBndyNodes)/double(np_),  thyra_B_bar.ptr()); // Each row should sum to around one!
         // We just discard the "R" factory thyra_fact_R ...
 #else // HAVE_THYRA_EPETRAEXT
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           true,std::logic_error
           ,"Error, can not normalize basis since we do not have Thyra support enabled!"
           );
@@ -284,14 +284,14 @@ AdvDiffReactOptModel::get_f_map() const
 Teuchos::RefCountPtr<const Epetra_Map>
 AdvDiffReactOptModel::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPT(!(0<=l<=Np_));
+  TEUCHOS_TEST_FOR_EXCEPT(!(0<=l<=Np_));
   return map_p_[l];
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
 AdvDiffReactOptModel::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
@@ -304,7 +304,7 @@ AdvDiffReactOptModel::get_x_init() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 AdvDiffReactOptModel::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT(!(0<=l<=Np_));
+  TEUCHOS_TEST_FOR_EXCEPT(!(0<=l<=Np_));
   return p0_[l];
 }
 
@@ -323,14 +323,14 @@ AdvDiffReactOptModel::get_x_upper_bounds() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 AdvDiffReactOptModel::get_p_lower_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(!(0<=l<=Np_));
+  TEUCHOS_TEST_FOR_EXCEPT(!(0<=l<=Np_));
   return pL_[l];
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 AdvDiffReactOptModel::get_p_upper_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(!(0<=l<=Np_));
+  TEUCHOS_TEST_FOR_EXCEPT(!(0<=l<=Np_));
   return pU_[l];
 }
 
@@ -343,7 +343,7 @@ AdvDiffReactOptModel::create_W() const
 Teuchos::RefCountPtr<Epetra_Operator>
 AdvDiffReactOptModel::create_DfDp_op(int l) const
 {
-  TEST_FOR_EXCEPT(l!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,dat_->getB()->Graph()));
   // See DfDp in evalModel(...) below for details
 }
@@ -540,17 +540,17 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
       int DfDx_num_row_entries=0; double *DfDx_row_vals=0; int *DfDx_row_inds=0;
       DfDx.ExtractMyRowView(i,DfDx_num_row_entries,DfDx_row_vals,DfDx_row_inds);
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(DfDx_num_row_entries!=dat_A_num_row_entries);
+      TEUCHOS_TEST_FOR_EXCEPT(DfDx_num_row_entries!=dat_A_num_row_entries);
 #endif
       if(reactionRate!=0.0) {
         int dat_Npy_num_row_entries=0; double *dat_Npy_row_vals=0; int *dat_Npy_row_inds=0;
         dat_Npy->ExtractMyRowView(i,dat_Npy_num_row_entries,dat_Npy_row_vals,dat_Npy_row_inds);
 #ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPT(dat_A_num_row_entries!=dat_Npy_num_row_entries);
+        TEUCHOS_TEST_FOR_EXCEPT(dat_A_num_row_entries!=dat_Npy_num_row_entries);
 #endif
         for(int k = 0; k < DfDx_num_row_entries; ++k) {
 #ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPT(dat_A_row_inds[k]!=dat_Npy_row_inds[k]||dat_A_row_inds[k]!=DfDx_row_inds[k]);
+          TEUCHOS_TEST_FOR_EXCEPT(dat_A_row_inds[k]!=dat_Npy_row_inds[k]||dat_A_row_inds[k]!=DfDx_row_inds[k]);
 #endif
           DfDx_row_vals[k] = dat_A_row_vals[k] + reactionRate * dat_Npy_row_vals[k];
         }
@@ -558,7 +558,7 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
       else {
         for(int k = 0; k < DfDx_num_row_entries; ++k) {
 #ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPT(dat_A_row_inds[k]!=DfDx_row_inds[k]);
+          TEUCHOS_TEST_FOR_EXCEPT(dat_A_row_inds[k]!=DfDx_row_inds[k]);
 #endif
           DfDx_row_vals[k] = dat_A_row_vals[k];
         }
@@ -589,7 +589,7 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
       // We only support a Multi-vector form when we have a non-idenity basis
       // matrix B_bar for p!
       //
-      TEST_FOR_EXCEPT(DfDp_mv==NULL);
+      TEUCHOS_TEST_FOR_EXCEPT(DfDp_mv==NULL);
       dat_B->Multiply(false,*B_bar_,*DfDp_mv);
     }
     else {
@@ -610,11 +610,11 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
           int DfDp_num_row_entries=0; double *DfDp_row_vals=0; int *DfDp_row_inds=0;
           DfDp_op->ExtractMyRowView(i,DfDp_num_row_entries,DfDp_row_vals,DfDp_row_inds);
 #ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPT(DfDp_num_row_entries!=dat_B_num_row_entries);
+          TEUCHOS_TEST_FOR_EXCEPT(DfDp_num_row_entries!=dat_B_num_row_entries);
 #endif
           for(int k = 0; k < DfDp_num_row_entries; ++k) {
 #ifdef TEUCHOS_DEBUG
-            TEST_FOR_EXCEPT(dat_B_row_inds[k]!=DfDp_row_inds[k]);
+            TEUCHOS_TEST_FOR_EXCEPT(dat_B_row_inds[k]!=DfDp_row_inds[k]);
 #endif
             DfDp_row_vals[k] = dat_B_row_vals[k];
           }

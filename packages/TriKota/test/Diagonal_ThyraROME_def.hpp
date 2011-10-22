@@ -318,12 +318,12 @@ createModel(
     Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
   const int numProcs = comm->getSize();
-  TEST_FOR_EXCEPT_MSG( numProcs > globalDim,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( numProcs > globalDim,
     "Error, the number of processors can not be greater than the global"
     " dimension of the vectors!." );
   const int localDim = globalDim / numProcs;
   const int localDimRemainder = globalDim % numProcs;
-  TEST_FOR_EXCEPT_MSG( localDimRemainder != 0,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( localDimRemainder != 0,
     "Error, the number of processors must divide into the global number"
     " of elements exactly for now!." );
 

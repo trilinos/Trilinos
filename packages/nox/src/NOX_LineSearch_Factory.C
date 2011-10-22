@@ -101,12 +101,12 @@ buildLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
     }
     else {
       std::string msg = "Error - NOX::LineSearch::Factory::buildLineSearch() -  a \"User Defined\" line search was chosen for the \"Method\" in the \"Line Search\" sublist, but a Teuchos::RCP<NOX::LineSearch::UserDefinedFactory> object was not found in the parameter list!";
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
     }
   }
   else {
     std::string msg = "Error - NOX::LineSearch::Facotry::buildLineSearch() - Invalid choice for \"Method\" in \"Line Search\" sublist!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   return line_search;

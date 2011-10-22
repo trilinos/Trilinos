@@ -42,7 +42,7 @@
 #include "LOCA_ErrorCheck.H"     // class definition
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"          // for printing utilities
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 LOCA::ErrorCheck::ErrorCheck(
 		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
@@ -66,7 +66,7 @@ void LOCA::ErrorCheck::throwError(const string& callingFunction,
       globalData->locaUtils->err() << message << "\n";       
     globalData->locaUtils->err() << "************************" << std::endl;
   }
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "ERROR: " << callingFunction << "\n"
     << "ThrowLabel: " << throwLabel << "\n"
     << message << "\n");

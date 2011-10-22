@@ -17,6 +17,8 @@ extern "C" {
 NNTI_result_t nnti_url_get_transport(const char *url, char *outstr, const int maxlen);
 NNTI_result_t nnti_url_get_address(const char *url, char *outstr, const int maxlen);
 NNTI_result_t nnti_url_get_memdesc(const char *url, char *outstr, const int maxlen);
+NNTI_result_t nnti_url_get_params(const char *url, char *outstr, const int maxlen);
+
 
 NNTI_result_t nnti_sleep(const uint64_t msec);
 

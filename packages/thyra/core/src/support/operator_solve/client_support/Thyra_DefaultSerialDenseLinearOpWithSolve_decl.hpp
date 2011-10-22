@@ -55,7 +55,7 @@ namespace Thyra {
 inline RTOpPack::ETransp convertToRTOpPackETransp( const EOpTransp transp )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(transp == CONJ);
+  TEUCHOS_TEST_FOR_EXCEPT(transp == CONJ);
 #endif
   switch(transp) {
     case NOTRANS:
@@ -65,7 +65,7 @@ inline RTOpPack::ETransp convertToRTOpPackETransp( const EOpTransp transp )
     case CONJTRANS:
       return RTOpPack::CONJTRANS;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return RTOpPack::NOTRANS; // will never be called!
 }

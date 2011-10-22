@@ -12,6 +12,9 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+#if defined(HAVE_KOKKOS_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
 
 #include "Tpetra_CrsGraph_def.hpp"
 
@@ -23,6 +26,9 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSGRAPH_INSTANT(int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_CRSGRAPH_INSTANT(int,int,Kokkos::OpenMPNode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST)
     TPETRA_CRSGRAPH_INSTANT(int,int,Kokkos::ThrustGPUNode)

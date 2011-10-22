@@ -48,8 +48,16 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database,
     idOffset(0)
   
 {
-  topology_ = ElementTopology::factory(entity_type);
-  assert(topology_ != NULL);
+  // The 'true' means it is ok for the factory to return
+  // NULL.  This is done here just so we can output a better
+  // error message.
+  topology_ = ElementTopology::factory(entity_type, true);
+  if (topology_ == NULL) {
+    std::ostringstream errmsg;
+    errmsg << "The topology type '" << entity_type << "' is not supported"
+	   << " on " << name() << " in file " << io_database->get_filename();
+    IOSS_ERROR(errmsg);
+  }
 
   if (topology()->master_element_name() != entity_type &&
       topology()->name() != entity_type) {

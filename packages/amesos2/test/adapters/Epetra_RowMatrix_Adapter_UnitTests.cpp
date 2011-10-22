@@ -196,7 +196,7 @@ namespace {
     for (int i = 0; i < NumMyElements; ++i)
       {
 	int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
-	TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
+	TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
       }
 
     eye->FillComplete();
@@ -254,7 +254,7 @@ namespace {
     for (int i = 0; i < NumMyElements; ++i)
       {
 	int ierr = eye->InsertGlobalValues(MyGlobalElements[i], 1, &one, &MyGlobalElements[i]);
-	TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
+	TEUCHOS_TEST_FOR_EXCEPTION(ierr != 0,std::runtime_error,"Error inserting value into matrix");
       }
 
     eye->FillComplete();

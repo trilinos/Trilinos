@@ -353,7 +353,7 @@ namespace TSQR {
 	    // really broken).
 	    if (two_to_the_numCols > magnitude_type(10) * STM::eps())
 	      {
-		TEST_FOR_EXCEPTION(rank != numCols, std::logic_error,
+		TEUCHOS_TEST_FOR_EXCEPTION(rank != numCols, std::logic_error,
 				   "The matrix of " << numCols << " columns "
 				   "should have full numerical rank, but Tsqr "
 				   "reports that it has rank " << rank << ".  "
@@ -479,7 +479,7 @@ namespace TSQR {
 	    // Avoid division by zero.
 	    const magnitude_type relResidError = 
 	      results[0] / (results[2] == STM::zero() ? STM::one() : results[2]);
-	    TEST_FOR_EXCEPTION(relResidError > relResidBound, TsqrInaccurate,
+	    TEUCHOS_TEST_FOR_EXCEPTION(relResidError > relResidBound, TsqrInaccurate,
 			       "Full Tsqr (SequentialTsqr + DistTsqr) has an "
 			       "inaccurate relative residual ||A - QR||_F"
 			       << (results[2] == STM::zero() ? " / ||A||_F" : "")
@@ -488,7 +488,7 @@ namespace TSQR {
 			       "factor of " << relResidError / relResidBound
 			       << ".");
 	    const magnitude_type orthoError = results[1];
-	    TEST_FOR_EXCEPTION(orthoError > orthoBound, TsqrInaccurate,
+	    TEUCHOS_TEST_FOR_EXCEPTION(orthoError > orthoBound, TsqrInaccurate,
 			       "Full Tsqr (SequentialTsqr + DistTsqr) has an "
 			       "inaccurate orthogonality measure ||I - Q^* Q||"
 			       "_F" << results[1] << " = " << orthoError 
@@ -731,15 +731,15 @@ namespace TSQR {
       static std::vector<int> 
       validateRandomSeed (const std::vector<int>& seed) 
       {
-	TEST_FOR_EXCEPTION(seed.size() < 4, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(seed.size() < 4, std::invalid_argument,
 			   "Invalid random seed: Need an array of four integers.");
 	for (std::vector<int>::size_type k = 0; k < seed.size(); ++k)
 	  {
-	    TEST_FOR_EXCEPTION(seed[k] < 0 || seed[k] > 4095,
+	    TEUCHOS_TEST_FOR_EXCEPTION(seed[k] < 0 || seed[k] > 4095,
 			       std::invalid_argument,
 			       "Invalid random seed: Each of the four integers must be in [0, 4095].");
 	  }
-	TEST_FOR_EXCEPTION(seed[3] % 2 != 1, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(seed[3] % 2 != 1, std::invalid_argument,
 			   "Invalid random seed: The last of the four integers must be odd.");
 	return seed;
       }

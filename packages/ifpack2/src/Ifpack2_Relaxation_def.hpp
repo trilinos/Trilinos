@@ -62,7 +62,7 @@ Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0)
 {
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
       Teuchos::typeName(*this) << "::Relaxation(): input matrix reference was null.");
 }
 
@@ -243,10 +243,10 @@ void Relaxation<MatrixType>::apply(
                  Scalar alpha,
                  Scalar beta) const
 {
-  TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
      "Ifpack2::Relaxation::apply ERROR: isComputed() must be true prior to calling apply.");
 
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::Relaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   Time_->start(true);
@@ -295,9 +295,9 @@ void Relaxation<MatrixType>::applyMat(
                                     typename MatrixType::node_type>& Y,
              Teuchos::ETransp mode) const
 {
-  TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
      "Ifpack2::Relaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::Relaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply(X, Y, mode);
 }
@@ -307,12 +307,12 @@ template<class MatrixType>
 void Relaxation<MatrixType>::initialize() {
   IsInitialized_ = false;
 
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
     "Ifpack2::Relaxation::Initialize ERROR, Matrix is NULL");
 
 //  size_t globalrows = A_->getGlobalNumRows();
 //  size_t globalcols = A_->getGlobalNumCols();
-//  TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
+//  TEUCHOS_TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
 //   "Ifpack2::Relaxation::Initialize ERROR, only square matrices are supported");
 
   NumMyRows_ = A_->getNodeNumRows();
@@ -344,12 +344,12 @@ void Relaxation<MatrixType>::compute()
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::runtime_error,
     "Ifpack2::Relaxation::compute, NumSweeps_ must be >= 0");
   
   Diagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()) );
 
-  TEST_FOR_EXCEPTION(Diagonal_ == Teuchos::null, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Diagonal_ == Teuchos::null, std::runtime_error,
     "Ifpack2::Relaxation::compute, failed to create Diagonal_");
 
   A_->getLocalDiagCopy(*Diagonal_);
@@ -379,7 +379,7 @@ void Relaxation<MatrixType>::compute()
 										  A_->getColMap()) );
 
 
-    TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
       "Ifpack2::Relaxation::compute ERROR failed to create Importer_");
   }
 

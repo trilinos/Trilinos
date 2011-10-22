@@ -160,6 +160,34 @@ namespace {
     return omitted;
   }
 
+  int get_side_offset(const Ioss::SideBlock *sb)
+  {
+    // And yet another idiosyncracy of sidesets...
+    // The side of an element (especially shells) can be
+    // either a face or an edge in the same sideset.  The
+    // ordinal of an edge is (local_edge_number+#faces) on the
+    // database, but needs to be (local_edge_number) for
+    // Sierra...
+    //
+    // If the sideblock has a "parent_element_topology" and a
+    // "topology", then we can determine whether to offset the
+    // side ordinals...
+
+    const Ioss::ElementTopology *side_topo   = sb->topology();
+    const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
+    int side_offset = 0;
+    if (side_topo && parent_topo) {
+      int side_topo_dim = side_topo->parametric_dimension();
+      int elem_topo_dim = parent_topo->parametric_dimension();
+      int elem_spat_dim = parent_topo->spatial_dimension();
+      
+      if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
+	side_offset = parent_topo->number_faces();
+      }
+    }
+    return side_offset;
+  }
+
   void filter_element_list(Ioss::Region *region,
 			   Ioss::IntVector &elements, Ioss::IntVector &sides,
 			   bool remove_omitted_elements);
@@ -3130,6 +3158,9 @@ namespace Ioex {
 	    // numbers.
 	    int *element_side = static_cast<int*>(data);
 
+	    // See if edges or faces...
+	    int side_offset = get_side_offset(fb);
+
 	    Ioss::IntVector element(number_sides);
 	    Ioss::IntVector sides(number_sides);
 
@@ -3141,7 +3172,7 @@ namespace Ioex {
 	      size_t index = 0;
 	      for (size_t iel = 0; iel < entity_count; iel++) {
 		element_side[index++] = map[element[iel]];
-		element_side[index++] = sides[iel];
+		element_side[index++] = sides[iel] - side_offset;
 	      }
 	      assert(index/2 == entity_count);
 	    } else {
@@ -3154,7 +3185,7 @@ namespace Ioex {
 		if (is_valid_side[iel] == 1) {
 		  // This side  belongs in the side block
 		  element_side[index++] = map[element[iel]];
-		  element_side[index++] = sides[iel];
+		  element_side[index++] = sides[iel] - side_offset;
 		}
 	      }
 	      assert(index/2 == entity_count);
@@ -3174,6 +3205,9 @@ namespace Ioex {
 	    // numbers.
 	    int *element_side = static_cast<int*>(data);
 
+	    // See if edges or faces...
+	    int side_offset = get_side_offset(fb);
+
 	    Ioss::IntVector element(number_sides);
 	    Ioss::IntVector sides(number_sides);
 
@@ -3185,7 +3219,7 @@ namespace Ioex {
 	      size_t index = 0;
 	      for (size_t iel = 0; iel < entity_count; iel++) {
 		element_side[index++] = element[iel];
-		element_side[index++] = sides[iel];
+		element_side[index++] = sides[iel] - side_offset;
 	      }
 	      assert(index/2 == entity_count);
 	    } else {
@@ -3198,7 +3232,7 @@ namespace Ioex {
 		if (is_valid_side[iel] == 1) {
 		  // This side  belongs in the side block
 		  element_side[index++] = element[iel];
-		  element_side[index++] = sides[iel];
+		  element_side[index++] = sides[iel] - side_offset;
 		}
 	      }
 	      assert(index/2 == entity_count);
@@ -5155,10 +5189,13 @@ namespace Ioex {
 	    Ioss::IntVector side(num_to_get);
 	    int *el_side = (int *)data;
 
+	    // See if edges or faces...
+	    int side_offset = get_side_offset(fb);
+
 	    int index = 0;
 	    for (size_t i=0; i < num_to_get; i++) {
 	      element[i] = element_global_to_local(el_side[index++]);
-	      side[i]    = el_side[index++];
+	      side[i]    = el_side[index++]+side_offset;
 	    }
 
 	    int ierr;
@@ -5184,10 +5221,13 @@ namespace Ioex {
 	    Ioss::IntVector side(num_to_get);
 	    int *el_side = (int *)data;
 
+	    // See if edges or faces...
+	    int side_offset = get_side_offset(fb);
+
 	    int index = 0;
 	    for (size_t i=0; i < num_to_get; i++) {
 	      element[i] = el_side[index++];
-	      side[i]    = el_side[index++];
+	      side[i]    = el_side[index++]+side_offset;
 	    }
 
 	    int ierr;

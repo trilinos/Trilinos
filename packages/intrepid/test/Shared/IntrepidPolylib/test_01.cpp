@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 
 
   int errorFlag = 0;
-  int beginThrowNumber = TestForException_getThrowNumber();
+  int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 1;
 
   typedef IntrepidPolylib ipl; 
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
 
-  if (TestForException_getThrowNumber() != endThrowNumber)
+  if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag = -1000;
 
   *outStream \

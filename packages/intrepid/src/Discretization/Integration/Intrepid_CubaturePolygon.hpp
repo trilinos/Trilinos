@@ -50,7 +50,7 @@
 #define INTREPID_CUBATURE_POLYGON_HPP
 
 #include "Intrepid_Cubature.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace Intrepid{

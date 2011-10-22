@@ -132,6 +132,7 @@
 #include "AztecOO.h"
 
 // ML Includes
+#include "ml_config.h" // minor abuse
 #include "ml_epetra_utils.h"
 #include "ml_GradDiv.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -1660,7 +1661,7 @@ int main(int argc, char *argv[]) {
    RCP<const Epetra_CrsMatrix> A00=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(0,0));
    RCP<const Epetra_CrsMatrix> A11=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(1,1));
 
-   // Make H(Div)  preconditioner A00
+   // Make H(Div) preconditioner A00
    Teuchos::ParameterList ListHdiv, List_Coarse;
    List_Coarse.set("PDE equations",3);
    List_Coarse.set("x-coordinates",Nx.Values());
@@ -1674,10 +1675,23 @@ int main(int argc, char *argv[]) {
    ML_Epetra::UpdateList(List_Coarse,List11,true); 
    List11.set("smoother: type","do-nothing");
    List11.set("smoother: sweeps",0);
-
    ML_Epetra::UpdateList(List_Coarse,List22,true); 
    ML_Epetra::UpdateList(List_Coarse,List11c,true); 
+#ifdef HAVE_ML_ZOLTAN
+   List11c.set("aggregation: type","Uncoupled");
+   List11c.set("repartition: enable",1);
+   List11c.set("repartition: Zoltan dimensions",3);
+   List11c.set("repartition: max min ratio",1.4);
+   List11c.set("repartition: min per proc",1000);
+#endif
    ML_Epetra::UpdateList(List_Coarse,List22c,true); 
+#ifdef HAVE_ML_ZOLTAN
+   List22c.set("aggregation: type","Uncoupled");
+   List22c.set("repartition: enable",1);
+   List22c.set("repartition: Zoltan dimensions",3);
+   List22c.set("repartition: max min ratio",1.4);
+   List22c.set("repartition: min per proc",1000);
+#endif
    List11.set("face matrix free: coarse",List11c);
    List22.set("edge matrix free: coarse",List22c);
    ListHdiv.setName("graddiv list");
@@ -1699,7 +1713,20 @@ int main(int argc, char *argv[]) {
    ListHgrad.set("smoother: sweeps",2);
    ListHgrad.set("smoother: type","Chebyshev");
    ListHgrad.set("coarse: type","Amesos-KLU");
+   ListHgrad.set("coarse: max size",200);  
    ListHgrad.set("ML output",10);
+   ListHgrad.set("ML label","Poisson solver");
+#ifdef HAVE_ML_ZOLTAN
+   ListHgrad.set("aggregation: type","Uncoupled");
+   ListHgrad.set("repartition: enable",1);
+   ListHgrad.set("repartition: Zoltan dimensions",3);
+   ListHgrad.set("repartition: max min ratio",1.4);
+   ListHgrad.set("repartition: min per proc",1000);
+   ListHgrad.set("x-coordinates",Nx.Values());
+   ListHgrad.set("y-coordinates",Ny.Values());
+   ListHgrad.set("z-coordinates",Nz.Values());
+#endif
+
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));
 
 

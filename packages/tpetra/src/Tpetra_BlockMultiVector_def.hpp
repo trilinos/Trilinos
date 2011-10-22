@@ -45,11 +45,11 @@ LocalOrdinal BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalP
 {
   LocalOrdinal LBID = blockMap_->getLocalBlockID(globalBlockRow);
 
-  TEST_FOR_EXCEPTION( LBID == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error, "Tpetra::BlockMultiVector::getLocalPointIndex ERROR: specified globalBlockRow not found in local block-map.");
+  TEUCHOS_TEST_FOR_EXCEPTION( LBID == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error, "Tpetra::BlockMultiVector::getLocalPointIndex ERROR: specified globalBlockRow not found in local block-map.");
 
   LocalOrdinal blkSize = blockMap_->getLocalBlockSize(LBID);
 
-  TEST_FOR_EXCEPTION( blockOffset >= blkSize, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( blockOffset >= blkSize, std::runtime_error,
      "Tpetra::BlockMultiVector::getLocalPointIndex ERROR: specified blockOffset >= blockSize.");
 
   LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInLocalBlock(LBID);

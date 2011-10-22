@@ -49,7 +49,7 @@
 #include "Thyra_apply_op_helper.hpp"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -123,7 +123,7 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     in_applyOpImpl_, std::invalid_argument,
     "SpmdVectorBase<>::applyOp(...): Error, this method is being entered recursively"
     " which is a clear sign that one of the methods acquireDetachedView(...),"
@@ -320,7 +320,7 @@ void SpmdVectorBase<Scalar>::releaseDetachedVectorViewImpl(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
     ,"SpmdVectorBase<Scalar>::releaseDetachedVectorViewImpl(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
@@ -382,7 +382,7 @@ void SpmdVectorBase<Scalar>::commitNonconstDetachedVectorViewImpl(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
     ,"SpmdVectorBase<Scalar>::commitDetachedView(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
@@ -432,7 +432,7 @@ Range1D SpmdVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
 {
   const Range1D rng = Teuchos::full_range(rng_in,0,globalDim_-1);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= rng.lbound() && rng.ubound() < globalDim_), std::invalid_argument
     ,"SpmdVectorBase<Scalar>::validateRange(...): Error, the range ["
     <<rng.lbound()<<","<<rng.ubound()<<"] is not "

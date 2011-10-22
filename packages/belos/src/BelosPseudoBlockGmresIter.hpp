@@ -337,7 +337,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) { 
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 			 "Belos::PseudoBlockGmresIter::setBlockSize(): Cannot use a block size that is not one.");
     }
     
@@ -427,7 +427,7 @@ namespace Belos {
     iter_(0)
   {
     // Get the maximum number of blocks allowed for each Krylov subspace
-    TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::PseudoBlockGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
@@ -442,7 +442,7 @@ namespace Belos {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
     
-    TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::PseudoBlockGmresIter::setNumBlocks was passed a non-positive argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::PseudoBlockGmresIter::setNumBlocks was passed a non-positive argument.");
 
     numBlocks_ = numBlocks;
     curDim_ = 0;
@@ -542,7 +542,7 @@ namespace Belos {
 			"length and width.");
 
     // Check that newstate has V and Z arrays with nonzero length.
-    TEST_FOR_EXCEPTION((int)newstate.V.size()==0 || (int)newstate.Z.size()==0, 
+    TEUCHOS_TEST_FOR_EXCEPTION((int)newstate.V.size()==0 || (int)newstate.Z.size()==0, 
 		       std::invalid_argument,
                        "Belos::PseudoBlockGmresIter::initialize(): "
 		       "V and/or Z was not specified in the input state; "
@@ -565,7 +565,7 @@ namespace Belos {
     RCP<const MV> vectorInBasisSpace = rhsMV.is_null() ? lhsMV : rhsMV;
     //RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 
-    TEST_FOR_EXCEPTION(vectorInBasisSpace.is_null(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(vectorInBasisSpace.is_null(), 
 		       std::invalid_argument,
                        "Belos::PseudoBlockGmresIter::initialize(): "
 		       "The linear problem to solve does not specify multi"
@@ -575,7 +575,7 @@ namespace Belos {
 
     // Check the new dimension is not more that the maximum number of
     // allowable blocks.
-    TEST_FOR_EXCEPTION(newstate.curDim > numBlocks_+1, 
+    TEUCHOS_TEST_FOR_EXCEPTION(newstate.curDim > numBlocks_+1, 
 		       std::invalid_argument, 
 		       errstr);
     curDim_ = newstate.curDim;
@@ -593,9 +593,9 @@ namespace Belos {
       }
       // Check that the newstate vector newstate.V[i] has dimensions
       // consistent with those of V_[i].
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
                           std::invalid_argument, errstr );
       //
       // If newstate.V[i] and V_[i] are not identically the same
@@ -642,7 +642,7 @@ namespace Belos {
       }
       
       // Check that the newstate vector is consistent.
-      TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
       
       // Put data into Z_, make sure old information is not still hanging around.
       if (newstate.Z[i] != Z_[i]) {
@@ -675,7 +675,7 @@ namespace Belos {
       if ((int)newstate.H.size() == numRHS_) {
 	
 	// Check that the newstate matrix is consistent.
-	TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
+	TEUCHOS_TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
 			   "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
 	
 	if (newstate.H[i] != H_[i]) {
