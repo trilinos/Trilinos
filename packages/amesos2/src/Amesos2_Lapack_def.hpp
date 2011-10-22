@@ -165,18 +165,6 @@ namespace Amesos2 {
 			  std::runtime_error,
 			  "Lapack solver solve method returned with error code "
 			  << solve_ierr );
-
-      /* Work around a bug in Teuchos::SerialDenseSolver that does not
-       * perform the unequilibration of the solution.  If the matrix
-       * and RHS were not equilibrated, then this is a no-op
-       */
-      int unequilibrate_ierr = solver_.unequilibrateLHS();
-      TEUCHOS_TEST_FOR_EXCEPTION( unequilibrate_ierr != 0,
-			  std::runtime_error,
-			  "Lapack solver returned with error code "
-			  << unequilibrate_ierr
-			  << " when unequilibrating the system solution." );
-
       // Solution is found in rhsvals_
     }
 
