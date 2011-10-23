@@ -200,8 +200,8 @@ namespace Belos {
 	// every time you call this method with name == "TSQR", a new
 	// parameter list will be created.  You can save the parameter
 	// list yourself if you want to reuse it.
-	TsqrMatOrthoManager<Scalar, MV, OP> tsqr; 
-	return tsqr.getValidParameters ();
+	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getValidParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
@@ -213,7 +213,8 @@ namespace Belos {
 	return orthoMan.getValidParameters ();
       }
       else if (name == "Simple") {
-	return SimpleOrthoManager<Scalar, MV>::getDefaultParameters();
+	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getValidParameters ();
       }
       else {
 	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
@@ -264,7 +265,8 @@ namespace Belos {
 	return orthoMan.getFastParameters ();
       }
       else if (name == "Simple") {
-	return SimpleOrthoManager<Scalar, MV>::getFastParameters();
+	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getFastParameters ();
       }
       else {
 	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 

@@ -50,6 +50,7 @@
 #include <BelosOrthoManager.hpp>
 #include <BelosOutputManager.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -64,7 +65,10 @@ namespace Belos {
   /// reorthogonalization (no norm tests), but has no rank-revealing
   /// features.
   template<class Scalar, class MV>
-  class SimpleOrthoManager : public OrthoManager<Scalar, MV> {
+  class SimpleOrthoManager : 
+    public OrthoManager<Scalar, MV>, 
+    public Teuchos::ParameterListAcceptorDefaultBase
+  {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
@@ -76,14 +80,16 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-    //! Label for Belos timer display
+    //! Label for Belos timer display.
     std::string label_;
-    //! Output manager (used mainly for debugging)
+    //! Output manager (used mainly for debugging).
     Teuchos::RCP<OutputManager<Scalar> > outMan_;
-    //! Whether or not to do (unconditional) reorthogonalization
+    //! Whether or not to do (unconditional) reorthogonalization.
     bool reorthogonalize_;
-    //! Whether to use MGS or CGS in the normalize() step
+    //! Whether to use MGS or CGS in the normalize() step.
     bool useMgs_;
+    //! Default parameter list.
+    mutable Teuchos::RCP<Teuchos::ParameterList> defaultParams_;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     //! Timer for all orthogonalization operations
@@ -119,27 +125,54 @@ namespace Belos {
     /// terms of accuracy of the computed orthogonalization.  Call \c
     /// getFastParameters() if you prefer to sacrifice some accuracy
     /// for speed.
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters () const
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      const std::string defaultNormalizationMethod ("MGS");
+      const bool defaultReorthogonalization = false;
+
+      if (defaultParams_.is_null()) {
+	RCP<ParameterList> params = parameterList ("Simple");
+	params->set ("Normalization", defaultNormalizationMethod,
+		     "Which normalization method to use. Valid values are \"MGS\""
+		     " (for Modified Gram-Schmidt) and \"CGS\" (for Classical "
+		     "Gram-Schmidt).");
+	params->set ("Reorthogonalization", defaultReorthogonalization,
+		     "Whether to perform one (unconditional) reorthogonalization "
+		     "pass.");
+	defaultParams_ = params;
+      }
+      return defaultParams_;
+    }
+
+    /// \brief Get a default list of parameters.
     ///
-    /// \warning This class method is nonreentrant.
+    /// The "default" parameter list sets reasonably safe options in
+    /// terms of accuracy of the computed orthogonalization.  Call \c
+    /// getFastParameters() if you prefer to sacrifice some accuracy
+    /// for speed.
     ///
-    static Teuchos::RCP<const Teuchos::ParameterList> 
+    /// \warning This method is deprecated.  Please call \c
+    /// getValidParameters() instead.
+    static TEUCHOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList> 
     getDefaultParameters ()
     {
       using Teuchos::ParameterList;
+      using Teuchos::parameterList;
       using Teuchos::RCP;
 
-      // This part makes this class method non-reentrant.
-      static RCP<ParameterList> params;
-      if (! params.is_null())
-	return params;
-
-      params = Teuchos::parameterList();
       const std::string defaultNormalizationMethod ("MGS");
+      const bool defaultReorthogonalization = false;
+
+      RCP<ParameterList> params = parameterList ("Simple");
       params->set ("Normalization", defaultNormalizationMethod,
 		   "Which normalization method to use. Valid values are \"MGS\""
 		   " (for Modified Gram-Schmidt) and \"CGS\" (for Classical "
 		   "Gram-Schmidt).");
-      const bool defaultReorthogonalization = false;
       params->set ("Reorthogonalization", defaultReorthogonalization,
 		   "Whether to perform one (unconditional) reorthogonalization "
 		   "pass.");
@@ -149,29 +182,55 @@ namespace Belos {
     /// \brief Get a "fast" list of parameters.
     ///
     /// The "fast" parameter list favors speed of orthogonalization,
-    /// but sacrifices some accuracy.  Call \c getDefaultParameters()
-    /// for safer options in terms of accuracy.
-    ///
-    /// \warning This class method is nonreentrant.
-    ///
-    static Teuchos::RCP<const Teuchos::ParameterList> 
+    /// but sacrifices some safety and accuracy.  Call \c
+    /// getDefaultParameters() for safer and more accurate options.
+    Teuchos::RCP<const Teuchos::ParameterList> 
     getFastParameters ()
     {
       using Teuchos::ParameterList;
+      using Teuchos::parameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
 
-      // This part makes this class method non-reentrant.
-      static RCP<ParameterList> fastParams;
-      if (! fastParams.is_null())
-	return fastParams;
-      
-      fastParams = rcp (new ParameterList (*getDefaultParameters()));
       const std::string fastNormalizationMethod ("CGS");
-      fastParams->set ("Normalization", fastNormalizationMethod);
       const bool fastReorthogonalization = false;
+
+      // Start with a clone of the default parameters.
+      RCP<ParameterList> fastParams = parameterList (*getValidParameters());
+      fastParams->set ("Normalization", fastNormalizationMethod);
       fastParams->set ("Reorthogonalization", fastReorthogonalization);
+
       return fastParams;
+    }
+
+    void 
+    setParameterList (const Teuchos::RCP<ParameterList>& plist)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      using Teuchos::Exceptions::InvalidParameter;
+
+      RCP<const ParameterList> defaultParams = getValidParameters();
+      RCP<ParameterList> params;
+      if (plist.is_null()) {
+	params = parameterList (*defaultParams);
+      } else {
+	plist = params;
+	params->validateParametersAndSetDefaults (*defaultParams);
+      }
+      const std::string normalizeImpl = params->get<std::string>("Normalization");
+      const bool reorthogonalize = params->get<bool>("Reorthogonalization");
+
+      if (normalizeImpl == "MGS" || normalizeImpl == "Mgs" || normalizeImpl == "mgs") {
+	useMgs_ = true;
+	params->set ("Normalization", std::string ("MGS")); // Standardize.
+      } else {
+	useMgs_ = false;
+      }
+      reorthogonalize_ = reorthogonalize;
+
+      setMyParamList (params);
     }
 
     /// \brief Constructor
@@ -181,64 +240,31 @@ namespace Belos {
     ///
     /// \param label [in] Label for Belos timers.
     ///
-    /// \param params [in] List of configuration parameters.  Call
-    ///   getDefaultParameters() or getFastParameters() for sample
-    ///   valid parameter lists.
-    ///
+    /// \param params [in/out] List of configuration parameters.  Call
+    ///   getDefaultParameters() or getFastParameters() for valid
+    ///   parameter lists.
     SimpleOrthoManager (const Teuchos::RCP<OutputManager<Scalar> >& outMan,
 			const std::string& label,
-			const Teuchos::RCP<const Teuchos::ParameterList>& params) :
+			const Teuchos::RCP<Teuchos::ParameterList>& params) :
       label_ (label),
       outMan_ (outMan)
     {
-      using Teuchos::ParameterList;
-      using Teuchos::RCP;
-      using Teuchos::Exceptions::InvalidParameter;
-
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerOrtho_ = makeTimer (label, "All orthogonalization");
       timerProject_ = makeTimer (label, "Projection");
       timerNormalize_ = makeTimer (label, "Normalization");
 #endif // BELOS_TEUCHOS_TIME_MONITOR
-      
-      std::string normalizeImpl;
-      if (params.is_null())
-	normalizeImpl = "MGS";
-      else
-	{
-	  try {
-	    normalizeImpl = params->get<std::string>("Normalization");
-	  } catch (InvalidParameter&) {
-	    normalizeImpl = "MGS";
-	  }
-	}
-      bool reorthogonalize;
-      if (params.is_null())
-	reorthogonalize = false;
-      else
-	{
-	  try {
-	    reorthogonalize = params->get<bool>("Reorthogonalization");
-	  } catch (InvalidParameter&) {
-	    reorthogonalize = false;
-	  }
-	}
-      if (normalizeImpl == "MGS" || normalizeImpl == "Mgs" || normalizeImpl == "mgs")
-	useMgs_ = true;
-      else 
-	useMgs_ = false;
-      reorthogonalize_ = reorthogonalize;
 
-      if (! outMan_.is_null())
-	{
-	  using std::endl;
-	  std::ostream& dbg = outMan_->stream(Debug);
-	  dbg << "Belos::SimpleOrthoManager constructor:" << endl
-	      << "-- Normalization method: " 
-	      << (useMgs_ ? "MGS" : "CGS") << endl
-	      << "-- Reorthogonalize (unconditionally)? " 
-	      << (reorthogonalize_ ? "Yes" : "No") << endl;
-	}
+      setParameterList (params);
+      if (! outMan_.is_null()) {
+	using std::endl;
+	std::ostream& dbg = outMan_->stream(Debug);
+	dbg << "Belos::SimpleOrthoManager constructor:" << endl
+	    << "-- Normalization method: " 
+	    << (useMgs_ ? "MGS" : "CGS") << endl
+	    << "-- Reorthogonalize (unconditionally)? " 
+	    << (reorthogonalize_ ? "Yes" : "No") << endl;
+      }
     }
     
     //! Virtual destructor for memory safety of derived classes.
