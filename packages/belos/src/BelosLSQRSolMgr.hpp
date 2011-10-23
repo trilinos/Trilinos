@@ -644,7 +644,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       orthoParams = sublist (params_, paramName, true);
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! orthoParams.is_null(), std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(orthoParams.is_null(), std::logic_error, 
 			     "Failed to get orthogonalization parameters.  "
 			     "Please report this bug to the Belos developers.");
 
