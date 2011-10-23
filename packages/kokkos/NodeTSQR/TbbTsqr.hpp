@@ -190,7 +190,7 @@ namespace TSQR {
       ///
       /// This method is deprecated, because the name is misleading.
       /// Please call \c ntasks() instead.
-      size_t TEUCHOS_DEPRECATED ncores() const { return impl_.ncores(); }
+      size_t TEUCHOS_DEPRECATED ncores() const { return impl_.ntasks(); }
 
       //! Cache size hint (in bytes) used for the factorization.
       size_t cache_size_hint() const { return impl_.cache_size_hint(); }
