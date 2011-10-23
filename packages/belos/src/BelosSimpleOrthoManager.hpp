@@ -227,6 +227,7 @@ namespace Belos {
 	params->set ("Normalization", std::string ("MGS")); // Standardize.
       } else {
 	useMgs_ = false;
+	params->set ("Normalization", std::string ("CGS")); // Standardize.
       }
       reorthogonalize_ = reorthogonalize;
 
