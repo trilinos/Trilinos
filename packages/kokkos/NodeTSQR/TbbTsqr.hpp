@@ -230,7 +230,7 @@ namespace TSQR {
 	std::ostringstream os;
 	os << "Intranode Tall Skinny QR (TSQR): "
 	   << "Intel Threading Building Blocks (TBB) implementation"
-	   << ", max " << ncores() << "-way parallelism"
+	   << ", max " << ntasks() << "-way parallelism"
 	   << ", cache size hint of " << cache_size_hint() << " bytes.";
 	return os.str();
       }
