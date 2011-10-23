@@ -209,7 +209,8 @@ namespace Belos {
 	return orthoMan.getValidParameters ();
       }
       else if (name == "IMGS") {
-	return getDefaultImgsParameters<Scalar>();
+	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getValidParameters ();
       }
       else if (name == "Simple") {
 	return SimpleOrthoManager<Scalar, MV>::getDefaultParameters();
@@ -259,7 +260,8 @@ namespace Belos {
 	return orthoMan.getFastParameters ();
       }
       else if (name == "IMGS") {
-	return getFastImgsParameters<Scalar>();
+	IMGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getFastParameters ();
       }
       else if (name == "Simple") {
 	return SimpleOrthoManager<Scalar, MV>::getFastParameters();
@@ -332,11 +334,8 @@ namespace Belos {
 	return rcp (new ortho_type (params, label, M));
       }
       else if (ortho == "IMGS") {
-	int maxNumOrthogPasses;
-	magnitude_type blkTol, singTol;
-	readImgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
-	typedef IMGSOrthoManager<Scalar, MV, OP> imgs_type;
-	return rcp (new imgs_type (label, M, maxNumOrthogPasses, blkTol, singTol));
+	typedef IMGSOrthoManager<Scalar, MV, OP> ortho_type;
+	return rcp (new ortho_type (params, label, M));
       } 
       else if (ortho == "Simple") {
 	TEUCHOS_TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,

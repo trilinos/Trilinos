@@ -77,6 +77,7 @@ namespace Belos {
   Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
   getDefaultIcgsParameters()
   {
+    using Teuchos::as;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -84,8 +85,9 @@ namespace Belos {
     // Documentation will be embedded in the parameter list.
     const int defaultMaxNumOrthogPasses = 2;
     const magnitude_type eps = STM::eps();
-    const magnitude_type defaultBlkTol = magnitude_type(10) * STM::squareroot(eps);
-    const magnitude_type defaultSingTol = magnitude_type(10) * eps;
+    const magnitude_type defaultBlkTol = 
+      as<magnitude_type> (10) * STM::squareroot (eps);
+    const magnitude_type defaultSingTol = as<magnitude_type> (10) * eps;
 
     Teuchos::RCP<Teuchos::ParameterList> params = 
       Teuchos::parameterList ("ICGS");
@@ -278,6 +280,7 @@ namespace Belos {
 
     //! Destructor
     ~ICGSOrthoManager() {}
+    //@}
 
     //! @name Implementation of Teuchos::ParameterListAcceptorDefaultBase interface
     //@{ 
@@ -601,16 +604,17 @@ namespace Belos {
     //@}
 
   private:
-    
-    //! Parameters for re-orthogonalization.
+    //! Max number of (re)orthogonalization steps, including the first.    
     int max_ortho_steps_;
+    //! Block reorthogonalization threshold.
     MagnitudeType blk_tol_;
+    //! Singular block detection threshold.
     MagnitudeType sing_tol_;
 
-    //! Timers and timer label
+    //! Label for timers.
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerUpdate_, 
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
       timerNorm_, timerScale_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 

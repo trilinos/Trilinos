@@ -63,6 +63,8 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 
+#include "Teuchos_as.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -71,27 +73,26 @@ namespace Belos {
 
   /// \brief Default parameters for IMGSOrthoManager
   ///
-  /// \warning This function is not reentrant.
+  /// \warning This function is deprecated.  Please use \c
+  ///   IMGSOrthoManager::getValidParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
   getDefaultImgsParameters()
   {
+    using Teuchos::as;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-
-    // This part makes this class method non-reentrant.
-    static Teuchos::RCP<Teuchos::ParameterList> params;
-    if (! params.is_null())
-      return params;
 
     // Default parameter values for IMGS orthogonalization.
     // Documentation will be embedded in the parameter list.
     const int defaultMaxNumOrthogPasses = 2;
     const magnitude_type eps = STM::eps();
-    const magnitude_type defaultBlkTol = magnitude_type(10) * STM::squareroot(eps);
-    const magnitude_type defaultSingTol = magnitude_type(10) * eps;
+    const magnitude_type defaultBlkTol = 
+      as<magnitude_type> (10) * STM::squareroot (eps);
+    const magnitude_type defaultSingTol = as<magnitude_type> (10) * eps;
 
-    params = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> params = 
+      Teuchos::parameterList ("IMGS");
     params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
 		 "Maximum number of orthogonalization passes "
 		 "(includes the first).  Default is 2, since "
@@ -105,9 +106,10 @@ namespace Belos {
 
   /// \brief "Fast" parameters for IMGSOrthoManager
   ///
-  /// \warning This function is not reentrant.
+  /// \warning This function is deprecated.  Please use \c
+  ///   IMGSOrthoManager::getFastParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
   getFastImgsParameters()
   {
     using Teuchos::ParameterList;
@@ -117,33 +119,32 @@ namespace Belos {
     typedef typename ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef ScalarTraits<magnitude_type> STM;
 
-    // This part makes this class method non-reentrant.
-    static RCP<ParameterList> params;
-    if (params.is_null())
-      {
-	RCP<const ParameterList> defaultParams = getDefaultImgsParameters<ScalarType>();
-	// Start with a clone of the default parameters
-	params = rcp (new ParameterList (*defaultParams));
+    RCP<const ParameterList> defaultParams = getDefaultImgsParameters<ScalarType>();
+    // Start with a clone of the default parameters.
+    RCP<ParameterList> params = rcp (new ParameterList (*defaultParams));
 
-	const int maxBlkOrtho = 1;
-	params->set ("maxNumOrthogPasses", maxBlkOrtho);
+    const int maxBlkOrtho = 1;
+    const magnitude_type blkTol = STM::zero();
+    const magnitude_type singTol = STM::zero();
+    
+    params->set ("maxNumOrthogPasses", maxBlkOrtho);
+    params->set ("blkTol", blkTol);
+    params->set ("singTol", singTol);
 
-	const magnitude_type blkTol = STM::zero();
-	params->set ("blkTol", blkTol);
-
-	const magnitude_type singTol = STM::zero();
-	params->set ("singTol", singTol);
-      }
     return params;
   }
 
-  /// \brief Read IMGS options from the given parameter list
+  /// \brief Read IMGS options from the given parameter list.
   ///
   /// Try to read IMGS options from the given parameter list.
   /// Silently substitute in defaults if the parameters don't exist or
   /// have invalid values.
+  ///
+  /// \warning This function is deprecated.  Please use \c
+  ///   IMGSOrthoManager::setParameterList() or an \c IMGSOrthoManager
+  ///   constructor that takes a parameter list input.
   template<class ScalarType>
-  void
+  void TEUCHOS_DEPRECATED
   readImgsParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
 		      int& maxNumOrthogPasses,
 		      typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,
@@ -201,8 +202,10 @@ namespace Belos {
 
 
   template<class ScalarType, class MV, class OP>
-  class IMGSOrthoManager : public MatOrthoManager<ScalarType,MV,OP> {
-
+  class IMGSOrthoManager : 
+    public MatOrthoManager<ScalarType,MV,OP>,
+    public Teuchos::ParameterListAcceptorDefaultBase
+  {
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
@@ -211,9 +214,9 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
-    
     //! @name Constructor/Destructor
     //@{ 
+
     //! Constructor specifying re-orthogonalization tolerance.
     IMGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
@@ -245,12 +248,136 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
 #endif
-    };
+    }
+
+    //! Constructor that takes a list of parameters.
+    IMGSOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		      const std::string& label = "Belos",
+                      Teuchos::RCP<const OP> Op = Teuchos::null) :
+      MatOrthoManager<ScalarType,MV,OP>(Op), 
+      max_ortho_steps_ (2),
+      blk_tol_ (10 * MGT::squareroot (MGT::eps())),
+      sing_tol_ (10 * MGT::eps()),
+      label_ (label)
+    {
+      setParameterList (plist);
+
+      std::string orthoLabel = label_ + ": Orthogonalization";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
+#endif
+      std::string updateLabel = label_ + ": Ortho (Update)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
+#endif
+      std::string normLabel = label_ + ": Ortho (Norm)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
+#endif
+      std::string ipLabel = label_ + ": Ortho (Inner Product)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel); 
+#endif
+    }
 
     //! Destructor
     ~IMGSOrthoManager() {}
     //@}
 
+    //! @name Implementation of Teuchos::ParameterListAcceptorDefaultBase interface
+    //@{
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<const ParameterList> defaultParams = getValidParameters();
+      RCP<ParameterList> params;
+      if (plist.is_null()) {
+	// No need to validate default parameters.
+	params = parameterList (*defaultParams);
+      } else {
+	params = plist;
+	params->validateParametersAndSetDefaults (*defaultParams);
+      }
+	
+      // Using temporary variables and fetching all values before
+      // setting the output arguments ensures the strong exception
+      // guarantee for this function: if an exception is thrown, no
+      // externally visible side effects (in this case, setting the
+      // output arguments) have taken place.
+      const int maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      const MagnitudeType blkTol = params->get<MagnitudeType> ("blkTol");
+      const MagnitudeType singTol = params->get<MagnitudeType> ("singTol");
+
+      max_ortho_steps_ = maxNumOrthogPasses;
+      blk_tol_ = blkTol;
+      sing_tol_ = singTol;
+
+      setMyParamList (params);
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters () const
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      if (defaultParams_.is_null()) {
+	RCP<ParameterList> params = parameterList ("IMGS");
+
+	// Default parameter values for IMGS orthogonalization.
+	// Documentation will be embedded in the parameter list.
+	const int defaultMaxNumOrthogPasses = 2;
+	const MagnitudeType eps = MGT::eps();
+	const MagnitudeType defaultBlkTol = 
+	  as<MagnitudeType> (10) * MGT::squareroot (eps);
+	const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
+
+	params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+		     "Maximum number of orthogonalization passes (includes the "
+		     "first).  Default is 2, since \"twice is enough\" for Krylov "
+		     "methods.");
+	params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
+		     "threshhold.");
+	params->set ("singTol", defaultSingTol, "Singular block detection "
+		     "threshold.");
+	defaultParams_ = params;
+      }
+      return defaultParams_;
+    }
+    //@}
+
+    /// \brief "Fast" but possibly unsafe or less accurate parameters.
+    ///
+    /// Use this parameter list when you care more about speed than
+    /// accuracy of the orthogonalization.
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getFastParameters () const 
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<const ParameterList> defaultParams = getValidParameters ();
+      // Start with a clone of the default parameters.
+      RCP<ParameterList> params = parameterList (*defaultParams);
+
+      const int maxBlkOrtho = 1; // No block reorthogonalization
+      const MagnitudeType blkTol = MGT::zero();
+      const MagnitudeType singTol = MGT::zero();
+
+      params->set ("maxNumOrthogPasses", maxBlkOrtho);
+      params->set ("blkTol", blkTol);
+      params->set ("singTol", singTol);
+
+      return params;
+    }
 
     //! @name Accessor routines
     //@{ 
@@ -456,18 +583,22 @@ namespace Belos {
     //@}
 
   private:
-    
-    //! Parameters for re-orthogonalization.
+    //! Max number of (re)orthogonalization steps, including the first.
     int max_ortho_steps_;
+    //! Block reorthogonalization tolerance.
     MagnitudeType blk_tol_;
+    //! Singular block detection threshold.
     MagnitudeType sing_tol_;
 
-    //! Timers and timer label
+    //! Label for timers.
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerUpdate_, 
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
       timerNorm_, timerScale_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+
+    //! Default parameter list.
+    mutable Teuchos::RCP<Teuchos::ParameterList> defaultParams_;
   
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RCP<MV> MX, 
