@@ -175,9 +175,9 @@ namespace Belos {
      *   orthogonalization. Currently supported values: "DGKS",
      *   "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR
      *   support). Default: "DGKS".
-     * - "Orthogonalization Parameters": a ParameterList or
-     *   RCP<(const) ParameterList> of parameters specific to the type
-     *   of orthogonalization used. Defaults are set automatically.
+     * - "Orthogonalization Parameters": a sublist of parameters
+     *   specific to the type of orthogonalization used. Defaults are
+     *   set automatically.
      * - "Verbosity": a sum of MsgType specifying the
      *   verbosity. Default: Belos::Errors.
      * - "Output Style": a OutputType specifying the style of
@@ -187,7 +187,6 @@ namespace Belos {
      *   convergence. Default: 1e-8.
      * 
      * Other supported options:
-
      * - "Output Frequency": an int specifying how often (in terms of
      *   number of iterations) convergence information should be
      *   output to the output stream. Default: -1 (means never output
@@ -359,10 +358,6 @@ namespace Belos {
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
-
-    /// Factory that knows how to instantiate MatOrthoManager
-    /// subclasses on demand, given their name.
-    ortho_factory_type orthoFactory_;
 
     /// Orthogonalization manager.  It is created by the
     /// OrthoManagerFactory instance, and may be changed if the
@@ -800,19 +795,20 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // parameters ("Orthogonalization Parameters") requires knowing the
   // orthogonalization manager name.  Save it for later, and also
   // record whether it's different than before.
+  OrthoManagerFactory<ScalarType, MV, OP> factory;
   bool changedOrthoType = false;
   if (params->isParameter ("Orthogonalization")) 
     {
       const std::string& tempOrthoType = 
 	params->get ("Orthogonalization", orthoType_default_);
       // Ensure that the specified orthogonalization type is valid.
-      if (! orthoFactory_.isValidName (tempOrthoType))
+      if (! factory.isValidName (tempOrthoType))
 	{
 	  std::ostringstream os;
 	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
 	     << tempOrthoType << "\".  The following are valid options "
 	     << "for the \"Orthogonalization\" name parameter: ";
-	  orthoFactory_.printValidNames (os);
+	  factory.printValidNames (os);
 	  throw std::invalid_argument (os.str());
 	}
       if (tempOrthoType != orthoType_)
@@ -851,7 +847,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       // Modify params_ so that it has the default parameter list,
       // and set orthoParams to ensure it's a sublist of params_
       // (and not just a copy of one).
-      params_->set (paramName, orthoFactory_.getDefaultParameters (orthoType_));
+      params_->set (paramName, factory.getDefaultParameters (orthoType_));
       orthoParams = sublist (params_, paramName, true);
     }
   }
@@ -884,8 +880,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (ortho_.is_null() || changedOrthoType) {
     // Create orthogonalization manager.  This requires that the
     // OutputManager (printer_) already be initialized.
-    ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_, 
-						label_, orthoParams);
+    ortho_ = factory.makeMatOrthoManager (orthoType_, null, printer_, 
+					  label_, orthoParams);
   }
 
   // The DGKS orthogonalization accepts a "Orthogonalization Constant"
@@ -1057,11 +1053,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
     
 template<class ScalarType, class MV, class OP>
-Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const {
+Teuchos::RCP<const Teuchos::ParameterList> 
+GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const 
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
 
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = parameterList ();
+
     // Set all the valid parameters and their default values.
     pl->set("Convergence Tolerance", convTol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
@@ -1101,21 +1103,15 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
-    pl->set("Orthogonalization", orthoType_default_,
-	    "The type of orthogonalization to use.  Valid options: " + 
-	    orthoFactory_.validNamesString());
     {
-      // We have to help out the C++ compiler's type inference a bit here.
-      typedef Teuchos::RCP<const Teuchos::ParameterList> const_plist_ptr;
-#if 0
-      const_plist_ptr orthoParams = 
-	orthoFactory_.getDefaultParameters (orthoType_default_);
-#else
-      const_plist_ptr orthoParams;
-#endif // 0
-      pl->set< const_plist_ptr > ("Orthogonalization Parameters", orthoParams,
-				  "Parameters specific to the type of "
-				  "orthogonalization used.");
+      OrthoManagerFactory<ScalarType, MV, OP> factory;
+      pl->set("Orthogonalization", orthoType_default_,
+	      "The type of orthogonalization to use.  Valid options: " + 
+	      factory.validNamesString());
+      RCP<const ParameterList> orthoParams = 
+	factory.getDefaultParameters (orthoType_default_);
+      pl->set ("Orthogonalization Parameters", *orthoParams, 
+	       "Parameters specific to the type of orthogonalization used.");
     }
     pl->set("Orthogonalization Constant", orthoKappa_default_,
 	    "When using DGKS orthogonalization: the \"depTol\" constant, used "
@@ -1124,7 +1120,6 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     validPL = pl;
   }
   return validPL;
-
 }
 
 // initializeStateStorage

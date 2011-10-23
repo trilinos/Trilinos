@@ -426,10 +426,21 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "consecutive iterations meeting thresholds are necessary for\n"
        "for convergence.");
     pl->set("Orthogonalization", orthoType,
-      "uses orthogonalization of either DGKS, ICGS or IMGS.");
+      "uses orthogonalization of either DGKS, ICGS, IMGS, or TSQR.");
+    {
+      OrthoManagerFactory<ScalarType, MV, OP> factory;
+      pl->set("Orthogonalization", orthoType,
+	      "refers to the orthogonalization method to use.  Valid "
+	      "options: " + factory.validNamesString());
+      RCP<const ParameterList> orthoParams = 
+	factory.getDefaultParameters (orthoType);
+      pl->set ("Orthogonalization Parameters", *orthoParams, 
+	       "Parameters specific to the type of orthogonalization used.");
+    }
     pl->set("Orthogonalization Constant", orthoKappa,
       "is the threshold used by DGKS orthogonalization to determine\n"
-      "whether or not to repeat classical Gram-Schmidt.");
+      "whether or not to repeat classical Gram-Schmidt.  This parameter\n"
+      "is ignored if \"Orthogonalization\" is not \"DGKS\".");
     pl->set("Verbosity", verbosity,
       "type(s) of solver information are outputted to the output\n"
       "stream.");
