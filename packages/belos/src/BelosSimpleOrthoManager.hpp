@@ -204,7 +204,7 @@ namespace Belos {
     }
 
     void 
-    setParameterList (const Teuchos::RCP<ParameterList>& plist)
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
