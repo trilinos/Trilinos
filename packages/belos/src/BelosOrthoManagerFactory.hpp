@@ -383,6 +383,13 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
       using Teuchos::rcp;
 
+      if (ortho == "Simple") {
+	TEUCHOS_TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
+				   "SimpleOrthoManager is not yet supported "
+				   "when the operator M is nontrivial (i.e., "
+				   "M != null).");
+	return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
+      }
 #ifdef HAVE_BELOS_TSQR
       // TsqrMatOrthoManager has to store more things and do more work
       // than TsqrOrthoManager, in order for the former to be correct
@@ -392,17 +399,11 @@ namespace Belos {
       // a MatOrthoManager is-an OrthoManager, so returning a
       // TsqrMatOrthoManager would still be correct; this is just an
       // optimization.
-      if (ortho == "TSQR" && M.is_null()) {
+      else if (ortho == "TSQR" && M.is_null()) {
 	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
       }
 #endif // HAVE_BELOS_TSQR
-      else if (ortho == "Simple") {
-	TEUCHOS_TEST_FOR_EXCEPTION(! M.is_null(), std::logic_error,
-				   "SimpleOrthoManager is not yet supported "
-				   "when the operator M is nontrivial (i.e., "
-				   "M != null).");
-	return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
-      } else {
+      else {
 	// A MatOrthoManager is-an OrthoManager.
 	return makeMatOrthoManager (ortho, M, outMan, label, params);
       }
