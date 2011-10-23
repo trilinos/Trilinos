@@ -1463,7 +1463,7 @@ namespace TSQR {
 		     const bool contiguousCacheBlocks) const
     {
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
@@ -1486,7 +1486,7 @@ namespace TSQR {
 		 const LocalOrdinal lda_in) const
     {
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
@@ -1514,7 +1514,7 @@ namespace TSQR {
 		    const Scalar A_in[]) const
     {
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
@@ -1544,7 +1544,7 @@ namespace TSQR {
 	       const bool contiguousCacheBlocks) const
     {
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
@@ -1624,7 +1624,7 @@ namespace TSQR {
 	return FactorOutput (0, 0);
       }
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
@@ -1684,7 +1684,7 @@ namespace TSQR {
       typedef MatView<LocalOrdinal, Scalar> view_type;
 
       Teuchos::RCP<node_type> node = getNode ();
-      TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::runtime_error, 
 			 "The Kokkos Node instance has not yet been set.  "
 			 "KokkosNodeTsqr needs a Kokkos Node instance in order "
 			 "to perform computations.");
