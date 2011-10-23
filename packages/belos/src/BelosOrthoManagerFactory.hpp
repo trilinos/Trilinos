@@ -323,15 +323,13 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {
-	// mfh 12 Jan 2011: TSQR knows how to read its own parameters.
-	// I didn't want to change the other OrthoManager subclasses'
-	// public interfaces to accept a parameter list input.
-	typedef TsqrMatOrthoManager<Scalar, MV, OP> tsqr_type;
-	return rcp (new tsqr_type (params, label, M));
+	typedef TsqrMatOrthoManager<Scalar, MV, OP> ortho_type;
+	return rcp (new ortho_type (params, label, M));
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
-	return rcp (new imgs_type (params, label, M));
+	typedef ICGSOrthoManager<Scalar, MV, OP> ortho_type;
+	return rcp (new ortho_type (params, label, M));
       }
       else if (ortho == "IMGS") {
 	int maxNumOrthogPasses;

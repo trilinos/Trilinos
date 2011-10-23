@@ -75,7 +75,7 @@ namespace Belos {
   ///   ICGSOrthoManager::getValidParameters() instead.
   template<class ScalarType>
   Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
-  getDefaultIcgsParameters();
+  getDefaultIcgsParameters()
   {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -289,9 +289,7 @@ namespace Belos {
       using Teuchos::parameterList;
       using Teuchos::RCP;
 
-      const MagnitudeType zero = MGT::zero();
       RCP<const ParameterList> defaultParams = getValidParameters();
-
       RCP<ParameterList> params;
       if (plist.is_null()) {
 	// No need to validate default parameters.
@@ -306,18 +304,15 @@ namespace Belos {
       // guarantee for this function: if an exception is thrown, no
       // externally visible side effects (in this case, setting the
       // output arguments) have taken place.
-      int maxNumOrthogPasses;
-      MagnitudeType blkTol, singTol;
-
-      int maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
-      MagnitudeType blkTol = params->get<MagnitudeType> ("blkTol");
-      MagnitudeType singTol = params->get<MagnitudeType> ("singTol");
+      const int maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      const MagnitudeType blkTol = params->get<MagnitudeType> ("blkTol");
+      const MagnitudeType singTol = params->get<MagnitudeType> ("singTol");
 
       max_ortho_steps_ = maxNumOrthogPasses;
       blk_tol_ = blkTol;
       sing_tol_ = singTol;
 
-      setMyParamList (*params);
+      setMyParamList (params);
     }
 
     Teuchos::RCP<const Teuchos::ParameterList> 
