@@ -216,7 +216,7 @@ namespace Belos {
       if (plist.is_null()) {
 	params = parameterList (*defaultParams);
       } else {
-	plist = params;
+	params = plist;
 	params->validateParametersAndSetDefaults (*defaultParams);
       }
       const std::string normalizeImpl = params->get<std::string>("Normalization");
