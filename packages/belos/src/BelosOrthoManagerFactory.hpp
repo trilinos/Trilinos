@@ -205,7 +205,8 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return getDefaultIcgsParameters<Scalar>();
+	ICGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getValidParameters ();
       }
       else if (name == "IMGS") {
 	return getDefaultImgsParameters<Scalar>();
@@ -254,7 +255,8 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return getFastIcgsParameters<Scalar>();
+	ICGSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getFastParameters ();
       }
       else if (name == "IMGS") {
 	return getFastImgsParameters<Scalar>();
@@ -329,11 +331,7 @@ namespace Belos {
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
-	int maxNumOrthogPasses;
-	magnitude_type blkTol, singTol;
-	readIcgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
-	typedef ICGSOrthoManager<Scalar, MV, OP> icgs_type;
-	return rcp (new icgs_type (label, M, maxNumOrthogPasses, blkTol, singTol));
+	return rcp (new imgs_type (params, label, M));
       }
       else if (ortho == "IMGS") {
 	int maxNumOrthogPasses;
@@ -341,7 +339,8 @@ namespace Belos {
 	readImgsParameters<Scalar> (params, maxNumOrthogPasses, blkTol, singTol);
 	typedef IMGSOrthoManager<Scalar, MV, OP> imgs_type;
 	return rcp (new imgs_type (label, M, maxNumOrthogPasses, blkTol, singTol));
-      } else if (ortho == "Simple") {
+      } 
+      else if (ortho == "Simple") {
 	TEUCHOS_TEST_FOR_EXCEPTION(ortho == "Simple", std::logic_error,
 				   "SimpleOrthoManager does not yet support "
 				   "the MatOrthoManager interface");
