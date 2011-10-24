@@ -12,8 +12,8 @@ namespace MueLu {
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-class RAPFactory : public TwoLevelFactoryBase {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  class RAPFactory : public TwoLevelFactoryBase {
 
 #include "MueLu_UseShortNames.hpp"
 

@@ -19,7 +19,7 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
-  using Teuchos::RCP; // Reference count pointers
+  using Teuchos::RCP; // reference count pointers
 
   //
   // MPI initialization using Teuchos

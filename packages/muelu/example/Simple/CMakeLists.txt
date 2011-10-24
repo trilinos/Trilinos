@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddExecutable)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
@@ -14,14 +14,18 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
     )
 
   IF(Teuchos_ENABLE_LONG_LONG_INT)
-
     PACKAGE_ADD_EXECUTABLE(
       Simple-LongInt
       SOURCES Simple-LongInt.cpp
       DEPLIBS muelu muelu-xpetra
       )
-    
   ENDIF()
+
+  PACKAGE_ADD_EXECUTABLE(
+    Simple-Templated
+    SOURCES Simple-Templated.cpp
+    DEPLIBS muelu muelu-xpetra
+    )
 
 ENDIF()
 
@@ -32,4 +36,9 @@ ENDIF()
 INCLUDE(../../xpetra/cmake/AddTestTpetraAndEpetra.cmake)
 
 PACKAGE_ADD_TEST_TPETRA_AND_EPETRA(Simple)
-PACKAGE_ADD_TEST_TPETRA_AND_EPETRA(Simple-LongInt)
+
+IF(Teuchos_ENABLE_LONG_LONG_INT)
+  PACKAGE_ADD_TEST_TPETRA_AND_EPETRA(Simple-LongInt) 
+ENDIF()
+
+PACKAGE_ADD_TEST_TPETRA_AND_EPETRA(Simple-Templated)

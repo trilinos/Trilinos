@@ -1,17 +1,7 @@
-// Teuchos
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_ArrayView.hpp>
+#include <iostream>
 
-// Xpetra
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperatorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-
-// MueLu
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_Utilities.hpp"
+// MueLu main header: include most common header files in one line
+#include "MueLu.hpp"
 
 // Define default template types
 typedef double Scalar;
@@ -19,46 +9,57 @@ typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 
 int main(int argc, char *argv[]) {
-  using Teuchos::RCP;
+  using Teuchos::RCP; // reference count pointers
 
   //
-  // MPI initialization
+  // MPI initialization using Teuchos
   //
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  //
+  // Parameters
+  //
+
+  GlobalOrdinal numGlobalElements = 256;         // problem size
+
+#ifdef HAVE_MUELU_TPETRA
+  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; // linear algebra library
+#else
+  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+#endif
 
   //
   // Construct the problem
   //
 
-  // Construct a Map that puts approximately the same number of equations on each processor.
-  RCP<const Map<Ordinal> > map = Xpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
+  // Construct a Map that puts approximately the same number of equations on each processor
+  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal>::createUniformContigMap(lib, numGlobalElements, comm);
 
   // Get update list and number of local equations from newly created map.
   const size_t numMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<CrsMatrix> A = Xpetra::CrsOperatorFactory(map,3);
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal> > A = rcp(new Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal>(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
-                             tuple<Scalar> ( 2.0, -1.0 ) );
+      A->insertGlobalValues(myGlobalElements[i], 
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
+                            Teuchos::tuple<Scalar> (2.0, -1.0));
     }
-    else if (myGlobalElements[i] == numGlobalElements-1) {
-      A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
-                             tuple<Scalar> ( -1.0, 2.0 ) );
+    else if (myGlobalElements[i] == numGlobalElements - 1) {
+      A->insertGlobalValues(myGlobalElements[i], 
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+                            Teuchos::tuple<Scalar> (-1.0, 2.0));
     }
     else {
-      A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
-                             tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
+      A->insertGlobalValues(myGlobalElements[i], 
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+                            Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
     }
   }
 
@@ -66,34 +67,39 @@ int main(int argc, char *argv[]) {
   A->fillComplete();
 
   //
-  // Construct AMG preconditioner
+  // Construct a multigrid preconditioner
   //
 
-  // AMG Hierarchy
-  Hierarchy H(A);
-  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  // Multigrid Hierarchy
+  MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal> H(A);
+  H.setVerbLevel(Teuchos::VERB_HIGH);
 
-  // AMG Setup phase
-  H->Setup();
+  // Multigrid setup phase (using default parameters)
+  MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal> M;                         // -
+  M.SetFactory("A", rcp(new MueLu::RAPFactory<Scalar, GlobalOrdinal, LocalOrdinal>())); // TODO: to be remove, but will require some work
+  H.Setup(M);                                                                           // -
+  // Should be instead: H.Setup();
 
   //
   // Solve Ax = b
   //
 
-  RCP<Vector> X = VectorFactory::Build(map,1);
-  RCP<Vector> B = VectorFactory::Build(map,1);
+  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > X = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 1);
+  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > B = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 1);
   
-  X->putScalar((SC) 0.0);
+  X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
 
-  // Use AMG directly as an iterative method
+  // Use AMG directly as an iterative solver (not as a preconditionner)
   int nIts = 9;
 
-  H.Iterate(*B, its, *X);
+  H.Iterate(*B, nIts, *X);
 
   // Print relative residual norm
-  ST::magnitudeType residualNorms = MueLu::Utils::ResidualNorm(A, X, B);
-  std::out << "||Residual|| = " << std::setiosflags(ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  ST::magnitudeType residualNorms = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal>::ResidualNorm(*A, *X, *B)[0];
+  if (comm->getRank() == 0)
+    std::cout << "||Residual|| = " << residualNorms << std::endl;
 
   return EXIT_SUCCESS;
 }
