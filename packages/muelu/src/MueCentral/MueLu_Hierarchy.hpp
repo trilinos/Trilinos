@@ -26,7 +26,7 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains 
     an apply method that supports V and W cycles.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Hierarchy : public BaseClass {
 
 #include "MueLu_UseShortNames.hpp"
@@ -118,15 +118,15 @@ namespace MueLu {
     /*!
       @brief Constructs components of the hierarchy.
 
-      Invoke a set of factories to populate (construct prolongation,
+      Invoke a set of factories to populate (construct prolongation, 
       restriction, coarse level discretizations, and smoothers in this
       order) a multigrid Hierarchy starting with information on 'startLevel'
       and continuing for at most 'numDesiredLevels'.
     */
-    Teuchos::ParameterList FullPopulate(const FactoryBase & PFact,
-                                        const FactoryBase & RFact,
-                                        const TwoLevelFactoryBase & AcFact,
-                                        const SmootherFactory & SmooFact,
+    Teuchos::ParameterList FullPopulate(const FactoryBase & PFact, 
+                                        const FactoryBase & RFact, 
+                                        const TwoLevelFactoryBase & AcFact, 
+                                        const SmootherFactory & SmooFact, 
                                         const int &startLevel = 0, const int &numDesiredLevels = 10) {
 
       // Note: It's OK to use rcpFromRef here, because data will only be kept by the FactoryManager
@@ -141,7 +141,7 @@ namespace MueLu {
 
     /*! @brief Populate hierarchy with A's, R's, and P's.
 
-    Invoke a set of factories to populate (construct prolongation,
+    Invoke a set of factories to populate (construct prolongation, 
     restriction, and coarse level discretizations in this
     order) a multigrid Hierarchy starting with information on 'startLevel' 
     and continuing for at most 'numDesiredLevels'. 
@@ -149,8 +149,8 @@ namespace MueLu {
     @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
     matrix, and the sum of nonzeros all matrices (including the fine).
     */
-    Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact,
-                                         const TwoLevelFactoryBase & AcFact,
+    Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact, 
+                                         const TwoLevelFactoryBase & AcFact, 
                                          const int startLevel = 0, const int numDesiredLevels = 10) {
 
       FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
@@ -165,9 +165,9 @@ namespace MueLu {
     Teuchos::ParameterList Setup(const FactoryManager & manager, const int &startLevel = 0, const int &numDesiredLevels = 10) {
       RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
 
-      TopRAPFactory<SC,LO,GO,NO>      rapFactory           (rcpManager); //TODO: remove SC,LO,GO,NO
-      TopSmootherFactory<SC,LO,GO,NO> smootherFactory      (rcpManager, "Smoother");
-      TopSmootherFactory<SC,LO,GO,NO> coarsestSolverFactory(rcpManager, "CoarseSolver");
+      TopRAPFactory<SC, LO, GO, NO>      rapFactory           (rcpManager); //TODO: remove SC, LO, GO, NO
+      TopSmootherFactory<SC, LO, GO, NO> smootherFactory      (rcpManager, "Smoother");
+      TopSmootherFactory<SC, LO, GO, NO> coarsestSolverFactory(rcpManager, "CoarseSolver");
 
       Monitor h(*this, "Setup");
       Xpetra::global_size_t sumCoarseNnz = 0;
@@ -274,10 +274,10 @@ namespace MueLu {
     /*! @brief Set solve method for coarsest level.
 
     @param smooFact  fully constructed SmootherFactory 
-    @param pop       whether to use pre,post, or both pre and post smoothing 
+    @param pop       whether to use pre, post, or both pre and post smoothing 
 
     Note: Whether the SmootherFactory builds both a pre- and post-smoother can be also be
-    controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome,
+    controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome, 
     however.
     */
     //TODO: remove PRE/POST
@@ -350,12 +350,12 @@ namespace MueLu {
 
     } //SetSmoothers()
 
-    // #define GimmeNorm(someVec,someLabel) { (someVec).norm2(norms); GetOStream(Statistics1, 0) << someLabel << " = " << norms << std::endl; }
+    // #define GimmeNorm(someVec, someLabel) { (someVec).norm2(norms); GetOStream(Statistics1, 0) << someLabel << " = " << norms << std::endl; }
 
     /*!
       @brief Apply the multigrid preconditioner.
 
-      In theory, more general cycle types than just V- and W-cycles are possible.  However,
+      In theory, more general cycle types than just V- and W-cycles are possible.  However, 
       the enumerated type CycleType would have to be extended.
 
       @param B right-hand side of linear problem
@@ -379,7 +379,7 @@ namespace MueLu {
                                      << std::setiosflags(std::ios::left)
                                      << std::setprecision(3) << i
                                      << "           residual = "
-                                     << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")),X,B)
+                                     << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B)
                                      << std::endl;
         }
 
@@ -426,34 +426,34 @@ namespace MueLu {
             GetOStream(Errors, 0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
           }
 
-          RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
+          RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")), X, B);
 
           RCP<Operator> P = Coarse->Get< RCP<Operator> >("P");
           RCP<Operator> R;
           RCP<MultiVector> coarseRhs, coarseX;
           if (implicitTranspose_) {
-            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
-            coarseX   = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
-            P->apply(*residual,*coarseRhs,Teuchos::TRANS,1.0,0.0);
+            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors());
+            coarseX   = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors());
+            P->apply(*residual, *coarseRhs, Teuchos::TRANS, 1.0, 0.0);
           } else {
             R = Coarse->Get< RCP<Operator> >("R");
-            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
-            coarseX   = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
-            R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
+            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors());
+            coarseX   = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors());
+            R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, 1.0, 0.0);
           }
           coarseX->putScalar(0.);
 
-          Iterate(*coarseRhs,1,*coarseX,true,Cycle,startLevel+1);
+          Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
           // ^^ zero initial guess
           if (Cycle>1)
-            Iterate(*coarseRhs,1,*coarseX,false,Cycle,startLevel+1);
+            Iterate(*coarseRhs, 1, *coarseX, false, Cycle, startLevel+1);
           // ^^ nonzero initial guess
 
           // update X+=P * coarseX
-          //P->apply(*coarseX,X,Teuchos::NO_TRANS,1.0,1.0);  //Xpetra throws an error if linAlgebra==0
-          RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
-          P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
-          X.update(1.0,*correction,1.0);
+          //P->apply(*coarseX, X, Teuchos::NO_TRANS, 1.0, 1.0);  //Xpetra throws an error if linAlgebra==0
+          RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors());
+          P->apply(*coarseX, *correction, Teuchos::NO_TRANS, 1.0, 0.0);
+          X.update(1.0, *correction, 1.0);
 
           //X.norm2(norms);
           //TODO: add IsAvailable test to avoid building default smoother
@@ -461,13 +461,50 @@ namespace MueLu {
             RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
             postSmoo->Apply(X, B, false);
           } else {
-            GetOStream(Errors,0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
+            GetOStream(Errors, 0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
           }
         }
         zeroGuess=false;
       } //for (LO i=0; i<nIts; i++)
 
     } //Iterate()
+
+    //@}
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+    
+    //! Return a simple one-line description of this object.
+    std::string description() const {
+      std::ostringstream out;
+      out << BaseClass::description();
+      out << "{numLevels = " << GetNumLevels() << "}";
+      return out.str();
+    }
+    
+    //! Print the object with some verbosity level to an FancyOStream object.
+    //using MueLu::Describable::describe; // overloading, not hiding
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
+
+      if (verbLevel & Parameters0) {
+        out0 << "Number of Levels: " << GetNumLevels() << endl;
+      }
+      
+      if (verbLevel & Parameters1) { 
+        out0 << "Max Coarse Size: "    << maxCoarseSize_ << endl;
+        out0 << "Implicit Transpose: " << implicitTranspose_ << endl;
+      }
+      
+      if (verbLevel & Statistics1) {
+        Teuchos::OSTab tab2(out);
+        for(int i = 0; i < GetNumLevels(); i++) {
+          std::cout << "Level " << i << std::endl; //TODO: remove
+          Levels_[i]->print(out, verbLevel);
+        }
+      }
+    }
 
     //@}
 
