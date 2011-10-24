@@ -19,7 +19,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_GaussSeidel.hpp"
+#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"

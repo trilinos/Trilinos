@@ -10,7 +10,6 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-//#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"

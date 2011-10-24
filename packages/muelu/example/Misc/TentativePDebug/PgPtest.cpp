@@ -21,7 +21,6 @@
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-//#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 
