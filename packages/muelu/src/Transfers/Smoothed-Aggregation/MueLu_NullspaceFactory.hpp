@@ -42,9 +42,12 @@ namespace MueLu {
     void Build(Level &currentLevel) const {
       RCP<MultiVector> nullspace;
       
+      Monitor m(*this, "Nullspace factory");
+
       if (currentLevel.IsAvailable("Nullspace")) {
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
         nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace");
+        GetOStream(Runtime1, 0) << "Use user-given nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
 
       } else {
         
@@ -54,7 +57,11 @@ namespace MueLu {
 
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
         nullspace->putScalar(1.0);
+        GetOStream(Runtime1, 0) << "Calculate nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
       }
+
+      if(currentLevel.GetLevelID() != 0)
+        GetOStream(Warnings0, 0) << "NullspaceFactory::Build called for Level " << currentLevel.GetLevelID() << "! Check me!" << std::endl;
 
       currentLevel.Set("Nullspace", nullspace, this);
 
