@@ -7,4 +7,3 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   DEPLIBS muelu muelu-xpetra
 )
-	

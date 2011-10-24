@@ -14,7 +14,7 @@
 
 // Xpetra
 #include <Xpetra_Parameters.hpp>
-#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 

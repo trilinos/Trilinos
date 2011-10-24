@@ -112,5 +112,4 @@ private:
 } //namespace MueLu
 
 #define MUELU_RAPFACTORY_SHORT
-
 #endif //ifndef MUELU_RAPFACTORY_HPP

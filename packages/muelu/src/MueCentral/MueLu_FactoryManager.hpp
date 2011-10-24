@@ -19,6 +19,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_GaussSeidel.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
@@ -66,13 +67,15 @@ namespace MueLu {
     //!
     const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const {
       if (IsAvailable(varName, defaultFactoryTable_)) {
-
+        
         return defaultFactoryTable_[varName];
-
-      }        else {
+        
+      } else {
           
         //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
         if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+        //if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp (new NoFactoryOr("A", rcp(new RAPFactory()))));
+
         if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
         if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 
@@ -80,8 +83,14 @@ namespace MueLu {
         if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
         if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
+        // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
         if (varName == "PreSmoother")   return GetFactory("Smoother");
         if (varName == "PostSmoother")  return GetFactory("Smoother");
+        if (varName == "Smoother")      return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
+        
+        if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
+
+        //TO BE FIX: cannot use TrilinosSmoother or DirectSolver here, because need to know the lin alg. lib.
 
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
       }
@@ -105,7 +114,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
       GetOStream(Warnings0,  0) << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
-      GetOStream(Warnings00, 0) << "        using default factory: ";
+      GetOStream(Warnings00, 0) << "         using default factory: ";
       { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel()); }
 
       defaultFactoryTable_[varName] = factory;
