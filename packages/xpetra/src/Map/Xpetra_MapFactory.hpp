@@ -64,7 +64,7 @@ namespace Xpetra {
     }
 
     //! Create a locally replicated Map with the default node.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
     createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
  
 #ifdef HAVE_XPETRA_TPETRA
@@ -77,7 +77,7 @@ namespace Xpetra {
     }
 
     //! Create a locally replicated Map with a specified node.
-    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
  
 #ifdef HAVE_XPETRA_TPETRA
@@ -90,7 +90,7 @@ namespace Xpetra {
     }
 
     //! Create a uniform, contiguous Map with a user-specified node.
-    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
  
@@ -104,7 +104,7 @@ namespace Xpetra {
     }
 
     //! Create a uniform, contiguous Map with the default node.
-    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node> >
     createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
  
 #ifdef HAVE_XPETRA_TPETRA
@@ -117,7 +117,7 @@ namespace Xpetra {
     }
 
     //! Create a (potentially) non-uniform, contiguous Map with the default node.
-    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
  
 #ifdef HAVE_XPETRA_TPETRA
@@ -130,7 +130,7 @@ namespace Xpetra {
     }
 
     //! Create a (potentially) non-uniform, contiguous Map with a user-specified node.
-    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
  
