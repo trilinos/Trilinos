@@ -162,7 +162,7 @@ namespace MueLu {
     }
     // FillHierarchy
 
-    Teuchos::ParameterList Setup(const FactoryManager & manager, const int &startLevel = 0, const int &numDesiredLevels = 10) {
+    Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10) {
       RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
 
       TopRAPFactory<SC, LO, GO, NO>      rapFactory           (rcpManager); //TODO: remove SC, LO, GO, NO
