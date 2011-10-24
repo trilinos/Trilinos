@@ -280,9 +280,9 @@ namespace MueLu {
       }
       else {
         // check for error!
-        TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == false && IsRequested(ename,fac) == false && IsKept(ename,fac) == true, Exceptions::RuntimeError,
+        TEUCHOS_TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == false && IsRequested(ename,fac) == false && IsKept(ename,fac) == true, Exceptions::RuntimeError,
             "MueLu::Level::Release(): Data not requested and not available, but kept. Call of Release does not make sense. You should check this!");
-        TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == true && IsRequested(ename,fac) == false && IsKept(ename,fac) == false, Exceptions::RuntimeError,
+        TEUCHOS_TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == true && IsRequested(ename,fac) == false && IsKept(ename,fac) == false, Exceptions::RuntimeError,
             "MueLu::Level::Release(): Strange! Data is available but not requested and not kept??");
       }
     }
