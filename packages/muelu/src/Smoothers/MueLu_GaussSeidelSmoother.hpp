@@ -53,6 +53,8 @@ namespace MueLu {
       @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
     */
     void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(A_->getRowMap()->getComm()->getSize() != 1, Exceptions::NotImplemented, "MueLu::GaussSeidelSmoother(): This smoother is implemented only for sequential run. Use MueLu::TrilinosSmoother instead.");
+
       if (InitialGuessIsZero) // TODO: There is no optimization for InitialGuessIsZero = true
         x.putScalar(0.0);
       
