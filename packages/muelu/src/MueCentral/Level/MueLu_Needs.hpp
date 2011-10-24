@@ -193,7 +193,7 @@ namespace MueLu {
     }
 
     //! Test whether a factory is generating factory of a requested variable in Needs
-    bool IsRequestedFactory(const FactoryBase* factory) {
+    bool IsRequestedFactory(const FactoryBase* factory) { //TODO: rename HaveBeenRequested() !!
       std::vector<std::string> ekeys = RequestedKeys();
       for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
         std::vector<const FactoryBase*> ehandles = RequestedFactories(*it);
