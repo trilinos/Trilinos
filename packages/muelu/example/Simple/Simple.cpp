@@ -75,7 +75,10 @@ int main(int argc, char *argv[]) {
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  H.Setup();
+  FactoryManager M;                         // -
+  M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
+  H.Setup(M);                               // -
+  // Should be instead: H.Setup();
 
   //
   // Solve Ax = b
