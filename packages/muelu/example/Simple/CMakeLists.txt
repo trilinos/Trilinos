@@ -10,6 +10,17 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
     DEPLIBS muelu muelu-xpetra
     )
 
+  IF(Teuchos_ENABLE_LONG_LONG_INT)
+
+    PACKAGE_ADD_EXECUTABLE(
+      Simple-LongInt
+      SOURCES Simple-LongInt.cpp
+      COMM serial mpi
+      DEPLIBS muelu muelu-xpetra
+      )
+    
+  ENDIF()
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
