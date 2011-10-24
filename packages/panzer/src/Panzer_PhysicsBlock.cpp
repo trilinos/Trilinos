@@ -1,5 +1,5 @@
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_Evaluator_Factory.hpp"
@@ -50,7 +50,7 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
   
   const std::vector<panzer::InputEquationSet>& input_eq_sets = ipb.eq_sets;
 
-  TEST_FOR_EXCEPTION(input_eq_sets.size() < 1, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(input_eq_sets.size() < 1, std::runtime_error,
 		     "There are no equation sets in the input file.  In order to use the phalanx assembly routines, you must add equation sets to a physics block!");
 
   m_equation_sets.clear();
@@ -223,7 +223,7 @@ panzer::PhysicsBlock::getBases() const
 // *******************************************************************
 const shards::CellTopology panzer::PhysicsBlock::getBaseCellTopology() const
 {
-  TEST_FOR_EXCEPTION(m_bases.size() == 0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(m_bases.size() == 0, std::runtime_error,
 		     "Cannot return a basis since none exist in this physics block.");
   return m_bases.begin()->second->getIntrepidBasis()->getBaseCellTopology();
 }

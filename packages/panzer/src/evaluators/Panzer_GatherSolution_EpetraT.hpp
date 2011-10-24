@@ -1,4 +1,4 @@
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"

@@ -8,6 +8,7 @@
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_LineMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_MultiBlockMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -87,7 +88,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
-    TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
 
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
@@ -402,7 +403,7 @@ namespace panzer_stk {
       piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,ep_lof)));
     } 
     else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error: Unknown Piro Solver : " << solver);
     }
 
@@ -424,9 +425,18 @@ namespace panzer_stk {
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
 
       int dimension = mesh_params.sublist("Inline Mesh").get<int>("Mesh Dimension");
+      std::string typeStr = "";
+      if(mesh_params.sublist("Inline Mesh").isParameter("Type")) 
+         typeStr = mesh_params.sublist("Inline Mesh").get<std::string>("Type");
 
       if (dimension == 1) {
 	mesh_factory = Teuchos::rcp(new panzer_stk::LineMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if (dimension == 2 && typeStr=="Tri") {
+	mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
 	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
 	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
 	mesh_factory->setParameterList(in_mesh);
@@ -485,7 +495,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getPhysicsModelEvaluator()
   {
-    TEST_FOR_EXCEPTION(Teuchos::is_null(m_physics_me), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_physics_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
     return  m_physics_me;
   }
@@ -493,7 +503,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseOnlyModelEvaluator()
   {
-    TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
     return m_rome_me;
   }
@@ -501,7 +511,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseLibrary()
   {
-    TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
 
     return m_response_library;
@@ -578,7 +588,7 @@ namespace panzer_stk {
 
         // sanity check for valid element blocks
         for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++)
-           TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),*itr)==validEBlocks.end(),Teuchos::Exceptions::InvalidParameterValue,
+           TEUCHOS_TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),*itr)==validEBlocks.end(),Teuchos::Exceptions::InvalidParameterValue,
                               "Invalid element block \""+(*itr)+"\" specified for response labeled \""+label+"\"."); 
 
         rLibrary.reserveLabeledVolumeResponse(label,rid,eBlocks,eTypes);

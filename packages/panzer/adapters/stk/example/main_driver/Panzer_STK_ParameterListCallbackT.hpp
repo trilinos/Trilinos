@@ -51,7 +51,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest(const 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const
 {
-   TEST_FOR_EXCEPTION(!coordinatesBuilt_,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(!coordinatesBuilt_,std::runtime_error,
                       "ParameterListCallback::setFieldByKey: Coordinates have not been built!");
 
    double * x = const_cast<double *>(&xcoords_[0]);
@@ -65,7 +65,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(con
    else if(key=="z-coordinates") 
       pl.set<double*>(key,z);
    else
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                          "ParameterListCallback cannot handle key=\"" << key << "\"");
 }
 
@@ -110,7 +110,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       resultVec->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_));
       break;
    default:
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
              "ParameterListCallback::buildCoordinates: Constructed multivector has nonphysical dimensions.");
       break;
    }

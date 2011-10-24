@@ -12,7 +12,7 @@ getAggregator(const std::string & type) const
 {
    Teuchos::RCP<const ResponseAggregatorBase<TraitsT> > agg = getAggregatorManager(type).template getAsBase<EvalT>();
 
-   TEST_FOR_EXCEPTION(agg==Teuchos::null,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(agg==Teuchos::null,std::logic_error,
                       "ResponseAggregator_Manager cannot find type \""+type+"\" associated with "
                       "evaluation type \""+PHX::TypeString<EvalT>::value+"\"");
 
@@ -25,7 +25,7 @@ template <typename Builder>
 void ResponseAggregator_Manager<TraitsT>::
 defineAggregatorTypeFromBuilder(const std::string & type,const Builder & builder)
 {
-   TEST_FOR_EXCEPTION(isAggregator(type),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(isAggregator(type),std::logic_error,
                       "ResponeAggregator_Manager: Aggregator of type \""+type+"\" "
                       "already exists! Choose a new type name!");
 
@@ -83,7 +83,7 @@ getAggregatorManager(const std::string & type) const
 {
    typename std::map<std::string,Teuchos::RCP<AggregatorManager> >::const_iterator itr = aggregators_.find(type);
   
-   TEST_FOR_EXCEPTION(itr==aggregators_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==aggregators_.end(),std::logic_error,
                       "ResponseAggregator_Manager does not have any aggregators of type \"" + type + "\"!");
 
    return *(itr->second);

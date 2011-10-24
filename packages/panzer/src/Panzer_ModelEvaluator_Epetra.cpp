@@ -75,10 +75,10 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
  
-  TEST_FOR_EXCEPTION(lof_==Teuchos::null,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(lof_==Teuchos::null,std::logic_error,
                      "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The linear object factory "
                      "was not correctly initialized before calling initializeEpetraObjs.");
-  TEST_FOR_EXCEPTION(responseLibrary_==Teuchos::null,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_==Teuchos::null,std::logic_error,
                      "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The response library "
                      "was not correctly initialized before calling initializeEpetraObjs.");
 
@@ -249,7 +249,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     is_transient = !Teuchos::is_null(inArgs.get_x_dot());
 
   // Make sure construction built in transient support
-  TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
 		     "ModelEvaluator was not built with transient support enabled!");
 
   //
@@ -600,5 +600,5 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
    ss << "\"SGEpetraLinearObjFactory\", ";
 #endif
 
-   TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
 }

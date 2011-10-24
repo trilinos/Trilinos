@@ -235,7 +235,7 @@ namespace panzer {
       piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me));
     }
     else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error: Unknown Piro Solver : " << solver);
     }
     
@@ -528,7 +528,7 @@ namespace panzer {
       piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer));
     }
     else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error: Unknown Piro Solver : " << solver);
     }
     

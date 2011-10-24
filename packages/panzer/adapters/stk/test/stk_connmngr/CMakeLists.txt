@@ -21,6 +21,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tSquareTriMeshDOFManager
+  SOURCES tSquareTriMeshDOFManager.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   tEpetraLinObjFactory
   SOURCES tEpetraLinearObjFactory.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2

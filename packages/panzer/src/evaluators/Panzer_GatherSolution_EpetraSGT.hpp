@@ -1,7 +1,7 @@
 #include "Panzer_config.hpp"
 #ifdef HAVE_STOKHOS
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"

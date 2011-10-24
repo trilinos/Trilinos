@@ -140,7 +140,7 @@ template<typename EvalT, typename Traits>
 void GlobalStatistics<EvalT, Traits>::postprocess(std::ostream& os)
 {
   // throw unless specialized for residual evaluations
-  TEST_FOR_EXCEPTION(true,std::logic_error,"SHOULD NEVER BE CALLED!");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SHOULD NEVER BE CALLED!");
 }
 
 //**********************************************************************

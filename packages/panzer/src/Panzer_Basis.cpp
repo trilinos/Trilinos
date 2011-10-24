@@ -3,7 +3,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 panzer::Basis::

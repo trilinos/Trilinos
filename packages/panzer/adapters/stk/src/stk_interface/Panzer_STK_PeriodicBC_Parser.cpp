@@ -22,7 +22,7 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
 {
    if(not pl->isParameter(countStr_)) {
       bool validEntry = false;
-      TEST_FOR_EXCEPTION_PURE_MSG(
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
         !validEntry, Teuchos::Exceptions::InvalidParameterName,
         "Error, the parameter {name=\"" << countStr_ << "\","
         "type=\"int\""
@@ -81,7 +81,7 @@ Teuchos::RCP<const Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters
 
 Teuchos::RCP<Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters(int count) const
 {
-   TEST_FOR_EXCEPTION(count<0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(count<0,std::logic_error,
                       "PeriodicBC requires a positive number (or none) of periodic boundary conditions.");
 
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
@@ -172,7 +172,7 @@ bool PeriodicBC_Parser::buildMatcher_Tokenize_withParams(const std::string & bui
    while(comma!=std::string::npos) {
       std::string p = trim(matchAndParams.substr(0,comma));
 
-      TEST_FOR_EXCEPTION(p.length()<1,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(p.length()<1,std::logic_error,
                           "Error parsing periodic boundary condition \"" + buildStr + "\"");
 
       params.push_back(p);
@@ -225,7 +225,7 @@ PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   TEST_FOR_EXCEPTION(true,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
        "Failed parsing parameter list: could not find periodic boundary "
        "condition matcher \"" << matcher << "\" "
        "in string \"" << buildStr << "\"");

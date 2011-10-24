@@ -127,7 +127,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
    typedef Tpetra::Import<std::size_t,GlobalOrdinalT,Node> Importer;
 
-   TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
 
    Teuchos::RCP<const Map> dataMap = dataVector.getMap();
@@ -136,7 +136,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
-   TEST_FOR_EXCEPTION(data.dimension(0)!=(int) elements.size(),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=(int) elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
    int rank = data.rank();
@@ -156,7 +156,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    else if(rank==3) {
       std::size_t entries = data.dimension(2);
  
-      TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
@@ -172,7 +172,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
       }
    }
    else
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data array rank must be 2 or 3");
 }
 
@@ -227,7 +227,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    else if(rank==3)
       numCols = data.begin()->second.dimension(2);
    else
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                           "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3");
 
 
@@ -252,7 +252,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
       // extract data vector
       typename std::map<std::string,ArrayT>::const_iterator blockItr = data.find(block);
-     TEST_FOR_EXCEPTION(blockItr==data.end(),std::runtime_error,
+     TEUCHOS_TEST_FOR_EXCEPTION(blockItr==data.end(),std::runtime_error,
                         "ArrayToFieldVector::getDataVector: can not find block \""+block+"\".");
 
      const ArrayT & d = blockItr->second;

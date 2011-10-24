@@ -43,7 +43,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
       yProcs_ = 1;
       zProcs_ = 1;
    }
-   TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_*zProcs_,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_*zProcs_,std::logic_error,
                       "Cannot build CubeHexMeshFactory, the product of \"X Procs\", \"Y Procs\", and \"Z Procs\""
                       " must equal the number of processors.");
    procTuple_ = procRankToProcTuple(machRank_);

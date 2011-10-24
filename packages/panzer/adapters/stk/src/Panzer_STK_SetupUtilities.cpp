@@ -1,6 +1,6 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_Workset_Builder.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace panzer_stk { 
 
@@ -33,7 +33,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
        for(str_iter=element_blocks.begin();str_iter!=element_blocks.end();++str_iter)
           ss << "   \"" << *str_iter << "\"\n"; 
 
-       TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
+       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
 
        // should never get here!
     }
@@ -64,7 +64,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
        for(str_iter=element_blocks.begin();str_iter!=element_blocks.end();++str_iter)
           ss << "   \"" << *str_iter << "\"\n"; 
 
-       TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
+       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
 
        // should never get here!
     }
@@ -139,7 +139,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
     std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
       eb_to_ipb.find(bc->elementBlockID());
     
-    TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
 		       "Could not find input physics block corresponding to region");
 
     const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
@@ -166,7 +166,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
        for(std::size_t i=0;i<sideSets.size();i++) 
           ss << "\"" << sideSets[i] << "\"\n";
 
-       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
     }
     catch(STK_Interface::ElementBlockException & e) {
        std::stringstream ss;
@@ -178,13 +178,13 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
        for(std::size_t i=0;i<elementBlocks.size();i++) 
           ss << "\"" << elementBlocks[i] << "\"\n";
 
-       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
     }
     catch(std::logic_error & e) {
        std::stringstream ss;
        ss << e.what() << "\nUnrecognized logic error.\n";
 
-       TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
     }
     
     std::vector<stk::mesh::Entity*> elements;
@@ -203,7 +203,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
     std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
       eb_to_ipb.find(bc->elementBlockID());
     
-    TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
 		       "Could not find input physics block corresponding to region");
 
     const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
@@ -255,7 +255,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
      for(std::size_t i=0;i<sideSets.size();i++) 
         ss << "\"" << sideSets[i] << "\"\n";
 
-     TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   catch(STK_Interface::ElementBlockException & e) {
      std::stringstream ss;
@@ -267,13 +267,13 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
      for(std::size_t i=0;i<elementBlocks.size();i++) 
         ss << "\"" << elementBlocks[i] << "\"\n";
 
-     TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   catch(std::logic_error & e) {
      std::stringstream ss;
      ss << e.what() << "\nUnrecognized logic error.\n";
 
-     TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
+     TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   
   std::vector<stk::mesh::Entity*> elements;

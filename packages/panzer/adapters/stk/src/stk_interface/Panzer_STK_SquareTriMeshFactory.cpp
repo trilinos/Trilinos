@@ -1,22 +1,22 @@
-#include <Panzer_STK_SquareQuadMeshFactory.hpp>
+#include <Panzer_STK_SquareTriMeshFactory.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
 namespace panzer_stk {
 
-SquareQuadMeshFactory::SquareQuadMeshFactory()
+SquareTriMeshFactory::SquareTriMeshFactory()
 {
    initializeWithDefaults();
 }
 
 //! Destructor
-SquareQuadMeshFactory::~SquareQuadMeshFactory()
+SquareTriMeshFactory::~SquareTriMeshFactory()
 {
 }
 
 //! Build the mesh object
-Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
    // build all meta data
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
@@ -30,7 +30,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachin
    return mesh;
 }
 
-Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
    RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
 
@@ -42,8 +42,8 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
       xProcs_ = machSize_; 
       yProcs_ = 1;
    }
-   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
-                      "Cannot build SquareQuadMeshFactory, the product of \"X Procs\" and \"Y Procs\""
+   TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
+                      "Cannot build SquareTriMeshFactory, the product of \"X Procs\" and \"Y Procs\""
                       " must equal the number of processors.");
    procTuple_ = procRankToProcTuple(machRank_);
 
@@ -55,7 +55,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
    return mesh;
 }
 
-void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
    if(not mesh.isInitialized())
       mesh.initialize(parallelMach);
@@ -72,7 +72,7 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
 }
 
 //! From ParameterListAcceptor
-void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
+void SquareTriMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
    paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
 
@@ -98,7 +98,7 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
 }
 
 //! From ParameterListAcceptor
-Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList> SquareTriMeshFactory::getValidParameters() const
 {
    static RCP<Teuchos::ParameterList> defaultParams;
 
@@ -128,7 +128,7 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParame
    return defaultParams;
 }
 
-void SquareQuadMeshFactory::initializeWithDefaults()
+void SquareTriMeshFactory::initializeWithDefaults()
 {
    // get valid parameters
    RCP<Teuchos::ParameterList> validParams = rcp(new Teuchos::ParameterList(*getValidParameters()));
@@ -137,10 +137,10 @@ void SquareQuadMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
-   typedef shards::Quadrilateral<4> QuadTopo;
-   const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
+   typedef shards::Triangle<> TriTopo;
+   const CellTopologyData * ctd = shards::getCellTopologyData<TriTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    // build meta data
@@ -167,7 +167,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    mesh.addSideset("bottom",side_ctd);
 }
 
-void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    mesh.beginModification();
       // build each block
@@ -179,7 +179,7 @@ void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_
    mesh.endModification();
 }
 
-void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -214,20 +214,29 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBl
    // build the elements
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
       for(int ny=myYElems_start;ny<myYElems_end;++ny) {
-         stk::mesh::EntityId gid = totalXElems*ny+nx+1;
-         std::vector<stk::mesh::EntityId> nodes(4);
-         nodes[0] = nx+1+ny*(totalXElems+1);
-         nodes[1] = nodes[0]+1;
-         nodes[2] = nodes[1]+(totalXElems+1);
-         nodes[3] = nodes[2]-1;
+         stk::mesh::EntityId gid_a = 2*(totalXElems*ny+nx+1)-1;
+         stk::mesh::EntityId gid_b = gid_a+1;
+         std::vector<stk::mesh::EntityId> nodes(3);
+         stk::mesh::EntityId sw,se,ne,nw;
+         sw = nx+1+ny*(totalXElems+1);
+         se = sw+1;
+         ne = se+(totalXElems+1);
+         nw = ne-1;
 
-         RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(gid,nodes));
-         mesh.addElement(ed,block);
+         nodes[0] = sw;
+         nodes[1] = se;
+         nodes[2] = ne;
+         mesh.addElement(rcp(new ElementDescriptor(gid_a,nodes)),block);
+
+         nodes[0] = sw;
+         nodes[1] = ne;
+         nodes[2] = nw;
+         mesh.addElement(rcp(new ElementDescriptor(gid_b,nodes)),block);
       }
    }
 }
 
-std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
@@ -250,7 +259,7 @@ std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
 {
    std::size_t yProcLoc = procTuple_[1];
    unsigned int minElements = nYElems_/size;
@@ -273,7 +282,7 @@ std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-const stk::mesh::Relation * SquareQuadMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
+const stk::mesh::Relation * SquareTriMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
 {
    for(std::size_t i=0;i<relations.size();i++) 
       if(relations[i].identifier()==ID)
@@ -282,7 +291,7 @@ const stk::mesh::Relation * SquareQuadMeshFactory::getRelationByID(unsigned ID,s
    return 0;
 }
 
-void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
+void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
 
@@ -305,14 +314,16 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       stk::mesh::EntityId gid = element->identifier();      
       stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
 
+      bool lower = (gid%2 != 0);
+      std::size_t block = lower ? (gid+1)/2 : gid/2;
       std::size_t nx,ny;
-      ny = (gid-1) / totalXElems;
-      nx = gid-ny*totalXElems-1;
+      ny = (block-1) / totalXElems;
+      nx = block-ny*totalXElems-1;
 
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems) { 
+      if(nx+1==totalXElems && lower) { 
          stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the right
@@ -320,8 +331,8 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
             mesh.addEntityToSideset(*edge,right);
       }
 
-      if(nx==0) {
-         stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+      if(nx==0 && !lower) {
+         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_)
@@ -331,7 +342,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       // horizontal boundaries
       ///////////////////////////////////////////
 
-      if(ny==0) {
+      if(ny==0 && lower) {
          stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
 
          // on the bottom
@@ -339,8 +350,8 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
             mesh.addEntityToSideset(*edge,bottom);
       }
 
-      if(ny+1==totalYElems) {
-         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+      if(ny+1==totalYElems && !lower) {
+         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the top
          if(edge->owner_rank()==machRank_)
@@ -352,7 +363,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
 }
 
 //! Convert processor rank to a tuple
-Teuchos::Tuple<std::size_t,2> SquareQuadMeshFactory::procRankToProcTuple(std::size_t procRank) const
+Teuchos::Tuple<std::size_t,2> SquareTriMeshFactory::procRankToProcTuple(std::size_t procRank) const
 {
    std::size_t i=0,j=0;
 

@@ -35,7 +35,7 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::stri
    // return based on what was found
    if(itr==fieldStrToNum_.end()) {
       // incorrect field name
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                          "BlockedDOFManager::getFieldNum No field with the name \"" + str + "\" has been added");
    }
    else {
@@ -52,7 +52,7 @@ std::string BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldString(int 
    if(itr==fieldNumToStr_.end()) {
       std::stringstream ss; ss << number; // itoa() in c-language
       // incorrect field name
-      TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                          "BlockedDOFManager::getFieldString No field with number \"" + ss.str() + "\" has been added");
    }
    else {
@@ -65,7 +65,7 @@ bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::fieldInBlock(const std::st
 {
    // try  to find element block
    std::map<std::string,std::set<std::string> >::const_iterator fieldsItr = blockIdToFieldStrings_.find(block);
-   TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldStrings_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldStrings_.end(),std::logic_error,
                       "BlockedDOFManager::fieldInBlock could not find the element block \""+block+"\"");
 
    // find field in element block 
@@ -81,7 +81,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 {
    // try to find element block
    std::map<std::string,std::vector<int> >::const_iterator fieldsItr = blockIdToFieldNumbers_.find(block);
-   TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldNumbers_.end(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldNumbers_.end(),std::logic_error,
                       "BlockedDOFManager::getBlockFieldNumbers cannot field elemenet block, has registerFields() been called?");
 
    return fieldsItr->second;
@@ -112,7 +112,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
-   TEST_FOR_EXCEPTION(true,std::logic_error,"BlockedDOFManager::getElementOrientation not implemented yet!");
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"BlockedDOFManager::getElementOrientation not implemented yet!");
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -132,7 +132,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
    else {
       std::vector<std::string> elementBlocks;
       getElementBlockIds(elementBlocks);
-      TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
                          "BlockedDOFManager::getGIDFieldOffsets: Block ID \""+blockId+"\" does not exist");
 
       gidFieldOffsets_[blockId] = std::map<int,std::vector<int> >();
@@ -199,7 +199,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
    else {
       std::vector<std::string> elementBlocks;
       getElementBlockIds(elementBlocks);
-      TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
                          "BlockedDOFManager::getGIDFieldOffsets: Block ID \""+blockId+"\" does not exist");
 
       gidFieldOffsets_closure_[blockId] = TupleToVectorPairMap();
@@ -294,7 +294,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
    // quick error sanity check
    TEUCHOS_ASSERT(isOwned.size()==indices.size());
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
-      TEST_FOR_EXCEPTION(blockItrs[fbm]!=blockIsOwned[fbm].end(),std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockItrs[fbm]!=blockIsOwned[fbm].end(),std::logic_error,
                        "BlockedDOFManager::ownedIndices: Did not consume all sub block boolean entries as expected.");
    }
     
@@ -367,7 +367,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
                                                         const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   TEST_FOR_EXCEPTION(fieldsRegistered(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(fieldsRegistered(),std::logic_error,
                       "BlockedDOFManager::addField: addField cannot be called after registerFields or"
                       "buildGlobalUnknowns has been called"); 
 
@@ -432,7 +432,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
          }
          ss << " ]\n";
 
-         TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
+         TEUCHOS_TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
       }
    }
 
@@ -538,7 +538,7 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
 
    // verify correctness check
    std::size_t correctFlag = std::accumulate(correctnessCheck.begin(),correctnessCheck.end(),0);
-   TEST_FOR_EXCEPTION(correctFlag!=activeFields.size(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(correctFlag!=activeFields.size(),std::logic_error,
                       "BlockedDOFManager::addFieldsToFieldBlockManager detected inconsistincies in the active fields.");
 
    // set field order

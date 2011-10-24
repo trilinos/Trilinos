@@ -113,7 +113,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 //! From ParameterListAcceptor
 void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
-   TEST_FOR_EXCEPTION_PURE_MSG(!paramList->isParameter("File Name"),
+   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(!paramList->isParameter("File Name"),
         Teuchos::Exceptions::InvalidParameterName,
         "Error, the parameter {name=\"File Name\","
         "type=\"string\""
@@ -202,7 +202,7 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::Mes
       // if a side part ==> this is a sideset: now storage is recursive
       // on part contains all sub parts with consistent topology
       if(part->primary_entity_rank()==mesh.getSideRank() && ct==0 && subsets.size()>0) {
-         TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
+         TEUCHOS_TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
                             "STK_ExodusReaderFactory::registerSidesets error - part \"" << part->name() << 
                             "\" has more than one subset"); 
 

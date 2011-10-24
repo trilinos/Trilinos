@@ -44,7 +44,7 @@ namespace user_app {
     {
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
-      TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
+      TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
       const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector(); 
 
       Teuchos::RCP<const Epetra_Vector> ep_x = Thyra::get_Epetra_Vector(*(m_lof->getMap()), Teuchos::rcp(&th_x, false));

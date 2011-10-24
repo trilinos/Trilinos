@@ -1,4 +1,4 @@
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"

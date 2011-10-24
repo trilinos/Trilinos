@@ -32,7 +32,7 @@ void CommaSeperatedEntryValidator::validate(const Teuchos::ParameterEntry & entr
   Teuchos::any anyValue = entry.getAny(true);
   
   // type passed, validate value
-  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
+  TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Teuchos::Exceptions::InvalidParameterType,
     "Sorry but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName <<
@@ -55,7 +55,7 @@ void CommaSeperatedEntryValidator::validate(const Teuchos::ParameterEntry & entr
                                   "your value is \""+value+"\"";
 
      // verify that their is a response type and an evaluation type
-     TEST_FOR_EXCEPTION(tokens.size()==0,
+     TEUCHOS_TEST_FOR_EXCEPTION(tokens.size()==0,
         Teuchos::Exceptions::InvalidParameterValue,errorStr);
   }
 }
@@ -103,7 +103,7 @@ void buildResponseMap(const Teuchos::ParameterList & p,
       const Teuchos::ParameterEntry & pe = itr->second;
 
       // make sure this is a parameter list
-      TEST_FOR_EXCEPTION(!pe.isList(),Teuchos::Exceptions::InvalidParameterValue,
+      TEUCHOS_TEST_FOR_EXCEPTION(!pe.isList(),Teuchos::Exceptions::InvalidParameterValue,
                          "In list \""+sublistName+"\", the parameter \""+paramName+"\" is expected "
                          "to be a sublist. Response map cannot be built!");
 
