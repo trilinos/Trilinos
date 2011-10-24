@@ -13,11 +13,18 @@ IF (Trilinos_ENABLE_CXX11)
       )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(MultiPrecInputStack
-      SOURCE_FILES double.xml double_float.xml double_double.xml qd_dd.xml qd_dd_double.xml
+      SOURCE_FILES double.xml double_float.xml double_double.xml qd.xml qd_dd.xml qd_dd_double.xml
                    threaded.xml mpionly.xml
       )
 
   IF (Tpetra_ENABLE_QD) 
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd
+      SOURCES MultiPrecExample_qd
+      ARGS "--matrix-file=bcsstk14.hb --param-file=qd.xml"
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+    )
+
     PACKAGE_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd
       SOURCES MultiPrecExample_qd_dd
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd.xml"
