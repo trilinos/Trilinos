@@ -58,8 +58,8 @@ typedef MueLu::Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> 
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 #endif
 
-#ifdef MUELU_GAUSSSEIDEL_SHORT
-typedef MueLu::GaussSeidel<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GaussSeidel;
+#ifdef MUELU_GAUSSSEIDELSMOOTHER_SHORT
+typedef MueLu::GaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GaussSeidelSmoother;
 #endif
 
 #ifdef MUELU_IFPACK2_SMOOTHER_SHORT

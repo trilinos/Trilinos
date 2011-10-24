@@ -1,8 +1,8 @@
-#ifndef MUELU_GAUSSSEIDEL_HPP
-#define MUELU_GAUSSSEIDEL_HPP
+#ifndef MUELU_GAUSSSEIDELSMOOTHER_HPP
+#define MUELU_GAUSSSEIDELSMOOTHER_HPP
 
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_VectorFactory.hpp"
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -10,114 +10,100 @@
 
 namespace MueLu {
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels < void, LocalOrdinal, Node>::SparseOps>
+  class GaussSeidelSmoother : public SmootherPrototype <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
-  private:
-
-    //! sweeps
-    LO nIts_;
-    //! relaxation parameter
-    SC omega_;
-    RCP<Operator> A_;
-
   public:
 
-  //! @name Constructors/Destructors
-  //@{
-  GaussSeidel(LO sweeps=1, SC omega=1.0) : nIts_(sweeps), omega_(omega) {
-    // TODO SmootherBase::SetType(type);
-    SmootherPrototype::IsSetup(false);
-  }
+    //! @name Constructors/Destructors
+    //@{
 
-  virtual ~GaussSeidel() {}
-  //@}
+    GaussSeidelSmoother(LO sweeps = 1, SC omega = 1.0) : nSweeps_(sweeps), omega_(omega) {
+      TEUCHOS_TEST_FOR_EXCEPTION(sweeps != 1, Exceptions::NotImplemented, "MueLu::GaussSeidelSmoother(): Sweeps != 1 not implemented. Use MueLu::TrilinosSmoother instead.");
+      SmootherPrototype::IsSetup(false);
+    }
 
-  //! @name Setup and apply methods.
-  //@{
+    virtual ~GaussSeidelSmoother() { }
 
-  //! Set up the smoother. (Right now, just grab A from the Level.)
-  void Setup(RCP<Level> const level)
-  {
-    A_ = level->Get< RCP<Operator> >("A",NULL);
-    SmootherPrototype::IsSetup(true);
-  }
+    //@}
 
-  /*! Solve A*x=b approximately with the smoother.
+    //! Input
+    //@{
 
-      FIXME right now, InitialGuessIsZero is ignored.
+    void DeclareInput(Level &currentLevel) const {
+      currentLevel.DeclareInput("A", NULL); //FIXME AFact_.get());
+    }
 
-      @param x  unknown vector
-      @param b  right-hand side
-      @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
-  */
-  void Apply(RCP<MultiVector> x, RCP<MultiVector> const b, bool InitialGuessIsZero=false) const
-  {
-     if (InitialGuessIsZero)
-       throw(Exceptions::NotImplemented("No logic for handling zero initial guesses"));
+    //@}
 
-     // get matrix diagonal
-     RCP<Vector> diag = VectorFactory::Build(A_->getRangeMap());
-     A_->getLocalDiagCopy(*diag);
+    //! @name Setup and apply methods.
+    //@{
 
-     Teuchos::ArrayRCP<const SC> bdata = b->getData(0);
-     Teuchos::ArrayRCP<SC>       xdata = x->getDataNonConst(0);
-     Teuchos::ArrayRCP<const SC> diagdata = diag->getData(0);
+    //! Set up the smoother. (Right now, just grab A from the Level.)
+    void Setup(Level & level) {
+      A_ = level.Get< RCP<Operator> >("A", NULL); //FIXME AFact_.get());
+      SmootherPrototype::IsSetup(true);
+    }
 
-     // loop through rows
-     SC sum;
-     Teuchos::ArrayRCP<const LO> indices;
-     Teuchos::ArrayRCP<const SC>  values;
-     for (int i=0; i<A_->getNodeNumRows(); i++) {
-       A_->getLocalRowView(i,indices,values);
-       sum = bdata[i];
-       for (int j=0; j< indices.size(); j++)
-         sum -= values[j]*xdata[indices[j]];
-       xdata[i] += (omega_/diagdata[i]) * sum;
-     }
-  } //Apply()
+    /*! Solve A*x = b approximately with the smoother.
 
-  //@}
+    FIXME right now, InitialGuessIsZero is ignored.
 
-  //! @name Set/Get methods.
-  //@{
+    @param x  unknown vector
+    @param b  right-hand side
+    @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
+    */
+    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const {
+      if (InitialGuessIsZero)
+        throw(Exceptions::NotImplemented("MueLu::GaussSeidelSmoother::Apply(): No logic for handling zero initial guesses"));
 
-  void SetNIts(LO Nits) {
-    nIts_ = Nits;
-  }
+      // get matrix diagonal
+      RCP<Vector> diag = VectorFactory::Build(A_->getRangeMap());
+      A_->getLocalDiagCopy(*diag);
 
-  LO GetNIts() {
-    return nIts_;
-  }
+      Teuchos::ArrayRCP<const SC> bData    = rhs.getData(0);
+      Teuchos::ArrayRCP<SC>       xData    = x.getDataNonConst(0);
+      Teuchos::ArrayRCP<const SC> diagData = diag->getData(0);
 
-  //@}
+      // loop through rows
+      SC sum;
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC>  values;
 
-  //! @name Utilities.
-  //@{
+      for (size_t i = 0; i < A_->getNodeNumRows(); i++) {
+        A_->getLocalRowView(i, indices, values);
 
-  void Print(std::string prefix) const {
-    throw(Exceptions::NotImplemented("Printing not implemented yet"));
-  }
+        sum = bData[i];
+        for (int j = 0; j < indices.size(); j++)
+          sum -= values[j] * xData[indices[j]];
 
-  RCP<SmootherPrototype> Copy() const
-  {
-    return rcp(new GaussSeidel(*this) );
-  }
+        xData[i] += (omega_ / diagData[i]) * sum;
+      }
 
-  void CopyParameters(RCP<SmootherPrototype> source)
-  {
-    nIts_ = source.nIts_;
-    omega_ = source.omega_;
-    A_ = source.A_;
-  }
+    } // Apply ()
+    
+    //@}
 
-  //@}
+    //! @name Utilities.
+    //@{
 
-}; //class GaussSeidel
+    RCP <SmootherPrototype> Copy() const {
+      return rcp(new GaussSeidelSmoother(*this));
+    }
+
+    //@}
+
+  private:
+
+    LO nSweeps_;       // < ! sweeps
+    SC omega_;         // < ! relaxation parameter
+    RCP <Operator> A_;
+
+  }; //class GaussSeidelSmoother
 
 } //namespace MueLu
 
-#define MUELU_GAUSSSEIDEL_SHORT
-#endif //ifndef MUELU_GAUSSSEIDEL_HPP
+#define MUELU_GAUSSSEIDELSMOOTHER_SHORT
+#endif //ifndef MUELU_GAUSSSEIDELSMOOTHER_HPP
