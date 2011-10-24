@@ -48,17 +48,14 @@ namespace MueLu {
     }
 
     /*! Solve A*x = b approximately with the smoother.
-
-    FIXME right now, InitialGuessIsZero is ignored.
-
-    @param x  unknown vector
-    @param b  right-hand side
-    @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
+      @param x  unknown vector
+      @param b  right-hand side
+      @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
     */
     void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const {
-      if (InitialGuessIsZero)
-        throw(Exceptions::NotImplemented("MueLu::GaussSeidelSmoother::Apply(): No logic for handling zero initial guesses"));
-
+      if (InitialGuessIsZero) // TODO: There is no optimization for InitialGuessIsZero = true
+        x.putScalar(0.0);
+      
       // get matrix diagonal
       RCP<Vector> diag = VectorFactory::Build(A_->getRangeMap());
       A_->getLocalDiagCopy(*diag);
