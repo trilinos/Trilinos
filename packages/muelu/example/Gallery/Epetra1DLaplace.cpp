@@ -46,7 +46,9 @@ int main(int argc, char *argv[])
 
   int myRank = Comm.MyPID();
 
-  int numGlobalElements = 10000000;
+  //int numGlobalElements = 10000000;
+  int numGlobalElements = 100;
+
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("numGlobalElements",&numGlobalElements,"Global problem size.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
