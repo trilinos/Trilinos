@@ -80,6 +80,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->N_nonzeros          = -1;
    mat->blocks              = -1;
    mat->max_nz_per_row      = 0;
+   mat->min_nz_per_row      = 0;
    mat->sub_matrix          = NULL;
    mat->BCs                 = NULL;
    mat->DirichletRows       = NULL;
@@ -144,7 +145,7 @@ int ML_Operator_Clean( ML_Operator *mat)
       nnz = ML_Comm_GsumDouble(mat->comm, (double) mat->N_nonzeros);
       if (mypid == 0)
         printf(" %s stats : %d active procs, %1.0f rows, %1.0f cols, %1.0f nnz\n",
-               mat->label,NumActiveProc,Nglobcols,Nglobrows,nnz);
+               mat->label,NumActiveProc,Nglobrows,Nglobcols,nnz);
       maxt = ML_gmax_double( (proc_active ? mat->build_time : 0.0 ), mat->comm);
       maxp = ML_gmax_int((maxt == mat->build_time ? mypid:0),mat->comm);
       avgt = ML_gsum_double( (proc_active ? mat->build_time : 0.0), mat->comm);
@@ -351,6 +352,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->N_nonzeros          = original->N_nonzeros;
    mat->blocks              = original->blocks;
    mat->max_nz_per_row      = original->max_nz_per_row;
+   mat->min_nz_per_row      = original->min_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
    mat->DirichletRows       = original->DirichletRows;
    mat->from_an_ml_operator = original->from_an_ml_operator;
@@ -1869,6 +1871,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   double *A_val = NULL, *B_val = NULL, *hashed_vals;
   int i, A_length, B_length, *hashed_inds;
   int max_nz_per_row = 0, j;
+  int min_nz_per_row = 1e6;
   int hash_val, index_length;
   int *columns = NULL, *rowptr, nz_ptr, hash_used, global_col;
   double *values = NULL;
@@ -2046,8 +2049,11 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
       }
 #endif
       rowptr[i+1] = nz_ptr;
-      if (rowptr[i+1] - rowptr[i] > max_nz_per_row)
-	max_nz_per_row = rowptr[i+1] - rowptr[1];
+      j = rowptr[i+1] - rowptr[i];
+      if (j > max_nz_per_row)
+        max_nz_per_row = j;
+      if (j < min_nz_per_row && j > 0)
+        min_nz_per_row = j;
   }
   if (matrix_type == ML_CSR_MATRIX) {
     temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
@@ -2086,6 +2092,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     C->data_destroy = ML_CSR_MSRdata_Destroy;
 
     C->max_nz_per_row = max_nz_per_row;
+    C->min_nz_per_row = min_nz_per_row;
     C->N_nonzeros     = nz_ptr;
   }
 #ifdef ML_WITH_EPETRA

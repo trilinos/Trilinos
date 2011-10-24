@@ -39,7 +39,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    double  printflag;
    int     sizeint, logsizeint, offnrows, *offibuffer, *offmap;
    int     *offmap2, *offlengths, numCi, *Ci_array,/* *int_array,*/ *int_buf;
-   int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
+   int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, min_nnz_per_row, *sys_array;
    int     msgtype, mypid, *send_leng=NULL, *recv_leng=NULL;
    int     N_neighbors, *neighbors=NULL, *send_list=NULL, sys_unk_filter;
    int     *recv_list=NULL, total_recv_leng=0, total_send_leng=0, idiag;
@@ -1140,6 +1140,7 @@ for ( i = 0; i < Nrows; i++ )
    new_ia[0]   = 0;
    count       = 0;
    nnz_per_row = 0;
+   min_nnz_per_row = 1e6;
    for (i = 0; i < Nrows; i++) 
    {
       if ( CF_array[i] >= 0 ) /* ----- C point ----- */
@@ -1321,8 +1322,11 @@ for ( i = 0; i < Nrows; i++ )
          /* ----- update the row pointer of P ----- */
 
          new_ia[i+1] = count;
-         if ( (new_ia[i+1] - new_ia[i]) > nnz_per_row ) 
-            nnz_per_row = new_ia[i+1] - new_ia[i];
+         j = new_ia[i+1] - new_ia[i];
+         if ( j > nnz_per_row ) 
+            nnz_per_row = j;
+         if ( j < min_nnz_per_row && j > 0) 
+            min_nnz_per_row = j;
       }
    }
    ML_free( rowi_col );
@@ -1445,6 +1449,7 @@ for ( i = 0; i < Nrows; i++ )
    ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
    (*Pmatrix)->max_nz_per_row = nnz_per_row;
+   (*Pmatrix)->min_nz_per_row = min_nnz_per_row;
 
    /* ============================================================= */
    /* clean up                                                      */

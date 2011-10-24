@@ -954,7 +954,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
 {
    int          i, j, Nfine, nbytes, newNlevels, nnz, *col_ind;
    int          k, newClevel, lengc, lengf, ap_ncols, *ap_cols;
-   int          *new_ia, *new_ja, p_ncols, *p_cols, max_nz_per_row;
+   int          *new_ia, *new_ja, p_ncols, *p_cols, max_nz_per_row, min_nz_per_row;
    double       max_eigen, norm, *darray, *darray2, **ap_aa;
    double       *diagonal, *new_val, **p_aa, *col_val;
    ML_Operator  *Amat, *tentP, *APMat;
@@ -1264,12 +1264,14 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
       new_ia[i+1] = nnz;
    }
    max_nz_per_row = 0;
+   min_nz_per_row = 1e6;
    for ( i = 0; i < Nfine; i++ )
    {
       nnz = 0;
       for ( j = 0; j < ap_ncols; j++ )
          if ( ap_aa[j][i] != 0.0 ) nnz++;
       if ( nnz > max_nz_per_row ) max_nz_per_row = nnz;
+      if ( nnz < min_nz_per_row && nnz > 0 ) min_nz_per_row = nnz;
    }
    
    ML_memory_alloc((void**)&csr_data,sizeof(struct ML_CSR_MSRdata),"CSR");
@@ -1282,6 +1284,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    ML_Operator_Set_Getrow(APMat, Nfine, CSR_getrow);
    ML_Operator_Set_ApplyFunc(APMat, CSR_matvec);
    APMat->max_nz_per_row = max_nz_per_row;
+   APMat->min_nz_per_row = min_nz_per_row;
 /*
    if ( ag->smoothP_damping_factor == 0.0 )
    {

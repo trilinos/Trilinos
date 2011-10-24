@@ -2042,6 +2042,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   ML_Operator_Set_ApplyFunc( permt_mat, CSR_matvec);
   permt_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat->max_nz_per_row = 1;
+  permt_mat->min_nz_per_row = 1;
   permt_mat->N_nonzeros     = mat->invec_leng;
   *permt = ML_Operator_Create(comm);
   ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
