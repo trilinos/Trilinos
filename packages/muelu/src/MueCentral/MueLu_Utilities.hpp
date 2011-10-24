@@ -33,6 +33,7 @@
 #include "MueLu_Memory.hpp"
 
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#include "Epetra_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #endif
