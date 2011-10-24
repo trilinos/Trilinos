@@ -93,9 +93,8 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
       // Level Set
-      coarseLevel.Set("Nullspace", coarseNullspace, this);
-      coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); // TODO?
-      coarseLevel.Set("P", Ptentative, this); //TODO: should be P when 'extended needs' implemented
+      coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get());
+      coarseLevel.Set("P", Ptentative, this);
     }
 
     //@}

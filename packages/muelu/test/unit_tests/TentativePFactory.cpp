@@ -60,15 +60,14 @@ namespace MueLuTests {
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
-      coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace (false, since no PR factory available)
+      coarseLevel.Request("Nullspace",NULL); // request coarse nullspace (false, since no PR factory available)
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
-      RCP<MultiVector> coarseNullSpace; 
-      coarseLevel.Get("Nullspace",coarseNullSpace, TentativePFact.get());
+      RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",NULL);
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -78,7 +77,7 @@ namespace MueLuTests {
       diff->putScalar(0.0);
 
       coarseLevel.Release("P",TentativePFact.get()); // release Ptent
-      coarseLevel.Release("Nullspace",TentativePFact.get());   // release coarse nullspace
+      coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
@@ -122,15 +121,14 @@ namespace MueLuTests {
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
-      coarseLevel.Request("Nullspace",TentativePFact.get());    // request coarse nullspace (false, since no PRFactory available)
+      coarseLevel.Request("Nullspace",NULL);
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent;
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
-      RCP<MultiVector> coarseNullSpace;
-      coarseLevel.Get("Nullspace", coarseNullSpace, TentativePFact.get());
+      RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",NULL);
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -140,7 +138,7 @@ namespace MueLuTests {
       diff->putScalar(0.0);
 
       coarseLevel.Release("P",TentativePFact.get()); // release Ptent
-      coarseLevel.Release("Nullspace", TentativePFact.get());   // release coarse nullspace
+      coarseLevel.Release("Nullspace",NULL);
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
@@ -183,18 +181,17 @@ namespace MueLuTests {
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
 
     coarseLevel.Request("P",tentativePFact.get());  // request Ptent
-    coarseLevel.Request("Nullspace", tentativePFact.get());  // request coarse nullspace
+    coarseLevel.Request("Nullspace", NULL);  // request coarse nullspace
     coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
     coarseLevel.Get("P",Ptent,tentativePFact.get());
 
-    RCP<MultiVector> coarseNullSpace; 
-    coarseLevel.Get("Nullspace",coarseNullSpace, tentativePFact.get());
+    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",NULL);
 
     coarseLevel.Release("P",tentativePFact.get()); // release Ptent
-    coarseLevel.Release("Nullspace", tentativePFact.get());   // release coarse nullspace
+    coarseLevel.Release("Nullspace",NULL);   // release coarse nullspace
 
     //grab default fine level nullspace (vector of all ones)
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
