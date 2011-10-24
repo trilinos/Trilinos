@@ -119,7 +119,6 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      //fineLevel.Request("Aggregates",&UCAggFact); //FIXME putting this in to avoid error until Merge needs business
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
@@ -173,7 +172,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
-    fineLevel.Set("A",A);
+    fineLevel.Set("A", A);
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     UCAggFact->SetMinNodesPerAggregate(3);
