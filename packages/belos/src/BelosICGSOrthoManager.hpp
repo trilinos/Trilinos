@@ -161,14 +161,11 @@ namespace Belos {
     // output arguments) have taken place.
     int _maxNumOrthogPasses;
     magnitude_type _blkTol, _singTol;
-    if (params.is_null())
-      {
-        _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-        _blkTol = defaultParams->get<magnitude_type> ("blkTol");
-        _singTol = defaultParams->get<magnitude_type> ("singTol");
-      }
-    else
-    {
+    if (params.is_null()) {
+      _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+      _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+      _singTol = defaultParams->get<magnitude_type> ("singTol");
+    } else {
       try {
         _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
         if (_maxNumOrthogPasses < 1)
@@ -178,11 +175,17 @@ namespace Belos {
       }
 
       try {
-        _blkTol = params->get<magnitude_type> ("blkTol");
-        if (_blkTol < zero)
-          _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	_blkTol = params->get<magnitude_type> ("blkTol");
+	if (_blkTol < zero)
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-        _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	try {
+	  // People may have used depTol instead of blkTol for this
+	  // parameter's name, by analogy with DGKS.
+	  _blkTol = params->get<magnitude_type> ("depTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	}
       }
 
       try {
@@ -227,24 +230,18 @@ namespace Belos {
       sing_tol_( sing_tol ),
       label_( label )
     {
-        std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
-#endif
+      std::string orthoLabel = label_ + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
 
-        std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
-#endif
+      std::string updateLabel = label_ + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
 
-        std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
-#endif
+      std::string normLabel = label_ + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
 
-        std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      std::string ipLabel = label_ + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
 #endif
     }
 
@@ -260,21 +257,18 @@ namespace Belos {
     {
       setParameterList (plist);
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
-#endif
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+
       std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
-#endif
+      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+
       std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
-#endif
+      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel); 
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
 #endif
     }
 
@@ -288,6 +282,7 @@ namespace Belos {
     void 
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
+      using Teuchos::Exceptions::InvalidParameterName;
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
       using Teuchos::RCP;
@@ -295,11 +290,14 @@ namespace Belos {
       RCP<const ParameterList> defaultParams = getValidParameters();
       RCP<ParameterList> params;
       if (plist.is_null()) {
-	// No need to validate default parameters.
 	params = parameterList (*defaultParams);
       } else {
 	params = plist;
-	params->validateParametersAndSetDefaults (*defaultParams);
+	// Some users might want to specify "blkTol" as "depTol".  Due
+	// to this case, we don't invoke
+	// validateParametersAndSetDefaults on params.  Instead, we go
+	// through the parameter list one parameter at a time and look
+	// for alternatives.
       }
 	
       // Using temporary variables and fetching all values before
@@ -307,9 +305,44 @@ namespace Belos {
       // guarantee for this function: if an exception is thrown, no
       // externally visible side effects (in this case, setting the
       // output arguments) have taken place.
-      const int maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
-      const MagnitudeType blkTol = params->get<MagnitudeType> ("blkTol");
-      const MagnitudeType singTol = params->get<MagnitudeType> ("singTol");
+      int maxNumOrthogPasses;
+      MagnitudeType blkTol;
+      MagnitudeType singTol;
+
+      try {
+	maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      } catch (InvalidParameterName&) {
+	maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	params->set ("maxNumOrthogPasses", maxNumOrthogPasses);
+      }
+
+      // Handling of the "blkTol" parameter is a special case.  This
+      // is because some users may prefer to call this parameter
+      // "depTol" for consistency with DGKS.  However, our default
+      // parameter list calls this "blkTol", and we don't want the
+      // default list's value to override the user's value.  Thus, we
+      // first check the user's parameter list for both names, and
+      // only then access the default parameter list.
+      try {
+	blkTol = params->get<MagnitudeType> ("blkTol");
+      } catch (InvalidParameterName&) {
+	try {
+	  blkTol = params->get<MagnitudeType> ("depTol");
+	  // "depTol" is the wrong name, so remove it and replace with
+	  // "blkTol".  We'll set "blkTol" below.
+	  params->remove ("depTol");
+	} catch (InvalidParameterName&) {
+	  blkTol = defaultParams->get<MagnitudeType> ("blkTol");
+	}
+	params->set ("blkTol", blkTol);
+      }
+
+      try {
+	singTol = params->get<MagnitudeType> ("singTol");
+      } catch (InvalidParameterName&) {
+	singTol = defaultParams->get<MagnitudeType> ("singTol");
+	params->set ("singTol", singTol);
+      }
 
       max_ortho_steps_ = maxNumOrthogPasses;
       blk_tol_ = blkTol;

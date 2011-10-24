@@ -163,38 +163,42 @@ namespace Belos {
     // output arguments) have taken place.
     int _maxNumOrthogPasses;
     magnitude_type _blkTol, _singTol;
-    if (params.is_null())
-      {
-	_maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-	_blkTol = defaultParams->get<magnitude_type> ("blkTol");
-	_singTol = defaultParams->get<magnitude_type> ("singTol");
-      }
-    else
-      {
-	try {
-	  _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
-	  if (_maxNumOrthogPasses < 1)
-	    _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-	} catch (Teuchos::Exceptions::InvalidParameter&) {
+    if (params.is_null()) {
+      _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+      _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+      _singTol = defaultParams->get<magnitude_type> ("singTol");
+    } 
+    else {
+      try {
+	_maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+	if (_maxNumOrthogPasses < 1)
 	  _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-	}
+      } catch (Teuchos::Exceptions::InvalidParameter&) {
+	_maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+      }
 
+      try {
+	_blkTol = params->get<magnitude_type> ("blkTol");
+	if (_blkTol < zero)
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {
 	try {
-	  _blkTol = params->get<magnitude_type> ("blkTol");
-	  if (_blkTol < zero)
-	    _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	  // People may have used depTol instead of blkTol for this
+	  // parameter's name, by analogy with DGKS.
+	  _blkTol = params->get<magnitude_type> ("depTol");
 	} catch (Teuchos::Exceptions::InvalidParameter&) {
 	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
 	}
-
-	try {
-	  _singTol = params->get<magnitude_type> ("singTol");
-	  if (_singTol < zero)
-	    _singTol = defaultParams->get<magnitude_type> ("singTol");
-	} catch (Teuchos::Exceptions::InvalidParameter&) {
-	  _singTol = defaultParams->get<magnitude_type> ("singTol");
-	}
       }
+
+      try {
+	_singTol = params->get<magnitude_type> ("singTol");
+	if (_singTol < zero)
+	  _singTol = defaultParams->get<magnitude_type> ("singTol");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {
+	_singTol = defaultParams->get<magnitude_type> ("singTol");
+      }
+    }
     maxNumOrthogPasses = _maxNumOrthogPasses;
     blkTol = _blkTol;
     singTol = _singTol;
@@ -289,6 +293,7 @@ namespace Belos {
     void 
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
+      using Teuchos::Exceptions::InvalidParameterName;
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
       using Teuchos::RCP;
@@ -296,11 +301,14 @@ namespace Belos {
       RCP<const ParameterList> defaultParams = getValidParameters();
       RCP<ParameterList> params;
       if (plist.is_null()) {
-	// No need to validate default parameters.
 	params = parameterList (*defaultParams);
       } else {
 	params = plist;
-	params->validateParametersAndSetDefaults (*defaultParams);
+	// Some users might want to specify "blkTol" as "depTol".  Due
+	// to this case, we don't invoke
+	// validateParametersAndSetDefaults on params.  Instead, we go
+	// through the parameter list one parameter at a time and look
+	// for alternatives.
       }
 	
       // Using temporary variables and fetching all values before
@@ -308,9 +316,44 @@ namespace Belos {
       // guarantee for this function: if an exception is thrown, no
       // externally visible side effects (in this case, setting the
       // output arguments) have taken place.
-      const int maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
-      const MagnitudeType blkTol = params->get<MagnitudeType> ("blkTol");
-      const MagnitudeType singTol = params->get<MagnitudeType> ("singTol");
+      int maxNumOrthogPasses;
+      MagnitudeType blkTol;
+      MagnitudeType singTol;
+
+      try {
+	maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      } catch (InvalidParameterName&) {
+	maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	params->set ("maxNumOrthogPasses", maxNumOrthogPasses);
+      }
+
+      // Handling of the "blkTol" parameter is a special case.  This
+      // is because some users may prefer to call this parameter
+      // "depTol" for consistency with DGKS.  However, our default
+      // parameter list calls this "blkTol", and we don't want the
+      // default list's value to override the user's value.  Thus, we
+      // first check the user's parameter list for both names, and
+      // only then access the default parameter list.
+      try {
+	blkTol = params->get<MagnitudeType> ("blkTol");
+      } catch (InvalidParameterName&) {
+	try {
+	  blkTol = params->get<MagnitudeType> ("depTol");
+	  // "depTol" is the wrong name, so remove it and replace with
+	  // "blkTol".  We'll set "blkTol" below.
+	  params->remove ("depTol");
+	} catch (InvalidParameterName&) {
+	  blkTol = defaultParams->get<MagnitudeType> ("blkTol");
+	}
+	params->set ("blkTol", blkTol);
+      }
+
+      try {
+	singTol = params->get<MagnitudeType> ("singTol");
+      } catch (InvalidParameterName&) {
+	singTol = defaultParams->get<MagnitudeType> ("singTol");
+	params->set ("singTol", singTol);
+      }
 
       max_ortho_steps_ = maxNumOrthogPasses;
       blk_tol_ = blkTol;

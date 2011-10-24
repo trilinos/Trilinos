@@ -182,24 +182,19 @@ namespace Belos {
     /// \param name [in] MatOrthoManager subclass short name, for
     ///   which isValidName(name) returns true.
     ///
-    /// \warning This method may not necessarily be reentrant,
-    ///   depending on the MatOrthoManager subclass.  This is because
-    ///   different subclasses may choose to cache the default
-    ///   parameter list as static method data.
+    /// \note This method does not cache its return value, so every
+    ///   time you call this method with the same \c name argument, a
+    ///   new parameter list will be created.  You can save the
+    ///   parameter list yourself if you want to reuse it.
     Teuchos::RCP<const Teuchos::ParameterList> 
     getDefaultParameters (const std::string& name)
     {
       if (name == "DGKS") {
-	return getDefaultDgksParameters<Scalar>();
+	DGKSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getValidParameters ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	// Make an instance to get its default parameters.  This
-	// doesn't allocate any scratch space and shouldn't be too
-	// expensive.  We don't cache the default parameter list, so
-	// every time you call this method with name == "TSQR", a new
-	// parameter list will be created.  You can save the parameter
-	// list yourself if you want to reuse it.
 	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan;
 	return orthoMan.getValidParameters ();
       }
@@ -238,22 +233,21 @@ namespace Belos {
     /// \param name [in] MatOrthoManager subclass short name, for
     ///   which isValidName(name) returns true.
     ///
-    /// \warning This method may not be thread-safe or reentrant,
-    ///   depending on the MatOrthoManager subclass.  This is because
-    ///   different subclasses may choose to cache the default
-    ///   parameter list as static method data.
+    /// \note This method does not cache its return value, so every
+    ///   time you call this method with the same \c name argument, a
+    ///   new parameter list will be created.  You can save the
+    ///   parameter list yourself if you want to reuse it.
     Teuchos::RCP<const Teuchos::ParameterList> 
     getFastParameters (const std::string& name)
     {
       if (name == "DGKS") {
-	return getFastDgksParameters<Scalar>();
+	DGKSOrthoManager<Scalar, MV, OP> orthoMan;
+	return orthoMan.getFastParameters ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	// Make an instance to get its fast parameters.  This doesn't
-	// allocate any scratch space and shouldn't be too expensive.
-	TsqrMatOrthoManager<Scalar, MV, OP> tsqr; 
-	return tsqr.getFastParameters ();
+	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan; 
+	return orthoMan.getFastParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
@@ -318,12 +312,8 @@ namespace Belos {
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
       if (ortho == "DGKS") {
-	int maxNumOrthogPasses;
-	magnitude_type blkTol, depTol, singTol;
-	readDgksParameters<Scalar> (params, maxNumOrthogPasses, blkTol, depTol, singTol);
 	typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;
-	return rcp (new dgks_type (label, M, maxNumOrthogPasses, 
-				   blkTol, depTol, singTol));
+	return rcp (new dgks_type (params, label, M));
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {

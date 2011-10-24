@@ -596,15 +596,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // moment (when the user asks Belos to perform the solve).  In
     // this common case, we save ourselves a deep copy of the input
     // parameter list.
-    if (params_ != params)
-      {
-	// Make a deep copy of the input parameter list.  This allows
-	// the caller to modify or change params later, without
-	// affecting the behavior of this solver.  This solver will
-	// then only change its internal parameters if setParameters()
-	// is called again.
-	params_ = parameterList (*params);
-      }
+    if (params_ != params) {
+      // Make a deep copy of the input parameter list.  This allows
+      // the caller to modify or change params later, without
+      // affecting the behavior of this solver.  This solver will then
+      // only change its internal parameters if setParameters() is
+      // called again.
+      params_ = parameterList (*params);
+    }
 
     // Fill in any missing parameters and their default values.  Also,
     // throw an exception if the parameter list has any misspelled or
@@ -758,15 +757,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // hole" stream that prints nothing sent to it.  (We can't use a
     // null output stream, since the output manager always sends
     // things it wants to print to the output stream.)
-    if (outputStream_.is_null())
+    if (outputStream_.is_null()) {
       outputStream_ = rcp (new Teuchos::oblackholestream);
-
+    }
     // Update parameter in our list.
     params_->set ("Output Stream", outputStream_);
     // If the output manager (printer_) is null, then we will
     // instantiate it later with the correct output stream.
-    if (! printer_.is_null())
+    if (! printer_.is_null()) {
       printer_->setOStream (outputStream_);
+    }
   }
 
   // frequency level
@@ -797,28 +797,25 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // record whether it's different than before.
   OrthoManagerFactory<ScalarType, MV, OP> factory;
   bool changedOrthoType = false;
-  if (params->isParameter ("Orthogonalization")) 
-    {
-      const std::string& tempOrthoType = 
-	params->get ("Orthogonalization", orthoType_default_);
-      // Ensure that the specified orthogonalization type is valid.
-      if (! factory.isValidName (tempOrthoType))
-	{
-	  std::ostringstream os;
-	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
-	     << tempOrthoType << "\".  The following are valid options "
-	     << "for the \"Orthogonalization\" name parameter: ";
-	  factory.printValidNames (os);
-	  throw std::invalid_argument (os.str());
-	}
-      if (tempOrthoType != orthoType_)
-	{
-	  changedOrthoType = true;
-	  orthoType_ = tempOrthoType;
-	  // Update parameter in our list.
-	  params_->set ("Orthogonalization", orthoType_);
-	}
+  if (params->isParameter ("Orthogonalization")) {
+    const std::string& tempOrthoType = 
+      params->get ("Orthogonalization", orthoType_default_);
+    // Ensure that the specified orthogonalization type is valid.
+    if (! factory.isValidName (tempOrthoType)) {
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
+	 << tempOrthoType << "\".  The following are valid options "
+	 << "for the \"Orthogonalization\" name parameter: ";
+      factory.printValidNames (os);
+      throw std::invalid_argument (os.str());
     }
+    if (tempOrthoType != orthoType_) {
+      changedOrthoType = true;
+      orthoType_ = tempOrthoType;
+      // Update parameter in our list.
+      params_->set ("Orthogonalization", orthoType_);
+    }
+  }
 
   // Get any parameters for the orthogonalization ("Orthogonalization
   // Parameters").  If not supplied, the orthogonalization manager
@@ -833,7 +830,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // sublist (supplying it as an RCP<ParameterList> would make the
   // resulting parameter list not serializable).
   RCP<ParameterList> orthoParams;
-  { // The nonmember function returns an RCP<ParameterList>, 
+  { // The nonmember function sublist() returns an RCP<ParameterList>,
     // which is what we want here.
     using Teuchos::sublist;
     // Abbreviation to avoid typos.
@@ -843,10 +840,10 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       orthoParams = sublist (params_, paramName, true);
     } catch (InvalidParameter&) {
       // We didn't get the parameter list from params, so get a
-      // default parameter list from the OrthoManagerFactory.
-      // Modify params_ so that it has the default parameter list,
-      // and set orthoParams to ensure it's a sublist of params_
-      // (and not just a copy of one).
+      // default parameter list from the OrthoManagerFactory.  Modify
+      // params_ so that it has the default parameter list, and set
+      // orthoParams to ensure it's a sublist of params_ (and not just
+      // a copy of one).
       params_->set (paramName, factory.getDefaultParameters (orthoType_));
       orthoParams = sublist (params_, paramName, true);
     }
@@ -855,33 +852,34 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 			     "Failed to get orthogonalization parameters.  "
 			     "Please report this bug to the Belos developers.");
 
-  // Check if the desired orthogonalization method changed, or if the
-  // orthogonalization manager has not yet been instantiated.  If
-  // either is the case, instantiate a new MatOrthoManager subclass
-  // instance corresponding to the desired orthogonalization method.
-  // We've already fetched the orthogonalization method name
-  // (orthoType_) and its parameters (orthoParams) above.
-  //
-  // NOTE (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
-  // subclass if the orthogonalization method name is different than
-  // before.  Thus, for some orthogonalization managers, changes to
-  // their parameters may not get propagated, if the manager type
-  // itself didn't change.  The one exception is the "depTol"
-  // (a.k.a. orthoKappa or "Orthogonalization Constant") parameter of
-  // DGKS; changes to that _do_ get propagated down to the DGKS
-  // instance.  
-  //
-  // The most general way to fix this issue would be to supply each
-  // orthogonalization manager class with a setParameterList() method
-  // that takes a parameter list input, and changes the parameters as
-  // appropriate.  A less efficient but correct way would be simply to
-  // reinstantiate the OrthoManager every time, whether or not the
-  // orthogonalization method name or parameters have changed.
+  // Instantiate a new MatOrthoManager subclass instance if necessary.
+  // If not necessary, then tell the existing instance about the new
+  // parameters.
   if (ortho_.is_null() || changedOrthoType) {
-    // Create orthogonalization manager.  This requires that the
-    // OutputManager (printer_) already be initialized.
+    // We definitely need to make a new MatOrthoManager, since either
+    // we haven't made one yet, or we've changed orthogonalization
+    // methods.  Creating the orthogonalization manager requires that
+    // the OutputManager (printer_) already be initialized.
     ortho_ = factory.makeMatOrthoManager (orthoType_, null, printer_, 
 					  label_, orthoParams);
+  } else {
+    // If the MatOrthoManager implements the ParameterListAcceptor
+    // mix-in interface, we can propagate changes to its parameters
+    // without reinstantiating the MatOrthoManager.
+    //
+    // We recommend that all MatOrthoManager subclasses implement
+    // Teuchos::ParameterListAcceptor, but do not (yet) require this.
+    typedef Teuchos::ParameterListAcceptor PLA;
+    RCP<PLA> pla = rcp_dynamic_cast<PLA> (ortho_);
+    if (pla.is_null()) {
+      // Oops, it's not a ParameterListAcceptor.  We have to
+      // reinstantiate the MatOrthoManager in order to pass in the
+      // possibly new parameters.
+      ortho_ = factory.makeMatOrthoManager (orthoType_, null, printer_,
+					    label_, orthoParams);
+    } else {
+      pla->setParameterList (orthoParams);
+    }
   }
 
   // The DGKS orthogonalization accepts a "Orthogonalization Constant"
@@ -893,29 +891,26 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
   bool gotValidOrthoKappa = false;
-  if (params->isParameter ("Orthogonalization Constant"))
-    {
-      const MagnitudeType orthoKappa = 
-	params->get ("Orthogonalization Constant", orthoKappa_default_);
-      if (orthoKappa > 0)
-	{
-	  orthoKappa_ = orthoKappa;
-	  gotValidOrthoKappa = true;
-	  // Update parameter in our list.
-	  params_->set("Orthogonalization Constant", orthoKappa_);
-	  // Only DGKS currently accepts this parameter.
-	  if (orthoType_ == "DGKS" && ! ortho_.is_null())
-	    {
-	      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
-	      // This cast should always succeed; it's a bug
-	      // otherwise.  (If the cast fails, then orthoType_
-	      // doesn't correspond to the OrthoManager subclass
-	      // instance that we think we have, so we initialized the
-	      // wrong subclass somehow.)
-	      rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
-	    }
-	}
+  if (params->isParameter ("Orthogonalization Constant")) {
+    const MagnitudeType orthoKappa = 
+      params->get ("Orthogonalization Constant", orthoKappa_default_);
+    if (orthoKappa > 0) {
+      orthoKappa_ = orthoKappa;
+      gotValidOrthoKappa = true;
+      // Update parameter in our list.
+      params_->set("Orthogonalization Constant", orthoKappa_);
+      // Only DGKS currently accepts this parameter.
+      if (orthoType_ == "DGKS" && ! ortho_.is_null()) {
+	typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
+	// This cast should always succeed; it's a bug
+	// otherwise.  (If the cast fails, then orthoType_
+	// doesn't correspond to the OrthoManager subclass
+	// instance that we think we have, so we initialized the
+	// wrong subclass somehow.)
+	rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
+      }
     }
+  }
   
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
