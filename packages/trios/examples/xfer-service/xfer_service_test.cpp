@@ -260,7 +260,6 @@ int main(int argc, char *argv[])
     }
 
     log_level debug_level = args.debug_level;
-    debug_level = LOG_ALL;
 
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
