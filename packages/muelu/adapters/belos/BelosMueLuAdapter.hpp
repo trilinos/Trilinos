@@ -1,6 +1,10 @@
 #ifndef BELOS_MUELU_ADAPTER_HPP
 #define BELOS_MUELU_ADAPTER_HPP
 
+//Note: using MACRO HAVE_XPETRA_ instead of HAVE_MUELU_ because this file will eventually be moved to Xpetra
+
+#include "Xpetra_ConfigDefs.hpp"
+
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
 
@@ -64,7 +68,7 @@ namespace Belos {
   // D - MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuXpetraPrecOp => TODO: this description have to be improved
   // TODO: I can also quickly implements couples Tpetra::MultiVector/Xpetra::Operator and Epetra_MultiVector/Xpetra::Operator=> it's more for debugging...because it skip the XpetraMultiVecTrait
 
-#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRAEXT
   // -----------------------------------------------------------------------------------------------------------------------------------
   //  A: MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
   // -----------------------------------------------------------------------------------------------------------------------------------
@@ -241,7 +245,9 @@ namespace Belos {
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
 #endif
-    //,public OperatorT<Epetra_MultiVector>  jglonglong
+#ifdef HAVE_XPETRA_EPETRA
+    // ,public OperatorT<Epetra_MultiVector> //TODO jg longlong
+#endif
   {  
     
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
@@ -309,7 +315,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
@@ -343,7 +349,9 @@ namespace Belos {
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
-    //,public OperatorT<Epetra_MultiVector>  jglonglong
+#ifdef HAVE_XPETRA_EPETRA
+    //    ,public OperatorT<Epetra_MultiVector> //TODO jglonglong
+#endif
   { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
@@ -415,7 +423,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 

@@ -39,7 +39,6 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
     COMM serial mpi
     )
 
-  IF(${PACKAGE_NAME}_ENABLE_Tpetra) #TMP
   #Simple-Belos
   IF(${PACKAGE_NAME}_ENABLE_Belos)
     PACKAGE_ADD_EXECUTABLE(
@@ -47,7 +46,6 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
       SOURCES Simple-Belos.cpp
       DEPLIBS muelu muelu-xpetra muelu-adapters
       )
-  ENDIF()
   ENDIF()
 
 ENDIF()

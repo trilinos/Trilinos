@@ -12,7 +12,6 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -43,6 +42,8 @@
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 
 int main(int argc, char *argv[]) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters matrixParameters(clp, 8748); // manage parameters of the test case
+  MueLu::Gallery::Parameters<int> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
@@ -76,11 +77,11 @@ int main(int argc, char *argv[]) {
   xpetraParameters.check();
   // TODO: check custom parameters
 
-  if (comm->getRank() == 0) {
-    matrixParameters.print();
-    xpetraParameters.print();
-    // TODO: print custom parameters
-  }
+//   if (comm->getRank() == 0) {
+//     matrixParameters.print();
+//     xpetraParameters.print();
+//     // TODO: print custom parameters
+//   }
 
   if (xpetraParameters.GetLib() != Xpetra::UseEpetra) {
     std::cout << "This example is Epetra only" << std::endl;
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+  RCP<Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   Finest->Set("A",Op);
@@ -141,21 +142,17 @@ int main(int argc, char *argv[]) {
                                 //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
-  H->SetLevel(Finest);
 
-  MueLu::AggregationOptions aggOptions;
-  aggOptions.SetPrintFlag(6);
-  aggOptions.SetMinNodesPerAggregate(3);
-  aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-  aggOptions.SetPhase3AggCreation(0.5);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetMinNodesPerAggregate(3);
+  UCAggFact->SetMaxNeighAlreadySelected(0);
+  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  UCAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<RFactory>         Rfact = rcp( new TransPFactory() );
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;
@@ -181,7 +178,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H->FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
   std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
 
@@ -221,13 +218,13 @@ int main(int argc, char *argv[]) {
   X->norm2(norms);
   std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
   // Use AMG directly as an iterative method
   {
     X->putScalar( (SC) 0.0);
 
-    H->PrintResidualHistory(true);
+    //    H->PrintResidualHistory(true);
     H->Iterate(*RHS,its,*X);
 
     X->norm2(norms);

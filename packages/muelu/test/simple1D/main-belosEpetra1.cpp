@@ -12,7 +12,6 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -43,10 +42,12 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "Epetra_CrsMatrix.h"
 
-#include "BelosEpetraAdapter.hpp" // this header defines Belos::MueLuPrecOp()
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuPrecOp()
 
 int main(int argc, char *argv[]) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
 #ifdef HAVE_MUELU_AMESOS
 
   Teuchos::oblackholestream blackhole;
@@ -81,11 +82,11 @@ int main(int argc, char *argv[]) {
   xpetraParameters.check();
   // TODO: check custom parameters
 
-  if (comm->getRank() == 0) {
-    matrixParameters.print();
-    xpetraParameters.print();
-    // TODO: print custom parameters
-  }
+//   if (comm->getRank() == 0) {
+//     matrixParameters.print();
+//     xpetraParameters.print();
+//     // TODO: print custom parameters
+//   }
 
   if (xpetraParameters.GetLib() != Xpetra::UseEpetra) {
     std::cout << "This example is Epetra only" << std::endl;
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Hierarchy> H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+  RCP<Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   Finest->Set("A",Op);
@@ -146,7 +147,6 @@ int main(int argc, char *argv[]) {
                                 //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
-  H->SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -158,7 +158,6 @@ int main(int argc, char *argv[]) {
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<RFactory>         Rfact = rcp( new TransPFactory() );
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;
@@ -186,7 +185,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  status = H->FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
   std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
 
@@ -234,7 +233,7 @@ int main(int argc, char *argv[]) {
 
   X->putScalar( (SC) 0.0);
 
-  H->PrintResidualHistory(true);
+  //  H->PrintResidualHistory(true);
   H->Iterate(*RHS,its,*X);
 
   X->norm2(norms);
