@@ -108,7 +108,7 @@ public:
    
    //! Set orthog poly object, this serves as a template for converting vectors to block vectors
    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> getVectorOrthogPoly() const
-   { TEST_FOR_EXCEPTION(vecOrthogPoly_==Teuchos::null,std::logic_error,
+   { TEUCHOS_TEST_FOR_EXCEPTION(vecOrthogPoly_==Teuchos::null,std::logic_error,
                         "SGEpetraLinearObjFactory::getVectorOrthogPoly: Vector orthogonal poly object has not been set!");
      return Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(*vecOrthogPoly_)); }
 
