@@ -195,7 +195,7 @@ public:
       input_(inputAdapter), rowMap_(inputAdapter->getMatrix()->getRowMap()),
       colMap_(inputAdapter->getMatrix()->getColMap()), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      numLocalEdges_(), numGlobalEdges_(0)
+      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_()
   {
     if (consecutiveIdsRequired && !rowMap_->isContiguous()){
       // TODO Use an identifier map to map the global IDs to consecutive IDs.
@@ -206,17 +206,16 @@ public:
 
     gno_t const *vtxIds=NULL, *nborIds=NULL;
     lno_t const  *offsets=NULL, *lids=NULL; 
-    lno_t numVtx;
     try{
-      numVtx = input_->getRowListView(vtxIds, lids, offsets, nborIds);
+      numLocalVtx_ = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
     catch (std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
-    gnos_ = arcp(vtxIds, 0, numVtx, false);   // non-owning ArrayRCPs
-    offsets_ = arcp(offsets, 0, numVtx+1, false);
+    gnos_ = arcp(vtxIds, 0, numLocalVtx_, false);   // non-owning ArrayRCPs
+    offsets_ = arcp(offsets, 0, numLocalVtx_+1, false);
 
-    numLocalEdges_ = offsets_[numVtx];
+    numLocalEdges_ = offsets_[numLocalVtx_];
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
@@ -287,7 +286,7 @@ public:
   {
     edgeIds = edgeGnos_.view(0, numLocalEdges_);
     procIds = procIds_.view(0, numLocalEdges_);
-    offsets = offsets_.view(0, numLocalEdges_+1);
+    offsets = offsets_.view(0, numLocalVtx_+1);
 
     return numLocalEdges_;
   }
@@ -337,6 +336,7 @@ private:
 
   global_size_t numLocalEdges_;
   global_size_t numGlobalEdges_;
+  size_t numLocalVtx_;
 
 };
 
