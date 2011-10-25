@@ -14,15 +14,20 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
       )
 #  ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
-  VisualizeAggregates
-  SOURCES visualizeAggregates.cpp
-  COMM serial mpi
-  DEPLIBS muelu muelu-xpetra
-)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+	IF(NOT Teuchos_ENABLE_LONG_LONG_INT)
+		PACKAGE_ADD_EXECUTABLE(
+		  VisualizeAggregates
+		  SOURCES visualizeAggregates.cpp
+		  COMM serial mpi
+		  DEPLIBS muelu muelu-xpetra
+		)
+		
+		PACKAGE_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_copyfiles
+		SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat plotaggs.py convhull.py nodes0.txt
+		)
+	ENDIF()
+ENDIF()
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_copyfiles
-SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat plotaggs.py convhull.py nodes0.txt
-)
   
 ENDIF()
