@@ -1,13 +1,17 @@
 #ifndef BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
 #define BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
 
+#include <Xpetra_ConfigDefs.hpp>
+
+#ifdef HAVE_XPETRA_TPETRA //TMP
+
 /*! \file BelosXpetraAdapter.hpp
   \brief Provides several interfaces between Belos virtual classes and Xpetra concrete classes.
 */
 
 #include <Xpetra_MultiVector.hpp>
 
-#ifndef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
 #endif
 
@@ -192,5 +196,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
   };        
 
 } // end of Belos namespace 
+
+#endif //TMP
 
 #endif // end of file BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
