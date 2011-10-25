@@ -19,13 +19,16 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_values, volume)
   {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
     const int num_cells = 20;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells, base_cell_dimension);
 
     const int cubature_degree = 2;    
     RCP<IntegrationRule> int_rule = 
-      rcp(new IntegrationRule(cubature_degree, cell_data));
+      rcp(new IntegrationRule(topo,cubature_degree, cell_data));
     
     panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > 
       int_values;

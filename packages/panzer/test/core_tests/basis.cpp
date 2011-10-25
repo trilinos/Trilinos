@@ -15,8 +15,11 @@ namespace panzer {
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells, base_cell_dimension);
     const int cubature_degree = 2;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
-    panzer::IntegrationRule int_rule(cubature_degree, cell_data);
+    panzer::IntegrationRule int_rule(topo,cubature_degree, cell_data);
     
     const std::string basis_type = "Q2";
     
@@ -58,6 +61,9 @@ namespace panzer {
     const panzer::CellData cell_data(num_cells, base_cell_dimension,
 				     cell_local_side_id);
     const int cubature_degree = 2;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     panzer::IntegrationRule int_rule(cubature_degree, cell_data);
     

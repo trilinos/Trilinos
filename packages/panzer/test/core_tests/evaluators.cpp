@@ -127,6 +127,9 @@ namespace panzer {
   {
     using panzer::IntegrationRule;
     using panzer::Basis;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::Basis> basis;
@@ -135,7 +138,7 @@ namespace panzer {
       int baseCellDim = 2;
       int cubatureDegree = 2;
       panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -154,6 +157,8 @@ namespace panzer {
     using panzer::IntegrationRule;
     using panzer::Basis;
     
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::Basis> basis;
     {
@@ -161,7 +166,7 @@ namespace panzer {
       int baseCellDim = 2;
       int cubatureDegree = 2;
       panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -180,6 +185,9 @@ namespace panzer {
   {
     using panzer::IntegrationRule;
     using panzer::Basis;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::Basis> basis;
@@ -188,7 +196,7 @@ namespace panzer {
       int baseCellDim = 2;
       int cubatureDegree = 2;
       panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -211,6 +219,9 @@ namespace panzer {
   {
     using panzer::IntegrationRule;
     using panzer::Basis;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::Basis> basis;
@@ -219,7 +230,7 @@ namespace panzer {
       int baseCellDim = 2;
       int cubatureDegree = 2;
       panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
