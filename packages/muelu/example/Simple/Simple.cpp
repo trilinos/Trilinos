@@ -1,12 +1,12 @@
 #include <iostream>
 
 // MueLu main header: include most common header files in one line
-#include "MueLu.hpp"
+#include <MueLu.hpp>
 
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
-#include "MueLu_UseDefaultTypes.hpp"  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
-#include "MueLu_UseShortNames.hpp"    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
+#include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
+#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers

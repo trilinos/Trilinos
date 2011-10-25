@@ -6,7 +6,7 @@
 #include <iostream>
 
 // MueLu main header: include most common header files in one line
-#include "MueLu.hpp"
+#include <MueLu.hpp>
 
 // Define default types
 typedef double Scalar;
@@ -16,7 +16,7 @@ typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 // Skip template names
-#include "MueLu_UseShortNames.hpp"
+#include <MueLu_UseShortNames.hpp>
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
