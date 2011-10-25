@@ -45,8 +45,6 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
       Simple-Belos
       SOURCES Simple-Belos.cpp
       DEPLIBS muelu muelu-xpetra muelu-adapters
-      NUM_MPI_PROCS 1
-      COMM serial mpi
       )
   ENDIF()
 

@@ -10,6 +10,6 @@ Examples:
  Simple-Tpetra    - How to use MueLu with Tpetra.
 
 Usage:
-./MueLu_Simple.exe                # default
-./MueLu_Simple.exe --linAlgebra=0 # Epetra
-./MueLu_Simple.exe --linAlgebra=1 # Tpetra
+./MueLu_Simple.exe
+
+The four first examples are using Tpetra when available and fall back on Epetra when Tpetra is not available.
