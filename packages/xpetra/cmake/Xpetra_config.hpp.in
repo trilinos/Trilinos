@@ -1,5 +1,7 @@
 
+#cmakedefine HAVE_XPETRA_TPETRA
+
 #cmakedefine HAVE_XPETRA_EPETRA
 
-#cmakedefine HAVE_XPETRA_TPETRA
+#cmakedefine HAVE_XPETRA_EPETRAEXT
 
