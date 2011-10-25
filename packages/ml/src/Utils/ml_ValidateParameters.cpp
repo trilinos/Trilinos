@@ -18,8 +18,6 @@ class InverseLibrary;
 
 using namespace Teuchos;
 using namespace ML_Epetra;
-using namespace std;
-
 
 bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int depth){
   Teuchos::ParameterList List,*validList;
@@ -41,7 +39,7 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
   validList=GetValidMLPParameters();
   }
   catch(...) {
-    cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<endl;
+    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -50,9 +48,9 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
   try{
     List.validateParameters(*validList,depth,VALIDATE_USED_ENABLED,VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}
   delete validList;
   return rv;
@@ -77,8 +75,8 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<string>("pre","post","both"),PL);
 #ifdef HAVE_ML_AZTECOO
-  RCP<vector<int> > options = rcp(new vector<int>(AZ_OPTIONS_SIZE));
-  RCP<vector<double> > params = rcp(new vector<double>(AZ_PARAMS_SIZE));
+  RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+  RCP<std::vector<double> > params = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
   PL->set("smoother: Aztec options",options);
   PL->set("smoother: Aztec params",params);
 #endif
@@ -416,7 +414,7 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   validList=GetValidRefMaxwellParameters();
   }
   catch(...) {
-    cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<endl;
+    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -425,9 +423,9 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what();}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what();}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what();}
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what();}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what();}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what();}
   catch(...) {rv=false;}
   delete validList;
   return rv;

@@ -15,7 +15,6 @@
 #include "Teuchos_ArrayRCP.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
-using namespace std;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 

@@ -26,8 +26,6 @@
 #include "ml_qr_fix.h"
 #endif
 
-using namespace std;
-
 namespace Teuchos {
   class ParameterList;
 }

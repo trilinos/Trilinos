@@ -11,7 +11,6 @@
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_ifpack_epetra_wrap.h"
-using namespace std;
 
 #define ABS(x)((x)>0?(x):-(x))
 
