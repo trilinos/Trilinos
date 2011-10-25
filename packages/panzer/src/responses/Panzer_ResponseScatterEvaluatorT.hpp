@@ -2,7 +2,6 @@
 #define __Panzer_ResponseScatterEvaluatorT_hpp__
 
 #include "Intrepid_FunctionSpaceTools.hpp"
-#include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"

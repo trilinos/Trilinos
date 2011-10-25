@@ -11,7 +11,6 @@
 
 // for testing gather/scatter construction
 #include "Panzer_Basis.hpp"
-#include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_PauseToAttach.hpp"
 

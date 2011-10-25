@@ -5,7 +5,6 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
-#include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
 
 // Evaluators

@@ -23,13 +23,16 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    typedef panzer::Traits::Residual Residual;
    typedef panzer::Traits::Jacobian Jacobian;
 
+   Teuchos::RCP<shards::CellTopology> topo 
+    = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
    // auxiliary information needed to construct basis object
    std::size_t numCells = 10;
    int baseCellDim = 2;
    int cubatureDegree = 2;
    std::string basisType = "Q1";
    panzer::CellData cellData(numCells,baseCellDim);
-   panzer::IntegrationRule intRule(cubatureDegree,cellData);
+   panzer::IntegrationRule intRule(topo,cubatureDegree,cellData);
 
    // build DOF names
    RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>); 

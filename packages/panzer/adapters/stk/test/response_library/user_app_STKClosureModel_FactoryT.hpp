@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include "Panzer_InputEquationSet.hpp"
-#include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"

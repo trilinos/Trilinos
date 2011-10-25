@@ -132,8 +132,11 @@ namespace panzer {
 
   Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize)
   {
+     Teuchos::RCP<shards::CellTopology> topo = 
+        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
      panzer::CellData cellData(worksetSize,2);
-     panzer::IntegrationRule intRule(1,cellData);
+     panzer::IntegrationRule intRule(topo,1,cellData);
 
      return Teuchos::rcp(new panzer::Basis("Q1",intRule)); 
   }

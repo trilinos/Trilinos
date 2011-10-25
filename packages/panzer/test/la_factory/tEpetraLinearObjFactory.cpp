@@ -153,12 +153,15 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList gatherParams;
    {
+      Teuchos::RCP<shards::CellTopology> topo = 
+         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
       // auxiliary information needed to construct basis object
       int baseCellDim = 2;
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
+      panzer::IntegrationRule intRule(topo,cubatureDegree,cellData);
 
       // build DOF names
       RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>);
@@ -176,11 +179,14 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList scatterParams;
    {
+      Teuchos::RCP<shards::CellTopology> topo = 
+         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
       int baseCellDim = 2;
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
+      panzer::IntegrationRule intRule(topo,cubatureDegree,cellData);
    
       // build basis
       RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
@@ -206,11 +212,14 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList scatterDirichletParams;
    {
+      Teuchos::RCP<shards::CellTopology> topo = 
+         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
       int baseCellDim = 2;
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
+      panzer::IntegrationRule intRule(topo,cubatureDegree,cellData);
    
       // build basis
       RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
