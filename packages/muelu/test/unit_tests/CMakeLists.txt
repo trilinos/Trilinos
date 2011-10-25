@@ -48,6 +48,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Ifpack
   ${PACKAGE_NAME}_ENABLE_Ifpack2
   ${PACKAGE_NAME}_ENABLE_Epetra
+  ${PACKAGE_NAME}_ENABLE_EpetraExt
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
@@ -74,7 +75,7 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS muelu muelu-xpetra
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 
   PACKAGE_ADD_TEST(
     UnitTests
