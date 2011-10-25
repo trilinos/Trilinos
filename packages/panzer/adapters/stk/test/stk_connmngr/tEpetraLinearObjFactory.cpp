@@ -4,6 +4,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Panzer_config.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
@@ -27,7 +28,11 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
+#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#include "Panzer_EpetraLinearObjFactoryT.hpp" // explicitly include this file
+
 template class panzer::EpetraLinearObjFactory<panzer::Traits,char>;
+#endif
 
 namespace panzer_stk {
 
