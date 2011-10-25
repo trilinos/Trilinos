@@ -73,6 +73,10 @@
 #include <mpi.h>
 #endif
 
+#if defined(__STRICT_ANSI__)
+#include <getopt.h>
+#endif
+
 extern void brdcst_command_info(void);
 #if defined(__STRICT_ANSI__)
 #include <getopt.h>
