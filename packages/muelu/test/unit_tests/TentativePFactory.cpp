@@ -386,7 +386,7 @@ namespace MueLuTests {
 
   }
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   TEUCHOS_UNIT_TEST(TentativePFactory, TentativePFactory_EpetraVsTpetra)
   {
     out << "version: " << MueLu::Version() << std::endl;
