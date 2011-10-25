@@ -25,7 +25,7 @@ using namespace std;
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
 // GO.  For now, we set them at compile time.
 typedef int z2TestLO;
-typedef long z2TestGO;
+typedef int z2TestGO;
 typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
