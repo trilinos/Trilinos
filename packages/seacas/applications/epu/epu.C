@@ -1223,7 +1223,7 @@ namespace {
 
       }
     }
-    else {
+    else if (dimensionality  == 2) {
       if (debug_level & 8) {
 	for (int i = 0; i < num_nodes; i++) {
 	  int node = local_node_to_global[proc][i];
@@ -1249,6 +1249,31 @@ namespace {
 
 	x[node] = local_x[i];
 	y[node] = local_y[i];
+      }
+    }
+    else {
+      if (debug_level & 8) {
+	for (int i = 0; i < num_nodes; i++) {
+	  int node = local_node_to_global[proc][i];
+	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
+	    if (x[node] != local_x[i]) {
+	      std::cerr << "\nWARNING: Node " << node+1
+			<< " has different coordinates in at least two files.\n"
+			<< "         cur value = "
+			<< std::scientific << std::setprecision(6)
+			<< std::setw(14) << x[node] << "\tnew value = "
+			<< std::setw(14) << local_x[i] 
+			<< " from processor " << proc << std::endl;
+	    }
+	  }
+	}
+      }
+      for (int i = 0; i < num_nodes; i++) {
+
+	// The following WILL overwrite x[node] if node is the same for
+	// different processors
+	int node = local_node_to_global[proc][i];
+	x[node] = local_x[i];
       }
     }
     return error;
@@ -2101,7 +2126,7 @@ namespace {
 	glob_sets[ns].dfCount = glob_sets[ns].nodeCount;
 
 	// distFactors is a vector of 'char' to allow storage of either float or double.
-	glob_sets[ns].distFactors.resize(glob_sets[ns].dfCount * sizeof(T));
+	glob_sets[ns].distFactors.resize(glob_sets[ns].dfCount * ExodusFile::io_word_size());
 
 	T *glob_df = (T*)(&glob_sets[ns].distFactors[0]);
 	size_t j = 0;
@@ -2116,7 +2141,7 @@ namespace {
 	SMART_ASSERT(j == glob_sets[ns].entity_count())(j)(glob_sets[ns].entity_count())(ns);
 
 	// See if we need a map from local nodeset position to global nodeset position
-	// Only needed if there are nodeset variables (or dist factors).
+	// Only needed if there are nodeset variables
 	// Assume all files have same number of variables...
 	int num_vars;
 	{
