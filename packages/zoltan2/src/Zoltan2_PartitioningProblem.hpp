@@ -62,6 +62,9 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::solve()
 {
   HELLO;
+
+  this->solution_ = rcp(new PartitioningSolution<Adapter>);
+
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
