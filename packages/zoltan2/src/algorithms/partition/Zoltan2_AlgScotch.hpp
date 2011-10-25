@@ -6,7 +6,9 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
+#ifdef HAVE_SCOTCH
 #include "ptscotch.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Scotch.hpp
@@ -51,6 +53,10 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   const RCP<const Teuchos::Comm<int> > &comm
 ) 
 {
+#ifndef HAVE_SCOTCH
+  cout << "Scotch requested but not compiled into Zoltan2." << endl
+       << "Please set CMake flag TPL_ENABLE_Scotch:BOOL=ON." << endl;
+#else
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
@@ -143,6 +149,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   //TODO if (ewtdim) delete [] edlotab;
 
   delete [] partloctab;  // unless it will be part of Solution class
+#endif // HAVE_SCOTCH
 }
 
 }
