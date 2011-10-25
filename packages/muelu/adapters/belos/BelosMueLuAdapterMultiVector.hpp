@@ -43,8 +43,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
   {
 
   private:
+#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
     typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+#endif
 
   public:
  
@@ -410,12 +412,16 @@ namespace Belos { // should be moved to Belos or Xpetra?
     typedef int LO;
     typedef int GO;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    
-    typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
-    typedef Xpetra::EpetraMultiVector                    EpetraMultiVector;
 
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
     typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-    typedef MultiVecTraits<Scalar, Epetra_MultiVector>                      MultiVecTraitsEpetra;
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    typedef Xpetra::EpetraMultiVector                  EpetraMultiVector;
+    typedef MultiVecTraits<Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
+#endif
 
   public:
  
