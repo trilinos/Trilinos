@@ -216,6 +216,27 @@ namespace Belos {
     //! Destructor, declared virtual for safe inheritance.
     virtual ~TsqrOrthoManager() {}
 
+    /// \brief Set callback to be invoked on reorthogonalization.
+    ///
+    /// This callback is invoked right after the first projection
+    /// step, and only if reorthogonalization will be necessary.  It
+    /// is called before actually reorthogonalizing.  The first
+    /// argument gives the norms of the columns of the input
+    /// multivector before the first projection pass, and the second
+    /// argument gives their norms after the first projection pass.
+    ///
+    /// The callback is null by default.  If the callback is null, no
+    /// callback will be invoked.
+    ///
+    /// \warning We assume that the input arguments of the function's
+    ///   operator() are only valid views within the scope of the
+    ///   function.  Your callback should not keep the views.
+    void 
+    setReorthogonalizationCallback (const Teuchos::RCP<ReorthogonalizationCallback<Scalar> >& callback)
+    {
+      impl_.setReorthogonalizationCallback (callback);
+    }
+
     void innerProd (const MV &X, const MV &Y, mat_type& Z) const {
       return impl_.innerProd (X, Y, Z);
     }
