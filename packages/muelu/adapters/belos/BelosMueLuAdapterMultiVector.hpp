@@ -7,10 +7,14 @@
 
 #include <Xpetra_MultiVector.hpp>
 
+#include <Xpetra_TpetraMultiVector.hpp>
+
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
+
+//TODO: missing headers Belos/Tpetra and Belos/Epetra adapters?
 
 namespace Belos { // should be moved to Belos or Xpetra?
 
@@ -31,6 +35,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
   {
 
   private:
+    typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
     typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
 
   public:
