@@ -17,11 +17,7 @@ PACKAGE_ADD_DEBUG_OPTION()
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   HAVE_${PACKAGE_NAME_UC}_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
-  OFF )
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  SET(HAVE_MUELU_EPETRA_AND_EPETRAEXT ON)
-  #TODO? Also Set PACKAGE_NAME_ENABLE_Epetra_and_EpetraExt ?
-ENDIF()
+  OFF)
 
 #
 # C) Add the libraries, tests, and examples
