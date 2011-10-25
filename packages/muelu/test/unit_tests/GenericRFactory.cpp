@@ -19,7 +19,7 @@
 #include "MueLu_UseShortNames.hpp"
 
 //TODO: remove this
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_RowMatrixOut.h"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #endif

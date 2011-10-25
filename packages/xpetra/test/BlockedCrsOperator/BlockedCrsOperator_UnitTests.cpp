@@ -571,7 +571,7 @@ namespace {
   /// simple test routine for the apply function of BlockedCrsOperator
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraApply, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRAEXT
 
 #ifdef HAVE_MPI
 
@@ -865,7 +865,7 @@ namespace {
   /// simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult2x1, Scalar, LO, GO, Node)
   {
-#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRAEXT
     RCP<const Comm<int> > comm = getDefaultComm();
 
     // build maps

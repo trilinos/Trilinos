@@ -32,7 +32,7 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Memory.hpp"
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
@@ -256,7 +256,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
       if (C->getRowMap()->lib() == Xpetra::UseEpetra)
       {
-#       ifndef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#       ifndef HAVE_MUELU_EPETRAEXT
         throw(Exceptions::RuntimeError("MueLu::TwoMatrixMultiply requires EpetraExt to be compiled."));
 #       else
         RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
@@ -339,7 +339,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
         } //switch (canUseML)
 
-#       endif //ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#       endif //ifdef HAVE_MUELU_EPETRAEXT
 
       } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
@@ -366,7 +366,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       return C;
     } //TwoMatrixMultiply()
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
    // Michael Gee's MLMultiply
    static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
             RCP<Epetra_CrsMatrix> epB)
@@ -497,7 +497,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         return Teuchos::null;
 #endif
     }
-#endif //ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#endif //ifdef HAVE_MUELU_EPETRAEXT
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
@@ -586,7 +586,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       }
 
       if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
         
@@ -639,7 +639,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         C = rcp( new CrsOperator(A->getRowMap(), 5) );
 
       if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
@@ -677,7 +677,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
     }
 
     static void MatrixPrint(RCP<Operator> const &Op, std::string const &label) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT 
+#ifdef HAVE_MUELU_EPETRAEXT 
       RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
       int mypid = epOp->RowMap().Comm().MyPID();
       if (mypid == 0)
@@ -875,10 +875,10 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
    static void Write(std::string const & fileName, Operator const & Op) {
     CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
       int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
       if (rv != 0) {
@@ -892,7 +892,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 #endif
       return;
     }
-#endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
     const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);    
@@ -966,7 +966,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
     } //simple_Transpose
 #endif // HAVE_MUELU_TPETRA
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
    /*! @brief Simple transpose for Epetra_CrsMatrix types
 
       Note:  This is very inefficient, as it inserts one entry at a time.
@@ -1071,13 +1071,13 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
                                 bool doOptimizeStorage=true)
    {
    //Note: Epetra and Tpetra could be enabled simultaneously.
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
      std::string TorE = "epetra";
 #else
      std::string TorE = "tpetra";
 #endif
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epOp;
       try {
         epOp = Op2NonConstEpetraCrs(Op);
@@ -1174,7 +1174,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       } 
 
       if (TorE == "epetra") {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
         Epetra_Map const &rowMap = epOp->RowMap();
         int nnz;
         double *vals;
@@ -1186,7 +1186,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
         }
 #else
         throw(Exceptions::RuntimeError("Epetra (Err. 1)"));   
-#endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#endif // HAVE_MUELU_EPETRAEXT
       }
 
       if (TorE != "epetra" && TorE != "tpetra")
@@ -1254,13 +1254,13 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
      std::string TorE = "epetra";
 #else
      std::string TorE = "tpetra";
 #endif
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
      try {
        epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
@@ -1320,13 +1320,13 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
      std::string TorE = "epetra";
 #else
      std::string TorE = "tpetra";
 #endif
 
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
      try {
        epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
@@ -1362,7 +1362,7 @@ public:
        throw(Exceptions::RuntimeError("Tpetra"));
 #endif
      } else {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
        //epetra case
        Epetra_RowMatrixTransposer et(&*epetraOp);
        Epetra_CrsMatrix *A;
