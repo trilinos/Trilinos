@@ -7,7 +7,9 @@
 
 #include <Xpetra_MultiVector.hpp>
 
+#ifndef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
+#endif
 
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
