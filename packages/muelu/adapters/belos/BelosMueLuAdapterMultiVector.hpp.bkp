@@ -1,4 +1,11 @@
-/* /!\ Implementation of the Xpetra::Multivector for Belos is not finished yet! */
+/*
+  This is an implementation of the Belos/Xpetra::Multivector adapter without using Belos/Tpetra::Multivector and Belos/Epetra::Multivector adapters.
+  It is not finished.
+*/
+
+
+
+
 
 
 
