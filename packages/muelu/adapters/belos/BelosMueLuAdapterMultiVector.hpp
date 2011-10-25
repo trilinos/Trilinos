@@ -210,8 +210,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTimesMatAddMv(alpha, toTpetra(A), B, beta, toTpetra(mv));
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -222,8 +224,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvAddMv(alpha, toTpetra(A), beta, toTpetra(B), toTpetra(mv));
+        return;
+      }
+
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -234,8 +239,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
-        MultiVecTraitsTpetra::MvScale(toTpetra(mv) ,alpha);
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
+        MultiVecTraitsTpetra::MvScale(toTpetra(mv), alpha);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -246,8 +253,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
-        MultiVecTraitsTpetra::MvScale(toTpetra(mv) ,alphas);
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
+        MultiVecTraitsTpetra::MvScale(toTpetra(mv), alphas);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -261,12 +270,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
 
-      XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
-      XPETRA_FACTORY_END;
- 
 #ifdef HAVE_XPETRA_TPETRA
-      if (A.getMap()->lib() == Xpetra::UseTpetra) 
+      if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTransMv(alpha, toTpetra(A), toTpetra(B), C);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
@@ -277,8 +285,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (A.getMap()->lib() == Xpetra::UseTpetra) 
+      if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvDot(toTpetra(A), toTpetra(B), dots);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
@@ -289,8 +299,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvNorm(toTpetra(mv), normvec, type);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -301,8 +313,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -316,8 +330,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -330,8 +346,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::Assign(toTpetra(A), toTpetra(mv));
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -342,8 +360,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvRandom(toTpetra(mv));
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -354,8 +374,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvInit(toTpetra(mv), alpha);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -366,8 +388,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvPrint(toTpetra(mv), os);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -603,13 +627,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #endif
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTimesMatAddMv(alpha, toTpetra(A), B, beta, toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvTimesMatAddMv(alpha, toEpetra(A), B, beta, toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -619,13 +647,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvAddMv(alpha, toTpetra(A), beta, toTpetra(B), toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvAddMv(alpha, toEpetra(A), beta, toEpetra(B), toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -635,13 +667,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
-        MultiVecTraitsTpetra::MvScale(toTpetra(mv) ,alpha);
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
+        MultiVecTraitsTpetra::MvScale(toTpetra(mv), alpha);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
-        MultiVecTraitsEpetra::MvScale(toEpetra(mv) ,alpha);
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
+        MultiVecTraitsEpetra::MvScale(toEpetra(mv), alpha);
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -651,13 +687,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
-        MultiVecTraitsTpetra::MvScale(toTpetra(mv) ,alphas);
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
+        MultiVecTraitsTpetra::MvScale(toTpetra(mv), alphas);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
-        MultiVecTraitsEpetra::MvScale(toEpetra(mv) ,alphas);
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
+        MultiVecTraitsEpetra::MvScale(toEpetra(mv), alphas);        
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -669,18 +709,19 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
-
-      XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
-      XPETRA_FACTORY_END;
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (A.getMap()->lib() == Xpetra::UseTpetra) 
+      if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTransMv(alpha, toTpetra(A), toTpetra(B), C);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (A.getMap()->lib() == Xpetra::UseEpetra) 
+      if (A.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvTransMv(alpha, toEpetra(A), toEpetra(B), C);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_END;
@@ -690,13 +731,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (A.getMap()->lib() == Xpetra::UseTpetra) 
+      if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvDot(toTpetra(A), toTpetra(B), dots);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (A.getMap()->lib() == Xpetra::UseEpetra) 
+      if (A.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvDot(toEpetra(A), toEpetra(B), dots);
+        return;
+      }
 #endif
 
       XPETRA_FACTORY_END;
@@ -706,13 +751,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvNorm(toTpetra(mv), normvec, type);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvNorm(toEpetra(mv), normvec, type);
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -722,13 +771,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::SetBlock(toEpetra(A), index, toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -741,13 +794,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::SetBlock(toEpetra(A), index, toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -759,13 +816,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::Assign(toTpetra(A), toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::Assign(toEpetra(A), toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -775,13 +836,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     {
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvRandom(toTpetra(mv));
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvRandom(toEpetra(mv));
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -791,13 +856,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvInit(toTpetra(mv), alpha);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvInit(toEpetra(mv), alpha);
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
@@ -807,13 +876,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
     { 
  
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvPrint(toTpetra(mv), os);
+        return;
+      }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra) {
         MultiVecTraitsEpetra::MvPrint(toEpetra(mv), os);
+        return;
+      }
 #endif
  
       XPETRA_FACTORY_END;
