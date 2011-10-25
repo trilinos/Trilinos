@@ -3,7 +3,7 @@ CXXEXTRA_DEFINES = -I$(INCDIR)/ioss -DNO_MPI
 
 PROGS=exomatlab2
 
-SRCS = EML_exomatlab.C EML_SystemInterface.C 
+SRCS = exomatlab.C EML_SystemInterface.C 
 OBJS = $(SRCS:.C=.o)
 
 NormalCCTarget($(PROGS), $(OBJS), NullParameter, NullParameter, $(LIBS))

@@ -6,7 +6,7 @@ addvar.f algebra.f alicmd.f aparse.f caltim.f chkdis.f \
 chkerr.f chkfnc.f   chkpar.f chksyn.f cmdtim.f cnvnum.f \
 comand.f cpyvar.f   ag_dbicon.f ag_dbielb.f ag_dbinam.f \
 ag_dbiqa.f  ag_dbivtt.f   ag_dblist.f ag_dboqa.f  ag_dbpelb.f ag_dbpini.f \
-ag_dbpnam.f ag_dbpqa.f    ag_dbptim.f ag_dbvini.f delcmd.f dofnc1.f \
+ag_dbpnam.f ag_dbptim.f ag_dbvini.f delcmd.f dofnc1.f \
 dofnc2.f dofncg.f   doif.f   dooper.f eval.f   fixone.f \
 initim.f   isize.f  lnkfnc.f lnksto.f lnkvar.f \
 loceqv.f locnam.f   locrl.f  makevo.f mlist.f  \

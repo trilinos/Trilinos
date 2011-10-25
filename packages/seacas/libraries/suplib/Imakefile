@@ -37,11 +37,11 @@ LIBDIR     = $(PLIBDIR)
 
 LIB = suplib
 
-INCLIST = argparse.inc add_to_log.h tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h
+INCLIST = argparse.inc add_to_log.h getline.h SL_tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h
 
-OBJSC  = tokenize.o  GetLongOpt.o smart_assert.o timer.o to_string.o adler.o
+OBJSC  = SL_tokenize.o  GetLongOpt.o smart_assert.o timer.o to_string.o adler.o
 
-OBJSc  = addlog.o wildcmp.o add_to_log.o
+OBJSc  = addlog.o add_to_log.o getline.o
 
 OBJSf1 = abrstr.o addv.o   banner.o bannr2.o batch.o  ckexod.o \
          cknone.o ckwhol.o copint.o cpuifc.o cpyint.o cpylog.o dbpini.o \
