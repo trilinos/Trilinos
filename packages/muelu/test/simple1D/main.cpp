@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
 
   //Finest->print(std::cout);
 
-  //#define JG_TODO
+#define JG_TODO
 #ifdef JG_TODO
   // Use AMG as a preconditioner in Belos
   {
@@ -210,8 +210,8 @@ int main(int argc, char *argv[]) {
     // Create an iterative solver manager.
 
     // Belos parameter list
-    int maxiters = 10;
-    double tol = 1e-4;
+    int maxiters = 100;
+    double tol = 1e-7;
     Teuchos::ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
