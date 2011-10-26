@@ -237,8 +237,10 @@ evaluateFields(typename Traits::EvalData workset)
                Teuchos::RCP<Epetra_CrsMatrix> Jac = (*itr)->A;
 
                // Sum residual
-               if(r!=Teuchos::null)
-       	          r->SumIntoMyValue(row,0,scatterField.val().coeff(stochIndex));
+               if(r!=Teuchos::null) {
+       	          // r->SumIntoMyValue(row,0,scatterField.val().coeff(stochIndex));
+       	          (*r)[row] += scatterField.val().coeff(stochIndex);
+               }
        
                // loop over the sensitivity indices: all DOFs on a cell
                jacRow.resize(scatterField.size());

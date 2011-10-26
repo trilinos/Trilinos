@@ -129,9 +129,9 @@ evaluateFields(typename Traits::EvalData workset)
                // extract solution and time derivative vectors
                Teuchos::RCP<Epetra_Vector> x;
                if (useTimeDerivativeSolutionVector_)
-                 x = (*sgEpetraContainer->begin())->dxdt;
+                 x = (*itr)->dxdt;
                else
-                 x = (*sgEpetraContainer->begin())->x; 
+                 x = (*itr)->x; 
 
                field.fastAccessCoeff(stochIndex) = (*x)[lid];
             }
