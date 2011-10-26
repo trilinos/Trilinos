@@ -202,12 +202,6 @@ int main(int argc, char *argv[]) {
   *out << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
-  // print out aggregation information
-  for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
-    RCP<Level> level = H->GetLevel((int)l);
-    ExportAggregates(level, UCAggFact.get(),comm);
-  }
-
   Finest->print(*out);
 
   RCP<Level> coarseLevel = H->GetLevel(1);
