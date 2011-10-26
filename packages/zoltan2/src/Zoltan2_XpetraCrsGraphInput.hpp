@@ -17,83 +17,9 @@
 #include <Xpetra_EpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_XpetraTraits.hpp>
 
 namespace Zoltan2 {
-
-/////////////////////////////////////////////////////////////////////////////
-// Specializations of InputTraits for Xpetra, Epetra, and Tpetra graphs.
-
-// Xpetra::CrsGraph
-// KDDKDD:  Do we need specializations for Xpetra::EpetraCrsGraph and
-// KDDKDD:  Xpetra::TpetraCrsGraph
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Xpetra::CrsGraph";}
-  static inline RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> >
-    convertToXpetra(
-      const RCP<const Xpetra::CrsGraph<lno_t, gno_t, node_t> > &a)
-    {
-      return a;
-    }
-};
-
-
-// Tpetra::CrsGraph
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Tpetra::CrsGraph";}
-
-  // Traits specific to Tpetra::CrsGraph
-  typedef typename Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef typename Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
-  typedef typename Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
-
-  static inline RCP<const xgraph_t> convertToXpetra(
-    const RCP<const tgraph_t> &a)
-    {
-      return rcp(new xtgraph_t(rcp_const_cast<tgraph_t>(a)));
-    }
-};
-
-
-// Epetra_CrsGraph
-template < >
-struct InputTraits<Epetra_CrsGraph>
-{
-  typedef float scalar_t;
-  typedef int   lno_t;
-  typedef int   gno_t;
-  typedef int   lid_t;
-  typedef int   gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
-  static inline std::string name() {return "Epetra_CrsGraph";}
-  static inline RCP<const Xpetra::CrsGraph<lno_t,gno_t,node_t> >
-    convertToXpetra(const RCP<const Epetra_CrsGraph> &a)
-    {
-      return rcp(new Xpetra::EpetraCrsGraph(
-                             rcp_const_cast<Epetra_CrsGraph>(a)));
-    }
-};
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraCrsGraphInput
@@ -143,7 +69,7 @@ public:
     cout << __func__ << " getting Traits from "
          << InputTraits<User>::name() << endl;
 
-    graph_ = InputTraits<User>::convertToXpetra(ingraph);
+    graph_ = XpetraTraits<User>::convertToXpetra(ingraph);
     makeOffsets();
   }
 

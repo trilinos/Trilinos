@@ -38,18 +38,87 @@ struct InputTraits {
   static inline std::string name() {return "InputAdapter";}
 };
 
-#ifdef KDDKDD_CAN_WE_LEAVE_SPECIALIZATIONS_IN_SPECIFIC_INPUT_ADAPTER_FILES
-// KDDKDD For now, I left the specializations in the same files as their
-// KDDKDD specific input adapters.  That way, I could add methods (e.g.,
-// KDDKDD convertToXpetra) to the InputTraits
-// KDDKDD for specific specializations (Epetra, Tpetra, Xpetra) without
-// KDDKDD this interface file becoming confusing for users (who might 
-// KDDKDD think they need to implement convertToXpetra for every input adapter.
-// KDDKDD Also, I envision users would implement their own Traits and Adapters
-// KDDKDD in one file, rather than edit this file.
-// KDDKDD If this idea is faulty, we can restore this code, adding the 
-// KDDKDD extra methods for Epetra, Tpetra and Xpetra specializations.
 
+// Specialization for Xpetra::CrsMatrix.
+// KDDKDD Do we need specializations for Xpetra::EpetraCrsMatrix and
+// KDDKDD Xpetra::TpetraCrsMatrix?
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsMatrix";}
+};
+
+// Specialization for Tpetra::CrsMatrix
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsMatrix";}
+};
+
+// Epetra_CrsMatrix
+template < >
+struct InputTraits<Epetra_CrsMatrix>
+{
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef int lid_t;
+  typedef int gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_CrsMatrix";}
+};
+
+// Xpetra::CrsGraph
+// KDDKDD:  Do we need specializations for Xpetra::EpetraCrsGraph and
+// KDDKDD:  Xpetra::TpetraCrsGraph
+template <typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef float         scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::CrsGraph";}
+};
+
+// Tpetra::CrsGraph
+template <typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef float         scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::CrsGraph";}
+};
+
+// Epetra_CrsGraph
 template < >
 struct InputTraits<Epetra_CrsGraph>
 {
@@ -62,77 +131,7 @@ struct InputTraits<Epetra_CrsGraph>
   static inline std::string name() {return "Epetra_CrsGraph";}
 };
 
-template < >
-struct InputTraits<Epetra_CrsMatrix>
-{
-  typedef double scalar_t;
-  typedef int lno_t; 
-  typedef int gno_t; 
-  typedef int lid_t;
-  typedef int gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t; 
-  static inline std::string name() {return "Epetra_CrsMatrix";}
-};  
 
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{   
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Tpetra::CrsGraph";}
-};  
-
-template <typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-{   
-  typedef Scalar        scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Tpetra::CrsMatrix";}
-};
-
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{ 
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Xpetra::CrsGraph";}
-};
-
-template <typename Scalar, 
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-{ 
-  typedef Scalar        scalar_t; 
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "Xpetra::CrsMatrix";}
-};
-
-#endif  //KDDKDD_CAN_WE_LEAVE_SPECIALIZATIONS_IN_SPECIFIC_INPUT_ADAPTER_FILES
 }
 
 #endif

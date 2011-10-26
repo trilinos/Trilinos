@@ -200,24 +200,23 @@ public:
       input_(inputAdapter), rowMap_(inputAdapter->getMatrix()->getRowMap()),
       colMap_(inputAdapter->getMatrix()->getColMap()), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      numLocalEdges_(), numGlobalEdges_(0)
+      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_()
   {
     gno_t const *vtxIds=NULL, *nborIds=NULL;
     lno_t const  *offsets=NULL, *lids=NULL; 
-    lno_t numVtx;
     try{
-      numVtx = input_->getRowListView(vtxIds, lids, offsets, nborIds);
+      numLocalVtx_ = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
     catch (std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
-    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numVtx);
+    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx);
     gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
 
-    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numVtx+1);
+    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numLocalVtx+1);
     offsets_ = av2.getConst();
 
-    numLocalEdges_ = offsets_[numVtx];
+    numLocalEdges_ = offsets_[numLocalVtx_];
 
     ArrayView<gno_t> av3(const_cast<gno_t *>(nborIds), numLocalEdges_);
     edgeGnos_ = av3.getConst();
@@ -294,7 +293,7 @@ public:
   {
     edgeIds = edgeGnos_.view(0, numLocalEdges_);
     procIds = procIds_.view(0, numLocalEdges_);
-    offsets = offsets_.view(0, gnos_.size()+1);
+    offsets = offsets_.view(0, numLocalVtx_+1);
 
     return numLocalEdges_;
   }
@@ -344,6 +343,7 @@ private:
 
   global_size_t numLocalEdges_;
   global_size_t numGlobalEdges_;
+  size_t numLocalVtx_;
 
 };
 

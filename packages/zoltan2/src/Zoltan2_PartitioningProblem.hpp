@@ -3,7 +3,7 @@
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
-// #include <Zoltan2_PartitioningAlgorithms.hpp>
+#include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
@@ -62,11 +62,15 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::solve()
 {
   HELLO;
+
+  this->solution_ = rcp(new PartitioningSolution<Adapter>);
+
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  // AlgScotch<Adapter> alg(this->model_, this->solution_, this->params_);
+  AlgPTScotch<Adapter> alg(this->graphModel_, this->solution_, this->params_,
+                           this->comm_);
 }
 
 ////////////////////////////////////////////////////////////////////////
