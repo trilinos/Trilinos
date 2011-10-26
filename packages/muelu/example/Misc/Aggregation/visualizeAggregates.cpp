@@ -48,19 +48,7 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Aggregates.hpp"
 
-//
-typedef double Scalar;
-typedef int LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#endif
-//
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps
-    LocalMatOps;
-//
+#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm );
