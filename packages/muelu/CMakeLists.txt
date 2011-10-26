@@ -19,6 +19,9 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
   OFF)
 
+# Add directory xpetra/cmake/ to the cmake module search path
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/xpetra/cmake)
+
 #
 # C) Add the libraries, tests, and examples
 #

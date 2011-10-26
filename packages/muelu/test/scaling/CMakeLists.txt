@@ -1,13 +1,3 @@
-INCLUDE(PackageAddExecutableAndTest)
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
-
 # Ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos
@@ -15,6 +5,21 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
+
+#
+# Executable
+#
+
+INCLUDE(PackageAddExecutable)
+
+#TODO: how to remove that?
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 # ScalingTest is compile with long long int when Teuchos_ENABLE_LONG_LONG_INT=ON
 # The name of the executable is changed to make sure that long int support is correctly 
@@ -24,11 +29,7 @@ IF(Teuchos_ENABLE_LONG_LONG_INT)
 ELSE()
   SET(MueLu_ScalingTestName ScalingTest-Int)
 ENDIF()
-#TODO: It is actually possible to build ScalingTest-Int in both case
-
-#
-# Executable
-#
+#TODO: It is actually possible to build and test ScalingTest-Int also when LONG_LONG_INT=ON
 
 PACKAGE_ADD_EXECUTABLE(
   ${MueLu_ScalingTestName}
@@ -41,43 +42,18 @@ PACKAGE_ADD_EXECUTABLE(
 # Tests
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
+INCLUDE(XpetraAddTest)
 
-  PACKAGE_ADD_TEST(
-    ${MueLu_ScalingTestName}
-    NAME "ScalingTestEpetra"
-    ARGS "--linAlgebra=0"
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
+IF (${PACKAGE_NAME}_ENABLE_Amesos)
 
-  PACKAGE_ADD_TEST(
-    ${MueLu_ScalingTestName}
-    NAME "ScalingTestEpetra"
-    ARGS "--linAlgebra=0"
-    NUM_MPI_PROCS 4
-    COMM mpi
-    )
+  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "mpi"        4)
+  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Amesos2)
   
-  PACKAGE_ADD_TEST(
-    ${MueLu_ScalingTestName}
-    NAME "ScalingTestTpetra"
-    ARGS "--linAlgebra=1"
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  PACKAGE_ADD_TEST(
-    ${MueLu_ScalingTestName}
-    NAME "ScalingTestTpetra"
-    ARGS "--linAlgebra=1"
-    NUM_MPI_PROCS 4
-    COMM mpi
-    )
+  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "mpi"        4)
+  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
 
 ENDIF()
-
