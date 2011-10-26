@@ -1,5 +1,6 @@
 #include <mpi.h>
 #include <iostream>
+#include <limits>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -108,6 +109,63 @@ int main(int narg, char** arg)
   Zoltan2::PartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
   problem.redistribute();
+
+  ////// Basic metric checking
+  size_t checkNparts, checkLength, totalWork;
+  z2TestGO *checkGIDs;
+  z2TestLO *checkLIDs;
+  size_t *checkParts;
+  Zoltan2::PartitioningSolution<SparseMatrixAdapter> *soln = 
+           problem.getSolution();
+  soln->getPartition(&checkNparts, &checkLength,
+                     &checkGIDs, &checkLIDs, &checkParts);
+  if (me == 0) 
+    cout << "Number of parts:  " << checkNparts 
+         << (checkNparts != comm->getSize() ? "  FAIL": " ")
+         << endl;
+
+  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
+                                  &checkLength, &totalWork);
+  if (me == 0)
+    cout << "Total work:  " << totalWork 
+         << ";  NumRows: " << origMatrix->getGlobalNumRows() 
+         << (totalWork != origMatrix->getGlobalNumRows() ? "  FAIL" : " ")
+         << endl;
+
+  size_t *countPerPart = new size_t[checkNparts];
+  size_t *globalCountPerPart = new size_t[checkNparts];
+  for (size_t i = 0; i < checkNparts; i++) countPerPart[i] = 0;
+  for (size_t i = 0; i < checkLength; i++) {
+    if (checkParts[i] >= checkNparts) cout << "Invalid Part:  FAIL" << endl;
+    countPerPart[checkParts[i]]++;
+  }
+  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
+                                  countPerPart, globalCountPerPart);
+  if (me == 0)
+    for (size_t i = 0; i < checkNparts; i++) 
+      cout << "Part " << i << " load " << globalCountPerPart[i] << endl;
+
+  size_t min = std::numeric_limits<std::size_t>::max();
+  size_t max = 0;
+  size_t sum = 0;
+  size_t minrank = 0, maxrank = 0;
+  for (size_t i = 0; i < checkNparts; i++) {
+    if (globalCountPerPart[i] < min) {min = globalCountPerPart[i]; minrank = i;}
+    if (globalCountPerPart[i] > max) {max = globalCountPerPart[i]; maxrank = i;}
+    sum += globalCountPerPart[i];
+  }
+  delete [] countPerPart;
+  delete [] globalCountPerPart;
+
+  if (me == 0) {
+    float avg = (float) sum / (float) checkNparts;
+    cout << "Minimum load:  " << min << " on rank " << minrank << endl;
+    cout << "Maximum load:  " << max << " on rank " << maxrank << endl;
+    cout << "Average load:  " << avg << endl;
+    cout << "Total load:    " << sum 
+         << (sum != totalWork ? " FAIL" : " ") << endl;
+    cout << "Imbalance:     " << max / avg << endl;
+  }
 
   ////// Redistribute matrix and vector into new matrix and vector.
 
