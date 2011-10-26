@@ -289,7 +289,7 @@ public:
       const Epetra_Map &sMap = ematrix->RowMap();
 
       // target map
-      Epetra_BlockMap tMap(numGlobalRows, numNewRows, newGidArray.getRawPtr(),
+      Epetra_Map tMap(numGlobalRows, numNewRows, newGidArray.getRawPtr(),
         1, base, ecomm);
 
       // target matrix
@@ -308,9 +308,7 @@ public:
         nnz = static_cast<int *>(newRowSizes.getRawPtr());
       }
 
-      Epetra_CrsMatrix *M ;//TODO KDDKDD DOES NOT COMPILE WITH REST OF THIS LINE = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
-      // TODO KDDKDD THE ABOVE LINE WILL NOT PRODUCE CORRECT RESULTS!
-
+      Epetra_CrsMatrix *M = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
       Epetra_Import importer(tMap, sMap);
 
       M->Import(*ematrix, importer, Insert);
