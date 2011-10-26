@@ -75,10 +75,10 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 template < >
 struct XpetraTraits<Epetra_CrsMatrix>
 {
-  typedef typename InputTraits<Epetra_CrsMatrix>::scalar_t scalar_t;
-  typedef typename InputTraits<Epetra_CrsMatrix>::lno_t    lno_t;
-  typedef typename InputTraits<Epetra_CrsMatrix>::gno_t    gno_t;
-  typedef typename InputTraits<Epetra_CrsMatrix>::node_t   node_t;
+  typedef InputTraits<Epetra_CrsMatrix>::scalar_t scalar_t;
+  typedef InputTraits<Epetra_CrsMatrix>::lno_t    lno_t;
+  typedef InputTraits<Epetra_CrsMatrix>::gno_t    gno_t;
+  typedef InputTraits<Epetra_CrsMatrix>::node_t   node_t;
   static inline RCP<const Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> >
     convertToXpetra(const RCP<const Epetra_CrsMatrix> &a)
     {
@@ -127,9 +127,9 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
 template < >
 struct XpetraTraits<Epetra_CrsGraph>
 {
-  typedef typename InputTraits<Epetra_CrsMatrix>::lno_t    lno_t;
-  typedef typename InputTraits<Epetra_CrsMatrix>::gno_t    gno_t;
-  typedef typename InputTraits<Epetra_CrsMatrix>::node_t   node_t;
+  typedef InputTraits<Epetra_CrsMatrix>::lno_t    lno_t;
+  typedef InputTraits<Epetra_CrsMatrix>::gno_t    gno_t;
+  typedef InputTraits<Epetra_CrsMatrix>::node_t   node_t;
   static inline RCP<const Xpetra::CrsGraph<lno_t,gno_t,node_t> >
     convertToXpetra(const RCP<const Epetra_CrsGraph> &a)
     {

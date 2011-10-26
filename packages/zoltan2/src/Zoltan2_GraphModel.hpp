@@ -210,10 +210,10 @@ public:
     catch (std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
-    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx);
+    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx_);
     gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
 
-    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numLocalVtx+1);
+    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numLocalVtx_+1);
     offsets_ = av2.getConst();
 
     numLocalEdges_ = offsets_[numLocalVtx_];
