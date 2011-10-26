@@ -2,7 +2,6 @@ INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-	IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 		IF(NOT Teuchos_ENABLE_LONG_LONG_INT)
 
 			PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -22,6 +21,5 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 			  A.mat
 			  P.mat
 			  )
-		ENDIF()
 	ENDIF()
 ENDIF()
