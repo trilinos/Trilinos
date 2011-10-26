@@ -690,7 +690,7 @@ namespace {
   /// simple test for matrix-matrix multiplication for two 2x2 blocked matrices
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsOperator, EpetraMatrixMatrixMult, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
   {
-#ifdef HAVE_XPETRA_EPETRA_AND_EPETRA_EXT
+#ifdef HAVE_XPETRA_EPETRAEXT
 
     RCP<Epetra_Comm> Comm;
     if(testMpi)
@@ -970,7 +970,6 @@ namespace {
     TEUCHOS_TEST_COMPARE(resvector2->norm2(), <, 1e-16, out, success);
 #endif
   }
-
 
   //
   // INSTANTIATIONS
