@@ -540,7 +540,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASAprepro" dir="seacas/applications/aprepro" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -555,7 +555,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASConjoin" dir="seacas/applications/conjoin" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -570,7 +570,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASEjoin" dir="seacas/applications/ejoin" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASIoss"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASIoss,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -615,7 +615,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASExodiff" dir="seacas/applications/exodiff" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -630,7 +630,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASExomatlab" dir="seacas/applications/exomatlab" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASIoss"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASIoss,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -750,7 +750,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASNemslice" dir="seacas/applications/nem_slice" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,SEACASChaco"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,SEACASChaco,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
