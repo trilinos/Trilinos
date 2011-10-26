@@ -6,4 +6,5 @@ ADD_SUBDIRECTORIES(
   unit
   util
   partitioning
+  scaling
   )
