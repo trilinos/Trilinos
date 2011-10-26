@@ -581,7 +581,7 @@ namespace {
 #ifdef HAVE_MPI
       Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-    throw(Xpetra::Exceptions::RuntimeError("This example has not been compiled with MPI enabled."));
+      Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
     else
       Comm = Teuchos::rcp(new Epetra_SerialComm);
@@ -697,7 +697,7 @@ namespace {
 #ifdef HAVE_MPI
       Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-    throw(Xpetra::Exceptions::RuntimeError("This example has not been compiled with MPI enabled."));
+      Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
     else
       Comm = Teuchos::rcp(new Epetra_SerialComm);
