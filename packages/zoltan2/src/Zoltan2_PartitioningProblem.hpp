@@ -55,6 +55,9 @@ public:
   virtual void solve();
   virtual void redistribute();
 
+  PartitioningSolution<Adapter> *getSolution() {
+    return solution_.getRawPtr();
+  };
 };
 
 ////////////////////////////////////////////////////////////////////////

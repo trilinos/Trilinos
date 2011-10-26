@@ -189,8 +189,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   }
 
   cout << me << " KDD Before set solution " << endl;
-  solution->setPartitioningSolution(
-               nVtx,
+  solution->setPartition((size_t) partnbr, nVtx,
                (gid_t *) (vtxID.getRawPtr()), // TODO Use IdentifierMap
                                               //      instead of cast.
                (lid_t *) NULL,                // TODO Use User's LIDs

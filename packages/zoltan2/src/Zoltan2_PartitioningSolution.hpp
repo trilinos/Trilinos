@@ -31,14 +31,18 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lid_t lid_t;
 
-  void setPartitioningSolution(
+  //////////////////////////////////////////////
+  void setPartition(
+    size_t nparts,   // Number of parts
     size_t length,   // Length of arrays
     gid_t *gids,     // GIDs
     lid_t *lids,     // LIDs
-    size_t *parts    // Part assignments
+    size_t *parts    // Part assignment for each gid
   )
   {
     HELLO;
+    nParts_ = nparts;
+
     gids_ = ArrayView<gid_t>(gids, length);
 
     if (lids != NULL)
@@ -49,24 +53,28 @@ public:
     parts_ = ArrayView<size_t>(parts, length);
   }
 
-  void getPartitioningSolution(
+  //////////////////////////////////////////////
+  void getPartition(
+    size_t *nparts,   // returned: Number of parts
     size_t *length,   // returned: Length of arrays
     gid_t **gids,     // returned: GIDs
     lid_t **lids,     // returned: LIDs
     size_t **parts    // returned: Part assignments
   )
   {
+    *nparts = nParts_;
     *length = gids_.size();
     *gids   = gids_.getRawPtr();
 
-    if (lids_ != Teuchos::null) *lids = lids_.getRawPtr();
-    else                        *lids = (lid_t *) NULL;
+    if (lids_.getRawPtr() != (lid_t*) Teuchos::null) *lids = lids_.getRawPtr();
+    else                                             *lids = (lid_t*) NULL;
 
     *parts  = parts_.getRawPtr();
   }
 
 protected:
   // Partitioning solution consists of GIDs, LIDs, and part assignments.
+  size_t nParts_;
   ArrayView<gid_t>  gids_;
   ArrayView<lid_t>  lids_;
   ArrayView<size_t> parts_;
