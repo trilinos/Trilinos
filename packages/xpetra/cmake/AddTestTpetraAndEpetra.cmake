@@ -1,56 +1,72 @@
-FUNCTION(PACKAGE_ADD_TEST_TPETRA_AND_EPETRA TEST_NAME)
+# Helper functions for tests using Xpetra::Parameters (--linAlgebra=0/1)
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+#
+#
+#
+
+FUNCTION(XPETRA_ADD_TEST_TPETRA TEST_NAME COMM NUM_MPI_PROCS)
+  IF (${XPETRA_NAME}_ENABLE_Tpetra)
     
     PACKAGE_ADD_TEST(
       ${TEST_NAME}
       NAME ${TEST_NAME}-Tpetra
       ARGS "--linAlgebra=1"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
+      NUM_MPI_PROCS ${NUM_MPI_PROCS}
+      COMM ${COMM}
       )
     
   ENDIF()
-  
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
-    
-    PACKAGE_ADD_TEST(
-      ${TEST_NAME}
-      NAME ${TEST_NAME}-Epetra
-      ARGS "--linAlgebra=0"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
-    
-  ENDIF()
-  
+
 ENDFUNCTION()
 
-# Also run tests with mpi builds, but with only one proc
-FUNCTION(PACKAGE_ADD_TEST_SEQ_TPETRA_AND_EPETRA TEST_NAME)
+#
+#
+#
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    
-    PACKAGE_ADD_TEST(
-      ${TEST_NAME}
-      NAME ${TEST_NAME}-Tpetra
-      ARGS "--linAlgebra=1"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
-    
-  ENDIF()
-  
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+FUNCTION(XPETRA_ADD_TEST_EPETRA TEST_NAME COMM NUM_MPI_PROCS)
+  IF (${XPETRA_NAME}_ENABLE_Epetra)
     
     PACKAGE_ADD_TEST(
       ${TEST_NAME}
       NAME ${TEST_NAME}-Epetra
       ARGS "--linAlgebra=0"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
+      NUM_MPI_PROCS ${NUM_MPI_PROCS}
+      COMM ${COMM}
       )
     
   ENDIF()
-  
+
+ENDFUNCTION()
+
+#
+#
+#
+
+FUNCTION(XPETRA_ADD_TEST_TPETRA_AND_EPETRA TEST_NAME COMM NUM_MPI_PROCS)
+
+  XPETRA_ADD_TEST_TPETRA TEST_NAME(${TEST_NAME} ${COMM} ${NUM_MPI_PROCS})
+  XPETRA_ADD_TEST_EPETRA TEST_NAME(${TEST_NAME} ${COMM} ${NUM_MPI_PROCS})
+ 
+ENDFUNCTION()
+
+#
+#
+#
+
+FUNCTION(XPETRA_ADD_TEST_PARA_TPETRA_AND_EPETRA TEST_NAME)
+
+  XPETRA_ADD_TEST_TPETRA_AND_EPETRA(${TEST_NAME} "mpi"        4)
+  XPETRA_ADD_TEST_TPETRA_AND_EPETRA(${TEST_NAME} "serial mpi" 1)
+
+ENDFUNCTION()
+
+#
+#
+#
+
+FUNCTION(XPETRA_ADD_TEST_SEQ_TPETRA_AND_EPETRA TEST_NAME)
+
+  # Also run seq tests with mpi builds, but with only one proc.
+  XPETRA_ADD_TEST_SEQ_TPETRA_AND_EPETRA TEST_NAME("serial mpi" 1)
+
 ENDFUNCTION()
