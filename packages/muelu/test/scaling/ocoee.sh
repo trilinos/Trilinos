@@ -14,7 +14,7 @@ fi
 SPREF=muelu
 DPREF=run
 CDIR=`pwd`
-BINARY_EXE="MueLu_ScalingTest.exe"
+BINARY_EXE="MueLu_ScalingTest-LongLongInt.exe"
 
 if [ $MACHINE == "hopper" ]; then
 ############# Hopper ##############
