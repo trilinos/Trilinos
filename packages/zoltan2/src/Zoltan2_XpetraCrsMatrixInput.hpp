@@ -73,8 +73,8 @@ public:
     offset_(),
     columnIds_()
   {
-    cout << __func__ << " getting Traits from " 
-         << InputTraits<User>::name() << endl;
+//    cout << __func__ << " getting Traits from " 
+//         << InputTraits<User>::name() << endl;
 
     matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
     rowMap_ = matrix_->getRowMap();

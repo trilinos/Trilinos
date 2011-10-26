@@ -62,10 +62,14 @@ int AlgPTScotch(
                                        (comm)->getRawMpiComm());
 
   // Allocate & initialize PTScotch data structure.
+  if (me == 0) cout << __func__ << ": SCOTCH_dgraphAlloc ";
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph 
+  if (me == 0) cout << " done." << endl;
 
+  if (me == 0) cout << __func__ << ": SCOTCH_dgraphInit ";
   ierr = SCOTCH_dgraphInit(gr, mpicomm);  // TODO Handle non-MPI builds.
   if (ierr) KDD_HANDLE_ERROR;
+  if (me == 0) cout << " done." << endl;
   
   // Get vertex info
   const SCOTCH_Num vertlocnbr = model->getLocalNumVertices();
@@ -75,8 +79,6 @@ int AlgPTScotch(
   // Get edge info
   const SCOTCH_Num edgelocnbr = model->getLocalNumEdges();
   const SCOTCH_Num edgelocsize = edgelocnbr;// Assumes adj array is compact.
-
-  cout << me << " KDD nVtx " << vertlocnbr << " nEdge " << edgelocnbr << endl;
 
   // Get edges
   ArrayView<const gno_t> edgeIds;
@@ -89,16 +91,8 @@ int AlgPTScotch(
   SCOTCH_Num *vertloctab = 
               const_cast<SCOTCH_Num *>(offsets.getRawPtr()); // starting adj/vtx
 
-  cout << me << " KDD Index ";
-  for (int i = 0; i <= vertlocnbr; i++) cout << vertloctab[i] << " ";
-  cout << endl;
-
   SCOTCH_Num *edgeloctab = 
               const_cast<SCOTCH_Num *>(edgeIds.getRawPtr()); // adjacencies
-
-  cout << me << " KDD Adjacencies ";
-  for (int i = 0; i < edgelocnbr; i++) cout << edgeloctab[i] << " ";
-  cout << endl;
 
   // We don't need these arrays, I think.
   SCOTCH_Num *vendloctab = NULL;  // Unneeded; assume consecutive 
@@ -118,45 +112,39 @@ int AlgPTScotch(
   //TODO if (ewtdim) edloloctab = new SCOTCH_Num[edgelocnbr];
   //TODO scale weights to SCOTCH_Nums.
 
-  cout << me << " KDD Calling dgraphBuild" << endl;
   // Build PTScotch distributed data structure
+  if (me == 0) cout << __func__ << ": SCOTCH_dgraphBuild ";
   ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax, 
                             vertloctab, vendloctab, veloloctab, vlblloctab, 
                             edgelocnbr, edgelocsize, 
                             edgeloctab, edgegsttab, edloloctab);
   if (ierr) KDD_HANDLE_ERROR;
-  cout << me << " KDD Done dgraphBuild" << endl;
+  if (me == 0) cout << " done." << endl;
 
   // Call partitioning; result returned in partloctab.
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   const SCOTCH_Num partnbr = comm->getSize();  // TODO read from params later.
   SCOTCH_Num *partloctab = new SCOTCH_Num[vertlocnbr];
 
-  cout << me << " KDD Calling dgraphPart partnbr=" << partnbr << endl;
+  if (me == 0) cout << __func__ << ": SCOTCH_dgraphPart ";
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
   if (ierr) KDD_HANDLE_ERROR;
-
-  cout << me << " KDD PartResults ";
-  for (int i = 0; i < vertlocnbr; i++) cout << partloctab[i] << " ";
-  cout << endl;
+  if (me == 0) cout << " done." << endl;
 
   // Clean up PTScotch
-  cout << me << " KDD Calling dgraphExit" << endl;
+  if (me == 0) cout << __func__ << ": SCOTCH_dgraphExit ";
   SCOTCH_dgraphExit(gr);
   SCOTCH_stratExit(&stratstr);
   if (ierr) KDD_HANDLE_ERROR;
+  if (me == 0) cout << " done." << endl;
 
   // Load answer into the solution.
   // TODO May move getVertexList call above when need weights.
+  if (me == 0) cout << __func__ << ": Load solution ";
   ArrayView<const gno_t> vtxID;
   ArrayView<const scalar_t> xyz;
   ArrayView<const scalar_t> vtxWt;
   size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
-
-  cout << me << " KDD vtxID ";
-  for (int i = 0; i < vtxID.size(); i++) cout << vtxID[i] << " ";
-  cout << endl;
-  cout << me << " KDD vtxID raw " << vtxID.getRawPtr() << endl;
 
   size_t *parts;
   if (sizeof(SCOTCH_Num) == sizeof(size_t))
@@ -167,12 +155,13 @@ int AlgPTScotch(
     delete [] partloctab;
   }
 
-  cout << me << " KDD Before set solution " << endl;
   solution->setPartition((size_t) partnbr, nVtx,
                (gid_t *) (vtxID.getRawPtr()), // TODO Use IdentifierMap
                                               //      instead of cast.
                (lid_t *) NULL,                // TODO Use User's LIDs
                parts);
+
+  if (me == 0) cout << " done." << endl;
 
   // Clean up Zoltan2
   //TODO if (vwtdim) delete [] velotab;
