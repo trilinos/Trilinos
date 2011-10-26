@@ -54,7 +54,7 @@ namespace MueLu {
     VerbLevel GetVerbLevel() const { return verbLevel_; }
   
     //! Set the verbosity level
-    void SetVerbLevel(const VerbLevel verblevel) { verbLevel_ = verblevel; }
+    void SetVerbLevel(const VerbLevel verbLevel) { verbLevel_ = verbLevel; }
 
     //! Get proc rank used for printing (do not use this information for any other purpose)
     int GetProcRankVerbose() const { return procRank_; }
