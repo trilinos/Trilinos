@@ -42,6 +42,8 @@
 #include <MueLu_GalleryParameters.hpp>
 
 
+#ifdef HAVE_MPI
+
 #define TEST_FAIL_AND_THROW(comm, ok, s){ \
 int gval, lval=( (ok) ? 0 : 1);       \
 Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
@@ -61,6 +63,24 @@ if (gval){ \
   exit(code);\
 } \
 }
+
+#else
+
+#define TEST_FAIL_AND_THROW(comm, ok, s){ \
+if (!ok){ \
+  throw std::runtime_error(std::string(s)); \
+} \
+}
+
+#define TEST_FAIL_AND_EXIT(comm, ok, s, code){ \
+if (!ok){ \
+  std::cerr << "Error: " << s << std::endl;\
+  std::cout << "FAIL" << std::endl;\
+} \
+exit(code);\
+}
+
+#endif
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;

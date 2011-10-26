@@ -34,16 +34,20 @@ void eraseMallocCount();
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
+#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if (nbytes) \
-    ptrname = new datatype [nbytes]; \
+  if ((num) > 1) \
+    ptrname = new datatype [num]; \
+  else if ((num) > 0) \
+    ptrname = new datatype; \
 }
 
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
+#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if (nbytes) \
-    ptrname = new datatype [nbytes]; \
+  if ((num) > 1) \
+    ptrname = new datatype [num]; \
+  else if ((num) > 0) \
+    ptrname = new datatype; \
 }
 
 #else
@@ -56,8 +60,12 @@ void eraseMallocCount();
 #define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) {\
   ptrname = NULL; \
   int fail = 0, gfail=0; \
-  if ((num) > 0){ \
+  if ((num) > 1){ \
     ptrname = new datatype [num]; \
+    if (!ptrname) fail = 1;  \
+  } \
+  else if ((num) == 1) { \
+    ptrname = new datatype; \
     if (!ptrname) fail = 1;  \
   } \
   Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
@@ -76,14 +84,17 @@ void eraseMallocCount();
 
 #define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) { \
   ptrname = NULL; \
-  if ((num) > 0) {\
+  if ((num) > 1) {\
     ptrname = new datatype [num]; \
-    if (!ptrname) { \
-      std::ostringstream _msg;  \
-      _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-      (env).dbg_->error(_msg.str()); \
-      throw std::bad_alloc(); \
-    } \
+  } \
+  else if ((num) == 1){ \
+    ptrname = new datatype; \
+  } \
+  if ((num) && !ptrname) { \
+    std::ostringstream _msg;  \
+    _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+    (env).dbg_->error(_msg.str()); \
+    throw std::bad_alloc(); \
   } \
 }
 

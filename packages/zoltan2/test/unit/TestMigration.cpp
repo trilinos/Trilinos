@@ -40,7 +40,8 @@ int main(int argc, char *argv[])
   TestAdapters<Scalar,LNO,GNO> *input = 
     new TestAdapters<Scalar,LNO,GNO>(10, 10, 10, comm);
 
-  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, Zoltan2::default_node_t> tmatrix_t;
+  typedef Zoltan2::default_node_t> node_t;
+  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, node_t> tmatrix_t;
   typedef Zoltan2::XpetraCrsMatrixInput<tmatrix_t> adapter_t;
 
   RCP<adapter_t> adapter = input->getTpetraCrsMatrixInputAdapter();
@@ -51,13 +52,12 @@ int main(int argc, char *argv[])
 
   size_t nrows = M->getGlobalNumRows();
 
-  GNO *rowIds, *colIds;
-  LNO *localIds, offsets;
+  const GNO *rowIds, *colIds;
+  const LNO *localIds, *offsets;
 
   // Since local ids are consecutive beginning with 0, adapter returns
   // with localIds=NULL.
 
-//TODO  this call does not compile:
   size_t n = adapter->getRowListView(rowIds, localIds, offsets, colIds);
 
   int *newpartList = new int [n];
@@ -71,12 +71,14 @@ int main(int argc, char *argv[])
   tmatrix_t *N=NULL;
 
   try{
-//TODO  this call does not compile:
-    adapter->applyPartitioningSolution(*M, *N, n, nprocs, rowIds, localIdList, newpartList);
+    adapter->applyPartitioningSolution(*M, N, n, nprocs, rowIds, 
+      localIdList, newpartList);
   }
   catch (std::exception &e){
     std::cerr << "broken" << e.what() << std::endl;
   }
+
+  // TODO - verify that the matrix has not changed.
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;

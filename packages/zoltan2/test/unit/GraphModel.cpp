@@ -11,17 +11,29 @@
 //
 //    TODO test GraphModel for a matrix that is not Xpetra, that
 //         that global IDs that are not Teuchos::Ordinals.
+//    TODO test for input with gids that are not consecutive, but
+//              ask graph model to map them to consecutive
 //    TODO test Epetra inputs
+//    TODO this test does not require MPI, but uses TestAdapters
+//               which does.  Modify TestAdapters and all unit
+//               tests to run both Serial and MPI.
 
 #include <string>
+#include <sstream>
 #include <vector>
+#include <iostream>
 #include <TestAdapters.hpp>
-#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_IdentifierTraits.hpp>
+
+#ifdef HAVE_MPI
+#include <Teuchos_MPISession.hpp>
+#endif
 
 using namespace std;
 using Teuchos::RCP;
@@ -31,227 +43,238 @@ using Teuchos::OrdinalTraits;
 using Teuchos::ScalarTraits;
 using Teuchos::ArrayView;
 
-//
-// TODO - Add a MatrixInput adapter for CSR arrays, and use GIDs
-//   that are not Ordinals - like std::pair<int,int>
-//#include <Zoltan2_IdentifierTraits.hpp>
-//using Zoltan2::IdentifierTraits;
-
-
-template <typename Model, typename Matrix>
-  void checkGraph(Model &graph, RCP<Matrix> M, std::string errMsg)
-{
-  typedef typename Model::scalar_t Scalar;
-  typedef typename Model::lno_t LNO;
-  typedef typename Model::gno_t GNO;
-
-  const RCP<const Comm<int> > &comm = M->getComm();
-  int rank = comm->getRank();
-  RCP<const Zoltan2::Environment> default_env = 
-    Teuchos::rcp(new Zoltan2::Environment);
-
-  // Values to check against
-  size_t nRows = M->getNodeNumRows();
-  size_t ngRows = M->getGlobalNumRows();
-  size_t nEntries = M->getNodeNumEntries();
-  size_t ngEntries = M->getGlobalNumEntries();
-
-  int fail = 0;
-
-  if (graph.getLocalNumVertices() != nRows)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getLocalNumVertices"+errMsg, 1)
-
-  if (graph.getGlobalNumVertices() != ngRows)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getGlobalNumVertices"+errMsg, 1)
-
-  if (graph.getGlobalNumEdges() != ngEntries)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getGlobalNumEdges"+errMsg, 1)
-
-  if (graph.getLocalNumEdges() != nEntries)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getLocalNumEdges"+errMsg, 1)
-
-  ArrayView<const GNO> vertexGids;
-  ArrayView<const Scalar> coords;     // not implemented
-  ArrayView<const Scalar> wgts;     // not implemented
-
-  try{
-    graph.getVertexList(vertexGids, coords, wgts);
-  }
-  catch (std::exception &e){
-    std::cerr << rank << ") Error " << e.what() << std::endl;
-    fail = 1;
-  }
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getVertexList"+errMsg, 1)
-
-  ArrayView<const GNO> edgeGids;
-  ArrayView<const int> procIds;
-
-#if 0
-   // TODO won't compile
-  for (LNO lid=0; lid < vertexGids.size(); lid++){
-    size_t edgeSize = 
-       graph.getVertexLocalEdge(lid, edgeGids, procIds, wgts);
-    //size_t edgeSize = graph.getVertexLocalEdge(lid, edgeGids, procIds, wgts);
-    // TODO check that these make sense
-  }
-#endif
-
-#if 0
-  // graph.getVertexGlobalEdge not implemented for now
-  for (LNO lid=0; lid < vertexGids.size(); lid++){
-    edgeSize[lid] = 
-      graph.getVertexGlobalEdge(vertexGids[lid], edgesGids, procIds, wgts);
-    edgeId[lid] = edgeGids.getRawPtr();
-    procOwner[lid] = procIds.getRawPtr();
-  }
-#endif
-  // TODO check that graph returned represents M
-  // TODO test graph.getEdgeList()
-}
+#define COMMENT(s) if (rank==0) {std::cout << s << std::endl;}
 
 template <typename Scalar, typename LNO, typename GNO, typename Node>
-  void testGraphInputFromMatrix(std::string fname, 
-  const RCP<const Comm<int> > &comm)
+  void testGraphModel(std::string fname, GNO xdim, GNO ydim, GNO zdim,
+    const RCP<const Comm<int> > &comm,
+    bool verbose, bool consecutiveIds)
 {
   int rank = comm->getRank();
-
-  // If LNO and GNO are int we can test an Epetra input adapter.
-  bool includeEpetra = false;
-  std::string intName(OrdinalTraits<int>::name());
-  std::string ScalarName(ScalarTraits<Scalar>::name());
-  std::string LNOName(OrdinalTraits<LNO>::name());
-  std::string GNOName(OrdinalTraits<GNO>::name());
+  int nprocs = comm->getSize();
+  int fail = 0;
 
   // A default environment 
-
   RCP<const Zoltan2::Environment> default_env = 
     Teuchos::rcp(new Zoltan2::Environment);
 
-  // User input data types
-
+  // User data
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
-  typedef Epetra_CrsMatrix                    ecrsMatrix_t;
-  typedef Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
 
-  // Zoltan2 user data input adapters
+  // Zoltan2 user data input adapter
+  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
 
-  typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
-  typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
+  // Test adapter generator
+  TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node> *input;
 
-  // Test adapters
+  if (fname.size() > 0)
+    input = new TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node>(fname, comm);
+  else
+    input = new TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node>(xdim,ydim,zdim,comm);
 
-  RCP<TpetraCrsMatrixInput> tmi;
-  RCP<EpetraCrsMatrixInput> emi;
-  RCP<XpetraCrsMatrixInput> xmi;
+  // TODO return by reference
+  RCP<adapter_t> tmi = input->getTpetraCrsMatrixInputAdapter();
 
-  TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node> input(fname, comm);
+  // Question: Are the matrix global IDs consecutive (locally)?
 
-  if (includeEpetra){
-    emi = input.getEpetraCrsMatrixInputAdapter();
-  }
+  const GNO *rowIds, *colIds;
+  const LNO *off, *rowLocalIds;
+  size_t n = tmi->getRowListView(rowIds, rowLocalIds, off, colIds);
+  bool inARow = Zoltan2::IdentifierTraits<GNO>::areConsecutive(rowIds, n);
 
-  tmi = input.getTpetraCrsMatrixInputAdapter();
-
-  xmi = input.getXpetraCrsMatrixInputAdapter();
+  if (inARow)
+    COMMENT("Matrix row IDs are locally consecutive")
+  else
+    COMMENT("Matrix row IDs are locally not consecutive")
 
   // Get original matrix for debugging.
-  RCP<tcrsMatrix_t > M = input.getTpetraMatrix();
+  RCP<tcrsMatrix_t > M = input->getTpetraMatrix();
+  LNO nLocalRows = M->getNodeNumRows();
+  LNO nLocalNonZeros = M->getNodeNumEntries();
+  GNO nGlobalRows =  M->getGlobalNumRows();
+  GNO nGlobalNonZeros = M->getGlobalNumEntries();
 
-  // Create graph models with different user objects and test them.
+  // Create a graph model with this input
+  Zoltan2::GraphModel<adapter_t> *model = NULL;
 
-
-  typedef Zoltan2::GraphModel<XpetraCrsMatrixInput> xGraphModel_t;
-  typedef Zoltan2::GraphModel<EpetraCrsMatrixInput> eGraphModel_t;
-  typedef Zoltan2::GraphModel<TpetraCrsMatrixInput> tGraphModel_t;
-
-  int fail = 0;
-  if (includeEpetra){
-    eGraphModel_t *graph = NULL;
-    try{
-      graph = new eGraphModel_t(emi, comm, default_env);
-    }
-    catch (std::exception &e){
-      std::cerr << rank << ") Error " << e.what() << std::endl;
-      fail = 1;
-    }
-    TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating epetra graph model", 1)
-
-    checkGraph<eGraphModel_t, tcrsMatrix_t>(*graph, M, " (epetra matrix input)");
-
-    delete graph;
-  }
-
-  // GraphModel built with TpetraCrsMatrixInput
-
-  tGraphModel_t *tgraph=NULL;
   try{
-    tgraph = new tGraphModel_t(tmi, comm, default_env);
+    model = new Zoltan2::GraphModel<adapter_t>(tmi, comm, default_env);
   }
   catch (std::exception &e){
-    std::cerr << rank << ") Error " << e.what() << std::endl;
-    fail = 1;
-  }
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating tpetra graph model", 1)
-
-  checkGraph<tGraphModel_t, tcrsMatrix_t>(*tgraph, M, " (tpetra matrix input)");
-
-  delete tgraph;
-
-  // GraphModel built with XpetraCrsMatrixInput
-
-  xGraphModel_t *xgraph=NULL;
-  try{
-    xgraph = new xGraphModel_t(xmi, comm, default_env);
-  }
-  catch (std::exception &e){
-    std::cerr << rank << ") Error " << e.what() << std::endl;
+    std::cerr << rank << ") " << e.what() << std::endl;
     fail = 1;
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "Creating xpetra graph model", 1)
 
-  checkGraph<xGraphModel_t, tcrsMatrix_t>(*xgraph, M, " (xpetra matrix input)");
+  // Test the GraphModel interface
 
-  delete xgraph;
+  if (model->getLocalNumVertices() != nLocalRows)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getLocalNumVertices", 1)
 
-  if (!rank){
-    std::cout << "Processed " << fname << ": ";
-    std::cout << "Scalar = " << ScalarName << std::endl;
-    std::cout << "LNO = " << LNOName << std::endl;
-    std::cout << "GNO = " << GNOName << std::endl;
-    std::cout << std::endl;
+  if (model->getGlobalNumVertices() != nGlobalRows)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getGlobalNumVertices", 1)
+
+  if (model->getGlobalNumEdges() !=  nGlobalNonZeros)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getGlobalNumEdges", 1)
+
+  if (model->getLocalNumEdges() != nLocalNonZeros)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getLocalNumEdges", 1)
+
+  if (verbose && (nLocalRows > 100)){
+    if (rank==0)
+       std::cout << "Note: Turned off verbose for big graph" << std::endl;
+    verbose=false;
   }
+
+  ArrayView<const GNO> vertexGids;
+  ArrayView<const Scalar> coords;  // not implemented yet
+  ArrayView<const Scalar> wgts;    // not implemented yet
+
+  try{
+    model->getVertexList(vertexGids, coords, wgts);
+  }
+  catch (std::exception &e){
+    std::cerr << rank << ") Error " << e.what() << std::endl;
+    fail = 1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getVertexList", 1)
+
+  if (vertexGids.size() != nLocalRows)
+    fail = 1;
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getVertexList", 1)
+  
+  ArrayView<const GNO> edgeGids;
+  ArrayView<const int> procIds;
+  ArrayView<const LNO> offsets;
+  size_t numEdges=0;
+
+  try{
+    numEdges = model->getEdgeList(edgeGids, procIds, offsets, wgts);
+  }
+  catch(std::exception &e){
+    std::cerr << rank << ") Error " << e.what() << std::endl;
+    fail = 1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getEdgeList", 1)
+
+  if (numEdges != nLocalNonZeros)
+    fail = 1;
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getEdgeList size", 1)
+
+  if (verbose){
+    const GNO *v = vertexGids.getRawPtr();
+    const GNO *e = edgeGids.getRawPtr();
+    const int *owner = procIds.getRawPtr();
+    const LNO *idx = offsets.getRawPtr();
+    comm->barrier();
+    for (int p=0; p < nprocs; p++){
+      if (p == rank){
+        std::cout << "Rank " << p << std::endl;
+        for (LNO i=0; i < nLocalRows; i++){
+          std::cout << "  Vtx " << *v++ << ": ";
+          for (LNO j=idx[i]; j < idx[i+1]; j++)
+            std::cout << *e++ << " (" << *owner++ << ") ";
+          std::cout << std::endl;
+        }
+        std::cout.flush();
+      }
+      comm->barrier();
+    }
+    comm->barrier();
+  }
+
+  // Test getting the edge list for one vertex
+
+  for (LNO i=0; (fail==0) && (i < nLocalRows); i++){
+     LNO vertexLid =  i;
+     GNO vertexGid =  vertexGids[i];
+     ArrayView<const GNO> edges;
+     ArrayView<const int> procs;
+     ArrayView<const Scalar> wgts;
+
+     size_t nedges = model->getVertexGlobalEdge(vertexGid, edges, procs, wgts);
+
+     LNO idx0 = offsets[i];
+     LNO idx1 = offsets[i+1];
+
+     if (nedges != idx1 - idx0)
+       fail = 1;
+     else{
+       for (LNO j=idx0,k=0; !fail && (j < idx1); j++,k++){
+         if ((edges[k] != edgeGids[j]) || (procs[k] != procIds[j]))
+           fail = 2;
+       }
+     }
+
+     if (!fail){
+       nedges = model->getVertexLocalEdge(vertexLid, edges, procs, wgts);
+
+       if (nedges != idx1 - idx0)
+         fail = 3;
+       else{
+         for (LNO j=idx0,k=0; !fail && (j < idx1); j++,k++){
+           if ((edges[k] != edgeGids[j]) || (procs[k] != procIds[j]))
+             fail = 4;
+         }
+       }
+     }
+  }
+
+  delete model;
+  delete input;
+  ostringstream oss;
+  oss << "Fail code " << fail << " getting vertex edges";
+  TEST_FAIL_AND_EXIT(*comm, fail==0, oss.str(), 1)
 }
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
   Teuchos::GlobalMPISession session(&argc, &argv);
-  const RCP<const Comm<int> > &comm = DefaultComm<int>::getComm();
+#endif
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
+  int rank = comm->getRank();
+
+  std::string nullString;
   std::vector<std::string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
   mtxFiles.push_back("../data/cage10.mtx");
 
-  // To use this matrix we would need to pass a domain map
-  // to FillComplete.  So we skip it for now.  TODO
-  // mtxFiles.push_back("../data/diag500_4.mtx");
+  bool verbose = true;
+  bool wishConsecutiveIds = true;
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
 
-    testGraphInputFromMatrix<
-      double, int, int, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
+    COMMENT(mtxFiles[fileNum]+" double, int, int, !wishConsecutiveIds");
+    testGraphModel<double, int, int, Zoltan2::default_node_t>(
+      mtxFiles[fileNum], 0,0,0,comm, verbose, !wishConsecutiveIds);
 
-    testGraphInputFromMatrix<
-      double, int, long, Zoltan2::default_node_t>(mtxFiles[fileNum], comm);
+    COMMENT(mtxFiles[fileNum]+" float, int, long, !wishConsecutiveIds");
+    testGraphModel<float, int, long, Zoltan2::default_node_t>(
+      mtxFiles[fileNum], 0,0,0,comm,  !verbose, !wishConsecutiveIds);
+
+    COMMENT(mtxFiles[fileNum]+" float, int, int, wishConsecutiveIds");
+    testGraphModel<float, int, long, Zoltan2::default_node_t>(
+      mtxFiles[fileNum], 0,0,0,comm,  !verbose, wishConsecutiveIds);
   }
 
-  if (comm->getRank() == 0)
-    std::cout << "PASS" << std::endl;
+  COMMENT("5x5x5 mesh, double, int, int, !wishConsecutiveIds");
+  testGraphModel<double, int, int, Zoltan2::default_node_t>(
+    nullString, 5, 5, 5, comm, verbose, !wishConsecutiveIds);
+
+  COMMENT("5x5x5 mesh, double, int, int, wishConsecutiveIds");
+  testGraphModel<double, int, int, Zoltan2::default_node_t>(
+    nullString, 5, 5, 5, comm, verbose, wishConsecutiveIds);
+
+  COMMENT("PASS");
 
   return 0;
 }

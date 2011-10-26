@@ -8,194 +8,389 @@
 // ***********************************************************************
 // @HEADER
 //
-// TODO: doxygen comments
-// TODO Zoltan2 could should throw errors and we should catch them
-// TODO rewrite using Teuchos Unittest
-//     make this work if !HAVE_MPI
-//
-//  TODO we only test one case write more tests
-//
-// 3 cases:
-//   Application GID is a Teuchos Global Ordinal type
-//      GIDs are consecutive and increase with rank
-//      GIDs are mixed up
-//
-//   Application GIDs can not be used as Teuchos Global Ordinals
-//
-// 2 cases:
-//   Application supplies local IDs
-//   Application does not supply local IDs
-//
-// Returns 0 on success, 1 on failure.
+// Test the IdentifierMap class.
 
 #include <string>
 #include <ostream>
 #include <iostream>
 #include <exception>
+#include <utility>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ParameterList.hpp>
-
-#include <Zoltan2_Standards.hpp>    // for Zoltan2::default_node_t
-#include <Zoltan2_InputTraits.hpp>
-
-// user data structure 
-template<typename AppLID, typename AppGID>
-struct TestData{
-  Teuchos::ArrayRCP<AppLID> lids;
-  Teuchos::ArrayRCP<AppGID> gids;
-};
-
-// the InputTraits of our structure for Zoltan2
-namespace Zoltan2{
-template<>
-template<typename AppLID, typename AppGID>
-struct InputTraits<struct TestData<AppLID, AppGID> >
-{
-  typedef float scalar_t;
-  typedef int lno_t;
-  typedef long gno_t;
-  typedef AppLID lid_t;
-  typedef AppGID gid_t;
-  typedef Zoltan2::default_node_t node_t;
-};
-}
 
 #include <Zoltan2_IdentifierMap.hpp>
+#include <TestAdapters.hpp>         // for TEST_FAIL macros
 
 using namespace std;
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::Comm;
 
-template <typename AppLID, typename AppGID>
-  int testIdentifierMap(
-          RCP<const Comm<int> > &comm, RCP<Zoltan2::Environment> &envPtr,
-          ArrayRCP<AppLID> &lids, ArrayRCP<AppGID> &gids,
-          bool consecutiveGnosAreRequired, bool gnosShouldBeGids)
+// We're testing with user global Ids that don't necessarily
+// define "<<(ostream)", so we do this with traits.
+// TODO: Let's add stringify to InputTraits, to be
+//   used in debugging output.
+
+template <typename T>
+struct UserIdTraits{
+  static std::string &stringify(T val) {return std::string("INVALID");}
+};
+
+template<>
+struct UserIdTraits<std::pair<int, int> >{
+  static std::string stringify(std::pair<int, int> p) {
+    ostringstream oss;
+    oss << "pair(" << p.first << ", " << p.second << ")";
+    return oss.str();
+  }
+};
+
+template<>
+struct UserIdTraits<long>{
+  static std::string stringify(long val) {
+    ostringstream oss;
+    oss << val;
+    return oss.str();
+  }
+};
+
+template<>
+struct UserIdTraits<int>{
+  static std::string stringify(int val) {
+    ostringstream oss;
+    oss << val;
+    return oss.str();
+  }
+};
+
+template <typename IDMAP>
+  void testIdMap( RCP<const Comm<int> > &comm,
+    IDMAP *map, bool gnosAreGids, bool gnosAreConsecutive,
+    ArrayRCP<typename IDMAP::gid_t> &gids, 
+    ArrayRCP<typename IDMAP::lid_t> &lids, 
+    ArrayRCP<typename IDMAP::gid_t> &remoteGids,
+    bool verbose)
 {
+  typedef typename IDMAP::lno_t LNO;
+  typedef typename IDMAP::gno_t GNO;
+  typedef typename IDMAP::gid_t GID;
+  typedef typename IDMAP::lid_t LID;
+
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  typedef struct TestData<AppLID, AppGID> testdata_t;
+  int fail = 0;
 
-  testdata_t test1;
+  if (map->gnosAreGids() != gnosAreGids)
+    fail = 1;
 
-  test1.gids = gids;
-  test1.lids = lids;
+  TEST_FAIL_AND_THROW(*comm, fail==0, "gnosAreGids")
 
-  Zoltan2::IdentifierMap<AppLID, AppGID, AppLID, AppGID> idmap;
+  if (map->gnosAreConsecutive() != gnosAreConsecutive)
+    fail = 1;
+
+  TEST_FAIL_AND_THROW(*comm, fail==0, "consecutiveGids")
+
+  // Get Zoltan2's global numbers given user global Ids
+
+  size_t nLocalIds = gids.size();
+  Array<GNO> z2Ids(nLocalIds);
 
   try {
-    idmap.initialize(comm, envPtr, test1.gids, test1.lids, consecutiveGnosAreRequired);
+    map->gidTranslate(gids(), z2Ids(), Zoltan2::TRANSLATE_APP_TO_LIB);
   }
   catch (std::exception &e){
-    std::cerr << rank << ") initialize error: " << e.what();
-    return 1;
+    fail = 1;
   }
 
-  if (idmap.gnosAreGids() != gnosShouldBeGids){
-    std::cerr << " gnosAreGids" << std::endl;
-    return 1;
+  TEST_FAIL_AND_THROW(*comm, fail==0, "gidTranslate")
+
+  if (verbose){
+    comm->barrier();
+    if (rank == 0)
+      std::cout << "Zoltan2 GNOs = User GIDs: " << gnosAreGids << std::endl;
+    for (int p=0; p < nprocs; p++){
+      if (p == rank){
+        std::cout << "Rank " << p << " gnos: ";
+        for (size_t i=0; i < nLocalIds; i++){
+          std::cout << z2Ids[i] << " ";
+        }
+        std::cout << std::endl;
+        std::cout.flush();
+      }
+      comm->barrier();
+    }
+    comm->barrier();
+    if (rank == 0){
+      std::cout << "MIN GNO " << map->getMinimumGlobalId();
+      std::cout << ", MAX GNO " << map->getMaximumGlobalId() << std::endl;
+      std::cout.flush();
+    }
+    comm->barrier();
   }
 
-  int numLocalObjects = gids.size();
+  // Get Zoltan2's global numbers given user local Ids
 
-  Array<long> gnoArray1(numLocalObjects);
-  Array<long> gnoArray2(numLocalObjects);
+  Array<GNO> z2Ids2(nLocalIds);
 
-  ArrayView<AppGID> gidArray = test1.gids.view(0, numLocalObjects);
-
-  try{
-    idmap.gidTranslate(gidArray, gnoArray1, Zoltan2::TRANSLATE_APP_TO_LIB);
+  try {
+    map->lidTranslate(lids(), z2Ids2(), Zoltan2::TRANSLATE_APP_TO_LIB);
   }
   catch (std::exception &e){
-    std::cerr << rank << ") gidTranslate error: " << e.what();
-    return 1;
+    fail = 1;
   }
 
-  ArrayView<AppLID> lidArray = test1.lids.view(0, numLocalObjects);
+  TEST_FAIL_AND_THROW(*comm, fail==0, "lidTranslate")
 
-  try{
-    idmap.lidTranslate(lidArray, gnoArray2, Zoltan2::TRANSLATE_APP_TO_LIB);
-  }
-  catch (std::exception &e){
-    std::cerr << rank << ") lidTranslate error: " << e.what();
-    return 1;
-  }
-
-  for (int i=0; i < numLocalObjects; i++){
-    if (gnoArray1[i] != gnoArray2[i]){
-      std::cerr << rank << ") gnos don't match: " << std::endl;
-      return 1;
+  for (size_t i=0; i < nLocalIds; i++){
+    if (z2Ids2[i] != z2Ids[i]){
+       fail = 1;
+       break;
     }
   }
 
-  if (consecutiveGnosAreRequired){
-    // TODO test htsi
+  TEST_FAIL_AND_THROW(*comm, fail==0, "lidTranslate results")
+
+  // Get User's global Ids give Zoltan2's global numbers
+
+  Array<GID> userGids(nLocalIds);
+
+  try {
+    map->gidTranslate(userGids(), z2Ids(), Zoltan2::TRANSLATE_LIB_TO_APP);
   }
-  return 0;
+  catch (std::exception &e){
+    fail = 1;
+  }
+
+  TEST_FAIL_AND_THROW(*comm, fail==0, "gidTranslate 2")
+
+  for (size_t i=0; i < nLocalIds; i++){
+    if (userGids[i] != gids[i]){
+       fail = 1;
+       break;
+    }
+  }
+
+  TEST_FAIL_AND_THROW(*comm, fail==0, "gidTranslate 2 results")
+
+  if (nprocs > 1){
+    // Get Zoltan2 global number and owner of some remote User global Ids
+    size_t nRemoteIds = remoteGids.size();
+    Array<GNO> remoteGno(nRemoteIds);
+    Array<int> remoteProc(nRemoteIds);
+  
+    try {
+      map->gidGlobalTranslate(remoteGids(), remoteGno(), remoteProc());
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+
+    TEST_FAIL_AND_THROW(*comm, fail==0, "gidGLobalTranslate")
+  
+    if (verbose){
+      comm->barrier();
+      for (int p=0; p < nprocs; p++){
+        if (rank == 0)
+          std::cout << "Global info obtained from map:" << std::endl;
+        if (p == rank){
+          std::cout << "Rank " << p << std::endl;
+          for (LNO i=0; i < nRemoteIds; i++){
+            std::cout << "  GID: ";
+            std::cout << UserIdTraits<GID>::stringify(remoteGids[i]);
+            std::cout << ", GNO " << remoteGno[i];
+            std::cout << ", Owner " << remoteProc[i] << std::endl;
+          }
+          std::cout << std::endl;
+          std::cout.flush();
+        }
+        comm->barrier();
+      }
+      comm->barrier();
+    }
+  }
 }
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int nprocs = comm->getSize();
   int rank = comm->getRank();
-  int errcode = 0, globalcode=0;
-  bool consecutiveGnosAreRequired=true; 
-  bool gnosShouldBeGids=true;
+  RCP<Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
-  long numLocalObjects = 10000/  nprocs;
-  long leftOver = 10000 % nprocs;
+  long numLocalObjects = 10;
+  long numRemoteObjects = 3;   // numRemoteObjects < numLocalObjects
+  bool verbose = true;
+  bool consecutiveGids=true;
+  bool gnosAreGids=true;
 
-  if (rank < leftOver) numLocalObjects++;
+  // Test these cases:
+  // 1. GIDs are non-consecutive ordinals
+  // 2. GIDs are non-consecutive ordinals, but we ask IdentifierMap to
+  //    map them to consecutive IDs
+  // 3. GIDs are consecutive ordinals
+  // 4. GIDs are not Teuchos Ordinals
 
-  Teuchos::ParameterList params; 
-  params.set(std::string("ERROR_CHECK_LEVEL"), 1);
-  params.set(std::string("DEBUG_OSTREAM"), "std::cout");
-  params.set(std::string("ERROR_OSTREAM"), "std::cerr");
-  params.set(std::string("DEBUG_LEVEL"), 0);
-    
-  Teuchos::RCP<Zoltan2::Environment> envPtr = 
-    Teuchos::rcp(new Zoltan2::Environment(params, comm));
+  ArrayRCP<long> gids(new long [numLocalObjects], 0, numLocalObjects, true);
+  ArrayRCP<long> remoteGids(new long [numRemoteObjects], 0, 
+    numRemoteObjects, true);
+  ArrayRCP<std::pair<int,int> > remoteGidPairs(
+    new std::pair<int,int> [numRemoteObjects], 0, numRemoteObjects, true);
+  ArrayRCP<int> lids(new int[numLocalObjects], 0, numLocalObjects, true);
 
-  // Test GIDs are longs, but not consecutive, LIDs are ints.
+  using Zoltan2::IdentifierMap;
 
-  {
-    // GIDs: long, LIDS: int, non consecutive global ids
-    Teuchos::ArrayRCP<long> gids(new long [numLocalObjects], 0, numLocalObjects, true);
-    Teuchos::ArrayRCP<int> lids(new int[numLocalObjects], 0, numLocalObjects, true);
+  //////////////////////////////////////////////////////////
+  //  Ids are non-consecutive ordinals.
 
-    long base = 10000 * rank;   // nonconsecutive gids
+  long base = 10000 * rank;
+  int fail = 0;
 
-    for (int i=0; i < numLocalObjects; i++){
-      gids[i] = base + i;   
-      lids[i] = i;
-    }
-    errcode = testIdentifierMap<int, long>(comm, envPtr, lids, gids,
-                      !consecutiveGnosAreRequired, gnosShouldBeGids);
-
-    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1, &errcode, &globalcode);
-
-    if (rank == 0){
-      if (globalcode){
-        std::cout << "FAIL" << std::endl;
-      }
-      else{
-        std::cout << "PASS" << std::endl;
-      }
-    }
-    if (globalcode){
-      return errcode;
-    }
+  for (int i=0; i < numLocalObjects; i++){
+    gids[i] = base + i;   
+    lids[i] = i;
   }
+
+  typedef IdentifierMap<int, long, int, long> mapLongGids_t;
+
+  mapLongGids_t *idMap = NULL;
+
+  try{
+    idMap = new mapLongGids_t(comm, env, gids, lids, false);
+  }
+  catch (std::exception &e){
+    std::cerr << rank << ") " << e.what() << std::endl;
+    fail = 1; 
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "constructor first case", 1);
+
+  if (nprocs > 1){
+    int remoteProc = (rank ? rank-1 : nprocs-1);
+    base = remoteProc * 10000;
+    for (int i=0; i < numRemoteObjects; i++)
+      remoteGids[i] = base + i;
+  }
+
+  // We're not asking IdentifierMap to create consecutive
+  // IDs, so Zoltan2 GNOs will be the User's GIDs, and
+  // we will not have consecutive GNOs.
+
+  testIdMap(comm, idMap, gnosAreGids, !consecutiveGids, 
+    gids, lids, remoteGids, verbose);
+
+  delete idMap;
+
+  //////////////////////////////////////////////////////////
+  //  Ids are non-consecutive ordinals.  
+  //  IdentifierMap is asked to map them to consecutive.
+
+  try{
+    idMap = new mapLongGids_t(comm, env, gids, lids, true); 
+  }
+  catch (std::exception &e){
+    std::cerr << rank << ") " << e.what() << std::endl;
+    fail = 1; 
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "constructor second case", 1);
+
+  // Because we're asking IdentifierMap to make the Zoltan2 GNOs
+  // consecutive, the GNOs will not be the same as the user GIDs.
+  // And because we specifically asked for consecutive GNOs, we
+  // will have consecutive global Ids.
+
+  testIdMap(comm, idMap, !gnosAreGids, consecutiveGids, 
+    gids, lids, remoteGids, verbose);
+
+  delete idMap;
+
+  //////////////////////////////////////////////////////////
+  //  Ids are consecutive ordinals.  
+
+  base = rank * numLocalObjects;
+  for (int i=0; i < numLocalObjects; i++){
+    gids[i] = base + i;   
+  }
+
+  try{
+    idMap = new mapLongGids_t(comm, env, gids, lids, false); 
+  }
+  catch (std::exception &e){
+    std::cerr << rank << ") " << e.what() << std::endl;
+    fail = 1; 
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "constructor third case", 1);
+
+  if (nprocs > 1){
+    int remoteProc = (rank ? rank-1 : nprocs-1);
+    base = remoteProc * numLocalObjects;
+    for (int i=0; i < numRemoteObjects; i++)
+      remoteGids[i] = base + i;
+  }
+
+  // Because the User GIDs are ordinals, the Zoltan2 GNOs will be
+  // the User GIDs. And since the User GIDs are already consecutive,
+  // the Zoltan2 GNOs are consecutive.
+
+  testIdMap(comm, idMap, gnosAreGids, consecutiveGids, 
+    gids, lids, remoteGids, verbose);
+
+  delete idMap;
+
+
+#if 0
+  // TODO - there is a bug in the IdentifierMap constructor
+  //   when GIDs are std::pair<int,int>
+  //////////////////////////////////////////////////////////
+  //  Ids are not ordinals.  
+
+  ArrayRCP<std::pair<int,int> > nonOrdinalGids(
+     new std::pair<int,int> [numLocalObjects],
+     0, numLocalObjects, true);
+
+  for (int i=0; i < numLocalObjects; i++){
+    nonOrdinalGids[i] = std::pair<int, int>(rank, i);
+  }
+
+  typedef IdentifierMap<int, std::pair<int,int>, int, long> mapPairGids_t;
+
+  mapPairGids_t *idMap2 = NULL;
+
+  try{
+    idMap2 = new mapPairGids_t(comm, env, nonOrdinalGids, lids, false); 
+  }
+  catch (std::exception &e){
+    std::cerr << rank << ") " << e.what() << std::endl;
+    fail = 1; 
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "constructor fourth case", 1);
+
+  if (nprocs > 1){
+    int remoteProc = (rank ? rank-1 : nprocs-1);
+    base = remoteProc * numLocalObjects;
+    for (int i=0; i < numRemoteObjects; i++)
+      remoteGidPairs[i] = std::pair<int,int>(remoteProc,i);
+  }
+
+  // Because the User's GIDs are not Teuchos Ordinals, they
+  // will not be used as Zoltan2 GNOs.  When Zoltan2 creates
+  // the global Ids for the problem, it creates consecutive
+  // Ids that begin at 0.
+
+  testIdMap(comm, idMap2, !gnosAreGids, consecutiveGids, 
+    nonOrdinalGids, lids, remoteGidPairs, verbose);
+
+  delete idMap2;
+#endif
+
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
 }
+

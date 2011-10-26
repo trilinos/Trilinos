@@ -82,6 +82,10 @@ public:
    */
   int getCoordinateDim() const { return 0; }
 
+  /*! Returns the base ID, typically 0 or 1.
+   */
+  gno_t getIndexBase() const {return 0;}
+
   /*! Sets pointers to this process' vertex Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
         each vertex on this process.
@@ -131,7 +135,7 @@ public:
    */
   size_t getVertexGlobalEdge( gno_t Id, 
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
-    ArrayView<const scalar_t> *&wgts) const { return 0; }
+    ArrayView<const scalar_t> &wgts) const { return 0; }
    
   /*! Obtain a view of the edge Ids of the input vertex.
       \param localRef  is the local id associated with vertex.  Local ids
@@ -158,7 +162,8 @@ public:
 ////////////////////////////////////////////////////////////////
 // Graph model derived from XpetraCrsMatrixInput.
 //    We know that Xpetra input does not need an IdentifierMap
-//
+//    unless consecutive global Ids are required and the Xpetra
+//    input is not consecutive.
 ////////////////////////////////////////////////////////////////
 
 /*! Zoltan2::GraphModel<XpetraCrsMatrixInput>
@@ -197,13 +202,6 @@ public:
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
       numLocalEdges_(), numGlobalEdges_(0)
   {
-    if (consecutiveIdsRequired && !rowMap_->isContiguous()){
-      // TODO Use an identifier map to map the global IDs to consecutive IDs.
-      if (comm->getRank() == 0)
-         std::cerr << "Consecutive ID problem" << std::endl;
-      throw std::logic_error("not prepared to create consecutive ids");
-    }
-
     gno_t const *vtxIds=NULL, *nborIds=NULL;
     lno_t const  *offsets=NULL, *lids=NULL; 
     lno_t numVtx;
@@ -213,17 +211,22 @@ public:
     catch (std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
-    gnos_ = arcp(vtxIds, 0, numVtx, false);   // non-owning ArrayRCPs
-    offsets_ = arcp(offsets, 0, numVtx+1, false);
+    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numVtx);
+    gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
+
+    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numVtx+1);
+    offsets_ = av2.getConst();
 
     numLocalEdges_ = offsets_[numVtx];
+
+    ArrayView<gno_t> av3(const_cast<gno_t *>(nborIds), numLocalEdges_);
+    edgeGnos_ = av3.getConst();
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
     RCP<Array<int> > procBuf =  rcp(new Array<int>(numLocalEdges_));
     procIds_ = arcp(procBuf);
-    edgeGnos_ = arcp(nborIds, 0, numLocalEdges_, false);
 
     try{
       rowMap_->getRemoteIndexList(edgeGnos_.view(0,numLocalEdges_), 
@@ -273,6 +276,10 @@ public:
     return 0;   // TODO
   } 
 
+  gno_t getIndexBase() const
+  {
+  }
+
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
@@ -287,13 +294,13 @@ public:
   {
     edgeIds = edgeGnos_.view(0, numLocalEdges_);
     procIds = procIds_.view(0, numLocalEdges_);
-    offsets = offsets_.view(0, numLocalEdges_+1);
+    offsets = offsets_.view(0, gnos_.size()+1);
 
     return numLocalEdges_;
   }
 
   size_t getVertexGlobalEdge( gno_t Id, ArrayView<const gno_t> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const scalar_t> *&wgts) const
+    ArrayView<const int> &procId, ArrayView<const scalar_t> &wgts) const
   {
     if (rowMap_->isNodeGlobalElement(Id)){
       return getVertexLocalEdge(rowMap_->getLocalElement(Id), edgeId, procId, wgts);
@@ -304,7 +311,7 @@ public:
   }
 
   size_t getVertexLocalEdge( lno_t lno, ArrayView<const gno_t> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const scalar_t> *&wgts) const
+    ArrayView<const int> &procId, ArrayView<const scalar_t> &wgts) const
   { 
     Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, "invalid local id",
       lno >= 0 && lno < gnos_.size(), BASIC_ASSERTION);
@@ -326,10 +333,10 @@ private:
   RCP<const Teuchos::Comm<int> > comm_;
   RCP<const Environment > env_;
 
-  ArrayRCP<const gno_t> gnos_;
-  ArrayRCP<const gno_t> edgeGnos_;
+  ArrayView<const gno_t> gnos_;
+  ArrayView<const gno_t> edgeGnos_;
   ArrayRCP<int> procIds_;
-  ArrayRCP<const lno_t> offsets_;
+  ArrayView<const lno_t> offsets_;
 
   // Transpose is required only if vertices are columns.
   // KDDKDD ??  We won't form an actual transpose, will we?

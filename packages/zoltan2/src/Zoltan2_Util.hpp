@@ -80,7 +80,7 @@ template <typename GID, typename LNO, typename EXTRA>
   Environment env;   //  default environment
 
   try{
-    AlltoAllv<GID, LNO>(comm, env, gidList, counts, imports, recvCounts);
+    AlltoAllv<GID, LNO>(comm, env, gidList(), counts(), imports, recvCounts);
   }
   catch (std::exception &e){
     throw std::runtime_error("alltoallv 1");
@@ -88,7 +88,7 @@ template <typename GID, typename LNO, typename EXTRA>
 
   if (sendSizes){
     try{
-      AlltoAllv<EXTRA, LNO>(comm, env, xtraInfo, counts, newXtraInfo, recvCounts);
+      AlltoAllv<EXTRA, LNO>(comm, env, xtraInfo, counts(), newXtraInfo, recvCounts);
     }
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");
