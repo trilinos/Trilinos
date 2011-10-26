@@ -35,7 +35,7 @@ useMueLuGallery(
   int zdim=10;
   std::string matrixType("Laplace2D");
 
-  Teuchos::CommandLineProcessor clp(false, true);
+  Teuchos::CommandLineProcessor clp(false, false);
   clp.setOption("x", &xdim, 
                 "number of gridpoints in X dimension for "
                 "mesh used to generate matrix.");
@@ -48,13 +48,7 @@ useMueLuGallery(
   clp.setOption("matrix", &matrixType, 
                 "Matrix type: Laplace1D, Laplace2D, or Laplace3D");
 
-  int status = clp.parse(narg, arg) ;
-  if (status != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
-    if (status == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) 
-      return Teuchos::null;
-    if (comm->getRank() == 0) std::cout << "FAIL" << std::endl;
-    return Teuchos::null;
-  }
+  clp.parse(narg, arg);
 
   ///////////////////////////////////////////////////
   // Use Muelu to create a distributed matrix.
@@ -89,7 +83,7 @@ useMueLuGallery(
                 << std::endl; 
       std::cout << "FAIL" << std::endl; 
     } 
-    return Teuchos::null; 
+    return RCP<Tpetra::CrsMatrix<Scalar, LNO, GNO> > (Teuchos::null); 
   } 
 
   return matrix;

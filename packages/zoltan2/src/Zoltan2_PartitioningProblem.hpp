@@ -55,6 +55,9 @@ public:
   virtual void solve();
   virtual void redistribute();
 
+  PartitioningSolution<Adapter> *getSolution() {
+    return solution_.getRawPtr();
+  };
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -69,8 +72,8 @@ void PartitioningProblem<Adapter>::solve()
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  AlgPTScotch<Adapter> alg(this->graphModel_, this->solution_, this->params_,
-                           this->comm_);
+  AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
+                       this->comm_);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -90,9 +93,9 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem()
 {
   HELLO;
-  cout << __func__ << " input adapter type " 
-       << this->inputAdapter_->inputAdapterType() << " " 
-       << this->inputAdapter_->inputAdapterName() << endl;
+//  cout << __func__ << " input adapter type " 
+//       << this->inputAdapter_->inputAdapterType() << " " 
+//       << this->inputAdapter_->inputAdapterName() << endl;
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
@@ -109,8 +112,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
   switch (modelType) {
 
   case GraphModelType:
-
-    cout << __func__ << "Xpetra matrix adapter switch" << endl;
 
     this->graphModel_ = RCP<GraphModel<Adapter> > 
                         (new GraphModel<Adapter>(this->inputAdapter_,

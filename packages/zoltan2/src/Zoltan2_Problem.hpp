@@ -90,11 +90,11 @@ Problem<Adapter>::Problem(
   env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
 {
   HELLO;
-  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
-       << " " << inputAdapter_->inputAdapterName() 
-       << " sizeof(scalar_t)= " 
-       << sizeof(typename Adapter::scalar_t) 
-       << endl;
+//  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
+//       << " " << inputAdapter_->inputAdapterName() 
+//       << " sizeof(scalar_t)= " 
+//       << sizeof(typename Adapter::scalar_t) 
+//       << endl;
 }
 
 }

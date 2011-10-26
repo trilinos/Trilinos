@@ -308,7 +308,8 @@ public:
         nnz = static_cast<int *>(newRowSizes.getRawPtr());
       }
 
-      Epetra_CrsMatrix *M = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
+      Epetra_CrsMatrix *M ;//TODO KDDKDD DOES NOT COMPILE WITH REST OF THIS LINE = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
+      // TODO KDDKDD THE ABOVE LINE WILL NOT PRODUCE CORRECT RESULTS!
 
       Epetra_Import importer(tMap, sMap);
 
