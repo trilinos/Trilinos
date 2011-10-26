@@ -72,8 +72,8 @@ void PartitioningProblem<Adapter>::solve()
   // For now, assuming Scotch graph partitioning.
   // Need some exception handling here, too.
 
-  AlgPTScotch<Adapter> alg(this->graphModel_, this->solution_, this->params_,
-                           this->comm_);
+  AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
+                       this->comm_);
 }
 
 ////////////////////////////////////////////////////////////////////////

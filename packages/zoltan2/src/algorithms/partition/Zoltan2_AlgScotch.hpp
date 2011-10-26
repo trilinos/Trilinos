@@ -22,31 +22,8 @@
 
 namespace Zoltan2{
 
-////////////////////////////////////////////////////////////////////////
-//! \class AlgPTScotch
-//! \brief Problem base class from which other classes (PartitioningProblem, 
-//!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-template<typename Adapter>
-class AlgPTScotch {
-public:
-
-  AlgPTScotch(const RCP<GraphModel<Adapter> > &, 
-              const RCP<PartitioningSolution<Adapter> > &,
-              const RCP<Teuchos::ParameterList> &,
-              const RCP<const Teuchos::Comm<int> > &);
-
-  // Destructor
-  ~AlgPTScotch() {};
-
-protected:
-private:
-
-};
-
-
-////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-AlgPTScotch<Adapter>::AlgPTScotch(
+int AlgPTScotch(
   const RCP<GraphModel<Adapter> > &model, 
   const RCP<PartitioningSolution<Adapter> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
@@ -56,6 +33,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
 #ifndef HAVE_SCOTCH
   cout << "Scotch requested but not compiled into Zoltan2." << endl
        << "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON." << endl;
+  return 1;
 #else
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
@@ -64,6 +42,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   HELLO;
+  int ierr = 0;
   int me = comm->getRank();
 
   if (sizeof(lno_t) != sizeof(SCOTCH_Num) || 
@@ -85,7 +64,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   // Allocate & initialize PTScotch data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph 
 
-  int ierr = SCOTCH_dgraphInit(gr, mpicomm);  // TODO Handle non-MPI builds.
+  ierr = SCOTCH_dgraphInit(gr, mpicomm);  // TODO Handle non-MPI builds.
   if (ierr) KDD_HANDLE_ERROR;
   
   // Get vertex info
@@ -199,6 +178,7 @@ AlgPTScotch<Adapter>::AlgPTScotch(
   //TODO if (vwtdim) delete [] velotab;
   //TODO if (ewtdim) delete [] edlotab;
 
+  return ierr;
 #endif // HAVE_SCOTCH
 }
 
