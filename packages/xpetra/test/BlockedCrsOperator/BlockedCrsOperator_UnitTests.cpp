@@ -17,6 +17,8 @@
 #endif
 #  include "Epetra_SerialComm.h"
 
+#include <Xpetra_ConfigDefs.hpp>
+
 #ifdef HAVE_XPETRA_EPETRAEXT
 // EpetraExt
 #include "EpetraExt_CrsMatrixIn.h"
@@ -26,7 +28,6 @@
 #include "EpetraExt_RowMatrixOut.h"
 #endif
 
-#include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Teuchos_as.hpp>
 
