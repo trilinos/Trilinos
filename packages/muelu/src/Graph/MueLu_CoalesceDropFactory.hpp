@@ -10,6 +10,10 @@
 
 namespace MueLu {
 
+static const std::string color_esc = "\x1b[";
+static const std::string color_std = "39;49;00m";
+static const std::string color_purple = "35m";
+
   /*!
     @class CoalesceDropFactory
     @brief Factory for creating a graph base on a given matrix.
@@ -32,7 +36,7 @@ namespace MueLu {
 
     //! Constructor
     CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-      : AFact_(AFact)
+      : AFact_(AFact), fixedBlkSize_(true)
     { }
 
     //! Destructor
@@ -45,6 +49,14 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const {
       currentLevel.DeclareInput("A", AFact_.get());
     }
+
+    void SetFixedBlockSize(GlobalOrdinal blksize) {
+    	blksize_ = blksize;
+    	fixedBlkSize_ = true;
+    	GetOStream(Low, 0) << color_esc << color_purple << "CoalesceDropFactory::SetFixedBlockSize()" << color_esc << color_std << endl;
+    }
+
+    // todo: method that takes a block map...
 
     //@}
 
@@ -60,6 +72,12 @@ namespace MueLu {
   private:
     //! A Factory
     RCP<const FactoryBase> AFact_;
+
+    /// blocksize for fixed blocksize setup
+    GO blksize_;
+
+    /// are we doing fixed or variabled blocks
+    bool fixedBlkSize_;
 
   }; //class CoalesceDropFactory
 
