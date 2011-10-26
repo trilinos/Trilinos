@@ -17,14 +17,14 @@
 #endif
 #  include "Epetra_SerialComm.h"
 
-#ifdef HAVE_XPETRA_EPETRAEXT
+//#ifdef HAVE_XPETRA_EPETRAEXT  // for some unknown reason this #define flag is not known even though set in CMakeLists.txt
 // EpetraExt
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
-#endif
+//#endif
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
