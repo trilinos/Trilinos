@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",xNS);
 
-
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
