@@ -37,6 +37,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosXpetraAdapter.hpp" // this header defines Belos::MueLuOp()
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 #endif
 

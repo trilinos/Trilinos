@@ -17,10 +17,12 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp and Belos::MueLuPrecOp
+#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::MueLuOp
+#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuPrecOp
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
+  using Teuchos::rcp; //
 
   //
   // MPI initialization using Teuchos

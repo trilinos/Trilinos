@@ -5,7 +5,8 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 
-// Belos / MueLu adapters
+// Belos / Xpetra-MueLu adapters
+#include "BelosXpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
 
 namespace MueLuTests {
