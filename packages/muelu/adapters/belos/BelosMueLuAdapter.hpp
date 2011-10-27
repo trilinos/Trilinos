@@ -243,25 +243,17 @@ namespace Belos {
   class MueLuOp : 
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
-    , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-    ,public OperatorT<Epetra_MultiVector> //TODO jg longlong
+    , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
   {  
-    
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector;
-#endif
+
   public:
     
     //! @name Constructor/Destructor
     //@{ 
     
     //! Default constructor
-    MueLuOp(const RCP<Operator> & Op) : Op_(Op) {}
+    MueLuOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
     
     //! Destructor.
     virtual ~MueLuOp() {};
@@ -275,7 +267,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-    void Apply ( const MultiVector& x, MultiVector& y, ETrans trans=NOTRANS ) const {
+    void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported."); 
 
@@ -292,12 +284,12 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-    void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
+    void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
 
 
-      TMultiVector & temp_x = const_cast<TMultiVector &>(x);
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
 
       const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
       Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
@@ -309,33 +301,9 @@ namespace Belos {
     }
 #endif
 
-    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
-    /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
-      to it resulting in the Tpetra::MultiVector \c y, which is returned.
-      \note It is expected that any problem with applying this operator to \c x will be
-      indicated by an std::exception being thrown.
-    */
-#ifdef HAVE_XPETRA_EPETRAEXT
-    void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
-                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
-
-
-      Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
-
-      const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
-
-      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
-      tY.putScalar(0.0);
-
-      Op_->apply(tX,tY);
-    }
-#endif
-
   private:
   
-    RCP<Operator> Op_;
+    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
   };
 
   //TODO: doc
@@ -349,23 +317,15 @@ namespace Belos {
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-    ,public OperatorT<Epetra_MultiVector> //TODO jglonglong
-#endif
   { 
-    
-    typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector; //TODO: remove for readability
-#endif
+  
   public:
     
     //! @name Constructor/Destructor
     //@{ 
     
     //! Default constructor
-    MueLuPrecOp(const RCP<Hierarchy> & H) : Hierarchy_(H) {}
+    MueLuPrecOp(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) {}
     
     //! Destructor.
     virtual ~MueLuPrecOp() {};
@@ -380,7 +340,7 @@ namespace Belos {
       indicated by an std::exception being thrown.
     */
     // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
-    void Apply ( const MultiVector& x, MultiVector& y, ETrans trans=NOTRANS ) const {
+    void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
@@ -399,12 +359,12 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-    void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
+    void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
-      TMultiVector & temp_x = const_cast<TMultiVector &>(x);
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
 
       const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
       Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
@@ -417,13 +377,153 @@ namespace Belos {
     }
 #endif
 
+  private:
+  
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
+  };
+
+
+
+  template <> 
+  class MueLuOp<double, int, int>   
+    : 
+    public OperatorT<Xpetra::MultiVector<double, int, int> >
+#ifdef HAVE_XPETRA_TPETRA
+    , public OperatorT<Tpetra::MultiVector<double, int, int> >
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+    , public OperatorT<Epetra_MultiVector>
+#endif
+  {  
+
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+
+  public:
+
+    MueLuOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    
+    virtual ~MueLuOp() {};
+
+    void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported."); 
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      y.putScalar(0.0);
+
+      Op_->apply(x,y);
+    }
+
+#ifdef HAVE_XPETRA_TPETRA
+    void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
+
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Op_->apply(tX,tY);
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRAEXT
+    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
+    /*! \brief This routine takes the Epetra_MultiVector \c x and applies the operator
+      to it resulting in the Epetra_MultiVector \c y, which is returned.
+      \note It is expected that any problem with applying this operator to \c x will be
+      indicated by an std::exception being thrown.
+    */
+    void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+
+      Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
+
+      const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Op_->apply(tX,tY);
+    }
+#endif
+
+  private:
+  
+    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
+  };
+
+  template <> 
+  class MueLuPrecOp<double, int, int> : 
+    public OperatorT<Xpetra::MultiVector<double, int, int> >
+#ifdef HAVE_XPETRA_TPETRA
+    , public OperatorT<Tpetra::MultiVector<double, int, int> >
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+    , public OperatorT<Epetra_MultiVector>
+#endif
+  { 
+
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+
+  public:
+    
+    MueLuPrecOp(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) {}
+    
+    virtual ~MueLuPrecOp() {};
+
+    void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      y.putScalar(0.0);
+
+      Hierarchy_->Iterate( x, 1, y , true);
+      
+    }
+
+#ifdef HAVE_XPETRA_TPETRA  
+    void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
+
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
+
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Hierarchy_->Iterate( tX, 1, tY , true);
+      
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRAEXT
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-#ifdef HAVE_XPETRA_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
@@ -444,7 +544,7 @@ namespace Belos {
 
   private:
   
-    RCP<Hierarchy> Hierarchy_;
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
   };
 
 } // namespace Belos
