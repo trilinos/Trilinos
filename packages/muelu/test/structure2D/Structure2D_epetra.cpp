@@ -48,20 +48,10 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_PreDropFunctionConstVal.hpp"
 
-//
-typedef double Scalar;
-typedef int LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#endif
-//
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps
-    LocalMatOps;
-//
+#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 /*!
@@ -118,21 +108,21 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
   // Epetra_CrsMatrix -> Xpetra::Operator
-  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > crsOp = Teuchos::rcp(new Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal>(exA));
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal> >(crsOp);
+  RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+  RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
+  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
 
   // Epetra_Vector -> Xpetra::Vector
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+  RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
 
-  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> > xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+  RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
 
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::toXpetra(emap);
+  const RCP< const Map> map = Xpetra::toXpetra(emap);
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
+  RCP<Hierarchy> H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize(maxCoarseSize);
 
@@ -143,7 +133,15 @@ int main(int argc, char *argv[]) {
   Finest->Set("Nullspace",xNS);
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  dropFact->SetVerbLevel(MueLu::Extreme);
   dropFact->SetFixedBlockSize(2);
+
+#ifdef MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
+typedef MueLu::PreDropFunctionConstVal<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreDropFunctionConstVal;
+#endif
+
+  RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+  dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;

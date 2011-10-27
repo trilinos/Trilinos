@@ -7,12 +7,13 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
+#include "MueLu_PreDropFunctionBaseClass.hpp"
 
 namespace MueLu {
 
-static const std::string color_esc = "\x1b[";
-static const std::string color_std = "39;49;00m";
-static const std::string color_purple = "35m";
+  static const std::string color_esc = "\x1b[";
+  static const std::string color_std = "39;49;00m";
+  static const std::string color_purple = "35m";
 
   /*!
     @class CoalesceDropFactory
@@ -57,6 +58,9 @@ static const std::string color_purple = "35m";
     	GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::SetFixedBlockSize()" << color_esc << color_std << std::endl;
     }
 
+    /// set predrop function
+    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop) { predrop_ = predrop; }
+
     // todo: method that takes a block map...
 
     //@}
@@ -64,9 +68,19 @@ static const std::string color_purple = "35m";
     void Build(Level &currentLevel) const {
       RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
-      RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      // pre-dropping
+      RCP<Graph> graph;
+      if (predrop_ == Teuchos::null) {
+        graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      } else {
+        graph = predrop_->Drop(A);
+      }
+
+      // coalesce
 
       currentLevel.Set("Graph", graph, this);
+
+      // post-dropping?
 
     } // Build
 
@@ -79,6 +93,9 @@ static const std::string color_purple = "35m";
 
     /// are we doing fixed or variabled blocks
     bool fixedBlkSize_;
+
+    /// pre-drop function
+    RCP<PreDropFunctionBaseClass<SC,LO,GO,Node,LMO> > predrop_;
 
   }; //class CoalesceDropFactory
 
