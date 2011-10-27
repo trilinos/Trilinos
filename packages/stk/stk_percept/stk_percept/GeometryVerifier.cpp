@@ -238,37 +238,23 @@ namespace stk
       unsigned foundBad=0;
       jac_data_map jac_data;
 
-      std::cout << "tmp GeometryVerifier 1" << std::endl;
-
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
       mesh::Selector select_owned( meta.locally_owned_part() );
-      std::cout << "tmp GeometryVerifier 2 meta.element_rank() = " << meta.element_rank() << std::endl;
-
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
 
-      std::cout << "tmp GeometryVerifier 2a" << std::endl;
       for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
           if ( select_owned( **ik ) ) {
-      std::cout << "tmp GeometryVerifier 2b" << std::endl;
 
             const mesh::Bucket & bucket = **ik ;
 
-      std::cout << "tmp GeometryVerifier 2c" << std::endl;
             const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
 
-            std::cout << "tmp GeometryVerifier 2d " << stk::mesh::fem::get_cell_topology(bucket).getName() << std::endl;
-
-            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data << " " <<  std::endl;
-            std::cout << "tmp GeometryVerifier 2d " << bucket.size() << std::endl;
-            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data->name << " " <<  std::endl;
             jac_data[bucket_cell_topo_data->name] = jacData();
-      std::cout << "tmp GeometryVerifier 2e" << std::endl;
           }
         }
-      std::cout << "tmp GeometryVerifier 3" << std::endl;
 
       for (unsigned ipass = 0; ipass < 1; ipass++)
         {
@@ -298,13 +284,12 @@ namespace stk
 
               if (0) { std::cout << "number_elems= " << number_elems << std::endl;}
 
-              std::cout << "tmp GeometryVerifier 4" << std::endl;
-
               CellTopology cell_topo(bucket_cell_topo_data);
               double volEqui = getEquiVol(cell_topo);
               unsigned numCells = number_elems;
               unsigned numNodes = cell_topo.getNodeCount();
               unsigned spaceDim = cell_topo.getDimension();
+              //unsigned spatialDimMeta = stk::mesh::fem::FEMMetaData::get(bulk).spatial_dimension();
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
               FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
@@ -323,7 +308,15 @@ namespace stk
 
               DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
               unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-              Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+              Teuchos::RCP<Cubature<double> > myCub;
+              try {
+                myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+              }
+              catch(...)
+                {
+                  std::cout << "WARNING: mesh contains elements that Intrepid doesn't support for quadrature, cell_topo= " << cell_topo.getName() << std::endl;
+                  continue;
+                }
 
               unsigned numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
 
@@ -351,8 +344,6 @@ namespace stk
 
               FieldContainer<double> weightedMeasure(numCells, numCubPoints);
 
-              std::cout << "tmp GeometryVerifier 5" << std::endl;
-
               FieldContainer<double> onesLeft(numCells,  numCubPoints);
               onesLeft.initialize(1.0);
 
@@ -370,8 +361,6 @@ namespace stk
 
               // integrate to get volume
               FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
-
-              std::cout << "tmp GeometryVerifier 6" << std::endl;
 
               jacData& jdata = jac_data[cell_topo.getName()];
               jdata.numEle += numCells;
@@ -508,8 +497,10 @@ namespace stk
       if (!p_rank && printTable)
         //if (printTable)
         {
-          std::cout << "P[" << p_rank << "] " << table;
-          //std::cout << table;
+          std::cout << "P[" << p_rank << "] Explanation: JacDet=det(element jacobian), QM1=min(element edge length)/(elemement vol)^(1/dim), QM2=min(element edge length)/max(element edge length)\n" 
+                    << " NOTE: QM1/2 are small for badly shaped elements, normalized to 1 for perfectly shaped elements\n"
+                    << std::endl;
+          std::cout << table;
         }
 
       return (foundBad > 0);
