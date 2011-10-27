@@ -339,6 +339,7 @@ namespace MueLuTests {
 
     // Make sure that Constructors and SetSmootherPrototypes() are not using references as input arguments
     // (to allow Teuchos::null as input arguments)
+    //TODO: const ref?
     TEUCHOS_UNIT_TEST(SmootherFactory, Compilation)
     {
       SmootherFactory smooFact1(Teuchos::null);
