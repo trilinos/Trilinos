@@ -164,6 +164,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Portals         ""    SS
   CrayPortals     ""    SS
   Gemini          ""    SS
+  InfiniBand      ""    SS
   Pablo           ""    SS
   Pnetcdf         ""    SS
   )
