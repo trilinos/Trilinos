@@ -5,7 +5,11 @@
  *      Author: thkorde
  */
 
-#include "nssi_config.h"
+#include "Trios_config.h"
+#include "Trios_threads.h"
+#include "Trios_timer.h"
+#include "Trios_signal.h"
+#include "Trios_nssi_fprint_types.h"
 
 #include <assert.h>
 #include <unistd.h>
@@ -20,13 +24,11 @@
 #include <netdb.h>
 #include <verbs.h>
 
-#include "uthash.h"
+#include <map>   // hash maps
 
 #include "nnti_ib.h"
 #include "nnti_utils.h"
 
-#include "nssi_threads.h"
-#include "support/timer/nssi_timer.h"
 
 
 /**
@@ -265,11 +267,11 @@ static int32_t get_qp_index(ib_connection *conn);
 static void release_qp_index(ib_connection *conn, int32_t index);
 static void print_ib_conn(ib_connection *c);
 static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *conn);
-static NNTI_result_t insert_conn_qpn(const uint64_t qpn, ib_connection *conn);
+static NNTI_result_t insert_conn_qpn(const NNTI_qp_num qpn, ib_connection *conn);
 static ib_connection *get_conn_peer(const NNTI_peer_t *peer);
-static ib_connection *get_conn_qpn(const uint64_t qpn);
+static ib_connection *get_conn_qpn(const NNTI_qp_num qpn);
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer);
-static ib_connection *del_conn_qpn(const uint64_t qpn);
+static ib_connection *del_conn_qpn(const NNTI_qp_num qpn);
 static void close_all_conn(void);
 //static void print_put_buf(void *buf, uint32_t size);
 
@@ -278,6 +280,39 @@ static ib_transport_global transport_global_data;
 static const int MIN_TIMEOUT = 1000;  /* in milliseconds */
 
 
+/**
+ * This custom key is used to look up existing connections.
+ */
+struct addrport_key {
+    NNTI_ip_addr    addr;       /* part1 of a compound key */
+    NNTI_tcp_port   port;       /* part2 of a compound key */
+
+    // Need this operators for the hash map
+    bool operator<(const addrport_key &key1) const {
+        return addr < key1.addr;
+    }
+
+    bool operator>(const addrport_key &key1) const {
+        return addr > key1.addr;
+    }
+};
+
+/*
+ * We need a couple of maps to keep track of connections.  Servers need to find
+ * connections by QP number when requests arrive.  Clients need to find connections
+ * by peer address and port.  Setup those maps here.
+ */
+static std::map<addrport_key, ib_connection *> connections_by_peer;
+typedef std::map<addrport_key, ib_connection *>::iterator conn_by_peer_iter_t;
+typedef std::pair<addrport_key, ib_connection *> conn_by_peer_t;
+static nthread_mutex_t nnti_conn_peer_lock;
+
+static std::map<NNTI_qp_num, ib_connection *> connections_by_qpn;
+typedef std::map<NNTI_qp_num, ib_connection *>::iterator conn_by_qpn_iter_t;
+typedef std::pair<NNTI_qp_num, ib_connection *> conn_by_qpn_t;
+static nthread_mutex_t nnti_conn_qpn_lock;
+
+#if 0
 /*
  * We need a couple of maps to keep track of connections.  Servers need to find
  * connections by QP number when requests arrive.  Clients need to find connections
@@ -302,6 +337,7 @@ static conn_addrport  *connections_by_peer=NULL;
 static nthread_mutex_t nnti_conn_peer_lock;
 static conn_qpn       *connections_by_qpn=NULL;
 static nthread_mutex_t nnti_conn_qpn_lock;
+#endif
 
 
 
@@ -323,9 +359,8 @@ NNTI_result_t NNTI_ib_init (
 {
     static int initialized=0;
 
-    NNTI_result_t rc=NNTI_OK;
+    int rc=0;
 
-    struct sockaddr_in sin;
     struct ibv_device_attr dev_attr;
     struct ibv_port_attr   dev_port_attr;
     int flags;
@@ -333,12 +368,12 @@ NNTI_result_t NNTI_ib_init (
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
-    char *sep, *endptr;
+    char *sep;
+//    char *endptr;
 
     char hostname[NNTI_HOSTNAME_LEN];
-    NNTI_ip_addr  addr;
-    NNTI_tcp_port port;
+//    NNTI_ip_addr  addr;
+//    NNTI_tcp_port port;
 
     assert(trans_hdl);
 
@@ -360,19 +395,15 @@ NNTI_result_t NNTI_ib_init (
 
         if (my_url != NULL) {
             if ((rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {
-                return(rc);
+                return(NNTI_EINVAL);
             }
             if (0!=strcmp(transport, "ib")) {
                 return(NNTI_EINVAL);
             }
 
             if ((rc=nnti_url_get_address(my_url, address, NNTI_URL_LEN)) != NNTI_OK) {
-                return(rc);
+                return(NNTI_EINVAL);
             }
-
-//            if ((rc=nnti_url_get_memdesc(my_url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//                return(rc);
-//            }
 
             sep=strchr(address, ':');
             if (sep == address) {
@@ -381,15 +412,15 @@ NNTI_result_t NNTI_ib_init (
             } else {
                 strncpy(hostname, address, sep-address);
             }
-            sep++;
-            port=strtol(sep, &endptr, 0);
-            if (endptr == sep) {
-                /* no port given; use -1 */
-                port=-1;
-            }
+//            sep++;
+//            port=strtol(sep, &endptr, 0);
+//            if (endptr == sep) {
+//                /* no port given; use -1 */
+//                port=-1;
+//            }
         } else {
             gethostname(hostname, NNTI_HOSTNAME_LEN);
-            port=-1;
+//            port=-1;
         }
         strcpy(transport_global_data.listen_name, hostname);
 
@@ -524,7 +555,7 @@ NNTI_result_t NNTI_ib_init (
 
     log_debug(nnti_debug_level, "exit");
 
-    return(rc);
+    return(NNTI_OK);
 }
 
 
@@ -579,11 +610,10 @@ NNTI_result_t NNTI_ib_connect (
 {
     NNTI_result_t rc=NNTI_OK;
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-    char memdesc[NNTI_URL_LEN];
     char *sep;
 
     char          hostname[NNTI_HOSTNAME_LEN];
@@ -610,10 +640,6 @@ NNTI_result_t NNTI_ib_connect (
         if ((rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
             return(rc);
         }
-
-//        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//            return(rc);
-//        }
 
         sep=strchr(address, ':');
         strncpy(hostname, address, sep-address);
@@ -642,7 +668,7 @@ NNTI_result_t NNTI_ib_connect (
     memcpy(&skin.sin_addr, host_entry->h_addr_list[0], (size_t) host_entry->h_length);
     skin.sin_port = htons(port);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
 retry:
     if (connect(s, (struct sockaddr *) &skin, sizeof(skin)) < 0) {
         if (errno == EINTR) {
@@ -652,11 +678,11 @@ retry:
             return NNTI_EIO;
         }
     }
-    nssi_stop_timer("socket connect", callTime);
+    trios_stop_timer("socket connect", callTime);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     ib_connection *conn = init_connection(s, hostname, skin.sin_addr.s_addr, port, 0);
-    nssi_stop_timer("ib init connection", callTime);
+    trios_stop_timer("ib init connection", callTime);
 
     create_peer(
             peer_hdl,
@@ -680,7 +706,6 @@ retry:
                 "end of NNTI_ib_connect", peer_hdl);
     }
 
-cleanup:
     return(rc);
 }
 
@@ -728,7 +753,6 @@ NNTI_result_t NNTI_ib_register_memory (
 {
     NNTI_result_t rc=NNTI_OK;
     uint32_t i;
-    double callTime;
 
     uint32_t cqe_num;
 
@@ -807,10 +831,10 @@ NNTI_result_t NNTI_ib_register_memory (
                 register_memory(ib_mem_hdl, i, slice, NNTI_REQUEST_BUFFER_SIZE, IBV_ACCESS_LOCAL_WRITE);
                 ib_mem_hdl->offset[i]=i*NNTI_REQUEST_BUFFER_SIZE;
 
-                if (rc=ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[i], &bad_wr)) {
+                if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[i], &bad_wr)) {
                     log_error(nnti_debug_level, "failed to post SRQ recv #%d (rq_wr=%p ; bad_wr=%p): %s",
                             i, &ib_mem_hdl->rq_wr[i], bad_wr, strerror(errno));
-                    return errno;
+                    return (NNTI_result_t)errno;
                 }
             }
 
@@ -848,10 +872,10 @@ NNTI_result_t NNTI_ib_register_memory (
             ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
             ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
 
-            if (rc=ibv_post_recv(ib_mem_hdl->qp, ib_mem_hdl->rq_wr, &bad_wr)) {
+            if (ibv_post_recv(ib_mem_hdl->qp, ib_mem_hdl->rq_wr, &bad_wr)) {
                 log_error(nnti_debug_level, "failed to post recv (rq_wr=%p ; bad_wr=%p): %s", ib_mem_hdl->rq_wr, bad_wr, strerror(errno));
                 abort();
-                return errno;
+                return (NNTI_result_t)errno;
             }
 
         } else {
@@ -882,9 +906,9 @@ NNTI_result_t NNTI_ib_register_memory (
             ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
             ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
 
-            if (rc=ibv_post_recv(ib_mem_hdl->qp, ib_mem_hdl->rq_wr, &bad_wr)) {
+            if (ibv_post_recv(ib_mem_hdl->qp, ib_mem_hdl->rq_wr, &bad_wr)) {
                 log_error(nnti_debug_level, "failed to post recv (rq_wr=%p ; bad_wr=%p): %s", ib_mem_hdl->rq_wr, bad_wr, strerror(errno));
-                return errno;
+                return (NNTI_result_t)errno;
             }
         }
 
@@ -901,7 +925,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, 0);
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)0);
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=-1;
@@ -918,7 +942,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=-1;
@@ -937,7 +961,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
@@ -951,10 +975,10 @@ NNTI_result_t NNTI_ib_register_memory (
 
         register_ack(ib_mem_hdl);
 
-        if (rc=ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+        if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
             log_error(nnti_debug_level, "failed to post recv (qp_index=%d ; ack_rq_wr=%p ; bad_wr=%p): %s",
                     ib_mem_hdl->my_qp_index, &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
-            return errno;
+            return (NNTI_result_t)errno;
         }
 
     } else if (ops == NNTI_PUT_SRC) {
@@ -970,7 +994,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=-1;
@@ -991,7 +1015,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
@@ -1005,9 +1029,9 @@ NNTI_result_t NNTI_ib_register_memory (
 
         register_ack(ib_mem_hdl);
 
-        if (rc=ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+        if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
             log_error(nnti_debug_level, "failed to post recv (ack_rq_wr=%p ; bad_wr=%p): %s", &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
-            return errno;
+            return (NNTI_result_t)errno;
         }
 
     } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
@@ -1021,7 +1045,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, size, (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, buffer, size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
         ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
@@ -1035,9 +1059,9 @@ NNTI_result_t NNTI_ib_register_memory (
 
         register_ack(ib_mem_hdl);
 
-        if (rc=ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+        if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
             log_error(nnti_debug_level, "failed to post recv (ack_rq_wr=%p ; bad_wr=%p): %s", &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
-            return errno;
+            return (NNTI_result_t)errno;
         }
 
     } else {
@@ -1057,8 +1081,6 @@ NNTI_result_t NNTI_ib_register_memory (
                 "end of NNTI_ib_register_memory", reg_buf);
     }
 
-cleanup:
-
     return(rc);
 }
 
@@ -1072,7 +1094,7 @@ cleanup:
 NNTI_result_t NNTI_ib_unregister_memory (
         NNTI_buffer_t    *reg_buf)
 {
-    NNTI_result_t rc=NNTI_OK, rc2=NNTI_OK;
+    NNTI_result_t rc=NNTI_OK;
     ib_memory_handle *ib_mem_hdl=NULL;
 
     assert(reg_buf);
@@ -1092,10 +1114,9 @@ NNTI_result_t NNTI_ib_unregister_memory (
 
     release_qp_index(ib_mem_hdl->conn, ib_mem_hdl->my_qp_index);
 
-cleanup:
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
-    reg_buf->ops               = 0;
+    reg_buf->ops               = (NNTI_buf_ops_t)0;
     IB_SET_MATCH_ANY(&reg_buf->peer);
     reg_buf->payload_size      = 0;
     reg_buf->payload           = 0;
@@ -1118,7 +1139,7 @@ NNTI_result_t NNTI_ib_send (
 {
     NNTI_result_t rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr;
 
@@ -1153,12 +1174,12 @@ NNTI_result_t NNTI_ib_send (
 
     log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%lu)", peer_hdl->url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
 
-    nssi_start_timer(call_time);
+    trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
-    nssi_stop_timer("NNTI_ib_send - ibv_post_send", call_time);
+    trios_stop_timer("NNTI_ib_send - ibv_post_send", call_time);
 
     ib_mem_hdl->last_op=IB_OP_SEND;
 
@@ -1182,7 +1203,7 @@ NNTI_result_t NNTI_ib_put (
 {
     NNTI_result_t rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
@@ -1212,12 +1233,12 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->ack.op    =IB_OP_PUT_TARGET;
     ib_mem_hdl->ack.offset=dest_offset;
 
-    nssi_start_timer(call_time);
+    trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
-    nssi_stop_timer("NNTI_ib_put - ibv_post_send", call_time);
+    trios_stop_timer("NNTI_ib_put - ibv_post_send", call_time);
 
     ib_mem_hdl->last_op=IB_OP_PUT_INITIATOR;
 
@@ -1241,7 +1262,7 @@ NNTI_result_t NNTI_ib_get (
 {
     NNTI_result_t rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
@@ -1271,12 +1292,12 @@ NNTI_result_t NNTI_ib_get (
     ib_mem_hdl->ack.op    =IB_OP_GET_TARGET;
     ib_mem_hdl->ack.offset=src_offset;
 
-    nssi_start_timer(call_time);
+    trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
-    nssi_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
+    trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
 
     ib_mem_hdl->last_op=IB_OP_GET_INITIATOR;
 
@@ -1304,11 +1325,12 @@ NNTI_result_t NNTI_ib_wait (
     ib_request_queue_handle *q_hdl=NULL;
     ib_connection           *conn=NULL;
 
+    int ibv_rc=0;
     NNTI_result_t rc;
     int elapsed_time = 0;
     int timeout_per_call;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_wc            wc;
 
@@ -1328,23 +1350,23 @@ NNTI_result_t NNTI_ib_wait (
         timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
 
     while (1)   {
-        if (nssi_exit_now()) {
+        if (trios_exit_now()) {
             log_debug(nnti_debug_level, "caught abort signal");
             nnti_rc=NNTI_ECANCELED;
             break;
         }
 
         memset(&wc, 0, sizeof(struct ibv_wc));
-        nssi_start_timer(call_time);
-        rc = ibv_poll_cq(ib_mem_hdl->cq, 1, &wc);
-        nssi_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
-        if (rc < 0) {
-            log_debug(nnti_debug_level, "ibv_poll_cq failed: %d", rc);
+        trios_start_timer(call_time);
+        ibv_rc = ibv_poll_cq(ib_mem_hdl->cq, 1, &wc);
+        trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
+        if (ibv_rc < 0) {
+            log_debug(nnti_debug_level, "ibv_poll_cq failed: %d", ibv_rc);
             break;
         }
-        log_debug(nnti_debug_level, "ibv_poll_cq rc==%d", rc);
+        log_debug(nnti_debug_level, "ibv_poll_cq rc==%d", ibv_rc);
 
-        if (rc > 0) {
+        if (ibv_rc > 0) {
             log_debug(nnti_debug_level, "got wc from cq=%p", ib_mem_hdl->cq);
 
 //            ibv_ack_cq_events(ib_mem_hdl->cq, 1);
@@ -1371,9 +1393,9 @@ NNTI_result_t NNTI_ib_wait (
 
 retry:
 //        nthread_lock(&nnti_ib_lock);
-        nssi_start_timer(call_time);
+        trios_start_timer(call_time);
         rc = poll_comp_channel(ib_mem_hdl->comp_channel, ib_mem_hdl->cq, timeout_per_call);
-        nssi_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
+        trios_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
 //        nthread_unlock(&nnti_ib_lock);
         /* case 1: success */
         if (rc == NNTI_OK) {
@@ -1385,7 +1407,7 @@ retry:
             elapsed_time += timeout_per_call;
 
             /* if the caller asked for a legitimate timeout, we need to exit */
-            if (((timeout > 0) && (elapsed_time >= timeout)) || nssi_exit_now()) {
+            if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                 log_debug(nnti_debug_level, "poll_comp_channel timed out");
                 nnti_rc = NNTI_ETIMEDOUT;
                 break;
@@ -1451,7 +1473,6 @@ retry:
         }
     }
 
-cleanup:
     return(nnti_rc);
 }
 
@@ -1531,8 +1552,6 @@ static NNTI_result_t setup_mr_sge_sqwr(ib_memory_handle *hdl, uint32_t mr_count)
 
 static NNTI_result_t destroy_mr_sge_wr(ib_memory_handle *hdl)
 {
-    int i=0;
-
     if (hdl->mr    !=NULL) free(hdl->mr);
     if (hdl->sge   !=NULL) free(hdl->sge);
     if (hdl->rq_wr !=NULL) free(hdl->rq_wr);
@@ -1546,25 +1565,25 @@ static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, void *buf, 
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     struct ibv_mr *mr=NULL;
 
     if (hdl->type != REQUEST_BUFFER) log_debug(nnti_debug_level, "enter buffer(%p) len(%d)", buf, len);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     mlock(buf, len);
     munlock(buf, len);
-    nssi_stop_timer("mlock", callTime);
+    trios_stop_timer("mlock", callTime);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     mr = ibv_reg_mr(transport_global_data.pd, buf, len, access);
     if (!mr) {
         log_error(nnti_debug_level, "failed to register memory region");
         perror("errno");
         return errno;
     }
-    nssi_stop_timer("register", callTime);
+    trios_stop_timer("register", callTime);
 
 
     hdl->mr[mr_index]=mr;
@@ -1608,7 +1627,7 @@ static int register_ack(ib_memory_handle *hdl)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     struct ibv_mr *mr=NULL;
 
@@ -1618,19 +1637,19 @@ static int register_ack(ib_memory_handle *hdl)
 
     len = sizeof(hdl->ack);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     mlock(&hdl->ack, len);
     munlock(&hdl->ack, len);
-    nssi_stop_timer("mlock", callTime);
+    trios_stop_timer("mlock", callTime);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     mr = ibv_reg_mr(transport_global_data.pd, &hdl->ack, len, IBV_ACCESS_LOCAL_WRITE);
     if (!mr) {
         log_error(nnti_debug_level, "failed to register memory region");
         perror("errno");
         return errno;
     }
-    nssi_stop_timer("register", callTime);
+    trios_stop_timer("register", callTime);
 
     hdl->ack_mr=mr;
 
@@ -1666,16 +1685,14 @@ static int unregister_memory(ib_memory_handle *hdl)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
     int i=0;
-    double callTime;
-
-    struct ibv_mr *mr=NULL;
+    trios_declare_timer(callTime);
 
     log_debug(nnti_debug_level, "enter");
 
     for (i=0;i<hdl->mr_count;i++) {
-        nssi_start_timer(callTime);
+        trios_start_timer(callTime);
         ibv_dereg_mr(hdl->mr[i]);
-        nssi_stop_timer("deregister", callTime);
+        trios_stop_timer("deregister", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -1685,15 +1702,14 @@ static int unregister_memory(ib_memory_handle *hdl)
 static int unregister_ack(ib_memory_handle *hdl)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
-    int i=0;
-    double callTime;
+    trios_declare_timer(callTime);
 
     log_debug(nnti_debug_level, "enter");
 
     if (hdl->ack_mr!=NULL) {
-        nssi_start_timer(callTime);
+        trios_start_timer(callTime);
         ibv_dereg_mr(hdl->ack_mr);
-        nssi_stop_timer("deregister", callTime);
+        trios_stop_timer("deregister", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -1704,8 +1720,6 @@ static int unregister_ack(ib_memory_handle *hdl)
 static void send_ack (
         const NNTI_buffer_t *reg_buf)
 {
-    NNTI_result_t rc=NNTI_OK;
-
     struct ibv_send_wr *bad_wr;
 
     ib_memory_handle *ib_mem_hdl=NULL;
@@ -1718,7 +1732,6 @@ static void send_ack (
 
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->ack_sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
-        rc=NNTI_EIO;
     }
 
     ib_mem_hdl->last_op=IB_OP_SEND;
@@ -1831,7 +1844,6 @@ int process_event(
             break;
     }
 
-cleanup:
     return (rc);
 }
 
@@ -1841,7 +1853,6 @@ int8_t is_buf_op_complete(
 {
     int8_t rc=FALSE;
     ib_memory_handle *ib_mem_hdl=NULL;
-    log_level nnti_debug_level = nnti_debug_level;
 
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
 
@@ -1892,7 +1903,6 @@ static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_t
 {
     log_debug(nnti_debug_level, "enter");
 
-    peer->url = (char *)malloc(NNTI_URL_LEN);
     sprintf(peer->url, "ib://%s:%u/", name, ntohs(port));
 
     peer->peer.transport_id                   =NNTI_TRANSPORT_IB;
@@ -1906,7 +1916,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
 {
     log_debug(nnti_debug_level, "enter");
 
-    dest->url = strdup(src->url);
+    strncpy(dest->url, src->url, NNTI_URL_LEN);
 
     src->peer.transport_id                    =NNTI_TRANSPORT_IB;
     dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
@@ -1978,10 +1988,10 @@ static void transition_connection_to_ready(
 {
     int i;
     int rc=NNTI_OK;
-    double callTime=0.0;
+    trios_declare_timer(callTime);
 
     /* bring the two QPs up to RTR */
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     transition_qp_to_ready(conn->req_qp, conn->peer_req_qpn, conn->peer_lid);
     for(i=0;i<QP_PER_CONN;i++) {
         transition_qp_to_ready(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
@@ -1989,12 +1999,12 @@ static void transition_connection_to_ready(
     for(i=0;i<QP_PER_CONN;i++) {
         transition_qp_to_ready(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
     }
-    nssi_stop_timer("transition_qp_to_ready", callTime);
+    trios_stop_timer("transition_qp_to_ready", callTime);
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     /* final sychronization to ensure both sides have posted RTRs */
     rc = exchange_data(sock, 0, &rc, &rc, sizeof(rc));
-    nssi_stop_timer("exch data", callTime);
+    trios_stop_timer("exch data", callTime);
 }
 
 static void transition_qp_to_ready(
@@ -2002,7 +2012,6 @@ static void transition_qp_to_ready(
         uint32_t peer_qpn,
         int peer_lid)
 {
-    NNTI_result_t rc;
     enum ibv_qp_attr_mask mask;
     struct ibv_qp_attr attr;
 
@@ -2018,8 +2027,7 @@ static void transition_qp_to_ready(
             IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ;
     attr.pkey_index = 0;
     attr.port_num = transport_global_data.nic_port;
-    rc = ibv_modify_qp(qp, &attr, mask);
-    if (rc) {
+    if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp to INIT state");
     }
 
@@ -2041,8 +2049,7 @@ static void transition_qp_to_ready(
     attr.rq_psn = 0;
     attr.dest_qp_num = peer_qpn;
     attr.min_rnr_timer = 31;
-    rc = ibv_modify_qp(qp, &attr, mask);
-    if (rc) {
+    if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from INIT to RTR state");
     }
 
@@ -2061,8 +2068,7 @@ static void transition_qp_to_ready(
     attr.timeout = 26;  /* 4.096us * 2^26 = 5 min */
     attr.retry_cnt = 20;
     attr.rnr_retry = 20;
-    rc = ibv_modify_qp(qp, &attr, mask);
-    if (rc) {
+    if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from RTR to RTS state");
     }
 
@@ -2072,11 +2078,10 @@ static void transition_connection_to_error(
         ib_connection *conn)
 {
     int i;
-    int rc=NNTI_OK;
-    double callTime=0.0;
+    trios_declare_timer(callTime);
 
     /* bring the two QPs up to RTR */
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     transition_qp_to_error(conn->req_qp, conn->peer_req_qpn, conn->peer_lid);
     for(i=0;i<QP_PER_CONN;i++) {
         transition_qp_to_error(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
@@ -2084,7 +2089,7 @@ static void transition_connection_to_error(
     for(i=0;i<QP_PER_CONN;i++) {
         transition_qp_to_error(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
     }
-    nssi_stop_timer("transition_qp_to_error", callTime);
+    trios_stop_timer("transition_qp_to_error", callTime);
 }
 
 static void transition_qp_to_error(
@@ -2092,14 +2097,12 @@ static void transition_qp_to_error(
         uint32_t peer_qpn,
         int peer_lid)
 {
-    NNTI_result_t rc;
     struct ibv_qp_attr attr;
 
     /* Transition QP to Error */
     memset(&attr, 0, sizeof(attr));
     attr.qp_state = IBV_QPS_ERR;
-    rc = ibv_modify_qp(qp, &attr, IBV_QP_STATE);
-    if (rc) {
+    if (ibv_modify_qp(qp, &attr, IBV_QP_STATE)) {
         log_error(nnti_debug_level, "failed to modify qp to ERROR state");
     }
 }
@@ -2155,10 +2158,10 @@ static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t 
 
     for (i=0; i<2; i++) {
         if (i ^ is_server) {
-            double callTime;
-            nssi_start_timer(callTime);
+            trios_declare_timer(callTime);
+            trios_start_timer(callTime);
             rc = read_full(sock, xin, len);
-            nssi_stop_timer("read_full", callTime);
+            trios_stop_timer("read_full", callTime);
             if (rc < 0) {
                 log_warn(nnti_debug_level, "failed to read IB connection info: errno=%d", errno);
                 goto out;
@@ -2169,10 +2172,10 @@ static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t 
                 goto out;
             }
         } else {
-            double callTime;
-            nssi_start_timer(callTime);
+            trios_declare_timer(callTime);
+            trios_start_timer(callTime);
             rc = write_full(sock, xout, len);
-            nssi_stop_timer("write_full", callTime);
+            trios_stop_timer("write_full", callTime);
             if (rc < 0) {
                 log_warn(nnti_debug_level, "failed to write IB connection info: errno=%d", errno);
                 goto out;
@@ -2190,9 +2193,7 @@ static int new_client_connection(
         ib_connection *c,
         int sock)
 {
-    int i, j, rc;
-    int num_wr;
-    size_t len;
+    int i, rc;
     int flags=0;
     struct ibv_qp_init_attr att;
 
@@ -2209,7 +2210,7 @@ static int new_client_connection(
         uint32_t peer_qpn[QP_PER_CONN];
     } ch_in, ch_out;
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     /* create the main queue pair */
     memset(&att, 0, sizeof(att));
@@ -2222,13 +2223,13 @@ static int new_client_connection(
     att.cap.max_send_sge = 1;
     att.qp_type = IBV_QPT_RC;
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     c->req_qp = ibv_create_qp(transport_global_data.pd, &att);
     if (!c->req_qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
     c->req_qpn = c->req_qp->qp_num;
-    nssi_stop_timer("create_qp", callTime);
+    trios_stop_timer("create_qp", callTime);
 
     /* exchange data, converting info to network order and back */
     ch_out.lid     = htonl(transport_global_data.nic_lid);
@@ -2307,9 +2308,9 @@ static int new_client_connection(
         ch_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
     }
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     rc = exchange_data(sock, 0, &ch_in, &ch_out, sizeof(ch_in));
-    nssi_stop_timer("exch data", callTime);
+    trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;
 
@@ -2353,9 +2354,7 @@ static int new_server_connection(
         ib_connection *c,
         int sock)
 {
-    int i, j, rc;
-    int num_wr;
-    size_t len;
+    int i, rc;
     int flags=0;
     struct ibv_qp_init_attr att;
 
@@ -2372,7 +2371,7 @@ static int new_server_connection(
         uint32_t peer_qpn[QP_PER_CONN];
     } ch_in, ch_out;
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     /* create the main queue pair */
     memset(&att, 0, sizeof(att));
@@ -2386,13 +2385,13 @@ static int new_server_connection(
     att.cap.max_send_sge = 1;
     att.qp_type = IBV_QPT_RC;
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     c->req_qp = ibv_create_qp(transport_global_data.pd, &att);
     if (!c->req_qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
     c->req_qpn = c->req_qp->qp_num;
-    nssi_stop_timer("create_qp", callTime);
+    trios_stop_timer("create_qp", callTime);
 
     /* exchange data, converting info to network order and back */
     ch_out.lid     = htonl(transport_global_data.nic_lid);
@@ -2471,9 +2470,9 @@ static int new_server_connection(
         ch_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
     }
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     rc = exchange_data(sock, 1, &ch_in, &ch_out, sizeof(ch_in));
-    nssi_stop_timer("exch data", callTime);
+    trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;
 
@@ -2516,22 +2515,10 @@ out:
 static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *conn)
 {
     NNTI_result_t  rc=NNTI_OK;
-    conn_addrport *value=NULL;
-    int keylen;
+    addrport_key key;
 
-    value=(conn_addrport *)calloc(1, sizeof(conn_addrport));
-    if (value==NULL) {
-        log_error(nnti_debug_level, "cannot allocate value.  no memory.");
-        rc=NNTI_ENOMEM;
-        goto cleanup;
-    }
-    value->addrport.addr=peer->peer.NNTI_remote_process_t_u.ib.addr;
-    value->addrport.port=peer->peer.NNTI_remote_process_t_u.ib.port;
-    value->conn=conn;
-
-    keylen = offsetof(addrport_key, port)   /* offset of last key field */
-           + sizeof(value->addrport.port)   /* size of last key field */
-           - offsetof(addrport_key, addr);  /* offset of first key field */
+    key.addr = peer->peer.NNTI_remote_process_t_u.ib.addr;
+    key.port = peer->peer.NNTI_remote_process_t_u.ib.port;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -2539,50 +2526,31 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *co
     }
 
     nthread_lock(&nnti_conn_peer_lock);
-    HASH_ADD(hh, connections_by_peer, addrport, keylen, value);
+    connections_by_peer[key] = conn;   // add to connection map
     nthread_unlock(&nnti_conn_peer_lock);
 
-    log_debug(nnti_debug_level, "peer connection added (value=%p)", value);
+    log_debug(nnti_debug_level, "peer connection added (conn=%p)", conn);
 
-cleanup:
     return(rc);
 }
-static NNTI_result_t insert_conn_qpn(const uint64_t qpn, ib_connection *conn)
+static NNTI_result_t insert_conn_qpn(const NNTI_qp_num qpn, ib_connection *conn)
 {
     NNTI_result_t  rc=NNTI_OK;
-    void          *key=NULL;
-    conn_qpn      *value=NULL;
-
-    key=(void *)qpn;
-
-    value=(conn_qpn *)calloc(1, sizeof(conn_qpn));
-    if (value==NULL) {
-        log_error(nnti_debug_level, "cannot allocate value.  no memory.");
-        rc=NNTI_ENOMEM;
-        goto cleanup;
-    }
-    value->qpn=qpn;
-    value->conn=conn;
 
     nthread_lock(&nnti_conn_qpn_lock);
-    HASH_ADD(hh, connections_by_qpn, qpn, sizeof(uint64_t), value);
+    assert(connections_by_qpn.find(qpn) == connections_by_qpn.end());
+    connections_by_qpn[qpn] = conn;
     nthread_unlock(&nnti_conn_qpn_lock);
 
-    log_debug(nnti_debug_level, "qpn connection added (value=%p)", value);
+    log_debug(nnti_debug_level, "qpn connection added (conn=%p)", conn);
 
-cleanup:
     return(rc);
 }
 static ib_connection *get_conn_peer(const NNTI_peer_t *peer)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    conn_addrport *value=NULL;
-    addrport_key   key;
-    int keylen;
+    ib_connection *conn = NULL;
 
-    keylen = offsetof(addrport_key, port)   /* offset of last key field */
-           + sizeof(value->addrport.port)   /* size of last key field */
-           - offsetof(addrport_key, addr);  /* offset of first key field */
+    addrport_key   key;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -2594,12 +2562,12 @@ static ib_connection *get_conn_peer(const NNTI_peer_t *peer)
     key.port=peer->peer.NNTI_remote_process_t_u.ib.port;
 
     nthread_lock(&nnti_conn_peer_lock);
-    HASH_FIND( hh, connections_by_peer, &key.addr, keylen, value);
+    conn = connections_by_peer[key];
     nthread_unlock(&nnti_conn_peer_lock);
 
-    if (value != NULL) {
+    if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
-        return value->conn;
+        return conn;
     }
 
     log_debug(nnti_debug_level, "connection NOT found");
@@ -2609,27 +2577,23 @@ static ib_connection *get_conn_peer(const NNTI_peer_t *peer)
 }
 static void print_qpn_map()
 {
-    NNTI_result_t  rc=NNTI_OK;
-    conn_qpn      *current=NULL, *tmp=NULL;
-
-    HASH_ITER(hh, connections_by_qpn, current, tmp) {
-        log_debug(nnti_debug_level, "qpn_map key=%llu conn=%p",
-                (uint64_t)current->qpn, current->conn);
+    conn_by_qpn_iter_t i;
+    for (i=connections_by_qpn.begin(); i != connections_by_qpn.end(); i++) {
+        log_debug(nnti_debug_level, "qpn_map key=%llu conn=%p", i->first, i->second);
     }
 }
-static ib_connection *get_conn_qpn(const uint64_t qpn)
+static ib_connection *get_conn_qpn(const NNTI_qp_num qpn)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    conn_qpn      *value=NULL;
+    ib_connection *conn=NULL;
 
     log_debug(nnti_debug_level, "looking for qpn=%llu", (unsigned long long)qpn);
     nthread_lock(&nnti_conn_qpn_lock);
-    HASH_FIND( hh, connections_by_qpn, &qpn, sizeof(uint64_t), value);
+    conn = connections_by_qpn[qpn];
     nthread_unlock(&nnti_conn_qpn_lock);
 
-    if (value != NULL) {
+    if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
-        return value->conn;
+        return conn;
     }
 
     log_debug(nnti_debug_level, "connection NOT found");
@@ -2639,15 +2603,8 @@ static ib_connection *get_conn_qpn(const uint64_t qpn)
 }
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
 {
-    NNTI_result_t   rc=NNTI_OK;
-    conn_addrport  *value=NULL;
     ib_connection  *conn=NULL;
     addrport_key    key;
-    int keylen;
-
-    keylen = offsetof(addrport_key, port)   /* offset of last key field */
-           + sizeof(value->addrport.port)   /* size of last key field */
-           - offsetof(addrport_key, addr);  /* offset of first key field */
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -2659,33 +2616,30 @@ static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
     key.port=peer->peer.NNTI_remote_process_t_u.ib.port;
 
     nthread_lock(&nnti_conn_peer_lock);
-    HASH_FIND( hh, connections_by_peer, &key.addr, keylen, value);
+    conn = connections_by_peer[key];
     nthread_unlock(&nnti_conn_peer_lock);
 
-    if (value != NULL) {
+    if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
-        conn=value->conn;
-        HASH_DEL(connections_by_peer, value);
+        connections_by_peer.erase(key);
+        del_conn_qpn(conn->req_qpn);
     } else {
         log_debug(nnti_debug_level, "connection NOT found");
     }
 
     return(conn);
 }
-static ib_connection *del_conn_qpn(const uint64_t qpn)
+static ib_connection *del_conn_qpn(const NNTI_qp_num qpn)
 {
-    NNTI_result_t   rc=NNTI_OK;
-    conn_qpn       *value=NULL;
     ib_connection  *conn=NULL;
 
     nthread_lock(&nnti_conn_qpn_lock);
-    HASH_FIND( hh, connections_by_qpn, &qpn, sizeof(uint64_t), value);
+    conn = connections_by_qpn[qpn];
     nthread_unlock(&nnti_conn_qpn_lock);
 
-    if (value != NULL) {
+    if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
-        conn=value->conn;
-        HASH_DEL(connections_by_qpn, value);
+        connections_by_qpn.erase(qpn);
     } else {
         log_debug(nnti_debug_level, "connection NOT found");
     }
@@ -2694,33 +2648,47 @@ static ib_connection *del_conn_qpn(const uint64_t qpn)
 }
 static void close_all_conn(void)
 {
-    int rc=0;
-    int i=0;
+    log_level debug_level = nnti_debug_level;
 
-    double call_time;
-
-    conn_qpn      *current_cqpn=NULL, *tmp_cqpn=NULL;
-    conn_addrport *current_peer=NULL, *tmp_peer=NULL;
-
-    log_debug(nnti_debug_level, "enter (%d qpn connections, %d peer connections)", HASH_COUNT(connections_by_qpn), HASH_COUNT(connections_by_peer));
+    log_debug(nnti_debug_level, "enter (%d qpn connections, %d peer connections)",
+            connections_by_qpn.size(), connections_by_peer.size());
 
     nthread_lock(&nnti_conn_qpn_lock);
+    conn_by_qpn_iter_t qpn_iter;
+    for (qpn_iter = connections_by_qpn.begin(); qpn_iter != connections_by_qpn.end(); qpn_iter++) {
+        log_debug(debug_level, "close connection (qpn=%llu)", qpn_iter->first);
+        close_connection(qpn_iter->second);
+        connections_by_qpn.erase(qpn_iter);
+    }
+#if 0
     HASH_ITER(hh, connections_by_qpn, current_cqpn, tmp_cqpn) {
         HASH_DEL(connections_by_qpn,current_cqpn);
         close_connection(current_cqpn->conn);
     }
+#endif
+
     nthread_unlock(&nnti_conn_qpn_lock);
 
     nthread_lock(&nnti_conn_peer_lock);
+    conn_by_peer_iter_t peer_iter;
+    for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
+        log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
+        close_connection(peer_iter->second);
+        connections_by_peer.erase(peer_iter);
+    }
+
+#if 0
     HASH_ITER(hh, connections_by_peer, current_peer, tmp_peer) {
         HASH_DEL(connections_by_peer,current_peer);
         if (current_peer->conn->state!=DISCONNECTED) {
             close_connection(current_peer->conn);
         }
     }
+#endif
     nthread_unlock(&nnti_conn_peer_lock);
 
-    log_debug(nnti_debug_level, "exit (%d instance connections, %d peer connections)", HASH_COUNT(connections_by_qpn), HASH_COUNT(connections_by_peer));
+    log_debug(debug_level, "exit (%d qpn connections, %d peer connections)",
+            connections_by_qpn.size(), connections_by_peer.size());
 
     return;
 }
@@ -2735,10 +2703,9 @@ static ib_connection *init_connection(
         const NNTI_tcp_port port,
         const int is_server)
 {
-    NNTI_result_t rc=NNTI_OK; /* return code */
-    struct ibv_recv_wr *bad_wr;
+    int rc=0; /* return code */
 
-    double callTime;
+    trios_declare_timer(callTime);
 
     log_debug(nnti_debug_level, "initializing ib connection");
 
@@ -2759,7 +2726,7 @@ static ib_connection *init_connection(
 
     conn->disconnect_requested = FALSE;
 
-    nssi_start_timer(callTime);
+    trios_start_timer(callTime);
     if (is_server) {
         rc = new_server_connection(conn, sock);
     } else {
@@ -2769,11 +2736,10 @@ static ib_connection *init_connection(
         close_connection(conn);
         conn = NULL;
     }
-    nssi_stop_timer("new connection", callTime);
+    trios_stop_timer("new connection", callTime);
 
     print_ib_conn(conn);
 
-out:
     return(conn);
 }
 
@@ -2845,7 +2811,7 @@ static void close_connection(ib_connection *c)
  * so this test can be quick; but accept is not really that quick compared
  * to polling an IB interface, for instance.  Returns >0 if an accept worked.
  */
-static int check_listen_socket_for_new_connections()
+static NNTI_result_t check_listen_socket_for_new_connections()
 {
     NNTI_result_t rc = NNTI_OK;
 
@@ -2909,7 +2875,7 @@ static void *connection_listener_thread(void *args)
     log_debug(nnti_debug_level, "started thread to listen for client connection attempts");
 
     /* SIGINT (Ctrl-C) will get us out of this loop */
-    while (!nssi_exit_now()) {
+    while (!trios_exit_now()) {
         log_debug(nnti_debug_level, "listening for new connection");
         rc = check_listen_socket_for_new_connections();
         if (rc != NNTI_OK) {
@@ -2929,14 +2895,14 @@ static void *connection_listener_thread(void *args)
  */
 static int start_connection_listener_thread()
 {
-    NNTI_result_t rc = NNTI_OK;
+    int rc = 0;
     nthread_t thread;
 
     /* Create the thread. Do we want special attributes for this? */
     rc = nthread_create(&thread, NULL, connection_listener_thread, NULL);
     if (rc) {
         log_error(nnti_debug_level, "could not spawn thread");
-        rc = NNTI_EBADRPC;
+        rc = 1;
     }
 
     return rc;
@@ -3008,8 +2974,7 @@ static NNTI_result_t poll_comp_channel(
     my_pollfd.events  = POLLIN;
     my_pollfd.revents = 0;
     log_debug(nnti_debug_level, "polling with timeout==%d", timeout);
-    rc = poll(&my_pollfd, 1, timeout);
-    if (rc == 0) {
+    if (poll(&my_pollfd, 1, timeout) == 0) {
         log_debug(nnti_debug_level, "poll timed out: %x", my_pollfd.revents);
         rc = NNTI_ETIMEDOUT;
         goto cleanup;
@@ -3017,8 +2982,7 @@ static NNTI_result_t poll_comp_channel(
 
     log_debug(nnti_debug_level, "completion channel poll complete - %d event(s) waiting", my_pollfd.revents);
 
-    rc = ibv_get_cq_event(comp_channel, &ev_cq, &ev_ctx);
-    if (rc == 0) {
+    if (ibv_get_cq_event(comp_channel, &ev_cq, &ev_ctx) == 0) {
         log_debug(nnti_debug_level, "got event from comp_channel for cq=%p", ev_cq);
         ibv_ack_cq_events(ev_cq, 1);
         log_debug(nnti_debug_level, "ACKed event on cq=%p", ev_cq);
