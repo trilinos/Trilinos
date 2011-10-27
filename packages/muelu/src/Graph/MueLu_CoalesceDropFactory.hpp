@@ -50,10 +50,11 @@ static const std::string color_purple = "35m";
       currentLevel.DeclareInput("A", AFact_.get());
     }
 
-    void SetFixedBlockSize(GlobalOrdinal blksize) {
+    /// set fixed block size
+    void SetFixedBlockSize(GO blksize) {
     	blksize_ = blksize;
     	fixedBlkSize_ = true;
-    	GetOStream(Low, 0) << color_esc << color_purple << "CoalesceDropFactory::SetFixedBlockSize()" << color_esc << color_std << endl;
+    	GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::SetFixedBlockSize()" << color_esc << color_std << std::endl;
     }
 
     // todo: method that takes a block map...
