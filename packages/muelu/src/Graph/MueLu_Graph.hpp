@@ -56,6 +56,16 @@ namespace MueLu {
       return nGhost;
     }
 
+    /** \brief Return a simple one-line description of this object. */
+    std::string description() const {
+      return "MueLu.description()";
+    }
+
+    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+      graph_->describe(out,verbLevel);
+    }
+
   private:
 
     RCP<const CrsGraph> graph_;
