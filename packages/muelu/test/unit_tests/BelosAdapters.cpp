@@ -93,6 +93,8 @@ namespace MueLuTests {
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
+#ifdef HAVE_MUELU_AMESOS  // TODO: remove
+#ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
   // - OP: Xpetra::Operator
   // - MV: Xpetra::MultiVector
@@ -105,7 +107,7 @@ namespace MueLuTests {
     typedef Belos::OperatorT<MV>    OP;
     
     // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>    (p->GetA()));
+    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(p->GetA()));
     RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
     
     // Run Belos
@@ -115,8 +117,11 @@ namespace MueLuTests {
     // Tests
     TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
   }
+#endif // AMESOS2
+#endif // AMESOS
 
 #ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_AMESOS // TODO: remove
   // TEST:
   // - OP: Xpetra::Operator
   // - MV: Epetra::MultiVector
@@ -179,9 +184,11 @@ namespace MueLuTests {
       //  eX->Norm2(&norm);
     }
   }
+#endif // AMESOS
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
   // - OP: Xpetra::Operator
   // - MV: Tpetra::MultiVector
@@ -209,6 +216,7 @@ namespace MueLuTests {
       TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
     }
   }
+#endif // AMESOS2
 #endif
 
   // TODO : Tpetra and Epetra are not giving the same results on the test problem. Must be changed for this test.

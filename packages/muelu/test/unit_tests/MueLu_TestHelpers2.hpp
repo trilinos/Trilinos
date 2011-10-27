@@ -83,7 +83,6 @@ namespace MueLuTests {
       
             Teuchos::ParameterList status;
             status = H_->FullPopulate(*Pfact, *Rfact, *Acfact, *smooFact, 0, maxLevels);
-      
             RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver(lib_));
             SmootherFactory coarseSolveFact(coarseProto);
             H_->SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
