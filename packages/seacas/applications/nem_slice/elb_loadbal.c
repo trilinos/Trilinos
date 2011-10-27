@@ -866,7 +866,7 @@ int generate_loadbal(MACHINE_PTR machine,
 
  /* need to free the bigger graph and create a face adjacent graph */
 
-        int tmp_alloc_graph, tmp_adj;
+        int tmp_alloc_graph, tmp_adjacency;
 
         if (graph->start)     free (graph->start);
         if (graph->adj)       free (graph->adj);
@@ -887,7 +887,7 @@ int generate_loadbal(MACHINE_PTR machine,
         graph->nsur_elem = NULL;
 
         tmp_alloc_graph = problem->alloc_graph;
-        tmp_adj         = problem->face_adj;
+        tmp_adjacency   = problem->face_adj;
 
         problem->alloc_graph = ELB_TRUE;
         problem->face_adj    = 1;
@@ -904,7 +904,7 @@ int generate_loadbal(MACHINE_PTR machine,
         identify_mechanisms(machine, problem, mesh, lb, graph, LOCAL_ISSUES);
 
         problem->alloc_graph = tmp_alloc_graph;
-        problem->face_adj    = tmp_adj;
+        problem->face_adj    = tmp_adjacency;
       }
 
       printf("============================================================\n");
