@@ -14,7 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
-SOURCE_FILES stru2d.mat stru2d.rhs stru2d.ns
+SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt
 )
   
 ENDIF()

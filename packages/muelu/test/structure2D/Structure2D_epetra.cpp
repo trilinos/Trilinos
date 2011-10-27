@@ -51,6 +51,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 
+//
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
@@ -100,9 +101,9 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d.mat",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("stru2d.rhs",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "stru2d.ns", emap, ptrNS);
+  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
+  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
+  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
