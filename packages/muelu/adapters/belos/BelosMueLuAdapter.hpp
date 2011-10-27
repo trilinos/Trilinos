@@ -64,7 +64,7 @@ namespace Belos {
   // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
   // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
   // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
-  // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuTpetraPrecOp (TODO: not available yet)
+  // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuPrecOp (TODO: not available yet)
   // D - MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuXpetraPrecOp => TODO: this description have to be improved
   // TODO: I can also quickly implements couples Tpetra::MultiVector/Xpetra::Operator and Epetra_MultiVector/Xpetra::Operator=> it's more for debugging...because it skip the XpetraMultiVecTrait
 
@@ -246,7 +246,7 @@ namespace Belos {
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-    // ,public OperatorT<Epetra_MultiVector> //TODO jg longlong
+    ,public OperatorT<Epetra_MultiVector> //TODO jg longlong
 #endif
   {  
     
@@ -350,7 +350,7 @@ namespace Belos {
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-    //    ,public OperatorT<Epetra_MultiVector> //TODO jglonglong
+    ,public OperatorT<Epetra_MultiVector> //TODO jglonglong
 #endif
   { 
     
@@ -402,7 +402,7 @@ namespace Belos {
     void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
-                         "Belos::MueLuTpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
+                         "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
 
@@ -427,7 +427,7 @@ namespace Belos {
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
-                         "Belos::MueLuTpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
+                         "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 

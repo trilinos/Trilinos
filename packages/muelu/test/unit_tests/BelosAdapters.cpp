@@ -60,10 +60,6 @@ namespace MueLuTests {
     default:;
     }
 
-    // Test norm equality across the unit tests
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
-    X->norm2(norms);
-    TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norms[0]), true);
   }
 
   //
@@ -74,7 +70,7 @@ namespace MueLuTests {
   void BelosAdaptersTest_XpetraOp_XpetraMV(Xpetra::UnderlyingLib lib, Teuchos::FancyOStream & out, bool & success) {
 #include "MueLu_UseShortNames.hpp"
     
-    RCP<TestProblem<SC,LO,GO,NO,LMO> > p   = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+    RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
 
     typedef Xpetra::MultiVector<SC> MV;
     typedef Belos::OperatorT<MV>    OP;
@@ -86,6 +82,11 @@ namespace MueLuTests {
     // Test adapters
     RCP<MultiVector> X = p->GetNewX0();
     MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, p->GetRHS(), out, success);
+
+    // Test norm equality across the unit tests
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
+    X->norm2(norms);
+    TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norms[0]), true);
   }
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -98,7 +99,70 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     BelosAdaptersTest_XpetraOp_XpetraMV<SC, LO, GO, NO, LMO>(lib, out, success);
   }
- 
+
+ #ifdef HAVE_MUELU_EPETRA
+  // TEST:
+  // - OP: Xpetra::Operator
+  // - MV: Epetra::MultiVector
+  TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_EpetraMV) {
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
+
+      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+      
+      typedef Epetra_MultiVector   MV;
+      typedef Belos::OperatorT<MV> OP;
+      
+      // Construct a Belos LinearProblem object
+      RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
+      
+      // Test adapters
+      RCP<MV> X   = Utils::MV2NonConstEpetraMV(p->GetNewX0());
+      RCP<MV> RHS = Utils::MV2NonConstEpetraMV(p->GetRHS());
+      
+      MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, RHS, out, success);
+      
+      // Test norm equality across the unit tests
+      double norm;
+      X->Norm2(&norm);
+      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norm), true);
+    }
+  }
+#endif
+
+#ifdef HAVE_MUELU_TPETRA
+  // TEST:
+  // - OP: Xpetra::Operator
+  // - MV: Tpetra::MultiVector
+  TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_TpetraMV) {
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    if (lib == Xpetra::UseTpetra) {  // Tpetra specific test: run only once.
+
+      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+      
+      typedef Tpetra::MultiVector<SC> MV;
+      typedef Belos::OperatorT<MV>    OP;
+      
+      // Construct a Belos LinearProblem object
+      RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
+      
+      // Test adapters
+      RCP<MV> X   = Utils::MV2NonConstTpetraMV(p->GetNewX0());
+      RCP<MV> RHS = Utils::MV2NonConstTpetraMV(p->GetRHS());
+      
+      MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, RHS, out, success);
+
+      // Test norm equality across the unit tests
+      Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
+      X->norm2(norms);
+      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norms[0]), true);
+
+    }
+  }
+#endif
+
   // TODO : Tpetra and Epetra are not giving the same results on the test problem. Must be changed for this test.
 #ifdef MUELU_DISABLED
 
