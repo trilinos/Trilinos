@@ -600,7 +600,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASExo2mat" dir="seacas/applications/exo2mat" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -735,7 +735,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASMat2exo" dir="seacas/applications/mat2exo" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -765,7 +765,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASNemspread" dir="seacas/applications/nem_spread" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
