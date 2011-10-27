@@ -11,26 +11,13 @@
 namespace MueLuTests {
    
   //
-  // Test helpers
+  // Helpers function to build tests
   //
-
-  // Singleton for results comparisons across tests
-  template <class Scalar>
-  bool BelosAdaptersTestResults(typename Teuchos::ScalarTraits<Scalar>::magnitudeType r) {
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType ref = -1;
-    if (ref == -1) {
-      //std::cout << "BelosAdaptersTestResults(): Set reference results" << std::endl;
-      ref = r;
-      return true;
-    }
-    //std::cout << "BelosAdaptersTestResults(): Compare" << std::endl;
-    return (r == ref);
-  }
 
   // Test Belos adapters for the couple <MV,OP> 
   // TODO: add a bunch of 'const' on prototype
   template <class Scalar, class MV, class OP>
-  void BelosAdaptersTest(RCP<OP> & belosOp, RCP<OP> & belosPrec, RCP<MV> & X, RCP<MV> & B, Teuchos::FancyOStream & out, bool & success) {
+  int BelosAdaptersTest(RCP<OP> & belosOp, RCP<OP> & belosPrec, RCP<MV> & X, RCP<MV> & B, Teuchos::FancyOStream & out, bool & success) {
     RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, B));
     belosProblem->setLeftPrec(belosPrec);
     
@@ -43,14 +30,43 @@ namespace MueLuTests {
     belosList.set("Convergence Tolerance", 1e-7); // Relative convergence tolerance requested
     
     // Create an iterative solver manager.
-    RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(belosProblem, rcp(&belosList,false)) );
+    RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp(new Belos::BlockCGSolMgr<double,MV,OP>(belosProblem, rcp(&belosList,false)));
     
     // Perform solve
     Belos::ReturnType ret = belosSolver->solve();
     TEST_EQUALITY(ret, Belos::Converged);
     
-    // Get the number of iterations for this solve.
-    int numIters = belosSolver->getNumIters();
+    // Return number of iterations
+    return belosSolver->getNumIters();
+  }
+
+  //
+  // Helpers function to verify results
+  //
+
+  // Singleton for norm comparisons across tests
+  template <class Scalar>
+  bool BelosAdaptersTestResultsNorm(typename Teuchos::ScalarTraits<Scalar>::magnitudeType r) {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType ref = -1;
+    if (ref == -1) {
+      //std::cout << "BelosAdaptersTestResults(): Set reference results" << std::endl;
+      ref = r;
+      return true;
+    }
+    //std::cout << "BelosAdaptersTestResults(): Compare" << std::endl;
+
+    if (r != ref)
+      std::cout << "ref  norm = " << ref << std::endl
+                << "curr norm = " << r   << std::endl;
+
+    return (r == ref);
+  }
+
+  // Test results
+  template <class Scalar, class MV>
+  bool BelosAdaptersTestResults(int numIters, RCP<MV> & X, Teuchos::FancyOStream & out, bool & success) {
+
+    // Check numIters
     switch (TestHelpers::Parameters::getDefaultComm()->getSize()) { 
     case 0: TEST_EQUALITY(numIters, 5); break;
     case 4: 
@@ -59,35 +75,19 @@ namespace MueLuTests {
       break;
     default:;
     }
-
-  }
-
-  //
-  // Code factorization:
-  //
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BelosAdaptersTest_XpetraOp_XpetraMV(Xpetra::UnderlyingLib lib, Teuchos::FancyOStream & out, bool & success) {
-#include "MueLu_UseShortNames.hpp"
     
-    RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
-
-    typedef Xpetra::MultiVector<SC> MV;
-    typedef Belos::OperatorT<MV>    OP;
+    // Compute norm of X (using MV traits)
+    typedef Belos::MultiVecTraits<Scalar, MV> MVT;
+    std::vector<Scalar> norms(1);
+    MVT::MvNorm(*X, norms);
     
-    // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
-    RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
-    
-    // Test adapters
-    RCP<MultiVector> X = p->GetNewX0();
-    MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, p->GetRHS(), out, success);
-
     // Test norm equality across the unit tests
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
-    X->norm2(norms);
-    TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norms[0]), true);
+    return MueLuTests::BelosAdaptersTestResultsNorm<Scalar>(norms[0]);
   }
+
+  //
+  // Tests
+  //
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -97,10 +97,25 @@ namespace MueLuTests {
   // - MV: Xpetra::MultiVector
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_XpetraMV) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-    BelosAdaptersTest_XpetraOp_XpetraMV<SC, LO, GO, NO, LMO>(lib, out, success);
+
+    RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+
+    typedef Xpetra::MultiVector<SC> MV;
+    typedef Belos::OperatorT<MV>    OP;
+    
+    // Construct a Belos LinearProblem object
+    RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
+    RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
+    
+    // Run Belos
+    RCP<MultiVector> X = p->GetNewX0();
+    int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, p->GetRHS(), out, success);
+
+    // Tests
+    TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
   }
 
- #ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA
   // TEST:
   // - OP: Xpetra::Operator
   // - MV: Epetra::MultiVector
@@ -117,16 +132,50 @@ namespace MueLuTests {
       RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
       RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
       
-      // Test adapters
-      RCP<MV> X   = Utils::MV2NonConstEpetraMV(p->GetNewX0());
-      RCP<MV> RHS = Utils::MV2NonConstEpetraMV(p->GetRHS());
+      // X, B
+      RCP<MV> X = Utils::MV2NonConstEpetraMV(p->GetNewX0());
+      RCP<MV> B = Utils::MV2NonConstEpetraMV(p->GetRHS());
+
+      // Run Belos      
+      int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, B, out, success);
       
-      MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, RHS, out, success);
+      // Tests
+      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
+    }
+  }
+
+  // TEST:
+  // - OP: Belos::MultiVec<double>
+  // - MV: Belos::Operator<double>
+  TEUCHOS_UNIT_TEST(BelosAdapters, BelosMultiVec_BelosOperator) {
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
+
+      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
       
-      // Test norm equality across the unit tests
-      double norm;
-      X->Norm2(&norm);
-      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norm), true);
+      typedef Belos::MultiVec<double> MV;
+      typedef Belos::Operator<double> OP;
+
+      // Construct a Belos LinearProblem object
+      RCP<Epetra_CrsMatrix> A = Utils::Op2NonConstEpetraCrs(p->GetA());
+      RCP<OP> belosOp   = rcp(new Belos::EpetraOp(A));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuEpetraPrecOp(p->GetH()));
+
+      // X, B
+      RCP<Epetra_MultiVector> eX = Utils::MV2NonConstEpetraMV(p->GetNewX0());
+      RCP<Epetra_MultiVector> eB = Utils::MV2NonConstEpetraMV(p->GetRHS());
+      RCP<MV> X = rcp(new Belos::EpetraMultiVec(*eX));
+      RCP<MV> B = rcp(new Belos::EpetraMultiVec(*eB));
+
+      // Run Belos      
+      int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, B, out, success);
+      
+      // Tests
+      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
+
+      // TODO: this do not work. Is it a bug?
+      //  double norm;
+      //  eX->Norm2(&norm);
     }
   }
 #endif
@@ -148,17 +197,15 @@ namespace MueLuTests {
       RCP<OP> belosOp   = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>    (p->GetA()));
       RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
       
-      // Test adapters
-      RCP<MV> X   = Utils::MV2NonConstTpetraMV(p->GetNewX0());
-      RCP<MV> RHS = Utils::MV2NonConstTpetraMV(p->GetRHS());
-      
-      MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, RHS, out, success);
+      //X, B
+      RCP<MV> X = Utils::MV2NonConstTpetraMV(p->GetNewX0());
+      RCP<MV> B = Utils::MV2NonConstTpetraMV(p->GetRHS());
 
-      // Test norm equality across the unit tests
-      Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
-      X->norm2(norms);
-      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(norms[0]), true);
+      // Run Belos      
+      int numIters = MueLuTests::BelosAdaptersTest<SC, MV, OP>(belosOp, belosPrec, X, B, out, success);
 
+      // Tests
+      TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
     }
   }
 #endif
@@ -176,7 +223,10 @@ namespace MueLuTests {
       
       // Test for Tpetra will be done by XpetraOp_XpetraMV.
       // We only need to run tests for Epetra to force the result comparisons.
-      MueLuTests::BelosAdaptersTest_XpetraOp_XpetraMV<SC, LO, GO, NO, LMO>(Xpetra::UseEpetra, out, success);
+      //
+      // TODO
+      //
+
     }
   }
 #endif
@@ -184,3 +234,5 @@ namespace MueLuTests {
 #endif // MUELU_DISABLED
 
 } // namespace MueLuTests
+
+//TODO: norm test can be factorized, using Belos Adapter Norm function.

@@ -76,13 +76,13 @@ ENDIF()
 #     DEPLIBS muelu muelu-xpetra
 #   )
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#     simple1D-belosEpetra1
-#     SOURCES main-belosEpetra1.cpp
-#     ARGS ""
-#     COMM serial mpi
-#     DEPLIBS muelu muelu-xpetra
-#   )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    simple1D-belosEpetra1
+    SOURCES main-belosEpetra1.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra
+  )
 
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -104,10 +104,10 @@ ENDIF()
 #     DEPLIBS muelu muelu-xpetra
 #   )
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#     simple1D-belosXpetraEpetra
-#     SOURCES main-belosXpetraEpetra.cpp
-#     ARGS ""
-#     COMM serial mpi
-#     DEPLIBS muelu muelu-xpetra
-#   )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    simple1D-belosXpetraEpetra
+    SOURCES main-belosXpetraEpetra.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra
+  )
