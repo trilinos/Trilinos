@@ -42,8 +42,7 @@
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 
 int main(int argc, char *argv[]) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  using Teuchos::RCP;  using Teuchos::rcp;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -58,7 +57,7 @@ int main(int argc, char *argv[]) {
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters<int> matrixParameters(clp, 8748); // manage parameters of the test case
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
@@ -148,8 +147,9 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetMaxNeighAlreadySelected(0);
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
+
   RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<RFactory>         Rfact = rcp( new TransPFactory() );
