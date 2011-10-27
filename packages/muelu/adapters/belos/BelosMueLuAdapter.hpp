@@ -62,93 +62,11 @@ namespace Belos {
   // TODO: Should this file be moved to Belos ? The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So maybe.
 
   // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
-  // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
-  // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
+  // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuPrecOp
+  // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
   // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuPrecOp (TODO: not available yet)
   // D - MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuXpetraPrecOp => TODO: this description have to be improved
   // TODO: I can also quickly implements couples Tpetra::MultiVector/Xpetra::Operator and Epetra_MultiVector/Xpetra::Operator=> it's more for debugging...because it skip the XpetraMultiVecTrait
-
-#ifdef HAVE_XPETRA_EPETRAEXT
-  // -----------------------------------------------------------------------------------------------------------------------------------
-  //  A: MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
-  // -----------------------------------------------------------------------------------------------------------------------------------
-
-  // Turns a MueLu::Hierarchy<ScalarType,...> object to a Belos::Operator<ScalarType>.
-  // This allows to use MueLu as a preconditionner for a Belos::LinearProblem
-  // with ScalarType=, MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
-  //
-  // Note: this adapter is implemented only for Epetra (and ScalarType=double), because the interface Belos::Operator and Belos::MultiVec is only implemented for Epetra in Belos.
-  // For Tpetra, you can use directly the adapter provided for Belos::LinearProblem where OP=Tpetra::Operator<...> or OP=Xpetra::Operator<...>
-  //
-  // TODO: This adapter may also be used for OP=Epetra_Operator if we implements the interface Epetra_Operator by adding inheritence to public virtual Epetra_Operator and a bunch of methods
-  // (see also the class Belos::EpetraPrecOp in package/belos/epetra/src/ for guidance)
-  class MueLuEpetraPrecOp : public Belos::Operator<double> { 
-    
-    typedef MueLu::Hierarchy<double,int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> Hierarchy; // TODO: remove template parameters of Hierarchy
-    typedef Xpetra::MultiVector<double, int, int> MultiVector;
-
-  public:
-    
-    //! @name Constructor/Destructor
-    //@{ 
-    
-    //! Default constructor
-    MueLuEpetraPrecOp(const RCP<Hierarchy> & H) : Hierarchy_(H) {}
-    
-    //! Destructor.
-    virtual ~MueLuEpetraPrecOp() {};
-    //@}
-    
-    //! @name Operator application method
-    //@{ 
-    
-    /*! \brief This routine takes the Epetra_MultiVector \c x and applies the operator
-      to it resulting in the Epetra_MultiVector \c y, which is returned.
-      \note It is expected that any problem with applying this operator to \c x will be
-      indicated by an std::exception being thrown.
-    */
-    // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
-    void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, EpetraOpFailure, 
-                         "Belos::MueLuEpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
-
-      Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
-
-      const Xpetra::EpetraMultiVector eX(Teuchos::rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector eY(rcpFromRef(y));
-
-      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
-      eY.putScalar(0.0);
-
-      Hierarchy_->Iterate( eX, 1, eY , true);
-      
-    }
-
-    /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
-      to it resulting in the Belos::MultiVec \c y, which is returned.
-      \note It is expected that any problem with applying this operator to \c x will be
-      indicated by an std::exception being thrown.
-    */
-    void Apply ( const Belos::MultiVec<double>& x, Belos::MultiVec<double>& y, ETrans trans=NOTRANS ) const {
-      const Epetra_MultiVector* vec_x = dynamic_cast<const Epetra_MultiVector*>(&x);
-      Epetra_MultiVector*       vec_y = dynamic_cast<Epetra_MultiVector*>(&y);
-
-      TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
-                          "Belos::MueLuEpetraPrecOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
-
-      Apply(*vec_x, *vec_y, trans);
-    }
-  
-  private:
-  
-    RCP<Hierarchy> Hierarchy_;
-  };
-#endif
-
-  // -----------------------------------------------------------------------------------------------------------------------------------
-  //  D: MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>
-  // -----------------------------------------------------------------------------------------------------------------------------------
 
   // JG Notes about the implementation of Belos adapters for Xpetra objects:
   // To use Belos with Xpetra, we need here a common ancestor between classes Xpetra::Operator and MueLu::Hierarchy
@@ -382,8 +300,6 @@ namespace Belos {
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
   };
 
-
-
   template <> 
   class MueLuOp<double, int, int>   
     : 
@@ -471,6 +387,7 @@ namespace Belos {
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
+    , public Belos::Operator<double>
 #endif
   { 
 
@@ -539,6 +456,21 @@ namespace Belos {
 
       Hierarchy_->Iterate( tX, 1, tY , true);
       
+    }
+
+    /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
+      to it resulting in the Belos::MultiVec \c y, which is returned.
+      \note It is expected that any problem with applying this operator to \c x will be
+      indicated by an std::exception being thrown.
+    */
+    void Apply ( const Belos::MultiVec<double>& x, Belos::MultiVec<double>& y, ETrans trans=NOTRANS ) const {
+      const Epetra_MultiVector* vec_x = dynamic_cast<const Epetra_MultiVector*>(&x);
+      Epetra_MultiVector*       vec_y = dynamic_cast<Epetra_MultiVector*>(&y);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+                          "Belos::MueLuPrecOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
+
+      Apply(*vec_x, *vec_y, trans);
     }
 #endif
 

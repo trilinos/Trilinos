@@ -159,7 +159,7 @@ namespace MueLuTests {
       // Construct a Belos LinearProblem object
       RCP<Epetra_CrsMatrix> A = Utils::Op2NonConstEpetraCrs(p->GetA());
       RCP<OP> belosOp   = rcp(new Belos::EpetraOp(A));
-      RCP<OP> belosPrec = rcp(new Belos::MueLuEpetraPrecOp(p->GetH()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC, LO, GO, NO, LMO>(p->GetH()));
 
       // X, B
       RCP<Epetra_MultiVector> eX = Utils::MV2NonConstEpetraMV(p->GetNewX0());
