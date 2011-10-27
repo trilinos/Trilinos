@@ -343,10 +343,8 @@ public:
   //@{
   
   /** \brief Return a simple one-line description of this object. */
-  std::string description() const { 
-    std::ostringstream oss;
-    oss << "Xpetra_CrsOperator.description()" << std::endl;
-    return oss.str();
+  std::string description() const {
+    return "Xpetra_CrsOperator.description()";
   }
   
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
