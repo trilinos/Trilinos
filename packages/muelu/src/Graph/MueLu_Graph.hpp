@@ -43,6 +43,7 @@ namespace MueLu {
       return neighborVertices;
     }
 
+#ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const { 
       /*
         Ray's comments about nGhost:
@@ -51,10 +52,11 @@ namespace MueLu {
         Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
       */
       size_t nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
-      if (nGhost < 0) nGhost = 0;
+      if (nGhost < 0) nGhost = 0; // FIXME: size_t is unsigned.
       
       return nGhost;
     }
+#endif
 
     /** \brief Return a simple one-line description of this object. */
     std::string description() const {
