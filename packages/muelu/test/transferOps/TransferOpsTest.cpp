@@ -47,7 +47,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 #endif
 
 //
@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
 
     // construct Belos LinearProblem
     RCP<OP> belosOp      = Teuchos::rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );  // Xpetra::Op -> Belos::Op
-    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H)); // Hierarchy  -> prec
+    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Hierarchy  -> prec
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = Teuchos::rcp( new Belos::LinearProblem<double,MV,OP>(belosOp, belosX, belosRHS) );
     problem->setLeftPrec( belosPrec );

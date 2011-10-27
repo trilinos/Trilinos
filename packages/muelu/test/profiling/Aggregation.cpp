@@ -47,7 +47,7 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 #endif
 
 int main(int argc, char *argv[]) {

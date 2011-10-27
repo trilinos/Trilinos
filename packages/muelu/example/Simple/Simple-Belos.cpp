@@ -18,7 +18,7 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuPrecOp
+#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   
   // Construct a Belos LinearProblem object
   RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(A));    // Turns a Xpetra::Operator object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
   RCP< Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);

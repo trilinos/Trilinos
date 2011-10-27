@@ -40,7 +40,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
