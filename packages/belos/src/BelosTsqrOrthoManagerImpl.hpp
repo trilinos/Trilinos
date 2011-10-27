@@ -96,14 +96,39 @@ namespace Belos {
   };
 
   /// \class ReorthogonalizationCallback
-  /// \brief Callback invoked by TsqrOrthoManager on reorthogonalization.
+  /// \brief Interface of callback invoked by TsqrOrthoManager on reorthogonalization.
   /// \author Mark Hoemmen
   ///
   /// This callback's \c operator() is invoked by \c
   /// TsqrOrthoManagerImpl, and therefore by \c TsqrOrthoManager.  It
   /// is invoked right after discovering the need to reorthogonalize
   /// (for the first time), but before actually reorthogonalizing.  It
-  /// is <i>only</i> invoked if reorthogonalization is necessary.
+  /// is <i>only</i> invoked if reorthogonalization is necessary.  You
+  /// can define your own callback by implementing this interface.
+  ///
+  /// This callback lets you collect metrics on reorthogonalization.
+  /// For example, you might want to measure how often it occurs, or
+  /// by how much the norms of the vectors drop each time.  You can
+  /// use this information in order to adjust parameters (such as the
+  /// reorthogonalization parameters) dynamically for your desired
+  /// balance of accuracy and performance.  You might also use it as a
+  /// numerical debugging aid.
+  ///
+  /// Why a reorthgonalization callback, but not other kinds of
+  /// callbacks?  Reorthogonalization is an event that affects
+  /// performance, and happens in a data-driven way.  Even if you have
+  /// enabled reorthogonalization, it may not happen at all, or only
+  /// infrequently.  Other kinds of data-driven events (such as a
+  /// normalization discovering numerical rank deficiency) immediately
+  /// return to the user with useful diagnostics.  Reorthogonalization
+  /// does not; it happens silently.  We could have the
+  /// orthogonalization method itself gather metrics on
+  /// reorthogonalization, but the callback lets you define what
+  /// metrics you want to collect and how you want to display them
+  /// yourself.
+  ///
+  /// \warning Please do not rely on this interface.  It may change or
+  ///   go away at any time.
   template<class Scalar>
   class ReorthogonalizationCallback : 
     public std::binary_function<Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>, 
@@ -235,6 +260,9 @@ namespace Belos {
     ///
     /// The callback is null by default.  If the callback is null, no
     /// callback will be invoked.
+    ///
+    /// \warning Please do not rely on the interface to this method.
+    ///   This method may change or go away at any time.
     ///
     /// \warning We assume that the input arguments of the function's
     ///   operator() are only valid views within the scope of the
