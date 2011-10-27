@@ -32,26 +32,6 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       SUBROUTINE DBIV0 (NQAREC, NINFO)
 C=======================================================================
-C$Id: dbiv0.f,v 1.4 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbiv0.f,v $
-CRevision 1.4  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.3  1990/11/30 09:50:53  gdsjaar
-CModified to work on Unicos
-C
-c Revision 1.2  90/10/11  16:47:17  gdsjaar
-c Fixed problem with singly/doubly dimensioned array
-c 
-c Revision 1.1.1.1  90/08/14  16:13:11  gdsjaar
-c Testing
-c 
-c Revision 1.1  90/08/14  16:13:09  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:13  gdsjaar
-c Initial revision
-c 
 
 C   --*** DBIV0 *** (EXOLIB) Initialize for DBIVAR
 C   --   Written by Amy Gilkey - revised 11/04/87

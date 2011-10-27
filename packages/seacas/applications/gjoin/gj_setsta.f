@@ -32,7 +32,6 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
 C -*- Mode: fortran -*-
-C $Id: setsta.f,v 1.4 2008/04/09 21:45:53 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE SETSTA (PROMPT, ERRMSG, NITEM1, NITEM2, IDS, ISTAT, *)
 C=======================================================================
@@ -84,6 +83,7 @@ C   --changing the table.
      2   'LIST    ', 'HELP    ', 'UP      ', 'EXIT    ', 'INCREMEN',
      3   '        ' /
 
+      MATCH = 0
       NITEMS = NITEM1 + NITEM2
       IF (NITEMS .LE. 0) RETURN
 

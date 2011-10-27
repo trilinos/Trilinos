@@ -297,8 +297,7 @@ C
           V2MAG = SQRT(V21*V21 + V22*V22)
           V21 = V21 / V2MAG
           V22 = V22 / V2MAG
-          V23 = V23 / V2MAG
-          VDOT = ABS(V11*V21 + V12*V22 + V13*V23)
+          VDOT = ABS(V11*V21 + V12*V22)
           IF (VDOT .GT. 0.9)THEN
             IRED = 1
           END IF

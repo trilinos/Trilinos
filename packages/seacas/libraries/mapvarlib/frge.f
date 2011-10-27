@@ -70,17 +70,21 @@ C
     2   CONTINUE
         G(I) = SMAX
     3 CONTINUE
+
       DO 7 K = 1,N-1
         RMAX = 0.D+00
+        JJ = 0
         DO 4 I = K,N
           R = DABS(S(L(I),K)) / G(L(I))
           IF (R .LE. RMAX) GO TO 4
-          J = I
+          JJ = I
           RMAX = R
     4   CONTINUE
-        LK = L(J)
-        L(J) = L(K)
-        L(K) = LK
+        if (jj .ne. 0) then
+          LK = L(JJ)
+          L(JJ) = L(K)
+          L(K) = LK
+        end if
         DO 6 I = K+1,N
           XMULT = S(L(I),K)/S(LK,K)
           DO 5 J = K+1,N

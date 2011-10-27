@@ -31,23 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C $Id: rotxyz.f,v 1.1 1999/01/18 19:21:26 gdsjaar Exp $
-C $Log: rotxyz.f,v $
-C Revision 1.1  1999/01/18 19:21:26  gdsjaar
-C ExodusII version of gjoin, needs testing and syncing with exodus 1 version, but is being committed to permit easier testing and modifications.  This was created by Dave Fry at Goodyear
-C
-c Revision 1.1.1.1  1998/11/05  16:23:28  a294617
-c Initial import == gjoin 1.36
-c
-C Revision 1.1  1992/11/11 22:00:13  gdsjaar
-C Added revolve and revcen transformation commands.
-C
-c Revision 1.1.1.1  1990/11/12  16:10:50  gdsjaar
-c GREPOS: Genesis Repositioning
-c
-c Revision 1.1  90/11/12  16:10:49  gdsjaar
-c Initial revision
-c 
 C=======================================================================
       SUBROUTINE ROTXYZ (XYZ, ANG, ROTMAT)
 C=======================================================================
@@ -81,6 +64,12 @@ C   --   ROTMAT - IN/OUT - the rotation matrix
          N1 = 1
          N2 = 2
          N3 = 3
+      ELSE
+         n1 = 0
+         n2 = 0
+         n3 = 0
+         CALL PRTERR ('ERROR', 'Invalid axis specification in rotxyz')
+         return
       END IF
 
       COSANG = COS (ANG)

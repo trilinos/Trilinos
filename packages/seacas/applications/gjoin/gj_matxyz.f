@@ -91,6 +91,7 @@ C     --      if actual matches not equal.
       
       BYSET = (MATNS1 .GT. 0) .AND. (MATNS2 .GT. 0)
       INIT = (NMATCH .LE. 0)
+      NSVMAT = NMATCH
       
 C     --Index nodes to match in the nodal point sets
       
@@ -191,9 +192,10 @@ C     --Find the limits of the overlapping area of the two databases
       
 C     --Index the nodes within the overlap area
       
+      Z3D = 0.0
       IF (.NOT. BYSET) THEN
          IN1 = 0
-         IF (NDIM .LT. 3) Z3D = 0.0
+         Z3D = 0.0
          DO 120 INP = 1, NUMNP1
             IF ((XN1(INP) .GE. XMIN) .AND. (XN1(INP) .LE. XMAX)) THEN
                IF ((YN1(INP) .GE. YMIN) .AND. (YN1(INP) .LE. YMAX)) THEN
@@ -283,6 +285,7 @@ C     area
       DELMAX = MAX(DELTAX, DELTAY, DELTAZ)
       
       call excpus(time0)
+      imat = 0
       if (DELMAX .EQ. DELTAX) THEN
         imat = 1
         call indexn(xn1, 1, 1, ix1, in1, .FALSE.)
@@ -309,9 +312,8 @@ C     area
       WRITE (*,'(A)') ' '
       WRITE (*,'(A)') ' '
       
-      NSVMAT = NMATCH
-      IF (NDIM .LT. 3) Z3D = 0.0
-      IF (NDIM .LT. 3) Z = 0.0
+      Z3D = 0.0
+      Z = 0.0
       IN1SV = IN1
       IN2SV = IN2
 

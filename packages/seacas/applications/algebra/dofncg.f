@@ -69,8 +69,8 @@ C   --   RESULT - OUT - the returned result value
 
       INIT = .TRUE.
 
+      R = 0.0
       IF (NUMIX .GE. 0) THEN
-         R = 0.0
          IF (PARTYP .NE. 'E') THEN
             DO 100 I = 1, NUMIX
                J = IXNODE(I)

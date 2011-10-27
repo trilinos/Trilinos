@@ -182,6 +182,7 @@ C
 C     Get node number diagonally across element, in most cases this
 C     node will have 4 elements attached.
 C     
+                  NXTLND = 0
                   DO 120 I = 1, NNODES
                      IF (IGLND .EQ. ICONA(I,INVCN(1,IGLND))) THEN
                         NXTLND = I + 2
@@ -249,6 +250,7 @@ C
 C     
 C     Similar to 2D, process special cases
 C     
+                  NOWLND = 0
                   DO 210 I = 1, NNODES
                      IF (IGLND .EQ. ICONA(I,INVCN(1,IGLND)))THEN
                         NOWLND = I

@@ -110,6 +110,7 @@ C   --   Uses NUMELO, NUMNPO of /DBOUT/
      *  myatan, myatan2, mysinh, mycosh, mytanh, mysqrt
 
       MERR = 0
+      IOP2 = 0
 
       IF (NUMENT .LT. 3) RETURN
 

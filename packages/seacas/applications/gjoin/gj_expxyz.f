@@ -100,8 +100,9 @@ C     --   MATMAT - IN/OUT - true if match by material
       LOGICAL BYSET
       LOGICAL OK
       
+      NSVMAT = 0
       BYSET = (MATNS1 .GT. 0) .AND. (MATNS2 .GT. 0)
-
+      
 C     --Index nodes to match in the nodal point sets
       call prterr('WARNING',
      &     'EXPXYZ (By-material matching) is an experimental routine')
@@ -239,7 +240,7 @@ C     --Find the limits of the overlapping area of the two databases
          
          in1sv = in1
          IN1 = 0
-         IF (NDIM .LT. 3) Z3D = 0.0
+         Z3D = 0.0
          DO 120 INP = 1, in1sv
            IF (IX1(INP) .GT. 0) THEN
              in = ix1(inp)
@@ -314,8 +315,8 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
          WRITE (*,'(A)') ' '
          
          NSVMAT = NMATCH
-         IF (NDIM .LT. 3) Z3D = 0.0
-         IF (NDIM .LT. 3) Z = 0.0
+         Z3D = 0.0
+         Z = 0.0
          IN1SV = IN1
          in2sv = in2
          i2beg = 1

@@ -87,6 +87,11 @@ C INPUT/OUTPUT ARRAYS
 C SCRATCH ARRAYS
       DIMENSION CTRCL(10)
 C
+C ... Eliminate uninitialized variable warning...
+      do i=1, 10
+        ctrcl(i) = 0.0
+      end do
+      
       IF( NISR .LT. 1 .OR. NRSR .LT. 4 .OR. NRSS .LT. 10 )THEN
         IERR = 1
         RETURN

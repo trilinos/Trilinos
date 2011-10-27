@@ -145,6 +145,7 @@ C
 C  Get node number diagonally across element, in most cases this
 C  node will have 4 elements attached.
 C
+          NXTLND = 0
           DO 70 I = 1, NNODES
             IF (IGLND .EQ. ICONA(I,INVCN(1,IGLND)))NXTLND = I + 2
    70     CONTINUE
