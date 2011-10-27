@@ -499,7 +499,7 @@ NNTI_result_t NNTI_gni_init (
 
     int rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     int flags;
 
@@ -757,7 +757,7 @@ NNTI_result_t NNTI_gni_connect (
 {
     int rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
@@ -780,7 +780,7 @@ NNTI_result_t NNTI_gni_connect (
 
     NNTI_peer_t *key;
 
-    double start_time=0.0;
+    double start_time;
     uint64_t elapsed_time = 0;
     int timeout_per_call;
 
@@ -1029,7 +1029,7 @@ NNTI_result_t NNTI_gni_register_memory (
 {
     NNTI_result_t rc=NNTI_OK;
     uint32_t i;
-    double call_time;
+    trios_declare_timer(call_time);
 
     uint32_t cqe_num;
 
@@ -1271,7 +1271,7 @@ NNTI_result_t NNTI_gni_send (
 {
     NNTI_result_t rc=NNTI_OK;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     gni_memory_handle *gni_mem_hdl=NULL;
 
@@ -1328,7 +1328,7 @@ NNTI_result_t NNTI_gni_put (
         const uint64_t       dest_offset)
 {
     int rc=NNTI_OK;
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
@@ -1434,7 +1434,7 @@ NNTI_result_t NNTI_gni_get (
         const uint64_t       dest_offset)
 {
     int rc=NNTI_OK;
-    double call_time;
+    trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
@@ -1560,7 +1560,7 @@ NNTI_result_t NNTI_gni_wait (
     int elapsed_time = 0;
     int timeout_per_call;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     assert(reg_buf);
     assert(status);
@@ -1792,7 +1792,7 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
 {
     int rc=GNI_RC_SUCCESS; /* return code */
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     gni_connection *conn=NULL;
 
@@ -1914,7 +1914,7 @@ static NNTI_result_t unregister_memory(gni_memory_handle *hdl)
 {
     int rc=GNI_RC_SUCCESS; /* return code */
     int i=0;
-    double call_time;
+    trios_declare_timer(call_time);
     gni_cq_entry_t  ev_data;
 
     gni_connection *conn=NULL;
@@ -2005,7 +2005,7 @@ static void send_ack (
         const NNTI_buffer_t *reg_buf)
 {
     int rc=NNTI_OK;
-    double call_time;
+    trios_declare_timer(call_time);
 
     gni_memory_handle *gni_mem_hdl=NULL;
 
@@ -2754,7 +2754,7 @@ static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
 
 static void write_contact_info(void)
 {
-    double call_time;
+    trios_declare_timer(call_time);
     char *contact_filename=NULL;
     FILE *cf=NULL;
 
@@ -2775,7 +2775,7 @@ static void write_contact_info(void)
 static int init_server_listen_socket()
 {
     NNTI_result_t rc=NNTI_OK;
-    double call_time;
+    trios_declare_timer(call_time);
     int flags;
     struct hostent *host_entry;
     struct sockaddr_in skin;
@@ -2853,7 +2853,7 @@ static void transition_connection_to_ready(
 {
     int i;
     int rc=NNTI_OK;
-    double callTime=0.0;
+    trios_declare_timer(callTime);
 
     trios_start_timer(callTime);
     /* final sychronization to ensure both sides have posted RTRs */
@@ -2909,7 +2909,7 @@ static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t 
 
     for (i=0; i<2; i++) {
         if (i ^ is_server) {
-            double call_time;
+            trios_declare_timer(call_time);
             trios_start_timer(call_time);
             rc = read_full(sock, xin, len);
             if (rc < 0) {
@@ -2923,7 +2923,7 @@ static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t 
                 goto out;
             }
         } else {
-            double call_time;
+            trios_declare_timer(call_time);
             trios_start_timer(call_time);
             rc = write_full(sock, xout, len);
             if (rc < 0) {
@@ -2962,7 +2962,7 @@ static int new_client_connection(
         nnti_gni_client_queue_attrs client_attrs;
     } ca_out;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     c->connection_type=CLIENT_CONNECTION;
 
@@ -3035,7 +3035,7 @@ static int new_server_connection(
         nnti_gni_client_queue_attrs client_attrs;
     } ca_in;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     assert(transport_global_data.req_queue.reg_buf);
 
@@ -3114,9 +3114,8 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, gni_connection *c
     connections_by_peer[key] = conn;   // add to connection map
     nthread_unlock(&nnti_conn_peer_lock);
 
-    log_debug(nnti_debug_level, "peer connection added (value=%p)", conn);
+    log_debug(nnti_debug_level, "peer connection added (conn=%p)", conn);
 
-cleanup:
     return(rc);
 }
 static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_connection *conn)
@@ -3224,6 +3223,7 @@ static gni_connection *del_conn_peer(const NNTI_peer_t *peer)
     if (conn != NULL) {
         log_debug(nnti_debug_level, "connection found");
         connections_by_peer.erase(key);
+        del_conn_instance(conn->peer_instance);
     } else {
         log_debug(nnti_debug_level, "connection NOT found");
     }
@@ -3243,7 +3243,6 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
     if (conn != NULL) {
         log_debug(debug_level, "connection found");
         connections_by_instance.erase(instance);
-
     } else {
         log_debug(debug_level, "connection NOT found");
     }
@@ -3311,7 +3310,7 @@ static NNTI_result_t init_connection(
     int rc=NNTI_OK; /* return code */
     struct ibv_recv_wr *bad_wr;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     log_debug(nnti_debug_level, "initializing gni connection");
 
@@ -3791,7 +3790,7 @@ static int post_wait(
 {
     int rc=0;
     int i=0;
-    double call_time;
+    trios_declare_timer(call_time);
     gni_post_descriptor_t *post_desc_ptr;
     gni_cq_entry_t ev_data;
 
@@ -3902,7 +3901,7 @@ static int fetch_add_buffer_offset(
         uint64_t                    *prev_offset)
 {
     int rc=0;
-    double call_time;
+    trios_declare_timer(call_time);
     gni_post_descriptor_t  post_desc;
 //    gni_post_descriptor_t *post_desc_ptr;
     gni_cq_entry_t ev_data;
@@ -4012,7 +4011,7 @@ static int send_req(
     int rc=0;
     gni_post_descriptor_t  post_desc;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
 
@@ -4072,7 +4071,7 @@ static int send_wc(
     int rc=0;
     gni_memory_handle *gni_mem_hdl=NULL;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
     assert(gni_mem_hdl);
@@ -4134,7 +4133,7 @@ static int request_send(
 {
     int rc=0;
     uint64_t offset=0;
-    double call_time;
+    trios_declare_timer(call_time);
 
     gni_memory_handle *gni_mem_hdl=NULL;
 
@@ -4186,7 +4185,7 @@ static int send_unblock(
     gni_post_descriptor_t  post_desc;
     uint32_t *ptr32=NULL;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
 
