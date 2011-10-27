@@ -91,11 +91,11 @@ namespace MueLu {
     /// blocksize for fixed blocksize setup
     GO blksize_;
 
-    /// are we doing fixed or variabled blocks
+    /// are we doing fixed or variable blocks
     bool fixedBlkSize_;
 
     /// pre-drop function
-    RCP<PreDropFunctionBaseClass<SC,LO,GO,Node,LMO> > predrop_;
+    RCP<PreDropFunctionBaseClass> predrop_;
 
   }; //class CoalesceDropFactory
 

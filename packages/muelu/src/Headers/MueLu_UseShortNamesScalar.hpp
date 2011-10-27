@@ -86,6 +86,14 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 typedef MueLu::CoalesceDropFactory<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoalesceDropFactory;
 #endif
 
+#ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
+typedef MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreDropFunctionBaseClass;
+#endif
+
+#ifdef MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
+typedef MueLu::PreDropFunctionConstVal<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreDropFunctionConstVal;
+#endif
+
 /*#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
 typedef MueLu::DefaultFactoryHandler<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DefaultFactoryHandler;
 #endif*/
