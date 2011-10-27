@@ -33,7 +33,7 @@ useMueLuGallery(
   int xdim=10;  
   int ydim=10;
   int zdim=10;
-  std::string matrixType("Laplace2D");
+  std::string matrixType("Laplace3D");
 
   Teuchos::CommandLineProcessor clp(false, false);
   clp.setOption("x", &xdim, 
