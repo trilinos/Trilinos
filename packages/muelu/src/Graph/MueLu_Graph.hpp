@@ -58,14 +58,31 @@ namespace MueLu {
     }
 #endif
 
-    /** \brief Return a simple one-line description of this object. */
+    /// Return a simple one-line description of this object.
     std::string description() const {
       return "MueLu.description()";
     }
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-      graph_->describe(out,verbLevel);
+    //! Print the object with some verbosity level to an FancyOStream object.
+    //using MueLu::Describable::describe; // overloading, not hiding
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+      MUELU_DESCRIBE;
+
+      if (verbLevel & Parameters0) {
+        //out0 << "Prec. type: " << type_ << std::endl;
+      }
+
+      if (verbLevel & Parameters1) {
+        //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+        //out0 << "PrecType: " << type_ << std::endl;
+        //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+        //out0 << "Overlap: " << overlap_ << std::endl;
+      }
+
+      if (verbLevel & Debug) {
+        graph_->describe(out0, Teuchos::VERB_EXTREME);
+      }
     }
 
   private:

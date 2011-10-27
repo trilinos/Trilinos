@@ -37,7 +37,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, PreDrop)
   {
     out << "version: " << MueLu::Version() << std::endl;
-//    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     Level fineLevel;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
@@ -45,7 +44,6 @@ namespace MueLuTests {
     RCP<Operator> A = TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(3);
     fineLevel.Set("A", A);
     A->describe(out,Teuchos::VERB_EXTREME);
-//    std::cout << *A << std::endl;
 
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetVerbLevel(MueLu::Extreme);
@@ -59,7 +57,7 @@ namespace MueLuTests {
     RCP<Graph> graph = fineLevel.Get<RCP<Graph> >("Graph", &dropFact);
 
     std::cout << graph->GetDomainMap()->getGlobalNumElements() << std::endl;
-    graph->describe(out, Teuchos::VERB_EXTREME);
+    graph->print(out, MueLu::Debug);
 
 //    TEST_EQUALITY(1 == 0, true);
 
