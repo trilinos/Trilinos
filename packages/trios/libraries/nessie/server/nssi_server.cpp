@@ -461,7 +461,7 @@ static int fetch_args(
     int rc;   /* return code from non-NSSI methods */
     XDR xdrs;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     /* pointer to the decoded buffer for arguments */
     char *buf=NULL;
@@ -582,7 +582,7 @@ static int send_result(const NNTI_peer_t   *caller,
 {
     static uint32_t res_counter = 1;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     int rc; /* return code for non-NSSI methods */
 
@@ -949,7 +949,7 @@ void *process_rpc_request(
     int rc;
     nssi_svc_op svc_op;   /* current operation */
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     /* space for args and result (these are passed in with the header) */
     void *op_args = NULL;
@@ -1183,7 +1183,7 @@ int nssi_get_data(
     int rc = NSSI_OK;
     NNTI_buffer_t rpc_msg;
     NNTI_status_t status;
-    double call_time;
+    trios_declare_timer(call_time);
 
     if (len == 0)
         return rc;
@@ -1551,7 +1551,7 @@ int nssi_service_start(
     double t1;
     double idle_time = 0;
     double processing_time = 0;
-    double call_time;
+    trios_declare_timer(call_time);
     int rank = FIXRANK;
     //queue<struct thread_pool_task *> task_queue;
 
