@@ -10,13 +10,15 @@
 
 
 /* Confirm that the bipartite match algorithm did the right thing. */
-void      checkbp(graph, xvecs, sets, dists, nvtxs, ndims)
-struct vtx_data **graph;	/* graph data structure for vertex weights */
-double  **xvecs;		/* values to partition */
-int    *sets;			/* set assignments returned */
-double   *dists;		/* distances that separate sets */
-int       nvtxs;		/* number of vertices */
-int       ndims;		/* number of dimensions for division */
+void 
+checkbp (
+    struct vtx_data **graph,	/* graph data structure for vertex weights */
+    double **xvecs,		/* values to partition */
+    int *sets,			/* set assignments returned */
+    double *dists,		/* distances that separate sets */
+    int nvtxs,		/* number of vertices */
+    int ndims		/* number of dimensions for division */
+)
 {
     int       signs[MAXDIMS];	/* signs for coordinates of target points */
     int       sizes[MAXSETS];	/* size of each set */

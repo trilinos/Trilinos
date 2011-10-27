@@ -9,19 +9,20 @@
     on Wilkinson's algorithm, AEP, p.302. Returns 1 if sturmcnt() fails and
     2 if it hasn't converged in max_steps of bisection. If neither of these
     errors is detected the return value is 0. */ 
-int       bisect(alpha, beta, j, Anorm, workj, ritz, nevals_left, 
-                 nevals_right, tol, ritz_sav, max_steps)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* number of Lanczos iterations taken */
-double    Anorm;		/* Gershgorin estimate */
-double   *workj;		/* work vector for Sturm sequence */
-int       nevals_left;		/* number of evals on right to find */
-int       nevals_right;		/* number of evals on left to find */
-double   *ritz;			/* array holding evals */
-double    tol;			/* tolerance on bracket width */
-double   *ritz_sav;		/* space to copy ritzvals for debugging */
-int	  max_steps;		/* maximum number of bisection steps allowed */ 
+int 
+bisect (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* number of Lanczos iterations taken */
+    double Anorm,		/* Gershgorin estimate */
+    double *workj,		/* work vector for Sturm sequence */
+    double *ritz,			/* array holding evals */
+    int nevals_left,		/* number of evals on right to find */
+    int nevals_right,		/* number of evals on left to find */
+    double tol,			/* tolerance on bracket width */
+    double *ritz_sav,		/* space to copy ritzvals for debugging */
+    int max_steps		/* maximum number of bisection steps allowed */
+) 
 {
     extern int DEBUG_EVECS;	/* debug flag for eigen computation */
     extern double DOUBLE_MAX;	/* largest double value */

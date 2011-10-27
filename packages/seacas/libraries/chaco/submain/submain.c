@@ -43,33 +43,30 @@ FILE     *Output_File = NULL;	/* Pointer to output file or NULL */
 
 int	  EXPERT = 0;		/* user mode */
 
-int       submain(graph, nvtxs, nedges, using_vwgts, using_ewgts, igeom, coords,
-		            outassignname, outfilename,
-		            assignment, goal,
-		            architecture, ndims_tot, mesh_dims,
-		            global_method, local_method, rqi_flag, vmax, ndims,
-		            eigtol, seed)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vertices in full graph */
-int       nedges;		/* number of edges in graph */
-int       using_vwgts;		/* are vertex weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-int       igeom;		/* geometry dimension if using inertial method */
-float   **coords;		/* coordinates of vertices if used */
-char     *outassignname;	/* name of assignment output file */
-char     *outfilename;		/* in which to print output metrics */
-int    *assignment;		/* set number of each vtx (length n) */
-double   *goal;			/* desired sizes for each set */
-int       architecture;		/* 0=> hypercube, d=> d-dimensional mesh */
-int       ndims_tot;		/* total number hypercube dimensions */
-int       mesh_dims[3];		/* extent of mesh in 3 directions */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* use RQI/Symmlq eigensolver? */
-int       vmax;			/* if so, how many vtxs to coarsen down to */
-int       ndims;		/* number of eigenvectors (2^d sets) */
-double    eigtol;		/* tolerance on eigenvectors */
-long      seed;			/* for random graph mutations */
+int 
+submain (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vertices in full graph */
+    int nedges,		/* number of edges in graph */
+    int using_vwgts,		/* are vertex weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    int igeom,		/* geometry dimension if using inertial method */
+    float **coords,		/* coordinates of vertices if used */
+    char *outassignname,	/* name of assignment output file */
+    char *outfilename,		/* in which to print output metrics */
+    int *assignment,		/* set number of each vtx (length n) */
+    double *goal,			/* desired sizes for each set */
+    int architecture,		/* 0=> hypercube, d=> d-dimensional mesh */
+    int ndims_tot,		/* total number hypercube dimensions */
+    int mesh_dims[3],		/* extent of mesh in 3 directions */
+    int global_method,	/* global partitioning algorithm */
+    int local_method,		/* local partitioning algorithm */
+    int rqi_flag,		/* use RQI/Symmlq eigensolver? */
+    int vmax,			/* if so, how many vtxs to coarsen down to */
+    int ndims,		/* number of eigenvectors (2^d sets) */
+    double eigtol,		/* tolerance on eigenvectors */
+    long seed			/* for random graph mutations */
+)
 {
     extern int ECHO;		/* controls output to file or screen */
     extern int CHECK_INPUT;	/* should I check input for correctness? */

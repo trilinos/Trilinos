@@ -10,15 +10,16 @@
 /* Make coarse graph vertex coordinates be center-of-mass of their */
 /* fine graph constituents. */
 
-void      makeccoords(graph, cnvtxs, cv2v_ptrs, cv2v_vals,
-		                igeom, coords, ccoords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       cnvtxs;		/* number of vertices in coarse graph */
-int       igeom;		/* dimensions of geometric data */
-int      *cv2v_ptrs;		/* vtxs corresponding to each cvtx */
-int      *cv2v_vals;		/* indices into cv2v_vals */
-float   **coords;		/* coordinates for vertices */
-float   **ccoords;		/* coordinates for coarsened vertices */
+void 
+makeccoords (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int cnvtxs,		/* number of vertices in coarse graph */
+    int *cv2v_ptrs,		/* vtxs corresponding to each cvtx */
+    int *cv2v_vals,		/* indices into cv2v_vals */
+    int igeom,		/* dimensions of geometric data */
+    float **coords,		/* coordinates for vertices */
+    float **ccoords		/* coordinates for coarsened vertices */
+)
 {
     double    mass;		/* total mass of merged vertices */
     float    *cptr;		/* loops through ccoords */

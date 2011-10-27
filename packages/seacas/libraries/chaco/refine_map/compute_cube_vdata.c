@@ -8,12 +8,14 @@
 #include	"refine_map.h"
 
 
-void      compute_cube_vdata(vdata, comm_graph, vtx, mask, vtx2node)
-struct refine_vdata *vdata;	/* preference data for a vertex */
-struct vtx_data **comm_graph;	/* communication graph data structure */
-int       vtx;			/* current vertex */
-int       mask;			/* bit set in current hypercube dimension */
-int    *vtx2node;		/* maps graph vtxs to mesh nodes */
+void 
+compute_cube_vdata (
+    struct refine_vdata *vdata,	/* preference data for a vertex */
+    struct vtx_data **comm_graph,	/* communication graph data structure */
+    int vtx,			/* current vertex */
+    int mask,			/* bit set in current hypercube dimension */
+    int *vtx2node		/* maps graph vtxs to mesh nodes */
+)
 {
     float     same;		/* my preference to stay where I am */
     float     change;		/* my preference to change this bit */

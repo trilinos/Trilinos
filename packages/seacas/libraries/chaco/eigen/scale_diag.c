@@ -6,10 +6,13 @@
 
 
 /* Scales vector by diagonal matrix (passed as vector) over range. */
-void      scale_diag(vec, beg, end, diag)
-double   *vec;			/* the vector to scale */
-int       beg, end;		/* specify the range to norm over */
-double   *diag;			/* vector to scale by */
+void 
+scale_diag (
+    double *vec,			/* the vector to scale */
+    int beg,
+    int end,		/* specify the range to norm over */
+    double *diag			/* vector to scale by */
+)
 {
     int       i;
 
@@ -24,10 +27,13 @@ double   *diag;			/* vector to scale by */
 }
 
 /* Scales vector by diagonal matrix (passed as vector) over range. */
-void      scale_diag_float(vec, beg, end, diag)
-float    *vec;			/* the vector to scale */
-int       beg, end;		/* specify the range to norm over */
-float    *diag;			/* vector to scale by */
+void 
+scale_diag_float (
+    float *vec,			/* the vector to scale */
+    int beg,
+    int end,		/* specify the range to norm over */
+    float *diag			/* vector to scale by */
+)
 {
 
     int       i;

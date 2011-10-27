@@ -9,14 +9,16 @@
 
 /* Find a maximal matching in a graph using one of several algorithms. */
 
-int       maxmatch(graph, nvtxs, nedges, mflag, using_ewgts, igeom, coords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int      *mflag;		/* flag indicating vtx selected or not */
-int       using_ewgts;		/* are edge weights being used? */
-int       igeom;		/* geometric dimensionality */
-float   **coords;		/* coordinates for each vertex */
+int 
+maxmatch (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int *mflag,		/* flag indicating vtx selected or not */
+    int using_ewgts,		/* are edge weights being used? */
+    int igeom,		/* geometric dimensionality */
+    float **coords		/* coordinates for each vertex */
+)
 {
     extern int DEBUG_COARSEN;	/* debug output for coarsening? */
     extern int MATCH_TYPE;	/* which matching routine to use */

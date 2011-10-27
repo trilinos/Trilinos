@@ -8,16 +8,17 @@
 #include	"internal.h"
 
 
-void      check_internal(graph, nvtxs, int_list, set_list, vtx_elems, 
-			           total_vwgt, assign, nsets_tot)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-struct bidint *int_list;	/* sorted list of internal weights per set */
-struct bidint *set_list;	/* head of vtx_elems lists */
-struct bidint *vtx_elems;	/* start of vertex data */
-int      *total_vwgt;		/* total weight in each set */
-int    *assign;		/* current assignment */
-int       nsets_tot;		/* total number of sets */
+void 
+check_internal (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    struct bidint *int_list,	/* sorted list of internal weights per set */
+    struct bidint *set_list,	/* head of vtx_elems lists */
+    struct bidint *vtx_elems,	/* start of vertex data */
+    int *total_vwgt,		/* total weight in each set */
+    int *assign,		/* current assignment */
+    int nsets_tot		/* total number of sets */
+)
 {
     struct bidint *ptr, *ptr2;	/* elements in int_list */
     struct bidint *old_ptr, *old_ptr2;	/* elements in set_list */

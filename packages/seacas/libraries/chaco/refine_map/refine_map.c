@@ -11,15 +11,16 @@
 
 /* Given a partition, refine the mapping in a locally greedy fasion. */
 
-void      refine_map(graph, nvtxs, using_ewgts, assign, cube_or_mesh, ndims_tot,
-		               mesh_dims)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
-int    *assign;		/* current assignment */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       ndims_tot;		/* if hypercube, number of dimensions */
-int       mesh_dims[3];		/* if mesh, dimensions of mesh */
+void 
+refine_map (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int *assign,		/* current assignment */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int ndims_tot,		/* if hypercube, number of dimensions */
+    int mesh_dims[3]		/* if mesh, dimensions of mesh */
+)
 {
     struct vtx_data **comm_graph;	/* graph for communication requirements */
     int       nsets_tot=0;	/* total number of sets */

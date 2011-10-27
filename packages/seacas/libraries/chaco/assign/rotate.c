@@ -7,10 +7,12 @@
 #include	"defs.h"
 
 
-void      rotate2d(yvecs, nmyvtxs, theta)
-double  **yvecs;		/* ptr to list of y-vectors (rotated) */
-int       nmyvtxs;		/* length of yvecs */
-double    theta;		/* angle to rotate by */
+void 
+rotate2d (
+    double **yvecs,		/* ptr to list of y-vectors (rotated) */
+    int nmyvtxs,		/* length of yvecs */
+    double theta		/* angle to rotate by */
+)
 {
     double    temp1;		/* hold values for a while */
     double    c, s;		/* cosine and sine of theta */
@@ -27,10 +29,14 @@ double    theta;		/* angle to rotate by */
 }
 
 
-void      rotate3d(yvecs, nmyvtxs, theta, phi, gamma2)
-double  **yvecs;		/* ptr to list of y-vectors (to be rotated) */
-int       nmyvtxs;		/* length of yvecs */
-double    theta, phi, gamma2;	/* rotational parameters */
+void 
+rotate3d (
+    double **yvecs,		/* ptr to list of y-vectors (to be rotated) */
+    int nmyvtxs,		/* length of yvecs */
+    double theta,
+    double phi,
+    double gamma2	/* rotational parameters */
+)
 {
     double    temp1, temp2;	/* hold values for a while */
     double    ctheta, stheta;	/* cosine and sine of theta */

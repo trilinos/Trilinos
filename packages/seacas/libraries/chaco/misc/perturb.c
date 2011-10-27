@@ -11,8 +11,10 @@ static struct ipairs *pedges;	/* perturbed edges */
 static double *pvals;		/* perturbed values */
 
 /* Inititialize the perturbation */
-void      perturb_init(n)
-int       n;			/* graph size at this level */
+void 
+perturb_init (
+    int n			/* graph size at this level */
+)
 {
     extern int NPERTURB;	/* number of edges to perturb */
     extern double PERTURB_MAX;	/* maximum perturbation */
@@ -44,7 +46,8 @@ int       n;			/* graph size at this level */
     }
 }
 
-void      perturb_clear()
+void 
+perturb_clear (void)
 {
 
 
@@ -56,9 +59,11 @@ void      perturb_clear()
 
 
 /* Modify the result of splarax to break any graph symmetry */
-void      perturb(result, vec)
-double   *result;		/* result of matrix-vector multiply */
-double   *vec;			/* vector matrix multiplies */
+void 
+perturb (
+    double *result,		/* result of matrix-vector multiply */
+    double *vec			/* vector matrix multiplies */
+)
 {
     extern int NPERTURB;	/* number of edges to perturb */
     int       i;		/* loop counter */
@@ -73,9 +78,11 @@ double   *vec;			/* vector matrix multiplies */
 
 
 /* Modify the result of splarax to break any graph symmetry, float version */
-void      perturb_float(result, vec)
-float    *result;		/* result of matrix-vector multiply */
-float    *vec;			/* vector matrix multiplies */
+void 
+perturb_float (
+    float *result,		/* result of matrix-vector multiply */
+    float *vec			/* vector matrix multiplies */
+)
 {
     extern int NPERTURB;	/* number of edges to perturb */
     int       i;		/* loop counter */

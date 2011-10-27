@@ -16,15 +16,17 @@
    loop for the extended eigenproblem, and (3) to squawk and die if a
    pivot below machine precision is encountered and (4) exploit the fact
    that all elements of the rhs except the first are 0. */
-void      tri_solve(alpha, beta, j, lambda, v, b, d, e)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* system size */
-double    lambda;		/* diagonal shift */
-double   *v;			/* solution vector */
-double    b;			/* scalar multiple of e1 specifying the rhs */
-double   *d;			/* work vec. for diagonal of Cholesky factor */
-double   *e;			/* work vec. for off diagonal of Cholesky factor */
+void 
+tri_solve (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* system size */
+    double lambda,		/* diagonal shift */
+    double *v,			/* solution vector */
+    double b,			/* scalar multiple of e1 specifying the rhs */
+    double *d,			/* work vec. for diagonal of Cholesky factor */
+    double *e			/* work vec. for off diagonal of Cholesky factor */
+)
 {
     extern int DEBUG_EVECS;	/* debug flag for eigen computation */
     int       i;		/* loop index */

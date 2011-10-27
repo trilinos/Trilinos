@@ -10,15 +10,16 @@
 
 
 /* Greedily increase the number of internal vtxs in each set. */
-void      force_internal(graph, nvtxs, using_ewgts, assign, goal, nsets_tot,
-     npasses_max)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
-int    *assign;		/* current assignment */
-double   *goal;			/* desired set sizes */
-int       nsets_tot;		/* total number of sets */
-int       npasses_max;		/* number of passes to make */
+void 
+force_internal (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int *assign,		/* current assignment */
+    double *goal,			/* desired set sizes */
+    int nsets_tot,		/* total number of sets */
+    int npasses_max		/* number of passes to make */
+)
 {
     extern int DEBUG_TRACE;	/* trace main execution path? */
     extern int DEBUG_INTERNAL;	/* turn on debugging code here? */

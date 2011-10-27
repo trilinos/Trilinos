@@ -8,21 +8,22 @@
 #include "smalloc.h"
 
 
-void      makecgraph2(graph, nvtxs, nedges, pcgraph, pcnvtxs, pcnedges, mflag,
-		               v2cv, nmerged, using_ewgts, igeom, coords, ccoords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-struct vtx_data ***pcgraph;	/* coarsened version of graph */
-int      *pcnvtxs;		/* number of vtxs in coarsened graph */
-int      *pcnedges;		/* number of edges in coarsened graph */
-int      *mflag;		/* flag indicating vtx matched or not */
-int      *v2cv;			/* mapping from vtxs to coarsened vtxs */
-int       nmerged;		/* number of merged vertices */
-int       using_ewgts;		/* are edge weights being used? */
-int       igeom;		/* dimensions of geometric data */
-float   **coords;		/* coordinates for vertices */
-float   **ccoords;		/* coordinates for coarsened vertices */
+void 
+makecgraph2 (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    struct vtx_data ***pcgraph,	/* coarsened version of graph */
+    int *pcnvtxs,		/* number of vtxs in coarsened graph */
+    int *pcnedges,		/* number of edges in coarsened graph */
+    int *mflag,		/* flag indicating vtx matched or not */
+    int *v2cv,			/* mapping from vtxs to coarsened vtxs */
+    int nmerged,		/* number of merged vertices */
+    int using_ewgts,		/* are edge weights being used? */
+    int igeom,		/* dimensions of geometric data */
+    float **coords,		/* coordinates for vertices */
+    float **ccoords		/* coordinates for coarsened vertices */
+)
 {
     extern double make_cgraph_time;
     extern int DEBUG_COARSEN;	/* debug flag for coarsening output */

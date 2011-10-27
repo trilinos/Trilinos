@@ -15,19 +15,20 @@ int       N_VTX_CHECKS;		/* number of considered moves */
 int       N_VTX_MOVES;		/* number of actual moves */
 static void nextmove(), undo_coupling(), couple();
 
-void      movevtxs(graph, nvtxs, nsets, dist, indices, vals, startvtx, sets,
-		             size, goal, vwgt_max)
-struct vtx_data **graph;	/* data structure with vertex weights */
-int       nvtxs;		/* number of vertices in graph */
-int       nsets;		/* how many sets am I dividing into? */
-double   *dist;			/* distances defining splitter */
-int      *indices[][MAXSETS];	/* indices that define order in sorted lists */
-double   *vals[][MAXSETS];	/* values in sorted lists */
-int       startvtx[][MAXSETS];	/* index values corresponding to splitter */
-int    *sets;			/* set assignment for each vertex */
-double   *size;			/* sizes of the different sets */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+movevtxs (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    int nvtxs,		/* number of vertices in graph */
+    int nsets,		/* how many sets am I dividing into? */
+    double *dist,			/* distances defining splitter */
+    int *indices[][MAXSETS],	/* indices that define order in sorted lists */
+    double *vals[][MAXSETS],	/* values in sorted lists */
+    int startvtx[][MAXSETS],	/* index values corresponding to splitter */
+    int *sets,			/* set assignment for each vertex */
+    double *size,			/* sizes of the different sets */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     double    largest;		/* largest overshoot from desired size */
     double    smallest;		/* largest undershoot from desired size */
@@ -153,20 +154,21 @@ int       vwgt_max;		/* largest vertex weight */
 
 /* Find the next move from an active to an inactive set, returning */
 /* next_vtx, next_to, and distance. */
-static void nextmove(nvtxs, nsets, vals, indices, startvtx, dist, sets,
-		               toobig, active, next_vtx, next_to, next_delta)
-int       nvtxs;		/* number of vertices in graph */
-int       nsets;		/* how many sets am I dividing into? */
-double   *dist;			/* distances defining splitter */
-int      *indices[][MAXSETS];	/* indices that define order in sorted lists */
-double   *vals[][MAXSETS];	/* values in sorted lists */
-int       startvtx[][MAXSETS];	/* index values corresponding to splitter */
-int    *sets;			/* set assignment for each vertex */
-int       toobig;		/* is bad set too big or too small? */
-int      *active;		/* flags sets trying to change size */
-int      *next_vtx;		/* vertex selected to move next */
-int    *next_to;		/* set vertex should be moved to */
-double   *next_delta;		/* size of change in distances */
+static void 
+nextmove (
+    int nvtxs,		/* number of vertices in graph */
+    int nsets,		/* how many sets am I dividing into? */
+    double *vals[][MAXSETS],	/* values in sorted lists */
+    int *indices[][MAXSETS],	/* indices that define order in sorted lists */
+    int startvtx[][MAXSETS],	/* index values corresponding to splitter */
+    double *dist,			/* distances defining splitter */
+    int *sets,			/* set assignment for each vertex */
+    int toobig,		/* is bad set too big or too small? */
+    int *active,		/* flags sets trying to change size */
+    int *next_vtx,		/* vertex selected to move next */
+    int *next_to,		/* set vertex should be moved to */
+    double *next_delta		/* size of change in distances */
+)
 {
     double    delta;		/* amount distance must change */
     double    bestdelta;	/* best value see so far */
@@ -252,10 +254,13 @@ static int ncoupled = 0;
 static int coupled_vtxs[MAXSETS];
 static int coupled_sets[MAXSETS][MAXSETS];
 
-static void couple(nsets, from, to, vtx)
-int       nsets;		/* number of sets being divided into */
-int     from, to;		/* sets to be coupled */
-int       vtx;			/* vertex that they share */
+static void 
+couple (
+    int nsets,		/* number of sets being divided into */
+    int from,
+    int to,		/* sets to be coupled */
+    int vtx			/* vertex that they share */
+)
 {
     int       i;		/* loop counter */
 
@@ -277,14 +282,17 @@ int       vtx;			/* vertex that they share */
 }
 
 
-static void undo_coupling(graph, sets, nsets, from, to, toobig, badset, size)
-struct vtx_data **graph;	/* data structure with vertex weights */
-int    *sets;			/* sets each vertex is in */
-int       nsets;		/* number of sets being divided into */
-int     from, to;		/* set final vertex moved from and to */
-int       toobig;		/* are we shrinking or enlarging a set? */
-int     badset;		/* the set number being shrunk or enlarged */
-double   *size;			/* sizes of the different sets */
+static void 
+undo_coupling (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    int *sets,			/* sets each vertex is in */
+    int nsets,		/* number of sets being divided into */
+    int from,
+    int to,		/* set final vertex moved from and to */
+    int toobig,		/* are we shrinking or enlarging a set? */
+    int badset,		/* the set number being shrunk or enlarged */
+    double *size			/* sizes of the different sets */
+)
 {
     int       done;		/* have enough vertices been moved? */
     int       found;		/* have I found the right set? */

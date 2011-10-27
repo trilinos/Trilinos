@@ -23,8 +23,10 @@ double    STARTUP_COST = 0.0;   /* Communication cost of a message startup. */
 	/* Intel Paragon startup: 70e-6, per byte: 5.3e-8 */
 
 
-void      read_params(pfile)
-FILE     *pfile;		/* file with new user parameters */
+void 
+read_params (
+    FILE *pfile		/* file with new user parameters */
+)
 {
     extern int CHECK_INPUT;	/* check the input for consistency? */
     extern int ECHO;		/* print input/param options? to file? (-2..2) */
@@ -240,7 +242,7 @@ FILE     *pfile;		/* file with new user parameters */
     int       i;		/* loop counters */
     char     *true_or_false();
 
-    if (DEBUG_TRACE > 0) {
+    if (DEBUG_TRACE) {
 	printf("<Entering read_params>\n");
     }
 
@@ -428,9 +430,11 @@ FILE     *pfile;		/* file with new user parameters */
 }
 
 
-static int read_intTF(ptr, val)
-char     *ptr;			/* pointer to string to parse */
-int      *val;			/* value returned */
+static int 
+read_intTF (
+    char *ptr,			/* pointer to string to parse */
+    int *val			/* value returned */
+)
 {
     int       nvals;		/* number of values sucessfully read */
 
@@ -451,9 +455,11 @@ int      *val;			/* value returned */
 }
 
 
-static int read_double(ptr, val)
-char     *ptr;			/* pointer to string to parse */
-double   *val;			/* value returned */
+static int 
+read_double (
+    char *ptr,			/* pointer to string to parse */
+    double *val			/* value returned */
+)
 {
     int       nvals;		/* number of values sucessfully read */
 
@@ -468,9 +474,11 @@ double   *val;			/* value returned */
 }
 
 
-static int read_long(ptr, val)
-char     *ptr;			/* pointer to string to parse */
-long     *val;			/* value returned */
+static int 
+read_long (
+    char *ptr,			/* pointer to string to parse */
+    long *val			/* value returned */
+)
 {
     int       nvals;		/* number of values sucessfully read */
 
@@ -485,9 +493,11 @@ long     *val;			/* value returned */
 }
 
 
-static int read_string(ptr, val)
-char     *ptr;			/* pointer to string to parse */
-char     *val;			/* value returned */
+static int 
+read_string (
+    char *ptr,			/* pointer to string to parse */
+    char *val			/* value returned */
+)
 {
     char      *sptr;		/* loops through val */
 

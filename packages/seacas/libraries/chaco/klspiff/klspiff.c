@@ -17,20 +17,21 @@
 static void free_kl();
 
 
-void      klspiff(graph, nvtxs, sets, nsets, hops, goal, term_wgts, max_dev,
-	          maxdeg, using_ewgts, bndy_list, weights)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int       nvtxs;		/* number of vertices in graph */
-int    *sets;			/* local partitioning of vtxs */
-int       nsets;		/* number of sets at each level */
-int     (*hops)[MAXSETS];	/* hop cost between sets */
-double   *goal;			/* desired set sizes */
-float    *term_wgts[];		/* weights for terminal propogation */
-int       max_dev;		/* largest deviation from balance allowed */
-double    maxdeg;		/* largest weighted vertex degree */
-int       using_ewgts;		/* are edge weights being used? */
-int     **bndy_list;		/* list of vertices on boundary (0 ends) */
-double   *weights;		/* vertex weights in each set */
+void 
+klspiff (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int nvtxs,		/* number of vertices in graph */
+    int *sets,			/* local partitioning of vtxs */
+    int nsets,		/* number of sets at each level */
+    int (*hops)[MAXSETS],	/* hop cost between sets */
+    double *goal,			/* desired set sizes */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int max_dev,		/* largest deviation from balance allowed */
+    double maxdeg,		/* largest weighted vertex degree */
+    int using_ewgts,		/* are edge weights being used? */
+    int **bndy_list,		/* list of vertices on boundary (0 ends) */
+    double *weights		/* vertex weights in each set */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern double CUT_TO_HOP_COST;	/* relative importance of cuts/hops */
@@ -136,12 +137,14 @@ double   *weights;		/* vertex weights in each set */
 }
 
 
-static void free_kl(buckets, listspace, dvals, tops)
+static void 
+free_kl (
 /* Free everything malloc'd for KL. */
-struct bilist ****buckets;	/* space for bucket sorts */
-struct bilist **listspace;	/* space for all bidirectional elements */
-int     **dvals;		/* change in penalty for each possible move */
-int     **tops;			/* starting dval for each type of move */
+    struct bilist ****buckets,	/* space for bucket sorts */
+    struct bilist **listspace,	/* space for all bidirectional elements */
+    int **dvals,		/* change in penalty for each possible move */
+    int **tops			/* starting dval for each type of move */
+)
 {
 
 

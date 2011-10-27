@@ -8,21 +8,22 @@
 #include "structs.h"
 
 
-int       divide_procs(architecture, ndims, ndims_tot, set_info, set, subsets, inert,
-            pndims_real, pnsets_real, pstriping, cut_dirs, mesh_dims, hops_special)
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-int       ndims;		/* normal dimension of each cut */
-int       ndims_tot;		/* total number of hypercube dimensions */
-struct set_info *set;		/* data for set being divided */
-struct set_info *set_info;	/* data for all sets */
-int    *subsets;		/* subsets to be created */
-int       inert;		/* using inertial method? */
-int      *pndims_real;		/* actual ndims for this cut */
-int      *pnsets_real;		/* # sets created by this cut */
-int      *pstriping;		/* cut in single direction? */
-int      *cut_dirs;		/* direction of each cut if mesh */
-int      *mesh_dims;		/* size of full mesh */
-int     hops_special[][MAXSETS];	/* hop matrix for nonstandard cases */
+int 
+divide_procs (
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    int ndims,		/* normal dimension of each cut */
+    int ndims_tot,		/* total number of hypercube dimensions */
+    struct set_info *set_info,	/* data for all sets */
+    struct set_info *set,		/* data for set being divided */
+    int *subsets,		/* subsets to be created */
+    int inert,		/* using inertial method? */
+    int *pndims_real,		/* actual ndims for this cut */
+    int *pnsets_real,		/* # sets created by this cut */
+    int *pstriping,		/* cut in single direction? */
+    int *cut_dirs,		/* direction of each cut if mesh */
+    int *mesh_dims,		/* size of full mesh */
+    int hops_special[][MAXSETS]	/* hop matrix for nonstandard cases */
+)
 {
     int       nsets_real=-1;	/* number of sets to divide into */
     int       ndims_real=-1;	/* number of eigenvectors to use */

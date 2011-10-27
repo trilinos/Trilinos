@@ -9,28 +9,28 @@
 
 
 /* Perform KL between two sets. */
-int       kl_refine(graph, subgraph, set_list, vtx_elems, new_assign,
-    set1, set2, glob2loc, loc2glob, sub_assign, old_sub_assign,
-    degrees, using_ewgts, hops, goal, sizes, term_wgts, architecture,
-    mesh_dims)
-struct vtx_data **graph;	/* graph data structure */
-struct vtx_data **subgraph;	/* space for subgraph to refine */
-struct bilist *set_list;	/* lists of vtxs in each set */
-struct bilist *vtx_elems;	/* start of storage for lists */
-int    *new_assign;		/* set assignments for all vertices */
-int     set1, set2;		/* two sets being refined */
-int      *glob2loc;		/* maps vertices to subgraph vertices */
-int      *loc2glob;		/* maps subgraph vertices to vertices */
-int    *sub_assign;		/* new assignment for subgraphs */
-int    *old_sub_assign;	/* current assignment for subgraphs */
-int    *degrees;		/* space for forming subgraphs */
-int       using_ewgts;		/* are edge weights being used? */
-int     (*hops)[MAXSETS];	/* KL set preferences */
-double   *goal;			/* desired set sizes */
-int      *sizes;		/* number of vertices in different sets */
-float    *term_wgts[];		/* space for terminal propagation weights */
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-int       mesh_dims[3];		/* if mesh, how big is it? */
+int 
+kl_refine (
+    struct vtx_data **graph,	/* graph data structure */
+    struct vtx_data **subgraph,	/* space for subgraph to refine */
+    struct bilist *set_list,	/* lists of vtxs in each set */
+    struct bilist *vtx_elems,	/* start of storage for lists */
+    int *new_assign,		/* set assignments for all vertices */
+    int set1,
+    int set2,		/* two sets being refined */
+    int *glob2loc,		/* maps vertices to subgraph vertices */
+    int *loc2glob,		/* maps subgraph vertices to vertices */
+    int *sub_assign,		/* new assignment for subgraphs */
+    int *old_sub_assign,	/* current assignment for subgraphs */
+    int *degrees,		/* space for forming subgraphs */
+    int using_ewgts,		/* are edge weights being used? */
+    int (*hops)[MAXSETS],	/* KL set preferences */
+    double *goal,			/* desired set sizes */
+    int *sizes,		/* number of vertices in different sets */
+    float *term_wgts[],		/* space for terminal propagation weights */
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    int mesh_dims[3]		/* if mesh, how big is it? */
+)
 {
     extern int TERM_PROP;	/* perform terminal propagation? */
     extern double KL_IMBALANCE;	/* fractional imbalance allowed in KL */

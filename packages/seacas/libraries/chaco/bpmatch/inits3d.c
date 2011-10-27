@@ -8,16 +8,18 @@
 #include	"defs.h"
 
 
-void      inits3d(graph, xvecs, vals, indices, nvtxs, dist, startvtx, size, sets)
-struct vtx_data **graph;	/* graph data structure for vertex weights */
-double  **xvecs;		/* values to partition with */
-double   *vals[8][MAXSETS];	/* values in sorted lists */
-int      *indices[8][MAXSETS];	/* indices sorting lists */
-int       nvtxs;		/* number of vertices */
-double   *dist;			/* trial separation point */
-int       startvtx[8][MAXSETS];	/* indices defining separation */
-double   *size;			/* size of each set being modified */
-int    *sets;			/* set each vertex gets assigned to */
+void 
+inits3d (
+    struct vtx_data **graph,	/* graph data structure for vertex weights */
+    double **xvecs,		/* values to partition with */
+    double *vals[8][MAXSETS],	/* values in sorted lists */
+    int *indices[8][MAXSETS],	/* indices sorting lists */
+    int nvtxs,		/* number of vertices */
+    double *dist,			/* trial separation point */
+    int startvtx[8][MAXSETS],	/* indices defining separation */
+    double *size,			/* size of each set being modified */
+    int *sets			/* set each vertex gets assigned to */
+)
 {
     double    xmid, ymid, zmid;	/* median x, y and z values */
     double    val, bestval;	/* values for determining set preferences */

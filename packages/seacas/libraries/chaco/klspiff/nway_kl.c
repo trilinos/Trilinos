@@ -20,25 +20,25 @@
 int KL_MAX_PASS = -1;		/* max KL passes; infinite if <= 0 */
 
 
-int       nway_kl(graph, nvtxs, buckets, listspace, tops, dvals, sets,
-	          maxdval, nsets, goal, term_wgts, hops, max_dev,
-		  using_ewgts, bndy_list, startweight)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vtxs in graph */
-struct bilist ****buckets;	/* array of lists for bucket sort */
-struct bilist **listspace;	/* list data structure for each vertex */
-int     **tops;			/* 2-D array of top of each set of buckets */
-int     **dvals;		/* d-values for each transition */
-int    *sets;			/* processor each vertex is assigned to */
-int       maxdval;		/* maximum d-value for a vertex */
-int       nsets;		/* number of sets divided into */
-double   *goal;			/* desired set sizes */
-float    *term_wgts[];		/* weights for terminal propogation */
-int     (*hops)[MAXSETS];	/* cost of set transitions */
-int       max_dev;		/* largest allowed deviation from balance */
-int       using_ewgts;		/* are edge weights being used? */
-int     **bndy_list;		/* list of vertices on boundary (0 ends) */
-double   *startweight;		/* sum of vweights in each set (in and out) */
+int 
+nway_kl (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vtxs in graph */
+    struct bilist ****buckets,	/* array of lists for bucket sort */
+    struct bilist **listspace,	/* list data structure for each vertex */
+    int **tops,			/* 2-D array of top of each set of buckets */
+    int **dvals,		/* d-values for each transition */
+    int *sets,			/* processor each vertex is assigned to */
+    int maxdval,		/* maximum d-value for a vertex */
+    int nsets,		/* number of sets divided into */
+    double *goal,			/* desired set sizes */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int (*hops)[MAXSETS],	/* cost of set transitions */
+    int max_dev,		/* largest allowed deviation from balance */
+    int using_ewgts,		/* are edge weights being used? */
+    int **bndy_list,		/* list of vertices on boundary (0 ends) */
+    double *startweight		/* sum of vweights in each set (in and out) */
+)
 
 /* Suaris and Kedem algorithm for quadrisection, generalized to an */
 /* arbitrary number of sets, with intra-set cost function specified by hops. */

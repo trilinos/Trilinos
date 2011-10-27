@@ -9,19 +9,20 @@
 #include "smalloc.h"
 
 
-int       flatten(graph, nvtxs, nedges, pcgraph, pcnvtxs, pcnedges, pv2cv,
-		  using_ewgts, igeom, coords, ccoords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-struct vtx_data ***pcgraph;	/* coarsened version of graph */
-int      *pcnvtxs;		/* number of vtxs in coarsened graph */
-int      *pcnedges;		/* number of edges in coarsened graph */
-int     **pv2cv;		/* pointer to v2cv */
-int       using_ewgts;		/* are edge weights being used? */
-int       igeom;                /* dimensions of geometric data */
-float   **coords;               /* coordinates for vertices */
-float   **ccoords;              /* coordinates for coarsened vertices */
+int 
+flatten (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    struct vtx_data ***pcgraph,	/* coarsened version of graph */
+    int *pcnvtxs,		/* number of vtxs in coarsened graph */
+    int *pcnedges,		/* number of edges in coarsened graph */
+    int **pv2cv,		/* pointer to v2cv */
+    int using_ewgts,		/* are edge weights being used? */
+    int igeom,                /* dimensions of geometric data */
+    float **coords,               /* coordinates for vertices */
+    float **ccoords              /* coordinates for coarsened vertices */
+)
 {
     double    Thresh;		/* minimal acceptable size reduction */
     int      *v2cv;		/* map from vtxs to coarse vtxs */
@@ -51,11 +52,13 @@ float   **ccoords;              /* coordinates for coarsened vertices */
 }
 
 
-void      find_flat(graph, nvtxs, pcnvtxs, v2cv)
-struct vtx_data **graph;	/* data structure for storing graph */
-int       nvtxs;		/* number of vertices in graph */
-int      *pcnvtxs;		/* number of coarse vertices */
-int      *v2cv;			/* map from vtxs to coarse vtxs */
+void 
+find_flat (
+    struct vtx_data **graph,	/* data structure for storing graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *pcnvtxs,		/* number of coarse vertices */
+    int *v2cv			/* map from vtxs to coarse vtxs */
+)
 {
 /* Look for cliques with the same neighbor set.  These are matrix */
 /* rows corresponding to multiple degrees of freedom on a node. */
@@ -113,10 +116,13 @@ int      *v2cv;			/* map from vtxs to coarse vtxs */
     sfree(hash);
 }
 
-int       SameStructure(node1, node2, graph, scatter)
-int       node1, node2;		/* two vertices which might have same nonzeros */
-struct vtx_data **graph;	/* data structure for storing graph */
-int      *scatter;		/* array for checking vertex labelling */
+int 
+SameStructure (
+    int node1,
+    int node2,		/* two vertices which might have same nonzeros */
+    struct vtx_data **graph,	/* data structure for storing graph */
+    int *scatter		/* array for checking vertex labelling */
+)
 {
     int       same;		/* are two vertices indistinguisable? */
     int       i;		/* loop counter */

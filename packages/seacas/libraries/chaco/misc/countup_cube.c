@@ -9,16 +9,17 @@
 
 /* Print metrics of partition quality. */
 
-void      countup_cube(graph, nvtxs, assignment, ndims, ndims_tot, print_lev,
-		       outfile, using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vtxs in graph */
-int    *assignment;		/* set number of each vtx (length nvtxs+1) */
-int       ndims;		/* number of cuts at each level */
-int       ndims_tot;		/* total number of divisions of graph */
-int       print_lev;		/* level of output */
-FILE     *outfile;		/* output file if not NULL */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+countup_cube (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vtxs in graph */
+    int *assignment,		/* set number of each vtx (length nvtxs+1) */
+    int ndims,		/* number of cuts at each level */
+    int ndims_tot,		/* total number of divisions of graph */
+    int print_lev,		/* level of output */
+    FILE *outfile,		/* output file if not NULL */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     double   *hopsize;		/* number of hops for each set */
     double   *cutsize;		/* number of cuts for each set */

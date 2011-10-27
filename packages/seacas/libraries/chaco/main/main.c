@@ -8,7 +8,8 @@
 #include "smalloc.h"
 #include "chaco.h"
 
-int       main()
+int 
+main (void)
 {
     extern int Using_Main;	/* is main routine being called? */
     extern char *Graph_File_Name;	/* name of graph input file */

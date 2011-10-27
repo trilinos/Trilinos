@@ -12,14 +12,16 @@
 static int bpm_improve1();
 static double sep_cost();
 
-void      bpm_improve(graph, sets, goal, max_dev, bndy_list, weights, using_vwgts)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int    *sets;			/* local partitioning of vtxs */
-double   *goal;			/* desired set sizes */
-int       max_dev;		/* largest deviation from balance allowed */
-int     **bndy_list;		/* list of vertices on boundary (0 ends) */
-double   *weights;		/* vertex weights in each set */
-int       using_vwgts;		/* invoke weighted cover routines? */
+void 
+bpm_improve (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int *sets,			/* local partitioning of vtxs */
+    double *goal,			/* desired set sizes */
+    int max_dev,		/* largest deviation from balance allowed */
+    int **bndy_list,		/* list of vertices on boundary (0 ends) */
+    double *weights,		/* vertex weights in each set */
+    int using_vwgts		/* invoke weighted cover routines? */
+)
 {
     extern int DEBUG_COVER;	/* debug flag for min vertex cover */
     extern int VERTEX_COVER;	/* apply improvement once, or repeatedly? */
@@ -105,22 +107,22 @@ int       using_vwgts;		/* invoke weighted cover routines? */
     }
 }
 
-static int bpm_improve1(graph, sets, pbndy_list, weights, set_match, set_other,
-	              goal, max_dev, pimbalance, sep_size, sep_weight, using_vwgts,
-			          pcost)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int    *sets;			/* local partitioning of vtxs */
-int     **pbndy_list;		/* list of vertices on boundary (0 ends) */
-double   *weights;		/* vertex weights in each set */
-int       set_match;		/* side of graph I'm matching against */
-int       set_other;		/* side of graph I'm not matching against */
-double   *goal;			/* desired set sizes */
-int       max_dev;		/* largest deviation from balance allowed */
-double   *pimbalance;		/* imbalance of current partition */
-int      *sep_size;		/* separator size */
-int      *sep_weight;		/* weight of separator */
-int       using_vwgts;		/* use weighted model? */
-double   *pcost;		/* cost of current separator */
+static int 
+bpm_improve1 (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int *sets,			/* local partitioning of vtxs */
+    int **pbndy_list,		/* list of vertices on boundary (0 ends) */
+    double *weights,		/* vertex weights in each set */
+    int set_match,		/* side of graph I'm matching against */
+    int set_other,		/* side of graph I'm not matching against */
+    double *goal,			/* desired set sizes */
+    int max_dev,		/* largest deviation from balance allowed */
+    double *pimbalance,		/* imbalance of current partition */
+    int *sep_size,		/* separator size */
+    int *sep_weight,		/* weight of separator */
+    int using_vwgts,		/* use weighted model? */
+    double *pcost		/* cost of current separator */
+)
 {
     extern int DEBUG_COVER;	/* debug flag for min vertex cover */
     double    new_weights[2];	/* weights associated with new separator */
@@ -288,10 +290,13 @@ double   *pcost;		/* cost of current separator */
 
 /* Routine that can be modified to allow different cost functions. */
 
-static double sep_cost(size1, size2, size_sep, max_dev)
-double    size1, size2;		/* vertex weight in two partitions */
-double    size_sep;		/* vertex weight of separator */
-double    max_dev;		/* maximum allowed imbalance */
+static double 
+sep_cost (
+    double size1,
+    double size2,		/* vertex weight in two partitions */
+    double size_sep,		/* vertex weight of separator */
+    double max_dev		/* maximum allowed imbalance */
+)
 {
     return ((double) size_sep);
 }

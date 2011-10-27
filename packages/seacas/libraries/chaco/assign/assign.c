@@ -7,20 +7,21 @@
 #include	"structs.h"
 
 
-void      assign(graph, yvecs, nvtxs, ndims, cube_or_mesh, nsets, wsqrt, sets,
-		           active, mediantype, goal, vwgt_max)
-struct vtx_data **graph;	/* data structure with vtx weights */
-double  **yvecs;		/* ptr to list of y-vectors (lengths nvtxs+1) */
-int       nvtxs;		/* number of vertices in graph */
-int       ndims;		/* number of vectors for dividing */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to divide into */
-double   *wsqrt;		/* sqrt of vertex weights */
-int      *sets;			/* processor assignment for my vtxs */
-int      *active;		/* space for nvtxs integers */
-int       mediantype;		/* which partitioning strategy to use */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+assign (
+    struct vtx_data **graph,	/* data structure with vtx weights */
+    double **yvecs,		/* ptr to list of y-vectors (lengths nvtxs+1) */
+    int nvtxs,		/* number of vertices in graph */
+    int ndims,		/* number of vectors for dividing */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to divide into */
+    double *wsqrt,		/* sqrt of vertex weights */
+    int *sets,			/* processor assignment for my vtxs */
+    int *active,		/* space for nvtxs integers */
+    int mediantype,		/* which partitioning strategy to use */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     extern int DEBUG_TRACE;	/* trace execution path of code */
     extern int DEBUG_ASSIGN;	/* turn on debugging in assignment */

@@ -10,13 +10,15 @@
 
 
 /* Construct a weighted quotient graph representing the inter-set communication. */
-int       make_comm_graph(pcomm_graph, graph, nvtxs, using_ewgts, assign, nsets_tot)
-struct vtx_data ***pcomm_graph;	/* graph for communication requirements */
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
-int    *assign;		/* current assignment */
-int       nsets_tot;		/* total number of sets */
+int 
+make_comm_graph (
+    struct vtx_data ***pcomm_graph,	/* graph for communication requirements */
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int *assign,		/* current assignment */
+    int nsets_tot		/* total number of sets */
+)
 {
     float     ewgt;		/* edge weight in graph */
     int     **edges_list = NULL;	/* lists of edges */

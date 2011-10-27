@@ -17,36 +17,35 @@ int       VERTEX_COVER = 0;	/* Do vertex cover to refine separator? */
 
  /* Once, or iteratively? */
 
-void      coarsen_klv(graph, nvtxs, nedges, using_vwgts, using_ewgts, term_wgts,
-		      igeom, coords, vwgt_max, assignment, goal, architecture, hops,
-		          solver_flag, ndims, nsets, vmax, mediantype, mkconnected,
-		                eigtol, nstep, step, pbndy_list, weights, give_up)
+void 
+coarsen_klv (
 /* Coarsen until nvtxs < vmax, compute and uncoarsen. */
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int       using_vwgts;		/* are vertices weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-float    *term_wgts[];		/* weights for terminal propogation */
-int       igeom;                /* dimension for geometric information */
-float   **coords;               /* coordinates for vertices */
-int       vwgt_max;		/* largest vertex weight */
-int    *assignment;		/* processor each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-int     (*hops)[MAXSETS];	/* cost of edge between sets */
-int       solver_flag;		/* which eigensolver to use */
-int       ndims;		/* number of eigenvectors to calculate */
-int       nsets;		/* number of sets being divided into */
-int       vmax;			/* largest subgraph to stop coarsening */
-int       mediantype;		/* flag for different assignment strategies */
-int       mkconnected;		/* enforce connectivity before eigensolve? */
-double    eigtol;		/* tolerence in eigen calculation */
-int       nstep;		/* number of coarsenings between RQI steps */
-int       step;			/* current step number */
-int     **pbndy_list;		/* pointer to returned boundary list */
-double   *weights;		/* weights of vertices in each set */
-int       give_up;		/* has coarsening bogged down? */
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int using_vwgts,		/* are vertices weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int igeom,                /* dimension for geometric information */
+    float **coords,               /* coordinates for vertices */
+    int vwgt_max,		/* largest vertex weight */
+    int *assignment,		/* processor each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    int (*hops)[MAXSETS],	/* cost of edge between sets */
+    int solver_flag,		/* which eigensolver to use */
+    int ndims,		/* number of eigenvectors to calculate */
+    int nsets,		/* number of sets being divided into */
+    int vmax,			/* largest subgraph to stop coarsening */
+    int mediantype,		/* flag for different assignment strategies */
+    int mkconnected,		/* enforce connectivity before eigensolve? */
+    double eigtol,		/* tolerence in eigen calculation */
+    int nstep,		/* number of coarsenings between RQI steps */
+    int step,			/* current step number */
+    int **pbndy_list,		/* pointer to returned boundary list */
+    double *weights,		/* weights of vertices in each set */
+    int give_up		/* has coarsening bogged down? */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern int DEBUG_TRACE;	/* trace the execution of the code */
@@ -493,9 +492,11 @@ print_sep_size(bndy_list, graph);
 }
 
 
-void      print_sep_size(list, graph)
-int      *list;
-struct vtx_data **graph;	/* array of vtx data for graph */
+void 
+print_sep_size (
+    int *list,
+    struct vtx_data **graph	/* array of vtx data for graph */
+)
 {
     int       sep_size, sep_weight;
     int       i;

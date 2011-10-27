@@ -8,26 +8,25 @@
 #include	"params.h"
 
 
-void      input_queries(fin, fingeom, finassign, inname, geomname, inassignname,
-			          outassignname, outfilename,
-			          architecture, ndims_tot, mesh_dims,
-		             global_method, local_method, rqi_flag, vmax, ndims)
-FILE    **fin;			/* input file */
-FILE    **fingeom;		/* geometry input file (for inertial method) */
-FILE    **finassign;		/* assignment input file (if just simulating) */
-char     *inname;		/* name of graph input file */
-char     *geomname;		/* name of geometry input file */
-char     *inassignname;		/* name of assignment input file */
-char     *outassignname;	/* name of assignment output file */
-char     *outfilename;		/* name of file for outputing run results */
-int      *architecture;		/* 0=> hypercube, d=> d-dimensional mesh */
-int      *ndims_tot;		/* target number of hypercube dimensions */
-int       mesh_dims[3];		/* mesh dimensions */
-int      *global_method;	/* what global partitioning strategy to use? */
-int      *local_method;		/* what local refinement strategy to use? */
-int      *rqi_flag;		/* should I use multilevel eigensolver? */
-int      *vmax;			/* if so, how far should I coarsen? */
-int      *ndims;		/* number of divisions at each stage */
+void 
+input_queries (
+    FILE **fin,		/* input file */
+    FILE **fingeom,	/* geometry input file (for inertial method) */
+    FILE **finassign,	/* assignment input file (if just simulating) */
+    char *inname,	/* name of graph input file */
+    char *geomname,	/* name of geometry input file */
+    char *inassignname,	/* name of assignment input file */
+    char *outassignname,/* name of assignment output file */
+    char *outfilename,	/* name of file for outputing run results */
+    int *architecture,	/* 0=> hypercube, d=> d-dimensional mesh */
+    int *ndims_tot,	/* target number of hypercube dimensions */
+    int mesh_dims[3],	/* mesh dimensions */
+    int *global_method,	/* what global partitioning strategy to use? */
+    int *local_method,	/* what local refinement strategy to use? */
+    int *rqi_flag,	/* should I use multilevel eigensolver? */
+    int *vmax,		/* if so, how far should I coarsen? */
+    int *ndims		/* number of divisions at each stage */
+)
 {
     extern int SEQUENCE;	/* sequence instead of partition graph? */
     extern int ARCHITECTURE;	/* 0=> hypercube, d=> d-dimensional mesh */

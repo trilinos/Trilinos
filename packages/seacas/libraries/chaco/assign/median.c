@@ -12,14 +12,16 @@
 /* Routine works by repeatedly guessing a value, and discarding those */
 /* values which are on the wrong side of the guess. */
 
-void      median(graph, vals, nvtxs, active, goal, using_vwgts, sets)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double   *vals;			/* values of which to find median */
-int       nvtxs;		/* number of values I own */
-int      *active;		/* space for list of nvtxs ints */
-double   *goal;			/* desired sizes for sets */
-int       using_vwgts;		/* are vertex weights being used? */
-int      *sets;			/* set each vertex gets assigned to */
+void 
+median (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double *vals,			/* values of which to find median */
+    int nvtxs,		/* number of values I own */
+    int *active,		/* space for list of nvtxs ints */
+    double *goal,			/* desired sizes for sets */
+    int using_vwgts,		/* are vertex weights being used? */
+    int *sets			/* set each vertex gets assigned to */
+)
 {
     double   *vptr;		/* loops through vals array */
     double    val;		/* value in vals array */
@@ -185,17 +187,18 @@ int      *sets;			/* set each vertex gets assigned to */
 }
 
 
-void      median_assign(graph, vals, nvtxs, goal, using_vwgts, sets,
-			          wlow, whigh, guess)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double   *vals;			/* values of which to find median */
-int       nvtxs;		/* number of values I own */
-double   *goal;			/* desired sizes for sets */
-int       using_vwgts;		/* are vertex weights being used? */
-int      *sets;			/* assigned set for each vertex */
-double    wlow;			/* sum of weights below guess */
-double    whigh;		/* sum of weights above guess */
-double    guess;		/* median value */
+void 
+median_assign (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double *vals,			/* values of which to find median */
+    int nvtxs,		/* number of values I own */
+    double *goal,			/* desired sizes for sets */
+    int using_vwgts,		/* are vertex weights being used? */
+    int *sets,			/* assigned set for each vertex */
+    double wlow,			/* sum of weights below guess */
+    double whigh,		/* sum of weights above guess */
+    double guess		/* median value */
+)
 {
     int       i;		/* loop counter */
 

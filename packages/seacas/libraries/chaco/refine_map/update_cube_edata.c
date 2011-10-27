@@ -7,20 +7,20 @@
 #include	"defs.h"
 #include	"refine_map.h"
 
-void      update_cube_edata(vertex, dim, edata, vdata, comm_graph,
-	              node2vtx, vtx2node, nsets_tot, best_desire, imax,
-		      desire_ptr)
-int       vertex;		/* graph vertex being worked on */
-int       dim;			/* mesh dimension to be adjusted */
-struct refine_edata *edata;	/* data structure for edge preferences */
-struct refine_vdata *vdata;	/* data structure for vertex preferences */
-struct vtx_data **comm_graph;	/* communication graph */
-int    *node2vtx;		/* maps processors to comm_graph vtxs */
-int    *vtx2node;		/* maps comm_graph vtxs to processors */
-int       nsets_tot;		/* total number of processors */
-double   *best_desire;		/* best desire seen */
-int       imax;			/* offset in desire_ptr array */
-struct refine_edata **desire_ptr;	/* buckets for desire values */
+void 
+update_cube_edata (
+    int vertex,		/* graph vertex being worked on */
+    int dim,			/* mesh dimension to be adjusted */
+    struct refine_edata *edata,	/* data structure for edge preferences */
+    struct refine_vdata *vdata,	/* data structure for vertex preferences */
+    struct vtx_data **comm_graph,	/* communication graph */
+    int *node2vtx,		/* maps processors to comm_graph vtxs */
+    int *vtx2node,		/* maps comm_graph vtxs to processors */
+    int nsets_tot,		/* total number of processors */
+    double *best_desire,		/* best desire seen */
+    int imax,			/* offset in desire_ptr array */
+    struct refine_edata **desire_ptr	/* buckets for desire values */
+)
 {
     struct refine_edata *eguy;	/* data for desired edge */
     float     old_desire;	/* original desire for edge to flip */

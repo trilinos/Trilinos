@@ -9,16 +9,18 @@
 #include "smalloc.h"
 
 
-void      inertial2d(graph, nvtxs, cube_or_mesh, nsets, x, y, sets, goal,
-		               using_vwgts)
-struct vtx_data **graph;	/* graph data structure for weights */
-int       nvtxs;		/* number of vtxs in graph */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to divide into */
-float    *x, *y;		/* x and y coordinates of vertices */
-int    *sets;			/* set each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       using_vwgts;		/* are vertex weights being used? */
+void 
+inertial2d (
+    struct vtx_data **graph,	/* graph data structure for weights */
+    int nvtxs,		/* number of vtxs in graph */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to divide into */
+    float *x,
+    float *y,		/* x and y coordinates of vertices */
+    int *sets,			/* set each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int using_vwgts		/* are vertex weights being used? */
+)
 {
     extern int DEBUG_INERTIAL;	/* debug flag for inertial method */
     extern double inertial_axis_time;	/* time spent finding inertial axis */

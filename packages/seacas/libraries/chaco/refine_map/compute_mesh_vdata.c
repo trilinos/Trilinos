@@ -8,13 +8,15 @@
 #include	"refine_map.h"
 
 
-void      compute_mesh_vdata(vdata, comm_graph, vtx, vtx2node, mesh_dims, dim)
-struct refine_vdata *vdata;	/* preference data for a vertex */
-struct vtx_data **comm_graph;	/* communication graph data structure */
-int       vtx;			/* current vertex */
-int    *vtx2node;		/* maps graph vtxs to mesh nodes */
-int       mesh_dims[3];		/* size of mesh */
-int       dim;			/* dimension we are currently working in */
+void 
+compute_mesh_vdata (
+    struct refine_vdata *vdata,	/* preference data for a vertex */
+    struct vtx_data **comm_graph,	/* communication graph data structure */
+    int vtx,			/* current vertex */
+    int *vtx2node,		/* maps graph vtxs to mesh nodes */
+    int mesh_dims[3],		/* size of mesh */
+    int dim			/* dimension we are currently working in */
+)
 {
     float     above;		/* my preference to move up in each dimension */
     float     below;		/* my preference to move down in each dimension */

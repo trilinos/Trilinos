@@ -8,11 +8,13 @@
 #include "smalloc.h"
 
 
-void      sorts2d(vals, indices, nvtxs)
+void 
+sorts2d (
 /* Sort the lists needed to find the splitter. */
-double   *vals[4][MAXSETS];	/* lists of values to sort */
-int      *indices[4][MAXSETS];	/* indices of sorted lists */
-int       nvtxs;		/* number of vertices */
+    double *vals[4][MAXSETS],	/* lists of values to sort */
+    int *indices[4][MAXSETS],	/* indices of sorted lists */
+    int nvtxs		/* number of vertices */
+)
 {
     int      *space;		/* space for mergesort routine */
     int      *temp[4];		/* place holders for indices */
