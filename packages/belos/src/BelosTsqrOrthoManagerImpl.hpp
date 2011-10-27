@@ -261,10 +261,13 @@ namespace Belos {
     /// The callback is null by default.  If the callback is null, no
     /// callback will be invoked.
     ///
+    /// For details and suggested uses, please refer to the
+    /// documentation of \c ReorthogonalizationCallback.
+    ///
     /// \warning Please do not rely on the interface to this method.
     ///   This method may change or go away at any time.
     ///
-    /// \warning We assume that the input arguments of the function's
+    /// \warning We assume that the input arguments of the callback's
     ///   operator() are only valid views within the scope of the
     ///   function.  Your callback should not keep the views.
     void 
