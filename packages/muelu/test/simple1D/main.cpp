@@ -34,7 +34,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
-#include "BelosXpetraAdapter.hpp" // this header defines Belos::MueLuOp()
+#include "BelosXpetraAdapter.hpp" // this header defines Belos::XpetraOp()
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 #endif
 
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
     typedef Belos::OperatorT<MV>              OP;
   
     // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );    // Turns a Xpetra::Operator object into a Belos operator
+    RCP<OP> belosOp   = rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );   // Turns a Xpetra::Operator object into a Belos operator
     RCP<OP> belosPrec = rcp( new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy object into a Belos operator
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, X, RHS ) );

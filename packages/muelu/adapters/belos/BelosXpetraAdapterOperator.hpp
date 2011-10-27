@@ -33,7 +33,7 @@ namespace Belos {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
-  class MueLuOp : 
+  class XpetraOp : 
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
@@ -46,10 +46,10 @@ namespace Belos {
     //@{ 
     
     //! Default constructor
-    MueLuOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
     
     //! Destructor.
-    virtual ~MueLuOp() {};
+    virtual ~XpetraOp() {};
     //@}
     
     //! @name Operator application method
@@ -62,7 +62,7 @@ namespace Belos {
     */
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported."); 
+                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);
@@ -100,7 +100,7 @@ namespace Belos {
   };
 
   template <> 
-  class MueLuOp<double, int, int>   
+  class XpetraOp<double, int, int>   
     : 
     public OperatorT<Xpetra::MultiVector<double, int, int> >
 #ifdef HAVE_XPETRA_TPETRA
@@ -119,13 +119,13 @@ namespace Belos {
 
   public:
 
-    MueLuOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
     
-    virtual ~MueLuOp() {};
+    virtual ~XpetraOp() {};
 
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported."); 
+                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);

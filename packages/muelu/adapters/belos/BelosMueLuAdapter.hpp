@@ -18,11 +18,11 @@ namespace Belos {
   //! @name MueLu Adapter Exceptions
   //@{
 
-  /** \brief MueLuOpFailure is thrown when a return value from an MueLu
+  /** \brief MueLuPrecOpFailure is thrown when a return value from an MueLu
    * call on an Xpetra::Operator or MueLu::Hierarchy is non-zero.
    */
-  class MueLuOpFailure : public BelosError {public:
-    MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg)
+  class MueLuPrecOpFailure : public BelosError {public:
+    MueLuPrecOpFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   //TODO: doc
@@ -61,7 +61,7 @@ namespace Belos {
     // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuPrecOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
@@ -80,7 +80,7 @@ namespace Belos {
     */
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuPrecOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
@@ -127,7 +127,7 @@ namespace Belos {
 
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuPrecOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
@@ -140,7 +140,7 @@ namespace Belos {
 #ifdef HAVE_MUELU_TPETRA  
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuPrecOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
@@ -165,7 +165,7 @@ namespace Belos {
     */
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuPrecOpFailure, 
                          "Belos::MueLuPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
@@ -189,7 +189,7 @@ namespace Belos {
       const Epetra_MultiVector* vec_x = dynamic_cast<const Epetra_MultiVector*>(&x);
       Epetra_MultiVector*       vec_y = dynamic_cast<Epetra_MultiVector*>(&y);
 
-      TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, MueLuOpFailure, 
+      TEUCHOS_TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, MueLuPrecOpFailure, 
                                   "Belos::MueLuPrecOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
 
       Apply(*vec_x, *vec_y, trans);
