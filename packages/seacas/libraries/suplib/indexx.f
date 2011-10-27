@@ -54,18 +54,18 @@ C
       end if
 
       do start = (n-2)/2, 0, -1
-        call my_siftdown(a, indx, start, n);
+        call siftdown(a, indx, start, n);
       end do
  
       do bottom = n-1, 1, -1
         temp = indx(0)
         indx(0) = indx(bottom)
         indx(bottom) = temp;
-        call my_siftdown(a, indx, 0, bottom)
+        call siftdown(a, indx, 0, bottom)
       end do
       end
  
-      subroutine my_siftdown(a, indx, start, bottom)
+      subroutine siftdown(a, indx, start, bottom)
  
       real a(*)
       integer indx(0:*)

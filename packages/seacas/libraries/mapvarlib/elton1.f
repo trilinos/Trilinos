@@ -91,6 +91,7 @@ C
 C     
 C     *********************************************************************
 C     
+      NXTLND = 0
       IF (ITYPE .EQ. 4 .OR. ITYPE .EQ. 5)THEN
          CALL ERROR('ELTON1','ELEMENT TYPE',' ',ITYPE,
      &        'ELEMENT VARIABLE PROCESSING NOT YET IMPLEMENTED',

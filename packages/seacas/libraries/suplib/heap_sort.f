@@ -7,18 +7,18 @@
       real temp
  
       do start = (n-2)/2, 0, -1
-        call hs_siftdown(a, start, n);
+        call siftdown(a, start, n);
       end do
  
       do bottom = n-1, 1, -1
         temp = a(0)
         a(0) = a(bottom)
         a(bottom) = temp;
-        call hs_siftdown(a, 0, bottom)
+        call siftdown(a, 0, bottom)
       end do
       end
  
-      subroutine hs_siftdown(a, start, bottom)
+      subroutine siftdown(a, start, bottom)
  
       real a(0:*)
       integer start, bottom

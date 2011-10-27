@@ -250,7 +250,6 @@ Exo_Entity* ExoII_Read::Get_Entity_by_Index(EXOTYPE type, int block_index) const
   default:
     return NULL;
   }
-  return NULL;
 }
 
 Exo_Entity* ExoII_Read::Get_Entity_by_Id(EXOTYPE type, int id) const

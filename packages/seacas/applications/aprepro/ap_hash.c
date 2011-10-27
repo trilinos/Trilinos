@@ -171,7 +171,7 @@ void pstats (void)
 
   hash_ratio = hash_ratio / ((float) entries / HASHSIZE *
 			     (float) (entries + 2.0 * HASHSIZE - 1.0));
-  printf ("%d entries in %d element hash table, ", entries, HASHSIZE);
+  printf ("%d entries in %d element hash table, ", (int)entries, HASHSIZE);
   printf ("%d (%1.0f%%) empty.\n",
 	  lengths[0], ((double) lengths[0] / HASHSIZE) * 100.0);
   printf ("Hash ratio = %f\n", hash_ratio);

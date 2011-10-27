@@ -86,9 +86,9 @@ C
           L(K) = LK
         end if
         DO 6 I = K+1,N
-          XMULT = S(L(I),K)/S(LK,K)
+          XMULT = S(L(I),K)/S(L(K),K)
           DO 5 J = K+1,N
-            S(L(I),J) = S(L(I),J) - XMULT * S(LK,J)
+            S(L(I),J) = S(L(I),J) - XMULT * S(L(K),J)
     5     CONTINUE
           S(L(I),K) = XMULT
     6   CONTINUE
