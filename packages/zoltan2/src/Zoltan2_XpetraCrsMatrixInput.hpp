@@ -18,6 +18,7 @@
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Util.hpp>
 
 namespace Zoltan2 {
 
@@ -215,10 +216,13 @@ public:
     return nrows;
   }
 
+#if 0
   /*! Apply a partitioning solution to the matrix.
+   *   Return a new matrix reflecting the solution.
    */
-  int applyPartitioningSolution(const User &in, User *&out,
-    lno_t numIds, lno_t numParts, gid_t *gid, lid_t *lid, lno_t *partition)
+  User *applyPartitioningSolution(const User &in,
+    lno_t numIds, lno_t numParts, 
+    const gid_t *gid, const lid_t *lid, const lno_t *partition)
   {
     RCP<User> inptr = rcp(&in, false);
     std::string userType(InputTraits<User>::name());
@@ -244,7 +248,8 @@ public:
       throw std::logic_error("should be epetra, tpetra or xpetra");
     }
 
-    RCP<const Comm<int> > comm = inMatrix->getComm();
+    RCP<const Comm<int> > comm = inMatrix->getRowMap()->getComm();
+
     size_t numLocalRows = inMatrix->getNodeNumRows();
     size_t numGlobalRows = inMatrix->getGlobalNumRows();
     gno_t base = inMatrix->getRowMap()->getIndexBase();
@@ -255,10 +260,11 @@ public:
       rowSizes[i] = inMatrix->getNumEntriesInLocalRow(lid[i]);
     }
 
-    ArrayRCP<lno_t> partArray(partition, 0, numLocalRows);
-    ArrayRCP<gid_t> gidArray(gid, 0, numLocalRows);
+    ArrayRCP<lno_t> partArray(
+      const_cast<lno_t *>(partition), 0, numLocalRows, false);
+    ArrayRCP<gid_t> gidArray(const_cast<gid_t *>(gid), 0, numLocalRows, false);
     ArrayRCP<gid_t> newGidArray;
-    ArrayRCP<const size_t> newRowSizes;   // Epetra uses int, Tpetra uses size_t.
+    ArrayRCP<size_t> newRowSizes;   // Epetra uses int, Tpetra uses size_t.
   
     try{
       numNewRows = convertPartitionListToImportList(comm,
@@ -289,6 +295,7 @@ public:
       const Epetra_Map &sMap = ematrix->RowMap();
 
       // target map
+      // TODO - doesn't compile if GIDs are not ints.
       Epetra_Map tMap(numGlobalRows, numNewRows, newGidArray.getRawPtr(),
         1, base, ecomm);
 
@@ -313,7 +320,7 @@ public:
 
       M->Import(*ematrix, importer, Insert);
 
-      out = M;
+      return M;
     }
     else{
       typedef typename Tpetra::Map<lno_t,gno_t,node_t> tmap_t;
@@ -335,10 +342,10 @@ public:
 
       M->doImport(*tmatrix, importer, Tpetra::INSERT);
 
-      out = M;
+      return M;
     }
-    return;
   }
+#endif
 
 
 private:

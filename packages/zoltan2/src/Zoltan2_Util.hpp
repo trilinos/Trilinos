@@ -6,6 +6,9 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef ZOLTAN2_UTIL_HPP
+#define ZOLTAN2_UTIL_HPP
+
 #include <Teuchos_OpaqueWrapper.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Zoltan2_Environment.hpp>
@@ -42,7 +45,8 @@ template <typename Ordinal>
 
 template <typename GID, typename LNO, typename EXTRA>
   size_t convertPartitionListToImportList(Teuchos::Comm<int> &comm, 
-    ArrayView<int> &part, ArrayView<GID> &gid, ArrayView<EXTRA> &xtraInfo, 
+    ArrayView<int> &part, ArrayView<GID> &gid, 
+    ArrayView<EXTRA> &xtraInfo, 
     ArrayRCP<GID> &imports, ArrayRCP<EXTRA> &newXtraInfo)
 {
   int numParts = comm.getSize();
@@ -102,3 +106,5 @@ template <typename GID, typename LNO, typename EXTRA>
 #endif
 
 }//namespace Zoltan2
+
+#endif

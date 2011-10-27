@@ -40,11 +40,19 @@ int main(int argc, char *argv[])
   TestAdapters<Scalar,LNO,GNO> *input = 
     new TestAdapters<Scalar,LNO,GNO>(10, 10, 10, comm);
 
-  typedef Zoltan2::default_node_t> node_t;
+  typedef Zoltan2::default_node_t node_t;
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, node_t> tmatrix_t;
   typedef Zoltan2::XpetraCrsMatrixInput<tmatrix_t> adapter_t;
 
   RCP<adapter_t> adapter = input->getTpetraCrsMatrixInputAdapter();
+
+#if 0
+LNO testval=5;
+Array<GNO> vals(5, 0);
+Array<LNO> lnovals(5, 0);
+adapter->simpleFunc(testval, &vals[2], lnovals.getRawPtr(),
+     &lnovals[3]);
+#endif
 
   RCP<tmatrix_t> M = input->getTpetraMatrix();
 
@@ -71,14 +79,14 @@ int main(int argc, char *argv[])
   tmatrix_t *N=NULL;
 
   try{
-    adapter->applyPartitioningSolution(*M, N, n, nprocs, rowIds, 
+    N = adapter->applyPartitioningSolution(*M, n, nprocs, rowIds, 
       localIdList, newpartList);
   }
   catch (std::exception &e){
     std::cerr << "broken" << e.what() << std::endl;
   }
 
-  // TODO - verify that the matrix has not changed.
+  // TODO - verify that the N == M
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;
