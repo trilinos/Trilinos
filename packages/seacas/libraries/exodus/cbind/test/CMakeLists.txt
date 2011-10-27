@@ -28,6 +28,7 @@ PACKAGE_ADD_EXECUTABLE(
 find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
 	     NAME ncdump
 	     PATHS 
+                ${Netcdf_LIBRARY_DIRS}/../bin
 	        $ENV{ACCESS}/bin
 	        $ENV{NETCDF_DIR}/bin
 	        $ENV{NETCDF_DIR}/ncdump
