@@ -7,14 +7,14 @@ PACKAGE_ADD_EXECUTABLE(
    InverseFactoryOperator-Epetra
    SOURCES 
       inverse-factory-operator.cpp
-   COMM mpi
+   COMM mpi serial
    )
 
 PACKAGE_ADD_EXECUTABLE(
    StratimikosSolve
    SOURCES 
       stratimikos-solve.cpp
-   COMM mpi
+   COMM mpi serial
    )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(BasicExamples
