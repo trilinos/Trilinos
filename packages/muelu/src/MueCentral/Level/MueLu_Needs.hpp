@@ -54,7 +54,7 @@ namespace MueLu {
     //! @brief functions for setting data in data storage
     //@{
 
-    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) {
+    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) 
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>

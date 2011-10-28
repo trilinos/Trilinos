@@ -31,7 +31,7 @@ namespace MueLu {
 
     public:
 
-      TwoKeyMap() { };
+      TwoKeyMap() { }
 
       void Set(const Key1 & key1, const Key2 & key2, const Value & entry) {
         SubMap & subMap = map_[key1]; // operator [] will add an entry in map_ for key 'key1' if it does not exists

@@ -28,7 +28,7 @@ namespace MueLu {
     virtual ~NoFactory() { }
 
     //! Implementation of FactoryBase interface
-    //{@
+    //@{
     
     //!
     void CallBuild(Level & requestedLevel) const {  
@@ -41,7 +41,7 @@ namespace MueLu {
     //@}
     
     //! Static Get() functions
-    //{@
+    //@{
     
     //! 
     static const RCP<const NoFactory> getRCP() {

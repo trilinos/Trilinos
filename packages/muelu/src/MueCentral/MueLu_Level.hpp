@@ -266,7 +266,7 @@ namespace MueLu {
     void Release(const std::string& ename, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = GetFactory(ename, factory);
 
-      //if(IsAvailable(ename,fac) == false && IsRequested(ename,fac) == true) {
+      //if(IsAvailable(ename,fac) == false && IsRequested(ename,fac) == true)
       if(IsRequested(ename,fac) == true) {
         // data has been requested but never built
         // can we release the dependencies of fac safely?

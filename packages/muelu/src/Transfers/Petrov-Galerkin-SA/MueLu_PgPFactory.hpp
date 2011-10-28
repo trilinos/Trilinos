@@ -101,7 +101,7 @@ public:
   void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     fineLevel.DeclareInput("A",AFact_.get());
     coarseLevel.DeclareInput("P",initialPFact_.get());
-  };
+  }
   //@}
 
   //! @name Build methods.

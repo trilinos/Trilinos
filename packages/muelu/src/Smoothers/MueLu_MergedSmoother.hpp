@@ -127,7 +127,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
       } else {
    
         // NOTE: reverse_iterators not provided by ArrayRCP :-(
-        // for (...::reverse_iterator rit = smootherList_.rbegin(); rit != smootherList_.rend(); ++rit) {
+        // for (...::reverse_iterator rit = smootherList_.rbegin(); rit != smootherList_.rend(); ++rit) 
         for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = smootherList_.size() - 1; i >= 0; i--)
           try {
             smootherList_[i]->Apply(X,B,InitialGuessIsZero);

@@ -63,7 +63,7 @@ namespace MueLu {
     /*! This method is used to determine whether computations are necessary for this message type. */
     bool IsPrint(MsgType type, int thisProcRankOnly = -1) const { 
       return ((type & verbLevel_) && (thisProcRankOnly < 0 || procRank_ == thisProcRankOnly));
-    };
+    }
 
     //! Get an output stream for outputting the input message type.
     Teuchos::FancyOStream & GetOStream(MsgType type, int thisProcRankOnly = -1) const {
