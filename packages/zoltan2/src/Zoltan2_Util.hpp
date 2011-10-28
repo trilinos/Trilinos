@@ -57,7 +57,7 @@ template <typename GID, typename LNO, typename EXTRA>
   Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_SUM, 1,
     &localSend, &globalSend);
 
-  bool sendSizes = (globalSend = comm.getSize());
+  bool sendSizes = (globalSend == comm.getSize());
 
   Array<LNO> counts(numParts, 0);
   for (size_t i=0; i < localNumIds; i++){
@@ -65,7 +65,7 @@ template <typename GID, typename LNO, typename EXTRA>
   }
 
   Array<LNO> offsets(numParts+1, 0);
-  for (LNO i=1; i < numParts; i++){
+  for (LNO i=1; i <= numParts; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
 

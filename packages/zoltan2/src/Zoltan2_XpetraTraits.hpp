@@ -78,7 +78,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
-    RCP<const Teuchos::Comm<int> > commPtr(&comm);
+    RCP<const Teuchos::Comm<int> > commPtr(&comm, false);
     RCP<const map_t> tmap = rcp(
       new map_t(numGlobalRows, rowList, base, commPtr));
     int newNumElts = numLocalRows;
@@ -92,13 +92,14 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     vector_t numNew(tmap);
     for (int lid=0; lid < oldNumElts; lid++){
       numOld.replaceGlobalValue(smap->getGlobalElement(lid), 
-        double(from->getNumEntriesInLocalRow(lid)));
+        scalar_t(from->getNumEntriesInLocalRow(lid)));
     }
     numNew.doImport(numOld, importer, Tpetra::INSERT);
 
     ArrayRCP<size_t> nnz(newNumElts);
+    ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
     for (int lid=0; lid < newNumElts; lid++){
-      nnz[lid] = static_cast<size_t>(*numNew.getDataNonConst(lid));
+      nnz[lid] = static_cast<size_t>(ptr[lid]);
     }
 
     // target matrix
