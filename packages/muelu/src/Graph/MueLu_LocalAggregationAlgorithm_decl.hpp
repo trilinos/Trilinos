@@ -1,8 +1,6 @@
 #ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
 #define MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
@@ -39,16 +37,6 @@ namespace MueLu {
   }
 
   using namespace AggOptions;
-
-  typedef struct MueLu_SuperNode_Struct
-  {
-    int    length;
-    int    maxLength;
-    int    index;
-    Teuchos::ArrayRCP<int> list;
-    struct MueLu_SuperNode_Struct *next;
-  } MueLu_SuperNode;
-
 
   enum NodeState {
     READY   = -11,
@@ -94,7 +82,4 @@ namespace MueLu {
 }
 
 #define MUELU_LOCALAGGREGATIONALGORITHM_SHORT
-
-#endif //HAVE_MUELU_EXPLICIT_INSTANTIATION
-
 #endif //ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
