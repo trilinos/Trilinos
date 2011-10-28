@@ -265,7 +265,8 @@ public:
       if (tmi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        tmi_ = rcp(new TpetraCrsMatrixInput(M_));
+        tmi_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(M_)));
       }
       return tmi_;
     }
@@ -332,7 +333,8 @@ public:
         if (DestroyM)
           M_.release();
         
-        tmi_64_ = rcp(new TpetraCrsMatrixInput(newM64));
+        tmi_64_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(newM64)));
       }
       return tmi_64_;
     }
@@ -343,7 +345,8 @@ public:
         if (xM_.is_null())
           createMatrix();
 
-        xmi_ = rcp(new XpetraCrsMatrixInput(xM_));
+        xmi_ = rcp(new XpetraCrsMatrixInput(
+          rcp_const_cast<const xcrsMatrix_t>(xM_)));
       }
       return xmi_;
     }
@@ -591,7 +594,8 @@ public:
       if (tmi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        tmi_ = rcp(new TpetraCrsMatrixInput(M_));
+        tmi_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(M_)));
       }
       return tmi_;
     }
@@ -602,7 +606,8 @@ public:
         if (xM_.is_null())
           createMatrix();
 
-        xmi_ = rcp(new XpetraCrsMatrixInput(xM_));
+        xmi_ = rcp(new XpetraCrsMatrixInput(
+          rcp_const_cast<const xcrsMatrix_t>(xM_)));
       }
       return xmi_;
     }

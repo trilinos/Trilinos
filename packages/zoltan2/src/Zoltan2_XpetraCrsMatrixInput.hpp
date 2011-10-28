@@ -236,7 +236,7 @@ public:
     // Get an import list
 
     ArrayView<const gid_t> gidList(gid, numIds);
-    ArrayView<const lno_t> partList(partition, numParts);
+    ArrayView<const lno_t> partList(partition, numIds);
     ArrayView<const lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<int> dummyOut;

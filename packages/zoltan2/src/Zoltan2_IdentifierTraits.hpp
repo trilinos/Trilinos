@@ -57,7 +57,7 @@ template <typename T>
 {
   // We don't use Teuchos::reduceAll because T may not be a packet type.
   int nprocs = comm.getSize();
-  ArrayRCP<T> sendBuf(2*nprocs);
+  Array<T> sendBuf(2*nprocs);
   for (int i=0; i < 2*nprocs; i+=2){
     sendBuf[i] = minval;
     sendBuf[i+1] = maxval;
@@ -65,7 +65,8 @@ template <typename T>
   ArrayRCP<T> recvBuf;
   Environment env;
   try{
-    AlltoAll<T, int>(comm, env, sendBuf(), int(2), recvBuf);
+    ArrayView<const T> sendView = sendBuf(); 
+    AlltoAll<T, int>(comm, env, sendView, int(2), recvBuf);
   }
   catch(std::exception &e){
     Z2_THROW_ZOLTAN2_ERROR(env, e);

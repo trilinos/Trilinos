@@ -548,7 +548,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   // Z2::AlltoAllv comment: Buffers are in process rank contiguous order.
 
   try{
-    AlltoAllv(*comm_, *env_, gidOutBuf(), countOutBuf(), gidInBuf, countInBuf);
+    ArrayView<const GID> gidView = gidOutBuf();
+    ArrayView<const LNO> countView = countOutBuf();
+    AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
   catch (const std::exception &e)
     Z2_THROW_ZOLTAN2_ERROR(*env_, e);
@@ -557,8 +559,10 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   
   if (needGnoInfo){
     countInBuf.release();
+    ArrayView<const GNO> gnoView = gnoOutBuf();
+    ArrayView<const LNO> countView = countOutBuf();
     try{
-      AlltoAllv(*comm_, *env_, gnoOutBuf(), countOutBuf(), gnoInBuf, countInBuf);
+      AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     catch (const std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(*env_, e);
@@ -677,7 +681,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   }
 
   try{
-    AlltoAllv(*comm_, *env_, gidOutBuf(), countOutBuf(), gidInBuf, countInBuf);
+    ArrayView<const GID> gidView = gidOutBuf();
+    ArrayView<const LNO> countView = countOutBuf();
+    AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
   catch (const std::exception &e)
     Z2_THROW_ZOLTAN2_ERROR(*env_, e)
@@ -740,7 +746,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   }
 
   try{
-    AlltoAllv(*comm_, *env_, procOutBuf(), countOutBuf(), procInBuf, countInBuf);
+    ArrayView<const int> procView = procOutBuf();
+    ArrayView<const LNO> countView = countOutBuf();
+    AlltoAllv(*comm_, *env_, procView, countView, procInBuf, countInBuf);
   }
   catch (const std::exception &e)
     Z2_THROW_ZOLTAN2_ERROR(*env_, e);
@@ -749,7 +757,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
   if (needGnoInfo){
     try{
-      AlltoAllv(*comm_, *env_, gnoOutBuf(), countOutBuf(), gnoInBuf, countInBuf);
+      ArrayView<const GNO> gnoView = gnoOutBuf();
+      ArrayView<const LNO> countView = countOutBuf();
+      AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     catch (const std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(*env_, e);
