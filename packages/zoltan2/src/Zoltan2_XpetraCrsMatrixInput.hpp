@@ -16,9 +16,11 @@
 
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 
@@ -216,137 +218,50 @@ public:
     return nrows;
   }
 
-#if 0
+  ////////////////////////////////////////////////////
+  // End of MatrixInput interface.
+  ////////////////////////////////////////////////////
+
   /*! Apply a partitioning solution to the matrix.
-   *   Return a new matrix reflecting the solution.
+   *   Every gid that was belongs to this process must
+   *   be on the list, or the Import will fail.
+   *
+   *   TODO : params etc
    */
-  User *applyPartitioningSolution(const User &in,
+  void applyPartitioningSolution(const User &in, User *&out,
+    const Teuchos::Comm<int> &comm,
     lno_t numIds, lno_t numParts, 
     const gid_t *gid, const lid_t *lid, const lno_t *partition)
-  {
-    RCP<User> inptr = rcp(&in, false);
-    std::string userType(InputTraits<User>::name());
+  { 
+    // Get an import list
 
-    bool isEpetra = (userType == std::string("Epetra_CrsMatrix"));
-    bool isTpetra = (userType == std::string("Tpetra::CrsMatrix"));
-    bool isXpetra = (userType == std::string("Xpetra::CrsMatrix"));
+    ArrayView<const gid_t> gidList(gid, numIds);
+    ArrayView<const lno_t> partList(partition, numIds);
+    ArrayView<const lno_t> dummyIn;
+    ArrayRCP<gid_t> importList;
+    ArrayRCP<int> dummyOut;
+    size_t numNewRows;
 
-    RCP<xmatrix_t> inMatrix;
-
-    if (isEpetra){
-      RCP<xematrix_t> ematrix = rcp(new xematrix_t(inptr));
-      inMatrix = rcp_implicit_cast<xmatrix_t>(ematrix);
-    }
-    else if (isTpetra){
-      RCP<xtmatrix_t > tmatrix = rcp(new xtmatrix_t(inptr));
-      inMatrix = rcp_implicit_cast<xmatrix_t>(tmatrix);
-    }
-    else if (isXpetra){
-      inMatrix = inptr;
-    }
-    else{
-      throw std::logic_error("should be epetra, tpetra or xpetra");
-    }
-
-    RCP<const Comm<int> > comm = inMatrix->getRowMap()->getComm();
-
-    size_t numLocalRows = inMatrix->getNodeNumRows();
-    size_t numGlobalRows = inMatrix->getGlobalNumRows();
-    gno_t base = inMatrix->getRowMap()->getIndexBase();
-    size_t numNewRows = 0;
-
-    ArrayRCP<lno_t> rowSizes(numIds);
-    for (lno_t i=0; i < numIds; i++){
-      rowSizes[i] = inMatrix->getNumEntriesInLocalRow(lid[i]);
-    }
-
-    ArrayRCP<lno_t> partArray(
-      const_cast<lno_t *>(partition), 0, numLocalRows, false);
-    ArrayRCP<gid_t> gidArray(const_cast<gid_t *>(gid), 0, numLocalRows, false);
-    ArrayRCP<gid_t> newGidArray;
-    ArrayRCP<size_t> newRowSizes;   // Epetra uses int, Tpetra uses size_t.
-  
     try{
-      numNewRows = convertPartitionListToImportList(comm,
-        partArray, gidArray, rowSizes, newGidArray, newRowSizes);
+      numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
+        comm, partList, gidList, dummyIn, importList, dummyOut);
     }
     catch (std::exception &e){
       Z2_THROW_ZOLTAN2_ERROR(env, e);
     }
 
-    // We work with the underlying Tpetra or Epetra object.  This
-    // is because when we create xpetra maps and importers and
-    // a new matrix, they must be of a concrete type, not of type Xpetra.
+    gno_t lsum = numNewRows;
+    gno_t gsum = 0;
+    Teuchos::reduceAll<int, gno_t>(comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
 
-    if (isXpetra){
-      Xpetra::UnderlyingLib l = inMatrix->getRowMap()->lib();
-      if (l == Xpetra::UseEpetra)
-        isEpetra = true;
-      else
-        isTpetra = true;
-    }
+    RCP<const User> inPtr = rcp(&in, false);
 
-    if (isEpetra){
-      const RCP<const Epetra_Comm> ecomm = Xpetra::toEpetra(comm);
-    
-      // source map
-      RCP<xematrix_t> xematrix = rcp_dynamic_cast<xematrix_t>(inMatrix);
-      RCP<const Epetra_CrsMatrix> ematrix = xematrix->getEpetra_CrsMatrix();
-      const Epetra_Map &sMap = ematrix->RowMap();
+    RCP<User> outPtr = XpetraTraits<User>::doImport(
+     inPtr, gsum, lsum, importList.getRawPtr(), base_, comm);
 
-      // target map
-      // TODO - doesn't compile if GIDs are not ints.
-      Epetra_Map tMap(numGlobalRows, numNewRows, newGidArray.getRawPtr(),
-        1, base, ecomm);
-
-      // target matrix
-    
-      Array<int> intRowSizes;
-      int *nnz=NULL;
-    
-      if (sizeof(size_t) != sizeof(int)){
-        intRowSizes = Array<int>(numNewRows);
-        for (lno_t i=0; i < numNewRows; i++){
-          intRowSizes[i] = static_cast<int>(newRowSizes[i]);
-        }
-        nnz = intRowSizes.getRawPtr();
-      }
-      else{ 
-        nnz = static_cast<int *>(newRowSizes.getRawPtr());
-      }
-
-      Epetra_CrsMatrix *M = new Epetra_CrsMatrix(Copy, tMap, nnz, true);
-      Epetra_Import importer(tMap, sMap);
-
-      M->Import(*ematrix, importer, Insert);
-
-      return M;
-    }
-    else{
-      typedef typename Tpetra::Map<lno_t,gno_t,node_t> tmap_t;
-
-      // source map
-      RCP<xtmatrix_t> xtmatrix = rcp_dynamic_cast<xtmatrix_t>(inMatrix);
-      RCP<const tmatrix_t> tmatrix = xtmatrix->getTpetra_CrsMatrix();
-      const RCP<const tmap_t> &sMap = tmatrix->getRowMap();
-
-      // target map
-      RCP<const tmap_t> tMap =
-        rcp(new tmap_t(numGlobalRows, newGidArray.view(0, numNewRows), base, comm));
-
-      // target matrix
-
-      tmatrix_t *M = new tmatrix_t(tMap, newRowSizes, Tpetra::StaticProfile);
-
-      Tpetra::Import<lno_t, gno_t, node_t> importer(sMap, tMap);
-
-      M->doImport(*tmatrix, importer, Tpetra::INSERT);
-
-      return M;
-    }
+    out = outPtr.get();
+    outPtr.release();
   }
-#endif
-
 
 private:
 

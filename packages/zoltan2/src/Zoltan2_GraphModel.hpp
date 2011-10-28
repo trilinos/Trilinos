@@ -34,6 +34,11 @@ namespace Zoltan2 {
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
+
+    TODO: GraphModel parameters: 
+                    consecutive IDs required
+                    base required
+                    remove self edges
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -164,6 +169,10 @@ public:
 //    We know that Xpetra input does not need an IdentifierMap
 //    unless consecutive global Ids are required and the Xpetra
 //    input is not consecutive.
+//
+//   TODO Xpetra matrices need not have consecutive IDs, so
+//               add use if IdentifierMap to ensure IDs are
+//               consecutive
 ////////////////////////////////////////////////////////////////
 
 /*! Zoltan2::GraphModel<XpetraCrsMatrixInput>
