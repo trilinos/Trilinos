@@ -44,9 +44,9 @@ template <typename Ordinal>
 // return the size of the import list
 
 template <typename GID, typename LNO, typename EXTRA>
-  size_t convertPartitionListToImportList(Teuchos::Comm<int> &comm, 
-    ArrayView<int> &part, ArrayView<GID> &gid, 
-    ArrayView<EXTRA> &xtraInfo, 
+  size_t convertPartitionListToImportList(const Teuchos::Comm<int> &comm, 
+    ArrayView<const int> &part, ArrayView<const GID> &gid, 
+    ArrayView<const EXTRA> &xtraInfo, 
     ArrayRCP<GID> &imports, ArrayRCP<EXTRA> &newXtraInfo)
 {
   int numParts = comm.getSize();
