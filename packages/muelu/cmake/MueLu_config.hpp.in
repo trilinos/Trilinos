@@ -1,15 +1,21 @@
 
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 
+/* Options */
+
 #cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_MUELU_DEBUG
+
+#cmakedefine HAVE_MUELU_EXPLICIT_INSTANTIATION
+
+/* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS
 
 #cmakedefine HAVE_MUELU_AMESOS2
 
 #cmakedefine HAVE_MUELU_BELOS
-
-#cmakedefine HAVE_MUELU_DEBUG
 
 #cmakedefine HAVE_MUELU_EPETRA
 

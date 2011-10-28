@@ -50,6 +50,16 @@ APPEND_GLOB(SOURCES */*.cpp)
 APPEND_GLOB(SOURCES */*/*.cpp)
 
 #
+#
+#
+
+# Explicit instanciation
+PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+# Must glob the binary dir last to get all of the auto-generated headers
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#
 # C) Define the targets for package's library(s)
 #
 
