@@ -212,35 +212,32 @@ int main(int argc, char *argv[]) {
   // ===================== //
   // Build faux prolongator - use injection //
   // ===================== //
-#ifdef OLD_AND_BUSTED
-  Epetra_CrsMatrix P(Copy,Matrix->RowMap(),1);
-  int Pmax=Matrix->NumGlobalRows()/3;
-  Epetra_Map Pdomain(Pmax,0,Comm);
-
-  for(int i=0;i<P.NumMyRows();i++){
-    double one=1.0;
-    int grid=P.GRID(i);
-    int grid3=P.GRID(i)/3;
-    P.InsertGlobalValues(grid,1,&one,&grid3);
-  }
-  P.FillComplete(Pdomain,Matrix->DomainMap());
-#else
   Epetra_CrsMatrix *P;
   BuildProlongator(*Matrix,P);
-#endif
 
   // ====================== //
   // default options for LW+SA
   // ====================== //
-
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaultsLevelWrap(MLList);
   
   char mystring[80];
-  strcpy(mystring,"SA");
+  strcpy(mystring,"LW/SA");
   TestLevelWrapPreconditioner(mystring, MLList, Problem, *P,
                                TotalErrorResidual, TotalErrorExactSol);
+
+
+  // ====================== //
+  // LW w/ ILUT
+  // ====================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaultsLevelWrap(MLList,true);
+  MLList.set("smoother: type","ILUT");
+  strcpy(mystring,"LW-ILUT/SA");
+  TestLevelWrapPreconditioner(mystring, MLList, Problem, *P,
+                               TotalErrorResidual, TotalErrorExactSol);
+
 
 
 
@@ -259,7 +256,7 @@ int main(int argc, char *argv[]) {
   delete Map;
   
   if (TotalErrorResidual > 1e-8) {
-    cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;
+    cerr << "Error: `LevelTest.exe' failed!" << endl;
     exit(EXIT_FAILURE);
   }
 
@@ -268,7 +265,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (Comm.MyPID() == 0)
-    cerr << "`MultiLevelPrecoditioner_Sym.exe' passed!" << endl;
+    cerr << "`LevelTest.exe' passed!" << endl;
 
   return (EXIT_SUCCESS);
 }

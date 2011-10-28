@@ -162,6 +162,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
    
   // Sanity Checks
   if (!B.Map().SameAs(OperatorDomainMap())) return -1;
+  if (!X_.Map().SameAs(OperatorRangeMap())) return -1;
   if (B.NumVectors() != X_.NumVectors()) return -1;
 
   // Build new work vector X 
