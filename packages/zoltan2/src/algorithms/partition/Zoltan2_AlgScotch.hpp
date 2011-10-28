@@ -114,6 +114,9 @@ int AlgPTScotch(
 
   // Build PTScotch distributed data structure
   if (me == 0) cout << __func__ << ": SCOTCH_dgraphBuild ";
+
+cout << me << " KDDKDD vertlocnbr = " << vertlocnbr 
+     << " edgelocnbr = " << edgelocnbr << endl;
   ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax, 
                             vertloctab, vendloctab, veloloctab, vlblloctab, 
                             edgelocnbr, edgelocsize, 

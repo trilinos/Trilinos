@@ -196,11 +196,12 @@ public:
   GraphModel(
     const RCP<const XpetraCrsMatrixInput<User> > &inputAdapter,
     const RCP<const Comm<int> > &comm, const RCP<const Environment> &env,
-    bool consecutiveIdsRequired=false) :
+    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) :
       input_(inputAdapter), rowMap_(inputAdapter->getMatrix()->getRowMap()),
       colMap_(inputAdapter->getMatrix()->getColMap()), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_()
+      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_(),
+      allocatedCopies_(false), copyoffsets_(NULL), copynborIds_(NULL)
   {
     gno_t const *vtxIds=NULL, *nborIds=NULL;
     lno_t const  *offsets=NULL, *lids=NULL; 
@@ -213,12 +214,44 @@ public:
     ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx_);
     gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
 
-    ArrayView<lno_t> av2(const_cast<lno_t *>(offsets), numLocalVtx_+1);
+    numLocalEdges_ = offsets[numLocalVtx_];
+
+    copyoffsets_ = const_cast<lno_t*> (offsets); 
+    copynborIds_ = const_cast<gno_t*> (nborIds);
+
+    if (removeSelfEdges) {
+
+      // Need to copy the offsets and edges to remove self edges.
+      // When/how should these arrays be deleted?  In destructor?
+      allocatedCopies_ = true;
+      copyoffsets_ = (lno_t *) malloc((numLocalVtx_+1)*sizeof(lno_t));
+      copynborIds_ = (gno_t *) malloc(numLocalEdges_ *sizeof(gno_t));
+
+      lno_t nSelfEdges = 0;
+
+      for (lno_t i = 0; i < numLocalVtx_; i++) {
+        copyoffsets_[i] = offsets[i] - nSelfEdges;
+
+        for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
+          if (gnos_[i] == nborIds[j]) { // self edge; remove it
+            nSelfEdges++;
+          }
+          else {  // Not a self-edge; keep it.
+            copynborIds_[j-nSelfEdges] = nborIds[j];
+          }
+        }
+      }
+      copyoffsets_[numLocalVtx_] = offsets[numLocalVtx_] - nSelfEdges;
+      numLocalEdges_ -= nSelfEdges;
+
+      cout << comm->getRank() << " Removed " << nSelfEdges 
+           << " self-edges" << endl;
+    }
+
+    ArrayView<lno_t> av2(const_cast<lno_t *>(copyoffsets_), numLocalVtx_+1);
     offsets_ = av2.getConst();
 
-    numLocalEdges_ = offsets_[numLocalVtx_];
-
-    ArrayView<gno_t> av3(const_cast<gno_t *>(nborIds), numLocalEdges_);
+    ArrayView<gno_t> av3(const_cast<gno_t *>(copynborIds_), numLocalEdges_);
     edgeGnos_ = av3.getConst();
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
@@ -227,12 +260,22 @@ public:
     RCP<Array<int> > procBuf =  rcp(new Array<int>(numLocalEdges_));
     procIds_ = arcp(procBuf);
 
+    cout << comm->getRank() << " KDDKDD numLocalEdges_ " << numLocalEdges_ << endl;
+    for (gno_t i = 0; i < numLocalEdges_; i++) cout<< edgeGnos_[i] << endl;
     try{
       rowMap_->getRemoteIndexList(edgeGnos_.view(0,numLocalEdges_), 
         procIds_.view(0, numLocalEdges_));
     }
     catch (std::exception &e){
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
+    }
+  }
+
+  //!  Destructor
+  ~GraphModel() {
+    if (allocatedCopies_) {
+      delete [] copyoffsets_;
+      delete [] copynborIds_;
     }
   }
 
@@ -344,6 +387,16 @@ private:
   global_size_t numLocalEdges_;
   global_size_t numGlobalEdges_;
   size_t numLocalVtx_;
+
+  // Arrays that hold (possibly modified) copies of of the input data.
+  // Pointers may be set directly to the input data, or additional space 
+  // may be allocated for these arrays.
+  // TODO Using these arrays is not perfect, and probably conflicts with the
+  // TODO ArrayViews above, but it was the only way I could get the code to work
+  // TODO in short order.  I need to understand ArrayViews and ArrayRCPs better.
+  bool allocatedCopies_;
+  lno_t *copyoffsets_;
+  gno_t *copynborIds_;
 
 };
 

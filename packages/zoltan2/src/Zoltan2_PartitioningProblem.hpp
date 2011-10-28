@@ -115,7 +115,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 
     this->graphModel_ = RCP<GraphModel<Adapter> > 
                         (new GraphModel<Adapter>(this->inputAdapter_,
-                                                 this->comm_, this->env_));
+                                                 this->comm_, this->env_,
+                                                 false, true));
     break;
 
   case HypergraphModelType:
