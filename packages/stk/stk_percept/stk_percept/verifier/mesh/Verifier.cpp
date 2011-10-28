@@ -74,7 +74,7 @@ namespace stk
           }
       }
 
-      RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
+      //RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
 
       PerceptMesh mesh(3, run_environment.m_comm);
       mesh.openReadOnly(file_name);
