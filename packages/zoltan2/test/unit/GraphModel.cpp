@@ -43,7 +43,7 @@ using Teuchos::OrdinalTraits;
 using Teuchos::ScalarTraits;
 using Teuchos::ArrayView;
 
-#define COMMENT(s) if (rank==0) {std::cout << s << std::endl;}
+#define COMMENT(s) {if (rank==0) {std::cout << s << std::endl;}}
 
 template <typename Scalar, typename LNO, typename GNO, typename Node>
   void testGraphModel(std::string fname, GNO xdim, GNO ydim, GNO zdim,
