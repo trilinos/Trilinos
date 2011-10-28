@@ -10,12 +10,13 @@
 TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
 TRIOS_SRCDIR=${TRILINOS_SRCDIR}/packages/trios
 
+rm -f CMakeCache.txt
+
+export TARGET_COMPILER=pgi
+
 # Load the appropriate bash environment
 source ${TRIOS_SRCDIR}/sampleScripts/config/cielo/loadenv.sh
 
-rm -f CMakeCache.txt
-
-TARGET_COMPILER=pgi
 TOOLCHAIN=${TRIOS_SRCDIR}/sampleScripts/config/cielo/toolchain-cnl-${TARGET_COMPILER}.cmake
 
 INSTALL_PATH=/home/raoldfi/research/support/cnl/lib/trilinos
