@@ -233,9 +233,9 @@ static void copy_peer(
 static int init_server_listen_socket(void);
 static int start_connection_listener_thread(void);
 static struct ibv_device *get_ib_device(void);
-static int read_full(int fd, void *buf, size_t num);
-static int write_full(int fd, const void *buf, size_t num);
-static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t len);
+static int tcp_read(int sock, void *incoming, size_t len);
+static int tcp_write(int sock, const void *outgoing, size_t len);
+static int tcp_exchange(int sock, int is_server, void *incoming, void *outgoing, size_t len);
 static void transition_connection_to_ready(
         int sock,
         ib_connection *conn);
@@ -2003,7 +2003,7 @@ static void transition_connection_to_ready(
 
     trios_start_timer(callTime);
     /* final sychronization to ensure both sides have posted RTRs */
-    rc = exchange_data(sock, 0, &rc, &rc, sizeof(rc));
+    rc = tcp_exchange(sock, 0, &rc, &rc, sizeof(rc));
     trios_stop_timer("exch data", callTime);
 }
 
@@ -2109,83 +2109,113 @@ static void transition_qp_to_error(
 
 
 /*
- * Loop over reading until everything arrives.
- * Like bsend/brecv but without the fcntl messing.
+ * Try hard to read the whole buffer.  Abort on read error.
  */
-int
-read_full(int fd, void *buf, size_t num)
+static int tcp_read(int sock, void *incoming, size_t len)
 {
-    int i, offset = 0;
+    int bytes_this_read=0;
+    int bytes_left=len;
+    int bytes_read=0;
 
-    while (num > 0) {
-        i = read(fd, (char *)buf + offset, num);
-        if (i < 0)
-            return i;
-        if (i == 0)
+    while (bytes_left > 0) {
+        bytes_this_read = read(sock, (char *)incoming + bytes_read, bytes_left);
+        if (bytes_this_read < 0) {
+            return bytes_this_read;
+        }
+        if (bytes_this_read == 0) {
             break;
-        num -= i;
-        offset += i;
+        }
+        bytes_left -= bytes_this_read;
+        bytes_read += bytes_this_read;
     }
-    return offset;
+    return bytes_read;
 }
 
 /*
- * Keep looping until all bytes have been accepted by the kernel.
+ * Try hard to write the whole buffer.  Abort on write error.
  */
-int
-write_full(int fd, const void *buf, size_t num)
+static int tcp_write(int sock, const void *outgoing, size_t len)
 {
-    int i, offset = 0;
-    int total = num;
+    int bytes_this_write=0;
+    int bytes_left=len;
+    int bytes_written=0;
 
-    while (num > 0) {
-        i = write(fd, (const char *)buf + offset, num);
-        if (i < 0)
-            return i;
-        num -= i;
-        offset += i;
+    while (bytes_left > 0) {
+        bytes_this_write = write(sock, (const char *)outgoing + bytes_written, bytes_left);
+        if (bytes_this_write < 0) {
+            return bytes_this_write;
+        }
+        bytes_left    -= bytes_this_write;
+        bytes_written += bytes_this_write;
     }
-    return total;
+    return bytes_written;
 }
 
 /*
- * Exchange information: server reads first, then writes; client opposite.
+ * Two processes exchange data over a TCP socket.  Both sides send and receive the
+ * same amount of data.  Only one process can declare itself the server (is_server!=0),
+ * otherwise this will hang because both will wait for the read to complete.
+ *
+ * Server receives, then sends.
+ * Client sends, then receives.
  */
-static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t len)
+static int tcp_exchange(int sock, int is_server, void *incoming, void *outgoing, size_t len)
 {
-    int i;
     int rc;
 
-    for (i=0; i<2; i++) {
-        if (i ^ is_server) {
-            trios_declare_timer(callTime);
-            trios_start_timer(callTime);
-            rc = read_full(sock, xin, len);
-            trios_stop_timer("read_full", callTime);
-            if (rc < 0) {
-                log_warn(nnti_debug_level, "failed to read IB connection info: errno=%d", errno);
-                goto out;
-            }
-            if (rc != (int) len) {
-                log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
-                rc = 1;
-                goto out;
-            }
-        } else {
-            trios_declare_timer(callTime);
-            trios_start_timer(callTime);
-            rc = write_full(sock, xout, len);
-            trios_stop_timer("write_full", callTime);
-            if (rc < 0) {
-                log_warn(nnti_debug_level, "failed to write IB connection info: errno=%d", errno);
-                goto out;
-            }
+    if (is_server) {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_read(sock, incoming, len);
+        trios_stop_timer("tcp_read", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "server failed to read IB connection info: errno=%d", errno);
+            goto out;
+        }
+        if (rc != (int) len) {
+            log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
+            rc = 1;
+            goto out;
+        }
+    } else {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_write(sock, outgoing, len);
+        trios_stop_timer("tcp_write", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "client failed to write IB connection info: errno=%d", errno);
+            goto out;
+        }
+    }
+
+    if (is_server) {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_write(sock, outgoing, len);
+        trios_stop_timer("tcp_write", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "server failed to write IB connection info: errno=%d", errno);
+            goto out;
+        }
+    } else {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_read(sock, incoming, len);
+        trios_stop_timer("tcp_read", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "client failed to read IB connection info: errno=%d", errno);
+            goto out;
+        }
+        if (rc != (int) len) {
+            log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
+            rc = 1;
+            goto out;
         }
     }
 
     rc = 0;
 
-  out:
+out:
     return rc;
 }
 
@@ -2309,7 +2339,7 @@ static int new_client_connection(
     }
 
     trios_start_timer(callTime);
-    rc = exchange_data(sock, 0, &ch_in, &ch_out, sizeof(ch_in));
+    rc = tcp_exchange(sock, 0, &ch_in, &ch_out, sizeof(ch_in));
     trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;
@@ -2471,7 +2501,7 @@ static int new_server_connection(
     }
 
     trios_start_timer(callTime);
-    rc = exchange_data(sock, 1, &ch_in, &ch_out, sizeof(ch_in));
+    rc = tcp_exchange(sock, 1, &ch_in, &ch_out, sizeof(ch_in));
     trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;

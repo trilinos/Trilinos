@@ -328,9 +328,9 @@ static int init_server_listen_socket(void);
 static int start_connection_listener_thread(void);
 static uint32_t get_cpunum(void);
 static void get_alps_info(alpsAppGni_t *alps_info);
-static int read_full(int fd, void *buf, size_t num);
-static int write_full(int fd, const void *buf, size_t num);
-static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t len);
+static int tcp_read(int sock, void *incoming, size_t len);
+static int tcp_write(int sock, const void *outgoing, size_t len);
+static int tcp_exchange(int sock, int is_server, void *incoming, void *outgoing, size_t len);
 static void transition_connection_to_ready(
         int sock,
         gni_connection *conn);
@@ -2857,86 +2857,118 @@ static void transition_connection_to_ready(
 
     trios_start_timer(callTime);
     /* final sychronization to ensure both sides have posted RTRs */
-    rc = exchange_data(sock, 0, &rc, &rc, sizeof(rc));
-    trios_stop_timer("transition exch data", callTime);
+    rc = tcp_exchange(sock, 0, &rc, &rc, sizeof(rc));
+    trios_stop_timer("transition tcp_exchange", callTime);
 }
 
 /*
- * Loop over reading until everything arrives.
- * Like bsend/brecv but without the fcntl messing.
+ * Try hard to read the whole buffer.  Abort on read error.
  */
-static int read_full(int fd, void *buf, size_t num)
+static int tcp_read(int sock, void *incoming, size_t len)
 {
-    int i, offset = 0;
+    int bytes_this_read=0;
+    int bytes_left=len;
+    int bytes_read=0;
 
-    while (num > 0) {
-        i = read(fd, (char *)buf + offset, num);
-        if (i < 0)
-            return i;
-        if (i == 0)
+    while (bytes_left > 0) {
+        bytes_this_read = read(sock, (char *)incoming + bytes_read, bytes_left);
+        if (bytes_this_read < 0) {
+            return bytes_this_read;
+        }
+        if (bytes_this_read == 0) {
             break;
-        num -= i;
-        offset += i;
+        }
+        bytes_left -= bytes_this_read;
+        bytes_read += bytes_this_read;
     }
-    return offset;
+    return bytes_read;
 }
 
 /*
- * Keep looping until all bytes have been accepted by the kernel.
+ * Try hard to write the whole buffer.  Abort on write error.
  */
-static int write_full(int fd, const void *buf, size_t num)
+static int tcp_write(int sock, const void *outgoing, size_t len)
 {
-    int i, offset = 0;
-    int total = num;
+    int bytes_this_write=0;
+    int bytes_left=len;
+    int bytes_written=0;
 
-    while (num > 0) {
-        i = write(fd, (const char *)buf + offset, num);
-        if (i < 0)
-            return i;
-        num -= i;
-        offset += i;
+    while (bytes_left > 0) {
+        bytes_this_write = write(sock, (const char *)outgoing + bytes_written, bytes_left);
+        if (bytes_this_write < 0) {
+            return bytes_this_write;
+        }
+        bytes_left    -= bytes_this_write;
+        bytes_written += bytes_this_write;
     }
-    return total;
+    return bytes_written;
 }
 
 /*
- * Exchange information: server reads first, then writes; client opposite.
+ * Two processes exchange data over a TCP socket.  Both sides send and receive the
+ * same amount of data.  Only one process can declare itself the server (is_server!=0),
+ * otherwise this will hang because both will wait for the read to complete.
+ *
+ * Server receives, then sends.
+ * Client sends, then receives.
  */
-static int exchange_data(int sock, int is_server, void *xin, void *xout, size_t len)
+static int tcp_exchange(int sock, int is_server, void *incoming, void *outgoing, size_t len)
 {
-    int i;
-    int rc;
+    int rc=0;
 
-    for (i=0; i<2; i++) {
-        if (i ^ is_server) {
-            trios_declare_timer(call_time);
-            trios_start_timer(call_time);
-            rc = read_full(sock, xin, len);
-            if (rc < 0) {
-                log_warn(nnti_debug_level, "failed to read Gemini connection info: errno=%d", errno);
-                goto out;
-            }
-            trios_stop_timer("read_full", call_time);
-            if (rc != (int) len) {
-                log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
-                rc = 1;
-                goto out;
-            }
-        } else {
-            trios_declare_timer(call_time);
-            trios_start_timer(call_time);
-            rc = write_full(sock, xout, len);
-            if (rc < 0) {
-                log_warn(nnti_debug_level, "failed to write Gemini connection info: errno=%d", errno);
-                goto out;
-            }
-            trios_stop_timer("write_full", call_time);
+    if (is_server) {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_read(sock, incoming, len);
+        trios_stop_timer("tcp_read", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "server failed to read GNI connection info: errno=%d", errno);
+            goto out;
+        }
+        if (rc != (int) len) {
+            log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
+            rc = 1;
+            goto out;
+        }
+    } else {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_write(sock, outgoing, len);
+        trios_stop_timer("tcp_write", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "client failed to write GNI connection info: errno=%d", errno);
+            goto out;
+        }
+    }
+
+    if (is_server) {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_write(sock, outgoing, len);
+        trios_stop_timer("tcp_write", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "server failed to write GNI connection info: errno=%d", errno);
+            goto out;
+        }
+    } else {
+        trios_declare_timer(callTime);
+        trios_start_timer(callTime);
+        rc = tcp_read(sock, incoming, len);
+        trios_stop_timer("tcp_read", callTime);
+        if (rc < 0) {
+            log_warn(nnti_debug_level, "client failed to read GNI connection info: errno=%d", errno);
+            goto out;
+        }
+        if (rc != (int) len) {
+            log_error(nnti_debug_level, "partial read, %d/%d bytes", rc, (int) len);
+            rc = 1;
+            goto out;
         }
     }
 
     rc = 0;
 
-  out:
+out:
     return rc;
 }
 
@@ -2970,8 +3002,8 @@ static int new_client_connection(
     instance_out.alps_info = transport_global_data.alps_info;
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 0, &instance_in, &instance_out, sizeof(instance_in));
-    trios_stop_timer("exch data", call_time);
+    rc = tcp_exchange(sock, 0, &instance_in, &instance_out, sizeof(instance_in));
+    trios_stop_timer("tcp_exchange", call_time);
     if (rc)
         goto out;
 
@@ -2983,7 +3015,7 @@ static int new_client_connection(
     memset(&sa_in, 0, sizeof(sa_in));
 
     trios_start_timer(call_time);
-    rc = read_full(sock, &sa_in, sizeof(sa_in));
+    rc = tcp_read(sock, &sa_in, sizeof(sa_in));
     trios_stop_timer("read server queue attrs", call_time);
     if (rc == sizeof(sa_in)) {
         rc=0;
@@ -3001,7 +3033,7 @@ static int new_client_connection(
     ca_out.client_attrs.unblock_mem_hdl    =c->queue_local_attrs.unblock_mem_hdl;
 
     trios_start_timer(call_time);
-    rc = write_full(sock, &ca_out, sizeof(ca_out));
+    rc = tcp_write(sock, &ca_out, sizeof(ca_out));
     trios_stop_timer("write client queue attrs", call_time);
     if (rc == sizeof(ca_out)) {
         rc=0;
@@ -3048,8 +3080,8 @@ static int new_server_connection(
     instance_out.alps_info = transport_global_data.alps_info;
 
     trios_start_timer(call_time);
-    rc = exchange_data(sock, 1, &instance_in, &instance_out, sizeof(instance_in));
-    trios_stop_timer("exch data", call_time);
+    rc = tcp_exchange(sock, 1, &instance_in, &instance_out, sizeof(instance_in));
+    trios_stop_timer("tcp_exchange", call_time);
     if (rc)
         goto out;
 
@@ -3072,7 +3104,7 @@ static int new_server_connection(
     sa_out.server_attrs.wc_mem_hdl       =transport_global_data.req_queue.wc_mem_hdl;
 
     trios_start_timer(call_time);
-    rc = write_full(sock, &sa_out, sizeof(sa_out));
+    rc = tcp_write(sock, &sa_out, sizeof(sa_out));
     trios_stop_timer("write server queue attrs", call_time);
     if (rc == sizeof(sa_out)) {
         rc=0;
@@ -3083,7 +3115,7 @@ static int new_server_connection(
     memset(&ca_in, 0, sizeof(ca_in));
 
     trios_start_timer(call_time);
-    rc = read_full(sock, &ca_in, sizeof(ca_in));
+    rc = tcp_read(sock, &ca_in, sizeof(ca_in));
     trios_stop_timer("read client queue attrs", call_time);
     if (rc == sizeof(ca_in)) {
         rc=0;
