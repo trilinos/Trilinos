@@ -31,7 +31,7 @@
 #include "Stokhos_PreconditionerFactory.hpp"
 #include "Stokhos_IfpackPreconditionerFactory.hpp"
 #include "Stokhos_MLPreconditionerFactory.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::PreconditionerFactory::
 PreconditionerFactory(const std::string& prec_name,
@@ -44,7 +44,7 @@ PreconditionerFactory(const std::string& prec_name,
     factory = 
       Teuchos::rcp(new Stokhos::MLPreconditionerFactory(params));
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown preconditioner type " << prec_name
 		       << ".  Valid choices are \"Ifpack\" and \"ML\".");
 }

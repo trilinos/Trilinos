@@ -269,12 +269,12 @@ namespace Intrepid {
       break;
       
     case OPERATOR_CURL:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
     case OPERATOR_DIV:
-      TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
@@ -1211,7 +1211,7 @@ namespace Intrepid {
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): Invalid operator type");
     }
   }
@@ -1223,7 +1223,7 @@ namespace Intrepid {
                                                                             const ArrayScalar &    inputPoints,
                                                                             const ArrayScalar &    cellVertices,
                                                                             const EOperator        operatorType) const {
-    TEST_FOR_EXCEPTION( (true), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_WEDGE_C2_Serendipity_FEM): FEM Basis calling an FVD member function");
   }
 }// namespace Intrepid

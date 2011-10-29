@@ -9,26 +9,26 @@
 #include "structs.h"
 #include "smalloc.h"
 
-void      coarsen(graph, nvtxs, nedges, using_vwgts, using_ewgts, term_wgts,
-		            igeom, coords, yvecs, ndims, solver_flag, vmax, eigtol,
-		            nstep, step, give_up)
+void 
+coarsen (
 /* Coarsen until nvtxs <= vmax, compute and uncoarsen. */
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int       using_vwgts;		/* are vertices weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-float    *term_wgts[];		/* terminal weights */
-int       igeom;		/* dimension for geometric information */
-float   **coords;		/* coordinates for vertices */
-double  **yvecs;		/* eigenvectors returned */
-int       ndims;		/* number of eigenvectors to calculate */
-int       solver_flag;		/* which eigensolver to use */
-int       vmax;			/* largest subgraph to stop coarsening */
-double    eigtol;		/* tolerence in eigen calculation */
-int       nstep;		/* number of coarsenings between RQI steps */
-int       step;			/* current step number */
-int       give_up;		/* has coarsening bogged down? */
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int using_vwgts,		/* are vertices weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    float *term_wgts[],		/* terminal weights */
+    int igeom,		/* dimension for geometric information */
+    float **coords,		/* coordinates for vertices */
+    double **yvecs,		/* eigenvectors returned */
+    int ndims,		/* number of eigenvectors to calculate */
+    int solver_flag,		/* which eigensolver to use */
+    int vmax,			/* largest subgraph to stop coarsening */
+    double eigtol,		/* tolerence in eigen calculation */
+    int nstep,		/* number of coarsenings between RQI steps */
+    int step,			/* current step number */
+    int give_up		/* has coarsening bogged down? */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern int DEBUG_COARSEN;	/* debug flag for coarsening */

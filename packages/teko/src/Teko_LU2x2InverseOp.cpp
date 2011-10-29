@@ -201,7 +201,7 @@ void LU2x2InverseOp::describe(Teuchos::FancyOStream & out_arg,
            break;
         }
      default:
-        TEST_FOR_EXCEPT(true); // Should never get here!
+        TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 

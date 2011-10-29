@@ -367,7 +367,7 @@ inline
 void DefaultAddedLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( numOps() > 0 ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
 #endif
 }
 

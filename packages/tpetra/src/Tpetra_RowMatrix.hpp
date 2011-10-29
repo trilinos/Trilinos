@@ -206,7 +206,7 @@ namespace Tpetra {
                                    ArrayView<const LocalOrdinal> &indices, 
                                    ArrayView<const Scalar> &values) const = 0;
 
-      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+      //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
           the zero and non-zero diagonals owned by this node. */
       virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;

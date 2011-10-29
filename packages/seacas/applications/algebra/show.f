@@ -63,20 +63,20 @@ C   --      of /DBNUMS/
 C   --   Uses NPTIMS, TMIN, TMAX, DELT, NINTV, WHONLY of /TIMES/
 C   --   Uses ISZOOM, ZMLIM of /ZOOM/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'var.blk'
-      include 'alias.blk'
-      include 'dbase.blk'
-      include 'dbtitl.blk'
-      include 'dbnums.blk'
-      include 'dbnumg.blk'
-      include 'dbnumq.blk'
-      include 'times.blk'
-      include 'zoom.blk'
-      include 'filter.blk'
-      include 'remove.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_var.blk'
+      include 'ag_alias.blk'
+      include 'ag_dbase.blk'
+      include 'ag_dbtitl.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbnumg.blk'
+      include 'ag_dbnumq.blk'
+      include 'ag_times.blk'
+      include 'ag_zoom.blk'
+      include 'ag_filter.blk'
+      include 'ag_remove.blk'
       
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 

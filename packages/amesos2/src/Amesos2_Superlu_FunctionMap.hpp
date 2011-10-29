@@ -405,7 +405,7 @@ namespace Amesos2 {
       SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
 
-      TEST_FOR_EXCEPTION( A == NULL,
+      TEUCHOS_TEST_FOR_EXCEPTION( A == NULL,
 			  std::runtime_error,
 			  "Supermatrix A not initialized properly!");
     }
@@ -418,7 +418,7 @@ namespace Amesos2 {
       SLU::Z::zCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
 				     stype, dtype, mtype);
 
-      TEST_FOR_EXCEPTION( A == NULL,
+      TEUCHOS_TEST_FOR_EXCEPTION( A == NULL,
 			  std::runtime_error,
 			  "Supermatrix A not initialized properly!");
     }

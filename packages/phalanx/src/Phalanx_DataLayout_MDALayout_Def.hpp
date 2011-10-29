@@ -48,7 +48,7 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //**********************************************************************
 namespace PHX{
@@ -385,7 +385,7 @@ dimension(size_type ordinal) const
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
 		       std::logic_error, os.str());
   }
   
@@ -405,7 +405,7 @@ name(size_type ordinal) const
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
 		       std::logic_error, os.str());
   }
   

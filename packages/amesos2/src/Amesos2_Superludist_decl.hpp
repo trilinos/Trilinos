@@ -270,7 +270,7 @@ private:
 
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
-    SLUD::SuperMatrix A,;
+    SLUD::SuperMatrix A;
     SLUD::SuperMatrix AC; ///< The column-permuted matrix which will be factored
     typename type_map::LUstruct_t LU; ///< storage for L and U factors
     SLUD::Glu_freeable_t glu_freeable; ///< freeable storage used during symbolic fact

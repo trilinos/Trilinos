@@ -49,7 +49,7 @@
 
 #include "Teuchos_XMLParser.hpp"
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 using namespace Teuchos;
 
@@ -163,13 +163,13 @@ XMLObject XMLParser::parse()
     if (c1 == '<') {
       // determine if it is a STag/EmptyElemTag or ETag or Comment
       // get lookahead
-      TEST_FOR_EXCEPTION( _is->readBytes(&c2,1) < 1 , std::runtime_error, "XMLParser::parse(): stream ended in tag begin/end");
+      TEUCHOS_TEST_FOR_EXCEPTION( _is->readBytes(&c2,1) < 1 , std::runtime_error, "XMLParser::parse(): stream ended in tag begin/end");
 
       if (c2 == '/') {
         // we have: </
         // try to get an ETag
         getETag(tag);
-        TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
           "XMLParser::getETag(): document not well-formed: end element"
           " tag = '"<<tag<<"' did not match start element");
         curopen--;
@@ -180,13 +180,13 @@ XMLObject XMLParser::parse()
         getSTag(c2, tag, attrs, emptytag);
         handler->startElement(tag,attrs);
         if (curopen == 0) {
-          TEST_FOR_EXCEPTION(gotRoot == true, std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(gotRoot == true, std::runtime_error,
             "XMLParser::getETag(): document not well-formed: more than one root element specified");
           gotRoot = true;
         }
         curopen++;
         if (emptytag) {
-          TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
             "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
           curopen--;
         }
@@ -197,14 +197,14 @@ XMLObject XMLParser::parse()
         // * the document is not well-formed
         // * the document employs a feature not supported by this parser, 
         //   e.g. <!ELEMENT...  <!ATTLIST...  <!DOCTYPE...  <![CDATA[...
-        TEST_FOR_EXCEPTION( assertChar('-')!=0, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( assertChar('-')!=0, std::runtime_error,
             "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
-        TEST_FOR_EXCEPTION( assertChar('-')!=0 , std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( assertChar('-')!=0 , std::runtime_error,
             "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
         getComment();
       }
       else {
-        TEST_FOR_EXCEPTION(1, std::runtime_error, "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
       }
     }
     else if ( (curopen > 0) && (c1 == '&') ) {
@@ -218,11 +218,11 @@ XMLObject XMLParser::parse()
       handler->characters(chars);
     }
     else {
-      TEST_FOR_EXCEPTION(1,std::runtime_error,"XMLParser::parse(): document not well-formed");
+      TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"XMLParser::parse(): document not well-formed");
     }
   }
 
-  TEST_FOR_EXCEPTION( curopen != 0 , std::runtime_error, "XMLParser::parse(): document not well-formed: elements not matched" );
+  TEUCHOS_TEST_FOR_EXCEPTION( curopen != 0 , std::runtime_error, "XMLParser::parse(): document not well-formed: elements not matched" );
 
   return handler->getObject();
 
@@ -242,14 +242,14 @@ void XMLParser::getETag(std::string &tag)
   unsigned char c;
   // clear tag
   tag = "";
-  TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getETag(): EOF before end element was terminated");
-  TEST_FOR_EXCEPTION( !isLetter(c) && c!='_' && c!=':' , std::runtime_error , "XMLParser::getETag(): tag not well-formed");
+  TEUCHOS_TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getETag(): EOF before end element was terminated");
+  TEUCHOS_TEST_FOR_EXCEPTION( !isLetter(c) && c!='_' && c!=':' , std::runtime_error , "XMLParser::getETag(): tag not well-formed");
   tag.push_back(c);
   while (1) {
-    TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getETag(): EOF before end element was terminated");
+    TEUCHOS_TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getETag(): EOF before end element was terminated");
     if ( isNameChar(c) ) {
       if (tagover) {
-        TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getETag(): end element not well-formed: expected '>'");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getETag(): end element not well-formed: expected '>'");
       }
       tag.push_back(c);
     }
@@ -261,7 +261,7 @@ void XMLParser::getETag(std::string &tag)
       break; 
     }
     else {
-      TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getETag(): end element not well-formed");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getETag(): end element not well-formed");
     }
   }
 }
@@ -295,7 +295,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
   tag = lookahead;
   // get the rest of the tag: (NameChar)*
   while (1) {
-    TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+    TEUCHOS_TEST_FOR_EXCEPTION( _is->readBytes(&c,1) < 1 , std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
     if (isNameChar(c)) {
       tag.push_back(c);
     }
@@ -313,7 +313,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
     // if space, consume the whitespace
     if ( isSpace(c) ) {
       hadspace = true;
-      TEST_FOR_EXCEPTION( getSpace(c)!=0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( getSpace(c)!=0, std::runtime_error,
         "XMLParser::getSTag(): EOF before start element was terminated");
     }
     
@@ -325,7 +325,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
       std::string attname, attval;
       attname = c;
       do {
-        TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+        TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
         if ( isNameChar(c) ) {
           attname.push_back(c);
         }
@@ -333,7 +333,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
           break; 
         }
         else {
-          TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute not well-formed: expected whitespace or '='");
+          TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute not well-formed: expected whitespace or '='");
         }
       } while (1);
       
@@ -343,11 +343,11 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
       }
       // should be on '='
       if (c != '=') {
-        TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute not well-formed: expected '='");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute not well-formed: expected '='");
       }
       
       // get any whitespace following the '='
-      TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+      TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
       if (isSpace(c)) {
         getSpace(c);
       }
@@ -362,10 +362,10 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
         apost = false;
       }
       else {
-        TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute value must be quoted with either ''' or '\"'");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): attribute value must be quoted with either ''' or '\"'");
       }
       do {
-        TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+        TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
         if (apost && c=='\'') {
           // end of attval
           break;
@@ -385,12 +385,12 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
           attval.push_back(c);
         }
         else {
-          TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): invalid character in attribute value");
+          TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): invalid character in attribute value");
         }
       } while(1);
       
       // add attribute to list
-      TEST_FOR_EXCEPTION( attrs.find(attname) != attrs.end() , std::runtime_error , "XMLParser::getSTag(): cannot have two attributes with the same name");
+      TEUCHOS_TEST_FOR_EXCEPTION( attrs.find(attname) != attrs.end() , std::runtime_error , "XMLParser::getSTag(): cannot have two attributes with the same name");
       attrs[attname] = attval;
     }
     else if (c == '>') {
@@ -398,17 +398,17 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
       break;
     }
     else if (c == '/') {
-      TEST_FOR_EXCEPTION(assertChar('>')!=0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(assertChar('>')!=0, std::runtime_error,
         "XMLParser::getSTag(): empty element tag not well-formed: expected '>'");
       emptytag = true;
       break;
     }
     else {
-      TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): start element not well-formed: invalid character");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getSTag(): start element not well-formed: invalid character");
     }
   
     // get next char
-    TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+    TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
   
   } while(1);
 }
@@ -425,23 +425,23 @@ void XMLParser::getComment()
   */
   unsigned char c;
   while (1) {
-    TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getComment(): EOF before comment was terminated");
+    TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getComment(): EOF before comment was terminated");
     // if we have a -
     if (c=='-') {
       // then it must be the end of the comment or be a Char
-      TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getComment(): EOF before comment was terminated");
+      TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getComment(): EOF before comment was terminated");
       if (c=='-') {
         // this had better be leading to the end of the comment
-        TEST_FOR_EXCEPTION( assertChar('>')!=0, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( assertChar('>')!=0, std::runtime_error,
             "XMLParser::getComment(): comment not well-formed: expected '>'");
         break;
       }
       else if (!isChar(c)) {
-        TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getComment(): comment not well-formed: invalid character");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getComment(): comment not well-formed: invalid character");
       }
     }
     else if (!isChar(c)) {
-      TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getComment(): comment not well-formed: invalid character");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getComment(): comment not well-formed: invalid character");
     }
   } 
 }
@@ -452,13 +452,13 @@ void XMLParser::getReference(std::string &refstr) {
   unsigned char c;
   unsigned int num, base;
   refstr = "";
-  TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
+  TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
   if (c == '#') {
     // get a CharRef
     // CharRef   ::= '&#' [0-9]+ ';'
     //               | '&#x' [0-9]+ ';'
     // get first number
-    TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
+    TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
     if (c == 'x') {
       base = 16;
       num = 0;
@@ -468,18 +468,18 @@ void XMLParser::getReference(std::string &refstr) {
       num = c - '0';
     }
     else {
-      TEST_FOR_EXCEPTION(1, std::runtime_error, "XMLParser::getReference(): invalid character in character reference: expected 'x' or [0-9]");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "XMLParser::getReference(): invalid character in character reference: expected 'x' or [0-9]");
     }
 
     do {
-      TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
-      TEST_FOR_EXCEPTION( c != ';' && !('0' <= c && c <= '9') , std::runtime_error , "XMLParser::getReference(): invalid character in character reference: expected [0-9] or ';'");
+      TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
+      TEUCHOS_TEST_FOR_EXCEPTION( c != ';' && !('0' <= c && c <= '9') , std::runtime_error , "XMLParser::getReference(): invalid character in character reference: expected [0-9] or ';'");
       if (c == ';') {
         break;
       }
       num = num*base + (c-'0');
     } while (1);
-    TEST_FOR_EXCEPTION(num > 0xFF, std::runtime_error , "XMLParser::getReference(): character reference value out of range");
+    TEUCHOS_TEST_FOR_EXCEPTION(num > 0xFF, std::runtime_error , "XMLParser::getReference(): character reference value out of range");
     refstr.push_back( (unsigned char)num );
   }
   else if (isLetter(c) || c=='_' || c==':') {
@@ -488,7 +488,7 @@ void XMLParser::getReference(std::string &refstr) {
     std::string entname = "";
     entname.push_back(c);
     do {
-      TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
+      TEUCHOS_TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");
       if (c==';') {
         break;
       }
@@ -498,14 +498,14 @@ void XMLParser::getReference(std::string &refstr) {
         entname.push_back(c);
       }
       else {
-        TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getReference(): entity reference not well-formed: invalid character");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getReference(): entity reference not well-formed: invalid character");
       }
     } while (1);
-    TEST_FOR_EXCEPTION( _entities.find(entname) == _entities.end(), std::runtime_error , "XMLParser::getReference(): entity reference not well-formed: undefined entity");
+    TEUCHOS_TEST_FOR_EXCEPTION( _entities.find(entname) == _entities.end(), std::runtime_error , "XMLParser::getReference(): entity reference not well-formed: undefined entity");
     refstr = _entities[entname];  
   }
   else {
-    TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getReference(): reference not well-formed: expected name or '#'");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error , "XMLParser::getReference(): reference not well-formed: expected name or '#'");
   }
 }
 

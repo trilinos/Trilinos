@@ -13,8 +13,7 @@
 
 fei::LogManager::LogManager()
  : output_level_(NONE),
-   output_path_("./"),
-   loggers_()
+   output_path_("./")
 {
 }
 
@@ -49,10 +48,6 @@ void fei::LogManager::setOutputLevel(fei::OutputLevel olevel)
     fei::LogFile::getLogFile().openOutputStream(output_path_.c_str(),
                                                   numProcs_, localProc_);
   }
-
-//  for(unsigned i=0; i<loggers_.size(); ++i) {
-//    loggers_[i]->setOutputLevel(output_level_);
-//  }
 }
 
 void fei::LogManager::setOutputLevel(const char* olevel)
@@ -74,25 +69,5 @@ void fei::LogManager::setNumProcs(int nprocs, int localproc)
 {
   numProcs_ = nprocs;
   localProc_ = localproc;
-}
-
-void fei::LogManager::registerLogger(fei::Logger* logger)
-{
-  loggers_.push_back(logger);
-}
-
-void fei::LogManager::removeLogger(fei::Logger* logger)
-{
-   std::vector<fei::Logger*>::iterator
-    l_iter = loggers_.begin(),
-    l_end = loggers_.end();
-
-  for(; l_iter != l_end; ++l_iter) {
-    fei::Logger* l_ptr = *l_iter;
-    if (l_ptr == logger) {
-      loggers_.erase(l_iter);
-      break;
-    }
-  }
 }
 

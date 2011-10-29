@@ -187,7 +187,7 @@ int main( int argc, char* argv[] )
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       num_mv_cols < 4, std::logic_error
       ,"Error, num-mv-cols must be >= 4!"
       );

@@ -57,21 +57,21 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
 
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (leftFields.rank()  != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.rank()  != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of the left input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (rightFields.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightFields.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of right input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of output argument must equal 3!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): First dimension of output container and first dimension of left input container must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldScalar): Second dimension of output container and first dimension of right input container must agree!");
 #endif
 
@@ -163,7 +163,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractFieldFieldScalar
@@ -177,23 +177,23 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
                                           const bool                  sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (leftFields.rank()  != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.rank()  != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of the left input argument must equal 4!");
-  TEST_FOR_EXCEPTION( (rightFields.rank() != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightFields.rank() != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of right input argument must equal 4!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of output argument must equal 3!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(3) != rightFields.dimension(3) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(3) != rightFields.dimension(3) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Third dimensions (numbers of vector components) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): First dimension of output container and first dimension of left input container must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Second dimension of output container and first dimension of right input container must agree!");
 #endif
 
@@ -291,7 +291,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldVector): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractFieldFieldVector
@@ -305,25 +305,25 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
                                           const bool                  sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (leftFields.rank()  != 5 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.rank()  != 5 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of the left input argument must equal 5!");
-  TEST_FOR_EXCEPTION( (rightFields.rank() != 5 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightFields.rank() != 5 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of right input argument must equal 5!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of output argument must equal 3!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(2) != rightFields.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(3) != rightFields.dimension(3) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(3) != rightFields.dimension(3) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Third dimensions (first tensor dimensions) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (leftFields.dimension(4) != rightFields.dimension(4) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftFields.dimension(4) != rightFields.dimension(4) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Fourth dimensions (second tensor dimensions) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != rightFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != leftFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): First dimension of output container and first dimension of left input container must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Second dimension of output container and first dimension of right input container must agree!");
 #endif
 
@@ -426,7 +426,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldTensor): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractFieldFieldTensor
@@ -441,19 +441,19 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
 
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputFields.rank()  != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank()  != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of the fields input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (inputData.rank() != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputData.rank() != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of the data input argument must equal 2!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of output argument must equal 2!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-  TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Second dimension of fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): First dimensions (number of fields) of the fields input and output containers must agree!");
 #endif
 
@@ -570,7 +570,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataFieldScalar
@@ -584,21 +584,21 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                                          const bool             sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputFields.rank()  != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank()  != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of the fields input argument must equal 4!");
-  TEST_FOR_EXCEPTION( (inputData.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputData.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of the data input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of output argument must equal 2!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-  TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(3) != inputData.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(3) != inputData.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Third dimension of the fields input container and second dimension of data input container (vector index) must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): First dimensions of output container and fields input container (number of fields) must agree!");
 #endif
 
@@ -724,7 +724,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldVector): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataFieldVector
@@ -738,23 +738,23 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                                          const bool             sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputFields.rank()  != 5 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank()  != 5 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of the fields input argument must equal 5!");
-  TEST_FOR_EXCEPTION( (inputData.rank() != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputData.rank() != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of the data input argument must equal 4!");
-  TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of output argument must equal 2!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-  TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(3) != inputData.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(3) != inputData.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Third dimension of the fields input container and second dimension of data input container (first tensor dimension) must agree!");
-  TEST_FOR_EXCEPTION( (inputFields.dimension(4) != inputData.dimension(3) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(4) != inputData.dimension(3) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Fourth dimension of the fields input container and third dimension of data input container (second tensor dimension) must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
-  TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): First dimensions (number of fields) of output container and fields input container must agree!");
 #endif
 
@@ -889,7 +889,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldTensor): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataFieldTensor
@@ -903,17 +903,17 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
                                         const bool                sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of the left input argument must equal 2!");
-  TEST_FOR_EXCEPTION( (inputDataRight.rank() != 2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != 2 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of right input argument must equal 2!");
-  TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of output argument must equal 1!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): First dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataScalar): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
 #endif
 
@@ -962,7 +962,7 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataScalar): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataDataScalar
@@ -976,19 +976,19 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
                                         const bool                sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Rank of the left input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (inputDataRight.rank() != 3 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != 3 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Rank of right input argument must equal 3!");
-  TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Rank of output argument must equal 1!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): First dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(2) != inputDataRight.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(2) != inputDataRight.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Second dimensions (numbers of vector components) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
 #endif
 
@@ -1043,7 +1043,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataVector): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataDataVector
@@ -1057,21 +1057,21 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
                                         const bool                sumInto) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.rank()  != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of the left input argument must equal 4");
-  TEST_FOR_EXCEPTION( (inputDataRight.rank() != 4 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != 4 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of right input argument must equal 4!");
-  TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 1 ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of output argument must equal 1!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(1) != inputDataRight.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): First dimensions (numbers of integration points) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(2) != inputDataRight.dimension(2) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(2) != inputDataRight.dimension(2) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Second dimensions (first tensor dimensions) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (inputDataLeft.dimension(3) != inputDataRight.dimension(3) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(3) != inputDataRight.dimension(3) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Third dimensions (second tensor dimensions) of the left and right input containers must agree!");
-  TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataTensor): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
 #endif
 
@@ -1131,7 +1131,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
     break;
 
     default:
-      TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataTensor): Computational engine not defined!");
   } // switch(compEngine)
 } // end contractDataDataTensor

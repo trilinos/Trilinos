@@ -364,7 +364,7 @@ void PreconditionerInverseFactory::setupParameterListFromRequestHandler()
    }
 
    Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
-   TEST_FOR_EXCEPTION(rh==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(rh==Teuchos::null,std::runtime_error,
                       "PreconditionerInverseFactory::setupParameterListFromRequestHandler: no request handler set");
 
    // add extra parameters to list
@@ -373,7 +373,7 @@ void PreconditionerInverseFactory::setupParameterListFromRequestHandler()
    Teuchos::RCP<Teuchos::ParameterList> requestParams =
          rh->request<Teuchos::RCP<Teuchos::ParameterList> >(RequestMesg(extraParams_));
 
-   TEST_FOR_EXCEPTION(requestParams==Teuchos::null,std::runtime_error,"User specified request not satisfied!");
+   TEUCHOS_TEST_FOR_EXCEPTION(requestParams==Teuchos::null,std::runtime_error,"User specified request not satisfied!");
    for(itr=requestParams->begin();itr!=requestParams->end();++itr)
       settingsList.setEntry(itr->first,itr->second);
 

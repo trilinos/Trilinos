@@ -8,17 +8,18 @@
 #include "smalloc.h"
 
 
-void      make_bndy_list(graph, movelist, buckets, listspace, sets, nsets, bspace,
-			 tops, bndy_list)
-struct vtx_data **graph;	/* data structure for graph */
-struct bilist *movelist;	/* list of vtxs to be moved */
-struct bilist ****buckets;	/* array of lists for bucket sort */
-struct bilist **listspace;	/* list data structure for each vertex */
-int    *sets;			/* processor each vertex is assigned to */
-int       nsets;		/* number of sets divided into */
-int      *bspace;		/* list of active vertices for bucketsort */
-int     **tops;			/* top of each set of buckets */
-int     **bndy_list;		/* list of boundary vertices returned */
+void 
+make_bndy_list (
+    struct vtx_data **graph,	/* data structure for graph */
+    struct bilist *movelist,	/* list of vtxs to be moved */
+    struct bilist ****buckets,	/* array of lists for bucket sort */
+    struct bilist **listspace,	/* list data structure for each vertex */
+    int *sets,			/* processor each vertex is assigned to */
+    int nsets,		/* number of sets divided into */
+    int *bspace,		/* list of active vertices for bucketsort */
+    int **tops,			/* top of each set of buckets */
+    int **bndy_list		/* list of boundary vertices returned */
+)
 {
     struct bilist *bptr;	/* loops through bspace */
     int       vtx;		/* vertex that was moved */

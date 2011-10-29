@@ -307,35 +307,29 @@ void EpetraExt::HDF5::Create(const std::string FileName)
       dynamic_cast<const Epetra_MpiComm*> (&Comm_);
     if (mpiWrapper != NULL) {
       mpiComm = mpiWrapper->Comm();
-    } else {
-      // Is Comm_ an Epetra_MpiSmpComm?
-      const Epetra_MpiSmpComm* mpiSmpWrapper = 
-	dynamic_cast<const Epetra_MpiSmpComm*> (&Comm_);
-      if (mpiSmpWrapper != NULL) {
-	mpiComm = mpiSmpWrapper->Comm();
-      } else {
-	// Is Comm_ an Epetra_SerialComm?
-	const Epetra_SerialComm* serialWrapper = 
-	  dynamic_cast<const Epetra_SerialComm*> (&Comm_);
+    }
+    else {
+      // Is Comm_ an Epetra_SerialComm?
+      const Epetra_SerialComm* serialWrapper = 
+	dynamic_cast<const Epetra_SerialComm*> (&Comm_);
 
-	if (serialWrapper != NULL) {
-	  // Comm_ is an Epetra_SerialComm.  This means that even though
-	  // Trilinos was built with MPI, the user who instantiated the
-	  // HDF5 class wants only the calling process to access HDF5.
-	  // The right communicator to use in that case is
-	  // MPI_COMM_SELF.
-	  mpiComm = MPI_COMM_SELF;
-	} else {
-	  // Comm_ must be some other subclass of Epetra_Comm.
-	  // We don't know how to get an MPI communicator out of it.
-	  const char* const errMsg = "EpetraExt::HDF5::Create: This HDF5 object"
-	    " was created with an Epetra_Comm instance which is not an "
-	    "Epetra_MpiComm, Epetra_MpiSmpComm, or Epetra_SerialComm.  As a "
-	    "result, we don't know how to get an MPI communicator from it.  Our "
-	    "HDF5 class only understands Epetra_Comm objects which are instances"
-	    " of one of these three subclasses.";
-	  throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
-	}
+      if (serialWrapper != NULL) {
+	// Comm_ is an Epetra_SerialComm.  This means that even though
+	// Trilinos was built with MPI, the user who instantiated the
+	// HDF5 class wants only the calling process to access HDF5.
+	// The right communicator to use in that case is
+	// MPI_COMM_SELF.
+	mpiComm = MPI_COMM_SELF;
+      } else {
+	// Comm_ must be some other subclass of Epetra_Comm.
+	// We don't know how to get an MPI communicator out of it.
+	const char* const errMsg = "EpetraExt::HDF5::Create: This HDF5 object"
+	  " was created with an Epetra_Comm instance which is not an "
+	  "Epetra_MpiComm, Epetra_MpiSmpComm, or Epetra_SerialComm.  As a "
+	  "result, we don't know how to get an MPI communicator from it.  Our "
+	  "HDF5 class only understands Epetra_Comm objects which are instances"
+	  " of one of these three subclasses.";
+	throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
       }
     }
 

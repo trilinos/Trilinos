@@ -565,7 +565,7 @@ namespace {
     // * that the matrix uses this col map
     // * that it performs filtering during insertions
     // * that we can perform local or global insertions
-    const size_t numLocal = 10; TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
+    const size_t numLocal = 10; TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
     // these maps are equalivalent, but we should keep two distinct maps just to verify the general use case.
     RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);

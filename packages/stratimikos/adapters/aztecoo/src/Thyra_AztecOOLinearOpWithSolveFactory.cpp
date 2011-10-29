@@ -118,7 +118,7 @@ void AztecOOLinearOpWithSolveFactory::setPreconditionerFactory(
   const std::string &precFactoryName
   )
 {
-  TEST_FOR_EXCEPT(!precFactory.get());
+  TEUCHOS_TEST_FOR_EXCEPT(!precFactory.get());
   Teuchos::RCP<const Teuchos::ParameterList>
     precFactoryValidPL = precFactory->getValidParameters();
   const std::string _precFactoryName =
@@ -208,7 +208,7 @@ bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(
       return useAztecPrec_;
       break;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Should never be called!
 }
@@ -221,7 +221,7 @@ void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(prec.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(prec.get()==NULL);
   this->initializeOp_impl(fwdOpSrc,prec,Teuchos::null,false,Op);
 }
 
@@ -233,8 +233,8 @@ void AztecOOLinearOpWithSolveFactory::initializeApproxPreconditionedOp(
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(approxFwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(approxFwdOpSrc->getOp().get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(approxFwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(approxFwdOpSrc->getOp().get()==NULL);
   this->initializeOp_impl(fwdOpSrc,Teuchos::null,approxFwdOpSrc,false,Op);
 }
 
@@ -248,7 +248,7 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
 #endif
   AztecOOLinearOpWithSolve
     *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
@@ -279,7 +279,7 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
   //
@@ -455,9 +455,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(Op==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(Op==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
 #endif
 
   // 
@@ -508,7 +508,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     outArg(epetra_epetraFwdOpApplyAs), outArg(epetra_epetraFwdOpAdjointSupport),
     outArg(epetra_epetraFwdOpScalar)
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     epetra_epetraFwdOp.get()==NULL, std::logic_error
     ,"Error, The input fwdOp object must be fully initialized "
     "before calling this function!"
@@ -551,7 +551,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     RCP<const LinearOpBase<double> > unspecified = precUsed->getUnspecifiedPrecOp();
     RCP<const LinearOpBase<double> > left = precUsed->getLeftPrecOp();
     RCP<const LinearOpBase<double> > right = precUsed->getRightPrecOp();
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( left.get() || right.get() || unspecified.get() ), std::logic_error
       ,"Error, at least one preconditoner linear operator objects must be set!"
       );
@@ -560,7 +560,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     }
     else {
       // Set a left, right or split preconditioner
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         left.get(),std::logic_error
         ,"Error, we can not currently handle a left"
         " preconditioner with the AztecOO/Thyra adapters!"
@@ -592,7 +592,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     epetraPrecOp->getEpetraOpView(
       outArg(epetra_epetraPrecOp), outArg(epetra_epetraPrecOpTransp),
       outArg(epetra_epetraPrecOpApplyAs), outArg(epetra_epetraPrecOpAdjointSupport));
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
       ,"Error, The input prec object and its embedded precondtioner"
       " operator must be fully initialized before calling this function!"
@@ -625,7 +625,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       outArg(epetra_epetraPrecOp), outArg(epetra_epetraPrecOpTransp),
       outArg(epetra_epetraPrecOpApplyAs), outArg(epetra_epetraPrecOpAdjointSupport)
       );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
       ,"Error, The input approxFwdOp object must be fully initialized"
       " before calling this function!"
@@ -888,7 +888,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       // preconditioners
       //
       if( startingOver || !reusePrec ) {
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           rowmatrix_epetraFwdOp.get()==NULL, std::logic_error,
           "AztecOOLinearOpWithSolveFactory::initializeOp_impl(...): "
           "Error, There is no preconditioner given by client, but the client "
@@ -896,7 +896,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           <<typeName(*epetra_epetraFwdOp)<<"\' that does not "
           "support the Epetra_RowMatrix interface!"
           );
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           epetra_epetraFwdOpTransp!=NOTRANS, std::logic_error,
           "AztecOOLinearOpWithSolveFactory::initializeOp_impl(...):"
           " Error, There is no preconditioner given by client and the client "
@@ -920,14 +920,14 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       // aztec preconditioners
       //
       if( startingOver || !reusePrec ) {
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           rowmatrix_epetraPrecOp.get()==NULL, std::logic_error
           ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): The client "
           "passed in an Epetra_Operator for the preconditioner matrix of type \'"
           <<typeName(*epetra_epetraPrecOp)<<"\' that does not "
           "support the Epetra_RowMatrix interface!"
           );
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           overall_epetra_epetraPrecOpTransp!=NOTRANS, std::logic_error
           ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): Error, The client "
           "passed in an Epetra_RowMatrix for the preconditoner matrix but the overall "
@@ -1019,7 +1019,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   
   //
@@ -1028,7 +1028,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   if(setAztecPreconditioner) {
     if( startingOver || !reusePrec ) {
       double condNumEst = -1.0;
-      TEST_FOR_EXCEPT(0!=aztecFwdSolver->ConstructPreconditioner(condNumEst));
+      TEUCHOS_TEST_FOR_EXCEPT(0!=aztecFwdSolver->ConstructPreconditioner(condNumEst));
       //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_calc);
       set_extra_data<bool>(
         true, AOOLOWSF_constructedAztecPreconditoner_str,

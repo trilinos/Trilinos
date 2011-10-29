@@ -35,7 +35,7 @@
 #ifdef HAVE_SACADO_TEUCHOS
 
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
@@ -92,7 +92,7 @@ namespace Sacado {
 	TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
 	  a, "Error, the input value to magnitude(...) a = " << a << 
 	  " can not be NaN!" );
-	TEST_FOR_EXCEPTION(is_fad_real(a) == false, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(is_fad_real(a) == false, std::runtime_error,
 			   "Complex magnitude is not a differentiable "
 			   "function of complex inputs.");
 #endif
@@ -119,7 +119,7 @@ namespace Sacado {
       // Conjugate is only defined for real derivative components
       static FadType conjugate(const FadType& x) {
 #ifdef TEUCHOS_DEBUG
-	TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
 			   "Complex conjugate is not a differentiable "
 			   "function of complex inputs.");
 #endif
@@ -131,7 +131,7 @@ namespace Sacado {
       // Real part is only defined for real derivative components
       static FadType real(const FadType& x) { 
 #ifdef TEUCHOS_DEBUG
-	TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
 			   "Real component is not a differentiable "
 			   "function of complex inputs.");
 #endif
@@ -143,7 +143,7 @@ namespace Sacado {
       // Imaginary part is only defined for real derivative components
       static FadType imag(const FadType& x) { 
 #ifdef TEUCHOS_DEBUG
-	TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(is_fad_real(x) == false, std::runtime_error,
 			   "Imaginary component is not a differentiable "
 			   "function of complex inputs.");
 #endif

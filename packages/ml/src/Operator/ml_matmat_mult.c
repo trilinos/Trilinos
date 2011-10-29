@@ -879,6 +879,8 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    ML_Operator *current, *previous_matrix, *next;
    struct ML_CSR_MSRdata *temp;
    int    max_nz_row_new = 0, total_nz = 0, index_length = 0;
+   int    min_nz_row_new = 1e6;
+   int    avg_nz_row_new = 0;
    double A_avg_nz_per_row, B_avg_nz_per_row, estimated_nz_per_row;
    int    A_i_allocated;
    int    flag;
@@ -1413,9 +1415,9 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
       acc_col_ptr = accum_col;
       for (jj = 0; jj < Ncols; jj++ ) {
-    accum_index[*acc_col_ptr] = -1;
-    *acc_col_ptr = col_inds[*acc_col_ptr];
-    acc_col_ptr++;
+         accum_index[*acc_col_ptr] = -1;
+         *acc_col_ptr = col_inds[*acc_col_ptr];
+         acc_col_ptr++;
       }
 
       /* empty row. Let's put a zero in a nearby column. */
@@ -1451,6 +1453,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
          current->max_nz_per_row = max_nz_row_new; 
+         current->min_nz_per_row = min_nz_row_new; 
          current->N_nonzeros     = total_nz; 
          current->sub_matrix   = previous_matrix;
 
@@ -1511,9 +1514,10 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       C_ptr[sub_i+1] = next_nz;
       sub_i++;
       if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
-   }
+      if (Ncols > 0 && Ncols < min_nz_row_new) min_nz_row_new = Ncols;
+   } /*for (i = start; i < end ; i++) */
    start = end;
-   }
+   } /*while (start < N) */
    if (Bvals != NULL) ML_free(Bvals);
    if (Bcols != NULL) ML_free(Bcols);
    if (Bptr != NULL) ML_free(Bptr);
@@ -1538,6 +1542,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
+   (*Cmatrix)->min_nz_per_row = min_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;
    (*Cmatrix)->sub_matrix     = previous_matrix;
    if (A_i_allocated-1 > Amatrix->max_nz_per_row) 

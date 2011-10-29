@@ -174,11 +174,11 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::initialize(
   )
 {
 
-  TEST_FOR_EXCEPT(is_null(daeModel));
-  TEST_FOR_EXCEPT(is_null(initCond.get_x()));
-  TEST_FOR_EXCEPT(is_null(initCond.get_x_dot()));
-  TEST_FOR_EXCEPT(finalTime <= initCond.get_t());
-  TEST_FOR_EXCEPT(numTimeSteps <= 0);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(daeModel));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(initCond.get_x()));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(initCond.get_x_dot()));
+  TEUCHOS_TEST_FOR_EXCEPT(finalTime <= initCond.get_t());
+  TEUCHOS_TEST_FOR_EXCEPT(numTimeSteps <= 0);
   // ToDo: Validate that daeModel is of the right form!
 
   daeModel_ = daeModel;
@@ -255,7 +255,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return MEB::InArgs<Scalar>();
 }
 
@@ -311,7 +311,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
     );
 */
 
-  TEST_FOR_EXCEPTION( delta_t_ <= 0.0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( delta_t_ <= 0.0, std::logic_error,
     "Error, you have not initialized this object correctly!" );
 
   //

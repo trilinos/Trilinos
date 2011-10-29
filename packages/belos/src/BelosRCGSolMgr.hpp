@@ -425,7 +425,7 @@ RCGSolMgr<ScalarType,MV,OP>::RCGSolMgr(
   problem_(problem)
 {
   init();
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if ( !is_null(pl) ) {
@@ -509,7 +509,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   // Check for the maximum number of blocks.
   if (params->isParameter("Num Blocks")) {
     numBlocks_ = params->get("Num Blocks",numBlocks_default_);
-    TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Blocks\" must be strictly positive.");
  
     // Update parameter in our list.
@@ -519,10 +519,10 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   // Check for the maximum number of blocks.
   if (params->isParameter("Num Recycled Blocks")) {
     recycleBlocks_ = params->get("Num Recycled Blocks",recycleBlocks_default_);
-    TEST_FOR_EXCEPTION(recycleBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks_ <= 0, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Recycled Blocks\" must be strictly positive.");
  
-    TEST_FOR_EXCEPTION(recycleBlocks_ >= numBlocks_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks_ >= numBlocks_, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Recycled Blocks\" must be less than \"Num Blocks\".");
  
     // Update parameter in our list.
@@ -716,7 +716,7 @@ void RCGSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
                          "Belos::RCGSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1009,9 +1009,9 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,RCGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,RCGSolMgrLinearProblemFailure,
                      "Belos::RCGSolMgr::solve(): Linear problem is not a valid object.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),RCGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),RCGSolMgrLinearProblemFailure,
                      "Belos::RCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
@@ -1125,7 +1125,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
         LUUTAUtmp.assign(UTAUtmp);
         int info = 0;
         lapack.GESV(recycleBlocks_, 1, LUUTAUtmp.values(), LUUTAUtmp.stride(), &(*ipiv_)[0], Utr.values(), Utr.stride(), &info);
-        TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 
         // Update solution (x = x + U*y)
@@ -1158,7 +1158,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
         char TRANS = 'N';
         int info;
         lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAUtmp.values(), LUUTAUtmp.stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
-        TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                            "Belos::RCGSolMgr::solve(): LAPACK GETRS failed to compute a solution.");
         // p  = z - U*mu;
         index.resize( 1 );
@@ -1675,7 +1675,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 			       "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
 	  }
 	}
@@ -1809,12 +1809,12 @@ void RCGSolMgr<ScalarType,MV,OP>::getHarmonicVecs(const Teuchos::SerialDenseMatr
 
   // query for optimal workspace size
   lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info); 
-  TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to query optimal work size.");
   lwork = (int)work[0];
   work.resize(lwork);
   lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info); 
-  TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to compute eigensolutions.");
 
 

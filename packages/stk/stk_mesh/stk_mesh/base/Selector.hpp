@@ -16,6 +16,32 @@
 namespace stk {
 namespace mesh {
 
+enum Op{
+        INVALID = 0,
+        COMPOUND = 1,
+        PART_ID = 2
+       };
+
+struct OpType {
+  unsigned       m_part_id ; ///< Id of part under consideration
+  unsigned short m_unary ;   ///< Unary NOT operator: m_unary ^ expression
+  unsigned short m_count ;   ///< Compound statement length
+  Op             m_op      ; ///< Does the OpType reference a part
+
+  OpType() : m_part_id(0), m_unary(0), m_count(0), m_op(INVALID) {}
+  OpType( unsigned part_id , unsigned unary , unsigned count, Op op=INVALID )
+    : m_part_id( part_id ), m_unary( unary ), m_count( count ), m_op(op)  {}
+  OpType( const OpType & opType )
+    : m_part_id(opType.m_part_id), m_unary(opType.m_unary), m_count(opType.m_count), m_op(opType.m_op) {}
+  OpType & operator = ( const OpType & opType )
+  { this->m_part_id = opType.m_part_id;
+    this->m_unary = opType.m_unary;
+    this->m_count = opType.m_count;
+    this->m_op    = opType.m_op;
+    return *this;
+  }
+};
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -86,20 +112,10 @@ public:
   /** \brief  Pretty print the set-expression with part names */
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
+  const std::vector<OpType>& get_ops() const { return m_op; }
+  void set_ops(const std::vector<OpType>& ops) { m_op = ops; }
+
 private:
-
-  /** \brief . */
-  struct OpType {
-    unsigned       m_part_id ; ///< Id of part under consideration
-    unsigned short m_unary ;   ///< Unary NOT operator: m_unary ^ expression
-    unsigned short m_count ;   ///< Compound statement length
-
-    OpType() : m_part_id(0), m_unary(0), m_count(0) {}
-    OpType( unsigned part_id , unsigned unary , unsigned count )
-      : m_part_id( part_id ), m_unary( unary ), m_count( count ) {}
-    OpType( const OpType & opType );
-    OpType & operator = ( const OpType & opType );
-  };
 
   /** \brief . */
   friend class std::vector<OpType> ;

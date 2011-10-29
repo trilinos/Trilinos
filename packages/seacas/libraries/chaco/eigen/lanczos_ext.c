@@ -15,18 +15,20 @@
    case of arbitrary g (but this capability has not been tested). Returns 0 if it
    thinks everything's OK, nonzero otherwise. */
 
-int       lanczos_ext(A, n, d, y, eigtol, vwsqrt, maxdeg, version, gvec, sigma)
-struct vtx_data **A;		/* sparse matrix in row linked list format */
-int       n;			/* problem size */
-int       d;			/* problem dimension = number of eigvecs to find */
-double  **y;			/* columns of y are eigenvectors of A  */
-double    eigtol;		/* tolerance on eigenvectors */
-double   *vwsqrt;		/* square roots of vertex weights */
-double    maxdeg;		/* maximum degree of graph */
-int       version;		/* flags which version of sel. orth. to use */
-double   *gvec;			/* the rhs n-vector in the extended eigen problem */
-double    sigma;		/* specifies the norm constraint on extended
+int 
+lanczos_ext (
+    struct vtx_data **A,		/* sparse matrix in row linked list format */
+    int n,			/* problem size */
+    int d,			/* problem dimension = number of eigvecs to find */
+    double **y,			/* columns of y are eigenvectors of A  */
+    double eigtol,		/* tolerance on eigenvectors */
+    double *vwsqrt,		/* square roots of vertex weights */
+    double maxdeg,		/* maximum degree of graph */
+    int version,		/* flags which version of sel. orth. to use */
+    double *gvec,			/* the rhs n-vector in the extended eigen problem */
+    double sigma		/* specifies the norm constraint on extended
 				   eigenvector */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern int LANCZOS_SO_INTERVAL;	/* interval between orthogonalizations */

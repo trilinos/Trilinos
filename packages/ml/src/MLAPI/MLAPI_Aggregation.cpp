@@ -20,8 +20,6 @@
 #include "MLAPI_Workspace.h"
 #include "MLAPI_Aggregation.h"
 
-using namespace std;
-
 namespace MLAPI {
 
 #include "ml_aggregate.h"
@@ -228,8 +226,8 @@ int GetGlobalAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
 {
   int naggregates = GetAggregates(A,List,thisns,aggrinfo);
   const Epetra_Comm& comm = A.Comm();
-  vector<int> local(comm.NumProc());
-  vector<int> global(comm.NumProc());
+  std::vector<int> local(comm.NumProc());
+  std::vector<int> global(comm.NumProc());
   for (int i=0; i<comm.NumProc(); ++i) local[i] = 0;
   local[comm.MyPID()] = naggregates;
   comm.SumAll(&local[0],&global[0],comm.NumProc());
@@ -272,7 +270,7 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
     }
   offset *= nsdim;
   if (offset<0) ML_THROW("could not find any aggregate on proc",-2);
-  vector<int> coarsegids(naggregates*nsdim);
+  std::vector<int> coarsegids(naggregates*nsdim);
   for (int i=0; i<naggregates; ++i)
     for (int j=0; j<nsdim; ++j)
     {
@@ -282,17 +280,17 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
   Epetra_Map pdomainmap(-1,naggregates*nsdim,&coarsegids[0],0,A.Comm());
   
   // loop aggregates and build ids for dofs
-  map<int,vector<int> > aggdofs;
-  map<int,vector<int> >::iterator fool;
+  std::map<int,std::vector<int> > aggdofs;
+  std::map<int,std::vector<int> >::iterator fool;
   for (int i=0; i<naggregates; ++i)
   {
-    vector<int> gids(0);
-    aggdofs.insert(pair<int,vector<int> >(firstagg+i,gids));
+    std::vector<int> gids(0);
+    aggdofs.insert(std::pair<int,std::vector<int> >(firstagg+i,gids));
   }
   for (int i=0; i<mylength; ++i)
   {
     if (aggs[i]<0) continue;
-    vector<int>& gids = aggdofs[aggs[i]];
+    std::vector<int>& gids = aggdofs[aggs[i]];
     gids.push_back(aggs.Map().GID(i));
   }
   
@@ -304,7 +302,7 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
       for (fool=aggdofs.begin(); fool!=aggdofs.end(); ++fool)
       {
         cout << "Proc " << proc << " Aggregate " << fool->first << " Dofs ";
-        vector<int>& gids = fool->second;
+        std::vector<int>& gids = fool->second;
         for (int i=0; i<(int)gids.size(); ++i) cout << gids[i] << " ";
         cout << endl;
       }
@@ -337,10 +335,10 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
     int n = Bagg.N();
     int lwork = n*10;
     int info = 0;
-    int k = min(m,n);
+    int k = std::min(m,n);
     if (k!=n) ML_THROW("Aggregate too small, fatal!",-1);
-    vector<double> work(lwork);
-    vector<double> tau(k);
+    std::vector<double> work(lwork);
+    std::vector<double> tau(k);
     Epetra_LAPACK lapack;
     lapack.GEQRF(m,n,Bagg.A(),m,&tau[0],&work[0],lwork,&info);
     if (info) ML_THROW("Lapack dgeqrf returned nonzero",info);

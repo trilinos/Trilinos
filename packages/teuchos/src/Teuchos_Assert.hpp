@@ -52,7 +52,7 @@
  *
  * \ingroup TestForException_grp
  */
-#define TEUCHOS_ASSERT(assertion_test) TEST_FOR_EXCEPT(!(assertion_test))
+#define TEUCHOS_ASSERT(assertion_test) TEUCHOS_TEST_FOR_EXCEPT(!(assertion_test))
 
 
 /** \brief This macro asserts that an integral number fallis in the range
@@ -71,7 +71,7 @@
  */
 #define TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( index, lower_inclusive, upper_exclusive ) \
   { \
-    TEST_FOR_EXCEPTION( \
+    TEUCHOS_TEST_FOR_EXCEPTION( \
       !( (lower_inclusive) <= (index) && (index) < (upper_exclusive) ), \
       std::out_of_range, \
       "Error, the index " #index " = " << (index) << " does not fall in the range" \
@@ -94,7 +94,7 @@
  */
 #define TEUCHOS_ASSERT_EQUALITY( val1, val2 ) \
   { \
-    TEST_FOR_EXCEPTION( \
+    TEUCHOS_TEST_FOR_EXCEPTION( \
       (val1) != (val2), std::out_of_range, \
       "Error, (" #val1 " = " << (val1) << ") != (" #val2 " = " << (val2) << ")!" ); \
   }
@@ -115,7 +115,7 @@
  */
 #define TEUCHOS_ASSERT_INEQUALITY( val1, comp, val2 ) \
   { \
-    TEST_FOR_EXCEPTION( \
+    TEUCHOS_TEST_FOR_EXCEPTION( \
       !( (val1) comp (val2) ), std::out_of_range, \
       "Error, (" #val1 " = " << (val1) << ") " \
       #comp " (" #val2 " = " << (val2) << ")! FAILED!" ); \

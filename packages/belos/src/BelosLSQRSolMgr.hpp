@@ -60,6 +60,7 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
+#include "Teuchos_as.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -387,15 +388,21 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
   // Set all the valid parameters and their default values.
   if (is_null (validParams_)) {
+    // We use Teuchos::as just in case MagnitudeType doesn't have a
+    // constructor that takes an int.  Otherwise, we could just write
+    // "MagnitudeType(10)".
+    const MagnitudeType ten = Teuchos::as<MagnitudeType> (10);
+    const MagnitudeType sqrtEps = STM::squareroot (STM::eps());
+
     const MagnitudeType lambda = STM::zero();
     RCP<std::ostream> outputStream = rcpFromRef (std::cout);
-    const MagnitudeType relRhsErr = MagnitudeType(10) * STM::squareroot (STM::eps());
-    const MagnitudeType relMatErr = MagnitudeType(10) * STM::squareroot (STM::eps());
+    const MagnitudeType relRhsErr = ten * sqrtEps;
+    const MagnitudeType relMatErr = ten * sqrtEps;
     const MagnitudeType condMax = STM::one() / STM::eps();
     const int maxIters = 1000;
     const int termIterMax = 1;
     const std::string orthoType ("DGKS");
-    const MagnitudeType orthoKappa (-1.0);
+    const MagnitudeType orthoKappa = Teuchos::as<MagnitudeType> (-1.0);
     const int verbosity = Belos::Errors;
     const int outputStyle = Belos::General;
     const int outputFreq = -1;
@@ -419,10 +426,21 @@ LSQRSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "consecutive iterations meeting thresholds are necessary for\n"
        "for convergence.");
     pl->set("Orthogonalization", orthoType,
-      "uses orthogonalization of either DGKS, ICGS or IMGS.");
+      "uses orthogonalization of either DGKS, ICGS, IMGS, or TSQR.");
+    {
+      OrthoManagerFactory<ScalarType, MV, OP> factory;
+      pl->set("Orthogonalization", orthoType,
+	      "refers to the orthogonalization method to use.  Valid "
+	      "options: " + factory.validNamesString());
+      RCP<const ParameterList> orthoParams = 
+	factory.getDefaultParameters (orthoType);
+      pl->set ("Orthogonalization Parameters", *orthoParams, 
+	       "Parameters specific to the type of orthogonalization used.");
+    }
     pl->set("Orthogonalization Constant", orthoKappa,
       "is the threshold used by DGKS orthogonalization to determine\n"
-      "whether or not to repeat classical Gram-Schmidt.");
+      "whether or not to repeat classical Gram-Schmidt.  This parameter\n"
+      "is ignored if \"Orthogonalization\" is not \"DGKS\".");
     pl->set("Verbosity", verbosity,
       "type(s) of solver information are outputted to the output\n"
       "stream.");
@@ -463,7 +481,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
-  TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(params.is_null(), std::invalid_argument,
 		     "Belos::LSQRSolMgr::setParameters: "
 		     "the input ParameterList is null.");
   RCP<const ParameterList> defaultParams = getValidParameters ();
@@ -507,7 +525,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       if (oldSolveLabel != newSolveLabel) {
 	// Tell TimeMonitor to forget about the old timer.
 	// TimeMonitor lets you clear timers by name.
-	TimeMonitor::clearTimer (oldSolveLabel);
+	TimeMonitor::clearCounter (oldSolveLabel);
 	timerSolve_ = TimeMonitor::getNewCounter (newSolveLabel);
       }
     }
@@ -566,37 +584,117 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     printer_->setOStream (outputStream_);
   }
 
-
   // Check if the orthogonalization changed, or if we need to
   // initialize it.
+  typedef OrthoManagerFactory<ScalarType, MV, OP> factory_type;
+  factory_type factory;
+  bool mustMakeOrtho = false;
   {
-    std::string tempOrthoType = params->get<std::string> ("Orthogonalization");
-    if (tempOrthoType != orthoType_ || ortho_.is_null()) {
-      orthoType_ = tempOrthoType;
+    std::string tempOrthoType;
+    try {
+      tempOrthoType = params_->get<std::string> ("Orthogonalization");
+    } catch (InvalidParameterName&) {
+      tempOrthoType = orthoType_;
+    }
+    if (ortho_.is_null() || tempOrthoType != orthoType_) {
+      mustMakeOrtho = true;
 
-      typedef OrthoManagerFactory<ScalarType, MV, OP> factory_type;
-      factory_type factory;
-      // LSQR currently only orthogonalizes with respect to the
-      // Euclidean inner product, so we set the inner product matrix M
-      // to null.
-      RCP<const OP> M = null;
-      RCP<const ParameterList> orthoParams = factory.getDefaultParameters (orthoType_);
-      ortho_ = factory.makeMatOrthoManager (orthoType_, M, printer_, label_, orthoParams);
+      // Ensure that the specified orthogonalization type is valid.
+      if (! factory.isValidName (tempOrthoType)) {
+	std::ostringstream os;
+	os << "Belos::LSQRSolMgr: Invalid orthogonalization name \"" 
+	   << tempOrthoType << "\".  The following are valid options "
+	   << "for the \"Orthogonalization\" name parameter: ";
+	factory.printValidNames (os);
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+      }
+      orthoType_ = tempOrthoType; // The name is valid, so accept it.
+      params_->set ("Orthogonalization", orthoType_);
     }
   }
+
+  // Get any parameters for the orthogonalization ("Orthogonalization
+  // Parameters").  If not supplied, the orthogonalization manager
+  // factory will supply default values.
+  //
+  // NOTE (mfh 21 Oct 2011) For the sake of backwards compatibility,
+  // if params has an "Orthogonalization Constant" parameter and the
+  // DGKS orthogonalization manager is to be used, the value of this
+  // parameter will override DGKS's "depTol" parameter.
+  //
+  // Users must supply the orthogonalization manager parameters as a
+  // sublist (supplying it as an RCP<ParameterList> would make the
+  // resulting parameter list not serializable).
+  RCP<ParameterList> orthoParams;
+  { // The nonmember function returns an RCP<ParameterList>, 
+    // which is what we want here.
+    using Teuchos::sublist;
+    // Abbreviation to avoid typos.
+    const std::string paramName ("Orthogonalization Parameters");
+
+    try {
+      orthoParams = sublist (params_, paramName, true);
+    } catch (InvalidParameter&) {
+      // We didn't get the parameter list from params, so get a
+      // default parameter list from the OrthoManagerFactory.
+      // Modify params_ so that it has the default parameter list,
+      // and set orthoParams to ensure it's a sublist of params_
+      // (and not just a copy of one).
+      params_->set (paramName, factory.getDefaultParameters (orthoType_));
+      orthoParams = sublist (params_, paramName, true);
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(orthoParams.is_null(), std::logic_error, 
+			     "Failed to get orthogonalization parameters.  "
+			     "Please report this bug to the Belos developers.");
+
+  // If we need to, instantiate a new MatOrthoManager subclass
+  // instance corresponding to the desired orthogonalization method.
+  // We've already fetched the orthogonalization method name
+  // (orthoType_) and its parameters (orthoParams) above.
+  //
+  // NOTE (mfh 21 Oct 2011) We only instantiate a new MatOrthoManager
+  // subclass if the orthogonalization method name is different than
+  // before.  Thus, for some orthogonalization managers, changes to
+  // their parameters may not get propagated, if the manager type
+  // itself didn't change.  The one exception is the "depTol"
+  // (a.k.a. orthoKappa or "Orthogonalization Constant") parameter of
+  // DGKS; changes to that _do_ get propagated down to the DGKS
+  // instance.
+  //
+  // The most general way to fix this issue would be to supply each
+  // orthogonalization manager class with a setParameterList() method
+  // that takes a parameter list input, and changes the parameters as
+  // appropriate.  A less efficient but correct way would be simply to
+  // reinstantiate the OrthoManager every time, whether or not the
+  // orthogonalization method name or parameters have changed.
+  if (mustMakeOrtho) {
+    // Create orthogonalization manager.  This requires that the
+    // OutputManager (printer_) already be initialized.  LSQR
+    // currently only orthogonalizes with respect to the Euclidean
+    // inner product, so we set the inner product matrix M to null.
+    RCP<const OP> M = null;
+    ortho_ = factory.makeMatOrthoManager (orthoType_, M, printer_, 
+					  label_, orthoParams);
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(! ortho_.is_null(), std::logic_error, 
+			     "The MatOrthoManager is not yet initialized, but "
+			     "should be by this point.  "
+			     "Please report this bug to the Belos developers.");
 
   // Check which orthogonalization constant to use.  We only need this
   // if orthoType_ == "DGKS" (and we already fetched the orthoType_
   // parameter above).
-  if (orthoType_ == "DGKS")
-    {
-      orthoKappa_ = params->get<MagnitudeType> ("Orthogonalization Constant");
+  if (orthoType_ == "DGKS") {
+    if (params->isParameter ("Orthogonalization Constant")) {
+      orthoKappa_ = params_->get<MagnitudeType> ("Orthogonalization Constant");
 
       if (orthoKappa_ > 0 && ! ortho_.is_null()) {
 	typedef DGKSOrthoManager<ScalarType,MV,OP> ortho_impl_type;
 	rcp_dynamic_cast<ortho_impl_type> (ortho_)->setDepTol (orthoKappa_);
       }
     }
+  }
 
   // Check for condition number limit, number of consecutive passed
   // iterations, relative RHS error, and relative matrix error.
@@ -684,12 +782,12 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     setParameters (Teuchos::parameterList (*getValidParameters()));
   }
 
-  TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), LSQRSolMgrLinearProblemFailure,
 		     "The linear problem to solve is null.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(), LSQRSolMgrLinearProblemFailure,
                      "LSQRSolMgr::solve(): The linear problem is not ready, "
 		     "as its setProblem() method has not been called.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs (*(problem_->getRHS ())) != 1, 
 		     LSQRSolMgrBlockSizeFailure, 
 		     "LSQRSolMgr::solve(): The current implementation of LSQR "
 		     "only knows how to solve problems with one right-hand "
@@ -771,11 +869,11 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
     } else if (maxIterTest_->getStatus() == Belos::Passed) {
       isConverged = false;
     } else {
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "LSQRSolMgr::solve(): LSQRIteration::iterate() "
 			 "returned without either the convergence test or "
 			 "the maximum iteration count test passing."
-			 "Please report this bug to the Belos developers");
+			 "Please report this bug to the Belos developers.");
     }
   } catch (const std::exception &e) {
     printer_->stream(Belos::Errors) << "Error! Caught std::exception in LSQRIter::iterate() at iteration " 

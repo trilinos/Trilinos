@@ -77,7 +77,7 @@ std::string Teuchos::toString(const EVerbosityLevel verbLevel)
     case VERB_EXTREME:
       return "VERB_EXTREME";
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
   }
   return ""; // Never get here!
 }

@@ -30,7 +30,7 @@
 #include "Stokhos_MLPreconditionerFactory.hpp"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #ifdef HAVE_STOKHOS_ML
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -63,7 +63,7 @@ compute(const Teuchos::RCP<Epetra_Operator>& op, bool compute_prec) {
   //ml_prec->PrintUnused(0);
   return ml_prec;
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::MLPreconditionerFactory is available " <<
 		     "only with configured with ML support!");
   return Teuchos::null;
@@ -90,7 +90,7 @@ recompute(const Teuchos::RCP<Epetra_Operator>& op,
   // Compute preconditioner
   ml_prec->ComputePreconditioner();
 #else
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::MLPreconditionerFactory is available " <<
 		     "only with configured with ML support!");
 #endif // HAVE_STOKHOS_ML

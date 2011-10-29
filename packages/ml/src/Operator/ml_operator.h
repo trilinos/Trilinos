@@ -128,7 +128,9 @@ struct ML_Operator_Struct {
    ML_GetrowFunc *getrow;
    ML_DVector    *diagonal;      /** diagonal of matrix.     */
    int           N_nonzeros;
-   int           max_nz_per_row;
+   int           max_nz_per_row; /* largest local stencil size */
+   int           min_nz_per_row; /* minimum local stencil size */
+   int           avg_nz_per_row; /* average local stencil size */
    int           blocks; /*only used for VBR matrices to say number of blocks*/
    int           from_an_ml_operator;
    ML_Operator   *sub_matrix;

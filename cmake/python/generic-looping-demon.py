@@ -106,6 +106,12 @@ clp.add_option(
   help="The time today the script will run iterations till." \
   +" This takes the format "+timeFormat+" (e.g. 18:00:00).")
 
+clp.add_option(
+  "--pause-file", dest="pauseFile", type="string", default="",
+  help="The name of a file, that if exists, will prevent command" \
+  +" from being run.")
+
+
 (options, args) = clp.parse_args()
 
 
@@ -161,6 +167,11 @@ def formatDateTime(dateTimeObj):
   return datetime.datetime.strftime(dateTimeObj, dateTimeFormat)
 
 
+def pauseFileExists(pauseFile):
+  if pauseFile and os.path.exists(pauseFile):
+     return True
+  return False
+
 #
 # Executable statements
 #
@@ -180,6 +191,10 @@ elif options.todayRunTill:
   todayDateStr = datetime.datetime.strftime(todayDate, dateFormat)
   finalDateTime = parseDateTimeString(todayDateStr+" "+options.todayRunTill)
 
+if pauseFileExists(options.pauseFile):
+  print "\nThe file "+options.pauseFile+" exists at start so deleteing it!"
+  os.remove(options.pauseFile)
+
 print "\nThe script will run iterations till = " + formatDateTime(finalDateTime) + "\n"
 
 currentTime = datetime.datetime.now()
@@ -190,7 +205,10 @@ while currentTime < finalDateTime:
     + str(iteration) + ":" \
     + " current time = " + formatDateTime(currentTime) \
     + ", final time = " + formatDateTime(finalDateTime)
-  echoRunSysCmnd(options.command, throwExcept=False, timeCmnd=True)
+  if pauseFileExists(options.pauseFile):
+    print "\nThe file "+options.pauseFile+" exists so skipping this iteration!"
+  else:
+    echoRunSysCmnd(options.command, throwExcept=False, timeCmnd=True)
   echoRunSysCmnd("sleep "+options.loopInterval)
   currentTime = datetime.datetime.now()
   iteration += 1

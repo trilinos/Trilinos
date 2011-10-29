@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -747,7 +747,7 @@ compute_times_coeff(ordinal_type i, const ExprT1& a, const ExprT2& b) const
     }
     typename Cijk_type::i_iterator i_it = this->Cijk->find_i(i);
 #ifdef STOKHOS_DEBUG
-    TEST_FOR_EXCEPTION(i_it == this->Cijk->i_end(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(i_it == this->Cijk->i_end(), std::logic_error,
 		     "Stokhos::QuadOrthogPolyExpansion::compute_times_coeff()" 
 		       << ":  Index " << i << " is out of range [0," 
 		       << this->Cijk->num_i() << ")!");
@@ -813,7 +813,7 @@ fast_compute_times_coeff(ordinal_type i, const ExprT1& a, const ExprT2& b) const
 {
   typename Cijk_type::i_iterator i_it = this->Cijk->find_i(i);
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(i_it == this->Cijk->i_end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(i_it == this->Cijk->i_end(), std::logic_error,
 		     "Stokhos::QuadOrthogPolyExpansion::fast_ompute_times_coeff()" 
 		     << ":  Index " << i << " is out of range [0," 
 		     << this->Cijk->num_i() << ")!");

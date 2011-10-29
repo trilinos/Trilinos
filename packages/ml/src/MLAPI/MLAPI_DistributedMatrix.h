@@ -37,12 +37,12 @@ public:
     RowSpace_ = RowSpace;
     ColSpace_ = ColSpace;
 
-    int NumMyRows = RowSpace_.GetNumMyElements();
-    int NumMyCols = ColSpace_.GetNumMyElements();
+    int locNumMyRows = RowSpace_.GetNumMyElements();
+    int locNumMyCols = ColSpace_.GetNumMyElements();
     
     // FIXME: add MyGlobalElements()
-    RangeMap_ = new Epetra_Map(-1, NumMyRows, 0, GetEpetra_Comm());
-    DomainMap_ = new Epetra_Map(-1, NumMyCols, 0, GetEpetra_Comm());
+    RangeMap_ = new Epetra_Map(-1, locNumMyRows, 0, GetEpetra_Comm());
+    DomainMap_ = new Epetra_Map(-1, locNumMyCols, 0, GetEpetra_Comm());
 
     Matrix_ = new Epetra_FECrsMatrix(Copy, *RangeMap_, 0);
   }

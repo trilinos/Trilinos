@@ -67,7 +67,7 @@
 # All include and module paths are relative to this assumed directory
 # structure.
 #
-# This script can be run from anywhere by by default and will find the
+# This script can be run from anywhere by default and will find the
 # right related CMake files to run but it requires that the client set
 # CTEST_DASHBOARD_ROOT (or override this in the env) before running
 # this script.  The varible CTEST_DASHBOARD_ROOT determines where the
@@ -262,7 +262,7 @@ ENDMACRO()
 #
 # OUTPUT: Sets Trilinos_DEFAULT_PACKAGES
 #
-# NOTE: This macro is used to cean up the main TRILINOS_CTEST_DRIVER()
+# NOTE: This macro is used to clean up the main TRILINOS_CTEST_DRIVER()
 # macro.
 #
 

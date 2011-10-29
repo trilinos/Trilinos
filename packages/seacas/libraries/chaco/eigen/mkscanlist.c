@@ -7,8 +7,8 @@
 #include "structs.h"
 #include "smalloc.h"
 
-struct scanlink *mkscanlist(depth)
-int       depth;
+struct scanlink *
+mkscanlist (int depth)
 {
     struct scanlink *prevlnk;
     struct scanlink *newlnk;

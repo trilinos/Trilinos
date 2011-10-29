@@ -196,7 +196,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
   void setBlockSize(int blockSize) {
-    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 		       "Belos::CGIter::setBlockSize(): Cannot use a block size that is not one.");
   }
 
@@ -290,7 +290,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	if (R_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::CGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  R_ = MVT::Clone( *tmp, 1 );
 	  Z_ = MVT::Clone( *tmp, 1 );
@@ -314,7 +314,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::CGIter::initialize(): Cannot initialize state storage!");
     
     // NOTE:  In CGIter R_, the initial residual, is required!!!  
@@ -327,9 +327,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     if (newstate.R != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
@@ -359,7 +359,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
                          "Belos::CGIter::initialize(): CGIterationState does not have initial residual.");
     }
 
@@ -393,7 +393,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution vector only has one column. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
                         "Belos::CGIter::iterate(): current linear system has more than one vector!" );
 
     // Compute first <r,z> a.k.a. rHz
@@ -415,7 +415,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       alpha(0,0) = rHz(0,0) / pAp(0,0);
       
       // Check that alpha is a positive number!
-      TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
 			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
       // Update the solution vector x := x + alpha * P_

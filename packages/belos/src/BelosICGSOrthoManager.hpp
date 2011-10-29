@@ -61,35 +61,36 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 
+#include "Teuchos_as.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
 namespace Belos {
 
-  /// \brief Default parameters for ICGSOrthoManager
+  /// \brief Default parameters for ICGSOrthoManager.
   ///
-  /// \warning This function is not reentrant.
+  /// \warning This function is deprecated.  Please use \c
+  ///   ICGSOrthoManager::getValidParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
   getDefaultIcgsParameters()
   {
+    using Teuchos::as;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-
-    // This part makes this class method non-reentrant.
-    static Teuchos::RCP<Teuchos::ParameterList> params;
-    if (! params.is_null())
-      return params;
 
     // Default parameter values for ICGS orthogonalization.
     // Documentation will be embedded in the parameter list.
     const int defaultMaxNumOrthogPasses = 2;
     const magnitude_type eps = STM::eps();
-    const magnitude_type defaultBlkTol = magnitude_type(10) * STM::squareroot(eps);
-    const magnitude_type defaultSingTol = magnitude_type(10) * eps;
+    const magnitude_type defaultBlkTol = 
+      as<magnitude_type> (10) * STM::squareroot (eps);
+    const magnitude_type defaultSingTol = as<magnitude_type> (10) * eps;
 
-    params = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> params = 
+      Teuchos::parameterList ("ICGS");
     params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
                  "Maximum number of orthogonalization passes "
                  "(includes the first).  Default is 2, since "
@@ -101,11 +102,12 @@ namespace Belos {
     return params;
   }
 
-  /// \brief "Fast" parameters for ICGSOrthoManager
+  /// \brief "Fast" parameters for ICGSOrthoManager.
   ///
-  /// \warning This function is not reentrant.
+  /// \warning This function is deprecated.  Please use \c
+  ///   ICGSOrthoManager::getFastParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
   getFastIcgsParameters()
   {
     using Teuchos::ParameterList;
@@ -115,33 +117,32 @@ namespace Belos {
     typedef typename ScalarTraits<ScalarType>::magnitudeType magnitude_type;
     typedef ScalarTraits<magnitude_type> STM;
 
-    // This part makes this class method non-reentrant.
-    static RCP<ParameterList> params;
-    if (params.is_null())
-      {
-        RCP<const ParameterList> defaultParams = getDefaultIcgsParameters<ScalarType>();
-        // Start with a clone of the default parameters
-        params = rcp (new ParameterList (*defaultParams));
+    RCP<const ParameterList> defaultParams = getDefaultIcgsParameters<ScalarType>();
+    // Start with a clone of the default parameters.
+    RCP<ParameterList> params = rcp (new ParameterList (*defaultParams));
 
-        const int maxBlkOrtho = 1;
-        params->set ("maxNumOrthogPasses", maxBlkOrtho);
+    const int maxBlkOrtho = 1;
+    const magnitude_type blkTol = STM::zero();
+    const magnitude_type singTol = STM::zero();
 
-        const magnitude_type blkTol = STM::zero();
-        params->set ("blkTol", blkTol);
+    params->set ("maxNumOrthogPasses", maxBlkOrtho);
+    params->set ("blkTol", blkTol);
+    params->set ("singTol", singTol);
 
-        const magnitude_type singTol = STM::zero();
-        params->set ("singTol", singTol);
-      }
     return params;
   }
 
-  /// \brief Read ICGS options from the given parameter list
+  /// \brief Read ICGS options from the given parameter list.
   ///
   /// Try to read ICGS options from the given parameter list.
   /// Silently substitute in defaults if the parameters don't exist or
   /// have invalid values.
+  ///
+  /// \warning This function is deprecated.  Please use \c
+  ///   ICGSOrthoManager::setParameterList() or an \c ICGSOrthoManager
+  ///   constructor that takes a parameter list input.
   template<class ScalarType>
-  void
+  void TEUCHOS_DEPRECATED
   readIcgsParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
                       int& maxNumOrthogPasses,
                       typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,
@@ -160,14 +161,11 @@ namespace Belos {
     // output arguments) have taken place.
     int _maxNumOrthogPasses;
     magnitude_type _blkTol, _singTol;
-    if (params.is_null())
-      {
-        _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-        _blkTol = defaultParams->get<magnitude_type> ("blkTol");
-        _singTol = defaultParams->get<magnitude_type> ("singTol");
-      }
-    else
-    {
+    if (params.is_null()) {
+      _maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+      _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+      _singTol = defaultParams->get<magnitude_type> ("singTol");
+    } else {
       try {
         _maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
         if (_maxNumOrthogPasses < 1)
@@ -177,11 +175,17 @@ namespace Belos {
       }
 
       try {
-        _blkTol = params->get<magnitude_type> ("blkTol");
-        if (_blkTol < zero)
-          _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	_blkTol = params->get<magnitude_type> ("blkTol");
+	if (_blkTol < zero)
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-        _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	try {
+	  // People may have used depTol instead of blkTol for this
+	  // parameter's name, by analogy with DGKS.
+	  _blkTol = params->get<magnitude_type> ("depTol");
+	} catch (Teuchos::Exceptions::InvalidParameter&) {
+	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+	}
       }
 
       try {
@@ -199,8 +203,10 @@ namespace Belos {
 
 
   template<class ScalarType, class MV, class OP>
-  class ICGSOrthoManager : public MatOrthoManager<ScalarType,MV,OP> {
-
+  class ICGSOrthoManager : 
+    public MatOrthoManager<ScalarType,MV,OP>, 
+    public Teuchos::ParameterListAcceptorDefaultBase
+  {
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
@@ -209,9 +215,9 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
-    
     //! @name Constructor/Destructor
     //@{ 
+
     //! Constructor specifying re-orthogonalization tolerance.
     ICGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
@@ -224,40 +230,217 @@ namespace Belos {
       sing_tol_( sing_tol ),
       label_( label )
     {
-        std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
-#endif
+      std::string orthoLabel = label_ + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
 
-        std::string updateLabel = label_ + ": Ortho (Update)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
-#endif
+      std::string updateLabel = label_ + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
 
-        std::string normLabel = label_ + ": Ortho (Norm)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
-#endif
+      std::string normLabel = label_ + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
 
-        std::string ipLabel = label_ + ": Ortho (Inner Product)";
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-        timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      std::string ipLabel = label_ + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
 #endif
-    };
+    }
+
+    //! Constructor that takes a list of parameters.
+    ICGSOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		      const std::string& label = "Belos",
+                      Teuchos::RCP<const OP> Op = Teuchos::null) :
+      MatOrthoManager<ScalarType,MV,OP>(Op), 
+      max_ortho_steps_ (2),
+      blk_tol_ (10 * MGT::squareroot (MGT::eps())),
+      sing_tol_ (10 * MGT::eps()),
+      label_ (label)
+    {
+      setParameterList (plist);
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::string orthoLabel = label_ + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+
+      std::string updateLabel = label_ + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+
+      std::string normLabel = label_ + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+
+      std::string ipLabel = label_ + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+#endif
+    }
 
     //! Destructor
     ~ICGSOrthoManager() {}
     //@}
 
+    //! @name Implementation of Teuchos::ParameterListAcceptorDefaultBase interface
+    //@{ 
+
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      using Teuchos::Exceptions::InvalidParameterName;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<const ParameterList> defaultParams = getValidParameters();
+      RCP<ParameterList> params;
+      if (plist.is_null()) {
+	params = parameterList (*defaultParams);
+      } else {
+	params = plist;
+	// Some users might want to specify "blkTol" as "depTol".  Due
+	// to this case, we don't invoke
+	// validateParametersAndSetDefaults on params.  Instead, we go
+	// through the parameter list one parameter at a time and look
+	// for alternatives.
+      }
+	
+      // Using temporary variables and fetching all values before
+      // setting the output arguments ensures the strong exception
+      // guarantee for this function: if an exception is thrown, no
+      // externally visible side effects (in this case, setting the
+      // output arguments) have taken place.
+      int maxNumOrthogPasses;
+      MagnitudeType blkTol;
+      MagnitudeType singTol;
+
+      try {
+	maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+      } catch (InvalidParameterName&) {
+	maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+	params->set ("maxNumOrthogPasses", maxNumOrthogPasses);
+      }
+
+      // Handling of the "blkTol" parameter is a special case.  This
+      // is because some users may prefer to call this parameter
+      // "depTol" for consistency with DGKS.  However, our default
+      // parameter list calls this "blkTol", and we don't want the
+      // default list's value to override the user's value.  Thus, we
+      // first check the user's parameter list for both names, and
+      // only then access the default parameter list.
+      try {
+	blkTol = params->get<MagnitudeType> ("blkTol");
+      } catch (InvalidParameterName&) {
+	try {
+	  blkTol = params->get<MagnitudeType> ("depTol");
+	  // "depTol" is the wrong name, so remove it and replace with
+	  // "blkTol".  We'll set "blkTol" below.
+	  params->remove ("depTol");
+	} catch (InvalidParameterName&) {
+	  blkTol = defaultParams->get<MagnitudeType> ("blkTol");
+	}
+	params->set ("blkTol", blkTol);
+      }
+
+      try {
+	singTol = params->get<MagnitudeType> ("singTol");
+      } catch (InvalidParameterName&) {
+	singTol = defaultParams->get<MagnitudeType> ("singTol");
+	params->set ("singTol", singTol);
+      }
+
+      max_ortho_steps_ = maxNumOrthogPasses;
+      blk_tol_ = blkTol;
+      sing_tol_ = singTol;
+
+      setMyParamList (params);
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters () const
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      if (defaultParams_.is_null()) {
+	RCP<ParameterList> params = parameterList ("ICGS");
+
+	// Default parameter values for ICGS orthogonalization.
+	// Documentation will be embedded in the parameter list.
+	const int defaultMaxNumOrthogPasses = 2;
+	const MagnitudeType eps = MGT::eps();
+	const MagnitudeType defaultBlkTol = 
+	  as<MagnitudeType> (10) * MGT::squareroot (eps);
+	const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
+
+	params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+		     "Maximum number of orthogonalization passes (includes the "
+		     "first).  Default is 2, since \"twice is enough\" for Krylov "
+		     "methods.");
+	params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
+		     "threshhold.");
+	params->set ("singTol", defaultSingTol, "Singular block detection "
+		     "threshold.");
+	defaultParams_ = params;
+      }
+      return defaultParams_;
+    }
+    //@}
+
+    /// \brief "Fast" but possibly unsafe or less accurate parameters.
+    ///
+    /// Use this parameter list when you care more about speed than
+    /// accuracy of the orthogonalization.
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getFastParameters () const 
+    {
+      using Teuchos::as;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<const ParameterList> defaultParams = getValidParameters ();
+      // Start with a clone of the default parameters.
+      RCP<ParameterList> params = parameterList (*defaultParams);
+
+      const int maxBlkOrtho = 1; // No block reorthogonalization
+      const MagnitudeType blkTol = MGT::zero();
+      const MagnitudeType singTol = MGT::zero();
+
+      params->set ("maxNumOrthogPasses", maxBlkOrtho);
+      params->set ("blkTol", blkTol);
+      params->set ("singTol", singTol);
+
+      return params;
+    }
 
     //! @name Accessor routines
     //@{ 
 
     //! Set parameter for block re-orthogonalization threshhold.
-    void setBlkTol( const MagnitudeType blk_tol ) { blk_tol_ = blk_tol; }
+    void setBlkTol( const MagnitudeType blk_tol ) { 
+      // Update the parameter list as well.
+      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      if (! params.is_null()) {
+	// If it's null, then we haven't called setParameterList()
+	// yet.  It's entirely possible to construct the parameter
+	// list on demand, so we don't try to create the parameter
+	// list here.
+	params->set ("blkTol", blk_tol);
+      }
+      blk_tol_ = blk_tol; 
+    }
 
     //! Set parameter for singular block detection.
-    void setSingTol( const MagnitudeType sing_tol ) { sing_tol_ = sing_tol; }
+    void setSingTol( const MagnitudeType sing_tol ) { 
+      // Update the parameter list as well.
+      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      if (! params.is_null()) {
+	// If it's null, then we haven't called setParameterList()
+	// yet.  It's entirely possible to construct the parameter
+	// list on demand, so we don't try to create the parameter
+	// list here.
+	params->set ("singTol", sing_tol);
+      }
+      sing_tol_ = sing_tol; 
+    }
 
     //! Return parameter for block re-orthogonalization threshhold.
     MagnitudeType getBlkTol() const { return blk_tol_; } 
@@ -454,18 +637,22 @@ namespace Belos {
     //@}
 
   private:
-    
-    //! Parameters for re-orthogonalization.
+    //! Max number of (re)orthogonalization steps, including the first.    
     int max_ortho_steps_;
+    //! Block reorthogonalization threshold.
     MagnitudeType blk_tol_;
+    //! Singular block detection threshold.
     MagnitudeType sing_tol_;
 
-    //! Timers and timer label
+    //! Label for timers.
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerUpdate_, 
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
       timerNorm_, timerScale_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+
+    //! Default parameter list.
+    mutable Teuchos::RCP<Teuchos::ParameterList> defaultParams_;
   
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RCP<MV> MX, 
@@ -611,7 +798,7 @@ namespace Belos {
         else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
         {
           int err = C[k]->reshape (numRows, numCols);
-          TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
               "IMGS orthogonalization: failed to reshape "
               "C[" << k << "] (the array of block "
               "coefficients resulting from projecting X "
@@ -636,7 +823,7 @@ namespace Belos {
     int mxr = MVT::GetVecLength( *MX );
 
     // short-circuit
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Belos::ICGSOrthoManager::projectAndNormalize(): X must be non-empty" );
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Belos::ICGSOrthoManager::projectAndNormalize(): X must be non-empty" );
 
     int numbas = 0;
     for (int i=0; i<nq; i++) {
@@ -644,16 +831,16 @@ namespace Belos {
     }
 
     // check size of B
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
     // check size of X and MX
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX 
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
     // check feasibility
-    //TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
+    //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
     //                    "Belos::ICGSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
 
     // Some flags for checking dependency returns from the internal orthogonalization methods
@@ -728,7 +915,7 @@ namespace Belos {
     } // if (xc == 1) {
 
     // this should not raise an std::exception; but our post-conditions oblige us to check
-    TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Debug error in rank variable." );
 
     // Return the rank of X.
@@ -810,19 +997,19 @@ namespace Belos {
     int mxr = MVT::GetVecLength( *MX );
 
     // check size of X and Q w.r.t. common sense
-    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
-    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::project(): Size of X not consistant with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Belos::ICGSOrthoManager::project(): Q lengths not mutually consistant" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
-      TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
                           "Belos::ICGSOrthoManager::project(): Q has less rows than columns" );
       baslen += qcs[i];
 
@@ -831,7 +1018,7 @@ namespace Belos {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
                            "Belos::ICGSOrthoManager::project(): Size of Q not consistant with size of C" );
       }
     }
@@ -904,15 +1091,15 @@ namespace Belos {
     int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
 
     // check size of C, B
-    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): X must be non-empty" );
-    TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of B" );
-    TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
-    TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not feasible for normalization" );
-    TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument, 
                         "Belos::ICGSOrthoManager::findBasis(): Invalid howMany parameter" );
 
     /* xstart is which column we are starting the process with, based on howMany
@@ -965,7 +1152,7 @@ namespace Belos {
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
       MVT::MvDot( *Xj, *MXj, oldDot );
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
-      TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
           "Belos::ICGSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
 
       if (numX > 0) {

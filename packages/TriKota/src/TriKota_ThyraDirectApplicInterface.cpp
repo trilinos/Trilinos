@@ -86,7 +86,7 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
 						  numParameters);
       }
       else {
-        TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
               "TriKota Adapter Error: DgDp data type not implemented");
       }
     }
@@ -99,7 +99,7 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
     unsigned int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       num_dakota_vars > numParameters, std::logic_error,
       "TriKota Adapter Error: number of parameters in ModelEvaluator  " <<  
       numParameters << 
@@ -123,17 +123,17 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
   if (App != Teuchos::null) {
 
     // Test for consistency of problem definition between ModelEval and Dakota
-    TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
     MEB::InArgs<double> inArgs = App->createInArgs();
     MEB::OutArgs<double> outArgs = App->createOutArgs();
 
-    TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
     // Load parameters from Dakota to ModelEval data structure
@@ -170,7 +170,7 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     }
   }
   else {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
       != MPI_COMM_NULL, std::logic_error,
       "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");

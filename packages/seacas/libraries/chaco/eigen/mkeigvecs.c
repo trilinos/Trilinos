@@ -7,22 +7,23 @@
 #include "defs.h"
 
 /* Assemble eigenvectors, return bounds, etc. */
-void      mkeigvecs(scanlist, lambda, bound, index, bj, d, Sres_max,
-                    alpha, beta, j, s, y, n, q)
-struct scanlink *scanlist;      /* linked list of fields to do with min ritz vals */
-double   *lambda;               /* ritz approximation to eigenvals of A */
-double   *bound;                /* on ritz pair approximations to eig pairs of A */
-int      *index;                /* the Ritz index of an eigenpair */
-double   *bj;                   /* beta(j)*(last el. of corr. eigvec s of T) */
-int       d;                    /* problem dimension = number of eigvecs to find */
-double   *Sres_max;             /* Max value of Sres */
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* number of Lanczos iterations taken */
-double   *s;			/* approximate eigenvector of T */
-double  **y;                    /* columns of y are eigenvectors of A  */
-int       n;                    /* problem size */
-double  **q;                    /* columns of q are Lanczos basis vectors */
+void 
+mkeigvecs (
+    struct scanlink *scanlist,      /* linked list of fields to do with min ritz vals */
+    double *lambda,               /* ritz approximation to eigenvals of A */
+    double *bound,                /* on ritz pair approximations to eig pairs of A */
+    int *index,                /* the Ritz index of an eigenpair */
+    double *bj,                   /* beta(j)*(last el. of corr. eigvec s of T) */
+    int d,                    /* problem dimension = number of eigvecs to find */
+    double *Sres_max,             /* Max value of Sres */
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* number of Lanczos iterations taken */
+    double *s,			/* approximate eigenvector of T */
+    double **y,                    /* columns of y are eigenvectors of A  */
+    int n,                    /* problem size */
+    double **q                    /* columns of q are Lanczos basis vectors */
+)
 {
 
     int       i,k;		/* indcies */

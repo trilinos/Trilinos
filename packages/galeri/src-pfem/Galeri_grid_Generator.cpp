@@ -75,15 +75,15 @@ getSquare(Epetra_Comm& comm,
           Galeri::grid::Loadable& domain, Galeri::grid::Loadable& boundary,
           const string what)
 {
-  TEST_FOR_EXCEPTION(numDomainsX * numDomainsY != comm.NumProc(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numDomainsX * numDomainsY != comm.NumProc(), std::logic_error,
                      "the number of processor should equal numDomainsX * numDomainsY"
                      << ", now numProcs = " << comm.NumProc()
                      << " and numDomainsX * numDomainsY = " << numDomainsX * numDomainsY);
 
-  TEST_FOR_EXCEPTION(numGlobalElementsX % numDomainsX != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElementsX % numDomainsX != 0, std::logic_error,
                      "numGlobalElementsX must be a multiple of numDomainsX");
 
-  TEST_FOR_EXCEPTION(numGlobalElementsY % numDomainsY != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElementsY % numDomainsY != 0, std::logic_error,
                      "numGlobalElementsY must be a multiple of numDomainsY");
 
   double lx = 1.0;
@@ -229,7 +229,7 @@ getSquare(Epetra_Comm& comm,
       list[pos++] = offset + i;
   }
 
-  TEST_FOR_EXCEPTION(pos != numMyBoundaries, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(pos != numMyBoundaries, std::logic_error,
                      "internal error in boundary list definition, " 
                      << pos << " vs. " << numMyBoundaries);
 

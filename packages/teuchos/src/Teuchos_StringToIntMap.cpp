@@ -50,7 +50,7 @@ StringToIntMap::StringToIntMap(
 	typedef map_t::value_type val_t;
 	for( int i = 0; i < n; ++i ) {
 		const bool unique = map_.insert( val_t( strings[i], i ) ).second;
-		TEST_FOR_EXCEPTION(
+		TEUCHOS_TEST_FOR_EXCEPTION(
 			!unique, AlreadyExists
 			,"Teuchos::StringToIntMap::StringToIntMap(...): "
 			<< "Error, the std::string \"" << strings[i] << "\" is a duplicate for "
@@ -61,7 +61,7 @@ StringToIntMap::StringToIntMap(
 int StringToIntMap::get( const std::string& option, const std::string& groupName ) const
 {
 	map_t::const_iterator itr = map_.find( option );
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		itr == map_.end(), DoesNotExist
 		,"Teuchos::StringToIntMap:::get(\""<<option<<"\",...): "
 		<< "Error, the std::string \"" << option << "\" is not recongnised for "

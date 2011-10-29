@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
   
   fileName = "./testdata/HEX_C2_GradVals.dat";
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open GRAD values data file, test aborted.");
   while (!dataFile.eof() ){
     double temp;
@@ -372,7 +372,7 @@ int main(int argc, char *argv[]) {
   std::vector<double> basisD2; 
   fileName = "./testdata/HEX_C2_D2Vals.dat";  
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D2 values data file, test aborted.");
   while (!dataFile.eof() ){
     double temp;
@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
   
   fileName = "./testdata/HEX_C2_D3Vals.dat";  
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D3 values data file, test aborted.");
   
   while (!dataFile.eof() ){
@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
   
   fileName = "./testdata/HEX_C2_D4Vals.dat";
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");
   
   while (!dataFile.eof() ){

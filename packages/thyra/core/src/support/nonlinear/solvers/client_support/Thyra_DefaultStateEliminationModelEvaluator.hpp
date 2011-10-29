@@ -172,7 +172,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
-  TEST_FOR_EXCEPT(!stateSolver.get());
+  TEUCHOS_TEST_FOR_EXCEPT(!stateSolver.get());
   stateSolver_ = stateSolver;
   x_guess_solu_ = Teuchos::null; // We will get the guess at the last possible moment!
   wrappedThyraModel_ = Teuchos::rcp(
@@ -419,7 +419,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
           // Set DfDp(l) and DgDx(j) to be computed!
           //wrappedOutArgs.set_DfDp(l,...);
           //wrappedOutArgs.set_DgDx(j,...);
-          TEST_FOR_EXCEPT(true);
+          TEUCHOS_TEST_FOR_EXCEPT(true);
         }
       }
     }
@@ -438,7 +438,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
         //
         // Compute:  D(l) = -inv(DfDx)*DfDp(l)
         //
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
         for( int j = 0; j < Ng; ++j ) {
           if(
             outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
@@ -448,7 +448,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
             //
             // Compute:  DgDp(j,l) = DgDp(j,l) + DgDx(j)*D
             //
-            TEST_FOR_EXCEPT(true);
+            TEUCHOS_TEST_FOR_EXCEPT(true);
           }
         }
       }

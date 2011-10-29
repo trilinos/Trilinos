@@ -48,7 +48,7 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_Print_Utilities.hpp"
 
 //**********************************************************************
@@ -123,7 +123,7 @@ PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 fieldTag() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -139,7 +139,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7, size_type index8)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
 }
@@ -155,7 +155,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7);
 }
@@ -170,7 +170,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5, size_type index6)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6);
 }
@@ -185,7 +185,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5);
 }
@@ -200,7 +200,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4);
 }
@@ -214,7 +214,7 @@ DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3);
 }
@@ -228,7 +228,7 @@ DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2);
 }
@@ -242,7 +242,7 @@ DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1);
 }
@@ -256,7 +256,7 @@ DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator[](size_type index)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data[index];
 }
@@ -272,7 +272,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7, size_type index8) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
 }
@@ -288,7 +288,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7);
 }
@@ -303,7 +303,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5, size_type index6) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6);
 }
@@ -318,7 +318,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5);
 }
@@ -333,7 +333,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4);
 }
@@ -347,7 +347,7 @@ const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3);
 }
@@ -361,7 +361,7 @@ const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2);
 }
@@ -375,7 +375,7 @@ const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1);
 }
@@ -389,7 +389,7 @@ const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator[](size_type index) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data[index];
 }
@@ -404,8 +404,8 @@ PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 rank() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.rank();
 }
@@ -420,8 +420,8 @@ PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(size_type ord) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.dimension(ord);
 }
@@ -435,8 +435,8 @@ void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimensions(std::vector<size_type>& dims)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   
   dims.resize(m_field_data.rank());
@@ -456,7 +456,7 @@ typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.size();
 }
@@ -482,7 +482,7 @@ void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif
 
@@ -491,7 +491,7 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
   std::vector<size_type> array_dim;
   m_tag.dataLayout().dimensions(array_dim);
 
-  TEST_FOR_EXCEPTION(m_array_rcp.size() != m_tag.dataLayout().size(),
+  TEUCHOS_TEST_FOR_EXCEPTION(m_array_rcp.size() != m_tag.dataLayout().size(),
 		     std::runtime_error, "RCP Array size is not equal to the DataLayout size!");
 
 #ifdef PHX_USE_COMPILETIME_ARRAY
@@ -503,7 +503,7 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
        << array_dim.size() << std::endl
        << "Offending MDField:\n"
        << *this << std::endl;
-    TEST_FOR_EXCEPTION(array_type::Rank != (array_dim.size()), 
+    TEUCHOS_TEST_FOR_EXCEPTION(array_type::Rank != (array_dim.size()), 
 		       std::logic_error, os.str());
   }
   
@@ -655,7 +655,7 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 fieldTag() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -669,7 +669,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7, size_type index8)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
 }
@@ -683,7 +683,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7);
 }
@@ -696,7 +696,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5, size_type index6)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6);
 }
@@ -709,7 +709,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5);
 }
@@ -722,7 +722,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4);
 }
@@ -734,7 +734,7 @@ DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1, size_type index2, size_type index3)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3);
 }
@@ -746,7 +746,7 @@ DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1, size_type index2)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2);
 }
@@ -758,7 +758,7 @@ DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1);
 }
@@ -770,7 +770,7 @@ DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator[](size_type index)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data[index];
 }
@@ -784,7 +784,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7, size_type index8) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
 }
@@ -798,7 +798,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index7) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6,index7);
 }
@@ -811,7 +811,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5, size_type index6) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5,index6);
 }
@@ -824,7 +824,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4, size_type index5) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4,index5);
 }
@@ -837,7 +837,7 @@ operator()(size_type index1, size_type index2, size_type index3,
 	   size_type index4) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3,index4);
 }
@@ -849,7 +849,7 @@ const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1, size_type index2, size_type index3) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2,index3);
 }
@@ -861,7 +861,7 @@ const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1, size_type index2) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1,index2);
 }
@@ -873,7 +873,7 @@ const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator()(size_type index1) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data(index1);
 }
@@ -885,7 +885,7 @@ const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 operator[](size_type index) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data[index];
 }
@@ -898,8 +898,8 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 rank() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.rank();
 }
@@ -912,8 +912,8 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 dimension(size_type ord) const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.dimension(ord);
 }
@@ -925,8 +925,8 @@ void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 dimensions(std::vector<size_type>& dims)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   
   dims.resize(m_field_data.rank());
@@ -944,7 +944,7 @@ typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.size();
 }
@@ -966,7 +966,7 @@ void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif
 

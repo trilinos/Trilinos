@@ -98,12 +98,12 @@ C   --Documentation:
 C   --   "User's Manual for GROPE"
 
       include 'exodusII.inc'
-      INCLUDE 'progqa.blk'
-      INCLUDE 'outfil.blk'
-      INCLUDE 'dbase.blk'
-      INCLUDE 'dbtitl.blk'
-      INCLUDE 'dbnums.blk'
-      INCLUDE 'argparse.inc'
+      include 'gr_progqa.blk'
+      include 'gr_outfil.blk'
+      include 'gr_dbase.blk'
+      include 'gr_dbtitl.blk'
+      include 'gr_dbnums.blk'
+      include 'argparse.inc'
 
 C      --A - the dynamic numeric memory base array
       DIMENSION A(1)
@@ -121,7 +121,7 @@ C      --EXODUS - true iff EXODUS file versus GENESIS file
       LOGICAL ISEOF
       CHARACTER*1 cdum
 
-      INCLUDE 'qainfo.blk'
+      include 'gr_qainfo.blk'
       CALL STRTUP (QAINFO)
 
 C   --Set up the print file

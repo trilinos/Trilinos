@@ -45,7 +45,7 @@
 #ifndef PHX_FIELD_MANAGER_DEF_HPP
 #define PHX_FIELD_MANAGER_DEF_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"

@@ -166,8 +166,8 @@ C     Request length of the side set distribution factors list
      &             NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
      &             LESSDF,QAINFO, NAMLEN)
       CALL DBPINI ('TIS', NDB, TITLE, NNDIM, NUMNP, NUMEL, NELBLK,
-     &   NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF,
-     &   IDUM, IDUM, IDUM)
+     &   NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSDF,
+     &   IDUM, IDUM, IDUM, ' ')
 
 C   --Read the coordinates
 
@@ -430,7 +430,7 @@ C     Reserve memory for element block properties names and values
       end if
       write (NTXT, '(I10,12x,A)') numebp, 
      &      '! Number of ELEMENT BLOCK Properties'
-      call rwpval (ndb, NTXT, EXEBLK, numebp, nelblk,
+      call wrprop (ndb, NTXT, EXEBLK, numebp, nelblk,
      &             c(iebpn), a(iebpv), namlen)
 
       call mcdel ('EBPNAM')
@@ -450,7 +450,7 @@ C************************************************************************
 
       write (NTXT, '(I10,12x,A)') numnsp, 
      &      '! Number of NODE SET Properties'
-      call rwpval (ndb, NTXT, EXNSET, numnsp, numnps,
+      call wrprop (ndb, NTXT, EXNSET, numnsp, numnps,
      &             c(inspn), a(inspv), namlen)
 
       call mcdel ('NSPNAM')
@@ -471,7 +471,7 @@ C************************************************************************
 
       write (NTXT, '(I10,12x,A)') numssp, 
      &      '! Number of SIDE SET Properties'
-      call rwpval (ndb, NTXT, EXSSET, numssp, numess,
+      call wrprop (ndb, NTXT, EXSSET, numssp, numess,
      &             c(isspn), a(isspv), namlen)
 
       call mcdel ('SSPNAM')
@@ -501,8 +501,7 @@ C     Reserve space to read the QA and information records
          GOTO 140
       END IF
 
-      CALL DBIQA (NDB, '*', NQAREC, C(KQAREC), NINFO, C(KINFO), IOERR)
-      IF (IOERR .EQ. 1) GO TO 140
+      CALL DBIQA (NDB, '*', NQAREC, C(KQAREC), NINFO, C(KINFO))
       CALL WRQA (NTXT, NQAREC, C(KQAREC), NINFO, C(KINFO), QAINFO)
 
       CALL MCDEL ('QAREC')
@@ -544,13 +543,11 @@ C     Read the names of the global, node, and element variables
       IF (IOERR .EQ. 1) GO TO 140
 
       CALL DBPINI ('V', NDB, TITLE, NNDIM, NUMNP, NUMEL, NELBLK,
-     &      NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF,
-     &      NVARGL, NVARNP, NVAREL)
+     &      NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSDF,
+     &      NVARGL, NVARNP, NVAREL, ' ')
 
 C     Read the element variable truth table
-      CALL DBIVTT (NDB, A, A(KIEVOK), A(KITMP), NELBLK, NVAREL,
-     &             MAX(1,NELBLK))
-
+      CALL DBIVTT (NDB, A(KIEVOK), A(KITMP), NELBLK, NVAREL)
 
       CALL WRNAME (NTXT, NNDIM, NELBLK, NVARGL, NVARNP, NVAREL,
      &  C(KNAMES+NAMLEN*(KNAMGV-1)), C(KNAMES+NAMLEN*(KNAMNV-1)),

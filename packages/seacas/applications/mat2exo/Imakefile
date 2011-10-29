@@ -6,13 +6,13 @@ EXTRA_DEFINES = -DHAS_MATLAB -DV5_COMPAT
 
 CODE = mat2exo
 
-SRC = mat2exo.c add_to_log.c
+SRC = mat2exo.c
 
 OBJS = $(SRC:.c=.o)
 
 INCLUDES = MatlabIncludes
 
-LIBS = $(EXOIIV2C) $(NETCDF) $(MATLABLIBRARIES) -lm
+LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(MATLABLIBRARIES) -lm
 
 NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
 

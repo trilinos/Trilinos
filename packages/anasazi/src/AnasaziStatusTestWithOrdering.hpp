@@ -213,8 +213,8 @@ template <class ScalarType, class MV, class OP>
 StatusTestWithOrdering<ScalarType,MV,OP>::StatusTestWithOrdering(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test, Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sorter, int quorum)
   : state_(Undefined), ind_(0), quorum_(quorum), rvals_(0), ivals_(0), sorter_(sorter), test_(test)
 {
-  TEST_FOR_EXCEPTION(sorter_ == Teuchos::null, StatusTestError, "StatusTestWithOrdering::constructor() was passed null pointer for constituent SortManager.");
-  TEST_FOR_EXCEPTION(test_ == Teuchos::null, StatusTestError, "StatusTestWithOrdering::constructor() was passed null pointer for constituent StatusTest.");
+  TEUCHOS_TEST_FOR_EXCEPTION(sorter_ == Teuchos::null, StatusTestError, "StatusTestWithOrdering::constructor() was passed null pointer for constituent SortManager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(test_ == Teuchos::null, StatusTestError, "StatusTestWithOrdering::constructor() was passed null pointer for constituent StatusTest.");
 }
 
 template <class ScalarType, class MV, class OP>

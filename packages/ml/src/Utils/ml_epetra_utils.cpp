@@ -43,7 +43,6 @@
 # include "winprocess.h"
 #endif
 
-using namespace std;
 #ifdef HAVE_ML_TEUCHOS
 using namespace Teuchos;
 #endif
@@ -201,8 +200,8 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
 
   int row_lengths = 0;
   int allocated_space = A->MaxNumEntries();
-  vector<int> columns(allocated_space + 1);
-  vector<double> values(allocated_space + 1);
+  std::vector<int> columns(allocated_space + 1);
+  std::vector<double> values(allocated_space + 1);
 
   // FIXME: DOES NOT WORK IN PARALLEL!
   assert (A->Comm().NumProc() == 1);
@@ -234,15 +233,15 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 		    int row_lengths[])
 {
 
-  cout << "Fuction ML_Epetra_getrow() is no longer supported." << endl;
-  cout << "You should use one of the following instead:" << endl;
-  cout << "- ML_Epetra_RowMatrix_getrow();" << endl;
-  cout << "- ML_Epetra_CrsMatrix_getrow();" << endl;
-  cout << "- ML_Epetra_VbrMatrix_getrow()." << endl;
-  cout << "If you don't know what is your matrix type, then use" << endl;
-  cout << "the generic function for Epetra_RowMatrix's." << endl;
-  cout << "You may need to update your Epetra wrapper and set the" << endl;
-  cout << "appropriete function instead if ML_Epetra_getrow()" << endl;
+  cout << "Fuction ML_Epetra_getrow() is no longer supported." << std::endl;
+  cout << "You should use one of the following instead:" << std::endl;
+  cout << "- ML_Epetra_RowMatrix_getrow();" << std::endl;
+  cout << "- ML_Epetra_CrsMatrix_getrow();" << std::endl;
+  cout << "- ML_Epetra_VbrMatrix_getrow()." << std::endl;
+  cout << "If you don't know what is your matrix type, then use" << std::endl;
+  cout << "the generic function for Epetra_RowMatrix's." << std::endl;
+  cout << "You may need to update your Epetra wrapper and set the" << std::endl;
+  cout << "appropriete function instead if ML_Epetra_getrow()" << std::endl;
 
   ML_RETURN(-1);
 
@@ -586,7 +585,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
     return(0);
 
   if (N_requested_rows != 1) {
-    cerr << "Only N_requested_rows == 1 currently implemented..." << endl;
+    cerr << "Only N_requested_rows == 1 currently implemented..." << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -662,7 +661,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
 
   default:
 
-    cerr << "Error, file " << __FILE__ << ", line " << __LINE__ << endl;
+    cerr << "Error, file " << __FILE__ << ", line " << __LINE__ << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -829,11 +828,11 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
   EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize + base;
   EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize + base;
 
-  vector<double> global_isize; global_isize.resize(isize+Nghost+1);
-  vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+  std::vector<double> global_isize; global_isize.resize(isize+Nghost+1);
+  std::vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
 
   //vector<double> global_osize(osize);
-  vector<int>    global_osize_as_int(osize);
+  std::vector<int>    global_osize_as_int(osize);
   
   for (int i = 0 ; i < isize; i++) {
           global_isize[i] = (double) (isize_offset + i);
@@ -1194,8 +1193,8 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatri
   const Epetra_CrsMatrix *Matrix = dynamic_cast<const Epetra_CrsMatrix*>(&iMatrix);
 
   if (BoundaryMatrix == 0 || Matrix == 0) {
-    cout << "Not applying Dirichlet boundary conditions to gradient "
-         << "because cast failed." << endl;
+    std::cout << "Not applying Dirichlet boundary conditions to gradient "
+         << "because cast failed." << std::endl;
     return;
   }
 
@@ -1315,8 +1314,8 @@ void ML_Epetra::Apply_BCsToGradient(
   const Epetra_CrsMatrix *Grad = dynamic_cast<const Epetra_CrsMatrix*>(&iGrad );
 
   if (EdgeMatrix == 0 || Grad == 0) {
-    cout << "Not applying Dirichlet boundary conditions to gradient "
-         << "because cast failed." << endl;
+    std::cout << "Not applying Dirichlet boundary conditions to gradient "
+         << "because cast failed." << std::endl;
     return;
   }
 
@@ -1383,7 +1382,7 @@ Epetra_RowMatrix* ML_Epetra::ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
 int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
                               int out, double *ap)
 {
-  cerr << "ML_Epetra_CrsGraph_matvec() not implemented." << endl;
+  cerr << "ML_Epetra_CrsGraph_matvec() not implemented." << std::endl;
   ML_RETURN(-1);
 }
 
@@ -1562,7 +1561,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   int* global_rows = linrowmap->MyGlobalElements();
   if (Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements())
   {
-    cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
+    std::cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
     exit(-1);
   }
   for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i) 
@@ -1577,7 +1576,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     // this matches the map of tmpresult
     int err = tmpresult->InsertGlobalValues(global_rows[i],row_length, 
                                             val,bindx);
-    if (err!=0 && err != 1) cout << "tmpresult->InsertGlobalValues returned " << err << endl;
+    if (err!=0 && err != 1) std::cout << "tmpresult->InsertGlobalValues returned " << err << std::endl;
   }
   if (bindx != NULL) ML_free(bindx);
   if (val != NULL) ML_free(val);
@@ -1585,7 +1584,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   int err = tmpresult->FillComplete(*lindomainmap,*linrangemap);
   if (err) 
   {
-    cerr <<"Error in Epetra_CrsMatrix FillComplete" << err << endl;
+    cerr <<"Error in Epetra_CrsMatrix FillComplete" << err << std::endl;
     EPETRA_CHK_ERR(err);
   }
   delete linrowmap;
@@ -1597,7 +1596,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   // the unknown column map is an overlapping version of the Mat2_epet->OperatorDomainMap()
   const Epetra_Comm& comm = Mat2_epet->Comm();
   const Epetra_Map& dommap = Mat2_epet->OperatorDomainMap();
-  vector<int> gcolumns(dommap.NumGlobalElements());
+  std::vector<int> gcolumns(dommap.NumGlobalElements());
   int countold=0;
   int count=0;
   for (int proc=0; proc<comm.NumProc(); ++proc)
@@ -1605,9 +1604,9 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     if (proc==comm.MyPID())
       for (int i=0; i<dommap.NumMyElements(); ++i)
       {
-        //cout << "Proc " << proc << " gcolumns[" << countold << "+" << count << "] = " << dommap.GID(i) << endl;
+        //cout << "Proc " << proc << " gcolumns[" << countold << "+" << count << "] = " << dommap.GID(i) << std::endl;
         gcolumns[countold+count] = dommap.GID(i);
-        if (gcolumns[countold+count]<0) cout << "Cannot find gcid for lcid\n";
+        if (gcolumns[countold+count]<0) std::cout << "Cannot find gcid for lcid\n";
         ++count;
       }
     comm.Broadcast(&count,1,proc);
@@ -1617,24 +1616,24 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   }
   
   //if (comm.MyPID()==0)
-  //for (int i=0; i<(int)gcolumns.size(); ++i) cout << "gcolumns[ " << i << "] = " << gcolumns[i] << endl;
+  //for (int i=0; i<(int)gcolumns.size(); ++i) std::cout << "gcolumns[ " << i << "] = " << gcolumns[i] << std::endl;
   //---------------------------------------------------------------------------
   // create the final result matrix with the correct row map
   Epetra_CrsMatrix *Result_epet = new Epetra_CrsMatrix(Copy,Mat1_epet->RowMap(),
                                                        20,false);
   //---------------------------------------------------------------------------
   // fill the final result from the tmpresult
-  vector<int> gcid(50);
+  std::vector<int> gcid(50);
   for (int i=0; i<tmpresult->NumMyRows(); ++i)
   {
     int lrid = i; // holds for both matrices
     int grid = Result_epet->GRID(i); // holds for Result_epet
-    if (grid<0) cout << "Cannot find grid for lrid\n";
+    if (grid<0) std::cout << "Cannot find grid for lrid\n";
     int numindices;
     int* indices;
     double* values;
     int err = tmpresult->ExtractMyRowView(lrid,numindices,values,indices);
-    if (err) cout << "tmpresult->ExtractMyRowView returned " << err << endl;
+    if (err) std::cout << "tmpresult->ExtractMyRowView returned " << err << std::endl;
     // indices[j] are lcid which is what we wanted
     if (numindices>(int)gcid.size()) gcid.resize(numindices);
     for (int j=0; j<numindices; ++j)
@@ -1643,18 +1642,18 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
       // gcid in tmpresult is from the linear column map
       int tmpgcid = tmpresult->GCID(indices[j]);
       if (tmpgcid<0 || tmpgcid>=(int)gcolumns.size()) 
-        cout << "Cannot find tmpgcid " << tmpgcid << " for lcid (out of range)\n";
+        std::cout << "Cannot find tmpgcid " << tmpgcid << " for lcid (out of range)\n";
       // get the gcid from the lookup vector
       gcid[j] = gcolumns[tmpgcid];
     }
     // insert row into final result matrix
     err = Result_epet->InsertGlobalValues(grid,numindices,values,&(gcid[0]));
-    if (err < 0) cout << "Result_epet->InsertGlobalValues returned " << err << endl;
+    if (err < 0) std::cout << "Result_epet->InsertGlobalValues returned " << err << std::endl;
   }
   int ierr=Result_epet->FillComplete(Mat2_epet->OperatorDomainMap(),
                                      Mat1_epet->OperatorRangeMap());
   if (ierr!=0) {
-    cerr <<"Error in Epetra_CrsMatrix FillComplete" << ierr << endl;
+    cerr <<"Error in Epetra_CrsMatrix FillComplete" << ierr << std::endl;
     EPETRA_CHK_ERR(ierr);
   }
 
@@ -1987,7 +1986,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   
   ML_Operator * ML_Qt2;
 
-  cout << "CHECK MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
+  std::cout << "CHECK MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
   exit( EXIT_FAILURE );
   
 #ifndef ML_MPI
@@ -2095,11 +2094,11 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize + base;
   EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize + base;
 
-  vector<double> global_isize; global_isize.resize(isize+Nghost+1);
-  vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+  std::vector<double> global_isize; global_isize.resize(isize+Nghost+1);
+  std::vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
 
   //vector<double> global_osize(osize);
-  vector<int>    global_osize_as_int(osize);
+  std::vector<int>    global_osize_as_int(osize);
   
   for (int i = 0 ; i < isize; i++) {
           global_isize[i] = (double) (isize_offset + i);
@@ -2134,8 +2133,8 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   // MS // improved efficiency in InsertGlobalValues
 
   int allocated = 128;
-  vector<int> colInd(allocated);
-  vector<double> colVal(allocated);
+  std::vector<int> colInd(allocated);
+  std::vector<double> colVal(allocated);
   int NumNonzeros;
   int ierr;
   int    ncnt;
@@ -2152,8 +2151,8 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
         if (allocated > 20000) // would look strange to have such a dense row
         {
           cerr << "Row " << i << " on processor " << comm->ML_mypid;
-          cerr << " seems to have more than 20000 nonzeros." << endl;
-          cerr << "This looks suspicious, so now I abort..." << endl;
+          cerr << " seems to have more than 20000 nonzeros." << std::endl;
+          cerr << "This looks suspicious, so now I abort..." << std::endl;
           ML_EXIT(-1);
         }
         colInd.resize(allocated);
@@ -2186,10 +2185,10 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
     
     if( NumNonzeros == 0 && CheckNonzeroRow ) {
       if(verbose)
-        cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
+        std::cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
              << global_osize_as_int[i]
              << " has no nonzero elements (and " << ncnt
-             << " zero entries)" << endl
+             << " zero entries)" << std::endl
              << "*ML*WRN* Now put 1 on the diagonal...\n";
       // insert a 1 on the diagonal
       colInd[NumNonzeros] = global_isize_as_int[i];
@@ -2341,10 +2340,10 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
       }
     }
     if( NumNonzeros == 0 && CheckNonzeroRow ) {
-      cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
+      std::cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
 	   << global_rows_as_int[i]
 	   << " has no nonzero elements (and " << ncnt
-	   << " zero entries)" << endl
+	   << " zero entries)" << std::endl
 	   << "*ML*WRN* Now put 1 on the diagonal...\n";
       // insert a 1 on the diagonal
       colInd[NumNonzeros] = global_nodes_as_int[i];
@@ -2460,15 +2459,15 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
     return(-10); // problems occur
 
   if (ML_Get_PrintLevel() > 8) {
-    cout << endl;
-    cout << "Creating discrete Laplacian..." << endl;
-    cout << "Number of dimensions = " << NumDimensions << endl;
-    cout << "theta = " << theta;
+    std::cout << std::endl;
+    std::cout << "Creating discrete Laplacian..." << std::endl;
+    std::cout << "Number of dimensions = " << NumDimensions << std::endl;
+    std::cout << "theta = " << theta;
     if (SymmetricPattern == 1)
-      cout << ", using symmetric pattern" << endl;
+      std::cout << ", using symmetric pattern" << std::endl;
     else
-      cout << ", using original pattern" << endl;
-    cout << endl;
+      std::cout << ", using original pattern" << std::endl;
+    std::cout << std::endl;
   }
 
   // create the auxiliary matrix
@@ -2495,8 +2494,8 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
     Nghost = Op->getrow->pre_comm->total_rcv_length;
   }
 
-  vector<double> global;        
-  vector<int>    global_as_int; 
+  std::vector<double> global;        
+  std::vector<int>    global_as_int; 
   global.resize(NumMyRows+Nghost+1);
   global_as_int.resize(NumMyRows+Nghost+1);
 
@@ -2593,15 +2592,15 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	double tmp3=coord_i[2]-coord_j[2];
 	double d2 = tmp1*tmp1 + tmp2*tmp2 + tmp3*tmp3;
 	if( d2 == 0.0 ) {
-	  cerr << endl;
+	  cerr << std::endl;
 	  cerr << "distance between node " << i/NumPDEEqns << " and node " 
-	    << colInd[j]/NumPDEEqns << endl
-	    << "is zero. Coordinates of these nodes are" << endl
-	    << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
-	    << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
-	    << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
-	    << "Now proceeding with distance = 1.0" << endl;
-	  cerr << endl;
+	    << colInd[j]/NumPDEEqns << std::endl
+	    << "is zero. Coordinates of these nodes are" << std::endl
+	    << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
+	    << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
+	    << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+	    << "Now proceeding with distance = 1.0" << std::endl;
+	  cerr << std::endl;
 	  d2 = 1.0;
 	}
 
@@ -2616,20 +2615,20 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	  int col = GlobalCol+k;
 	  if( row >= NumGlobalRows || col >= NumGlobalRows ) {
 	    cerr << "trying to insert element (" << row 
-	         << "," << col << "), " << endl
-		 << "while NumGlobalRows = " << NumGlobalRows << endl
-		 << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
-		 << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	         << "," << col << "), " << std::endl
+		 << "while NumGlobalRows = " << NumGlobalRows << std::endl
+		 << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << std::endl
+		 << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
 	  }
 	    
 	  // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
 	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
 	    int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
 	    if( ierr ) {
-	      cerr << "InsertGlobalValues return value = " << ierr << endl
-		<< "for element (" << row << "," << col << ")" << endl
+	      cerr << "InsertGlobalValues return value = " << ierr << std::endl
+		<< "for element (" << row << "," << col << ")" << std::endl
 		<< "(file " << __FILE__ << ", line " << __LINE__
-		<< ")" << endl;
+		<< ")" << std::endl;
 	    }
 	  }
 	}
@@ -2644,18 +2643,18 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	    int col = GlobalRow+k;
 	    if( row >= NumGlobalRows || col >= NumGlobalRows ) {
 	      cerr << "trying to insert element (" << row 
-		<< "," << col << "), " << endl
-		<< "while NumGlobalRows = " << NumGlobalRows << endl
-		<< "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
-		<< "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+		<< "," << col << "), " << std::endl
+		<< "while NumGlobalRows = " << NumGlobalRows << std::endl
+		<< "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << std::endl
+		<< "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
 	    }
 	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
 	      int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
 	      if( ierr ) {
-		cerr << "InsertGlobalValues return value = " << ierr << endl
-		  << "for element (" << row << "," << col << ")" << endl
+		cerr << "InsertGlobalValues return value = " << ierr << std::endl
+		  << "for element (" << row << "," << col << ")" << std::endl
 		  << "(file " << __FILE__ << ", line " << __LINE__
-		  << ")" << endl;
+		  << ")" << std::endl;
 	      }
 	    }
 	  }
@@ -2673,10 +2672,10 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
       if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
 	int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total);
 	if( ierr ) {
-	  cerr << "InsertGlobalValues return value = " << ierr << endl
-	    << "for element (" << row << "," << row << ")" << endl
+	  cerr << "InsertGlobalValues return value = " << ierr << std::endl
+	    << "for element (" << row << "," << row << ")" << std::endl
 	    << "(file " << __FILE__ << ", line " << __LINE__
-	    << ")" << endl;
+	    << ")" << std::endl;
 	}
       }
    }
@@ -2856,7 +2855,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       FILE* fp = 0;
       if (activeproc==proc)
       {
-         cout << "Proc " << proc << " is reading the Epetra_CrsMatrix .."; fflush(stdout);
+         std::cout << "Proc " << proc << " is reading the Epetra_CrsMatrix .."; fflush(stdout);
          fp = fopen(filename,"r");
          if (fp) 
          {
@@ -2884,7 +2883,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
                continue;
             else                 // this row belongs to me, read it
             {
-               cout << "."; fflush(stdout);
+               std::cout << "."; fflush(stdout);
                // read row and insert them
                bptr = buffer;
                int column = 0;
@@ -2897,7 +2896,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
                }
             }
          }
-         cout << endl;   
+         std::cout << std::endl;   
          fclose(fp); fp = 0;
       }
       comm.Barrier();
@@ -3116,7 +3115,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
                  break;
               else if (j>0 && map.MyGID(row)==false)
               {
-                 cout << "**ERR** block split among several procs, abort reading\n";
+                 std::cout << "**ERR** block split among several procs, abort reading\n";
                  ok = 0;
                  break;
               }
@@ -3124,8 +3123,8 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
            if (myblock) ++block_counter;
         if (!ok) break;
         }
-        cout << "numeq " << numeq << endl;
-        cout << "numeq_counter " << numeq_counter << endl;
+        std::cout << "numeq " << numeq << std::endl;
+        std::cout << "numeq_counter " << numeq_counter << std::endl;
      }
      comm.Broadcast(&ok,1,activeproc);
      if (!ok)
@@ -3139,8 +3138,8 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
   
   if (nblocks != block_counter)
   {
-     cout << "**ERR**  Something went wrong, final number of blocks: " << block_counter << endl
-          << "**ERR** not equal number of blocks from head of file : " << nblocks << endl;
+     std::cout << "**ERR**  Something went wrong, final number of blocks: " << block_counter << std::endl
+          << "**ERR** not equal number of blocks from head of file : " << nblocks << std::endl;
      throw -1;
   }
 
@@ -3174,7 +3173,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   {
      int gID = map.GID(i);
      if (gID==-1) {
-        cout << "**ERR Cannot find GID\n"; throw -1; }
+        std::cout << "**ERR Cannot find GID\n"; throw -1; }
      send[gID] = values[i];
   }
   comm.SumAll(send,gvalues,numeq_total);
@@ -3510,7 +3509,7 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
 
   if (j != 0)
   {
-    if (Comm.MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
+    if (Comm.MyPID()  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
     for (i = 0; i <Comm.NumProc() ; i++) {
       if (i == Comm.MyPID() ) {
 #if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
@@ -3594,7 +3593,7 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
     */
     if (pname.find("coarse:",0) == 0) {
       ParameterList &coarseList = newList.sublist("coarse: list");
-      if (pnameIsList) {
+      if (pnameIsList && pname=="coarse: list") {
         ParameterList &sublist = List.sublist(pname);
         for (ParameterList::ConstIterator param=sublist.begin(); param!=sublist.end() ; param++) {
           ParameterList &coarseList = newList.sublist("coarse: list");
@@ -3627,9 +3626,9 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
             subname[where] = '\0';
             smList[i]->setEntry(subname,List.entry(param));
           } else {
-            cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating smoother sublists" << endl;
-            cout << "Offending parameter: " << pname << endl;
+            std::cout << "ML_CreateSublist(), Line " << __LINE__
+                 << ". Error in creating smoother sublists" << std::endl;
+            std::cout << "Offending parameter: " << pname << std::endl;
 #           ifdef ML_MPI
             MPI_Finalize();
 #           endif
@@ -3648,16 +3647,17 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
             subname[where] = '\0';
             aggList[i]->setEntry(subname,List.entry(param));
           } else {
-            cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating aggregation sublists" << endl;
-            cout << "Offending parameter: " << pname << endl;
+            std::cout << "ML_CreateSublist(), Line " << __LINE__
+                 << ". Error in creating aggregation sublists" << std::endl;
+            std::cout << "Offending parameter: " << pname << std::endl;
 #           ifdef ML_MPI
             MPI_Finalize();
 #           endif
             exit(EXIT_FAILURE);
           }
         }
-    } else {
+    } 
+    else{
       // Copy general (not level-specific) options and sublists to new list.
       // Don't copy coarse sublist, since its entries were already copied.
       if (pname.find("coarse: ",0) == string::npos ) {

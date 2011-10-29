@@ -41,7 +41,7 @@
 
 #include "hypre_Helpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include <iostream>
 #include <fstream>
@@ -138,7 +138,7 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix* newHypreMatrix(const int N, co
     int rows[1];
     for(i = ilower; i < iupper; i++) {
       int ncols = (int)(1+( (double)rand()/(double)RAND_MAX ) * 0.5*(N-1));
-      TEST_FOR_EXCEPTION(ncols <= 0, std::logic_error, "ncols is negative");
+      TEUCHOS_TEST_FOR_EXCEPTION(ncols <= 0, std::logic_error, "ncols is negative");
       Teuchos::Array<int> cols; cols.resize(ncols);
       Teuchos::Array<double> values; values.resize(ncols);
       for(int j = 0; j < ncols; j++){

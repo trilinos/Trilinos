@@ -64,10 +64,10 @@ void Galeri::core::Workspace::solve_LAPACK(Epetra_RowMatrix& matrix,
                                                   Epetra_MultiVector& LHS,
                                                   Epetra_MultiVector& RHS)
 {
-  TEST_FOR_EXCEPTION(matrix.Comm().NumProc() != 1, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(matrix.Comm().NumProc() != 1, std::logic_error,
                      "solve_LAPACK() works only in serial");
 
-  TEST_FOR_EXCEPTION(LHS.NumVectors() != RHS.NumVectors(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(LHS.NumVectors() != RHS.NumVectors(), std::logic_error,
                      "number of vectors in multivectors not consistent");
 
   int n = matrix.NumGlobalRows();

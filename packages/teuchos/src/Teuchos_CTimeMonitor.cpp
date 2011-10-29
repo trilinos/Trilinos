@@ -68,14 +68,14 @@ int Teuchos_startTimer( char timerName[], int timerID )
       return timerArray.size()-1;
     }
     // Else, the timer already exists so return it
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       timerID >=  implicit_cast<int>(timerArray.size()), std::logic_error,
       "Teuchos_startTimer(...): Error, timerID="<<timerID
       <<" is >= timerArray.size()="<<timerArray.size()
       <<" for timerName=\""<<timerName<<"\"!"
       );
     Teuchos::RCP<Teuchos::Time> timer = timerArray[timerID];
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       timer->isRunning(), std::logic_error,
       "Teuchos_startTimer(...): Error, timerID="<<timerID
       <<", timerName=\""<<timerName<<"\" is already running!"
@@ -96,7 +96,7 @@ void Teuchos_stopTimer( int timerID )
   using Teuchos::implicit_cast;
   bool success = true;
   try {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       timerID < 0 || timerID >= implicit_cast<int>(timerArray.size()),
       std::logic_error,
       "Teuchos_stopTimer(...): Error, timerID="<<timerID<<" is invalid!"

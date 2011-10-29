@@ -3695,7 +3695,7 @@ public:
   /** \brief  Dimensions of all ordinates. */
   template< typename iType >
   void dimensions( std::vector<iType> & n )
-    { m_array.dimensions<iType>( n ); }
+    { m_array.template dimensions<iType>( n ); }
 
   /** \brief  Total number of member data items. */
   size_type size() const { return m_array.m_stride[ Rank - 1 ]; }

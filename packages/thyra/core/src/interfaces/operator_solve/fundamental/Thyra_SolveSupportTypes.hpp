@@ -90,7 +90,7 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
     case SOLVE_MEASURE_NORM_RHS:
       return "SOLVE_MEASURE_NORM_RHS";
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return NULL; // Never be called!
 }
@@ -176,7 +176,7 @@ public:
   reduce( const VectorBase<Scalar> &v ) const
     {
 #ifdef THYRA_DEBUG
-      TEST_FOR_EXCEPTION(!isCompatible(v), Exceptions::IncompatibleVectorSpaces,
+      TEUCHOS_TEST_FOR_EXCEPTION(!isCompatible(v), Exceptions::IncompatibleVectorSpaces,
         "Error, the vector v="<<v.description()<<" is not compatiable with"
         " *this="<<this->description()<<"!");
 #endif
@@ -428,7 +428,7 @@ const std::string toString(const ESolveStatus solveStatus)
     case SOLVE_STATUS_CONVERGED:    return "SOLVE_STATUS_CONVERGED";
     case SOLVE_STATUS_UNCONVERGED:  return "SOLVE_STATUS_UNCONVERGED";
     case SOLVE_STATUS_UNKNOWN:      return "SOLVE_STATUS_UNKNOWN";
-    default: TEST_FOR_EXCEPT(true);
+    default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return ""; // Never be called!
 }
@@ -588,7 +588,7 @@ void accumulateSolveStatus(
           overallSolveStatus->extraParameters = solveStatus.extraParameters;
           break;
         default:
-          TEST_FOR_EXCEPT(true); // Corrupted enum?
+          TEUCHOS_TEST_FOR_EXCEPT(true); // Corrupted enum?
       }
       break;
     }
@@ -601,7 +601,7 @@ void accumulateSolveStatus(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Corrupted enum?
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Corrupted enum?
   }
   // Update the achieved tolerence to the maximum returned
   if( solveStatus.achievedTol > overallSolveStatus->achievedTol ) {

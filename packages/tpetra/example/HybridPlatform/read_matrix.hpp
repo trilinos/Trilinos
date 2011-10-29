@@ -211,7 +211,7 @@ read_vector_mm(const std::string& mm_file,
   }
 
   Teuchos::broadcast<int,GlobalOrdinal>(*comm, (int)0, (int)1, &num_global_rows);
-  TEST_FOR_EXCEPTION( rowmap->getGlobalNumElements() != num_global_rows, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION( rowmap->getGlobalNumElements() != num_global_rows, std::runtime_error, 
       "read_vector_mm: specified row map was not appropriate for this RHS." );
 
   Teuchos::RCP<TMV> b = Teuchos::rcp(new TMV(rowmap, 1));

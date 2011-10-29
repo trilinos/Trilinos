@@ -193,7 +193,7 @@ public:
     
     if (!problem.getSolutionGroup().isF()) {
       std::string msg = "Error - MyTest::checkStatus() - The residual F is not up-to-date with the solution.  Please fix your algorithm!";
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
     }
     
 

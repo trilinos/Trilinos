@@ -1281,6 +1281,20 @@ NOX::StatusTest::RelativeNormF): \"Tolerance\" <double> required
 tolerance for the test to return a converged status. (default =
 1.0e-8)
 
+\"Scale Norms by Length\" <bool> if set to true, the norms are scaled
+by the length of the vector. (default = false)
+
+Additional parameters valid for a NStep test (
+NOX::StatusTest::NStep): \"Number of Nonlinear Iterations\" <int>
+Number of nonlinear iterations to take until convergence (default = 1)
+
+\"Number of Initial Ramping Steps\" <int> Number of nonlinear solves
+in an initial ramping phase (default = 0)
+
+\"Number of Nonlinear Iterations in Ramping Phase\" <int> Number of
+nonlinear iterations to take until convergence in ramping phase
+(default = 10)
+
 Additional parameters valid for a \"User Defined\" test: \"User Status
 Test\" < Teuchos::RCP<NOX::StatusTest::Generic> > A status test
 suppied by the user. It is very important that when registering this
@@ -7093,6 +7107,63 @@ NormWRMS::print(ostream &stream, int indent=0) const
 Output formatted description of stopping test to output stream. ";
 
 
+// File: classNOX_1_1StatusTest_1_1NStep.xml
+%feature("docstring") NOX::StatusTest::NStep "
+
+Takes n Iterations before declaring convergence.
+
+This test is used to control an N-step Newton method. The test
+declares convergence once n nonlinear iterations have been taken.
+Optionally, an initial phase with a different number of steps can be
+taken.
+
+This is used where the time steps in a transient method are small
+enough that the step is essentially linear. The typical use case is to
+start with some initial transient run and take enough Newton steps to
+converge to an accurate solutions. After a few time steps, then switch
+over to a 1-Newton step per time step.
+
+C++ includes: NOX_StatusTest_NStep.H ";
+
+%feature("docstring")  NOX::StatusTest::NStep::NStep "NOX::StatusTest::NStep::NStep(int numberOfStepsForConvergence, int
+numberOfNonlinearSolvesInRampingPhase=0, int
+rampingPhaseNumberOfStepsForConvergence=10, const NOX::Utils *u=NULL)
+
+Ctor.
+
+Parameters:
+-----------
+
+numberOfStepsForConvergence:  Number of nonlinear iterations to take
+until convergence.
+
+numberOfNonlinearSolvesInRampingPhase:  Number of nonlinear solves in
+an initial ramping phase. During the ramping phase, convergenc will be
+declared after using a number of nonlinear steps equal to
+rampingPhaseNumberOfStepsForConvergence.
+
+rampingPhaseNumberOfStepsForConvergence:  Test will declaare
+convergence in the ramping phase after this number of time steps. ";
+
+%feature("docstring")  NOX::StatusTest::NStep::checkStatus "NOX::StatusTest::StatusType NOX::StatusTest::NStep::checkStatus(const
+NOX::Solver::Generic &problem, NOX::StatusTest::CheckType checkType)
+
+Test the stopping criterion
+
+The test can (and should, if possible) be skipped if checkType is
+NOX::StatusType::None. If the test is skipped, then the status should
+be set to NOX::StatusTest::Unevaluated. ";
+
+%feature("docstring")  NOX::StatusTest::NStep::getStatus "NOX::StatusTest::StatusType NOX::StatusTest::NStep::getStatus() const
+
+Return the result of the most recent checkStatus call. ";
+
+%feature("docstring")  NOX::StatusTest::NStep::print "ostream &
+NOX::StatusTest::NStep::print(ostream &stream, int indent=0) const
+
+Output formatted description of stopping test to output stream. ";
+
+
 // File: classNOX_1_1Epetra_1_1Observer.xml
 %feature("docstring") NOX::Epetra::Observer "";
 
@@ -7710,8 +7781,8 @@ Returns a converged status if $||F_k|| < ||F_0|| *
 
 C++ includes: NOX_StatusTest_RelativeNormF.H ";
 
-%feature("docstring")  NOX::StatusTest::RelativeNormF::RelativeNormF "NOX::StatusTest::RelativeNormF::RelativeNormF(double tolerance, const
-NOX::Utils *u=NULL) ";
+%feature("docstring")  NOX::StatusTest::RelativeNormF::RelativeNormF "NOX::StatusTest::RelativeNormF::RelativeNormF(double tolerance, bool
+scale_norms_by_vector_length=false, const NOX::Utils *u=NULL) ";
 
 %feature("docstring")  NOX::StatusTest::RelativeNormF::checkStatus "NOX::StatusTest::StatusType
 NOX::StatusTest::RelativeNormF::checkStatus(const NOX::Solver::Generic
@@ -8770,56 +8841,6 @@ deleted by the top level RCP.
 params:  Sublist with line search construction parameters. ";
 
 
-// File: classNOX_1_1Direction_1_1UserDefinedFactoryT.xml
-%feature("docstring") NOX::Direction::UserDefinedFactoryT "
-
-Concrete instantiation of a NOX::Direction::UserDefinedFactory object
-that uses the base objects only for constuction.
-
-If the user writes their own direction and that object has the same
-constructor arguments as the nox directions (the gd and params as in
-the buildDirection method), then users can use this object instead of
-having to write their own factory.
-
-For example, if a user writes their own direction object:
-
-They can build that object using this factory and do not have to write
-their own factory
-
-It is critical that the user defined factory be set in the parameter
-list as a base class type object: NOX::Direction::UserDefinedFactory.
-
-C++ includes: NOX_Direction_UserDefinedFactoryT.H ";
-
-%feature("docstring")
-NOX::Direction::UserDefinedFactoryT::UserDefinedFactoryT "NOX::Direction::UserDefinedFactoryT< T >::UserDefinedFactoryT()
-
-Constructor. ";
-
-%feature("docstring")
-NOX::Direction::UserDefinedFactoryT::~UserDefinedFactoryT "NOX::Direction::UserDefinedFactoryT< T >::~UserDefinedFactoryT()
-
-Destructor. ";
-
-%feature("docstring")
-NOX::Direction::UserDefinedFactoryT::buildDirection "Teuchos::RCP<NOX::Direction::Generic>
-NOX::Direction::UserDefinedFactoryT< T >::buildDirection(const
-Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
-const
-
-Builds a user defined direction object.
-
-Parameters:
------------
-
-gd:  A global data pointer that contains the top level parameter list.
-Without storing this inside the direction object, there is no
-guarantee that the second parameter params will still exist. It can be
-deleted by the top level RCP.
-
-params:  Sublist with direction construction parameters. ";
-
-
 // File: classNOX_1_1LineSearch_1_1UserDefinedFactoryT.xml
 %feature("docstring") NOX::LineSearch::UserDefinedFactoryT "
 
@@ -8868,6 +8889,56 @@ guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
 params:  Sublist with line search construction parameters. ";
+
+
+// File: classNOX_1_1Direction_1_1UserDefinedFactoryT.xml
+%feature("docstring") NOX::Direction::UserDefinedFactoryT "
+
+Concrete instantiation of a NOX::Direction::UserDefinedFactory object
+that uses the base objects only for constuction.
+
+If the user writes their own direction and that object has the same
+constructor arguments as the nox directions (the gd and params as in
+the buildDirection method), then users can use this object instead of
+having to write their own factory.
+
+For example, if a user writes their own direction object:
+
+They can build that object using this factory and do not have to write
+their own factory
+
+It is critical that the user defined factory be set in the parameter
+list as a base class type object: NOX::Direction::UserDefinedFactory.
+
+C++ includes: NOX_Direction_UserDefinedFactoryT.H ";
+
+%feature("docstring")
+NOX::Direction::UserDefinedFactoryT::UserDefinedFactoryT "NOX::Direction::UserDefinedFactoryT< T >::UserDefinedFactoryT()
+
+Constructor. ";
+
+%feature("docstring")
+NOX::Direction::UserDefinedFactoryT::~UserDefinedFactoryT "NOX::Direction::UserDefinedFactoryT< T >::~UserDefinedFactoryT()
+
+Destructor. ";
+
+%feature("docstring")
+NOX::Direction::UserDefinedFactoryT::buildDirection "Teuchos::RCP<NOX::Direction::Generic>
+NOX::Direction::UserDefinedFactoryT< T >::buildDirection(const
+Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
+const
+
+Builds a user defined direction object.
+
+Parameters:
+-----------
+
+gd:  A global data pointer that contains the top level parameter list.
+Without storing this inside the direction object, there is no
+guarantee that the second parameter params will still exist. It can be
+deleted by the top level RCP.
+
+params:  Sublist with direction construction parameters. ";
 
 
 // File: classNOX_1_1Utils.xml
@@ -10100,6 +10171,12 @@ follow the link for this object for more information. ";
 
 
 // File: NOX__StatusTest__NormWRMS_8H.xml
+
+
+// File: NOX__StatusTest__NStep_8C.xml
+
+
+// File: NOX__StatusTest__NStep_8H.xml
 
 
 // File: NOX__StatusTest__RelativeNormF_8C.xml

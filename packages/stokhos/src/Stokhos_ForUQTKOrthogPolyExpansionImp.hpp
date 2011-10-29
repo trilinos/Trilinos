@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 
@@ -100,7 +100,7 @@ timesEqual(
     pc = sz;
   else
     pc = p*xp;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::ForUQTKOrthogPolyExpansion::timesEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -111,7 +111,7 @@ timesEqual(
   const value_type* xc = x.coeff();
   
   if (p > 1 && xp > 1) {
-    TEST_FOR_EXCEPTION(pc != xp, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pc != xp, std::logic_error,
                      "Stokhos::ForUQTKOrthogPolyExpansion::timesEqual()" 
                      << ":  Arguments have incompatible sizes:  "
 		     << "x.size() = " << xp << ", c.size() = " << pc << ".");
@@ -150,7 +150,7 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = p;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::ForUQTKOrthogPolyExpansion::divideEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -161,7 +161,7 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   const value_type* xc = x.coeff();
   
   if (xp > 1) {
-    TEST_FOR_EXCEPTION(pc != xp, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pc != xp, std::logic_error,
                      "Stokhos::ForUQTKOrthogPolyExpansion::divideEqual()" 
                      << ":  Arguments have incompatible sizes:  "
 		     << "x.size() = " << xp << ", c.size() = " << pc << ".");
@@ -193,7 +193,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = pa*pb;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::ForUQTKOrthogPolyExpansion::times()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -205,7 +205,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pa > 1 && pb > 1) {
-    TEST_FOR_EXCEPTION(pa != pc || pb != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pa != pc || pb != pc, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::times()" 
 		       << ":  Arguments have incompatible sizes:  "
 		       << "a.size() = " << pa << ", b.size() = " << pb 
@@ -261,7 +261,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = pa;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::ForUQTKOrthogPolyExpansion::divide()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -273,7 +273,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pb > 1) {
-    TEST_FOR_EXCEPTION(pa != pc || pb != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pa != pc || pb != pc, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
 		       << ":  Arguments have incompatible sizes:  "
 		       << "a.size() = " << pa << ", b.size() = " << pb 
@@ -308,7 +308,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pb > 1) {
-    TEST_FOR_EXCEPTION(pb != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pb != pc, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
 		       << ":  Arguments have incompatible sizes:  "
 		       << "b.size() = " << pb 
@@ -352,7 +352,7 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pa > 1) {
-    TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
                      "Stokhos::ForUQTKOrthogPolyExpansion::exp()" 
                      << ":  Arguments have incompatible sizes:  "
 		     << "a.size() = " << pa << ", c.size() = " << pc
@@ -388,7 +388,7 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pa > 1) {
-    TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
                      "Stokhos::ForUQTKOrthogPolyExpansion::log()" 
                      << ":  Arguments have incompatible sizes:  "
 		     << "a.size() = " << pa << ", c.size() = " << pc
@@ -441,7 +441,7 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   value_type* cc = c.coeff();
 
   if (pa > 1) {
-    TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(pa != pc, std::logic_error,
                      "Stokhos::ForUQTKOrthogPolyExpansion::sqrt()" 
                      << ":  Arguments have incompatible sizes:  "
 		     << "a.size() = " << pa << ", c.size() = " << pc
@@ -522,7 +522,7 @@ sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     s[0] = std::sin(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::sin()" 
 		       << ":  Method not implemented!");
 }
@@ -539,7 +539,7 @@ cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::cos(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::cos()" 
 		       << ":  Method not implemented!");
 }
@@ -556,7 +556,7 @@ tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& t,
     t[0] = std::tan(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::tan()" 
 		       << ":  Method not implemented!");
 }
@@ -641,7 +641,7 @@ acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::acos(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::acos()" 
 		       << ":  Method not implemented!");
 }
@@ -658,7 +658,7 @@ asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::asin(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::asin()" 
 		       << ":  Method not implemented!");
 }
@@ -675,7 +675,7 @@ atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::atan(a[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atan()" 
 		       << ":  Method not implemented!");
 }
@@ -693,7 +693,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::atan2(a[0], b[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
@@ -711,7 +711,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::atan2(a, b[0]);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
@@ -729,7 +729,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::atan2(a[0], b);
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
@@ -746,7 +746,7 @@ acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::log(a[0]+std::sqrt(a[0]*a[0]-value_type(1.0)));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::acosh()" 
 		       << ":  Method not implemented!");
 }
@@ -763,7 +763,7 @@ asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = std::log(a[0]+std::sqrt(a[0]*a[0]+value_type(1.0)));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::asinh()" 
 		       << ":  Method not implemented!");
 }
@@ -780,7 +780,7 @@ atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     c[0] = 0.5*std::log((value_type(1.0)+a[0])/(value_type(1.0)-a[0]));
   }
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Stokhos::ForUQTKOrthogPolyExpansion::atanh()" 
 		       << ":  Method not implemented!");
 }

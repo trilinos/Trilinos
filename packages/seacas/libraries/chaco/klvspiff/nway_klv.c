@@ -22,23 +22,23 @@
 */
 
 
-int       nway_klv(graph, nvtxs, lbuckets, rbuckets, llistspace, rlistspace,
-		           ldvals, rdvals, sets, maxdval, goal, max_dev, bndy_list,
-		             weightsum)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vtxs in graph */
-struct bilist **lbuckets;	/* array of lists for bucket sort */
-struct bilist **rbuckets;	/* array of lists for bucket sort */
-struct bilist *llistspace;	/* list data structure for each vertex */
-struct bilist *rlistspace;	/* list data structure for each vertex */
-int      *ldvals;		/* d-values for each transition */
-int      *rdvals;		/* d-values for each transition */
-int    *sets;			/* processor each vertex is assigned to */
-int       maxdval;		/* maximum d-value for a vertex */
-double   *goal;			/* desired set sizes */
-int       max_dev;		/* largest allowed deviation from balance */
-int     **bndy_list;		/* list of vertices on boundary (0 ends) */
-double   *weightsum;		/* sum of vweights in each set (in and out) */
+int 
+nway_klv (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vtxs in graph */
+    struct bilist **lbuckets,	/* array of lists for bucket sort */
+    struct bilist **rbuckets,	/* array of lists for bucket sort */
+    struct bilist *llistspace,	/* list data structure for each vertex */
+    struct bilist *rlistspace,	/* list data structure for each vertex */
+    int *ldvals,		/* d-values for each transition */
+    int *rdvals,		/* d-values for each transition */
+    int *sets,			/* processor each vertex is assigned to */
+    int maxdval,		/* maximum d-value for a vertex */
+    double *goal,			/* desired set sizes */
+    int max_dev,		/* largest allowed deviation from balance */
+    int **bndy_list,		/* list of vertices on boundary (0 ends) */
+    double *weightsum		/* sum of vweights in each set (in and out) */
+)
 {
     struct bilist **to_buckets;	/* buckets I'm moving to */
     struct bilist **from_buckets;	/* buckets I'm moving from */

@@ -14,7 +14,6 @@ int main(int argc, char **argv)
     gethostname(buf, 256);
     printf("rank %d of %d executing on %s\n", rank, np, buf);
     MPI_Finalize();
-    printf("(rank %d) finished normally\n", rank);
 
     return(0);
 }

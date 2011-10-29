@@ -73,7 +73,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
         model_dgdp = Teuchos::rcp(new Epetra_MultiVector(model_g->Map(), numParameters));
       }
       else {
-        TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
               "TriKota Adapter Error: DgDp data type not implemented");
       }
     }
@@ -84,7 +84,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
     unsigned int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
-    TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
                        "TriKota Adapter Error: number of parameters in ModelEvaluator  "
                        <<  numParameters << "\n is less then the number of continuous variables\n"
                        << " specified in the dakota.in input file " << num_dakota_vars << "\n" );
@@ -106,20 +106,20 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
   if (App != Teuchos::null) {
 
     // test for consistency of problem definition between ModelEval and Dakota
-    TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
     EEME::InArgs inArgs = App->createInArgs();
     EEME::OutArgs outArgs = App->createOutArgs();
 
-    TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
-//    TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
+//    TEUCHOS_TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
 //                       != App->MyMPIComm(), std::logic_error,
 //     "TriKota Parallelism Error: derived_map_ac called with different MPI_comm");
  
@@ -149,7 +149,7 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
     }
   }
   else {
-    TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
+    TEUCHOS_TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
                        != MPI_COMM_NULL, std::logic_error,
                       "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
   }

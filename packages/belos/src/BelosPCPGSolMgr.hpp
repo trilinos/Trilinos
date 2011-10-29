@@ -419,7 +419,7 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr(
   label_(label_default_),
   isSet_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   if (!is_null(pl)) {
     // Set the parameters using the list that was passed in.
@@ -452,11 +452,11 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
   // Check for the maximum numbers of saved and deflated blocks.
   if (params->isParameter("Num Saved Blocks")) {
     savedBlocks_ = params->get("Num Saved Blocks",savedBlocks_default_);
-    TEST_FOR_EXCEPTION(savedBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(savedBlocks_ <= 0, std::invalid_argument,
 		       "Belos::PCPGSolMgr: \"Num Saved Blocks\" must be strictly positive.");
 
     // savedBlocks > number of matrix rows and columns, not known in parameters.
-    //TEST_FOR_EXCEPTION(savedBlocks_ >= maxIters_, std::invalid_argument,
+    //TEUCHOS_TEST_FOR_EXCEPTION(savedBlocks_ >= maxIters_, std::invalid_argument,
     //"Belos::PCPGSolMgr: \"Num Saved Blocks\" must be less than \"Maximum Iterations\".");
 
     // Update parameter in our list.
@@ -464,10 +464,10 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
   }
   if (params->isParameter("Num Deflated Blocks")) {
     deflatedBlocks_ = params->get("Num Deflated Blocks",deflatedBlocks_default_);
-    TEST_FOR_EXCEPTION(deflatedBlocks_ < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(deflatedBlocks_ < 0, std::invalid_argument,
 		       "Belos::PCPGSolMgr: \"Num Deflated Blocks\" must be positive.");
 
-    TEST_FOR_EXCEPTION(deflatedBlocks_ > savedBlocks_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(deflatedBlocks_ > savedBlocks_, std::invalid_argument,
 		       "Belos::PCPGSolMgr: \"Num Deflated Blocks\" must be <= \"Num Saved Blocks\".");
 
     // Update parameter in our list.
@@ -492,7 +492,7 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
+    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
 			std::invalid_argument,
 			"Belos::PCPGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
@@ -636,7 +636,7 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
       ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     } 
     else {
-      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
 			 "Belos::PCPGSolMgr(): Invalid orthogonalization type.");
     }  
   }
@@ -710,10 +710,10 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,PCPGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,PCPGSolMgrLinearProblemFailure,
                      "Belos::PCPGSolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PCPGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PCPGSolMgrLinearProblemFailure,
                      "Belos::PCPGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
@@ -868,7 +868,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
 
-            TEST_FOR_EXCEPTION(true,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
         } // end try
@@ -954,7 +954,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
         // One might save it, reuse it here, and just normalize columns U(q+1:dimU_) here.
 
         // throw an error if U is both A-orthonormal and rank deficient
-        TEST_FOR_EXCEPTION(rank < dimU_,PCPGSolMgrOrthoFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank < dimU_,PCPGSolMgrOrthoFailure,
                            "Belos::PCPGSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 
 
@@ -976,7 +976,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
                    &work[0], lwork,
                    &rwork[0], &info);
 
-        TEST_FOR_EXCEPTION(info != 0, PCPGSolMgrLAPACKFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, PCPGSolMgrLAPACKFailure,
 			     "Belos::PCPGSolMgr::solve(): LAPACK _GESVD failed to compute singular values.");
 
         if( work[0] !=  67. * dimU_ )

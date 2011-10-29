@@ -55,12 +55,12 @@ DependencyXMLConverter::fromXMLtoDependency(
   Dependency::ConstParameterEntryList dependees;
   Dependency::ParameterEntryList dependents;
 
-  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == -1,
+  TEUCHOS_TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == -1,
     MissingDependeesException,
     "Could not find any dependees for a dependency!" 
     <<std::endl <<std::endl);
 
-  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == -1,
+  TEUCHOS_TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == -1,
     MissingDependentsException,
     "Could not find any dependents for a dependency!" 
     <<std::endl <<std::endl);
@@ -72,7 +72,7 @@ DependencyXMLConverter::fromXMLtoDependency(
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIdAttributeName());
 
-      TEST_FOR_EXCEPTION(entryIDsMap.find(dependeeID) == entryIDsMap.end(),
+      TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(dependeeID) == entryIDsMap.end(),
         MissingDependeeException,
         "Can't find a Dependee ParameterEntry associated with the ID: " <<
         dependeeID << std::endl << std::endl);
@@ -83,7 +83,7 @@ DependencyXMLConverter::fromXMLtoDependency(
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIdAttributeName());
 
-      TEST_FOR_EXCEPTION(entryIDsMap.find(dependentID) == entryIDsMap.end(),
+      TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(dependentID) == entryIDsMap.end(),
         MissingDependentException,
         "Can't find a Dependent ParameterEntry associated with the ID: " <<
         dependentID << std::endl << std::endl);
@@ -111,7 +111,7 @@ DependencyXMLConverter::fromDependencytoXML(
 
   for(;it != dependency->getDependees().end(); ++it){
     XMLObject currentDependee(getDependeeTagName());
-    TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
       MissingDependeeException,
       "Can't find the Dependee of a dependency in the given " <<
       "EntryIDsMap. Occured when converting " <<
@@ -124,7 +124,7 @@ DependencyXMLConverter::fromDependencytoXML(
   it = dependency->getDependents().begin();
   for(; it != dependency->getDependents().end(); ++it){
     XMLObject currentDependent(getDependentTagName());
-    TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
       MissingDependentException,
       "Can't find the Dependent of a dependency in the given " <<
       "ValidatordIDsMap.. Occured when converting " <<

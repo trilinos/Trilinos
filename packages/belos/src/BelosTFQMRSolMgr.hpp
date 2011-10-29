@@ -354,7 +354,7 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
   isSet_(false),
   isSTSet_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if ( !is_null(pl) ) {
@@ -386,7 +386,7 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
   // Check for blocksize
   if (params->isParameter("Block Size")) {
     blockSize_ = params->get("Block Size",1);    
-    TEST_FOR_EXCEPTION(blockSize_ != 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ != 1, std::invalid_argument,
 		       "Belos::TFQMRSolMgr: \"Block Size\" must be 1.");
 
     // Update parameter in our list.
@@ -654,14 +654,14 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,TFQMRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,TFQMRSolMgrLinearProblemFailure,
 		     "Belos::TFQMRSolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),TFQMRSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),TFQMRSolMgrLinearProblemFailure,
                      "Belos::TFQMRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   if (!isSTSet_) {
-    TEST_FOR_EXCEPTION( checkStatusTest(),TFQMRSolMgrLinearProblemFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( checkStatusTest(),TFQMRSolMgrLinearProblemFailure,
 			"Belos::TFQMRSolMgr::solve(): Linear problem and requested status tests are incompatible.");
   }
 
@@ -759,7 +759,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 			       "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
 	  }
 	}

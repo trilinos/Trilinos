@@ -10,18 +10,19 @@
 
 /* Recursively apply median to a SINGLE vector of values */
 
-void      rec_median_1(graph, vals, nvtxs, active, cube_or_mesh, nsets,
-		                 goal, using_vwgts, assign, top)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double   *vals;			/* values of which to find median */
-int       nvtxs;		/* number of values I own */
-int      *active;		/* space for list of nmyvals ints */
-int       cube_or_mesh;		/* 0=> hypercube, other=> mesh */
-int       nsets;		/* number of sets to divide into */
-double   *goal;			/* desired sizes for sets */
-int       using_vwgts;		/* are vertex weights being used? */
-int      *assign;		/* set each vertex gets assigned to */
-int       top;			/* is this the top call in the recursion? */
+void 
+rec_median_1 (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double *vals,			/* values of which to find median */
+    int nvtxs,		/* number of values I own */
+    int *active,		/* space for list of nmyvals ints */
+    int cube_or_mesh,		/* 0=> hypercube, other=> mesh */
+    int nsets,		/* number of sets to divide into */
+    double *goal,			/* desired sizes for sets */
+    int using_vwgts,		/* are vertex weights being used? */
+    int *assign,		/* set each vertex gets assigned to */
+    int top			/* is this the top call in the recursion? */
+)
 {
     struct vtx_data **sub_graph;/* subgraph data structure with vertex weights */
     double   *sub_vals;		/* subgraph entries in vals vector */
@@ -147,17 +148,18 @@ int       top;			/* is this the top call in the recursion? */
 /* Divide with first, and use result to divide with second, etc. */
 /* Note: currently only works for power-of-two number of processors. */
 
-void      rec_median_k(graph, vals, nvtxs, active, ndims, cube_or_mesh,
-		                 goal, using_vwgts, assign)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double  **vals;			/* values of which to find median */
-int       nvtxs;		/* number of values I own */
-int      *active;		/* space for list of nmyvals ints */
-int       ndims;		/* number of dimensions to divide */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-double   *goal;			/* desired sizes for sets */
-int       using_vwgts;		/* are vertex weights being used? */
-int      *assign;		/* set each vertex gets assigned to */
+void 
+rec_median_k (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double **vals,			/* values of which to find median */
+    int nvtxs,		/* number of values I own */
+    int *active,		/* space for list of nmyvals ints */
+    int ndims,		/* number of dimensions to divide */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    double *goal,			/* desired sizes for sets */
+    int using_vwgts,		/* are vertex weights being used? */
+    int *assign		/* set each vertex gets assigned to */
+)
 {
     struct vtx_data **sub_graph;/* subgraph data structure with vertex weights */
     double   *sub_vals[MAXDIMS];/* subgraph entries in vals vectors */

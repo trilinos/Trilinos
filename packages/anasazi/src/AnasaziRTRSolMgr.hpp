@@ -178,15 +178,15 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
 #endif
   pl_(pl)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   std::string strtmp;
 
   whch_ = pl_.get("Which","SR");
-  TEST_FOR_EXCEPTION(whch_ != "SR" && whch_ != "LR",
+  TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "SR" && whch_ != "LR",
       std::invalid_argument, "Anasazi::RTRSolMgr: Invalid sorting string. RTR solvers compute only LR or SR.");
 
   // convergence tolerance
@@ -200,7 +200,7 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
     convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::RTRSolMgr: Invalid Convergence Norm.");
   }
   
@@ -363,7 +363,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
     rtr_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
-  TEST_FOR_EXCEPTION(rtr_solver->getBlockSize() < problem_->getNEV(),std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rtr_solver->getBlockSize() < problem_->getNEV(),std::logic_error,
             "Anasazi::RTRSolMgr requires block size >= requested number of eigenvalues.");
 
   int numfound = 0;
@@ -405,7 +405,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
     }
   }
   else {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::RTRSolMgr::solve(): solver returned without satisfy status test.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::RTRSolMgr::solve(): solver returned without satisfy status test.");
   }
 
   // create contiguous storage for all eigenvectors, eigenvalues

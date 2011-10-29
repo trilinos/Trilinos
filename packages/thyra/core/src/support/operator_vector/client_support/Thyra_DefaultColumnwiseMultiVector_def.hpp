@@ -50,7 +50,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
 namespace Thyra {
@@ -92,8 +92,8 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
 #ifdef TEUCHOS_DEBUG
   const std::string err_msg =
     "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
-  TEST_FOR_EXCEPT_MSG( is_null(col_vec), err_msg ); 
-  TEST_FOR_EXCEPT_MSG( is_null(col_vec->space()), err_msg ); 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( is_null(col_vec), err_msg ); 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( is_null(col_vec->space()), err_msg ); 
 #endif
   range_  = col_vec->space();
   domain_ = range_->smallVecSpcFcty()->createVecSpc(1);
@@ -112,10 +112,10 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
 #ifdef TEUCHOS_DEBUG
   const std::string err_msg =
     "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
-  TEST_FOR_EXCEPT_MSG( is_null(range_in), err_msg ); 
-  TEST_FOR_EXCEPT_MSG( is_null(domain_in), err_msg ); 
-  TEST_FOR_EXCEPT_MSG( range_in->dim()  == 0, err_msg ); 
-  TEST_FOR_EXCEPT_MSG( domain_in->dim() == 0, err_msg );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( is_null(range_in), err_msg ); 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( is_null(domain_in), err_msg ); 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( range_in->dim()  == 0, err_msg ); 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( domain_in->dim() == 0, err_msg );
   // ToDo: Check the compatibility of the vectors in col_vecs!
 #endif
   const int domainDim = domain_in->dim();
@@ -236,7 +236,7 @@ DefaultColumnwiseMultiVector<Scalar>::nonconstColImpl(Ordinal j)
 {
   using Teuchos::as;
   const int num_cols = col_vecs_.size();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(  0 <= j  && j < num_cols ), std::logic_error
     ,"Error, j = " << j << " does not fall in the range [0,"<<(num_cols-1)<< "]!"
     );
@@ -253,7 +253,7 @@ DefaultColumnwiseMultiVector<Scalar>::nonconstContigSubViewImpl(
   const Ordinal numCols = domain_->dim();
   const Range1D col_rng = Teuchos::full_range(col_rng_in,0,numCols-1);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( col_rng.ubound() < numCols ), std::logic_error
     ,"DefaultColumnwiseMultiVector<Scalar>::subView(col_rng):"
     "Error, the input range col_rng = ["<<col_rng.lbound()

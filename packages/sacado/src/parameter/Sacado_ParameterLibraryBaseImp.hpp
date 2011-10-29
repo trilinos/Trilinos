@@ -29,7 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 template <typename FamilyType, typename EntryType>
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
@@ -101,7 +101,7 @@ addEntry(const std::string& name,
   typename FamilyMap::iterator it = library.find(name);
   
   // First check parameter is in the library
-  TEST_FOR_EXCEPTION(it == library.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(it == library.end(), 
                      std::logic_error,
                      std::string("Sacado::ParameterLibraryBase::addEntry():  ")
                      + "Parameter family " + name
@@ -121,7 +121,7 @@ getEntry(const std::string& name)
   typename FamilyMap::iterator it = library.find(name);
   
   // First check parameter is in the library
-  TEST_FOR_EXCEPTION(it == library.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(it == library.end(), 
                      std::logic_error,
                      std::string("Sacado::ParameterLibraryBase::getEntry():  ")
                      + "Parameter family " + name
@@ -141,7 +141,7 @@ getEntry(const std::string& name) const
   typename FamilyMap::const_iterator it = library.find(name);
   
   // First check parameter is in the library
-  TEST_FOR_EXCEPTION(it == library.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(it == library.end(), 
                      std::logic_error,
                      std::string("Sacado::ParameterLibraryBase::getEntry():  ")
                      + "Parameter family " + name
@@ -164,7 +164,7 @@ fillVector(const Teuchos::Array<std::string>& names,
   // Fill in parameters
   for (unsigned int i=0; i<names.size(); i++) {
     it = library.find(names[i]);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
 		   it == library.end(), 
 		   std::logic_error,
 		   std::string("Sacado::ParameterLibraryBase::fillVector():  ")

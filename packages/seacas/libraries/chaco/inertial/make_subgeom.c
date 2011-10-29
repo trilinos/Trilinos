@@ -3,12 +3,14 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 
-void      make_subgeom(igeom, coords, subcoords, subnvtxs, loc2glob)
-int       igeom;		/* 1, 2 or 3 dimensional geometry? */
-float   **coords;		/* x, y and z coordinates of vertices */
-float   **subcoords;		/* x, y ans z coordinates in subgraph */
-int       subnvtxs;		/* number of vertices in subgraph */
-int      *loc2glob;		/* maps from subgraph to graph numbering */
+void 
+make_subgeom (
+    int igeom,		/* 1, 2 or 3 dimensional geometry? */
+    float **coords,		/* x, y and z coordinates of vertices */
+    float **subcoords,		/* x, y ans z coordinates in subgraph */
+    int subnvtxs,		/* number of vertices in subgraph */
+    int *loc2glob		/* maps from subgraph to graph numbering */
+)
 {
     int       i;		/* loop counter */
 

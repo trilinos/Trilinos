@@ -156,7 +156,7 @@ void NeumannSeriesPreconditionerFactory<ScalarT>::uninitializePrec(Thyra::Precon
 template <typename ScalarT>
 void NeumannSeriesPreconditionerFactory<ScalarT>::setParameterList(const RCP<Teuchos::ParameterList> & paramList)
 {
-   TEST_FOR_EXCEPT(paramList==Teuchos::null);
+   TEUCHOS_TEST_FOR_EXCEPT(paramList==Teuchos::null);
  
    // check the parameters are correct
    paramList->validateParametersAndSetDefaults(*getValidParameters(),0);

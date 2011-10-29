@@ -61,7 +61,7 @@ Stokhos::MeanBasedPreconditioner::
 setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
 		    const Epetra_Vector& x)
 {
-   TEST_FOR_EXCEPTION(prec_factory == Teuchos::null, std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(prec_factory == Teuchos::null, std::logic_error,
 		      "Error!  setupPreconditioner() cannot be called when " <<
 		      "prec_factory is null!" << std::endl);
 

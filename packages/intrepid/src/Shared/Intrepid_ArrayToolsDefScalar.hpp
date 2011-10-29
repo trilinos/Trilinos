@@ -55,32 +55,32 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                                          const bool           reciprocal) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputData.rank() != 2), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputData.rank() != 2), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input data container must have rank 2.");
   if (outputFields.rank() <= inputFields.rank()) {
-    TEST_FOR_EXCEPTION( ( (inputFields.rank() < 3) || (inputFields.rank() > 5) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 3) || (inputFields.rank() > 5) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 3, 4, or 5.");
-    TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input and output fields containers must have the same rank.");
-    TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-    TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
     for (int i=0; i<inputFields.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
-      TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i)), std::invalid_argument, errmsg );
     }
   }
   else {
-    TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 2, 3, or 4.");
-    TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): The rank of the input fields container must be one less than the rank of the output fields container.");
-    TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): First dimensions of fields input container and data input container (number of integration points) must agree or first data dimension must be 1!");
-    TEST_FOR_EXCEPTION( ( inputData.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inputData.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions of fields output container and data input containers (number of integration domains) must agree!");
     for (int i=0; i<inputFields.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimensions ";
@@ -88,7 +88,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
       errmsg += " and ";
       errmsg += (char)(48+i+1);
       errmsg += " of the input and output fields containers must agree!";
-      TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument, errmsg );
     }
   }
 #endif
@@ -193,7 +193,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): This branch of the method is defined only for rank-3,4 or 5 containers.");
       }// invalRank
 
@@ -280,7 +280,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 3) || (invalRank == 4) || (invalRank == 5) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): This branch of the method is defined only for rank-3, 4 or 5 input containers.");
 
       } // invalRank
@@ -371,7 +371,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): This branch of the method is defined only for rank-2, 3 or 4 input containers.");
       }// invalRank
 
@@ -458,7 +458,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 3) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 3) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): This branch of the method is defined only for rank-2, 3 or 4 input containers.");
 
       } // invalRank
@@ -477,32 +477,32 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
                                         const bool               reciprocal) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inputDataLeft.rank() != 2), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.rank() != 2), std::invalid_argument,
                       ">>> ERROR (ArrayTools::scalarMultiplyDataData): Left input data container must have rank 2.");
   if (outputData.rank() <= inputDataRight.rank()) {
-    TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 2) || (inputDataRight.rank() > 4) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 2) || (inputDataRight.rank() > 4) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 2, 3, or 4.");
-    TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input and output data containers must have the same rank.");
-    TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != inputDataLeft.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != inputDataLeft.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions (number of integration domains) of the left and right data input containers must agree!");
-    TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree or first dimension of the left data input container must be 1!");
     for (int i=0; i<inputDataRight.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the right input and output data containers must agree!";
-      TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i)), std::invalid_argument, errmsg );
     }
   }
   else {
-    TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 1) || (inputDataRight.rank() > 3) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 1) || (inputDataRight.rank() > 3) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 1, 2, or 3.");
-    TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()+1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()+1), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): The rank of the right input data container must be one less than the rank of the output data container.");
-    TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimension of the right input data container and first dimension of the left data input container (number of integration points) must agree or first dimension of the left data input container must be 1!");
-    TEST_FOR_EXCEPTION( ( inputDataLeft.dimension(0) != outputData.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inputDataLeft.dimension(0) != outputData.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions of data output and left data input containers (number of integration domains) must agree!");
     for (int i=0; i<inputDataRight.rank(); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimensions ";
@@ -510,7 +510,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
       errmsg += " and ";
       errmsg += (char)(48+i+1);
       errmsg += " of the right input and output data containers must agree!";
-      TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i+1)), std::invalid_argument, errmsg );
+      TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(i) != outputData.dimension(i+1)), std::invalid_argument, errmsg );
     }
   }
 #endif
@@ -602,7 +602,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): This branch of the method is defined only for rank-2, 3 or 4 containers.");
       }// invalRank
 
@@ -677,7 +677,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 2) || (invalRank == 3) || (invalRank == 4) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): This branch of the method is defined only for rank-2, 3 or 4 input containers.");
 
       } // invalRank
@@ -756,7 +756,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 1) || (invalRank == 2) || (invalRank == 3) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 1) || (invalRank == 2) || (invalRank == 3) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): This branch of the method is defined only for rank-1, 2 or 3 input containers.");
       }// invalRank
 
@@ -831,7 +831,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
         break;
 
         default:
-              TEST_FOR_EXCEPTION( !( (invalRank == 1) || (invalRank == 2) || (invalRank == 3) ), std::invalid_argument,
+              TEUCHOS_TEST_FOR_EXCEPTION( !( (invalRank == 1) || (invalRank == 2) || (invalRank == 3) ), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): This branch of the method is defined only for rank-1, 2 or 3 input containers.");
 
       } // invalRank

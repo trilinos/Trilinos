@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 
@@ -167,7 +167,7 @@ timesEqual(
     pc = sz;
   else
     pc = p*xp;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::OrthogPolyExpansionBase::timesEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -406,7 +406,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = pa*pb;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::OrthogPolyExpansionBase::times()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");

@@ -448,6 +448,8 @@ void BulkData::internal_resolve_shared_modify_delete()
   }
 }
 
+
+
 //----------------------------------------------------------------------
 // Resolve modifications for ghosted entities:
 // If a ghosted entity is modified or destroyed on the owning

@@ -83,6 +83,8 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_CombineNative.hpp
     Tsqr_CombineTest.hpp
     Tsqr_ConfigDefs.hpp
+    Tsqr_KokkosNodeTsqr.hpp
+    Tsqr_KokkosNodeTsqrTest.hpp
     Tsqr_Lapack.hpp
     Tsqr_LocalVerify.hpp
     Tsqr_Matrix.hpp

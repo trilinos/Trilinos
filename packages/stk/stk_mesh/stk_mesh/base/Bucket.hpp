@@ -73,7 +73,7 @@ bool has_superset( const Bucket & , const PartVector & );
  *  \ref stk::mesh::Bucket "bucket" that dereferences to a
  *  \ref stk::mesh::Entity "entity" reference.
  */
-class BucketIterator : public std::iterator<std::random_access_iterator_tag,Entity > {
+class BucketIterator : public std::iterator<std::random_access_iterator_tag,Entity&, ptrdiff_t, Entity*, Entity& > {
 private:
   const Bucket * m_bucket_ptr;
   size_t         m_current_entity;
@@ -260,7 +260,7 @@ public:
   typedef BucketIterator iterator ;
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const { return iterator(this,0); }
+  inline iterator begin() const { return iterator(this,(size_t)0); }
 
   /** \brief End of the bucket */
   inline iterator end() const { return iterator(this,size()); }
@@ -335,6 +335,9 @@ public:
 
   /** \brief  The allocation size, in bytes, of this bucket */
   unsigned allocation_size() const { return m_bucketImpl.allocation_size() ; }
+
+  /** \brief  A method to assist in unit testing - accesses private data as necessary. */
+  bool assert_correct() const;
 
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"

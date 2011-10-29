@@ -474,15 +474,15 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDen
 							     const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
 {
   // Check that these new vectors are consistent.
-  TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
 		     "SerialSpdDenseSolver<T>::setVectors: X and B are not the same size!");
-  TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
 		     "SerialSpdDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
-  TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
 		     "SerialSpdDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
-  TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
 		     "SerialSpdDenseSolver<T>::setVectors: B has an invalid stride!");
-  TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
 		     "SerialSpdDenseSolver<T>::setVectors: X has an invalid stride!");
 
   resetVectors(); 
@@ -507,7 +507,7 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (factored()) return(0); // Already factored
 
-  TEST_FOR_EXCEPTION(inverted(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(inverted(), std::logic_error,
 		     "SerialSpdDenseSolver<T>::factor: Cannot factor an inverted matrix!");
 
   ANORM_ = Matrix_->normOne(); // Compute 1-Norm of A
@@ -556,11 +556,11 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
   }
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
-  TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) , 
+  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) , 
                      std::logic_error, "SerialSpdDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
-  TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument, 
                      "SerialSpdDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
-  TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument, 
                      "SerialSpdDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
   if (shouldEquilibrate() && !equilibratedA_)
@@ -568,7 +568,7 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
 
   if (inverted()) {
 
-    TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument, 
                         "SerialSpdDenseSolver<T>::solve: X and B must be different vectors if matrix is inverted.");
 
     INFO_ = 0;
@@ -595,8 +595,6 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
   if (refineSolution_ && !inverted()) ierr1 = applyRefinement();
   if (ierr1!=0) 
     return(ierr1);
-  else
-    return(ierr);
   
   if (equilibrate_) ierr1 = unequilibrateLHS();
   return(ierr1);
@@ -606,9 +604,9 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
 template<typename OrdinalType, typename ScalarType>
 int SerialSpdDenseSolver<OrdinalType,ScalarType>::applyRefinement()
 {
-  TEST_FOR_EXCEPTION(!solved(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!solved(), std::logic_error,
 		     "SerialSpdDenseSolver<T>::applyRefinement: Must have an existing solution!");
-  TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
 		     "SerialSpdDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
   OrdinalType NRHS = RHS_->numCols();
@@ -759,10 +757,10 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 
   if (!equilibratedB_) return(0); // Nothing to do
 
-  OrdinalType LDX = RHS_->stride(), NRHS = RHS_->numCols();
-  ScalarType * X = RHS_->values();
+  OrdinalType LDX = LHS_->stride(), NLHS = LHS_->numCols();
+  ScalarType * X = LHS_->values();
   ScalarType * ptr;
-  for (j=0; j<NRHS; j++) {
+  for (j=0; j<NLHS; j++) {
     ptr = X + j*LDX;
     for (i=0; i<numRowCols_; i++) {
       *ptr = *ptr*R_[i];

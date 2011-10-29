@@ -150,13 +150,13 @@ void IfpackPreconditionerFactory::initializePrec(
   if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
-  TEST_FOR_EXCEPT(prec==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(prec==NULL);
 #endif
   Teuchos::RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc->getOp();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
 #endif
   //
   // Unwrap and get the forward Epetra_Operator object
@@ -175,7 +175,7 @@ void IfpackPreconditionerFactory::initializePrec(
   // Validate what we get is what we need
   RCP<const Epetra_RowMatrix>
     epetraFwdRowMat = rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp,true);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
@@ -236,12 +236,12 @@ void IfpackPreconditionerFactory::initializePrec(
       Teuchos::ParameterList
         &ifpackSettingsPL = paramList_->sublist(IfpackSettings_name);
       // Above will create new sublist if it does not exist!
-      TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(ifpackSettingsPL));
+      TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(ifpackSettingsPL));
       // Above, I have not idea how any error messages for a mistake will be
       // reported back to the user!
     }
     // Initailize the structure for the preconditioner
-    TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
+    TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
   //
   // Attach the epetraFwdOp to the ifpack_precOp to guarantee that it will not go away
@@ -258,7 +258,7 @@ void IfpackPreconditionerFactory::initializePrec(
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
 #endif
     timer.start(true);
-    TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
+    TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
@@ -311,14 +311,14 @@ void IfpackPreconditionerFactory::uninitializePrec(
   ,ESupportSolveUse                                         *supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!
+  TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!
 }
 
 // Overridden from ParameterListAcceptor
 
 void IfpackPreconditionerFactory::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),2);
   // Note: The above validation will validate right down into the the sublist
   // named IfpackSettings_name!

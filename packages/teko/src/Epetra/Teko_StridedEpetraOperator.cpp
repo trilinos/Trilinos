@@ -223,7 +223,7 @@ std::string StridedEpetraOperator::PrintNorm(const eNormType & nrmType,const cha
             norm = mat->NormFrobenius();
             break;
          default:
-            TEST_FOR_EXCEPTION(true,std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                "StridedEpetraOperator::eNormType incorrectly specified");
          }
 

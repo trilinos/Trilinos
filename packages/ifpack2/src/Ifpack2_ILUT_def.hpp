@@ -65,7 +65,7 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOr
   NumMyRows_(-1),
   NumGlobalNonzeros_(0)
 { 
-  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
       Teuchos::typeName(*this) << "::ILUT(): input matrix reference was null.");
 }
 
@@ -78,7 +78,7 @@ ILUT<MatrixType>::~ILUT() {
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   Ifpack2::getParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
-  TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Ifpack2::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
 
   double tmp = -1;
@@ -209,7 +209,7 @@ void ILUT<MatrixType>::initialize() {
   Time_.start(true);
 
   // check only in serial
-  TEST_FOR_EXCEPTION(Comm_->getSize() == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(), std::runtime_error, "Ifpack2::ILUT::Initialize ERROR, matrix must be square");
+  TEUCHOS_TEST_FOR_EXCEPTION(Comm_->getSize() == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(), std::runtime_error, "Ifpack2::ILUT::Initialize ERROR, matrix must be square");
 
   NumMyRows_ = A_->getNodeNumRows();
 
@@ -263,7 +263,7 @@ void ILUT<MatrixType>::compute() {
   L_ = Teuchos::rcp(new MatrixType(A_->getRowMap(), A_->getColMap(), 0));
   U_ = Teuchos::rcp(new MatrixType(A_->getRowMap(), A_->getColMap(), 0));
 
-  TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
      "Ifpack2::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
@@ -546,10 +546,10 @@ void ILUT<MatrixType>::apply(
                typename MatrixType::scalar_type alpha,
                typename MatrixType::scalar_type beta) const
 {
-  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::ILUT::apply() ERROR, compute() hasn't been called yet.");
 
-  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Ifpack2::ILUT::apply() ERROR, X.getNumVectors() != Y.getNumVectors().");
 
   Time_.start(true);

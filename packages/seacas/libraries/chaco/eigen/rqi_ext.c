@@ -5,7 +5,8 @@
 
 /* Perform Rayleigh Quotient Iteration for extended eigenproblem. */
 
-void      rqi_ext()
+void 
+rqi_ext (void)
 {
     void bail();
 

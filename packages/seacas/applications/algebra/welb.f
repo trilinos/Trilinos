@@ -66,7 +66,7 @@ C   --   NODIX(i) - IN - the zoom mesh index for each node (iff NEWNOD)
 C   --   A        - IN - the dynamic memory array
 C   --   MERR     - OUT - memory error flag
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       INTEGER NDBOUT
       INTEGER NELBLK
@@ -239,7 +239,7 @@ C           Write element block attributes
       end
 
       subroutine cpynam(namei, nameo, idx)
-      include 'params.blk'
+      include 'exodusII.inc'
 
       character*(mxstln) namei
       character*(mxstln) nameo(*)
@@ -248,7 +248,7 @@ C           Write element block attributes
       end
 
       subroutine blkout(ndbout, idelb, names, numelb, numlnk, numatr)
-      include 'params.blk'
+      include 'exodusII.inc'
       integer idelb(*)
       character*(mxstln) names(*)
       integer numelb(*)

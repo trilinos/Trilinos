@@ -124,7 +124,7 @@ void ROpGetSubVector<Scalar>::reduce_reduct_objs_impl(
   SubVectorView<Scalar> sub_vec_inout = drtsvv_inout_reduct_obj.get();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     sub_vec_in.subDim()!=sub_vec_inout.subDim()
     || sub_vec_in.globalOffset()!=sub_vec_inout.globalOffset()
     || is_null(sub_vec_in.values())
@@ -248,7 +248,7 @@ void ROpGetSubVector<Scalar>::apply_op_impl(
   typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
   const index_type subDim  = sub_vecs[0].subDim();
   const index_type globalOffset = sub_vecs[0].globalOffset();
-  TEST_FOR_EXCEPT(globalOffset<0);
+  TEUCHOS_TEST_FOR_EXCEPT(globalOffset<0);
   const_iter_t v0_val = sub_vecs[0].values().begin();
   const ptrdiff_t v0_s = sub_vecs[0].stride();
   

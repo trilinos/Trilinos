@@ -162,7 +162,7 @@ bool run_composite_linear_ops_tests(
     Thyra::EOpTransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_1 = NULL;
     unwrap( *origA, &scalar, &transp, &origA_1 );
-    TEST_FOR_EXCEPT( origA_1 == NULL );
+    TEUCHOS_TEST_FOR_EXCEPT( origA_1 == NULL );
 
     if (nonnull(out)) *out << "\nscalar = " << scalar << " == 1 ? ";
     result = (scalar == ST::one());
@@ -188,7 +188,7 @@ bool run_composite_linear_ops_tests(
     Thyra::EOpTransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_2 = NULL;
     unwrap( *A1, &scalar, &transp, &origA_2 );
-    TEST_FOR_EXCEPT( origA_2 == NULL );
+    TEUCHOS_TEST_FOR_EXCEPT( origA_2 == NULL );
 
     if (nonnull(out)) *out << "\nscalar = " << scalar << " == 0.5 ? ";
     result = (scalar == as<Scalar>(0.5));

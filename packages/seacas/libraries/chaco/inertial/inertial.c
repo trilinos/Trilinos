@@ -9,17 +9,18 @@
 int       PROJECTION_AXIS = 0;	/* axis to flatten geometry */
 				/* => long regions, good for SnRad */
 
-void      inertial(graph, nvtxs, cube_or_mesh, nsets, igeom, coords, sets,
-		             goal, using_vwgts)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vtxs in graph */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to cut into */
-int       igeom;		/* 1, 2 or 3 dimensional geometry? */
-float   **coords;		/* x, y and z coordinates of vertices */
-int    *sets;			/* set each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       using_vwgts;		/* are vertex weights being used? */
+void 
+inertial (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vtxs in graph */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to cut into */
+    int igeom,		/* 1, 2 or 3 dimensional geometry? */
+    float **coords,		/* x, y and z coordinates of vertices */
+    int *sets,			/* set each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int using_vwgts		/* are vertex weights being used? */
+)
 {
     extern    int DEBUG_TRACE;	/* trace the execution of the code */
     extern    int PROJECTION_AXIS;	/* axis to project out geometry */

@@ -394,7 +394,7 @@ namespace Intrepid {
       }
       break;
     default:
-        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                             ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): Operator type not implemented");
         break;
     }
@@ -405,7 +405,7 @@ void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                                                              const ArrayScalar &    inputPoints,
                                                              const ArrayScalar &    cellVertices,
                                                              const EOperator        operatorType) const {
-  TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): FEM Basis calling an FVD member function");
 }
 

@@ -56,7 +56,7 @@ AdaptiveSparseGridInterface<Scalar,UserVector>::AdaptiveSparseGridInterface(
 	      int maxLevel,
 	      bool isNormalized) {
 
-  TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,
     ">>> ERROR (AdaptiveSparseGridInterface): Dimension mismatch for inputs.");
 

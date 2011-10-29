@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 
 template <typename ordinal_type, typename value_type> 
@@ -189,7 +189,7 @@ timesEqual(
     pc = sz;
   else
     pc = p*xp;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::DerivOrthogPolyExpansion::timesEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -243,7 +243,7 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = p;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::DerivOrthogPolyExpansion::divideEqual()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -278,10 +278,10 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // Solve system
     int info = solve(pc, 1);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		            << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		            << " in LU factorization is exactly zero");
 
@@ -447,7 +447,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = pa*pb;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::DerivOrthogPolyExpansion::times()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -536,7 +536,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     pc = sz;
   else
     pc = pa;
-  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
 		     "Stokhos::DerivOrthogPolyExpansion::divide()" <<
 		     ":  Expansion size (" << sz << 
 		     ") is too small for computation.");
@@ -573,10 +573,10 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // Solve system
     int info = solve(pc, 1);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		            << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		            << " in LU factorization is exactly zero");
 
@@ -635,10 +635,10 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // Solve system
     int info = solve(pc, 1);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		            << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		            << " in LU factorization is exactly zero");
 
@@ -705,10 +705,10 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // Solve system
     int info = solve(pc-1, 1);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in LU factorization is exactly zero");
 
@@ -766,10 +766,10 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // Solve system
     int info = solve(pc-1, 1);
     
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in LU factorization is exactly zero");
     
@@ -931,10 +931,10 @@ sincos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     // Solve system
     int info = solve(2*pc-2, 2);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in LU factorization is exactly zero");
     
@@ -962,10 +962,10 @@ sincos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     
     info = solve(2, 1);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for (2x2) solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in (2x2) LU factorization is exactly zero");
     cs[0] = B(0,0);
@@ -1087,10 +1087,10 @@ sinhcosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     // Solve system
     int info = solve(2*pc-2, 2);
 
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in LU factorization is exactly zero");
     
@@ -1116,10 +1116,10 @@ sinhcosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     B(0,0) = std::sinh(t);
     B(1,0) = std::cosh(t);
     info = solve(2, 1);
-    TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		       func << ":  Argument " << info 
 		       << " for (2x2) solve had illegal value");
-    TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		       func << ":  Diagonal entry " << info 
 		       << " in (2x2) LU factorization is exactly zero");
     cs[0] = B(0,0);
@@ -1229,10 +1229,10 @@ quad(const OpT& quad_func,
   // Solve system
   int info = solve(pc-1, 1);
   
-  TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error,
 		     func << ":  Argument " << info 
 		     << " for solve had illegal value");
-  TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::logic_error,
 		     func << ":  Diagonal entry " << info 
 		     << " in LU factorization is exactly zero");
   

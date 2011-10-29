@@ -376,9 +376,8 @@ namespace Amesos2 {
 
     /// Prints the status information about the current solver with some level
     /// of verbosity
-    void describe(
-		  Teuchos::FancyOStream &out,
-		  const Teuchos::EVerbosityLevel verbLevel) const;
+    void describe(Teuchos::FancyOStream &out,
+		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
 
     /**

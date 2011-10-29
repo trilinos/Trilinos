@@ -65,13 +65,13 @@ typedef std::vector<std::string> StringVector;
 typedef std::vector<int>    GlobalMap;
 typedef GlobalMap::iterator GMapIter;
 
-#include "Internals.h"
-#include "ExodusFile.h"
-#include "ExodusEntity.h"
-#include "SystemInterface.h"
-#include "Version.h"
-#include "Variables.h"
-#include "ObjectType.h"
+#include "EP_Internals.h"
+#include "EP_ExodusFile.h"
+#include "EP_ExodusEntity.h"
+#include "EP_SystemInterface.h"
+#include "EP_Version.h"
+#include "EP_Variables.h"
+#include "EP_ObjectType.h"
 
 #include <exodusII.h>
 
@@ -79,8 +79,9 @@ typedef GlobalMap::iterator GMapIter;
 #error "Requires exodusII version 4.68 or later"
 #endif
 
-extern void add_to_log(const char *name, int elapsed);
-extern double epu_timer();
+#include "add_to_log.h"
+
+extern double seacas_timer();
 namespace {
   std::string time_stamp(const std::string &format);
   std::string format_time(double seconds);
@@ -143,14 +144,16 @@ namespace {
 void compress_white_space(char *str);
 void add_info_record(char *info_record, int size);
 void put_global_info(const Excn::Mesh& global);
-void get_put_coordinate_frames(int id, int id_out);
 void get_put_qa(int exo_id, int out_id);
 int  get_put_coordinate_names(int in, int out, int dimensionality);
 
 template <typename T>
+void get_put_coordinate_frames(int id, int id_out, T float_or_double);
+
+template <typename T>
 int get_put_coordinates(Excn::Mesh& global, int part_count,
 			std::vector<Excn::Mesh> &local_mesh,
-			int **local_node_to_global, T dummy);
+			int **local_node_to_global, T float_or_double);
 
 template <typename T>
 int get_coordinates(int id, int dimensionality, int num_nodes,
@@ -218,10 +221,11 @@ void build_reverse_element_map(int **local_element_to_global,
 			       GlobalMap &global_element_map,
 			       bool map_ids);
 
+template <typename T>
 void get_nodesets(int part_count, int total_node_count,
 		  int **local_node_to_global,
 		  std::vector<std::vector<Excn::NodeSet> > &nodesets,
-		  std::vector<Excn::NodeSet> &glob_sets);
+		  std::vector<Excn::NodeSet> &glob_sets, T float_or_double);
 
 void build_reverse_node_map(int **local_node_to_global,
 			    const std::vector<Excn::Mesh> &local_mesh,
@@ -239,7 +243,7 @@ void put_element_blocks(int part_count, int start_part,
 			std::vector<Excn::Block> &glob_blocks,
 			int **local_node_to_global,
 			int **local_element_to_global,
-			T single_or_double);
+			T float_or_double);
 
 void put_nodesets(std::vector<Excn::NodeSet> &glob_sets);
 
@@ -372,7 +376,7 @@ int main(int argc, char* argv[])
 }
 
 template <typename T>
-int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T /* dummy */)
+int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double )
 {
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
 
@@ -511,7 +515,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       if (debug_level & 1)
 	std::cerr << time_stamp(tsFormat);
       std::cerr << "\n**** GET NODE SETS *****\n";
-      get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets);
+      get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets, float_or_double);
       if (global.count(NSET) != glob_nsets.size()) {
 	std::cerr << "\nWARNING: Invalid nodesets will not be written to output database.\n";
 	global.nodesetCount = glob_nsets.size();
@@ -531,6 +535,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     // Define metadata for model....
     put_global_info(global);
+    get_put_coordinate_frames(ExodusFile(0), ExodusFile::output(), float_or_double);
 
     Internals exodus(ExodusFile::output(), ExodusFile::max_name_length());
 
@@ -570,9 +575,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // Needed on glory writing to Lustre or we end up with empty maps...
       ex_update(ExodusFile::output());
 
-      T dummy = 0.0;
       put_element_blocks(part_count, start_part, blocks, glob_blocks,
-			 local_node_to_global, local_element_to_global, dummy);
+			 local_node_to_global, local_element_to_global, float_or_double);
     }
 
     get_put_sidesets(part_count, local_element_to_global, sidesets, glob_ssets, interface);
@@ -777,7 +781,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // Determine how many steps will be written...
   int output_steps = (ts_max - ts_min) / ts_step + 1;
 
-  double start_time = epu_timer();
+  double start_time = seacas_timer();
 
   for (time_step = ts_min-1; time_step < ts_max; time_step+=ts_step) {
     time_step_out++;
@@ -996,7 +1000,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     std::cerr << "Wrote step " << std::setw(2) << time_step+1 << ", time "
 	      << std::scientific << std::setprecision(4) << time_val;
 
-    double cur_time = epu_timer();
+    double cur_time = seacas_timer();
     double elapsed = cur_time - start_time;
     double time_per_step = elapsed / time_step_out;
     double percentage_done = (time_step_out * 100.0) / output_steps;
@@ -1038,16 +1042,15 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 }
 
 namespace {
-  void get_put_coordinate_frames(int id, int id_out)
+  template <typename T> 
+  void get_put_coordinate_frames(int id, int id_out, T /* float_or_double */)
   {
-    // NOTE: Assuming info and QA records for all processors
-    // See if there are any coordinate frames...
     int num_frames = ex_inquire_int(id, EX_INQ_COORD_FRAMES);
     if (num_frames <= 0)
       return;
 
     IntVector           ids(num_frames);
-    std::vector<double> coordinates(9*num_frames);
+    std::vector<T>      coordinates(9*num_frames);
     std::vector<char>   tags(num_frames);
 
     ex_get_coordinate_frames(id, &num_frames, &ids[0], &coordinates[0], &tags[0]);
@@ -1129,7 +1132,7 @@ namespace {
   template <typename T>
   int get_put_coordinates(Mesh& global, int part_count,
 			  std::vector<Mesh> &local_mesh,
-			  int **local_node_to_global, T /* dummy */)
+			  int **local_node_to_global, T /* float_or_double */)
   {
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
     std::vector<T> x(global.nodeCount);
@@ -1220,7 +1223,7 @@ namespace {
 
       }
     }
-    else {
+    else if (dimensionality  == 2) {
       if (debug_level & 8) {
 	for (int i = 0; i < num_nodes; i++) {
 	  int node = local_node_to_global[proc][i];
@@ -1246,6 +1249,31 @@ namespace {
 
 	x[node] = local_x[i];
 	y[node] = local_y[i];
+      }
+    }
+    else {
+      if (debug_level & 8) {
+	for (int i = 0; i < num_nodes; i++) {
+	  int node = local_node_to_global[proc][i];
+	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
+	    if (x[node] != local_x[i]) {
+	      std::cerr << "\nWARNING: Node " << node+1
+			<< " has different coordinates in at least two files.\n"
+			<< "         cur value = "
+			<< std::scientific << std::setprecision(6)
+			<< std::setw(14) << x[node] << "\tnew value = "
+			<< std::setw(14) << local_x[i] 
+			<< " from processor " << proc << std::endl;
+	    }
+	  }
+	}
+      }
+      for (int i = 0; i < num_nodes; i++) {
+
+	// The following WILL overwrite x[node] if node is the same for
+	// different processors
+	int node = local_node_to_global[proc][i];
+	x[node] = local_x[i];
       }
     }
     return error;
@@ -1368,7 +1396,7 @@ namespace {
 			  std::vector<std::vector<Block> > &blocks,
 			  std::vector<Block> &glob_blocks,
 			  int **local_node_to_global,
-			  int **local_element_to_global, T /* dummy */)
+			  int **local_element_to_global, T /* float_or_double */)
   {
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
     int global_num_blocks = glob_blocks.size();
@@ -1944,13 +1972,13 @@ namespace {
 
     int id_out = ExodusFile::output();
     get_put_qa(ExodusFile(0), id_out);
-    get_put_coordinate_frames(ExodusFile(0), id_out);
   }
 
+  template <typename T>
   void get_nodesets(int part_count, int total_node_count,
 		    int **local_node_to_global,
 		    std::vector<std::vector<NodeSet> > &nodesets,
-		    std::vector<NodeSet> &glob_sets)
+		    std::vector<NodeSet> &glob_sets, T /* float_or_double */)
   {
     // Find number of nodesets in the global model...
     std::set<int> set_ids;
@@ -2012,6 +2040,16 @@ namespace {
 	  ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, &name[0]);
 	  if (name[0] != '\0') nodesets[p][iset].name_ = &name[0];
 
+	  if (nodesets[p][iset].dfCount != 0 &&
+	      nodesets[p][iset].dfCount != nodesets[p][iset].nodeCount) {
+	    std::cerr << "WARNING: Nodeset " << nodesets[p][iset].name_
+		      << " with id " <<  nodesets[p][iset].id
+		      << " on processor " << p
+		      << " has an invalid distribution factor count (" << nodesets[p][iset].dfCount
+		      << "). The distribution factors will be set to 1.0 on this nodeset.\n";
+	    nodesets[p][iset].dfCount = 0;
+	  }
+	    
 	  nodesets[p][iset].position_ = -1;
 	  for (size_t j=0; j < ids.size(); j++) {
 	    if (nodesets[p][iset].id == ids[j]) {
@@ -2032,16 +2070,18 @@ namespace {
     glob_sets.resize(set_ids.size());
     {
       // Now get the nodeset nodes and df.
-      // Currently ignore the DF.  Could add if people need it...
 
       // This is inefficient since the processor loop is on
       // the inside...  The other ordering would use more memory...
 
       IntVector ns_nodes;
+      std::vector<T> ns_df;
+      
       for (size_t ns = 0; ns < set_ids.size(); ns++) {
 
 	IntVector glob_ns_nodes(total_node_count+1);
 	std::fill(glob_ns_nodes.begin(), glob_ns_nodes.end(), 0);
+	std::vector<T> glob_ns_df(total_node_count+1);
 
 	for (int p=0; p < part_count; p++) {
 	  ExodusFile id(p);
@@ -2061,12 +2101,20 @@ namespace {
 	  int size = nodesets[p][ns].entity_count();
 	  if (size > 0) {
 	    ns_nodes.resize(size);
+	    ns_df.resize(size);
+	    
 	    ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, &ns_nodes[0], 0);
+	    if (nodesets[p][ns].dfCount > 0) {
+	      ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, &ns_df[0]);
+	    } else {
+	      std::fill(ns_df.begin(), ns_df.end(), 1.0);
+	    }
 
-	    // The node ids are in local space -- map to global
+	    // The node ids are in local space -- map to global; bring df along (if any).
 	    for (int iset=0; iset < size; iset++) {
 	      int global_node = local_node_to_global[p][ns_nodes[iset]-1] + 1;
 	      glob_ns_nodes[global_node] = 1;
+	      glob_ns_df[global_node] = ns_df[iset];
 	    }
 	  }
 	}
@@ -2075,20 +2123,25 @@ namespace {
 	// NOTE: global_node above is 1-based.
 	glob_sets[ns].nodeCount = std::accumulate(glob_ns_nodes.begin(), glob_ns_nodes.end(), 0);
 	glob_sets[ns].nodeSetNodes.resize(glob_sets[ns].entity_count());
-	glob_sets[ns].dfCount = 0;
+	glob_sets[ns].dfCount = glob_sets[ns].nodeCount;
 
+	// distFactors is a vector of 'char' to allow storage of either float or double.
+	glob_sets[ns].distFactors.resize(glob_sets[ns].dfCount * ExodusFile::io_word_size());
+
+	T *glob_df = (T*)(&glob_sets[ns].distFactors[0]);
 	size_t j = 0;
 	for (int i=1; i <= total_node_count; i++) {
 	  if (glob_ns_nodes[i] == 1) {
+	    glob_df[j] = glob_ns_df[i];
 	    glob_sets[ns].nodeSetNodes[j++] = i;
 	    glob_ns_nodes[i] = j;
 	  }
-
 	}
+
 	SMART_ASSERT(j == glob_sets[ns].entity_count())(j)(glob_sets[ns].entity_count())(ns);
 
 	// See if we need a map from local nodeset position to global nodeset position
-	// Only needed if there are nodeset variables (or dist factors).
+	// Only needed if there are nodeset variables
 	// Assume all files have same number of variables...
 	int num_vars;
 	{
@@ -2131,7 +2184,10 @@ namespace {
 
     for (size_t ns = 0; ns < glob_sets.size(); ns++) {
       ex_put_set(exoid, EX_NODE_SET, glob_sets[ns].id, &glob_sets[ns].nodeSetNodes[0], 0);
-      //    ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, &glob_sets[ns].distFactors[0]);
+      if (glob_sets[ns].dfCount > 0) {
+	ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, &glob_sets[ns].distFactors[0]);
+      }
+
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
       IntVector().swap(glob_sets[ns].nodeSetNodes);
       DistVector().swap(glob_sets[ns].distFactors);

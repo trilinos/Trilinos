@@ -140,7 +140,7 @@ template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill()
 {
  assertBlockFillIsActive(false);
- TEST_FOR_EXCEPT("ToDo: Have not implemented flexible block fill yet!");
+ TEUCHOS_TEST_FOR_EXCEPT("ToDo: Have not implemented flexible block fill yet!");
 }
 
 
@@ -169,9 +169,9 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   )
 {
 #ifdef THYRA_DEBUG
-  TEST_FOR_EXCEPT( is_null(productRange_in) );
-  TEST_FOR_EXCEPT( is_null(productDomain_in) );
-  TEST_FOR_EXCEPT( productRange_in->numBlocks() != productDomain_in->numBlocks() );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(productRange_in) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(productDomain_in) );
+  TEUCHOS_TEST_FOR_EXCEPT( productRange_in->numBlocks() != productDomain_in->numBlocks() );
 #endif
   assertBlockFillIsActive(false);
   productRange_ = productRange_in;
@@ -207,7 +207,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
   )
 {
   assertBlockFillIsActive(true);
-  TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
+  TEUCHOS_TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
 }
 
 
@@ -218,7 +218,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(
   )
 {
   assertBlockFillIsActive(true);
-  TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
+  TEUCHOS_TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
 }
 
 
@@ -231,7 +231,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::endBlockFill()
   for ( int k = 0; k < numDiagBlocks_; ++k ) {
     const RCP<const LinearOpWithSolveBase<Scalar> > lows_k = 
       diagonalBlocks_[k].getConstObj();
-    TEST_FOR_EXCEPTION(is_null(lows_k), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(lows_k), std::logic_error,
       "Error, the block diagonal k="<<k<<" can not be null when ending block fill!"
       );
     if (is_null(productRange_)) {
@@ -552,8 +552,8 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
     "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(...)",
     *this, M_trans, *X_inout, &B_in
     );
-  TEST_FOR_EXCEPT(!this->solveSupportsImpl(M_trans));
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPT(!this->solveSupportsImpl(M_trans));
+  TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
     std::logic_error,
     "Error, we can't handle any non-default solve criteria yet!"
@@ -602,7 +602,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockFillIsActive(
   ) const
 {
 #ifdef THYRA_DEBUG
-  TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive_in));
+  TEUCHOS_TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive_in));
 #endif
 }
 
@@ -613,11 +613,11 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockRowCol(
   ) const
 {
 #ifdef THYRA_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= i && i < numDiagBlocks_ ), std::logic_error,
     "Error, i="<<i<<" does not fall in the range [0,"<<numDiagBlocks_-1<<"]!"
       );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= j && j < numDiagBlocks_ ), std::logic_error,
     "Error, j="<<j<<" does not fall in the range [0,"<<numDiagBlocks_-1<<"]!"
       );
@@ -638,7 +638,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
   TEUCHOS_ASSERT_INEQUALITY( j, >=, 0 );
   TEUCHOS_ASSERT_INEQUALITY( i, <, numDiagBlocks_ );
   TEUCHOS_ASSERT_INEQUALITY( j, <, numDiagBlocks_ );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !this->acceptsLOWSBlock(i,j), std::logic_error,
     "Error, this DefaultBlockedTriangularLinearOpWithSolve does not accept\n"
     "LOWSB objects for the block i="<<i<<", j="<<j<<"!"

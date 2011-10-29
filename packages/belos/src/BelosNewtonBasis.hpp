@@ -69,7 +69,7 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Teuchos::ArrayView<const int>::size_type size_type;
 
-    TEST_FOR_EXCEPTION(realParts.size() != imagParts.size(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(realParts.size() != imagParts.size(), 
 		       ExceptionType, 
 		       "Newton basis shifts: There are " << realParts.size() 
 		       << " real values, but " << imagParts.size() 
@@ -77,7 +77,7 @@ namespace Belos {
 		       "i*imagParts[k] comprises a single complex-valued shift,"
 		       " so the realParts and imagParts arrays should always "
 		       "have the same length.";
-    TEST_FOR_EXCEPTION(mults.size() != realParts.size() || 
+    TEUCHOS_TEST_FOR_EXCEPTION(mults.size() != realParts.size() || 
 		       mults.size() != imagParts.size(),
 		       ExceptionType, 
 		       "Newton basis shifts: There are " << realParts.size()
@@ -282,7 +282,7 @@ namespace Belos {
 	// For each (multiple) shift value
 	for (size_type k = 0; k < multiplicities.size(); ++k)
 	  {
-	    TEST_FOR_EXCEPTION(imagParts[k] != 0, std::invalid_argument,
+	    TEUCHOS_TEST_FOR_EXCEPTION(imagParts[k] != 0, std::invalid_argument,
 			       "The (non-modified) Newton basis does not work when "
 			       "Scalar is a real type, but the shifts are complex. "
 			       " Shift number " << k << " = " 

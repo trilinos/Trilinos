@@ -41,7 +41,7 @@
 
 #include "LOCA_Thyra_Group.H"	          // class definition
 #include "NOX_Thyra_MultiVector.H"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"

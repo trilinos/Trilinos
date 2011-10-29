@@ -6,17 +6,19 @@
 #include "structs.h"
 
 /* Compute the terminal constraints for next partition. */
-void      make_terms_ref(graph, using_ewgts, subnvtxs, loc2glob, set0, set1,
-    assignment, architecture, mesh_dims, term_wgts)
-struct vtx_data **graph;	/* data structure for graph */
-int       using_ewgts;		/* are edge weights being used? */
-int       subnvtxs;		/* number of vtxs in subgraph */
-int      *loc2glob;		/* mapping from subgraph to graph */
-int       set0, set1;		/* two processors I'm choosing between */
-int    *assignment;		/* set for each vertex */
-int       architecture;		/* 0 => hypercube, 1 => mesh */
-int       mesh_dims[3];		/* if mesh, size of mesh */
-float    *term_wgts[];		/* terminal weights for each vertex */
+void 
+make_terms_ref (
+    struct vtx_data **graph,	/* data structure for graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int subnvtxs,		/* number of vtxs in subgraph */
+    int *loc2glob,		/* mapping from subgraph to graph */
+    int set0,
+    int set1,		/* two processors I'm choosing between */
+    int *assignment,		/* set for each vertex */
+    int architecture,		/* 0 => hypercube, 1 => mesh */
+    int mesh_dims[3],		/* if mesh, size of mesh */
+    float *term_wgts[]		/* terminal weights for each vertex */
+)
 {
     double    term_wgt;		/* terminal weight */
     float     edge_wgt;		/* weight of an edge */

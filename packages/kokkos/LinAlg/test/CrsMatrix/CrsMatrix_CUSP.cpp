@@ -88,7 +88,7 @@ namespace {
 
   template <class Node>
   RCP<Node> getNode() {
-    TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
   template <>

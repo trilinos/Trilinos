@@ -155,7 +155,7 @@ Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 coeff() 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
 		     "Stokhos::OrthogPolyApprox::coeff():  " <<
 		     "Coefficient array is empty!");
 #endif
@@ -168,7 +168,7 @@ Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 coeff() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
 		     "Stokhos::OrthogPolyApprox::coeff():  " <<
 		     "Coefficient array is empty!");
 #endif

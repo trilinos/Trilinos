@@ -279,17 +279,17 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   _timerLocking(Teuchos::TimeMonitor::getNewTimer("Anasazi: LOBPCGSolMgr locking"))
 #endif
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
 
   std::string strtmp;
 
   // which values to solve for
   whch_ = pl.get("Which",whch_);
-  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",
+  TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",
       std::invalid_argument, "Anasazi::LOBPCGSolMgr: Invalid sorting string.");
 
   // which orthogonalization to use
@@ -309,7 +309,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
     convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::LOBPCGSolMgr: Invalid Convergence Norm.");
   }
 
@@ -328,7 +328,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
     lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::LOBPCGSolMgr: Invalid Locking Norm.");
   }
 
@@ -337,7 +337,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
   // block size: default is nev()
   blockSize_ = pl.get("Block Size",problem_->getNEV());
-  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: \"Block Size\" must be strictly positive.");
 
   // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
@@ -350,15 +350,15 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   if (maxLocked_ == 0) {
     useLocking_ = false;
   }
-  TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: \"Max Locked\" must be positive.");
-  TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: Not enough storage space for requested number of eigenpairs.");
 
   if (useLocking_) {
     lockQuorum_ = pl.get("Locking Quorum",lockQuorum_);
-    TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
                        std::invalid_argument,
                        "Anasazi::LOBPCGSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
@@ -457,7 +457,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   } else if (ortho_=="DGKS") {
     ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else {
-    TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid orthogonalization type.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid orthogonalization type.");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -559,11 +559,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 #endif
 
           // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
-          TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
               "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() non-positive.");
-          TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
               "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() not consistent with whichVecs().");
-          TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
               "Anasazi::LOBPCGSolMgr::solve(): status test mistake: locking not deactivated.");
           // get the indices
           int numnew = locktest->howMany();
@@ -697,7 +697,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           }
         }
         else {
-          TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
         }
       }
       ////////////////////////////////////////////////////////////////////////////////////
@@ -889,17 +889,17 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       std::vector<int> inlocked(0), insolver(0);
       for (unsigned int i=0; i<which.size(); i++) {
         if (which[i] >= 0) {
-          TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): positive indexing mistake from ordertest.");
+          TEUCHOS_TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): positive indexing mistake from ordertest.");
           insolver.push_back(which[i]);
         }
         else {
           // sanity check
-          TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): negative indexing mistake from ordertest.");
+          TEUCHOS_TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): negative indexing mistake from ordertest.");
           inlocked.push_back(which[i] + curNumLocked);
         }
       }
 
-      TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
+      TEUCHOS_TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
 
       // set the vecs,vals in the solution
       if (insolver.size() > 0) {

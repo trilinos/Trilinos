@@ -57,7 +57,7 @@
 #include "RTOpPack_TOpAXPY.hpp"
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
@@ -163,15 +163,15 @@ void Thyra::scaleUpdate( const VectorBase<Scalar>& a,
 {
 #ifdef TEUCHOS_DEBUG
   bool is_compatible = U.range()->isCompatible(*a.space());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !is_compatible, Exceptions::IncompatibleVectorSpaces,
     "update(...), Error, U.range()->isCompatible(*a.space())==false" );
   is_compatible = U.range()->isCompatible(*V->range());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !is_compatible, Exceptions::IncompatibleVectorSpaces,
     "update(...), Error, U.range()->isCompatible((V->range())==false" );
   is_compatible = U.domain()->isCompatible(*V->domain());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !is_compatible, Exceptions::IncompatibleVectorSpaces,
     "update(...), Error, U.domain().isCompatible(V->domain())==false" );
 #endif
@@ -219,11 +219,11 @@ void Thyra::update( const ArrayView<const Scalar> &alpha, Scalar beta,
 {
 #ifdef TEUCHOS_DEBUG
   bool is_compatible = U.range()->isCompatible(*V->range());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !is_compatible, Exceptions::IncompatibleVectorSpaces,
     "update(...), Error, U.range()->isCompatible((V->range())==false");
   is_compatible = U.domain()->isCompatible(*V->domain());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !is_compatible, Exceptions::IncompatibleVectorSpaces,
     "update(...), Error, U.domain().isCompatible(V->domain())==false");
 #endif
@@ -240,11 +240,11 @@ void Thyra::update( const MultiVectorBase<Scalar>& U,
 {
 #ifdef TEUCHOS_DEBUG
   bool is_compatible = U.range()->isCompatible(*V->range());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_compatible, Exceptions::IncompatibleVectorSpaces,
       "update(...), Error, U.range()->isCompatible((V->range())==false");
     is_compatible = U.domain()->isCompatible(*V->domain());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !is_compatible, Exceptions::IncompatibleVectorSpaces,
       "update(...), Error, U.domain().isCompatible(V->domain())==false");
 #endif

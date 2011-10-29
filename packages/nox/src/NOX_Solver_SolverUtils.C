@@ -61,7 +61,7 @@ parseStatusTestCheckType(Teuchos::ParameterList& p)
     return NOX::StatusTest::None;
   else {
     std::string msg = "Error - NOX::Solver::parseStatusTestCheckType() - The value for the key \"Status Test Check Type\" is not valid!.  Please check the spelling of the parameter.";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   return NOX::StatusTest::Minimal;

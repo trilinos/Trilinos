@@ -77,7 +77,7 @@ namespace TSQR {
     ///
     template<class Ordinal, class Scalar, class NodeType>
     void
-    verifyKokkosNodeTsqr (const Teuchos::RCP<const NodeType>& node,
+    verifyKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
 			  TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
 			  const Ordinal numRows,
 			  const Ordinal numCols,
@@ -107,8 +107,9 @@ namespace TSQR {
       // Set up TSQR implementation.
       RCP<ParameterList> params = parameterList ("Intranode TSQR");
       params->set ("Cache Size Hint", cacheSizeHint);
-      params->set ("Num Partitions", numPartitions);
-      node_tsqr_type actor (node, params);
+      params->set ("Num Tasks", numPartitions);
+      node_tsqr_type actor (params);
+      actor.setNode (node);
       if (debug)
 	{
 	  cerr << actor.description() << endl;
@@ -380,7 +381,7 @@ namespace TSQR {
     ///
     template<class Ordinal, class Scalar, class NodeType>
     void
-    benchmarkKokkosNodeTsqr (const Teuchos::RCP<const NodeType>& node,
+    benchmarkKokkosNodeTsqr (const Teuchos::RCP<NodeType>& node,
 			     const int numTrials,
 			     const Ordinal numRows, 
 			     const Ordinal numCols, 
@@ -413,8 +414,9 @@ namespace TSQR {
       // Set up TSQR implementation.
       RCP<ParameterList> params = parameterList ("Intranode TSQR");
       params->set ("Cache Size Hint", cacheSizeHint);
-      params->set ("Num Partitions", numPartitions);
-      node_tsqr_type actor (node, params);
+      params->set ("Num Tasks", numPartitions);
+      node_tsqr_type actor (params);
+      actor.setNode (node);
 
       // Allocate space for test problem.
       matrix_type A (numRows, numCols);

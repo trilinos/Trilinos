@@ -64,31 +64,31 @@
 //
 
 
-#define TEST_EQUALITY_CONST( v1, v2 ) \
+#define TEST_EQUALITY_CONST( v1, v2 )                   \
   TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
 
-#define TEST_EQUALITY( v1, v2 ) \
+#define TEST_EQUALITY( v1, v2 )                 \
   TEUCHOS_TEST_EQUALITY( v1, v2, out, success )
 
-#define TEST_ITER_EQUALITY( iter1, iter2 ) \
+#define TEST_ITER_EQUALITY( iter1, iter2 )                      \
   TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success )
 
-#define TEST_ARRAY_ELE_EQUALITY( a, i, val ) \
-   TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, false, out, local_success )
+#define TEST_ARRAY_ELE_EQUALITY( a, i, val )                            \
+  TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, false, out, local_success )
 
-#define TEST_COMPARE( v1, comp, v2 ) \
+#define TEST_COMPARE( v1, comp, v2 )                    \
   TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
 
-#define TEST_COMPARE_ARRAYS( a1, a2 ) \
-  { \
-    const bool result = compareArrays(a1,#a1,a2,#a2,out); \
-    if (!result) success = false; \
+#define TEST_COMPARE_ARRAYS( a1, a2 )                           \
+  {                                                             \
+    const bool result = compareArrays(a1,#a1,a2,#a2,out);       \
+    if (!result) success = false;                               \
   }
 
-#define TEST_THROW( code, ExceptType  ) \
+#define TEST_THROW( code, ExceptType  )                 \
   TEUCHOS_TEST_THROW( code, ExceptType, out, success  )
 
-#define TEST_NOTHROW( code  ) \
+#define TEST_NOTHROW( code  )                   \
   TEUCHOS_TEST_NOTHROW( code, out, success  )
 
 
@@ -373,7 +373,7 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
 	
-	bool success = true;
+  bool success = true;
   bool result;
  
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -381,20 +381,20 @@ int main( int argc, char* argv[] ) {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
  
-	try {
+  try {
     
     //
-		// Read options from the commandline
+    // Read options from the commandline
     //
 
     CommandLineProcessor clp(false); // Don't throw exceptions
 
-		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
-		if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << std::endl;
-			return parse_return;
-		}
+    if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+      *out << "\nEnd Result: TEST FAILED" << std::endl;
+      return parse_return;
+    }
 
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
@@ -412,7 +412,7 @@ int main( int argc, char* argv[] ) {
     result = testTuple<std::complex<double> ,N>(*out);
     if (!result) success = false;
  
-	}
+  }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
  
   if (success)

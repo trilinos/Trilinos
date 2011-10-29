@@ -442,6 +442,7 @@ private:
 
   bool internal_modification_end( bool regenerate_aura );
     void internal_resolve_shared_modify_delete();
+    void internal_resolve_shared_modify_delete_second_pass();
     void internal_resolve_ghosted_modify_delete();
     void internal_resolve_parallel_create();
     void internal_resolve_shared_membership();

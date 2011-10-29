@@ -3,6 +3,7 @@
 
 namespace test{
   void test_Host(int beg, int end, int r);
+  void test_Pthread (int beg, int end, int r, int t);
   void test_TPI (int beg, int end, int r, int t);
   void test_TBB(int beg, int end, int r, int t);
   void test_Cuda(int beg, int end, int r);
@@ -24,6 +25,9 @@ int main(int argc, char ** argv)
 
 #ifdef TEST_KOKKOS_HOST
   test::test_Host(beg, end, runs);
+#endif
+#ifdef TEST_KOKKOS_PTHREAD
+  test::test_Pthread (beg, end, runs, threads);
 #endif
 #ifdef TEST_KOKKOS_TPI
   test::test_TPI (beg, end, runs, threads);

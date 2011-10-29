@@ -164,18 +164,18 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
   maxIters_(100),
   numIters_(0)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   whch_ = pl.get("Which","SR");
-  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",
+  TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Which\" parameter must be SM, LM, SR or LR.");
 
   tol_ = pl.get("Convergence Tolerance",tol_);
-  TEST_FOR_EXCEPTION(tol_ <= 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(tol_ <= 0,
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Tolerance\" parameter must be strictly postiive.");
 
@@ -190,7 +190,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
 
 
   blockSize_= pl.get("Block Size",problem_->getNEV());
-  TEST_FOR_EXCEPTION(blockSize_ <= 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0,
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Block Size\" parameter must be strictly positive.");
 
@@ -272,7 +272,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
       int num = norm->howMany();
       // if num < blockSize_, it is because we are on the last iteration: num+numfound>=nev
-      TEST_FOR_EXCEPTION(num < blockSize_ && num+numfound < nev,
+      TEUCHOS_TEST_FOR_EXCEPTION(num < blockSize_ && num+numfound < nev,
                          std::logic_error,
                          "Anasazi::SimpleLOBPCGSolMgr::solve(): logic error.");
       std::vector<int> ind = norm->whichVecs();
@@ -327,11 +327,11 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       break;  // while(numfound < nev)
     }
     else {
-      TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): solver returned without satisfy status test.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): solver returned without satisfy status test.");
     }
   } // end of while(numfound < nev)
 
-  TEST_FOR_EXCEPTION(foundvecs.size() != foundvals.size(),std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent array sizes");
+  TEUCHOS_TEST_FOR_EXCEPTION(foundvecs.size() != foundvals.size(),std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent array sizes");
 
   // create contiguous storage for all eigenvectors, eigenvalues
   Eigensolution<ScalarType,MV> sol;
@@ -352,7 +352,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // store eigenvectors, eigenvalues
   int curttl = 0;
   for (unsigned int i=0; i<foundvals.size(); i++) {
-    TEST_FOR_EXCEPTION((signed int)(foundvals[i]->size()) != MVT::GetNumberVecs(*foundvecs[i]), std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
+    TEUCHOS_TEST_FOR_EXCEPTION((signed int)(foundvals[i]->size()) != MVT::GetNumberVecs(*foundvecs[i]), std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
     unsigned int lclnum = foundvals[i]->size();
     std::vector<int> lclind(lclnum);
     for (unsigned int j=0; j<lclnum; j++) lclind[j] = curttl+j;
@@ -363,7 +363,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
     curttl += lclnum;
   }
-  TEST_FOR_EXCEPTION( curttl != sol.numVecs, std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
+  TEUCHOS_TEST_FOR_EXCEPTION( curttl != sol.numVecs, std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
 
   // sort the eigenvalues and permute the eigenvectors appropriately
   if (numfound > 0) {

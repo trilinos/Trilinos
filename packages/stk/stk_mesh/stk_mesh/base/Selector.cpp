@@ -321,23 +321,6 @@ std::string Selector::printExpression(
 }
 
 
-Selector::OpType::OpType( const OpType & opType )
-  : m_part_id(opType.m_part_id),
-    m_unary(opType.m_unary),
-    m_count(opType.m_count)
-{
-}
-
-
-Selector::OpType & Selector::OpType::operator=( const OpType & opType )
-{
-  this->m_part_id = opType.m_part_id;
-  this->m_unary = opType.m_unary;
-  this->m_count = opType.m_count;
-  return *this;
-}
-
-
 Selector selectUnion( const PartVector& union_part_vector )
 {
   Selector selector;

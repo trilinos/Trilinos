@@ -8,20 +8,25 @@
 # Set up
 #
 
-TRILINOS_BASE=/home/casl-vri-admin/CIDashboards/Trilinos
+DASHBOARDS_BASE=/home/casl-vri-admin/CIDashboards
+
+TRILINOS_BASE=$DASHBOARDS_BASE/Trilinos
 echo "TRILINOS_BASE = '$TRILINOS_BASE'"
 
 # Must always start from this dir!
-DASHBOARD_DRIVER_DIR=/home/casl-vri-admin/CIDashboards/Trilinos/cmake/ctest/drivers/pu241
+DASHBOARD_DRIVER_DIR=$DASHBOARDS_BASE/Trilinos/cmake/ctest/drivers/pu241
 cd $DASHBOARD_DRIVER_DIR
 
 BASE_COMMAND=$TRILINOS_BASE/cmake/ctest/drivers/pu241/cron_driver_single_ci_iter_pu241.sh
 LOOP_INTERVAL=1m
 TODAY_RUN_TILL=23:59:00
 
+PAUSE_FILE=$DASHBOARDS_BASE/pause_ci_server.txt
+
 echo "BASE_COMMAND = '$BASE_COMMAND'"
 echo "LOOP_INTERVAL = '$LOOP_INTERVAL'"
 echo "TODAY_RUN_TILL = '$TODAY_RUN_TILL'"
+echo "PAUSE_FILE = '$PAUSE_FILE'"
 
 #BASE_COMMAND="echo mock_command"
 #LOOP_INTERVAL=1s
@@ -57,7 +62,8 @@ echo "CI_COMMAND = $CI_COMMAND"
 $TRILINOS_BASE/cmake/python/generic-looping-demon.py \
 --command="$CI_COMMAND" \
 --today-run-till=$TODAY_RUN_TILL \
---loop-interval=$LOOP_INTERVAL
+--loop-interval=$LOOP_INTERVAL \
+--pause-file=$PAUSE_FILE
 
 $TRILINOS_BASE/cmake/python/mailmsg.py "Finished CASL VRI CI testing server on pu241"
 

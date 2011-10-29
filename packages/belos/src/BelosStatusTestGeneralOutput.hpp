@@ -125,7 +125,7 @@ class StatusTestGeneralOutput : public StatusTestOutput<ScalarType,MV,OP> {
     \return ::StatusType indicating whether the underlying test passed or failed.
   */
   StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver ) {
-    TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestGeneralOutput::checkStatus(): child pointer is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestGeneralOutput::checkStatus(): child pointer is null.");
     state_ = test_->checkStatus(solver);
 
     if (numCalls_++ % modTest_ == 0) {

@@ -123,11 +123,11 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(LinearOp &
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagnosticPreconditionerFactory::buildPreconditionerOperator requires that an "
                    << "inverse factory has been set. Currently it is null!");
 
-   TEST_FOR_EXCEPTION(buildTimer_==Teuchos::null || rebuildTimer_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(buildTimer_==Teuchos::null || rebuildTimer_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagnosticPreconditionerFactory::buildPreconditionerOperator requires that "
                    << "the timers be initialized. Currently they are null! (label = \"" << diagString_ << "\")");
 
@@ -173,9 +173,9 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(LinearOp &
   */
 void DiagnosticPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
-   TEST_FOR_EXCEPTION(not settings.isParameter("Inverse Factory"),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not settings.isParameter("Inverse Factory"),std::runtime_error,
                       "Parameter \"Inverse Factory\" is required by a Teko::DiagnosticPreconditionerFactory");
-   TEST_FOR_EXCEPTION(not settings.isParameter("Descriptive Label"),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(not settings.isParameter("Descriptive Label"),std::runtime_error,
                       "Parameter \"Descriptive Label\" is required by a Teko::DiagnosticPreconditionerFactory");
       
    // grab library and preconditioner name
@@ -185,7 +185,7 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(const Teuchos:
    // build preconditioner factory
    Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
    invFactory_ = il->getInverseFactory(invName);
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"Inverse Factory\" = " << invName
                    << " could not be found");
 
@@ -201,7 +201,7 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(const Teuchos:
   */
 Teuchos::RCP<Teuchos::ParameterList> DiagnosticPreconditionerFactory::getRequestedParameters() const
 {
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagnosticPreconditionerFactory::getRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
@@ -212,7 +212,7 @@ Teuchos::RCP<Teuchos::ParameterList> DiagnosticPreconditionerFactory::getRequest
   */
 bool DiagnosticPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
-   TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagnosticPreconditionerFactory::updateRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 

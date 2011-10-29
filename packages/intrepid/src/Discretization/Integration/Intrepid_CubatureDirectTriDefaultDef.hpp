@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectTriDefault(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 2;
-  TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectTriDefault): No direct cubature rule implemented for the desired polynomial degree.");
 } // end constructor

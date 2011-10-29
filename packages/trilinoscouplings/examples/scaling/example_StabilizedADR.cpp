@@ -103,7 +103,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -1895,7 +1895,7 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
   
   Delete_Pamgen_Mesh();
   
-  TEST_FOR_EXCEPTION( !(pamgenError == 0), std::runtime_error, " Pamgen error... Exiting!");
+  TEUCHOS_TEST_FOR_EXCEPTION( !(pamgenError == 0), std::runtime_error, " Pamgen error... Exiting!");
 }// *** PAMGEN wrapper ***
 
 /**************************************************************************************************
@@ -1922,7 +1922,7 @@ void getInputArguments(Teuchos::ParameterList &  inputMeshList,
     std::cout << "  ./TrilinosCouplings_examples_scaling_Example_StabilizedADR.exe [meshfile.xml] [solver.xml]\n\n";
     std::cout << "   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
     std::cout << "   solver.xml(optional)   - xml file with ML solver options\n\n";
-    TEST_FOR_EXCEPTION( argc == 3, std::invalid_argument, " ...exiting!");
+    TEUCHOS_TEST_FOR_EXCEPTION( argc == 3, std::invalid_argument, " ...exiting!");
   }
   
   // Solver is specified
@@ -1946,7 +1946,7 @@ void getInputArguments(Teuchos::ParameterList &  inputMeshList,
   }
   else{
     std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-    TEST_FOR_EXCEPTION( true, std::invalid_argument, " ...exiting!");
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, " ...exiting!");
   }
   
   if(xmlSolverInFileName.length()) {

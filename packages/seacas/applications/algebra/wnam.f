@@ -72,8 +72,8 @@ C   --   Uses ICOBEG, ICOEND of /DBXVAR/
 C   --   Uses NDBIN of /DBASE/
 C   --   Uses NDIM, NUMNP, NUMEL, NSTEPS of /DBNUMS/
 
-      include 'params.blk'
-      include 'namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
       
       LOGICAL VISELB(NELBLK)
       CHARACTER*(namlen) NAMECO(*)

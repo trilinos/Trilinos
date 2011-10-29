@@ -12,6 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
      SOURCES
        test_belos_gcrodr.cpp
        ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+     ARGS " --show-timer-summary"
      COMM serial mpi
      NUM_MPI_PROCS 4
      )
@@ -58,8 +59,8 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_amesos
     ARGS 
-      "--input-file=FourByFour.xml"
-      "--input-file=FourByFour.amesos.xml"
+      "--input-file=FourByFour.xml --show-timer-summary"
+      "--input-file=FourByFour.amesos.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -73,7 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   PACKAGE_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_aztecoo_np
-    ARGS "--input-file=FourByFour.aztecoo.np.xml"
+    ARGS "--input-file=FourByFour.aztecoo.np.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -86,8 +87,8 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_aztecoo_ifpack
       ARGS
-        "--input-file=FourByFour.aztecoo.ifpack.xml"
-        "--input-file=FourByFour.aztecoo.ifpack.adjoint.xml"
+        "--input-file=FourByFour.aztecoo.ifpack.xml --show-timer-summary"
+        "--input-file=FourByFour.aztecoo.ifpack.adjoint.xml --show-timer-summary"
       COMM serial mpi
       NUM_MPI_PROCS 1
       )
@@ -102,7 +103,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_aztecoo_ml
       ARGS
-        "--input-file=FourByFour.aztecoo.ml.xml"
+        "--input-file=FourByFour.aztecoo.ml.xml --show-timer-summary"
       COMM serial mpi
       NUM_MPI_PROCS 1
       )
@@ -120,7 +121,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   PACKAGE_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_belos_np
-    ARGS "--input-file=FourByFour.belos.np.xml"
+    ARGS "--input-file=FourByFour.belos.np.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -133,7 +134,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_belos_ifpack
       ARGS
-        "--input-file=FourByFour.belos.ifpack.xml"
+        "--input-file=FourByFour.belos.ifpack.xml --show-timer-summary"
       COMM serial mpi
       NUM_MPI_PROCS 1
       )
@@ -148,7 +149,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_belos_ml
       ARGS
-        "--input-file=FourByFour.belos.ml.xml"
+        "--input-file=FourByFour.belos.ml.xml --show-timer-summary"
       COMM serial mpi
       NUM_MPI_PROCS 1
       )

@@ -64,7 +64,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::DefaultBlockedTriangul
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(lowsf));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_.initialize(lowsf);
 }
@@ -76,7 +76,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::DefaultBlockedTriangul
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(lowsf));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_.initialize(lowsf);
 }
@@ -181,7 +181,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setPreconditionerFacto
   const std::string &precFactoryName
   )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, we don't support a preconditioner factory!");
 }
 
@@ -200,7 +200,7 @@ void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::unsetPrecondition
   std::string *precFactoryName
   )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, we don't support a preconditioner factory!");
 }
 
@@ -211,7 +211,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::isCompatible(
   const LinearOpSourceBase<Scalar> &fwdOpSrc
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return false;
 }
 
@@ -237,7 +237,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
   using Teuchos::rcp_dynamic_cast;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
 
   // Set the verbosity settings for the wrapped LOWSF object!
@@ -310,7 +310,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
   LinearOpWithSolveBase<Scalar> *Op
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -328,7 +328,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
   typedef DefaultBlockedTriangularLinearOpWithSolve<Scalar> DBTLOWS;
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
   DBTLOWS &btlowsOp = dyn_cast<DBTLOWS>(*Op);
   if (fwdOpSrc) {
     const RCP<const LinearOpBase<Scalar> > fwdOp = btlowsOp.getBlocks();
@@ -366,7 +366,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializePrecondition
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, we don't support an external preconditioner!");
 }
 
@@ -380,7 +380,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeApproxPrecon
   const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, we don't support an external preconditioner!");
 }
 

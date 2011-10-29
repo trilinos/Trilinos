@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 

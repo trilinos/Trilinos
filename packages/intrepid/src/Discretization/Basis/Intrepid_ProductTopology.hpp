@@ -51,7 +51,7 @@
 #define INTREPID_PRODUCTTOPOLOGY_HPP
 
 #include "Shards_CellTopology.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include <stdexcept>
 #include <map>
 
@@ -101,7 +101,7 @@ namespace Intrepid {
 	    } 
 	  else 
 	    {
-	      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				  "Intrepid::ProductTopology::lineProduct2D: illegal inputs" );
 	    }
 	}
@@ -118,7 +118,7 @@ namespace Intrepid {
 	    }
 	  else 
 	    {
-	      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				  "Intrepid::ProductTopology::lineProduct2D: illegal inputs" );
 	    }
 	}
@@ -135,7 +135,7 @@ namespace Intrepid {
 	    }
 	  else 
 	    {
-	      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				  "Intrepid::ProductTopology::lineProduct2D: illegal inputs" );
 	    }
 	}
@@ -148,13 +148,13 @@ namespace Intrepid {
 	    }
 	  else 
 	    {
-	      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				  "Intrepid::ProductTopology::lineProduct2D: illegal inputs" );
 	    }
 	}
       else 
 	{
-	  TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	  TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 			      "Intrepid::ProductTopology::lineProduct2D: illegal inputs" );
 	}
       
@@ -217,7 +217,7 @@ namespace Intrepid {
 	    }
 	  else 
 	    {
-	      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				  "Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	    }
 	}
@@ -244,7 +244,7 @@ namespace Intrepid {
 	  }
 	else 
 	  {
-	    TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				"Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	  }
       }
@@ -270,7 +270,7 @@ namespace Intrepid {
 	  }
 	else 
 	  {
-	    TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				"Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	  }
       }
@@ -296,7 +296,7 @@ namespace Intrepid {
 	  }
 	else 
 	  {
-	    TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				"Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	  }
       }
@@ -314,7 +314,7 @@ namespace Intrepid {
 	  }
 	else 
 	  {
-	    TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				"Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	  }
       }
@@ -331,7 +331,7 @@ namespace Intrepid {
 	  }
       else 
 	{
-	  TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	  TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 			      "Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	}
       }
@@ -348,7 +348,7 @@ namespace Intrepid {
 	  }
       else 
 	{
-	  TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	  TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 			      "Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	}
       }
@@ -362,7 +362,7 @@ namespace Intrepid {
 	  }
 	else 
 	  {
-	    TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+	    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
 				"Intrepid::ProductTopology::lineProduct3D: illegal inputs" );
 	  }
       }

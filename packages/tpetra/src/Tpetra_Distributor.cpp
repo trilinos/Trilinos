@@ -54,7 +54,7 @@ namespace Tpetra {
   Distributor::~Distributor() 
   {
   // we shouldn't have any outstanding requests at this point; verify
-    TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::Distributor~(): Destructor called with outstanding posts.");
   }
 
@@ -142,7 +142,7 @@ namespace Tpetra {
       for (Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
            i != requests_.end(); ++i) 
       {
-        TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
             Teuchos::typeName(*this) << "::doWaits(): Requests should be null after call to Teuchos::waitAll().");
       }
 #endif
@@ -370,7 +370,7 @@ namespace Tpetra {
     {
       int gbl_badID;
       Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,outArg(gbl_badID));
-      TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
           Teuchos::typeName(*this) << "::createFromSends(): bad node id listed on node " << gbl_badID << ".");
     }
 

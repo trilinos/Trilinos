@@ -291,7 +291,7 @@ void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
   using Teuchos::tuple; using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( is_null(sensModel) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(sensModel) );
   
   sensModel_ = sensModel;
 
@@ -388,7 +388,7 @@ template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::create_W() const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement create_W() when needed!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement create_W() when needed!");
   return Teuchos::null;
 }
 
@@ -443,7 +443,7 @@ void StateAndForwardSensitivityModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement evalModel(...) when needed!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement evalModel(...) when needed!");
 }
 
 

@@ -629,10 +629,10 @@ void read_restart_data (int io_ws)
     add_fname_ext(cTemp, PIO_Info.Exo_Extension);
   
   open_file_count = get_free_descriptor_count();
-  if (open_file_count > Proc_Info[2]) {
+  if (open_file_count > Proc_Info[5]) {
     fprintf(stderr, "All output files opened simultaneously.\n");
-    for (iproc=0; iproc < Proc_Info[2]; iproc++) {
-      
+    for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
+     
       gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],
 		       Proc_Info[0]);
       
@@ -675,9 +675,9 @@ void read_restart_data (int io_ws)
       if (Proc == 0) printf ("\tTime to read  vars for timestep %d: %f (sec.)\n", (time_idx+1), end_t);
 
       start_t = second ();
-      for (iproc=0; iproc < Proc_Info[2]; iproc++) {
+      for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
-	if (open_file_count < Proc_Info[2]) {
+	if (open_file_count < Proc_Info[5]) {
 	  gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],
 			   Proc_Info[0]);
 	  
@@ -708,7 +708,7 @@ void read_restart_data (int io_ws)
 	    fprintf(stderr, ".");
 	}
 
-	if (open_file_count < Proc_Info[2]) {
+	if (open_file_count < Proc_Info[5]) {
 	  if (ex_close(par_exoid[iproc]) == -1) {
 	    fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n",
 		    iproc, yo);
@@ -744,12 +744,14 @@ void read_restart_data (int io_ws)
     }
   }
 
-  for (iproc=0; iproc < Proc_Info[2]; iproc++) {
-    /* Close the parallel exodus II file */
-    if (ex_close(par_exoid[iproc]) == -1) {
-      fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n",
-	      iproc, yo);
-      exit(1);
+  if (open_file_count > Proc_Info[5]) {
+    for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
+      /* Close the parallel exodus II file */
+      if (ex_close(par_exoid[iproc]) == -1) {
+	fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n",
+		iproc, yo);
+	exit(1);
+      }
     }
   }
   if (par_exoid != NULL) {

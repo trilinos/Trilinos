@@ -52,8 +52,6 @@
 #include <stk_percept/NoMallocArray.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
-#include <stk_percept/Teuchos_My_Hashtable.hpp>
-#include <stk_percept/Hashtable.hpp>
 
 #include <boost/array.hpp>
 

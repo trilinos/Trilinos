@@ -45,7 +45,7 @@
 #ifndef PHX_FIELD_DEF_H
 #define PHX_FIELD_DEF_H
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //**********************************************************************
 #ifdef PHX_DEBUG
@@ -98,7 +98,7 @@ inline
 const PHX::FieldTag& PHX::Field<DataT>::fieldTag() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -109,7 +109,7 @@ inline
 DataT& PHX::Field<DataT>::operator[](int index)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data[index];
 }
@@ -120,7 +120,7 @@ inline
 typename Teuchos::ArrayRCP<DataT>::Ordinal PHX::Field<DataT>::size() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
   return m_field_data.size();
 }

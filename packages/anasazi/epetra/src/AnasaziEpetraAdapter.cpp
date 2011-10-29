@@ -127,7 +127,7 @@ namespace Anasazi {
       for(int i=0; i<numvecs; i++)
         index2[i] = i;
       EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-      TEST_FOR_EXCEPTION( tmp_vec==NULL, std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
+      TEUCHOS_TEST_FOR_EXCEPTION( tmp_vec==NULL, std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
       EpetraMultiVec A_vec(View, *tmp_vec, index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
@@ -149,9 +149,9 @@ namespace Anasazi {
     Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
     
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
     
-    TEST_FOR_EXCEPTION( 
+    TEUCHOS_TEST_FOR_EXCEPTION( 
         Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) != 0,
         EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvTimesMatAddMv() call to Epetra_MultiVec::Multiply() returned a nonzero value.");
   }
@@ -166,11 +166,11 @@ namespace Anasazi {
                                  double beta, const MultiVec<double>& B) 
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
     EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); 
-    TEST_FOR_EXCEPTION( B_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( B_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
     
-    TEST_FOR_EXCEPTION( 
+    TEUCHOS_TEST_FOR_EXCEPTION( 
         Update( alpha, *A_vec, beta, *B_vec, 0.0 ) != 0,
         EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvAddMv() call to Epetra_MultiVec::Update() returned a nonzero value.");
   }
@@ -194,7 +194,7 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-    TEST_FOR_EXCEPTION( 
+    TEUCHOS_TEST_FOR_EXCEPTION( 
         B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) != 0,
         EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvTransMv() call to Epetra_MultiVec::Multiply() returned a nonzero value.");
     }
@@ -213,10 +213,10 @@ namespace Anasazi {
                              ) const
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvDot() cast of MultiVec<double> to EpetraMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvDot() cast of MultiVec<double> to EpetraMultiVec failed.");
 
     if (( (int)b.size() >= A_vec->NumVectors() ) ) {
-      TEST_FOR_EXCEPTION( 
+      TEUCHOS_TEST_FOR_EXCEPTION( 
           this->Dot( *A_vec, &b[0] ) != 0,
           EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvDot() call to Epetra_MultiVec::Dot() returned a nonzero value.");
     }
@@ -231,13 +231,13 @@ namespace Anasazi {
   {
     // Check to make sure the vector is as long as the multivector has columns.
     int numvecs = this->NumVectors();
-    TEST_FOR_EXCEPTION( (int)alpha.size() != numvecs, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( (int)alpha.size() != numvecs, std::invalid_argument, 
         "Anasazi::EpetraMultiVec::MvScale() alpha argument size was inconsistent with number of vectors in mv.");
     
     std::vector<int> tmp_index( 1, 0 );
     for (int i=0; i<numvecs; i++) {
       Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
-      TEST_FOR_EXCEPTION( 
+      TEUCHOS_TEST_FOR_EXCEPTION( 
           temp_vec.Scale( alpha[i] ) != 0,
           EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvScale() call to Epetra_MultiVec::Scale() returned a nonzero value.");
       tmp_index[0]++;
@@ -274,11 +274,11 @@ namespace Anasazi {
     Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
     Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     
-    TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
-    TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
 
     int info = Epetra_Op->Apply( *vec_X, *vec_Y );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
 
@@ -316,15 +316,15 @@ namespace Anasazi {
     Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     Epetra_MultiVector temp_Y(*vec_Y); 
     
-    TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
-    TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
     //
     // Need to cast away constness because the member function Apply is not declared const.  
     // Change the transpose setting for the operator if necessary and change it back when done.
     //
     // Apply M
     info = Epetra_MOp->Apply( *vec_X, temp_Y );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     // Apply A or A^{-1}
     if (isAInverse) {
@@ -333,7 +333,7 @@ namespace Anasazi {
     else {
       info = Epetra_AOp->Apply( temp_Y, *vec_Y );
     }
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
   
@@ -412,9 +412,9 @@ namespace Anasazi {
         : Epetra_Op->OperatorRangeMap(), 
         vec_X->NumVectors() );
     
-    TEST_FOR_EXCEPTION( vec_X==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
-    TEST_FOR_EXCEPTION( vec_Y==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
-    TEST_FOR_EXCEPTION( temp_vec==NULL, std::invalid_argument, "Anasazi::EpetraSymOp::Apply() allocation Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( temp_vec==NULL, std::invalid_argument, "Anasazi::EpetraSymOp::Apply() allocation Epetra_MultiVector failed.");
     //
     // Need to cast away constness because the member function Apply
     // is not declared const.
@@ -424,7 +424,7 @@ namespace Anasazi {
       info = Epetra_Op->SetUseTranspose( isTrans_ );
       if (info != 0) {
         delete temp_vec;
-        TEST_FOR_EXCEPTION( true, OperatorError, 
+        TEUCHOS_TEST_FOR_EXCEPTION( true, OperatorError, 
                             "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
       }
     }
@@ -434,7 +434,7 @@ namespace Anasazi {
     info=Epetra_Op->Apply( *vec_X, *temp_vec );
     if (info!=0) { 
       delete temp_vec; 
-      TEST_FOR_EXCEPTION( true, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, OperatorError, 
                           "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     }
     //
@@ -442,7 +442,7 @@ namespace Anasazi {
     info=Epetra_Op->SetUseTranspose( !isTrans_ );
     if (info!=0) { 
       delete temp_vec; 
-      TEST_FOR_EXCEPTION( true, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, OperatorError, 
                           "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     }
     
@@ -450,14 +450,14 @@ namespace Anasazi {
     info=Epetra_Op->Apply( *temp_vec, *vec_Y );
     if (info!=0) { 
       delete temp_vec; 
-      TEST_FOR_EXCEPTION( true, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, OperatorError, 
                           "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     }
     
     // Un-transpose the operator
     info=Epetra_Op->SetUseTranspose( false );
     delete temp_vec;
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
   
@@ -558,12 +558,12 @@ namespace Anasazi {
       
       /* A'*X */
       info = temp_vec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
-      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                           "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
       /* A*(A'*X) */
       info = vec_Y->Multiply( 'N', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );      
-      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                           "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
     } 
     else {
@@ -572,12 +572,12 @@ namespace Anasazi {
       
       /* A*X */
       info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
-      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                           "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
       /* A'*(A*X) */
       info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );
-      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                           "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
     }
   }
@@ -614,12 +614,12 @@ namespace Anasazi {
       
     /* WA*X */
     info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_WMV, *vec_X, 0.0 );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraWSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
     /* A'*(WA*X) */
     info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraWSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
   }
   
@@ -655,12 +655,12 @@ namespace Anasazi {
       
     /* WA*X */
     info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_WMV, *vec_X, 0.0 );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraW2SymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
     /* (WA)'*(WA*X) */
     info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_WMV, temp_vec, 0.0 );
-    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError, 
                         "Anasazi::EpetraW2SymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
     
   }

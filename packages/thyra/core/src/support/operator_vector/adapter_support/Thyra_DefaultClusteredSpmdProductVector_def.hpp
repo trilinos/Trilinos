@@ -117,7 +117,7 @@ Teuchos::RCP<VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
+  TEUCHOS_TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return vecs_[k];
 }
 
@@ -127,7 +127,7 @@ Teuchos::RCP<const VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
+  TEUCHOS_TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return vecs_[k];
 }
 
@@ -147,7 +147,7 @@ template <class Scalar>
 bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
+  TEUCHOS_TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return false;
 }
 
@@ -204,14 +204,14 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
 
   // Validate input
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     global_offset_in < 0, std::invalid_argument,
     "DefaultClusteredSpmdProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << " is not acceptable" );
   bool test_failed;
   for (int k = 0; k < num_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces,
       "DefaultClusteredSpmdProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
       <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
@@ -220,7 +220,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   }
   for (int k = 0; k < num_targ_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*targ_vecs[k]->space());
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultClusteredSpmdProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
       <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
@@ -236,14 +236,14 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   Array<Ptr<const DefaultClusteredSpmdProductVector<Scalar> > > cl_vecs(num_vecs);
   for ( int k = 0; k < num_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(vecs[k]==null);
+    TEUCHOS_TEST_FOR_EXCEPT(vecs[k]==null);
 #endif
     cl_vecs[k] = ptr_dynamic_cast<const DefaultClusteredSpmdProductVector<Scalar> >(vecs[k],true);
   }
   Array<Ptr<DefaultClusteredSpmdProductVector<Scalar> > > cl_targ_vecs(num_targ_vecs);
   for ( int k = 0; k < num_targ_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(targ_vecs[k]==null);
+    TEUCHOS_TEST_FOR_EXCEPT(targ_vecs[k]==null);
 #endif
     cl_targ_vecs[k] = ptr_dynamic_cast<DefaultClusteredSpmdProductVector<Scalar> >(targ_vecs[k],true);
   }
@@ -299,7 +299,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
         v_vecs[k] = cl_vecs[k]->vecs_[j].ptr();
       for( int k = 0; k < num_targ_vecs ; ++k )
         v_targ_vecs[k] = cl_targ_vecs[k]->vecs_[j].ptr();
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         numBlocks > 1, std::logic_error
         ,"Error, Have not implemented general support for numBlocks > 1!"
         ); // ToDo: Fix the below code for numBlocks_ > 1!

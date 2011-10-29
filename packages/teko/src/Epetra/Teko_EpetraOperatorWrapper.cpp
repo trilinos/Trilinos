@@ -136,7 +136,7 @@ void EpetraOperatorWrapper::SetOperator(const RCP<const LinearOpBase<double> > &
 
 double EpetraOperatorWrapper::NormInf() const 
 {
-  TEST_FOR_EXCEPTION(true, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "EpetraOperatorWrapper::NormInf not implemated");
   return 1.0;
 }
@@ -177,7 +177,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
 int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
                                       Epetra_MultiVector& Y) const
 {
-  TEST_FOR_EXCEPTION(true, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "EpetraOperatorWrapper::ApplyInverse not implemented");
   return 1;
 }
@@ -206,7 +206,7 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
         current = prod->getBlock(0);
   }
 
-  TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
                      "EpetraOperatorWrapper requires std::vector space "
                      "blocks to be SPMD std::vector spaces");
 
@@ -239,7 +239,7 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
      }
   }
 
-  TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
                      "EpetraOperatorWrapper requires std::vector space "
                      "blocks to be SPMD std::vector spaces");
 
@@ -250,7 +250,7 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
   const MpiComm<Thyra::Ordinal>* mpiComm 
     = dynamic_cast<const MpiComm<Thyra::Ordinal>*>(spmd->getComm().get());
 
-  TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error, 
                      "SPMD std::vector space has a communicator that is "
                      "neither a serial comm nor an MPI comm");
 
@@ -263,14 +263,14 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
       rtn = rcp(new Epetra_SerialComm());
     }
 #else
-  TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error, 
                      "SPMD std::vector space has a communicator that is "
                      "neither a serial comm nor an MPI comm");
   rtn = rcp(new Epetra_SerialComm());
   
 #endif
 
-  TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
+  TEUCHOS_TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
   return rtn;
 */
 }

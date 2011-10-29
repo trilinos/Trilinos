@@ -10,10 +10,12 @@
 static double    checkvec();
 
 /* Benchmark certain kernel operations */
-void      time_kernels(A, n, vwsqrt)
-struct vtx_data **A;		/* matrix/graph being analyzed */
-int       n;			/* number of rows/columns in matrix */
-double   *vwsqrt;		/* square roots of vertex weights */
+void 
+time_kernels (
+    struct vtx_data **A,		/* matrix/graph being analyzed */
+    int n,			/* number of rows/columns in matrix */
+    double *vwsqrt		/* square roots of vertex weights */
+)
 {
     extern int DEBUG_PERTURB;	/* debug flag for matrix perturbation */
     extern int PERTURB;		/* randomly perturb to break symmetry? */
@@ -230,10 +232,8 @@ double   *vwsqrt;		/* square roots of vertex weights */
 }
 
 /* Compute norm of difference between a double and float vector. */
-static double checkvec(dvec, beg, end, svec)
-double   *dvec;
-float    *svec;
-int       beg, end;
+static double 
+checkvec (double *dvec, int beg, int end, float *svec)
 {
     double    sum, diff;
     int       i;

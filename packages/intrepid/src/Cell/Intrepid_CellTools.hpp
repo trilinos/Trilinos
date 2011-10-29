@@ -74,7 +74,7 @@
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Intrepid {

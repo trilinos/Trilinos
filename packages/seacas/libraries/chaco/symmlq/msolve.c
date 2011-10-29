@@ -4,13 +4,8 @@
 
 #include "structs.h"
 
-int       msolve_(lnvtxs, x, y, dA, vwsqrt, work)
-long     *lnvtxs;
-double   *x;
-double   *y;
-double   *dA;
-double   *vwsqrt;
-double   *work;
+int 
+msolve_ (long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work)
 {
     struct vtx_data **A;
     int       nvtxs;

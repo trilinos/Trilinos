@@ -42,7 +42,7 @@
 #ifndef TEUCHOS_AS_HPP
 #define TEUCHOS_AS_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>
@@ -226,6 +226,16 @@ public:
     { return (float)to_double(t); }
 };
 
+/** \brief Convert qd_real to int. */
+template <>
+class ValueTypeConversionTraits<int, qd_real> {
+public:
+  inline static int convert( const qd_real t )
+    { return to_int(t); }
+  inline static int safeConvert( const qd_real t )
+    { return to_int(t); }
+};
+
 /** \brief Convert qd_real to dd_real. */
 template <>
 class ValueTypeConversionTraits<dd_real, qd_real> {
@@ -254,6 +264,16 @@ public:
     { return (float)to_double(t); }
   inline static float safeConvert( const dd_real t )
     { return (float)to_double(t); }
+};
+
+/** \brief Convert dd_real to int. */
+template <>
+class ValueTypeConversionTraits<int, dd_real> {
+public:
+  inline static int convert( const dd_real t )
+    { return to_int(t); }
+  inline static int safeConvert( const dd_real t )
+    { return to_int(t); }
 };
 
 #endif

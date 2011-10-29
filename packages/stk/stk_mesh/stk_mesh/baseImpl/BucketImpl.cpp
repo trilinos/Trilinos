@@ -100,7 +100,7 @@ void BucketImpl::update_state()
 // Every bucket in the family points to the first bucket,
 // except the first bucket which points to the last bucket.
 
-Bucket * BucketImpl::last_bucket_in_family()
+Bucket * BucketImpl::last_bucket_in_family() const
 {
   Bucket * last = last_bucket_in_family_impl();
 
@@ -110,7 +110,7 @@ Bucket * BucketImpl::last_bucket_in_family()
   return last ;
 }
 
-Bucket * BucketImpl::last_bucket_in_family_impl()
+Bucket * BucketImpl::last_bucket_in_family_impl() const
 {
   bool this_is_first_bucket_in_family = (bucket_counter() == 0);
 
@@ -127,7 +127,7 @@ Bucket * BucketImpl::last_bucket_in_family_impl()
 
 //----------------------------------------------------------------------
 
-Bucket * BucketImpl::first_bucket_in_family()
+Bucket * BucketImpl::first_bucket_in_family() const
 {
   return last_bucket_in_family_impl()->m_bucketImpl.m_bucket;
 }

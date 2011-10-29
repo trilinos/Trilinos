@@ -37,8 +37,6 @@
 #include "Ifpack_Utils.h"
 #endif
 
-using namespace std;
-
 // ============================================================================
 void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector, 
 						      int size, 

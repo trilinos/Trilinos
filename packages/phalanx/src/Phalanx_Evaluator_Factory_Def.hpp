@@ -49,7 +49,7 @@
 #include "boost/mpl/size.hpp"
 #include "boost/mpl/for_each.hpp"
 #include "boost/mpl/range_c.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Phalanx_Evaluator_Factory_UFO.hpp"
 
 //**********************************************************************
@@ -82,7 +82,7 @@ buildEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>
 	  << it->first
 	  << ".  Please make sure you have set a valid integer "
 	  << "for \"Type\" in the parameter list!";
-      TEST_FOR_EXCEPTION(!found_type, std::logic_error, msg.str());
+      TEUCHOS_TEST_FOR_EXCEPTION(!found_type, std::logic_error, msg.str());
     }
 
     vector_tm->push_back(tm);

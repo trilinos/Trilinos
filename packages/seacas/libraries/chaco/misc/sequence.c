@@ -10,17 +10,18 @@
 #include "smalloc.h"
 
 
-void      sequence(graph, nvtxs, nedges, using_ewgts, vwsqrt,
-		             solver_flag, rqi_flag, vmax, eigtol)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int       using_ewgts;		/* are edge weights being used? */
-double   *vwsqrt;		/* sqrt of vertex weights (length nvtxs+1) */
-int       solver_flag;		/* which eigensolver should I use? */
-int       rqi_flag;		/* use multilevel eigensolver? */
-int       vmax;			/* if so, how many vtxs to coarsen down to? */
-double    eigtol;		/* tolerance on eigenvectors */
+void 
+sequence (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int using_ewgts,		/* are edge weights being used? */
+    double *vwsqrt,		/* sqrt of vertex weights (length nvtxs+1) */
+    int solver_flag,		/* which eigensolver should I use? */
+    int rqi_flag,		/* use multilevel eigensolver? */
+    int vmax,			/* if so, how many vtxs to coarsen down to? */
+    double eigtol		/* tolerance on eigenvectors */
+)
 {
     extern char SEQ_FILENAME[];	/* name of sequence file */
     extern int RQI_CONVERGENCE_MODE;	/* residual or partition mode? */

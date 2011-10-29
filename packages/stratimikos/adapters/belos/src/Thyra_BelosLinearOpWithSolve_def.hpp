@@ -236,7 +236,7 @@ void BelosLinearOpWithSolve<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -323,9 +323,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   ) const
 {
 
-#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: BelosLOWS");
-#endif
+  THYRA_FUNC_TIME_MONITOR("Stratimikos: BelosLOWS");
 
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
@@ -358,7 +356,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   //
 
   bool ret = lp_->setProblem( rcpFromPtr(X), rcpFromRef(B) );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ret == false, CatastrophicSolveFailure
     ,"Error, the Belos::LinearProblem could not be set for the current solve!"
     );

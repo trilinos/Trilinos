@@ -101,7 +101,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
   else {
     //  This is a serial (or locally replicated) vector space so
     // just write all of the multi-vector elements here.
-    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
   }
 }
 
@@ -121,7 +121,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
     DetachedMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !in, std::logic_error
       ,"Error: The input stream given is empty before any reading has began!\n"
       "If this stream came from a file, then the file may not exist!"
@@ -130,7 +130,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     Ordinal localSubDim_in;
     in >> localSubDim_in;
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       localSubDim != localSubDim_in, std::logic_error
       , "Error, localSubDim = "<<localSubDim<<" does not match the read in value of "
       "localSubDim_in = "<<localSubDim_in<<"!"
@@ -139,7 +139,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     Ordinal numSubCols_in;
     in >> numSubCols_in;
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       local_mv.numSubCols() != numSubCols_in, std::logic_error
       , "Error, numSubCols = "<<local_mv.numSubCols()<<" does not match the read in value of "
       "numSubCols_in = "<<numSubCols_in<<"!"
@@ -157,12 +157,12 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
       // Row-wise
       for( Ordinal i = 0; i < localSubDim; ++i ) {
 #ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
+        TEUCHOS_TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
         Ordinal i_in;
         in >> i_in;
 #ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           i != i_in, std::logic_error
           , "Error, i = "<<i<<" does not match the read in value of "
           "i_in = "<<i_in<<"!"
@@ -170,7 +170,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
 #endif
         for( Ordinal j = 0; j < local_mv.numSubCols(); ++j ) {
 #ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPTION(
+          TEUCHOS_TEST_FOR_EXCEPTION(
             !in, std::logic_error
             ,"Error: The input stream ran out at j="<<j<<" before"
             " reaching the promised " << local_mv.numSubCols()
@@ -185,7 +185,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
   else {
     //  This is a serial (or locally replicated) vector space so
     // just read all of the multi-vector elements here.
-    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
   }
 }
 

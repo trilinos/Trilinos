@@ -31,7 +31,7 @@
 #ifndef MOCKMODELEVAL_D_H
 #define MOCKMODELEVAL_D_H
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_MPI

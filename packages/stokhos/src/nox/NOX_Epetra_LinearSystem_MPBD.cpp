@@ -6,7 +6,7 @@
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 NOX::Epetra::LinearSystemMPBD::
 LinearSystemMPBD(
@@ -37,7 +37,7 @@ LinearSystemMPBD(
   else if (prec_strategy == "On the fly")
     precStrategy = ON_THE_FLY;
   else
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "Invalid preconditioner strategy " << prec_strategy);
 
   if (precStrategy == STANDARD)

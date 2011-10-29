@@ -54,7 +54,7 @@
 #include <fstream>
 #include <utility>
 #include <typeinfo>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator.hpp"
@@ -125,7 +125,7 @@ sortAndOrderEvaluators()
   if (sorting_called_) {
     std::string msg = "Setup was already called.  ";
     msg += "Don't call setup more than once!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 
   // Construct the order in which providers need to be called
@@ -316,7 +316,7 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       std::string filename = "error.dot";
       this->writeGraphvizFile(filename, true, true, true);
 
-      TEST_FOR_EXCEPTION(!removedVariable, std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(!removedVariable, std::logic_error, msg);
     }
     
   } // While tmpList.size() != 0
@@ -379,7 +379,7 @@ writeGraphvizFile(const std::string filename,
   using Teuchos::RCP;
   using PHX::FieldTag;
 
-  TEST_FOR_EXCEPTION(!sorting_called_ && !debugRegisteredEvaluators, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!sorting_called_ && !debugRegisteredEvaluators, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
 
 #if (BOOST_VERSION>=104400)
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,

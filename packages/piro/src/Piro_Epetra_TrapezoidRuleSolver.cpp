@@ -85,10 +85,10 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 }
@@ -111,7 +111,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::TrapezoidRuleSolver::get_f_map() co
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::TrapezoidRuleSolver::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::TrapezoidRuleSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -121,7 +121,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::TrapezoidRuleSolver::get_p_map(int 
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::TrapezoidRuleSolver::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::TrapezoidRuleSolver::get_g_map():  " <<
                      "Invalid response index j = " <<
@@ -139,7 +139,7 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidRuleSolver::get_x_init(
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidRuleSolver::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::TrapezoidRuleSolver::get_p_init():  " <<
                      "Invalid parameter index l = " <<
@@ -207,7 +207,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> x_pred = rcp(new Epetra_Vector(*model->get_f_map()));
   RCP<Epetra_Vector> a_old = rcp(new Epetra_Vector(*model->get_f_map()));
 
-  TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Requires initial x and x_dot: " << std::endl);

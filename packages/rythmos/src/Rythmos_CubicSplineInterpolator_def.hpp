@@ -54,7 +54,7 @@ void computeCubicSplineCoeff(
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       (data.size() < 2), std::logic_error,
       "Error!  A minimum of two data points is required for this cubic spline."
       );
@@ -62,9 +62,9 @@ void computeCubicSplineCoeff(
   Array<Scalar> t;
   Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
   dataStoreVectorToVector<Scalar>( data, &t, &x_vec, &xdot_vec, NULL );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   assertTimePointsAreSorted<Scalar>( t );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   // 11/18/08 tscoffe:  Question:  Should I erase everything in coeffPtr or
   // re-use what I can?  For now, I'll erase and create new each time.
   CubicSplineCoeff<Scalar>& coeff = *coeffPtr;
@@ -157,7 +157,7 @@ void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff)
   int b_n = coeff.b.size();
   int c_n = coeff.c.size();
   int d_n = coeff.d.size();
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       ((a_n != t_n-1) || (a_n != b_n) || (a_n != c_n) || (a_n != d_n)),
       std::logic_error,
       "Error!  The sizes of the data structures in the CubicSplineCoeff object do not match"
@@ -180,7 +180,7 @@ void evaluateCubicSpline(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
-  TEST_FOR_EXCEPTION( as<Teuchos::Ordinal>(j) >= coeff.a.size(),
+  TEUCHOS_TEST_FOR_EXCEPTION( as<Teuchos::Ordinal>(j) >= coeff.a.size(),
      std::out_of_range, "Error!, j is out of range" );
 
   Scalar dt = t-coeff.t[j];
@@ -246,7 +246,7 @@ void CubicSplineInterpolator<Scalar>::setNodes(
   nodes_ = nodesPtr;
   nodesSet_ = true;
   splineCoeffComputed_ = false;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   const typename DataStore<Scalar>::DataStoreVector_t & nodes = *nodesPtr;
   // Copy nodes to internal data structure for verification upon calls to interpolate
   nodes_copy_ = Teuchos::rcp(new typename DataStore<Scalar>::DataStoreVector_t);
@@ -254,7 +254,7 @@ void CubicSplineInterpolator<Scalar>::setNodes(
   for (int i=0 ; i<Teuchos::as<int>(nodes.size()) ; ++i) {
     nodes_copy_->push_back(*nodes[i].clone());
   }
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 template<class Scalar>
@@ -267,15 +267,15 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
       "Error!, setNodes must be called before interpolate"
       );
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check that our nodes_ have not changed between the call to setNodes and interpolate
   assertNodesUnChanged<Scalar>(*nodes_,*nodes_copy_);
   // Assert that the base interpolator preconditions are satisfied
   assertBaseInterpolatePreconditions(*nodes_,t_values,data_out);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   
   // Output info
   const RCP<FancyOStream> out = this->getOStream();
@@ -395,7 +395,7 @@ void CubicSplineInterpolator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);

@@ -653,24 +653,24 @@ namespace Anasazi {
     Rnorms_current_(false),
     R2norms_current_(false)
   {     
-    TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user passed null problem pointer.");
-    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user passed null sort manager pointer.");
-    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user passed null output manager pointer.");
-    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user passed null status test pointer.");
-    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user passed null orthogonalization manager pointer.");
-    TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: problem is not set.");
-    TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: problem is not Hermitian; LOBPCG requires Hermitian problem.");
 
     // get the problem operators
     Op_   = problem_->getOperator();
-    TEST_FOR_EXCEPTION(Op_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(Op_ == Teuchos::null, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: problem provides no operator.");
     MOp_  = problem_->getM();
     Prec_ = problem_->getPrec();
@@ -707,11 +707,11 @@ namespace Anasazi {
     }
     else {
       tmp = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
                          "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
     }
     
-    TEST_FOR_EXCEPTION(newBS <= 0 || newBS > MVT::GetVecLength(*tmp), std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly positive.");
+    TEUCHOS_TEST_FOR_EXCEPTION(newBS <= 0 || newBS > MVT::GetVecLength(*tmp), std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly positive.");
     if (newBS == blockSize_) {
       // do nothing
       return;
@@ -992,10 +992,10 @@ namespace Anasazi {
     // set up X, MX, KX
     //----------------------------------------
     if (newstate.X != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.X not correct." );
       // newstate.X must have blockSize_ vectors; any more will be ignored
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.X must have at least block size vectors.");
 
       // put X data in X_
@@ -1004,10 +1004,10 @@ namespace Anasazi {
       // put MX data in MX_
       if (hasM_) {
         if (newstate.MX != Teuchos::null) {
-          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*MX_),
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MX not correct." );
           // newstate.MX must have blockSize_ vectors; any more will be ignored
-          TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MX) < blockSize_,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MX) < blockSize_,
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.MX must have at least block size vectors.");
           MVT::SetBlock(*newstate.MX,bsind,*MX_);
         }
@@ -1027,10 +1027,10 @@ namespace Anasazi {
   
       // put data in KX
       if (newstate.KX != Teuchos::null) {
-        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*KX_),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*KX_),
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KX not correct." );
         // newstate.KX must have blockSize_ vectors; any more will be ignored
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KX) < blockSize_,
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KX) < blockSize_,
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.KX must have at least block size vectors.");
         MVT::SetBlock(*newstate.KX,bsind,*KX_);
       }
@@ -1060,7 +1060,7 @@ namespace Anasazi {
 
       // generate a basis and projectAndNormalize
       Teuchos::RCP<const MV> ivec = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
                          "Anasazi::LOBPCG::initialize(): Eigenproblem did not specify initial vectors to clone from.");
 
       int initSize = MVT::GetNumberVecs(*ivec);
@@ -1103,7 +1103,7 @@ namespace Anasazi {
 #endif
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalizeMat(*X_,auxVecs_,dummy,Teuchos::null,MX_);
-        TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
@@ -1111,7 +1111,7 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
         int rank = orthman_->normalizeMat(*X_,Teuchos::null,MX_);
-        TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
 
@@ -1131,7 +1131,7 @@ namespace Anasazi {
     //----------------------------------------
     theta_.resize(3*blockSize_,NANVAL);
     if (newstate.T != Teuchos::null) {
-      TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.T must contain at least block size Ritz values.");
       for (int i=0; i<blockSize_; i++) {
         theta_[i] = (*newstate.T)[i];
@@ -1160,7 +1160,7 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
 #endif
         Utils::directSolver(blockSize_, KK, Teuchos::rcpFromRef(MM), S, theta_, nevLocal_, 1);
-        TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
       }
 
@@ -1203,9 +1203,9 @@ namespace Anasazi {
     // compute R
     //----------------------------------------
     if (newstate.R != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.R not correct." );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.R must have blockSize number of vectors." );
       MVT::SetBlock(*newstate.R,bsind,*R_);
     }
@@ -1226,9 +1226,9 @@ namespace Anasazi {
   
     // put data in P,KP,MP: P is not used to set theta
     if (newstate.P != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.P) < blockSize_ ,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.P) < blockSize_ ,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.P must have blockSize number of vectors." );
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.P) != MVT::GetVecLength(*P_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.P) != MVT::GetVecLength(*P_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.P not correct." );
       hasP_ = true;
 
@@ -1237,9 +1237,9 @@ namespace Anasazi {
 
       // set/compute KP_
       if (newstate.KP != Teuchos::null) {
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KP) < blockSize_,
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KP) < blockSize_,
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.KP must have blockSize number of vectors." );
-        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KP) != MVT::GetVecLength(*KP_),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KP) != MVT::GetVecLength(*KP_),
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KP not correct." );
         MVT::SetBlock(*newstate.KP,bsind,*KP_);
       }
@@ -1254,9 +1254,9 @@ namespace Anasazi {
       // set/compute MP_
       if (hasM_) {
         if (newstate.MP != Teuchos::null) {
-          TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MP) < blockSize_,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MP) < blockSize_,
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.MP must have blockSize number of vectors." );
-          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MP) != MVT::GetVecLength(*MP_),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MP) != MVT::GetVecLength(*MP_),
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MP not correct." );
           MVT::SetBlock(*newstate.MP,bsind,*MP_);
         }
@@ -1418,7 +1418,7 @@ namespace Anasazi {
           Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
         int rank = orthman_->projectAndNormalizeMat(*H_,Q,dummyC,Teuchos::null,MH_);
         // our views are currently in place; it is safe to throw an exception
-        TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
                            "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");
       }
 
@@ -1604,7 +1604,7 @@ namespace Anasazi {
           cM_HP  = Teuchos::null;
           setupViews();
         }
-        TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
             "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
       }
 
@@ -1686,11 +1686,11 @@ namespace Anasazi {
         {
           int teuchosret;
           teuchosret = MMC.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,C,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute CMMC = C^H*MMC == C^H*lclMM*C
           teuchosret = CMMC.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,C,MMC,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
         }
 
@@ -1708,7 +1708,7 @@ namespace Anasazi {
             cM_HP = Teuchos::null;
             setupViews();
           }
-          TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
               "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
         }
         // compute C = C inv(R)
@@ -1734,11 +1734,11 @@ namespace Anasazi {
           // check CX^T MM CX == I
           // compute tmp1 = MM*CX
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CX,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CX
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CX,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CX^H * MM * CX - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
@@ -1748,11 +1748,11 @@ namespace Anasazi {
           // check CP^T MM CP == I
           // compute tmp1 = MM*CP
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CP,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CP^H*tmp1 == CP^H*MM*CP
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CP,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CP^H * MM * CP - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
@@ -1762,10 +1762,10 @@ namespace Anasazi {
           // check CX^T MM CP == 0
           // compute tmp1 = MM*CP
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CP,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CP
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CX,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
+          TEUCHOS_TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 == CX^H * MM * CP
           tmp = tmp2.normFrobenius();          
           os << " >> Error in CX^H MM CP == 0 : " << tmp << std::endl;
@@ -1888,7 +1888,7 @@ namespace Anasazi {
 
       // debugging check: all of our const views should have been cleared by now
       // if not, we have a logic error above
-      TEST_FOR_EXCEPTION(   cXHP != Teuchos::null || cK_XHP != Teuchos::null || cM_XHP != Teuchos::null
+      TEUCHOS_TEST_FOR_EXCEPTION(   cXHP != Teuchos::null || cK_XHP != Teuchos::null || cM_XHP != Teuchos::null
                           || cHP != Teuchos::null ||  cK_HP != Teuchos::null || cM_HP  != Teuchos::null
                           ||  cP != Teuchos::null ||   cK_P != Teuchos::null || cM_P   != Teuchos::null,
                           std::logic_error,
@@ -2241,7 +2241,7 @@ namespace Anasazi {
   // Set a new StatusTest for the solver.
   template <class ScalarType, class MV, class OP>
   void LOBPCG<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
-    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
         "Anasazi::LOBPCG::setStatusTest() was passed a null StatusTest.");
     tester_ = test;
   }

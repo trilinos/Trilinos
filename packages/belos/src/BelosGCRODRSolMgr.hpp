@@ -175,9 +175,9 @@ namespace Belos {
      *   orthogonalization. Currently supported values: "DGKS",
      *   "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR
      *   support). Default: "DGKS".
-     * - "Orthogonalization Parameters": a ParameterList or
-     *   RCP<(const) ParameterList> of parameters specific to the type
-     *   of orthogonalization used. Defaults are set automatically.
+     * - "Orthogonalization Parameters": a sublist of parameters
+     *   specific to the type of orthogonalization used. Defaults are
+     *   set automatically.
      * - "Verbosity": a sum of MsgType specifying the
      *   verbosity. Default: Belos::Errors.
      * - "Output Style": a OutputType specifying the style of
@@ -187,7 +187,6 @@ namespace Belos {
      *   convergence. Default: 1e-8.
      * 
      * Other supported options:
-
      * - "Output Frequency": an int specifying how often (in terms of
      *   number of iterations) convergence information should be
      *   output to the output stream. Default: -1 (means never output
@@ -360,10 +359,6 @@ namespace Belos {
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
-    /// Factory that knows how to instantiate MatOrthoManager
-    /// subclasses on demand, given their name.
-    ortho_factory_type orthoFactory_;
-
     /// Orthogonalization manager.  It is created by the
     /// OrthoManagerFactory instance, and may be changed if the
     /// parameters to this solver manager are changed.
@@ -505,7 +500,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   // to default values.
   init();
 
-  TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, 
 		     "Belos::GCRODRSolMgr constructor: The solver manager's "
 		     "constructor needs the linear problem argument 'problem' "
 		     "to be non-null.");
@@ -601,15 +596,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // moment (when the user asks Belos to perform the solve).  In
     // this common case, we save ourselves a deep copy of the input
     // parameter list.
-    if (params_ != params)
-      {
-	// Make a deep copy of the input parameter list.  This allows
-	// the caller to modify or change params later, without
-	// affecting the behavior of this solver.  This solver will
-	// then only change its internal parameters if setParameters()
-	// is called again.
-	params_ = parameterList (*params);
-      }
+    if (params_ != params) {
+      // Make a deep copy of the input parameter list.  This allows
+      // the caller to modify or change params later, without
+      // affecting the behavior of this solver.  This solver will then
+      // only change its internal parameters if setParameters() is
+      // called again.
+      params_ = parameterList (*params);
+    }
 
     // Fill in any missing parameters and their default values.  Also,
     // throw an exception if the parameter list has any misspelled or
@@ -667,7 +661,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Check for the maximum number of blocks.
   if (params->isParameter ("Num Blocks")) {
     numBlocks_ = params->get ("Num Blocks", numBlocks_default_);
-    TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Blocks\" parameter must "
 		       "be strictly positive, but you specified a value of "
 		       << numBlocks_ << ".");
@@ -679,11 +673,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (params->isParameter ("Num Recycled Blocks")) {
     recycledBlocks_ = params->get ("Num Recycled Blocks", 
 				   recycledBlocks_default_);
-    TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks_ <= 0, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
 		       "parameter must be strictly positive, but you specified "
 		       "a value of " << recycledBlocks_ << ".");
-    TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks_ >= numBlocks_, std::invalid_argument,
 		       "Belos::GCRODRSolMgr: The \"Num Recycled Blocks\" "
 		       "parameter must be less than the \"Num Blocks\" "
 		       "parameter, but you specified \"Num Recycled Blocks\" "
@@ -763,15 +757,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // hole" stream that prints nothing sent to it.  (We can't use a
     // null output stream, since the output manager always sends
     // things it wants to print to the output stream.)
-    if (outputStream_.is_null())
+    if (outputStream_.is_null()) {
       outputStream_ = rcp (new Teuchos::oblackholestream);
-
+    }
     // Update parameter in our list.
     params_->set ("Output Stream", outputStream_);
     // If the output manager (printer_) is null, then we will
     // instantiate it later with the correct output stream.
-    if (! printer_.is_null())
+    if (! printer_.is_null()) {
       printer_->setOStream (outputStream_);
+    }
   }
 
   // frequency level
@@ -800,29 +795,27 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // parameters ("Orthogonalization Parameters") requires knowing the
   // orthogonalization manager name.  Save it for later, and also
   // record whether it's different than before.
+  OrthoManagerFactory<ScalarType, MV, OP> factory;
   bool changedOrthoType = false;
-  if (params->isParameter ("Orthogonalization")) 
-    {
-      const std::string& tempOrthoType = 
-	params->get ("Orthogonalization", orthoType_default_);
-      // Ensure that the specified orthogonalization type is valid.
-      if (! orthoFactory_.isValidName (tempOrthoType))
-	{
-	  std::ostringstream os;
-	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
-	     << tempOrthoType << "\".  The following are valid options "
-	     << "for the \"Orthogonalization\" name parameter: ";
-	  orthoFactory_.printValidNames (os);
-	  throw std::invalid_argument (os.str());
-	}
-      if (tempOrthoType != orthoType_)
-	{
-	  changedOrthoType = true;
-	  orthoType_ = tempOrthoType;
-	  // Update parameter in our list.
-	  params_->set ("Orthogonalization", orthoType_);
-	}
+  if (params->isParameter ("Orthogonalization")) {
+    const std::string& tempOrthoType = 
+      params->get ("Orthogonalization", orthoType_default_);
+    // Ensure that the specified orthogonalization type is valid.
+    if (! factory.isValidName (tempOrthoType)) {
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \"" 
+	 << tempOrthoType << "\".  The following are valid options "
+	 << "for the \"Orthogonalization\" name parameter: ";
+      factory.printValidNames (os);
+      throw std::invalid_argument (os.str());
     }
+    if (tempOrthoType != orthoType_) {
+      changedOrthoType = true;
+      orthoType_ = tempOrthoType;
+      // Update parameter in our list.
+      params_->set ("Orthogonalization", orthoType_);
+    }
+  }
 
   // Get any parameters for the orthogonalization ("Orthogonalization
   // Parameters").  If not supplied, the orthogonalization manager
@@ -833,72 +826,61 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // DGKS orthogonalization manager is to be used, the value of this
   // parameter will override DGKS's "depTol" parameter.
   //
-  // Users may supply the orthogonalization manager parameters either
-  // as a sublist, or as an RCP.  We test for both.  Note that setting
-  // the sublist as an RCP<const ParameterList> rather than a
-  // ParameterList means that you can't correctly serialize the solver
-  // manager's parameter list.
-  RCP<const ParameterList> orthoParams;
-  {
-    bool gotOrthoParams = false;
-    try { // Could it be an RCP?
-      orthoParams = 
-	params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
-      gotOrthoParams = true;
-    } catch (InvalidParameter&) {
-      // We didn't get orthoParams; gotOrthoParams stays false.
-    }
-    if (! gotOrthoParams) {
-      try { // Could it be a sublist?
-	const ParameterList& _orthoParams = 
-	  params_->sublist("Orthogonalization Parameters");
-	// A deep copy is the only safe way to ensure that
-	// orthoParams doesn't "go away," since params doesn't
-	// belong to the solution manager and may fall out of
-	// scope.
-	orthoParams = rcp (new ParameterList (_orthoParams));
-	gotOrthoParams = true;
-      } catch (InvalidParameter&) {
-	// We didn't get orthoParams; gotOrthoParams stays false.
-      }
-    }
-    // We didn't get the parameter list from params, so get a default
-    // parameter list from the OrthoManagerFactory.
-    if (! gotOrthoParams)
-      orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
-    // Update parameter in our list.
-    params_->set ("Orthogonalization Parameters", orthoParams);
-  }
+  // Users must supply the orthogonalization manager parameters as a
+  // sublist (supplying it as an RCP<ParameterList> would make the
+  // resulting parameter list not serializable).
+  RCP<ParameterList> orthoParams;
+  { // The nonmember function sublist() returns an RCP<ParameterList>,
+    // which is what we want here.
+    using Teuchos::sublist;
+    // Abbreviation to avoid typos.
+    const std::string paramName ("Orthogonalization Parameters");
 
-  // Check if the desired orthogonalization method changed, or if the
-  // orthogonalization manager has not yet been instantiated.  If
-  // either is the case, instantiate a new MatOrthoManager subclass
-  // instance corresponding to the desired orthogonalization method.
-  // We've already fetched the orthogonalization method name
-  // (orthoType_) and its parameters (orthoParams) above.
-  //
-  // NOTE (mfh 12 Jan 2011) We only instantiate a new MatOrthoManager
-  // subclass if the orthogonalization method name is different than
-  // before.  Thus, for some orthogonalization managers, changes to
-  // their parameters may not get propagated, if the manager type
-  // itself didn't change.  The one exception is the "depTol"
-  // (a.k.a. orthoKappa or "Orthogonalization Constant") parameter of
-  // DGKS; changes to that _do_ get propagated down to the DGKS
-  // instance.  
-  //
-  // The most general way to fix this issue would be to supply each
-  // orthogonalization manager class with a setParameters() method
-  // that takes a parameter list input, and changes the parameters as
-  // appropriate.  A less efficient but correct way would be simply to
-  // reinstantiate the OrthoManager every time, whether or not the
-  // orthogonalization method name or parameters have changed.
-  if (ortho_.is_null() || changedOrthoType)
-    {
-      // Create orthogonalization manager.  This requires that the
-      // OutputManager (printer_) already be initialized.
-      ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_, 
-						  label_, orthoParams);
+    try {
+      orthoParams = sublist (params_, paramName, true);
+    } catch (InvalidParameter&) {
+      // We didn't get the parameter list from params, so get a
+      // default parameter list from the OrthoManagerFactory.  Modify
+      // params_ so that it has the default parameter list, and set
+      // orthoParams to ensure it's a sublist of params_ (and not just
+      // a copy of one).
+      params_->set (paramName, factory.getDefaultParameters (orthoType_));
+      orthoParams = sublist (params_, paramName, true);
     }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(orthoParams.is_null(), std::logic_error, 
+			     "Failed to get orthogonalization parameters.  "
+			     "Please report this bug to the Belos developers.");
+
+  // Instantiate a new MatOrthoManager subclass instance if necessary.
+  // If not necessary, then tell the existing instance about the new
+  // parameters.
+  if (ortho_.is_null() || changedOrthoType) {
+    // We definitely need to make a new MatOrthoManager, since either
+    // we haven't made one yet, or we've changed orthogonalization
+    // methods.  Creating the orthogonalization manager requires that
+    // the OutputManager (printer_) already be initialized.
+    ortho_ = factory.makeMatOrthoManager (orthoType_, null, printer_, 
+					  label_, orthoParams);
+  } else {
+    // If the MatOrthoManager implements the ParameterListAcceptor
+    // mix-in interface, we can propagate changes to its parameters
+    // without reinstantiating the MatOrthoManager.
+    //
+    // We recommend that all MatOrthoManager subclasses implement
+    // Teuchos::ParameterListAcceptor, but do not (yet) require this.
+    typedef Teuchos::ParameterListAcceptor PLA;
+    RCP<PLA> pla = rcp_dynamic_cast<PLA> (ortho_);
+    if (pla.is_null()) {
+      // Oops, it's not a ParameterListAcceptor.  We have to
+      // reinstantiate the MatOrthoManager in order to pass in the
+      // possibly new parameters.
+      ortho_ = factory.makeMatOrthoManager (orthoType_, null, printer_,
+					    label_, orthoParams);
+    } else {
+      pla->setParameterList (orthoParams);
+    }
+  }
 
   // The DGKS orthogonalization accepts a "Orthogonalization Constant"
   // parameter (also called kappa in the code, but not in the
@@ -909,29 +891,26 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
   bool gotValidOrthoKappa = false;
-  if (params->isParameter ("Orthogonalization Constant"))
-    {
-      const MagnitudeType orthoKappa = 
-	params->get ("Orthogonalization Constant", orthoKappa_default_);
-      if (orthoKappa > 0)
-	{
-	  orthoKappa_ = orthoKappa;
-	  gotValidOrthoKappa = true;
-	  // Update parameter in our list.
-	  params_->set("Orthogonalization Constant", orthoKappa_);
-	  // Only DGKS currently accepts this parameter.
-	  if (orthoType_ == "DGKS" && ! ortho_.is_null())
-	    {
-	      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
-	      // This cast should always succeed; it's a bug
-	      // otherwise.  (If the cast fails, then orthoType_
-	      // doesn't correspond to the OrthoManager subclass
-	      // instance that we think we have, so we initialized the
-	      // wrong subclass somehow.)
-	      rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
-	    }
-	}
+  if (params->isParameter ("Orthogonalization Constant")) {
+    const MagnitudeType orthoKappa = 
+      params->get ("Orthogonalization Constant", orthoKappa_default_);
+    if (orthoKappa > 0) {
+      orthoKappa_ = orthoKappa;
+      gotValidOrthoKappa = true;
+      // Update parameter in our list.
+      params_->set("Orthogonalization Constant", orthoKappa_);
+      // Only DGKS currently accepts this parameter.
+      if (orthoType_ == "DGKS" && ! ortho_.is_null()) {
+	typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
+	// This cast should always succeed; it's a bug
+	// otherwise.  (If the cast fails, then orthoType_
+	// doesn't correspond to the OrthoManager subclass
+	// instance that we think we have, so we initialized the
+	// wrong subclass somehow.)
+	rcp_dynamic_cast<ortho_man_type>(ortho_)->setDepTol (orthoKappa_);
+      }
     }
+  }
   
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
@@ -1069,11 +1048,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
     
 template<class ScalarType, class MV, class OP>
-Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const {
+Teuchos::RCP<const Teuchos::ParameterList> 
+GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const 
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
 
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = parameterList ();
+
     // Set all the valid parameters and their default values.
     pl->set("Convergence Tolerance", convTol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
@@ -1113,21 +1098,15 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
-    pl->set("Orthogonalization", orthoType_default_,
-	    "The type of orthogonalization to use.  Valid options: " + 
-	    orthoFactory_.validNamesString());
     {
-      // We have to help out the C++ compiler's type inference a bit here.
-      typedef Teuchos::RCP<const Teuchos::ParameterList> const_plist_ptr;
-#if 0
-      const_plist_ptr orthoParams = 
-	orthoFactory_.getDefaultParameters (orthoType_default_);
-#else
-      const_plist_ptr orthoParams;
-#endif // 0
-      pl->set< const_plist_ptr > ("Orthogonalization Parameters", orthoParams,
-				  "Parameters specific to the type of "
-				  "orthogonalization used.");
+      OrthoManagerFactory<ScalarType, MV, OP> factory;
+      pl->set("Orthogonalization", orthoType_default_,
+	      "The type of orthogonalization to use.  Valid options: " + 
+	      factory.validNamesString());
+      RCP<const ParameterList> orthoParams = 
+	factory.getDefaultParameters (orthoType_default_);
+      pl->set ("Orthogonalization Parameters", *orthoParams, 
+	       "Parameters specific to the type of orthogonalization used.");
     }
     pl->set("Orthogonalization Constant", orthoKappa_default_,
 	    "When using DGKS orthogonalization: the \"depTol\" constant, used "
@@ -1136,7 +1115,6 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     validPL = pl;
   }
   return validPL;
-
 }
 
 // initializeStateStorage
@@ -1154,7 +1132,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
                          "Belos::GCRODRSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1283,9 +1261,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   std::vector<int> index(numBlocks_+1);
   
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
@@ -1345,7 +1323,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       
       // If there is a subspace to recycle, recycle it, otherwise generate the initial recycled subspace.
       if (keff > 0) {
-	TEST_FOR_EXCEPTION(keff < recycledBlocks_,GCRODRSolMgrRecyclingFailure,
+	TEUCHOS_TEST_FOR_EXCEPTION(keff < recycledBlocks_,GCRODRSolMgrRecyclingFailure,
 			   "Belos::GCRODRSolMgr::solve(): Requested size of recycled subspace is not consistent with the current recycle subspace.");
 
 	printer_->stream(Debug) << " Now solving RHS index " << currIdx[0] << " using recycled subspace of dimension " << keff << std::endl << std::endl;
@@ -1363,20 +1341,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff ); 
 	int rank = ortho_->normalize(*Ctmp, rcp(&Rtmp,false));
 	// Throw an error if we could not orthogonalize this block
-	TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 	
 	// U_ = U_*R^{-1}	
 	// First, compute LU factorization of R
 	int info = 0;
         ipiv_.resize(Rtmp.numRows());
 	lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	
 	// Now, form inv(R)
 	int lwork = Rtmp.numRows();
         work_.resize(lwork);
 	lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+	TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	
         // U_ = U1_; (via a swap)
 	MVT::MvTimesMatAddMv( one, *Utmp, Rtmp, zero, *U1tmp );
@@ -1515,20 +1493,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           int lwork = -1;
           tau_.resize(keff);
           lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
           // Step #2: Compute QR factorization of HP
           lwork = (int)work_[0];
           work_.resize(lwork);
           lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
           // Step #3: Explicitly construct Q and R factors 
 	  // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff );
           for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
           lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
 
           // Now we have [Q,R] = qr(H*P)
 
@@ -1545,13 +1523,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  // Step #1: First, compute LU factorization of R
 	  ipiv_.resize(Rtmp.numRows());
 	  lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	  
 	  // Step #2: Form inv(R)
 	  lwork = Rtmp.numRows();
 	  work_.resize(lwork);
 	  lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	  
           // Step #3: Let U = U * R^{-1}
 	  MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
@@ -1696,7 +1674,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
 	  }
 	}
         catch (const GCRODRIterOrthoFailure &e) {
@@ -1852,19 +1830,19 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
   int info = 0, lwork = -1;
   tau_.resize(keff_new);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
   lwork = (int)work_[0];
   work_.resize(lwork);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
   Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Rtmp(i,j) = HPtmp(i,j); }
   lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
   // C = [C V] * Q;
@@ -1899,13 +1877,13 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
   // First, compute LU factorization of R
   ipiv_.resize(Rtmp.numRows());
   lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-  TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 
   // Now, form inv(R)
   lwork = Rtmp.numRows();
   work_.resize(lwork);
   lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
 
   {
     index.resize(keff_new);
@@ -1963,7 +1941,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   Teuchos::SerialDenseVector<int, ScalarType> e_m( m );
   e_m[m-1] = one;
   lapack.GESV(m, 1, HHt.values(), HHt.stride(), &iperm[0], e_m.values(), e_m.stride(), &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
@@ -1977,7 +1955,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   ScalarType* vl = 0;
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
 	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
   for( i=0; i<m; ++i )
@@ -2109,7 +2087,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
                &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
                &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
   
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above

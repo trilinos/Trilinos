@@ -63,7 +63,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int     mypid, Nrows, nvblocks, *vblock_info = NULL, *vblock_info2 = NULL;
    int     i, j, k, m, m2, nullspace_dim, *col_ind, aggr_count, nvblockflag;
    int     nbytes, Ncoarse, *mat_indx=NULL,*aggr_index,nz_cnt, diff_level;
-   int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500;
+   int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500, minnnz_per_row=1e6;
    double  printflag;
    int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL,ibeg;
    int     lwork, *agg_sizes = NULL, row, level, new_cnt, max_agg_size;
@@ -157,6 +157,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
    if (Amatrix->max_nz_per_row > maxnnz_per_row) 
       maxnnz_per_row = Amatrix->max_nz_per_row;
+   if (Amatrix->min_nz_per_row < minnnz_per_row) 
+      minnnz_per_row = Amatrix->min_nz_per_row;
 
 
    col_ind = (int *)    ML_allocate( maxnnz_per_row * sizeof(int) );
@@ -206,6 +208,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      ML_get_matrix_row( (ML_Operator *)getrowdata, 1, &i, &allocated_space, &col_ind,
                         &col_val, &m, 0);
      if ( m > maxnnz_per_row ) Amatrix->max_nz_per_row = m;
+     if ( m < minnnz_per_row && m>0 ) Amatrix->min_nz_per_row = m;
 
      for (j = 0; j < m; j++) 
      {

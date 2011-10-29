@@ -207,7 +207,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) { 
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 			 "Belos::PseudoBlockCGIter::setBlockSize(): Cannot use a block size that is not one.");
     }
     
@@ -288,7 +288,7 @@ namespace Belos {
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
-    TEST_FOR_EXCEPTION((lhsMV==Teuchos::null && rhsMV==Teuchos::null),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((lhsMV==Teuchos::null && rhsMV==Teuchos::null),std::invalid_argument,
 		       "Belos::PseudoBlockCGIter::initialize(): Cannot initialize state storage!");
 
     // Get the multivector that is not null.
@@ -317,9 +317,9 @@ namespace Belos {
 
     if (!Teuchos::is_null(newstate.R)) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
@@ -349,7 +349,7 @@ namespace Belos {
     }
     else {
 
-      TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
                          "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
     }
 
@@ -388,7 +388,7 @@ namespace Belos {
 
     if ( assertPositiveDefiniteness_ )
         for (i=0; i<numRHS_; ++i)
-            TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
+            TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
                                 CGIterateFailure,
                                 "Belos::PseudoBlockCGIter::iterate(): negative value for r^H*M*r encountered!" );
 
@@ -409,7 +409,7 @@ namespace Belos {
       for (i=0; i<numRHS_; ++i) {
         if ( assertPositiveDefiniteness_ )
             // Check that pAp[i] is a positive number!
-            TEST_FOR_EXCEPTION( SCT::real(pAp[i]) <= zero,
+            TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp[i]) <= zero,
                                 CGIterateFailure,
                                 "Belos::PseudoBlockCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
@@ -453,7 +453,7 @@ namespace Belos {
       MVT::MvDot( *R_, *Z_, rHz );
       if ( assertPositiveDefiniteness_ )
           for (i=0; i<numRHS_; ++i)
-              TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
+              TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
                                   CGIterateFailure,
                                   "Belos::PseudoBlockCGIter::iterate(): negative value for r^H*M*r encountered!" );
       //

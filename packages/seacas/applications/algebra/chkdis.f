@@ -48,7 +48,7 @@ C   --   NAMECO - IN - the coordinate names
 C   --   NVARNP - IN - the number of nodal variables
 C   --   NAMENV - IN - the nodal variable names
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       CHARACTER*(LN1) NAMECO(*)
       CHARACTER*(LN2) NAMENV(*)

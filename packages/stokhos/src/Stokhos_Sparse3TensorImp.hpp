@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Stokhos_ConfigDefs.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
@@ -42,7 +42,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 add_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == true, std::logic_error,
 		     "You can't call add_term() after calling fillComplete()!");
 #endif
 
@@ -56,7 +56,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 sum_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == true, std::logic_error,
 		     "You can't call sum_term() after calling fillComplete()!");
 #endif
 
@@ -138,7 +138,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling print()!");
 #endif
 
@@ -157,7 +157,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 getValue(ordinal_type i, ordinal_type j, ordinal_type k) const
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling getValue()!");
 #endif
 
@@ -182,7 +182,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_entries() const
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_entries()!");
 #endif
 
@@ -201,7 +201,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_k() const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_k()!");
 #endif
   return kji_array.size(); 
@@ -213,7 +213,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_j(const k_iterator& k) const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_j()!");
 #endif
 
@@ -226,7 +226,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_i(const kj_iterator& j) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_i()!");
 #endif
   return j.value().size(); 
@@ -238,7 +238,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_k(ordinal_type k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_k()!");
 #endif
   return kji_array.find(k); 
@@ -250,7 +250,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_j(const k_iterator& k, ordinal_type j) const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_j()!");
 #endif
   return k.value().find(j);
@@ -262,7 +262,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_i(const kj_iterator& j, ordinal_type i) const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_i()!");
 #endif
   return j.value().find(i);
@@ -274,7 +274,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_begin() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_begin()!");
 #endif
   return kji_array.begin(); 
@@ -286,7 +286,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_end() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_end()!");
 #endif
   return kji_array.end(); 
@@ -298,7 +298,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_rbegin() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_rbegin()!");
 #endif
   return kji_array.rbegin(); 
@@ -310,7 +310,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_rend() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_rend()!");
 #endif
   return kji_array.rend(); 
@@ -322,7 +322,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_begin(const k_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_begin()!");
 #endif
   return k.value().begin(); 
@@ -334,7 +334,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_end(const k_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_end()!");
 #endif
   return k.value().end(); 
@@ -346,7 +346,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_begin(const k_reverse_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_begin()!");
 #endif
   return k.value().begin(); 
@@ -358,7 +358,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_end(const k_reverse_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_end()!");
 #endif
   return k.value().end(); 
@@ -370,7 +370,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_begin(const kj_iterator& j) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_begin()!");
 #endif
   return j.value().begin(); 
@@ -382,7 +382,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_end(const kj_iterator& j) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_end()!");
 #endif
   return j.value().end(); 
@@ -394,7 +394,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_i() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_i()!");
 #endif
   return ikj_array.size(); 
@@ -406,7 +406,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_k(const i_iterator& i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_k()!");
 #endif
   return i.value().size(); 
@@ -418,7 +418,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_j(const ik_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling num_j()!");
 #endif
   return k.value().size(); 
@@ -430,7 +430,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_i(ordinal_type i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_i()!");
 #endif
   return ikj_array.find(i);
@@ -442,7 +442,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_k(const i_iterator& i, ordinal_type k) const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_k()!");
 #endif
   return i.value().find(k);
@@ -454,7 +454,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 find_j(const ik_iterator& k, ordinal_type j) const 
 {
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling find_j()!");
 #endif
   return k.value().find(j);
@@ -466,7 +466,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_begin() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_begin()!");
 #endif
   return ikj_array.begin(); 
@@ -478,7 +478,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_end() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_end()!");
 #endif
   return ikj_array.end(); 
@@ -490,7 +490,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_rbegin() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_rbegin()!");
 #endif
   return ikj_array.rbegin();
@@ -502,7 +502,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 i_rend() const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling i_rend()!");
 #endif
   return ikj_array.rend(); 
@@ -514,7 +514,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_begin(const i_iterator& i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_begin()!");
 #endif
   return i.value().begin(); 
@@ -526,7 +526,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_end(const i_iterator& i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_end()!");
 #endif
   return i.value().end(); 
@@ -538,7 +538,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_begin(const i_reverse_iterator& i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_begin()!");
 #endif
   return i.value().begin(); 
@@ -550,7 +550,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 k_end(const i_reverse_iterator& i) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling k_end()!");
 #endif
   return i.value().end(); 
@@ -562,7 +562,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_begin(const ik_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_begin()!");
 #endif
   return k.value().begin(); 
@@ -574,7 +574,7 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 j_end(const ik_iterator& k) const 
 { 
 #ifdef STOKHOS_DEBUG
-  TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(fill_completed == false, std::logic_error,
 		     "You must call fillComplete() before calling j_end()!");
 #endif
   return k.value().end(); 

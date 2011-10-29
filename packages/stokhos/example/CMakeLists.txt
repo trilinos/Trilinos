@@ -1,4 +1,5 @@
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   hermite_example
@@ -149,6 +150,19 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
        ARGS 1
        NUM_MPI_PROCS 2
        PASS_REGULAR_EXPRESSION "Example Passed!"
+      )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+       Linear2D_Diffusion_PCE_Interlaced_Example
+       SOURCES linear2d_diffusion_pce_interlaced.cpp
+       COMM serial mpi
+       DEPLIBS stokhos linear2d_diffusion
+       NUM_MPI_PROCS 2
+       PASS_REGULAR_EXPRESSION "Example Passed!"
+      )
+
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(copyInterlacedScripts
+      DEST_FILES   check_interlaced_solution.py
       )
 
       IF(Stokhos_ENABLE_NOX)

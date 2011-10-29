@@ -87,7 +87,7 @@ functions that include the macro:
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 /*! \class Teuchos::BLAS
     \brief The Templated BLAS Wrapper Class.
@@ -260,45 +260,227 @@ namespace Teuchos
 //      LEVEL 1 BLAS ROUTINES  
 //------------------------------------------------------------------------------------------
     
-  template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
-  {
-    ScalarType roe, alpha;
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
-    ScalarType one = ScalarTraits<ScalarType>::one();
-    MagnitudeType scale, norm;
-    MagnitudeType m_one = ScalarTraits<MagnitudeType>::one();
-    MagnitudeType m_zero = ScalarTraits<MagnitudeType>::zero();
+  /// \namespace details
+  /// \brief Teuchos implementation details.
+  ///
+  /// \warning Teuchos users should not use anything in this
+  ///   namespace.  They should not even assume that the namespace
+  ///   will continue to exist between releases.  The namespace's name
+  ///   itself or anything it contains may change at any time.
+  namespace details {
 
-    roe = *db;
-    if ( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ) { roe = *da; }
-    scale = ScalarTraits<ScalarType>::magnitude( *da ) + ScalarTraits<ScalarType>::magnitude( *db );
-    if ( scale == m_zero ) // There is nothing to do.
+    template<typename ScalarType, bool isComplex>
+    class GivensRotator {
+    public:
+      void 
+      ROTG (ScalarType* a, 
+	    ScalarType* b, 
+	    typename ScalarTraits<ScalarType>::magnitudeType* c,
+	    ScalarType* s) const;
+    };
+
+    // Complex-arithmetic specialization.
+    template<typename ScalarType>
+    class GivensRotator<ScalarType, true> {
+    public:
+      void 
+      ROTG (ScalarType* ca, 
+	    ScalarType* cb, 
+	    typename ScalarTraits<ScalarType>::magnitudeType* c,
+	    ScalarType* s) const;
+    };
+
+    // Real-arithmetic specialization.
+    template<typename ScalarType>
+    class GivensRotator<ScalarType, false> {
+    public:
+      void 
+      ROTG (ScalarType* da, 
+	    ScalarType* db, 
+	    ScalarType* c, 
+	    ScalarType* s) const;
+
+    private:
+      /// Return ABS(x) if y > 0 or y is +0, else -ABS(x) (if y is -0 or < 0).
+      ///
+      /// Note that SIGN respects IEEE 754 floating-point signed zero.
+      /// This is a hopefully correct implementation of the Fortran
+      /// type-generic SIGN intrinsic.  ROTG for complex arithmetic
+      /// doesn't require this function.  C99 provides a copysign()
+      /// math library function, but we are not able to rely on the
+      /// existence of C99 functions here.
+      ///
+      /// We provide this method on purpose only for the
+      /// real-arithmetic specialization of GivensRotator.  Complex
+      /// numbers don't have a sign; they have an angle.
+      ScalarType SIGN (ScalarType x, ScalarType y) const {
+	typedef ScalarTraits<ScalarType> STS;
+
+	if (y > STS::zero()) {
+	  return STS::magnitude (x);
+	} else if (y < STS::zero()) {
+	  return -STS::magnitude (x);
+	} else { // y == STS::zero()
+	  // Suppose that ScalarType implements signed zero, as IEEE
+	  // 754 - compliant floating-point numbers should.  You can't
+	  // use == to test for signed zero, since +0 == -0.  However,
+	  // 1/0 = Inf > 0 and 1/-0 = -Inf < 0.  Let's hope ScalarType
+	  // supports Inf... we don't need to test for Inf, just see
+	  // if it's greater than or less than zero.
+	  //
+	  // NOTE: This ONLY works if ScalarType is real.  Complex
+	  // infinity doesn't have a sign, so we can't compare it with
+	  // zero.  That's OK, because finite complex numbers don't
+	  // have a sign either; they have an angle.
+	  ScalarType signedInfinity = STS::one() / y;
+	  if (signedInfinity > STS::zero()) {
+	    return STS::magnitude (x);
+	  } else {
+	    // Even if ScalarType doesn't implement signed zero,
+	    // Fortran's SIGN intrinsic returns -ABS(X) if the second
+	    // argument Y is zero.  We imitate this behavior here.
+	    return -STS::magnitude (x);
+	  }
+	}
+      }
+    };
+
+    // Implementation of complex-arithmetic specialization.
+    template<typename ScalarType>
+    void 
+    GivensRotator<ScalarType, true>::
+    ROTG (ScalarType* ca, 
+	  ScalarType* cb, 
+	  typename ScalarTraits<ScalarType>::magnitudeType* c,
+	  ScalarType* s) const
     {
-      *c = m_one;
-      *s = zero;
-      *da = zero; *db = zero;
-    } 
-    else if ( *da == zero ) // Still nothing to do.
-    { 
-      *c = m_zero;
-      *s = one;
-      *da = *db; *db = zero;
-    } 
-    else 
-    { // Compute the Givens rotation.
-      norm = scale*ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::squareroot( ( *da/scale)*(*da/scale) + (*db/scale)*(*db/scale) ) );
-      alpha = roe / ScalarTraits<ScalarType>::magnitude(roe);
-      *c = ScalarTraits<ScalarType>::magnitude(*da) / norm;
-      *s = alpha * ScalarTraits<ScalarType>::conjugate(*db) / norm;
-      *db = one;
-      if( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ){ *db = *s; }
-      if( ScalarTraits<ScalarType>::magnitude( *db ) >= ScalarTraits<ScalarType>::magnitude( *da ) &&
-	   *c != ScalarTraits<MagnitudeType>::zero() ) { *db = one / *c; }
-      *da = norm * alpha;
+      typedef ScalarTraits<ScalarType> STS;
+      typedef typename STS::magnitudeType MagnitudeType;
+      typedef ScalarTraits<MagnitudeType> STM;
+
+      // This is a straightforward translation into C++ of the
+      // reference BLAS' implementation of ZROTG.  You can get
+      // the Fortran 77 source code of ZROTG here:
+      //
+      // http://www.netlib.org/blas/zrotg.f
+      //
+      // I used the following rules to translate Fortran types and
+      // intrinsic functions into C++:
+      //
+      // DOUBLE PRECISION -> MagnitudeType
+      // DOUBLE COMPLEX -> ScalarType
+      // CDABS -> STS::magnitude
+      // DCMPLX -> ScalarType constructor (assuming that ScalarType 
+      //   is std::complex<MagnitudeType>)
+      // DCONJG -> STS::conjugate
+      // DSQRT -> STM::squareroot
+      ScalarType alpha;
+      MagnitudeType norm, scale;
+
+      if (STS::magnitude (*ca) == STM::zero()) {
+	*c = STM::zero();
+	*s = STS::one();
+	*ca = *cb;
+      } else {
+	scale = STS::magnitude (*ca) + STS::magnitude (*cb);
+	{ // I introduced temporaries into the translated BLAS code in
+	  // order to make the expression easier to read and also save a
+	  // few floating-point operations.
+	  const MagnitudeType ca_scaled = 
+	    STS::magnitude (*ca / ScalarType(scale, STM::zero()));
+	  const MagnitudeType cb_scaled = 
+	    STS::magnitude (*cb / ScalarType(scale, STM::zero()));
+	  norm = scale * 
+	    STM::squareroot (ca_scaled*ca_scaled + cb_scaled*cb_scaled);
+	}
+	alpha = *ca / STS::magnitude (*ca);
+	*c = STS::magnitude (*ca) / norm;
+	*s = alpha * STS::conjugate (*cb) / norm;
+	*ca = alpha * norm;
+      }
     }
-  } /* end ROTG */
-      
+
+    // Implementation of real-arithmetic specialization.
+    template<typename ScalarType>
+    void 
+    GivensRotator<ScalarType, false>::
+    ROTG (ScalarType* da, 
+	  ScalarType* db, 
+	  ScalarType* c, 
+	  ScalarType* s) const
+    {
+      typedef ScalarTraits<ScalarType> STS;
+
+      // This is a straightforward translation into C++ of the
+      // reference BLAS' implementation of DROTG.  You can get
+      // the Fortran 77 source code of DROTG here:
+      //
+      // http://www.netlib.org/blas/drotg.f
+      //
+      // I used the following rules to translate Fortran types and
+      // intrinsic functions into C++:
+      //
+      // DOUBLE PRECISION -> ScalarType
+      // DABS -> STS::magnitude
+      // DSQRT -> STM::squareroot
+      // DSIGN -> SIGN (see below)
+      //
+      // DSIGN(x,y) (the old DOUBLE PRECISION type-specific form of
+      // the Fortran type-generic SIGN intrinsic) required special
+      // translation, which we did in a separate utility function in
+      // the specializaton of GivensRotator for real arithmetic.
+      // (ROTG for complex arithmetic doesn't require this function.)
+      // C99 provides a copysign() math library function, but we are
+      // not able to rely on the existence of C99 functions here.
+      ScalarType r, roe, scale, z;
+
+      roe = *db;
+      if (STS::magnitude (*da) > STS::magnitude (*db)) {
+	roe = *da;
+      }
+      scale = STS::magnitude (*da) + STS::magnitude (*db);
+      if (scale == STS::zero()) {
+	*c = STS::one();
+	*s = STS::zero();
+	r = STS::zero();
+	z = STS::zero();
+      } else {
+	// I introduced temporaries into the translated BLAS code in
+	// order to make the expression easier to read and also save
+	// a few floating-point operations.
+	const ScalarType da_scaled = *da / scale;
+	const ScalarType db_scaled = *db / scale;
+	r = scale * STS::squareroot (da_scaled*da_scaled + db_scaled*db_scaled);
+	r = SIGN (STS::one(), roe) * r;
+	*c = *da / r;
+	*s = *db / r;
+	z = STS::one();
+	if (STS::magnitude (*da) > STS::magnitude (*db)) {
+	  z = *s;
+	}
+	if (STS::magnitude (*db) >= STS::magnitude (*da) && *c != STS::zero()) {
+	  z = STS::one() / *c;
+	}
+      }
+
+      *da = r;
+      *db = z;
+    }
+  } // namespace details
+
+  template<typename OrdinalType, typename ScalarType>
+  void 
+  DefaultBLASImpl<OrdinalType, ScalarType>::
+  ROTG (ScalarType* da, 
+	ScalarType* db, 
+	MagnitudeType* c, 
+	ScalarType* s) const
+  {
+    typedef ScalarTraits<ScalarType> STS;
+    details::GivensRotator<ScalarType, STS::isComplex> rotator;
+    rotator.ROTG (da, db, c, s);
+  }
+
   template<typename OrdinalType, typename ScalarType>
   void DefaultBLASImpl<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
   {
@@ -842,7 +1024,7 @@ namespace Teuchos
     y_type y_zero = ScalarTraits<y_type>::zero();
     bool BadArgument = false;
 
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
 	    "Teuchos::BLAS::GER() does not currently support complex data types.");
 
     // Quick return if there is nothing to do!
@@ -1307,7 +1489,7 @@ namespace Teuchos
     bool BadArgument = false;
     bool Upper = (EUploChar[uplo] == 'U');
 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       Teuchos::ScalarTraits<ScalarType>::isComplex
       && (trans == CONJ_TRANS),
       std::logic_error,

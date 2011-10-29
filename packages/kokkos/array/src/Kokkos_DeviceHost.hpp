@@ -145,14 +145,6 @@ public:
   /*--------------------------------*/
 
   inline
-  static void set_dispatch_functor()
-    { memory_space::set_dispatch_functor(); }
-
-  inline
-  static void clear_dispatch_functor()
-    { memory_space::clear_dispatch_functor(); }
-
-  inline
   static void wait_functor_completion() {}
 
   /*--------------------------------*/

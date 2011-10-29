@@ -30,7 +30,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Epetra_LocalMap.h"
 #include "EpetraExt_BlockMultiVector.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::KroneckerProductPreconditioner::
 KroneckerProductPreconditioner(
@@ -143,7 +143,7 @@ SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   mean_prec->SetUseTranspose(useTranspose);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       UseTranspose == true, std::logic_error,
       "Stokhos::KroneckerProductPreconditioner::SetUseTranspose():  " <<
       "Preconditioner does not support transpose!" << std::endl);

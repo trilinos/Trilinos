@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
         nonlinearSolver = _nonlinearSolver;
         nonlinearSolverSlave = _nonlinearSolverSlave;
 #else // HAVE_RYTHMOS_NOX
-        TEST_FOR_EXCEPT_MSG(true, "Error: NOX is not enabled!");
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: NOX is not enabled!");
 #endif // HAVE_RYTHMOS_NOX
       } 
       else {
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
       }
     }
     else {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -497,26 +497,26 @@ int main(int argc, char *argv[])
             stepperSlave_ptr->setStepControlData(stepper);
             double slave_dt_taken = stepperSlave_ptr->takeStep(dt_taken,Rythmos::STEP_TYPE_FIXED);
             // Check that returned dt matches exactly
-            TEST_FOR_EXCEPT(dt_taken != slave_dt_taken);
+            TEUCHOS_TEST_FOR_EXCEPT(dt_taken != slave_dt_taken);
             Rythmos::StepStatus<double> stepStatusMaster = stepper.getStepStatus();
             Rythmos::StepStatus<double> stepStatusSlave = stepperSlave_ptr->getStepStatus();
             // Check that the stepStatus matches exactly:
-            TEST_FOR_EXCEPT(stepStatusMaster.stepLETStatus != stepStatusSlave.stepLETStatus);
-            TEST_FOR_EXCEPT(stepStatusMaster.stepSize != stepStatusSlave.stepSize);
-            TEST_FOR_EXCEPT(stepStatusMaster.time != stepStatusSlave.time);
+            TEUCHOS_TEST_FOR_EXCEPT(stepStatusMaster.stepLETStatus != stepStatusSlave.stepLETStatus);
+            TEUCHOS_TEST_FOR_EXCEPT(stepStatusMaster.stepSize != stepStatusSlave.stepSize);
+            TEUCHOS_TEST_FOR_EXCEPT(stepStatusMaster.time != stepStatusSlave.time);
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
               *out << "Master order = " << stepStatusMaster.order << endl;
               *out << " Slave order = " << stepStatusSlave.order << endl;
               *out << "Master LET Value = " << stepStatusMaster.stepLETValue << endl;
               *out << " Slave LET Value = " << stepStatusSlave.stepLETValue << endl;
             }
-            TEST_FOR_EXCEPTION(stepStatusMaster.order != stepStatusSlave.order, std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(stepStatusMaster.order != stepStatusSlave.order, std::logic_error,
                 "Error, stepStatusMaster.order = " << stepStatusMaster.order << 
                 " != stepStatusSlave.order = " << stepStatusSlave.order << "!");
             // We will allow a difference of some multiplier of machine epsilon:
             const double
               normLETDiff = std::abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
-            TEST_FOR_EXCEPTION(
+            TEUCHOS_TEST_FOR_EXCEPTION(
               normLETDiff > maxRestepError, std::logic_error,
               "Error, normLETDiff = " << normLETDiff << " > maxRestepError = " << maxRestepError << "!" );
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
               *out << "normSolutionDiff = " << normSolutionDiff << endl;
             }
             const double eps = 1.0e6*Teuchos::ScalarTraits<double>::prec();
-            TEST_FOR_EXCEPTION(normSolutionDiff > eps, std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(normSolutionDiff > eps, std::logic_error,
                 "Error, normSolutionDiff = " << normSolutionDiff << " > eps = " << eps << "!");
             // Check that solution dot matches exactly
             {
@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
               if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
                 *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
               }
-              TEST_FOR_EXCEPTION(normSolutionDotDiff > eps, std::logic_error,
+              TEUCHOS_TEST_FOR_EXCEPTION(normSolutionDotDiff > eps, std::logic_error,
                   "Error, normSolutionDotDiff = " << normSolutionDotDiff << " > eps = " << eps << "!");
             }
             // Do not check that the residual matches because the residual isn't stored in ImplicitBDFStepper.

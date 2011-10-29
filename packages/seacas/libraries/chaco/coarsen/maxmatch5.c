@@ -9,12 +9,14 @@
 
 /* Find a maximal matching in a graph by geometrically near neighbors. */
 
-int       maxmatch5(graph, nvtxs, mflag, igeom, coords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int      *mflag;		/* flag indicating vtx selected or not */
-int       igeom;		/* geometric dimensionality */
-float   **coords;		/* coordinates of each vertex */
+int 
+maxmatch5 (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *mflag,		/* flag indicating vtx selected or not */
+    int igeom,		/* geometric dimensionality */
+    float **coords		/* coordinates of each vertex */
+)
 {
     extern double DOUBLE_MAX;	/* largest floating point value */
     double    dist;		/* distance to free neighbor */

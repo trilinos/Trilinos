@@ -38,17 +38,17 @@ namespace {
 
   template <class NODE>
   RCP<NODE> getNode() {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
   template <class NODE>
   void initNode() {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
   template <class SCALAR, class NODE>
   std::pair<double,double> nativeTimings(int N, int numIters, SCALAR &result) {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
     return std::pair<double,double>(0.0,0.0);
   }
 

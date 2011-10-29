@@ -52,7 +52,7 @@
 #ifndef GALERI_GRID_HEX_H
 #define GALERI_GRID_HEX_H
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Galeri_grid_Element.h"
 #include "Galeri_grid_Segment.h"

@@ -132,9 +132,7 @@ C
       ENDIF
 C DIMENSION OF COORDINATES
       NDIM = 3
-C ZERO SEARCH-PAIR COUNTER
-      KOUNTS = 0
-C
+
 C CALL SORTING ROUTINE TO MAKE RANK ARRAYS
       CALL MKRNK( NPTS,NPTS,NDIM,XYZPTS,IND,IRNK,IRNK2 )
 C
@@ -185,32 +183,15 @@ C
      *                LBLK,NDIM)
 C
           DO 140 K = 1, NLIST
-            KOUNTS = KOUNTS + 1
-            IDP(KOUNTS) = LIST(K)
-            IDS(KOUNTS) = JFSRF
-            IF(KOUNTS .EQ. LBLK) THEN
-C IF A VECTOR BLOCK HAS BEEN ACCUMMULATED, THEN DO THE LOCAL SEARCH
+            LVAL = LIST(K)
             CALL TETSRC(
-     *      KOUNTS,   NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,     
+     *      NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,     
      *      NRSR,     NRSS,     XYZSRF,   XYZPTS,   LINKSRF,
-     *      ISRCHR,   RSRCHR,   IDP,      IDS,
-     *      IERR   )
-            KOUNTS = 0
-            ENDIF
-C
+     *      ISRCHR,   RSRCHR,   LVAL,     JFSRF,    IERR   )
+
   140     CONTINUE
   130   CONTINUE
   100 CONTINUE
-C
-C FOR ANY LEFTOVER PAIRS, DO THE LOCAL SEARCH
-      IF( KOUNTS .NE. 0 ) THEN
-        CALL TETSRC(
-     *    KOUNTS,   NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,     
-     *    NRSR,     NRSS,     XYZSRF,   XYZPTS,   LINKSRF,
-     *    ISRCHR,   RSRCHR,   IDP,      IDS,
-     *    IERR  )
-      ENDIF
-C
       RETURN
       END
       

@@ -135,8 +135,8 @@ void RampingIntegrationControlStrategy<Scalar>::setParameterList(
   using Teuchos::as;
   using Teuchos::get;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(is_null(paramList));
-  paramList->validateParameters(*getValidParameters());
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*getValidParameters());
   this->setMyParamList(paramList);
 
   num_ramping_steps_ = paramList->get<int>(num_ramping_steps_name_);
@@ -174,6 +174,13 @@ RampingIntegrationControlStrategy<Scalar>::getValidParameters() const
 
 
 template<class Scalar>
+bool RampingIntegrationControlStrategy<Scalar>::handlesFailedTimeSteps() const
+{
+  return true;
+}
+
+
+template<class Scalar>
 RCP<IntegrationControlStrategyBase<Scalar> >
 RampingIntegrationControlStrategy<Scalar>::cloneIntegrationControlStrategy() const
 {
@@ -198,7 +205,7 @@ RampingIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain.length() > ST::zero());
 #endif
   integrationTimeDomain_ = integrationTimeDomain;
@@ -221,7 +228,7 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain_.length() > ST::zero());
 #endif
   
@@ -244,6 +251,23 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
   return trialStepCtrlInfo;
   
 }
+
+
+template<class Scalar>
+bool RampingIntegrationControlStrategy<Scalar>::resetForFailedTimeStep(
+  const StepperBase<Scalar> &stepper,
+  const StepControlInfo<Scalar> &stepCtrlInfoLast,
+  const int timeStepIter,
+  const StepControlInfo<Scalar> &stepCtrlInfo
+  )
+{
+  // \todo Implement more control over this in the PL
+  current_dt_ /= ramping_factor_;
+  // \todo Put in a max number of attempted time steps (otherwise infinite
+  // loop)
+  return true;
+}
+
 
 // 
 // Explicit Instantiation macro

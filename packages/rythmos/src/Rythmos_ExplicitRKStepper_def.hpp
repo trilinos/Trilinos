@@ -116,7 +116,7 @@ void ExplicitRKStepper<Scalar>::setRKButcherTableau(const RCP<const RKButcherTab
   validateERKButcherTableau(*rkbt);
   int numStages_old = erkButcherTableau_->numStages();
   int numStages_new = rkbt->numStages();
-  TEST_FOR_EXCEPTION( numStages_new == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( numStages_new == 0, std::logic_error,
       "Error!  The Runge-Kutta Butcher tableau has no stages!"
       );
   if (!is_null(model_)) {
@@ -144,7 +144,7 @@ void ExplicitRKStepper<Scalar>::initialize_()
     TEUCHOS_ASSERT( !is_null(model_) );
     TEUCHOS_ASSERT( !is_null(erkButcherTableau_) );
     TEUCHOS_ASSERT( haveInitialCondition_ );
-    TEST_FOR_EXCEPTION( erkButcherTableau_->numStages() == 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( erkButcherTableau_->numStages() == 0, std::logic_error,
         "Error!  The Runge-Kutta Butcher tableau has no stages!"
         );
     ktemp_vector_ = Thyra::createMember(model_->get_f_space());
@@ -155,11 +155,11 @@ void ExplicitRKStepper<Scalar>::initialize_()
       k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
     }
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "Rythmos::ExplicitRKStepper::initialize_(...)",
     *solution_vector_->space(), *model_->get_x_space() );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   isInitialized_ = true;
 }
 
@@ -181,11 +181,11 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
-#ifdef RYTHMOS_DEBUG
-    TEST_FOR_EXCEPTION( flag == STEP_TYPE_VARIABLE, std::logic_error,
+#ifdef HAVE_RYTHMOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( flag == STEP_TYPE_VARIABLE, std::logic_error,
         "Error!  ExplicitRKStepper does not support variable time steps at this time."
         );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
@@ -289,7 +289,7 @@ void ExplicitRKStepper<Scalar>::addPoints(
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ExplicitRKStepper at this time.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>
@@ -340,7 +340,7 @@ void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>
@@ -352,7 +352,7 @@ int ExplicitRKStepper<Scalar>::getOrder() const
 template <class Scalar>
 void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -389,8 +389,8 @@ ExplicitRKStepper<Scalar>::getValidParameters() const
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
-  TEST_FOR_EXCEPT( is_null(model) );
-  TEST_FOR_EXCEPT( !is_null(model_) ); // For now you can only call this once.
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( !is_null(model_) ); // For now you can only call this once.
   assertValidModel( *this, *model );
   model_ = model;
 }
@@ -434,8 +434,8 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+#ifdef HAVE_RYTHMOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );

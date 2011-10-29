@@ -84,12 +84,12 @@ void DefaultProductVectorSpace<Scalar>::initialize(
   //
   const int nBlocks = vecSpaces_in.size();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( nBlocks == 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( nBlocks == 0 );
 #endif
   bool overallHasInCoreView = true;
   for (int k = 0; k < nBlocks; ++k) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       vecSpaces_in[k].get() == NULL, std::invalid_argument
       ,"Error, the smart pointer vecSpaces["<<k<<"] can not be NULL!"
       );
@@ -121,7 +121,7 @@ void DefaultProductVectorSpace<Scalar>::uninitialize(
   const ArrayView<RCP<const VectorSpaceBase<Scalar> > > &vecSpaces_in
   )
 {
-  TEST_FOR_EXCEPT(!is_null(vecSpaces_in)); // ToDo: Implement!
+  TEUCHOS_TEST_FOR_EXCEPT(!is_null(vecSpaces_in)); // ToDo: Implement!
   vecSpaces_ = Teuchos::null;
   vecSpacesOffsets_ = Teuchos::null;
   numBlocks_ = -1;
@@ -137,7 +137,7 @@ void DefaultProductVectorSpace<Scalar>::getVecSpcPoss(
 {
   // Validate the preconditions
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= i && i < this->dim()), std::out_of_range
     ,"VectorSpaceBlocked::get_vector_space_position(...): Error, i = "
     << i << " is not in range [0,"<<(this->dim()-1)<<"]"
@@ -153,7 +153,7 @@ void DefaultProductVectorSpace<Scalar>::getVecSpcPoss(
     }
     ++(*kth_vector_space);
   }
-  TEST_FOR_EXCEPT( !(*kth_vector_space < numBlocks_) );
+  TEUCHOS_TEST_FOR_EXCEPT( !(*kth_vector_space < numBlocks_) );
 }
 
 
@@ -171,7 +171,7 @@ template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::getBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_ < k );
+  TEUCHOS_TEST_FOR_EXCEPT( k < 0 || numBlocks_ < k );
   return (*vecSpaces_)[k];
 }
 
@@ -242,7 +242,7 @@ Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
     &x = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(x_in),
     &y = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(y_in);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     nBlocks!=x.productSpace()->numBlocks()
     || nBlocks!=y.productSpace()->numBlocks()
     );
@@ -268,8 +268,8 @@ void DefaultProductVectorSpace<Scalar>::scalarProdsImpl(
   const VectorSpaceBase<Scalar> &domain = *X_in.domain();
   const Ordinal m = domain.dim();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(scalarProds_out));
-  TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(scalarProds_out));
+  TEUCHOS_TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
   TEUCHOS_ASSERT_EQUALITY( as<Ordinal>(scalarProds_out.size()),
     as<Ordinal>(m) )
 #endif
@@ -284,7 +284,7 @@ void DefaultProductVectorSpace<Scalar>::scalarProdsImpl(
     &X = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in),
     &Y = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(Y_in);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( nBlocks!=X.productSpace()->numBlocks() || nBlocks!=Y.productSpace()->numBlocks() );
+  TEUCHOS_TEST_FOR_EXCEPT( nBlocks!=X.productSpace()->numBlocks() || nBlocks!=Y.productSpace()->numBlocks() );
 #endif
   Workspace<Scalar> _scalarProds_out(wss, m, false);
   std::fill( scalarProds_out.begin(), scalarProds_out.end(),
@@ -307,7 +307,7 @@ bool DefaultProductVectorSpace<Scalar>::hasInCoreView(const Range1D& rng_in, con
   Ordinal  kth_global_offset = 0;
   this->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if( rng.lbound() + rng.size() <= kth_global_offset + (*vecSpaces_)[kth_vector_space]->dim() ) {
     return (*vecSpaces_)[kth_vector_space]->hasInCoreView(rng_in-kth_global_offset,viewType,strideType);

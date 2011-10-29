@@ -31,7 +31,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -204,7 +204,7 @@ namespace Kokkos {
   {
     myGraph_ = NULL;
     staticGraph_ = &hgraph;
-    TEST_FOR_EXCEPTION( staticGraph_->isFinalized() == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( staticGraph_->isFinalized() == false, std::runtime_error, 
         Teuchos::typeName(*this) << ": construction with static graph requires that the graph is already finalized.");
   }
 
@@ -214,7 +214,7 @@ namespace Kokkos {
   {
     myGraph_ = &hgraph;
     staticGraph_ = &hgraph;
-    TEST_FOR_EXCEPTION( myGraph_->isFinalized() == true, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( myGraph_->isFinalized() == true, std::runtime_error,
         Teuchos::typeName(*this) << ": construction with matrix-owned graph requires that the graph is not yet finalized.");
   }
 
@@ -298,10 +298,10 @@ namespace Kokkos {
   void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::set1DValues(ArrayRCP<Scalar> vals)
   {
     this->clear();
-    TEST_FOR_EXCEPTION( is1DStructure() == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( is1DStructure() == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::set1DValues(vals): graph must have 1D structure and must be set before matrix.");
     values1D_ = vals;
-    TEST_FOR_EXCEPTION( (size_t)values1D_.size() < getNumEntries(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)values1D_.size() < getNumEntries(), std::runtime_error,
         Teuchos::typeName(*this) << "::set1DValues(vals): inds must have as many entries as the number of entries in the associated graph, and the graph entries must be set first.");
   }
 
@@ -309,9 +309,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::set2DValues(ArrayRCP<ArrayRCP<Scalar> > vals)
   {
-    TEST_FOR_EXCEPTION( is2DStructure() == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( is2DStructure() == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::set2DValues(vals): graph must have 2D structure and must be set before matrix.");
-    TEST_FOR_EXCEPTION( (size_t)vals.size() != getNumRows(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)vals.size() != getNumRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::set2DValues(inds): vals must have as many entries as the number of rows in the associated graph.");
     this->clear();
     values2D_  = vals;
@@ -328,7 +328,7 @@ namespace Kokkos {
       myGraph_->template finalize<Scalar>(OptimizeStorage, values2D_, values1D_);
     }
     else {
-      TEST_FOR_EXCEPTION(OptimizeStorage == true && staticGraph_->isOptimized() == false, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && staticGraph_->isOptimized() == false, std::runtime_error, 
           Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not optimized and cannot be optimized.");
     }
     isFinalized_ = true;
@@ -479,7 +479,7 @@ namespace Kokkos {
       myDeviceGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_, pbuf_values_);
     }
     else {
-      TEST_FOR_EXCEPTION(OptimizeStorage == true && this->staticGraph_->isOptimized() == false, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && this->staticGraph_->isOptimized() == false, std::runtime_error, 
           Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not optimized and cannot be optimized.");
       // static graph. no changes, but need to copy values to device.
       if (this->isEmpty()) {
@@ -658,15 +658,15 @@ namespace Kokkos {
         myFTGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_);
       }
       else {
-        TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error, 
             Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not already optimized and cannot be optimized.");
       }
       this->isFinalized_ = true;
     }
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(this->isFinalized_ == false || staticFTGraph_->isFinalized() == false, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(this->isFinalized_ == false || staticFTGraph_->isFinalized() == false, std::logic_error,
         Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
-    TEST_FOR_EXCEPTION(OptimizeStorage == true && (staticFTGraph_->isOptimized() == false && staticFTGraph_->isEmpty() == false), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && (staticFTGraph_->isOptimized() == false && staticFTGraph_->isEmpty() == false), std::logic_error,
         Teuchos::typeName(*this) << "::finalize(): logic error. Post-condition violated. Please contact Tpetra team.");
 #endif
   }

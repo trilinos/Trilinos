@@ -652,7 +652,7 @@ void load_mesh(int io_ws)
   else
     add_fname_ext(cTemp, PIO_Info.Exo_Extension);
 
-  for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+  for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
     gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc], Proc_Info[0]);
 
     /* Stage the writes if specified in the input file */
@@ -1120,7 +1120,7 @@ static void read_coord(int exoid, int io_ws, int max_name_length)
    * Calculate the size of the coordinate space for each processors
    * coordinate matrix.
    */
-  for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+  for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
     itotal_nodes = Num_Internal_Nodes[iproc] + Num_Border_Nodes[iproc] +
                    Num_External_Nodes[iproc];
 
@@ -1201,7 +1201,7 @@ static void read_coord(int exoid, int io_ws, int max_name_length)
 		    (Num_Dim*num_coord_in_mesg*io_ws), 0);
     }
 
-    for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+    for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
       itotal_nodes = Num_Internal_Nodes[iproc] + Num_Border_Nodes[iproc] +
                      Num_External_Nodes[iproc];
@@ -1347,7 +1347,7 @@ static void read_coord(int exoid, int io_ws, int max_name_length)
       }
     }
     if (sequential == 0) {
-      for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+      for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
 	itotal_nodes = Num_Internal_Nodes[iproc] + Num_Border_Nodes[iproc] +  Num_External_Nodes[iproc];
 	Proc_Global_Node_Id_Map[iproc] = (int *) array_alloc(__FILE__, __LINE__, 1, itotal_nodes,
@@ -1357,7 +1357,7 @@ static void read_coord(int exoid, int io_ws, int max_name_length)
       }
     } else {
       /* Should be NULL already, but make it more clear */
-      for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+      for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 	Proc_Global_Node_Id_Map[iproc] = NULL;
       }
     }
@@ -1429,7 +1429,7 @@ static void extract_elem_blk (void)
    * element belongs to.
    */
 
-  for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+  for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
     proc_elem_blk = (int *) array_alloc(__FILE__, __LINE__, 1,
                                         Num_Internal_Elems[iproc] +
@@ -1521,7 +1521,7 @@ static void extract_elem_blk (void)
 
   if(Debug_Flag >= 5) {
     print_sync_start(Proc, Num_Proc, FALSE);
-    for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+    for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
       /* Printout the Element Block Information defined on each Processor */
       print_line ("=", 79);
@@ -1607,7 +1607,7 @@ static void read_elem_blk(int exoid, int io_ws)
   global_ids = (int *) array_alloc(__FILE__, __LINE__, 1, Num_Elem,
 				   sizeof(int));
 
-  for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+  for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
     /*
      * Build Proc_Connect_Ptr, a vector of pointers to the start of each
@@ -1837,7 +1837,7 @@ static void read_elem_blk(int exoid, int io_ws)
          * On each processor, extract the element connectivity lists that the
          * processor needs
          */
-        for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+	for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
           extract_elem_connect(elem_blk, ielem_blk, istart_elem,
                                iend_elem, &local_ielem_blk, iproc);
         }
@@ -1898,7 +1898,7 @@ static void read_elem_blk(int exoid, int io_ws)
 	  psync(Proc, Num_Proc);
 	}
 
-        for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+	for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
           if(Debug_Flag > 6 && Proc == 0)
             printf("\t\tExtract attributes for processor %d\n",
@@ -1950,7 +1950,7 @@ static void read_elem_blk(int exoid, int io_ws)
       }
     }
     if (sequential == 0) {
-      for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+      for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 
 	Proc_Global_Elem_Id_Map[iproc] = (int *) array_alloc(__FILE__, __LINE__, 1,
 							Num_Internal_Elems[iproc] +
@@ -1961,7 +1961,7 @@ static void read_elem_blk(int exoid, int io_ws)
       }
     } else {
       /* Should be NULL already, but make it more clear */
-      for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+      for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
 	Proc_Global_Elem_Id_Map[iproc] = NULL;
       }
     }
@@ -1971,7 +1971,7 @@ static void read_elem_blk(int exoid, int io_ws)
   if (Debug_Flag > 6) {
     print_sync_start(Proc, Num_Proc, TRUE);
 
-    for(iproc=0; iproc < Proc_Info[2]; iproc++) {
+    for (iproc=Proc_Info[4]; iproc < Proc_Info[4]+Proc_Info[5]; iproc++) {
       ipos = ielem_count = 0;
       printf("\n\n\n");
       print_line("=", 79);

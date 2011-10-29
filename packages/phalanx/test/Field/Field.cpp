@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
       RCP<DataLayout> node4 = rcp(new MDALayout<Cell,Node>(25,4));
       RCP<DataLayout> quad4 = rcp(new MDALayout<Cell,QP>(25,4));
       const int size = node4->size();
-      TEST_FOR_EXCEPTION(node4->size() != quad4->size(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(node4->size() != quad4->size(), std::runtime_error,
 			 "Array sizes fixed to 100 for this test!");
       
       // Tags with same name but different topology
@@ -118,17 +118,17 @@ int main(int argc, char *argv[])
       cout << "Testing fieldTag() accessor...";
 
       const FieldTag& test_a = a.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_a == nodal_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_a == nodal_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
       const FieldTag& test_b = b.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
       const FieldTag& test_d = d.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
@@ -168,12 +168,12 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       cout << "Testing size() method...";
-      TEST_FOR_EXCEPTION( a.size() != size , std::logic_error, "Size of array a is not equal to requested size.");
-      TEST_FOR_EXCEPTION( b.size() != size , std::logic_error, "Size of array b is not equal to requested size.");
-      TEST_FOR_EXCEPTION( c.size() != size , std::logic_error, "Size of array c is not equal to requested size.");
-      TEST_FOR_EXCEPTION( d.size() != size , std::logic_error, "Size of array d is not equal to requested size.");
-      TEST_FOR_EXCEPTION( e.size() != size , std::logic_error, "Size of array e is not equal to requested size.");
-      TEST_FOR_EXCEPTION( f.size() != size , std::logic_error, "Size of array f is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( a.size() != size , std::logic_error, "Size of array a is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( b.size() != size , std::logic_error, "Size of array b is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( c.size() != size , std::logic_error, "Size of array c is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( d.size() != size , std::logic_error, "Size of array d is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( e.size() != size , std::logic_error, "Size of array e is not equal to requested size.");
+      TEUCHOS_TEST_FOR_EXCEPTION( f.size() != size , std::logic_error, "Size of array f is not equal to requested size.");
 
       cout << "passed!" << endl;
 

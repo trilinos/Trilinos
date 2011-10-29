@@ -29,7 +29,7 @@
 #ifndef KOKKOS_BUFFER_MACROS
 #define KOKKOS_BUFFER_MACROS
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <string>
 #include <stdexcept>
@@ -42,7 +42,7 @@
   }
 #define CHECK_COMPUTE_BUFFER(buff) \
   { \
-    TEST_FOR_EXCEPTION( Teuchos::get_extra_data<std::string>(buff, "BufferType") != "compute", std::logic_error, \
+    TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::get_extra_data<std::string>(buff, "BufferType") != "compute", std::logic_error, \
         Teuchos::typeName(*this) << ": argument buffer is not a compute buffer as expected." ); \
   }
 #else

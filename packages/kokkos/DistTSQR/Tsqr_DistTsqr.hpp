@@ -34,12 +34,13 @@
 
 #include <Tsqr_DistTsqrHelper.hpp>
 #include <Tsqr_DistTsqrRB.hpp>
-
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <utility> // std::pair
 
 
 namespace TSQR {
-
   /// \class DistTsqr
   /// \brief Internode part of TSQR.
   /// \author Mark Hoemmen
@@ -56,7 +57,7 @@ namespace TSQR {
   /// types for which \c Combine<LocalOrdinal, Scalar> and \c
   /// LAPACK<LocalOrdinal, Scalar> can be instantiated.
   template<class LocalOrdinal, class Scalar>
-  class DistTsqr {
+  class DistTsqr : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
@@ -65,34 +66,90 @@ namespace TSQR {
     typedef std::pair<VecVec, VecVec> FactorOutput;
     typedef int rank_type;
 
-    /// \brief Constructor.
+  private:
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  public:
+
+    /// \brief Constructor (that accepts a parameter list).
     ///
-    /// \param messenger [in/out] Wrapper of communication operations
-    ///   between MPI processes.
-    DistTsqr (const Teuchos::RCP<MessengerBase<scalar_type> >& messenger) :
-      messenger_ (messenger),
-      reduceBroadcastImpl_ (messenger)
-    {}
+    /// \param plist [in/out] List of parameters for configuring TSQR.
+    ///   The specific parameter keys that are read depend on the TSQR
+    ///   implementation.  For details, call \c getValidParameters()
+    ///   and examine the documentation embedded therein.
+    DistTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      setParameterList (plist);
+    }
+
+    //! Constructor (that uses default parameters).
+    DistTsqr ()
+    {
+      setParameterList (Teuchos::null);
+    }
+
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      RCP<ParameterList> params = plist.is_null() ? 
+	parameterList (*getValidParameters()) : plist;
+
+      // Do nothing for now, other than store the list.
+      this->setMyParamList (params);
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const
+    {
+      return Teuchos::parameterList ("DistTsqr"); // Empty list for now.
+    }
+    
+    /// \brief Finish initialization using the messenger object.
+    ///
+    /// \param messenger [in/out] An object handling communication
+    ///   between (MPI) process(es).
+    void init (const Teuchos::RCP<MessengerBase<scalar_type> >& messenger)
+    {
+      messenger_ = messenger;
+      reduceBroadcastImpl_ = 
+	Teuchos::rcp (new DistTsqrRB<ordinal_type, scalar_type> (messenger_));
+    }
 
     /// \brief Rank of this (MPI) process.
     /// 
     /// Rank is computed via MPI_Comm_rank() on the underlying
     /// communicator, if the latter is an MPI communicator.  If it's a
     /// serial "communicator," the rank is always zero.
-    rank_type rank() const { return messenger_->rank(); }
+    rank_type rank() const { 
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      return messenger_->rank(); 
+    }
 
     /// \brief Total number of MPI processes in this communicator.
     ///
     /// The size is communicated via MPI_Comm_size() on the underlying
     /// communicator, if the latter is an MPI communicator.  If it's a
     /// serial "communicator," the size is always one.
-    rank_type size() const { return messenger_->size(); }
+    rank_type size() const { 
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      return messenger_->size(); 
+    }
 
     /// \brief Destructor.
     ///
     /// The destructor doesn't need to do anything, thanks to smart
     /// pointers.
-    ~DistTsqr () {}
+    virtual ~DistTsqr () {}
 
     /// \brief Does the R factor have a nonnegative diagonal?
     ///
@@ -103,9 +160,13 @@ namespace TSQR {
     /// promises to compute an R factor whose diagonal entries are all
     /// nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
       typedef Combine<ordinal_type, scalar_type> combine_type;
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
-	reduceBroadcastImpl_.QR_produces_R_factor_with_nonnegative_diagonal();
+	reduceBroadcastImpl_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     /// \brief Internode TSQR with explicit Q factor.
@@ -127,10 +188,22 @@ namespace TSQR {
     ///   block of this process' entire Q factor, fill the rest of Q
     ///   with zeros, and call intranode TSQR's apply() on it, to get
     ///   the final explicit Q factor.)
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
     void
-    factorExplicit (matview_type R_mine, matview_type Q_mine)
+    factorExplicit (matview_type R_mine, 
+		    matview_type Q_mine,
+		    const bool forceNonnegativeDiagonal=false)
     {
-      reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine);
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      reduceBroadcastImpl_->factorExplicit (R_mine, Q_mine, 
+					    forceNonnegativeDiagonal);
     }
 
     /// \brief Get cumulative timings for \c factorExplicit().
@@ -141,7 +214,11 @@ namespace TSQR {
     void 
     getFactorExplicitTimings (std::vector<TimeStats>& stats) const
     {
-      reduceBroadcastImpl_.getStats (stats);
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      reduceBroadcastImpl_->getStats (stats);
     }
 
     /// \brief Get labels for timings for \c factorExplicit().
@@ -152,7 +229,11 @@ namespace TSQR {
     void
     getFactorExplicitTimingLabels (std::vector<std::string>& labels) const
     {
-      reduceBroadcastImpl_.getStatsLabels (labels);
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      reduceBroadcastImpl_->getStatsLabels (labels);
     }
 
     /// \brief Compute QR factorization of R factors, one per MPI process.
@@ -181,8 +262,12 @@ namespace TSQR {
     FactorOutput
     factor (matview_type R_mine)
     {
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
       VecVec Q_factors, tau_arrays;
-      DistTsqrHelper< ordinal_type, scalar_type > helper;
+      DistTsqrHelper<ordinal_type, scalar_type> helper;
       const ordinal_type ncols = R_mine.ncols();
 
       std::vector< scalar_type > R_local (ncols*ncols);
@@ -207,24 +292,26 @@ namespace TSQR {
 	   const ordinal_type ldc_mine,
 	   const FactorOutput& factor_output)
     {
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
       const bool transposed = apply_type.transposed();
-
-      if (transposed)
-	throw std::logic_error("DistTsqr: Applying Q^T or Q^H "
-			       "not yet implemented");
-
+      TEUCHOS_TEST_FOR_EXCEPTION(transposed, std::logic_error,
+				 "DistTsqr: Applying Q^T or Q^H has not yet "
+				 "been implemented.");
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
-      std::vector< scalar_type > C_other (ncols_C * ncols_C);
-      std::vector< scalar_type > work (ncols_C);
+      std::vector<scalar_type> C_other (ncols_C * ncols_C);
+      std::vector<scalar_type> work (ncols_C);
   
       const VecVec& Q_factors = factor_output.first;
       const VecVec& tau_arrays = factor_output.second;
 
       // assert (Q_factors.size() == tau_arrays.size());
       const int cur_pos = Q_factors.size() - 1;
-      DistTsqrHelper< ordinal_type, scalar_type > helper;
+      DistTsqrHelper<ordinal_type, scalar_type> helper;
       helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
 			   &C_other[0], my_rank, 0, P-1, first_tag, 
 			   messenger_.get(), Q_factors, tau_arrays, cur_pos, 
@@ -238,20 +325,30 @@ namespace TSQR {
 		const ordinal_type ldq_mine,
 		const FactorOutput& factor_output)
     {
-      const int my_rank = messenger_->rank ();
-      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, Scalar(0));
-      if (my_rank == 0)
-	{
-	  for (ordinal_type j = 0; j < ncols_Q; ++j)
-	    Q_mine[j + j*ldq_mine] = Scalar (1);
-	}
+      TEUCHOS_TEST_FOR_EXCEPTION(! ready(), std::logic_error,
+				 "Before using DistTsqr computational methods, "
+				 "you must first call init() with a valid "
+				 "MessengerBase instance.");
+      const int myRank = messenger_->rank ();
+      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, STS::zero());
+      if (myRank == 0) {
+	for (ordinal_type j = 0; j < ncols_Q; ++j)
+	  Q_mine[j + j*ldq_mine] = STS::one();
+      }
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q, 
 	     Q_mine, ldq_mine, factor_output);
     }
 
   private:
     Teuchos::RCP<MessengerBase<scalar_type> > messenger_;
-    DistTsqrRB<ordinal_type, scalar_type> reduceBroadcastImpl_;
+    Teuchos::RCP<DistTsqrRB<ordinal_type, scalar_type> > reduceBroadcastImpl_;
+
+    /// \brief Whether this object is ready to perform computations.
+    /// 
+    /// It is <i>not</i> ready until after \c init() has been called.
+    bool ready() const {
+      return ! messenger_.is_null() && ! reduceBroadcastImpl_.is_null();
+    }
   };
 
 } // namespace TSQR

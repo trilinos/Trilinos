@@ -64,22 +64,20 @@
 #include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #include <Tsqr.hpp> // full (internode + intranode) TSQR
 #include <Tsqr_DistTsqr.hpp> // internode TSQR
-
 #include <Epetra_Comm.h>
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
 #include <Epetra_TsqrMessenger.hpp>
 #include <Epetra_MultiVector.h>
-
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Epetra {
 
   /// \class TsqrAdaptor
-  /// \brief Adaptor from Epetra_MultiVector to TSQR
+  /// \brief Adaptor from Epetra_MultiVector to TSQR.
+  /// \author Mark Hoemmen
   ///
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
@@ -88,7 +86,7 @@ namespace Epetra {
   ///
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adaptor
-  /// class.  Epetra::TsqrAdaptor is the adaptor class for
+  /// class.  This class is the adaptor class for \c
   /// Epetra_MultiVector.  It templates on the MultiVector (MV) type
   /// so that it can pick up that class' typedefs.  In particular,
   /// TSQR chooses its intranode implementation based on the Kokkos
@@ -98,7 +96,10 @@ namespace Epetra {
   ///   requires support for namespaces, so it's acceptable for us to
   ///   create an "Epetra" namespace to contain this adaptor.
   ///
-  class TsqrAdaptor {
+  /// \warning The current implementation of this adaptor requires
+  ///   that all Epetra_MultiVector inputs use the same communicator
+  ///   object (that is, the same Epetra_Comm) and map.
+  class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef Epetra_MultiVector MV;
 
@@ -133,12 +134,12 @@ namespace Epetra {
     /// \typedef dense_matrix_type 
     ///
     /// How we pass around small dense matrices that are either local
-    /// to each MPI process, or globally replicated.  
+    /// to each MPI process, or globally replicated.
     ///
     /// \note TSQR lives in the Kokkos package, which requires the
     ///   Teuchos package, so it's acceptable for us to require
     ///   Teuchos components.
-    typedef Teuchos::SerialDenseMatrix< ordinal_type, scalar_type > dense_matrix_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
 
     /// \typedef magnitude_type
     ///
@@ -148,83 +149,107 @@ namespace Epetra {
     typedef double magnitude_type;
 
   private:
-    typedef TSQR::MatView< ordinal_type, scalar_type > matview_type;
-    typedef TSQR::NodeTsqrFactory< node_type, scalar_type, ordinal_type > node_tsqr_factory_type;
+    typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
+    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
     // Don't need a "typename" here, because there are no template
     // parameters involved in the type definition.
     typedef node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr< ordinal_type, scalar_type > dist_tsqr_type;
-    typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type > tsqr_type;
+    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
+    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
 
   public:
-    /// \brief Default parameters
+    /// \brief Constructor (that accepts a parameter list).
     ///
-    /// Return default parameters for the TSQR variant used by Epetra.
-    ///
-    /// \warning This method may not be reentrant.  It should only be
-    ///   called by one thread at a time.  We do not protect it from
-    ///   calls by more than one thread at a time.
-    static Teuchos::RCP<const Teuchos::ParameterList>
-    getDefaultParameters ()
-    {
-      // For now, only the intranode part of TSQR accepts parameters.
-      return node_tsqr_factory_type::getDefaultParameters ();
-    }
-
-    /// \brief Constructor
-    ///
-    /// \param mv [in] Multivector object, used only to access the
-    ///   underlying communicator object (in this case, Epetra_Comm,
-    ///   accessed directly from the Epetra_MultiVector input).  All
-    ///   multivector objects with which this Adaptor works must use
-    ///   the same map and communicator.
-    ///
-    /// \param plist [in] List of parameters for configuring TSQR.
+    /// \param plist [in/out] List of parameters for configuring TSQR.
     ///   The specific parameter keys that are read depend on the TSQR
-    ///   implementation.  For details, call getDefaultParameters(),
-    ///   examine the documentation embedded therein, and modify the
-    ///   default values as necessary.
-    ///
-    /// \warning The current implementation of this adaptor requires
-    ///   that all Epetra_MultiVector inputs use the same communicator
-    ///   object (that is, the same Epetra_Comm).  This will be fixed
-    ///   in the future -- it's not hard to fix.
-    ///
-    TsqrAdaptor (const MV& mv,
-		 const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
-      pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
+    ///   implementation.  For details, call \c getValidParameters()
+    ///   and examine the documentation embedded therein.
+    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+      nodeTsqr_ (new node_tsqr_type),
+      distTsqr_ (new dist_tsqr_type),
+      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
+      ready_ (false)
     {
-      // This particular adaptor wants an instance of the specific
-      // Kokkos Node type.  All of the Node constructors take
-      // parameters.  SerialNode doesn't currently read any of them,
-      // but we still have to pass in an empty parameter list.
-      Teuchos::ParameterList emptyParams;
-      pNode_ = Teuchos::rcp (new Kokkos::SerialNode (emptyParams));
+      setParameterList (plist);
     }
 
-    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    //! Constructor (that uses default parameters).
+    TsqrAdaptor () : 
+      nodeTsqr_ (new node_tsqr_type),
+      distTsqr_ (new dist_tsqr_type),
+      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
+      ready_ (false)
+    {
+      setParameterList (Teuchos::null);
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+
+      if (defaultParams_.is_null()) {
+	RCP<ParameterList> params = parameterList ("TSQR implementation");
+	params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
+	params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
+	defaultParams_ = params;
+      }
+      return defaultParams_;
+    }
+
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      using Teuchos::sublist;
+
+      RCP<ParameterList> params = plist.is_null() ? 
+	parameterList (*getValidParameters ()) : plist;
+      nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
+      distTsqr_->setParameterList (sublist (params, "DistTsqr"));
+
+      this->setMyParamList (params);
+    }
+
+    /// \brief Compute QR factorization [Q,R] = qr(A,0).
     ///
+    /// \param A [in/out] On input: the multivector to factor.
+    ///   Overwritten with garbage on output.
+    ///
+    /// \param Q [out] On output: the (explicitly stored) Q factor in
+    ///   the QR factorization of the (input) multivector A.
+    ///
+    /// \param R [out] On output: the R factor in the QR factorization
+    ///   of the (input) multivector A.
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
+    ///
+    /// \warning Currently, this method only works if A and Q have the
+    ///   same communicator and row distribution ("map," in Petra
+    ///   terms) as those of the multivector given to this TsqrAdaptor
+    ///   instance's constructor.  Otherwise, the result of this
+    ///   method is undefined.
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    dense_matrix_type& R)
+		    dense_matrix_type& R,
+		    const bool forceNonnegativeDiagonal=false)
     {
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
+      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
-      // FIXME (mfh 25 Oct 2010) Check Epetra_Comm objects in A and Q
-      // to make sure they are the same communicator as the one we are
-      // using in our dist_tsqr_type implementation.
-      //
-      // mfh 11 Jan 2011: Actually we should also check whether the
-      // Epetra_Map objects are compatible.  Fixing this at the TSQR
-      // implementation level likely will require reimplementing TSQR
-      // with Map awareness.  This will be troublesome if we want to
-      // maintain compatibility with both Epetra and Tpetra.
-      // Alternately, we can check for compatibility of maps at the
-      // adaptor or even the (Mat)OrthoManager levels.
+      prepareTsqr (Q); // Finish initializing TSQR.
       KMV A_view = getNonConstView (A);
       KMV Q_view = getNonConstView (Q);
-      pTsqr_->factorExplicit (A_view, Q_view, R, false);
+      tsqr_->factorExplicit (A_view, Q_view, R, false,
+			     forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -257,99 +282,144 @@ namespace Epetra {
     ///   rank of the matrix R.
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
-    ///
     int
     revealRank (MV& Q,
 		dense_matrix_type& R,
 		const magnitude_type& tol)
     {
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
+      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+
+      prepareTsqr (Q); // Finish initializing TSQR.      
 
       // FIXME (mfh 25 Oct 2010) Check Epetra_Comm object in Q to make
       // sure it is the same communicator as the one we are using in
       // our dist_tsqr_type implementation.
-
       KMV Q_view = getNonConstView (Q);
-      return pTsqr_->revealRank (Q_view, R, tol, false);
+      return tsqr_->revealRank (Q_view, R, tol, false);
     }
 
   private:
-    //! Smart pointer to the TSQR implementation object
-    Teuchos::RCP< tsqr_type > pTsqr_;
+    //! The intranode TSQR implementation instance.
+    Teuchos::RCP<node_tsqr_type> nodeTsqr_;
+    
+    //! The internode TSQR implementation instance.
+    Teuchos::RCP<dist_tsqr_type> distTsqr_;
 
-    /// \brief Smart pointer to a Kokkos::SerialNode instance
+    //! The (full) TSQR implementation instance.
+    Teuchos::RCP<tsqr_type> tsqr_;
+
+    //! Default parameter list.  Initialized by \c getValidParameters().
+    mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
+
+    //! Whether TSQR has been fully initialized.
+    bool ready_;
+
+    /// \brief Finish TSQR initialization.
     ///
-    /// We only use this to make Kokkos::MultiVector instances.  We
-    /// keep it around so that we don't have to call the SerialNode
-    /// constructor more than once.
-    Teuchos::RCP< Kokkos::SerialNode > pNode_;
+    /// The intranode and internode TSQR implementations both have a
+    /// two-stage initialization procedure: first, setting parameters
+    /// (which may happen at construction), and second, getting
+    /// information they need from the multivector input in order to
+    /// finish initialization.  For intranode TSQR, this includes the
+    /// Kokkos Node instance; for internode TSQR, this includes the
+    /// communicator.  The second stage of initialization happens in
+    /// this class' computational routines; all of those routines
+    /// accept one or more multivector inputs, which this method can
+    /// use for finishing initialization.  Thus, users of this class
+    /// never need to see the two-stage initialization.
+    ///
+    /// \param mv [in] Multivector object, used only to access the
+    ///   underlying communicator object (in this case, Epetra_Comm).
+    ///   All multivector objects used with this Adaptor instance must
+    ///   have the same map and communicator.
+    void 
+    prepareTsqr (const MV& mv) 
+    {
+      if (! ready_) {
+	prepareDistTsqr (mv);
+	prepareNodeTsqr (mv);
+	ready_ = true;
+      }
+    }
 
-    /// \brief Return a nonconstant view of the input MultiVector
+    /// \brief Finish intranode TSQR initialization.
+    ///
+    /// \note It's OK to call this method more than once; it is idempotent.
+    void
+    prepareNodeTsqr (const MV& mv)
+    {
+      (void) mv; // Epetra objects don't have a Kokkos Node.
+
+      // Kokkos::SerialNode wants an empty ParameterList.
+      Teuchos::ParameterList plist;
+      Teuchos::RCP<node_type> node (new node_type (plist));
+      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
+    }
+
+    /// \brief Finish internode TSQR initialization.
+    ///
+    /// \param mv [in] A multivector, from which to extract the
+    ///   Epetra_Comm communicator wrapper to use to initialize TSQR.
+    ///
+    /// \note It's OK to call this method more than once; it is idempotent.
+    void
+    prepareDistTsqr (const MV& mv)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using TSQR::Epetra::makeTsqrMessenger;
+      typedef TSQR::MessengerBase<scalar_type> base_mess_type;
+
+      // If mv falls out of scope, its Epetra_Comm may become invalid.
+      // Thus, we clone the input Epetra_Comm, so that the messenger
+      // owns the object.
+      RCP<const Epetra_Comm> comm = rcp (mv.Comm().Clone());
+      RCP<base_mess_type> messBase = makeTsqrMessenger<scalar_type> (comm);
+      distTsqr_->init (messBase);
+    }
+
+    /// \brief Return a nonconstant view of the input MultiVector.
     ///
     /// TSQR represents the local (to each MPI process) part of a
-    /// MultiVector as a Kokkos::MultiVector (KMV), which gives a
-    /// nonconstant view of the original MultiVector's data.  This
-    /// class method tells TSQR how to get the KMV from the input.
+    /// multivector as a Kokkos::MultiVector (KMV), which gives a
+    /// nonconstant view of the original multivector's data.  This
+    /// class method tells TSQR how to get the KMV from the input
+    /// multivector.  The KMV is not a persistent view of the data;
+    /// its scope is contained within the scope of the multivector.
     ///
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  This method will raise an exception
     ///   if A has nonconstant stride.
-    ///
-    /// \param MV [in] MultiVector object, for which to return a
-    ///   Kokkos::MultiVector nonconstant view.
-    ///
-    /// \return Nonconstant view of the input MultiVector object. 
-    ///
-    /// \note The view never escapes the scope of the creating 
-    Kokkos::MultiVector< scalar_type, node_type >
+    static Kokkos::MultiVector<scalar_type, node_type>
     getNonConstView (MV& A)
     {
-      if (! A.ConstantStride())
-	{
-	  // FIXME (mfh 25 Oct 2010) Storage of A uses nonconstant
-	  // stride internally, but that doesn't necessarily mean we
-	  // can't run TSQR.  We would have to copy and pack into a
-	  // matrix with constant stride, and then unpack on exit.
-	  std::ostringstream os;
-	  os << "TSQR does not currently support Epetra_MultiVector "
-	    "inputs that do not have constant stride.";
-	  throw std::runtime_error (os.str());
-	}
-
+      // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
+      // storage of A uses nonconstant stride internally.  We would
+      // have to copy and pack into a matrix with constant stride, and
+      // then unpack on exit.  For now we choose just to raise an
+      // exception.
+      TEUCHOS_TEST_FOR_EXCEPTION(! A.ConstantStride(), std::invalid_argument,
+				 "TSQR does not currently support Epetra_MultiVector "
+				 "inputs that do not have constant stride.");
       const int numRows = A.MyLength();
       const int numCols = A.NumVectors();
       const int stride  = A.Stride();
       // A_ptr does _not_ own the data.  TSQR only operates within the
       // scope of the multivector objects on which it operates, so it
       // doesn't need ownership of the data.
-      Teuchos::ArrayRCP< double > A_ptr (A.Values(), 0, numRows*stride, false);
+      Teuchos::ArrayRCP<double> A_ptr (A.Values(), 0, numRows*stride, false);
 
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
-      KMV A_kmv (pNode_);
+      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      // KMV objects want a Kokkos Node instance.  Epetra objects
+      // don't have a Kokkos Node, so we make a temporary node just
+      // for the KMV.
+      //
+      // Kokkos::SerialNode wants an empty ParameterList.
+      Teuchos::ParameterList plist;
+      Teuchos::RCP<node_type> node (new node_type (plist));
+      KMV A_kmv (node);
       A_kmv.initializeValues (numRows, numCols, A_ptr, stride);
       return A_kmv;
-    }
-
-    //! Initialize and return internode TSQR implementation
-    static Teuchos::RCP< dist_tsqr_type > 
-    makeDistTsqr (const MV& mv)
-    {
-      using Teuchos::RCP;
-      typedef TSQR::MessengerBase< scalar_type > base_mess_type;
-      using TSQR::Epetra::makeTsqrMessenger;
-
-      // pComm is a nonowning pointer to the reference.
-      RCP< const Epetra_Comm > pComm = Teuchos::rcpFromRef (mv.Comm());
-      RCP< base_mess_type > pMessBase = makeTsqrMessenger< scalar_type >(pComm);
-      RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMessBase));
-      return pDistTsqr;
-    }
-
-    //! Initialize and return intranode TSQR implementation
-    static Teuchos::RCP< node_tsqr_type >
-    makeNodeTsqr (const Teuchos::RCP<const Teuchos::ParameterList>& plist)
-    {
-      return node_tsqr_factory_type::makeNodeTsqr (plist);
     }
   };
 

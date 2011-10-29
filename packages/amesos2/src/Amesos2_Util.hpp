@@ -615,7 +615,7 @@ namespace Amesos2 {
 	  break;
 	}
       default:
-	TEST_FOR_EXCEPTION( true,
+	TEUCHOS_TEST_FOR_EXCEPTION( true,
 			    std::logic_error,
 			    "Control should never reach this point.  "
 			    "Please contact the Amesos2 developers." );
@@ -688,13 +688,13 @@ namespace Amesos2 {
       ind_begin = indices.begin();
       ind_end = indices.end();
       size_t min_trans_ptr_size = *std::max_element(ind_begin, ind_end) + 1;
-      TEST_FOR_EXCEPTION( Teuchos::as<size_t>(trans_ptr.size()) < min_trans_ptr_size,
+      TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::as<size_t>(trans_ptr.size()) < min_trans_ptr_size,
 			  std::invalid_argument,
 			  "Transpose pointer size not large enough." );
-      TEST_FOR_EXCEPTION( trans_vals.size() < vals.size(),
+      TEUCHOS_TEST_FOR_EXCEPTION( trans_vals.size() < vals.size(),
 			  std::invalid_argument,
 			  "Transpose values array not large enough." );
-      TEST_FOR_EXCEPTION( trans_indices.size() < indices.size(),
+      TEUCHOS_TEST_FOR_EXCEPTION( trans_indices.size() < indices.size(),
 			  std::invalid_argument,
 			  "Transpose indices array not large enough." );
 #else
@@ -751,7 +751,7 @@ namespace Amesos2 {
       size_t vals_size = vals.size();
 #ifdef HAVE_AMESOS2_DEBUG
       size_t s_size = s.size();
-      TEST_FOR_EXCEPTION( s_size < l,
+      TEUCHOS_TEST_FOR_EXCEPTION( s_size < l,
 			  std::invalid_argument,
 			  "Scale vector must have length at least that of the vector" );
 #endif
@@ -775,7 +775,7 @@ namespace Amesos2 {
       size_t vals_size = vals.size();
 #ifdef HAVE_AMESOS2_DEBUG
       size_t s_size = s.size();
-      TEST_FOR_EXCEPTION( s_size < l,
+      TEUCHOS_TEST_FOR_EXCEPTION( s_size < l,
 			  std::invalid_argument,
 			  "Scale vector must have length at least that of the vector" );
 #endif

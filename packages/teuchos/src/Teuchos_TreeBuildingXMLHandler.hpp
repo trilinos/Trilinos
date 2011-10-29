@@ -69,7 +69,7 @@ namespace Teuchos
       const XMLObject& getObject() const
         {
           // valid XML requires a root object; we will allow empty XML files
-          TEST_FOR_EXCEPTION(
+          TEUCHOS_TEST_FOR_EXCEPTION(
             root_.isEmpty(), EmptyXMLError
             ,"Error, An empty XML std::string or file was specified!"
             "  The XML specification requires at minimum the presence"

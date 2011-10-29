@@ -7,13 +7,12 @@ SET(SOURCES "")
 
 APPEND_SET(NOINSTALLHEADERS
   commsplitter.h
-  fsymbols.h
 )
 
 
 APPEND_SET(SOURCES
-  init.c 
-  logging.c 
+  init.c
+  logging.c
   wrappers.c
 )
 

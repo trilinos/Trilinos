@@ -26,8 +26,6 @@
 #include "ml_qr_fix.h"
 #endif
 
-using namespace std;
-
 namespace Teuchos {
   class ParameterList;
 }
@@ -377,7 +375,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   int A_allocated = 0, *A_bindx = NULL, B_allocated = 0, *B_bindx = NULL;
   double *A_val = NULL, *B_val = NULL, *hashed_vals;
   int i, A_length, B_length, *hashed_inds;
-  int max_nz_per_row = 0, j;
+  int max_nz_per_row = 0, min_nz_per_row=1e6, j;
   int hash_val, index_length;
   int *columns, *rowptr, nz_ptr, hash_used, global_col;
   double *values;
@@ -551,8 +549,11 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
       }
 #endif
       rowptr[i+1] = nz_ptr;
-      if (rowptr[i+1] - rowptr[i] > max_nz_per_row)
-	max_nz_per_row = rowptr[i+1] - rowptr[1];
+      j = rowptr[i+1] - rowptr[i];
+      if (j > max_nz_per_row)
+        max_nz_per_row = j;
+      if (j < min_nz_per_row && j>0)
+        min_nz_per_row = j;
   }
   if (matrix_type == ML_CSR_MATRIX) {
     temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
@@ -569,6 +570,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     C->data_destroy = ML_CSR_MSRdata_Destroy;
 
     C->max_nz_per_row = max_nz_per_row;
+    C->min_nz_per_row = min_nz_per_row;
     C->N_nonzeros     = nz_ptr;
   }
 #ifdef ML_WITH_EPETRA

@@ -65,7 +65,7 @@ void GAASPErrorEstimate::describe(
 void GAASPErrorEstimate::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*paramList_,this);

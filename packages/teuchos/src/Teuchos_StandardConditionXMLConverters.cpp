@@ -123,7 +123,7 @@ RCP<Condition> ParameterConditionConverter::convertXML(
   ParameterEntry::ParameterEntryID paramID = 
     xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
       getParameterEntryIdAttributeName());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     entryIDsMap.find(paramID) == entryIDsMap.end(),
     MissingParameterEntryDefinitionException,
     "Can't find a parameter entry with id " << paramID << " in the "
@@ -140,7 +140,7 @@ void ParameterConditionConverter::convertCondition(
   RCP<const ParameterCondition> castedCondition = 
     rcp_dynamic_cast<const ParameterCondition>(condition, true);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     entryIDsMap.find(castedCondition->getParameter()) == entryIDsMap.end(),
     MissingParameterEntryDefinitionException,
     "Couldn't find an id for the parameter in the given entryIDsMap!" <<
@@ -160,7 +160,7 @@ StringConditionConverter::getSpecificParameterCondition(
 {
   StringCondition::ValueList values;
   int result = xmlObj.findFirstChild(getValuesTagName());
-  TEST_FOR_EXCEPTION(result == -1,
+  TEUCHOS_TEST_FOR_EXCEPTION(result == -1,
     MissingValuesTagException,
     "A StringCondtion must have a tag with the name " <<
     getValuesTagName() << " as one of it's children!");

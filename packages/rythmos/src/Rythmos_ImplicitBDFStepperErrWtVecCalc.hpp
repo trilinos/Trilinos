@@ -79,8 +79,8 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::errWtVecSet(
   using Teuchos::as;
   using Teuchos::ptrFromRef;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(weight==NULL);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPT(weight==NULL);
+  TEUCHOS_TEST_FOR_EXCEPTION(
       ( ( relTol == ST::zero() ) && ( absTol == ST::zero() ) ), std::logic_error,
       "Error, relTol and absTol cannot both be zero!\n"
       );
@@ -111,7 +111,7 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList == Teuchos::null);
   paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*paramList_,this);

@@ -435,7 +435,7 @@ namespace Anasazi {
 
     if (normalize_in == true && qsize + xc > xr) {
       // not well-posed
-      TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Orthogonalization constraints not feasible" );
     }
 
@@ -446,12 +446,12 @@ namespace Anasazi {
     }
     else if (normalize_in == true && (xc == 0 || xr == 0)) {
       // normalize requires X not empty
-      TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): X must be non-empty" );
     }
 
     // check that Q matches X
-    TEST_FOR_EXCEPTION( qsize != 0 && qr != xr , std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( qsize != 0 && qr != xr , std::invalid_argument, 
                         "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistant with size of Q" );
 
     /* If we don't have enough C, expanding it creates null references
@@ -463,16 +463,16 @@ namespace Anasazi {
     // check the size of the C[i] against the Q[i] and consistency between Q[i]
     for (int i=0; i<nq; i++) {
       // check size of Q[i]
-      TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not mutually consistant" );
-      TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Q has less rows than columns" );
       // check size of C[i]
       if ( C[i] == Teuchos::null ) {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc, std::invalid_argument, 
                             "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not consistant with C" );
       }
       // clear C[i]
@@ -490,7 +490,7 @@ namespace Anasazi {
       if ( B == Teuchos::null ) {
         B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
       }
-      TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Size of B not consistant with X" );
       // set B to I
       B->putScalar(ZERO);
@@ -535,7 +535,7 @@ namespace Anasazi {
       int lwork = lapack.ILAENV(1,"hetrd","VU",xc,-1,-1,-1);
       // lwork >= (nb+1)*n for complex
       // lwork >= (nb+2)*n for real
-      TEST_FOR_EXCEPTION( lwork < 0, OrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( lwork < 0, OrthoError, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Error code from ILAENV" );
 
       lwork = (lwork+2)*xc;
@@ -552,7 +552,7 @@ namespace Anasazi {
     // test sizes of X,MX
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
     int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
-    TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
                         "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistant with MX" );
 
     // sentinel to continue the outer loop (perform another projection step)
@@ -649,7 +649,7 @@ namespace Anasazi {
           int info;
           for (int i=0; i<nq; i++) {
             info = C[i]->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,*newC[i],*B,ONE);
-            TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
+            TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
           }
         }
         else {
@@ -696,7 +696,7 @@ namespace Anasazi {
           lapack.HEEV('V', 'U', xc, XtMX.values(), XtMX.stride(), &lambda[0], &work[0], work.size(), &rwork[0], &info);
           std::stringstream os;
           os << "Anasazi::SVQBOrthoManager::findBasis(): Error code " << info << " from HEEV";
-          TEST_FOR_EXCEPTION( info != 0, OrthoError, 
+          TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OrthoError, 
                               os.str() );
           if (debug_) {
             std::cout << dbgstr << "eigenvalues of XtMX: (";
@@ -773,7 +773,7 @@ namespace Anasazi {
             }
           }
           info = B->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,XtMX,workU,ZERO);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
           for (int j=0; j<xc ;j++) {
             for (int i=0; i<xc; i++) {
               (*B)(i,j) *= lambda[i];

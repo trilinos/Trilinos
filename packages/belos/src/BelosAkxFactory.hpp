@@ -196,7 +196,7 @@ namespace Belos {
     } catch (InvalidParameter& e) {
       // Do nothing; let the default stay
     }
-    TEST_FOR_EXCEPTION(basisLength < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(basisLength < 1, std::invalid_argument,
 		       "The \"Basis Length\" parameter must be >= 1, "
 		       "but its value here is " << basisLength << ".");
     if (validName == "Monomial")
@@ -207,7 +207,7 @@ namespace Belos {
       }
     else
       {
-	TEST_FOR_EXCEPTION(validName != "Monomial", std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(validName != "Monomial", std::logic_error,
 			   "We have not yet implemented the \"" 
 			   << validName << "\" basis.");
 	throw std::logic_error("Should never get here!");
@@ -259,13 +259,13 @@ namespace Belos {
   {
     // Canonicalize the basis name.  First, strip whitespace.
     // Second, capitalize the first letter and lowercase the rest.
-    TEST_FOR_EXCEPTION(basisName.empty(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(basisName.empty(), std::invalid_argument,
 		       "The matrix powers kernel basis name is an empty "
 		       "string.");
     const size_t npos = std::string::npos;
     size_t firstNonSpacePos = basisName.find_first_not_of (" \t\n");
     size_t lastNonSpacePos = basisName.find_last_not_of (" \t\n");
-    TEST_FOR_EXCEPTION(firstNonSpacePos == npos, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(firstNonSpacePos == npos, std::invalid_argument,
 		       "The matrix powers kernel basis name \"" << basisName 
 		       << "\" contains only whitespace.");
     // canonName must have length at least one.
@@ -277,7 +277,7 @@ namespace Belos {
 		    canonName.begin()+1, tolower);
     const bool foundIt = validBasisNames_.end() != 
       std::find (validBasisNames_.begin(), validBasisNames_.end(), canonName);
-    TEST_FOR_EXCEPTION(! foundIt, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(! foundIt, std::invalid_argument,
 		       "Invalid basis name \"" << basisName << "\".");
     return canonName;
   }

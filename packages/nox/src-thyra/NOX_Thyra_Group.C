@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
@@ -127,7 +127,7 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
     resetIsValidFlags();
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Copy type is invalid!");
   }
   
@@ -314,7 +314,7 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
 NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeGradient() 
 {
   if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
-    TEST_FOR_EXCEPTION(true,  std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error, 
 		       "NOX Error - compute gradient not implemented yet!");
     return NOX::Abstract::Group::Ok;
   }
@@ -345,7 +345,7 @@ NOX::Abstract::Group::ReturnType
 NOX::Thyra::Group::applyJacobian(const Vector& input, Vector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -363,7 +363,7 @@ NOX::Thyra::Group::applyJacobianMultiVector(
 				 NOX::Abstract::MultiVector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -395,7 +395,7 @@ NOX::Thyra::Group::applyJacobianTranspose(const NOX::Thyra::Vector& input,
 					  NOX::Thyra::Vector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -414,7 +414,7 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
 				 NOX::Abstract::MultiVector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -544,7 +544,7 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
 
 void NOX::Thyra::Group::print() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 // protected
@@ -601,7 +601,7 @@ NOX::Thyra::Group::getThyraNormType(const string& name) const
   else if (name == "Norm RHS")
     return ::Thyra::SOLVE_MEASURE_NORM_RHS;
   else {
-    TEST_FOR_EXCEPTION(true,  std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error, 
 		       "NOX Error - unknown solve measure " << name);
     return ::Thyra::SOLVE_MEASURE_ONE;
   }

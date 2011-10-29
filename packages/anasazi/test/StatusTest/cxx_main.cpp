@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     {
       // 
       // stoutput currently has null child pointer
-      TEST_FOR_EXCEPTION( stoutput.getChild() != null, get_out, "StatusTestOutput::getChild() should have returned Teuchos::null.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getChild() != null, get_out, "StatusTestOutput::getChild() should have returned Teuchos::null.");
       //
       // calling checkStatus() with null child pointer should result in a StatusTestError exception
       bool threw_expected_exception;
@@ -203,91 +203,91 @@ int main(int argc, char *argv[])
       catch (const StatusTestError &ste) {
         threw_expected_exception = true;
       }
-      TEST_FOR_EXCEPTION( threw_expected_exception == false, get_out, "StatusTestOutput::checkStatus() should have thrown exception."); 
+      TEUCHOS_TEST_FOR_EXCEPTION( threw_expected_exception == false, get_out, "StatusTestOutput::checkStatus() should have thrown exception."); 
     }
 
     // 
     // test StatusTestResNorm
     {
       stoutput.setChild(rcp(&stresnorm,false));
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
       //
       // solver has residual norms == 0 < SCT::prec() 
       printer->print(Warnings,"*** StatusTestResNorm: 0 < -prec: Failed.\n");
       stresnorm.setTolerance(-SCT::prec());  // 0 < -prec() == false
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestResNorm::setTolerance() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestResNorm::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.howMany() != 0, get_out, "StatusTestResNorm::howMany() should have returned 0.");
-      TEST_FOR_EXCEPTION( stresnorm.whichVecs().size() != 0, get_out, "StatusTestResNorm::whichVecs() should have been empty.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestResNorm::setTolerance() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestResNorm::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.howMany() != 0, get_out, "StatusTestResNorm::howMany() should have returned 0.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.whichVecs().size() != 0, get_out, "StatusTestResNorm::whichVecs() should have been empty.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
 
       printer->print(Warnings,"*** StatusTestResNorm: 0 < prec: Passed.\n");
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestResNorm::setTolerance() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestResNorm::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.howMany() != blockSize, get_out, "StatusTestResNorm::howMany() should have returned blockSize.");
-      TEST_FOR_EXCEPTION( (int)stresnorm.whichVecs().size() != blockSize, get_out, "StatusTestResNorm::whichVecs() should have had length blockSize.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestResNorm::setTolerance() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestResNorm::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.howMany() != blockSize, get_out, "StatusTestResNorm::howMany() should have returned blockSize.");
+      TEUCHOS_TEST_FOR_EXCEPTION( (int)stresnorm.whichVecs().size() != blockSize, get_out, "StatusTestResNorm::whichVecs() should have had length blockSize.");
       std::vector<int> whch(stresnorm.whichVecs());
       for (int i=0; i<(int)whch.size(); i++) {
-        TEST_FOR_EXCEPTION( whch[i] != i, get_out, "StatusTestResNorm::howMany() should have contained {0,blockSize-1}.");
+        TEUCHOS_TEST_FOR_EXCEPTION( whch[i] != i, get_out, "StatusTestResNorm::howMany() should have contained {0,blockSize-1}.");
       }
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
     }
 
     // 
     // test StatusTestMaxIters
     {
       stoutput.setChild(rcp(&stmaxiter,false));
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
       //
       // solver has numIters() == 0 
       printer->print(Warnings,"*** StatusTestMaxIters: 0 >= 1: Failed.\n");
       stmaxiter.setMaxIters(1); // 0 >= 1 == false
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
 
       printer->print(Warnings,"*** StatusTestMaxIters: 0 >= 0: Passed.\n");
       stmaxiter.setMaxIters(0); // 0 >= 0 == true
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
 
       printer->print(Warnings,"*** StatusTestMaxIters: 0 < 0: Failed.\n");
       stmaxiter.setNegate(true); // 0 < 0 == false
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Failed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Failed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
 
       printer->print(Warnings,"*** StatusTestMaxIters: 0 < 1: Passed.\n");
       stmaxiter.setMaxIters(1); // 0 < 1 == true
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::setMaxIters() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg) != Passed, get_out, "StatusTestMaxIters::checkStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()  != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestMaxIters::clearStatus() should reset status to Undefined.");
     }
 
     // 
@@ -296,213 +296,213 @@ int main(int argc, char *argv[])
     // also test clearStatus()
     {
       stoutput.setChild(rcp(&stcombo,false));
-      TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
       stcombo.setTests( tuple<RCP<StatusTest<ST,MV,OP> > >(rcp(&stresnorm,false),rcp(&stmaxiter,false)) );
-      TEST_FOR_EXCEPTION( stcombo.getTests().size() != 2, get_out, "StatusTestCombo::getTests() should have two tests.");
-      TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setTests() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getTests().size() != 2, get_out, "StatusTestCombo::getTests() should have two tests.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setTests() should reset status to Undefined.");
       stcombo.setComboType( stcombo.AND );
-      TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.AND, get_out, "StatusTestCombo::getComboType() should be AND.");
-      TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.AND, get_out, "StatusTestCombo::getComboType() should be AND.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(false); 
       stmaxiter.setMaxIters(0);             // 0 >= 0     == true (second test)
       // test that T & T => T
       printer->print(Warnings,"*** StatusTestCombo(AND): T & T: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F & T => F
       printer->print(Warnings,"*** StatusTestCombo(AND): F & T: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
       
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(true);  // 0 < 0 == false   (second test)
       // test that T & F => F
       printer->print(Warnings,"*** StatusTestCombo(AND): T & F: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed , get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed , get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed , get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed , get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed , get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed , get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed , get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed , get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F & F => F
       printer->print(Warnings,"*** StatusTestCombo(AND): F & F: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed , get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed , get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed , get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed , get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed , get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed , get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed , get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed , get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed , get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed , get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
       stoutput.clearStatus();
-      TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus() != Undefined, get_out, "StatusTestOutput::clearStatus() should reset all to Undefined.");
     }
 
     // 
     // test StatusTestCombo(OR)
     {
       stcombo.setComboType( stcombo.OR );
-      TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.OR, get_out, "StatusTestCombo::getComboType() should be OR.");
-      TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.OR, get_out, "StatusTestCombo::getComboType() should be OR.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(false); 
       stmaxiter.setMaxIters(0);             // 0 >= 0     == true (second test)
       // test that T | T => T
       printer->print(Warnings,"*** StatusTestCombo(OR): T | T: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F | T => T
       printer->print(Warnings,"*** StatusTestCombo(OR): F | T: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(true);  // 0 < 0 == false   (second test)
       // test that T | F => T
       printer->print(Warnings,"*** StatusTestCombo(OR): T | F: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F | F => F
       printer->print(Warnings,"*** StatusTestCombo(OR): F | F: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
     }
 
     // 
     // test StatusTestCombo(SEQAND)
     {
       stcombo.setComboType( stcombo.SEQAND );
-      TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.SEQAND, get_out, "StatusTestCombo::getComboType() should be SEQAND.");
-      TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.SEQAND, get_out, "StatusTestCombo::getComboType() should be SEQAND.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(false); 
       stmaxiter.setMaxIters(0);             // 0 >= 0     == true (second test)
       // test that T && T => T
       printer->print(Warnings,"*** StatusTestCombo(SEQAND): T && T: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F && U => F
       printer->print(Warnings,"*** StatusTestCombo(SEQAND): F && U: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(true);  // 0 < 0 == false   (second test)
       // test that T && F => F
       printer->print(Warnings,"*** StatusTestCombo(SEQAND): T && F: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F && U => F
       printer->print(Warnings,"*** StatusTestCombo(SEQAND): F && U: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
     }
 
     // 
     // test StatusTestCombo(SEQOR)
     {
       stcombo.setComboType( stcombo.SEQOR );
-      TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.SEQOR, get_out, "StatusTestCombo::getComboType() should be SEQOR.");
-      TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getComboType() != stcombo.SEQOR, get_out, "StatusTestCombo::getComboType() should be SEQOR.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setComboType() should reset status to Undefined.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(false); 
       stmaxiter.setMaxIters(0);             // 0 >= 0     == true (second test)
       // test that T || U => T
       printer->print(Warnings,"*** StatusTestCombo(SEQOR): T || U: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F || T => T
       printer->print(Warnings,"*** StatusTestCombo(SEQOR): F || T: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Passed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(SCT::prec());  // 0 < prec() == true (first test)
       stmaxiter.setNegate(true);  // 0 < 0 == false   (second test)
       // test that T || U => T
       printer->print(Warnings,"*** StatusTestCombo(SEQOR): T || U: Passed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Passed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Passed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Passed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Undefined, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
 
       stresnorm.setTolerance(-SCT::prec()); // 0 < -prec() == false (first test)
       // test that F || F => F
       printer->print(Warnings,"*** StatusTestCombo(SEQOR): F || F: Failed.\n");
-      TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
-      TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
-      TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stoutput.checkStatus(&lobpcg)   != Failed, get_out, "StatusTestOutput::checkStatus(): unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(  stoutput.getStatus()           != Failed, get_out, "StatusTestOutput::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION(   stcombo.getStatus()           != Failed, get_out, "StatusTestCombo::getStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stresnorm.getStatus()           != Failed, get_out, "StatusTestResNorm::clearStatus() unexpected return.");
+      TEUCHOS_TEST_FOR_EXCEPTION( stmaxiter.getStatus()           != Failed, get_out, "StatusTestMaxIters::clearStatus() unexpected return.");
     }
 
   } // end of try

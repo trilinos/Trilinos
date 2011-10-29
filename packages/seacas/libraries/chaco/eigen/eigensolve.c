@@ -10,32 +10,31 @@
 #include "smalloc.h"
 
 /* Invoke the eigenvector calculation */
-void      eigensolve(graph, nvtxs, nedges, maxdeg, vwgt_max, vwsqrt,
-		               using_vwgts, using_ewgts, term_wgts, igeom, coords,
-		               yvecs, evals, architecture, assignment, goal,
-	                 solver_flag, rqi_flag, vmax, ndims, mediantype, eigtol)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-double    maxdeg;		/* largest (weighted) degree of a vertex */
-int       vwgt_max;		/* largest vertex weight */
-double   *vwsqrt;		/* sqrt of vertex weights (length nvtxs+1) */
-int       using_vwgts;		/* are vertex weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-float    *term_wgts[];		/* terminal propagation weight vector */
-int       igeom;		/* geometric dimensionality if given coords */
-float   **coords;		/* coordinates of vertices */
-double  **yvecs;		/* space for pointing to eigenvectors */
-double   *evals;		/* eigenvalues associated with eigenvectors */
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-int    *assignment;		/* set number of each vtx (length n+1) */
-double   *goal;			/* desired set sizes */
-int       solver_flag;		/* flag indicating which solver to use */
-int       rqi_flag;		/* use multi-level techniques? */
-int       vmax;			/* if so, how many vtxs to coarsen down to? */
-int       ndims;		/* number of eigenvectors (2^d sets) */
-int       mediantype;		/* which partitioning strategy to use */
-double    eigtol;		/* tolerance on eigenvectors */
+void 
+eigensolve (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    double maxdeg,		/* largest (weighted) degree of a vertex */
+    int vwgt_max,		/* largest vertex weight */
+    double *vwsqrt,		/* sqrt of vertex weights (length nvtxs+1) */
+    int using_vwgts,		/* are vertex weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    float *term_wgts[],		/* terminal propagation weight vector */
+    int igeom,		/* geometric dimensionality if given coords */
+    float **coords,		/* coordinates of vertices */
+    double **yvecs,		/* space for pointing to eigenvectors */
+    double *evals,		/* eigenvalues associated with eigenvectors */
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    int *assignment,		/* set number of each vtx (length n+1) */
+    double *goal,			/* desired set sizes */
+    int solver_flag,		/* flag indicating which solver to use */
+    int rqi_flag,		/* use multi-level techniques? */
+    int vmax,			/* if so, how many vtxs to coarsen down to? */
+    int ndims,		/* number of eigenvectors (2^d sets) */
+    int mediantype,		/* which partitioning strategy to use */
+    double eigtol		/* tolerance on eigenvectors */
+)
 {
     extern int DEBUG_TRACE;	/* trace the execution of the code */
     extern int DEBUG_EVECS;	/* debug flag for eigenvector generation */

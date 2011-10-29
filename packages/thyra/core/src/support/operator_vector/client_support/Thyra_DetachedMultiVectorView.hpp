@@ -161,7 +161,7 @@ void doExplicitMultiVectorAdjoint(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==mvTransOut);
+  TEUCHOS_TEST_FOR_EXCEPT(0==mvTransOut);
   THYRA_ASSERT_VEC_SPACES("doExplicitMultiVectorAdjoint(...)",
     *mvIn.domain(), *mvTransOut->range()
     );

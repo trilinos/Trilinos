@@ -42,6 +42,8 @@
 #include <Tsqr_Util.hpp>
 
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListExceptions.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
@@ -213,7 +215,6 @@ namespace TSQR {
     }
 
   public:
-
     /// \brief The standard constructor.
     ///
     /// \param cacheSizeHint [in] Cache size hint in bytes to use in
@@ -266,6 +267,96 @@ namespace TSQR {
       strategy_ (strategy) 
     {}
 
+    /// \brief Alternate constructor that takes a list of parameters.
+    ///
+    /// See the documentation of \c setParameterList() for the list of
+    /// currently understood parameters.  The constructor ignores
+    /// parameters that it doesn't understand.
+    ///
+    /// \param plist [in/out] On input: List of parameters.  On
+    ///   output: Missing parameters are filled in with default
+    ///   values.
+    SequentialTsqr (const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      setParameterList (params);
+    }
+
+    /// \brief Valid default parameters for SequentialTsqr.
+    ///
+    /// \note This object has to create a new parameter list each
+    ///   time, since it cannot cache an RCP (due to thread safety --
+    ///   TbbTsqr invokes multiple instances of SequentialTsqr in
+    ///   parallel).
+    Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters () const
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
+      const size_t cacheSizeHint = 0;
+      const size_t sizeOfScalar = sizeof(Scalar);
+
+      RCP<ParameterList> plist = parameterList ("NodeTsqr");
+      plist->set ("Cache Size Hint", cacheSizeHint, 
+		  "Cache size hint in bytes (as a size_t) to use for intranode"
+		  "TSQR.  If zero, TSQR will pick a reasonable default.  "
+		  "The size should correspond to that of the largest cache that "
+		  "is private to each CPU core, if such a private cache exists; "
+		  "otherwise, it should correspond to the amount of shared "
+		  "cache, divided by the number of cores sharing that cache.");
+      plist->set ("Size of Scalar", sizeOfScalar, "Size of the Scalar type.  "
+		  "Default is sizeof(Scalar).  Only set if sizeof(Scalar) does "
+		  "not describe how much memory a Scalar type takes.");
+      return plist;
+    }
+
+    /// \brief Set parameters.
+    ///
+    /// \param plist [in/out] On input: List of parameters.  On
+    ///   output: Missing parameters are filled in with default
+    ///   values.
+    ///
+    /// For a list of currently understood parameters, see the
+    /// parameter list returned by \c getValidParameters().
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      using Teuchos::Exceptions::InvalidParameter;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      
+      RCP<ParameterList> params = plist.is_null() ? 
+	parameterList (*getValidParameters()) : plist;
+
+      const std::string cacheSizeHintName ("Cache Size Hint");
+      const std::string sizeOfScalarName ("Size of Scalar");
+      // In order to avoid calling getValidParameters() and
+      // constructing a default list, we set missing values here to
+      // their defaults.  This duplicates default values set in
+      // getValidParameters(), so if you change those, be careful to
+      // change them here.
+      size_t cacheSizeHint = 0;
+      size_t sizeOfScalar = sizeof(Scalar);
+      
+      try {
+	cacheSizeHint = params->get<size_t> (cacheSizeHintName);
+      } catch (InvalidParameter&) {
+	params->set (cacheSizeHintName, cacheSizeHint);
+      }
+      try {
+	sizeOfScalar = params->get<size_t> (sizeOfScalarName);
+      } catch (InvalidParameter&) {
+	params->set (sizeOfScalarName, sizeOfScalar);
+      }
+
+      // Reconstruct the cache blocking strategy, since we may have
+      // changed parameters.
+      strategy_ = CacheBlockingStrategy<LocalOrdinal, Scalar> (cacheSizeHint, 
+							       sizeOfScalar);
+    }
+
     /// \brief One-line description of this object.
     ///
     /// This implements Teuchos::Describable::description().  For now,
@@ -277,6 +368,11 @@ namespace TSQR {
 	"implementation with cache size hint " << this->cache_size_hint() 
 	 << " bytes.";
       return os.str();
+    }
+
+    //! Whether this object is ready to perform computations.
+    bool ready() const {
+      return true;
     }
 
     /// \brief Does factor() compute R with nonnegative diagonal?

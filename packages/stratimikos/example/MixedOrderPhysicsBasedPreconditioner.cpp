@@ -69,7 +69,7 @@ readEpetraCrsMatrixFromMatrixMarket(
   )
 {
   Epetra_CrsMatrix *A = 0;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     0!=EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), comm, A ),
     std::runtime_error,
     "Error, could not read matrix file \""<<fileName<<"\"!"

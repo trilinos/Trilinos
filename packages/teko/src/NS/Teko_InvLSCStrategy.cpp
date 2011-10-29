@@ -443,7 +443,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       eigSolveParam_ = pl.get<int>("Eigen Solver Iterations");
    if(pl.isParameter("Scaling Type")) {
       scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
-      TEST_FOR_EXCEPT(scaleType_==NotDiag);
+      TEUCHOS_TEST_FOR_EXCEPT(scaleType_==NotDiag);
    }
 
    Teko_DEBUG_MSG_BEGIN(5)

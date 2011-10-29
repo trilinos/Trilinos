@@ -29,7 +29,7 @@
 // @HEADER
 
 #include <sstream>
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 
 #include "Stokhos_LegendreBasis.hpp"
@@ -104,7 +104,7 @@ create1DBasis(Teuchos::ParameterList& bp)
     basis = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut, normalize));
   }
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 
 		       "Error!  Stokhos::BasisFactory::create1DBasis():  " <<
 		       "Invalid basis type  " << type << std::endl);

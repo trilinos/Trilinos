@@ -56,9 +56,9 @@ C   --Common Variables:
 C   --   Uses IXLHS, NAMVAR, TYPVAR of /VAR../
 C   --   Uses NDIM, NVARHI, NVARGL, NVARNP, NVAREL of /DBNUMS/
 
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER*(*) NAME
       CHARACTER*(*) NAMECO(*)

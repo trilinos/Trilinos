@@ -94,7 +94,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
   initialize(createMember(space)); // Note that the space is guaranteed to be remembered here!
 }

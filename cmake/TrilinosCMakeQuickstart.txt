@@ -25,6 +25,7 @@ Section C: Configuring Trilinos
   --  Configuring with third party libraries (TPLS)
   --  Disabling tentatively enabled TPLs
   --  Getting verbose output
+  --  Enabling/disabling time monitors
   --  Enabling/disabling deprecated warnings
   --  Disable update of package dependency information
   --  Enable coverage testing
@@ -730,6 +731,15 @@ C) Configuring (Makefile Generator)
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
   NOTE: This will print a complete stack trace to show exactly where you are.
+
+
+(*) Enabling/disabling time monitors:
+
+   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
+
+  Above will enable Teuchos time monitors by default in all Trilinos packages
+  that support them.  To print the timers at the end of the program, call
+  Teuchos::TimeMonitor::summarize().
 
 
 (*) Enabling/disabling deprecated warnings:

@@ -31,6 +31,7 @@
 
 
 #include "Rythmos_ConfigDefs.h"
+#include "Thyra_VectorBase.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_Array.hpp"
@@ -39,12 +40,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_AbstractFactory.hpp"
-
-#include "Thyra_VectorBase.hpp"
-
-#ifdef ENABLE_RYTHMOS_TIMERS
 #include "Teuchos_TimeMonitor.hpp"
-#endif
+
+
 
 
 namespace Rythmos {

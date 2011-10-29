@@ -78,7 +78,7 @@ get_Epetra_RowMatrix(
     eW = epetraOutArgs.get_W();
   const RCP<Epetra_RowMatrix>
     ermW = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(eW,false);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(ermW), std::logic_error,
     "Thyra::EpetraModelEvaluator::evalModel(...): Error, if\n"
     "scaling is turned on, the underlying Epetra_Operator created\n"
@@ -100,7 +100,7 @@ create_and_assert_W(
   using Teuchos::RCP;
   RCP<Epetra_Operator>
     eW = epetraModel.create_W();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(eW), std::logic_error,
     "Error, the call to create_W() returned null on the "
     "EpetraExt::ModelEvaluator object "
@@ -163,7 +163,7 @@ void EpetraModelEvaluator::initialize(
     RCP<const Epetra_Map>
       p_map_l = ( p_map_[l] = epetraModel_->get_p_map(l) );
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(p_map_l), std::logic_error,
       "Error, the the map p["<<l<<"] for the model \""
       <<epetraModel->description()<<"\" can not be null!");
@@ -215,7 +215,7 @@ void EpetraModelEvaluator::setStateVariableScalingVec(
 {
   typedef ModelEvaluatorBase MEB;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !this->createInArgs().supports(MEB::IN_ARG_x) );
+  TEUCHOS_TEST_FOR_EXCEPT( !this->createInArgs().supports(MEB::IN_ARG_x) );
 #endif  
   stateVariableScalingVec_ = stateVariableScalingVec.assert_not_null();
   invStateVariableScalingVec_ = Teuchos::null;
@@ -311,7 +311,7 @@ void EpetraModelEvaluator::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters(),0); // Just validate my params
   paramList_ = paramList;
   const EStateFunctionScaling stateFunctionScaling_old = stateFunctionScaling_; 
@@ -449,7 +449,7 @@ EpetraModelEvaluator::get_p_names(int l) const
 RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= j && j < this->Ng() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( ! ( 0 <= j && j < this->Ng() ) );
   return g_space_[j];
 }
 
@@ -517,7 +517,7 @@ void EpetraModelEvaluator::reportFinalPoint(
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DfDp_op_impl(int l) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -525,7 +525,7 @@ EpetraModelEvaluator::create_DfDp_op_impl(int l) const
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -533,7 +533,7 @@ EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_op_impl(int j) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -541,7 +541,7 @@ EpetraModelEvaluator::create_DgDx_op_impl(int j) const
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDp_op_impl( int j, int l ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
@@ -726,7 +726,7 @@ void EpetraModelEvaluator::evalModelImpl(
     &epetraOutArgs, &allFuncsWhereScaled,
     out.get(), verbLevel
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !allFuncsWhereScaled, std::logic_error,
     "Error, we can not currently handle epetra output objects that could not be"
     " scaled.  Special code will have to be added to handle this (i.e. using"
@@ -781,7 +781,7 @@ void EpetraModelEvaluator::convertInArgsFromEpetraToThyra(
   using Teuchos::implicit_cast;
   typedef ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT(!inArgs);
+  TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
 
   if(inArgs->supports(MEB::IN_ARG_x)) {
     inArgs->set_x( create_Vector( epetraInArgs.get_x(), x_space_ ) );
@@ -816,7 +816,7 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 #endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
-  TEST_FOR_EXCEPT(0==epetraInArgs);
+  TEUCHOS_TEST_FOR_EXCEPT(0==epetraInArgs);
 
   RCP<const VectorBase<double> > x_dot;
   if( inArgs.supports(IN_ARG_x_dot) && (x_dot = inArgs.get_x_dot()).get() ) {
@@ -1142,7 +1142,7 @@ void EpetraModelEvaluator::postEvalScalingSetup(
     }
 
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
 
   }
 
@@ -1384,7 +1384,7 @@ Thyra::convert(
     case EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW :
       return ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never be called!
 }
@@ -1401,7 +1401,7 @@ Thyra::convert(
     case ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW :
       return EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return EpetraExt::ModelEvaluator::DERIV_MV_BY_COL; // Should never be called!
 }
@@ -1424,7 +1424,7 @@ Thyra::convert(
       linearity = ModelEvaluatorBase::DERIV_LINEARITY_NONCONST;
       break;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   ModelEvaluatorBase::ERankStatus rank;
   switch(derivativeProperties.rank) {
@@ -1438,7 +1438,7 @@ Thyra::convert(
       rank = ModelEvaluatorBase::DERIV_RANK_DEFICIENT;
       break;
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return ModelEvaluatorBase::DerivativeProperties(
     linearity,rank,derivativeProperties.supportsAdjoint);

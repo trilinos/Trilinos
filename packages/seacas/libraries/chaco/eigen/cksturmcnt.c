@@ -7,10 +7,8 @@
 #include "defs.h"
 
 /* Check sturmcnt */
-void      cksturmcnt(vec, beg, end, x1, x2, x1ck, x2ck, numck)
-double   *vec, x1, x2;
-int       beg, end;
-int      *x1ck, *x2ck, *numck;
+void 
+cksturmcnt (double *vec, int beg, int end, double x1, double x2, int *x1ck, int *x2ck, int *numck)
 {
 
     int i, count;

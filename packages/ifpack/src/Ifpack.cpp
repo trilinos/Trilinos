@@ -254,7 +254,7 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_SORa(Matrix));  
 #endif
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
       // The only way to get here is if some code developer does a cast like
       // (EPrecType)(anyNumber).  You can never get here by passing in a
       // string value for the preconditioner!

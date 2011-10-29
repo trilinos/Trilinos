@@ -242,7 +242,7 @@ public:
         switch(mvOrientation) {
           case DERIV_MV_BY_COL: supportsMVByCol_ = true; break;
           case DERIV_TRANS_MV_BY_ROW: supportsTransMVByRow_ = true; break;
-          default: TEST_FOR_EXCEPT(true);
+          default: TEUCHOS_TEST_FOR_EXCEPT(true);
         }
         return *this;
       }
@@ -258,7 +258,7 @@ public:
         switch(mvOrientation) {
           case DERIV_MV_BY_COL: return supportsMVByCol_;
           case DERIV_TRANS_MV_BY_ROW: return supportsTransMVByRow_;
-          default: TEST_FOR_EXCEPT(true);
+          default: TEUCHOS_TEST_FOR_EXCEPT(true);
         }
         return false; // Will never be called!
       }
@@ -809,7 +809,7 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
       return "IN_ARG_beta";
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
   return ""; // Will never be executed!
@@ -830,7 +830,7 @@ std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
       return "OUT_ARG_f_poly";
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
   return ""; // Will never be executed!
@@ -849,7 +849,7 @@ std::string Thyra::toString(
       return "DERIV_TRANS_MV_BY_ROW";
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
   return ""; // Should never execute this!
@@ -869,7 +869,7 @@ Thyra::getOtherDerivativeMultiVectorOrientation(
       return ModelEvaluatorBase::DERIV_MV_BY_COL;
 #ifdef TEUCHOS_DEBUG
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
   return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never execute this!

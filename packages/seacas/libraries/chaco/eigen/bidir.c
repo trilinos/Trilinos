@@ -19,13 +19,15 @@
          to 1) worked better. */ 
 
 /* Finds eigenvector s of T and returns residual norm. */
-double    bidir(alpha, beta, j, ritz, s, hurdle)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* number of Lanczos iterations taken */
-double    ritz;			/* approximate eigenvalue  of T */
-double   *s;			/* approximate eigenvector of T */
-double    hurdle;		/* hurdle for local maximum in recurrence */
+double 
+bidir (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* number of Lanczos iterations taken */
+    double ritz,			/* approximate eigenvalue  of T */
+    double *s,			/* approximate eigenvector of T */
+    double hurdle		/* hurdle for local maximum in recurrence */
+)
 
 {
     int	      i;		/* index */

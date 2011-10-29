@@ -2498,7 +2498,7 @@ namespace stk {
                 stk::mesh::Part *  part = *i_part ;
 
                 // FIXME - is there a better way to determine if a part is one of the "standard" parts?
-                //if (part->name()[0] == '{')   // is_auto_declared_part
+                //if (part->name()[0] == '{' "{")   // is_auto_declared_part, ie. UNIVERSAL universal_part
                 if ( stk::mesh::is_auto_declared_part(*part) )
                   continue;
 

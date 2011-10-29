@@ -117,13 +117,13 @@ void Stokhos::adapt_utils::buildColBasisFunctions(
    // loop over row degrees of freedom building Row Orders vector
    for(std::size_t dof=0;dof<per_dof_row_basis.size();dof++) {
       RCP<const Stokhos::ProductBasis<int,double> > rowBasis = per_dof_row_basis[dof];
-      TEST_FOR_EXCEPTION(rowBasis->dimension()!=masterBasis->dimension(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(rowBasis->dimension()!=masterBasis->dimension(),std::invalid_argument,
                       "Stokhos::adapt_utils::buildColBasisFunctions: Row basis must match dimension of master basis!");
    
       Teuchos::Array<RCP<const OneDOrthogPolyBasis<int,double> > > onedBasis 
             = rowBasis->getCoordinateBases();
 
-      TEST_FOR_EXCEPTION(onedBasis.size()!=numStochDim,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(onedBasis.size()!=numStochDim,std::logic_error,
                       "Stokhos::adapt_utils::buildColBasisFunctions: Wrong number of dimensions from row basis!");
 
       // fill stochastic orders vector
@@ -180,7 +180,7 @@ Teuchos::RCP<Epetra_CrsGraph> Stokhos::adapt_utils::buildAdaptedGraph(
         bool onlyUseLinear,
         int kExpOrder)
 {
-   TEST_FOR_EXCEPTION(int(per_dof_row_basis.size())!=determGraph.NumMyRows(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(int(per_dof_row_basis.size())!=determGraph.NumMyRows(),std::logic_error,
                       "Stokhos::adapt_utils::buildAdaptedGraph: per_dof_row_basis.size()!=determGraph.NumMyRows()");
 
    myRowGidOffsets.clear();

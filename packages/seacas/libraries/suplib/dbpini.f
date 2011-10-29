@@ -34,24 +34,6 @@ C=======================================================================
      &   NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL,
      &   NVARHI, NVARGL, NVARNP, NVAREL)
 C=======================================================================
-C$Id: dbpini.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C$Log: dbpini.f,v $
-CRevision 1.3  2009/03/25 12:46:01  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.2  1997/03/20 19:40:14  caforsy
-CUpdated Imakefile for Imake 6.1.  Changed printing routines to handle
-Clarger problems.
-C
-CRevision 1.1.1.1  1990/08/14 16:13:48  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:13:47  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:19  gdsjaar
-c Initial revision
-c 
 
 C   --*** DBPINI *** (EXOLIB) Display database title and initial variables
 C   --   Written by Amy Gilkey - revised 10/15/87

@@ -36,16 +36,14 @@
 
 /******************************************************************************/
 int
-check_monot (vector, length)
+check_monot (int *vector, int length)
 /*
  * This function checks to see if an integer vector is in monotonically
  * increasing order. It returns TRUE (i.e., 1), if this is so. It returns
  * false (i.e., 0), if this is not so.
  */
- int    length;
- int   *vector;
 {
-  register int  i;
+  int  i;
   for (i = 1; i < length; i++) {
       if (vector[i] < vector[i-1]) return(0);
   }

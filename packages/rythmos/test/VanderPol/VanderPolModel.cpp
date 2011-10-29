@@ -136,7 +136,7 @@ void VanderPolModel::setImplicitFlag(bool implicit)
 
 ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -169,11 +169,11 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) co
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::getExactSensSolution(int j, double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
 
@@ -220,7 +220,7 @@ VanderPolModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return nominalValues_;
@@ -283,7 +283,7 @@ VanderPolModel::get_W_factory() const
 ModelEvaluatorBase::InArgs<double>
 VanderPolModel::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return inArgs_;
@@ -324,7 +324,7 @@ Array<Sacado::Fad::DFad<ScalarT> > convertToIndepVarFadArray(
 ModelEvaluatorBase::OutArgs<double>
 VanderPolModel::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
   return outArgs_;
@@ -343,7 +343,7 @@ void VanderPolModel::evalModelImpl(
   using Teuchos::inOutArg;
   using Sacado::Fad::DFad;
 
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
 
@@ -471,7 +471,7 @@ RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_p_space(int l) co
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_;
@@ -482,7 +482,7 @@ RCP<const Teuchos::Array<std::string> > VanderPolModel::get_p_names(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   RCP<Teuchos::Array<std::string> > p_strings = 
@@ -493,7 +493,7 @@ RCP<const Teuchos::Array<std::string> > VanderPolModel::get_p_names(int l) const
 
 RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_g_space(int j) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_;
@@ -575,7 +575,7 @@ void VanderPolModel::setupInOutArgs_()
 void VanderPolModel::setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(paramList);
   RCP<ParameterList> pl = this->getMyNonconstParamList();

@@ -10611,6 +10611,8 @@ memory threads. WARNING:  This is an experimental class that
 marginally supported nested share memory parallelism within MPI
 processes.
 
+This class has been deprecated.
+
 C++ includes: Epetra_MpiSmpComm.h ";
 
 /*  Constructor/Destructor Methods  */

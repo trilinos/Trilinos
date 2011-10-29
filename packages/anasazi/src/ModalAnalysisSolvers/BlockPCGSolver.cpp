@@ -28,7 +28,7 @@
 
 #include "BlockPCGSolver.h"
 #include <stdexcept>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 
 BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
@@ -503,7 +503,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 	// FIXME (mfh 14 Jan 2011) Is this the right exception to
 	// throw?  I'm just replacing an exit(-1) with an exception,
 	// as per Trilinos coding standards.
-	TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
+	TEUCHOS_TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
 			   "eigenvalue for P^T K P: da[" << ii << "] = " 
 			   << da[ii] << ".");
 	da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];

@@ -112,8 +112,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   else if(PreOrPostSmoother == "pre")  pre_or_post = ML_PRESMOOTHER;
   else if(PreOrPostSmoother == "both") pre_or_post = ML_BOTH;
 
-  Teuchos::ParameterList & IfpackList=List_.sublist("smoother: ifpack list");
-  Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0, IfpackList,"LevelWrap Smoother (level 0): ",verbose_));
+  Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0,List_,"LevelWrap Smoother (level 0): ",verbose_));
   
   //********************
   // Setup A1
@@ -163,6 +162,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
    
   // Sanity Checks
   if (!B.Map().SameAs(OperatorDomainMap())) return -1;
+  if (!X_.Map().SameAs(OperatorRangeMap())) return -1;
   if (B.NumVectors() != X_.NumVectors()) return -1;
 
   // Build new work vector X 

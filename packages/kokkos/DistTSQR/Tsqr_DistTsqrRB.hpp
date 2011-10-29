@@ -15,30 +15,110 @@
 #include <utility>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
+  /// \namespace details
+  /// \brief TSQR implementation details.
+  /// \author Mark Hoemmen
+  /// 
+  /// \warning TSQR users should not use anything in this namespace.
+  ///   They should not even assume that the namespace will continue
+  ///   to exist between releases.  The namespace's name itself or
+  ///   anything it contains may change at any time.
+  namespace details {
+
+    // Force the diagonal of R_mine to be nonnegative, where
+    // Q_mine*R_mine is a QR factorization.
+    //
+    // We only made this a class because C++ (pre-C++11) does not
+    // allow partial specialization of template functions.
+    template<class LocalOrdinal, class Scalar, bool isComplex>
+    class NonnegDiagForcer {
+    public:
+      // Force the diagonal of R_mine to be nonnegative, where
+      // Q_mine*R_mine is a QR factorization.
+      void
+      force (MatView<LocalOrdinal, Scalar> Q_mine, 
+	     MatView<LocalOrdinal, Scalar> R_mine);
+    };
+
+    // The complex-arithmetic specialization does nothing, since
+    // _GEQR{2,F} for complex arithmetic returns an R factor with
+    // nonnegative diagonal already.
+    template<class LocalOrdinal, class Scalar>
+    class NonnegDiagForcer<LocalOrdinal, Scalar, true> {
+    public:
+      void
+      force (MatView<LocalOrdinal, Scalar> Q_mine, 
+	     MatView<LocalOrdinal, Scalar> R_mine)
+      {
+	(void) Q_mine;
+	(void) R_mine;
+      }
+    };
+
+    // Real-arithmetic specialization.
+    template<class LocalOrdinal, class Scalar>
+    class NonnegDiagForcer<LocalOrdinal, Scalar, false> {
+    public:
+      void
+      force (MatView<LocalOrdinal, Scalar> Q_mine, 
+	     MatView<LocalOrdinal, Scalar> R_mine)
+      {
+	typedef Teuchos::ScalarTraits<Scalar> STS;
+
+	if (Q_mine.nrows() > 0 && Q_mine.ncols() > 0) {
+	  for (int k = 0; k < R_mine.ncols(); ++k) {
+	    if (R_mine(k,k) < STS::zero()) {
+	      // Scale column k of Q_mine.  We use a raw pointer since
+	      // typically there are many rows in Q_mine, so this
+	      // operation should be fast.
+	      Scalar* const Q_k = &Q_mine(0,k);
+	      for (int i = 0; i < Q_mine.nrows(); ++i) {
+		Q_k[i] = -Q_k[i];
+	      }
+	      // Scale row k of R_mine.  R_mine is upper triangular,
+	      // so we only have to scale right of (and including) the
+	      // diagonal entry.
+	      for (int j = k; j < R_mine.ncols(); ++j) {
+		R_mine(k,j) = -R_mine(k,j);
+	      }
+	    }
+	  }
+	}
+      }
+    };
+  } // namespace details
+
+
   /// \class DistTsqrRB
-  /// \brief Reduce-and-Broadcast (RB) version of DistTsqr
+  /// \brief Reduce-and-Broadcast (RB) version of DistTsqr.
+  /// \author Mark Hoemmen
   ///
-  /// Reduce-and-Broadcast (RB) version of DistTsqr, which factors a
-  /// vertical stack of n by n R factors, one per MPI process.  Only
-  /// the final R factor is broadcast; the implicit Q factor data stay
-  /// on the MPI process where they are computed.
-  template< class LocalOrdinal, class Scalar >
+  /// \tparam LocalOrdinal Corresponds to the "local ordinal" template
+  ///   parameter of Tpetra objects (though TSQR is not Tpetra-specific).
+  ///
+  /// \tparam Scalar Corresponds to the "scalar" template parameter of
+  ///   Tpetra objects (though TSQR is not Tpetra-specific).
+  ///
+  /// This class implements the Reduce-and-Broadcast (RB) version of
+  /// DistTsqr.  DistTsqr factors a vertical stack of n by n R
+  /// factors, one per MPI process.  Only the final R factor is
+  /// broadcast.  The implicit Q factor data stay on the MPI process
+  /// where they were computed.
+  template<class LocalOrdinal, class Scalar>
   class DistTsqrRB {
   public:
     typedef LocalOrdinal ordinal_type;
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-    typedef MatView< ordinal_type, scalar_type > matview_type;
-    typedef Matrix< ordinal_type, scalar_type > matrix_type;
+    typedef MatView<ordinal_type, scalar_type> matview_type;
+    typedef Matrix<ordinal_type, scalar_type> matrix_type;
     typedef int rank_type;
-    typedef Combine< ordinal_type, scalar_type > combine_type;
+    typedef Combine<ordinal_type, scalar_type> combine_type;
 
-    /// Constructor
+    /// \brief Constructor
     ///
     /// \param messenger [in/out] Smart pointer to a wrapper handling
     ///   communication between MPI process(es).
@@ -51,9 +131,11 @@ namespace TSQR {
       bcastTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::explicitQBroadcast() total time"))
     {}
 
+    /// \brief Fill stats with cumulative timings from \c factorExplicit().
+    ///
     /// Fill in the timings vector with cumulative timings from
-    /// factorExplicit().  The vector gets resized to fit all the
-    /// timings.
+    /// factorExplicit().  The vector gets resized if necessary to fit
+    /// all the timings.
     void
     getStats (std::vector< TimeStats >& stats) const
     {
@@ -67,9 +149,11 @@ namespace TSQR {
       stats[4] = bcastStats_;
     }
 
+    /// \brief Fill labels with timer labels from \c factorExplicit().
+    ///
     /// Fill in the labels vector with the string labels for the
-    /// timings from factorExplicit().  The vector gets resized to fit
-    /// all the labels.
+    /// timings from factorExplicit().  The vector gets resized if
+    /// necessary to fit all the labels.
     void
     getStatsLabels (std::vector< std::string >& labels) const
     {
@@ -105,8 +189,14 @@ namespace TSQR {
     ///   with zeros, and call intranode TSQR's apply() on it, to get
     ///   the final explicit Q factor.)
     ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
     void
-    factorExplicit (matview_type R_mine, matview_type Q_mine)
+    factorExplicit (matview_type R_mine, 
+		    matview_type Q_mine,
+		    const bool forceNonnegativeDiagonal=false)
     {
       StatTimeMonitor totalMonitor (*totalTime_, totalStats_);
 
@@ -194,6 +284,13 @@ namespace TSQR {
 	explicitQBroadcast (R_mine, Q_mine, Q_other.view(), 
 			    P_mine, P_first, P_last,
 			    numSteps, QFactors, tauArrays);
+      }
+
+      if (forceNonnegativeDiagonal &&
+	  ! QR_produces_R_factor_with_nonnegative_diagonal()) {
+	typedef Teuchos::ScalarTraits<Scalar> STS;
+	details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
+	forcer.force (Q_mine, R_mine);
       }
     }
 

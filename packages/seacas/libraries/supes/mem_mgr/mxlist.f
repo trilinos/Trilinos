@@ -165,6 +165,8 @@ C
             NXTLOC = DPOINT(IDICT,ICOL,1)
          ELSE IF (NVOIDS(ICOL) .GT. 0) THEN
             NXTLOC = VOID(1,ICOL,1)
+         ELSE
+            NXTLOC = 0
          END IF
          IVOID = 1
 C

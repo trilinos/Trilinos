@@ -31,7 +31,7 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <stdexcept>
@@ -186,7 +186,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &graph) {
     using Teuchos::arcp;
-    TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -222,9 +222,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &matrix) {
     using Teuchos::arcp;
-    TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() || 
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() || 
                        (inds2D_ != null && matrix.is1DStructure()) || (inds1D_ != null && matrix.is2DStructure()),
                        std::runtime_error, Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
     if (!isEmpty_) {
@@ -260,11 +260,11 @@ namespace Kokkos {
     typedef DefaultSparseSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
     typedef DefaultSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp1D;
     typedef DefaultSparseTransposeSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp2D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
-    TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
-    TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): Left-hand-side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
 
     ReadyBufferHelper<Node> rbh(node_);
@@ -272,7 +272,7 @@ namespace Kokkos {
       // null op
     }
     else if (isEmpty_) {
-      TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
           Teuchos::typeName(*this) << "::solve(): solve of empty matrix only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
@@ -368,9 +368,9 @@ namespace Kokkos {
     typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op2D;
     typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp1D;
     typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp2D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -469,9 +469,9 @@ namespace Kokkos {
     typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op2D;
     typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp1D;
     typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp2D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= alpha * 0 * X + beta * Y 
@@ -569,9 +569,9 @@ namespace Kokkos {
   {
     typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
     typedef DefaultSparseScaleOp2<Scalar,Ordinal,VectorScalar>  Op2D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::leftScale(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != 1);
     ReadyBufferHelper<Node> rbh(node_);
     if (begs1D_ != null) {
       Op1D wdp;
@@ -720,7 +720,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphDeviceCompute<Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &graph) {
-    TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -738,9 +738,9 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixDeviceCompute<Scalar,Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &matrix) {
-    TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
     if (!isEmpty_) {
       ArrayRCP<Scalar> vals;
@@ -759,11 +759,11 @@ namespace Kokkos {
                             MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
     typedef DefaultSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp1D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
-    TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
-    TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): Left-hand-side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
 
     ReadyBufferHelper<Node> rbh(node_);
@@ -771,7 +771,7 @@ namespace Kokkos {
       // null op
     }
     else if (isEmpty_) {
-      TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
           Teuchos::typeName(*this) << "::solve(): solve of empty matrix only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
@@ -828,9 +828,9 @@ namespace Kokkos {
     // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
     typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp1D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -889,9 +889,9 @@ namespace Kokkos {
     // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
     typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp1D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= alpha * 0 * X + beta * Y 
@@ -952,9 +952,9 @@ namespace Kokkos {
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
   {
     typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::scale(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != 1);
     ReadyBufferHelper<Node> rbh(node_);
 
 

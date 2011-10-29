@@ -240,7 +240,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
   void setBlockSize(int blockSize) {
-    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
                        "Belos::MinresIter::setBlockSize(): Cannot use a block size that is not one.");
   }
 
@@ -357,7 +357,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
         if (Y_ == Teuchos::null) {
           // Get the multivector that is not null.
           Teuchos::RCP< const MV > tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-          TEST_FOR_EXCEPTION( tmp == Teuchos::null,
+          TEUCHOS_TEST_FOR_EXCEPTION( tmp == Teuchos::null,
                               std::invalid_argument,
                               "Belos::MinresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
           Y_  = MVT::Clone( *tmp, 1 );
@@ -383,19 +383,19 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION( !stateStorageInitialized_,
+    TEUCHOS_TEST_FOR_EXCEPTION( !stateStorageInitialized_,
                         std::invalid_argument,
                         "Belos::MinresIter::initialize(): Cannot initialize state storage!" );
 
-    TEST_FOR_EXCEPTION( newstate.Y == Teuchos::null,
+    TEUCHOS_TEST_FOR_EXCEPTION( newstate.Y == Teuchos::null,
                         std::invalid_argument,
                         "Belos::MinresIter::initialize(): MinresIterationState does not have initial residual.");
 
     std::string errstr("Belos::MinresIter::initialize(): Specified multivectors must have a consistent length and width.");
-    TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.Y) != MVT::GetVecLength(*Y_),
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.Y) != MVT::GetVecLength(*Y_),
                         std::invalid_argument,
                         errstr );
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.Y) != 1,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.Y) != 1,
                         std::invalid_argument,
                         errstr );
 
@@ -427,7 +427,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
     MVT::MvTransMv( one, *newstate.Y, *Y_, beta1_ );
 
-    TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
@@ -491,7 +491,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution vector only has one column. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1,
                         MinresIterateFailure,
                         "Belos::MinresIter::iterate(): current linear system has more than one vector!" );
 
@@ -552,7 +552,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // algebra library to compute a posteriori rounding error bounds
       // for the inner product, and then changing
       // Belos::MultiVecTraits to make this information available).
-      TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
                           MinresIterateFailure,
                           "Belos::MinresIter::iterate(): Encountered nonpositi"
 			  "ve value " << beta(0,0) << " for r2^H*M*r2 at itera"

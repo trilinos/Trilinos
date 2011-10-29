@@ -362,7 +362,7 @@ RCP<const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > > StepperValid
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return x_space_;
 }
 
@@ -370,7 +370,7 @@ RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::ge
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::get_f_space() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return f_space_;
 }
 
@@ -378,7 +378,7 @@ RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::ge
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::getNominalValues() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return nominalValues_;
 }
 
@@ -433,7 +433,7 @@ RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > StepperValidatorMockMode
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::createInArgs() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return inArgs_;
 }
 
@@ -441,7 +441,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::cre
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return p_space_;
 }
 
@@ -466,7 +466,7 @@ RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::ge
 template<class Scalar>
 void StepperValidatorMockModel<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParameters(*this->getValidParameters());
   Teuchos::readVerboseObjectSublist(&*paramList,this);
   bool test_isImplicit = paramList->get("Is Implicit",false);
@@ -492,7 +492,7 @@ RCP<const ParameterList> StepperValidatorMockModel<Scalar>::getValidParameters()
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar> StepperValidatorMockModel<Scalar>::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPT(!isInitialized_);
+  TEUCHOS_TEST_FOR_EXCEPT(!isInitialized_);
   return outArgs_;
 }
 
@@ -620,7 +620,7 @@ template<class Scalar>
     global_success = global_success && success_array[i];
   }
 
-  TEST_FOR_EXCEPTION( !global_success, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !global_success, std::logic_error,
       "Error!  StepperValidator:  The stepper " << stepperName_ << " did not pass stepper validation."
       );
 }
@@ -628,34 +628,34 @@ template<class Scalar>
 template<class Scalar>
   void StepperValidator<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
   RCP<Teuchos::ParameterList> StepperValidator<Scalar>::getNonconstParameterList()
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
 template<class Scalar>
   RCP<Teuchos::ParameterList> StepperValidator<Scalar>::unsetParameterList()
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
 template<class Scalar>
   RCP<const Teuchos::ParameterList> StepperValidator<Scalar>::getValidParameters() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
 template<class Scalar>
   std::string StepperValidator<Scalar>::description() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return("");
 }
 
@@ -665,7 +665,7 @@ template<class Scalar>
     const Teuchos::EVerbosityLevel verbLevel
     ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
@@ -760,20 +760,20 @@ void StepperValidator<Scalar>::validateIC_() const
   {
     valid_t = true;
   }
-  TEST_FOR_EXCEPTION( !valid_t, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !valid_t, std::logic_error,
     "Error!  StepperValidator::validateIC:  Time did not get correctly set on"
     " the model through StepperBase::setInitialCondition!"
     );
   // If a stepper uses a predictor, then the x passed into the model will not
   // be the same as the IC, so we can't check it.
   RCP<const VectorBase<Scalar> > p_out = passedInArgs[0].get_p(0);
-  TEST_FOR_EXCEPTION( is_null(p_out), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( is_null(p_out), std::logic_error,
     "Error!  StepperValidator::validateIC:  Parameter 0 did not get set on the"
     " model through StepperBase::setInitialCondition!"
     );
   {
     Thyra::ConstDetachedVectorView<Scalar> p_out_view( *p_out );
-    TEST_FOR_EXCEPTION( p_out_view[0] != Scalar(11.0), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( p_out_view[0] != Scalar(11.0), std::logic_error,
         "Error!  StepperValidator::validateIC:  Parameter 0 did not get set correctly on the model through StepperBase::setInitialCondition!"
         );
   }
@@ -792,11 +792,11 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Uninitialized Stepper:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEST_FOR_EXCEPTION( tr.isValid(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( tr.isValid(), std::logic_error,
         "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid time range!"
         );
     const StepStatus<Scalar> ss = stepper->getStepStatus();
-    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNINITIALIZED, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNINITIALIZED, std::logic_error,
         "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid step status!"
         );
   }
@@ -808,11 +808,11 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Has initial condition:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
         "Error!  StepperValidator::validateStates:  Stepper with initial condition returned a non zero time range!"
         );
 //    const StepStatus<Scalar> ss = stepper->getStepStatus();
-//    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
+//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
 //        "Error!  StepperValidator::validateStates:  Stepper with initial condition did not return STEP_STATUS_UNKNOWN!"
 //        );
   }
@@ -827,11 +827,11 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Still has initial condition:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
         "Error!  StepperValidator::validateStates:  Fully initialized stepper returned a non zero time range!"
         );
 //    const StepStatus<Scalar> ss = stepper->getStepStatus();
-//    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
+//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
 //        "Error!  StepperValidator::validateStates:  Fully initialized stepper, prior to taking a step, did not return STEP_STATUS_UNKNOWN!"
 //        );
   }
@@ -841,11 +841,11 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Taken Step:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) >= 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) >= 0, std::logic_error,
         "Error!  StepperValidator::validateStates:  Stepper returned a zero (or invalid) time range after taking a step!"
         );
     const StepStatus<Scalar> ss = stepper->getStepStatus();
-    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
         "Error!  StepperValidator::validateStates:  Stepper did not return converged step status after taking a step!"
         );
   }
@@ -878,7 +878,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
     stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
     {
       Thyra::ConstDetachedVectorView<Scalar> x_view( *x_vec[0] );
-      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0,
         std::logic_error,
         "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial"
         " condition for X through getPoints prior to taking a step!"
@@ -886,7 +886,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
     }
     if (isImplicit && !is_null(xdot_vec[0])) {
       Thyra::ConstDetachedVectorView<Scalar> xdot_view( *xdot_vec[0] );
-      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0,
         std::logic_error,
         "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial"
         " condition for XDOT through getPoints prior to taking a step!"
@@ -906,7 +906,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
     stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
     {
       Thyra::ConstDetachedVectorView<Scalar> x_view( *x_vec[0] );
-      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0,
         std::logic_error,
         "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial"
         " condition for X through getPoints after taking a step!"
@@ -914,7 +914,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
     }
     if (isImplicit && !is_null(xdot_vec[0])) {
       Thyra::ConstDetachedVectorView<Scalar> xdot_view( *xdot_vec[0] );
-      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0,
         std::logic_error,
         "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial"
         " condition for XDOT through getPoints after taking a step!"
@@ -968,7 +968,7 @@ void StepperValidator<Scalar>::validateGetNodes_() const
     RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
     Array<Scalar> nodes;
     stepper->getNodes(&nodes);
-    TEST_FOR_EXCEPTION( nodes.size() != 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() != 0, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  Uninitialized stepper returned non-empty node list!"
         );
   }
@@ -985,10 +985,10 @@ void StepperValidator<Scalar>::validateGetNodes_() const
   {
     Array<Scalar> nodes;
     stepper->getNodes(&nodes);
-    TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  Initialized stepper returned empty node list!"
         );
-    TEST_FOR_EXCEPTION( nodes.size() > 1, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() > 1, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  Initialized stepper returned node list with more than one node!"
         );
   }
@@ -999,13 +999,13 @@ void StepperValidator<Scalar>::validateGetNodes_() const
   {
     Array<Scalar> nodes;
     stepper->getNodes(&nodes);
-    TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned empty node list!"
         );
-    TEST_FOR_EXCEPTION( nodes.size() == 1, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() == 1, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned node list with only one node!"
         );
-    TEST_FOR_EXCEPTION( nodes.size() > 2, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( nodes.size() > 2, std::logic_error,
         "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned node list with more than two nodes!"
         );
   }

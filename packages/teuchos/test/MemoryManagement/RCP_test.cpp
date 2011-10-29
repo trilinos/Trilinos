@@ -146,43 +146,43 @@ int main( int argc, char* argv[] ) {
     // lifetime of temprary objects must not extend past the
     // statement in which it was created (see section 10.4.10 in
     // Stroustroup, 3ed edition). This compiler stinks!!!!!
-    TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
-    TEST_FOR_EXCEPT( !a_ptr1.shares_resource(a_ptr1) );
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( !a_ptr1.shares_resource(a_ptr1) );
 #endif // __sun
-    TEST_FOR_EXCEPT( a_ptr1.ptr() == null );
-    TEST_FOR_EXCEPT( a_ptr1 == null );
-    TEST_FOR_EXCEPT( !(a_ptr1 != null) );
-    TEST_FOR_EXCEPT( is_null(a_ptr1) );
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.ptr() == null );
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1 == null );
+    TEUCHOS_TEST_FOR_EXCEPT( !(a_ptr1 != null) );
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(a_ptr1) );
     RCP<D> d_ptr1 = rcp(new E);
-    TEST_FOR_EXCEPT( d_ptr1.shares_resource(a_ptr1) );
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.shares_resource(a_ptr1) );
 #ifndef __sun
-    TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
 #endif
-    TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
-    TEST_FOR_EXCEPT( d_ptr1.getRawPtr() == NULL);
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.getRawPtr() == NULL);
 
     {
 
       // Create some more smart points (no new memory!)
 
       const RCP<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
-      TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
-      TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
-      TEST_FOR_EXCEPT( !ca_ptr1.shares_resource(a_ptr1) );
+      TEUCHOS_TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
+      TEUCHOS_TEST_FOR_EXCEPT( !ca_ptr1.shares_resource(a_ptr1) );
 #ifndef __sun
-      TEST_FOR_EXCEPT( a_ptr1.count() != 2 );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 2 );
 #endif
-      TEST_FOR_EXCEPT( ca_ptr1.ptr() == null );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.ptr() == null );
 #ifndef __sun
-      TEST_FOR_EXCEPT( ca_ptr1.count() != 2 );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 2 );
 #endif
       const RCP<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
 #ifndef __sun
-      TEST_FOR_EXCEPT( d_ptr1.count() != 2 );
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 2 );
 #endif
-      TEST_FOR_EXCEPT( cd_ptr1.ptr() == null );
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.ptr() == null );
 #ifndef __sun
-      TEST_FOR_EXCEPT( cd_ptr1.count() != 2 );
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.count() != 2 );
 #endif
 
 #ifdef SHOW_RUN_TIME_ERROR_1
@@ -202,71 +202,71 @@ int main( int argc, char* argv[] ) {
 
       // Test function calls through operaor->(...)
 
-      TEST_FOR_EXCEPT( a_ptr1->A_g() != A_g_return );
-      TEST_FOR_EXCEPT( a_ptr1->A_f() != A_f_return );
-      TEST_FOR_EXCEPT( ca_ptr1->A_f() != A_f_return );
-      TEST_FOR_EXCEPT( d_ptr1->D_g() != D_g_return );
-      TEST_FOR_EXCEPT( d_ptr1->D_f() != D_f_return );
-      TEST_FOR_EXCEPT( cd_ptr1->D_f() != D_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1->A_g() != A_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_g() != D_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_f() != D_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1->D_f() != D_f_return );
     
       // Test funciton calls through operator*(...)
 
-      TEST_FOR_EXCEPT( (*a_ptr1).A_g() != A_g_return );
-      TEST_FOR_EXCEPT( (*a_ptr1).A_f() != A_f_return );
-      TEST_FOR_EXCEPT( (*ca_ptr1).A_f() != A_f_return );
-      TEST_FOR_EXCEPT( (*d_ptr1).D_g() != D_g_return );
-      TEST_FOR_EXCEPT( (*d_ptr1).D_f() != D_f_return );
-      TEST_FOR_EXCEPT( (*cd_ptr1).D_f() != D_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*a_ptr1).A_g() != A_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*a_ptr1).A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*ca_ptr1).A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*d_ptr1).D_g() != D_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*d_ptr1).D_f() != D_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( (*cd_ptr1).D_f() != D_f_return );
 
       // Test dynamic and static conversions
 
       // Cast down the inheritance hiearchy (const A -> const B1)
       const RCP<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
-      TEST_FOR_EXCEPT( cb1_ptr1.ptr() == null );
+      TEUCHOS_TEST_FOR_EXCEPT( cb1_ptr1.ptr() == null );
 #ifndef __sun
-      TEST_FOR_EXCEPT( cb1_ptr1.count() != 3 );
-      TEST_FOR_EXCEPT( ca_ptr1.count() != 3 );
-      TEST_FOR_EXCEPT( a_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( cb1_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 3 );
 #endif
 
       // Cast up the inheritance hiearchy (const B1 -> const A)
-      TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f() != A_f_return );
-      TEST_FOR_EXCEPT( RCP<const A>(cb1_ptr1)->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( RCP<const A>(cb1_ptr1)->A_f() != A_f_return );
       // Implicit cast from const to non-const (A -> const A)
-      TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(a_ptr1)->A_f() != A_f_return );
-      TEST_FOR_EXCEPT( RCP<const A>(a_ptr1)->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(a_ptr1)->A_f() != A_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( RCP<const A>(a_ptr1)->A_f() != A_f_return );
       // Cast away constantness (const B1 -> B1)
-      TEST_FOR_EXCEPT( rcp_const_cast<B1>(cb1_ptr1)->B1_g() != B1_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_const_cast<B1>(cb1_ptr1)->B1_g() != B1_g_return );
       // Cast across the inheritance hiearchy (const B1 -> const B2)
-      TEST_FOR_EXCEPT( rcp_dynamic_cast<const B2>(cb1_ptr1)->B2_f() != B2_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_dynamic_cast<const B2>(cb1_ptr1)->B2_f() != B2_f_return );
       // Cast down the inheritance hiearchy (const B1 -> const C)
-      TEST_FOR_EXCEPT( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f() != C_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f() != C_f_return );
 
       // Cast away constantness (const C -> C)
       const RCP<C>
         c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
-      TEST_FOR_EXCEPT( c_ptr1.ptr() == null );
+      TEUCHOS_TEST_FOR_EXCEPT( c_ptr1.ptr() == null );
 #ifndef __sun
-      TEST_FOR_EXCEPT( c_ptr1.count() != 4 );
-      TEST_FOR_EXCEPT( ca_ptr1.count() != 4 );
-      TEST_FOR_EXCEPT( a_ptr1.count() != 4 );
+      TEUCHOS_TEST_FOR_EXCEPT( c_ptr1.count() != 4 );
+      TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1.count() != 4 );
+      TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 4 );
 #endif
 
       // Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
       const RCP<const E>
         ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
-      TEST_FOR_EXCEPT( ce_ptr1.ptr() == null);
+      TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1.ptr() == null);
 #ifndef __sun
-      TEST_FOR_EXCEPT( ce_ptr1.count() != 3 );
-      TEST_FOR_EXCEPT( cd_ptr1.count() != 3 );
-      TEST_FOR_EXCEPT( d_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1.count() != 3 );
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 3 );
 #endif
 
       // Cast up the inheritance hiearchy (const E -> const D)
-      TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return ); 
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return ); 
       // Cast away constantness (const E -> E)
-      TEST_FOR_EXCEPT( rcp_const_cast<E>(ce_ptr1)->E_g() != E_g_return );
-      TEST_FOR_EXCEPT( ce_ptr1->D_f() != D_f_return );
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_const_cast<E>(ce_ptr1)->E_g() != E_g_return );
+      TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1->D_f() != D_f_return );
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
       // Try to cast down inheritance hiearchy using dynamic_cast<...> (const D -> const E)
@@ -281,7 +281,7 @@ int main( int argc, char* argv[] ) {
         // Note that RCP<...>::optertor->() should throw an std::exception in debug
         // mode (i.e. TEUCHOS_DEBUG is defined) but even so no memory leak occurs. If you
         // don't believe me then step through with a debugger and see for yourself.
-        TEST_FOR_EXCEPT( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() != B1_g_return );
+        TEUCHOS_TEST_FOR_EXCEPT( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() != B1_g_return );
         return -1; // Should not be executed!
       }
       catch( const std::logic_error &excpt )
@@ -304,7 +304,7 @@ int main( int argc, char* argv[] ) {
       delete d_ptr1.release().get(); // Now d_ptr1.get() no longer points to a valid object but okay
       // as long as no other access to this object is attempted! (see below)
 #ifdef SHOW_RUN_TIME_ERROR_2
-      TEST_FOR_EXCEPT( d_ptr1->D_g() == D_g_return ); // Should cause a segmentation fault since d_ptr.get() was deleted!
+      TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_g() == D_g_return ); // Should cause a segmentation fault since d_ptr.get() was deleted!
 #endif
 
 #ifdef SHOW_MEMORY_LEAK_1
@@ -315,8 +315,8 @@ int main( int argc, char* argv[] ) {
     }
     // Check that all of the other references where removed but these
 #ifndef __sun
-    TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
-    TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
+    TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
 #endif
 
     // Assign some other dynamically created objects.
@@ -370,24 +370,24 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
     get_dealloc<DeallocDelete<C> >(a_ptr1);
     get_nonconst_dealloc<DeallocDelete<C> >(a_ptr1);
-    TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<C> >(a_ptr1)==null );
-    TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==null );
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<C> >(a_ptr1)==null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=null );
  
     // Test storing extra data and then getting it out again
-    TEST_FOR_EXCEPT( get_optional_nonconst_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
-    TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
     set_extra_data( int(-5), "int", inOutArg(a_ptr1) );
-    TEST_FOR_EXCEPT( get_extra_data<int>(a_ptr1,"int") != -5 );
-    TEST_FOR_EXCEPT( get_nonconst_extra_data<int>(a_ptr1,"int") != -5 );
+    TEUCHOS_TEST_FOR_EXCEPT( get_extra_data<int>(a_ptr1,"int") != -5 );
+    TEUCHOS_TEST_FOR_EXCEPT( get_nonconst_extra_data<int>(a_ptr1,"int") != -5 );
     set_extra_data( rcp(new B1), "B1", inOutArg(a_ptr1) );
-    TEST_FOR_EXCEPT( get_extra_data<RCP<B1> >(a_ptr1,"B1")->B1_f() != B1_f_return );
-    TEST_FOR_EXCEPT( get_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
-    TEST_FOR_EXCEPT( (*get_optional_extra_data<RCP<B1> >(a_ptr1,"B1"))->B1_f() != B1_f_return );
-    TEST_FOR_EXCEPT( *get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
-    TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
-    TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
+    TEUCHOS_TEST_FOR_EXCEPT( get_extra_data<RCP<B1> >(a_ptr1,"B1")->B1_f() != B1_f_return );
+    TEUCHOS_TEST_FOR_EXCEPT( get_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
+    TEUCHOS_TEST_FOR_EXCEPT( (*get_optional_extra_data<RCP<B1> >(a_ptr1,"B1"))->B1_f() != B1_f_return );
+    TEUCHOS_TEST_FOR_EXCEPT( *get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
+    TEUCHOS_TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
 
     // Test storage of extra data as embedded objects and then getting it out
     // again
@@ -395,28 +395,28 @@ int main( int argc, char* argv[] ) {
     {
       RCP<A> a_ptr = rcpWithEmbeddedObj(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn2 != -4 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
  
     {
       RCP<A> a_ptr = rcpWithEmbeddedObjPreDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn2 != -4 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
  
     {
       RCP<A> a_ptr = rcpWithEmbeddedObjPostDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
-      TEST_FOR_EXCEPT( intRtn2 != -4 );
+      TEUCHOS_TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
 
     // Test pre-destruction of extra data
@@ -432,7 +432,7 @@ int main( int argc, char* argv[] ) {
     // RAB: 2004/08/12: It appears that SUN compiler is not deleting the piece of extra
     // data properly and therefore the destructor of the above Get_A_f_return object
     // is not being called (which sets the value of af_return). This compiler stinks!
-    TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
+    TEUCHOS_TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
 #endif
 
     // Testing the deallocFunctorDelete function and DeallocFunctorDelete class
@@ -491,17 +491,17 @@ int main( int argc, char* argv[] ) {
 
     boost::shared_ptr<A> a_sptr1(new C());
     RCP<A> a_rsptr1 = rcp(a_sptr1);
-    TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
-    TEST_FOR_EXCEPT( a_rsptr1.getRawPtr() != a_sptr1.get() );
-    TEST_FOR_EXCEPT( a_rsptr1.get() != a_rsptr1.getRawPtr() );
+    TEUCHOS_TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
+    TEUCHOS_TEST_FOR_EXCEPT( a_rsptr1.getRawPtr() != a_sptr1.get() );
+    TEUCHOS_TEST_FOR_EXCEPT( a_rsptr1.get() != a_rsptr1.getRawPtr() );
     boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
     // There seems no standard way to test that a shared_ptr shares the same node
-    //TEST_FOR_EXCEPT( a_sptr2._internal_equiv(a_sptr1) != true );
+    //TEUCHOS_TEST_FOR_EXCEPT( a_sptr2._internal_equiv(a_sptr1) != true );
     RCP<A> a_rsptr2 = rcp(a_sptr2);
-    TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
-    //TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
+    TEUCHOS_TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
+    //TEUCHOS_TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
     boost::shared_ptr<A> a_sptr3 = shared_pointer(a_rsptr2);
-    TEST_FOR_EXCEPT( a_sptr3.get() != a_rsptr2.get() );
+    TEUCHOS_TEST_FOR_EXCEPT( a_sptr3.get() != a_rsptr2.get() );
 
     out << "\nCompatibility with boost::shared_ptr passed ...\n";
 

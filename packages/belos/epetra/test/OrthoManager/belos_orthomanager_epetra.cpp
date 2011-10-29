@@ -189,7 +189,7 @@ namespace {
 	    // Make sure that loadedNumRows has a sensible value,
 	    // since we'll need to allocate an std::vector with that
 	    // many elements.
-	    TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
 			       "Harwell-Boeing sparse matrix file reports that "
 			       "the matrix has # rows = " << loadedNumRows 
 			       << " < 0.");
@@ -225,17 +225,17 @@ namespace {
 	pComm->Broadcast (&info, 1, 0);
 	pComm->Broadcast (&nnz,  1, 0);
 
-	TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
 			   "Error reading Harwell-Boeing sparse matrix file \"" 
 			   << filename << "\"" << std::endl);
 	
-	TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
 			   "Harwell-Boeing sparse matrix file \"" 
 			   << filename << "\" reports having negative nnz "
 			   << "(= " << nnz << ")"
 			   << std::endl);
 	
-	TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
 			   "Test matrix in Harwell-Boeing sparse matrix file '" 
 			   << filename << "' " << "has zero nonzero values, which "
 			   << "means it does not define a valid inner product." 
@@ -245,7 +245,7 @@ namespace {
 	pComm->Broadcast (&numCols, 1, 0);
 	pComm->Broadcast (&rnnzmax, 1, 0);
 
-	TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
 			   "Test matrix in Harwell-Boeing sparse matrix file '" 
 			   << filename << "' " << "is not square: it is " 
 			   << loadedNumRows << " by " << numCols << std::endl);
@@ -416,15 +416,15 @@ main (int argc, char *argv[])
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
-    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
 		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }
   //
   // Validate command-line arguments
   //
-  TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
-  TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
 		     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
     
   // Declare an output manager for handling local output.  Initialize,
@@ -457,7 +457,7 @@ main (int argc, char *argv[])
     map = results.first;
     M = results.second;
   }
-  TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
   {
@@ -499,7 +499,7 @@ main (int argc, char *argv[])
 	   << std::flush; 
   RCP<OrthoManager<scalar_type, MV> > OM = 
     factory.makeOrthoManager (ortho, M, outMan, timingLabel, null);
-  TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error, 
 		     "The OrthoManager factory returned null, "
 		     "for ortho=\"" << ortho << "\".");
   debugOut << "done." << endl;

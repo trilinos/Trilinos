@@ -65,7 +65,7 @@ Teuchos::RCP<Teuchos::AbstractFactory<RTOpPack::RTOpT<Scalar> > >
 RTOpServer<Scalar>::get_op_factory( const char op_name[] ) const
 {
   typename op_factories_t::const_iterator itr = op_factories_.find(op_name);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     itr == op_factories_.end(), std::logic_error
     ,"RTOpServer<Scalar>::get_op_factory(...): Error, an operator factory with the "
     "operator name \'" << op_name << "\' does not exist!"

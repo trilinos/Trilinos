@@ -13,11 +13,13 @@
 /* quickly find a particular tag value.  This assumes that tags */
 /* are integers between 0 and nvals. */
 
-void      heapify(heap, index, nvals, map)
-struct heap *heap;		/* array of vals/tag to make into heap */
-int       index;		/* root of subtree to heapify */
-int       nvals;		/* number of values in array */
-int      *map;			/* maps from tag values to heap indices */
+void 
+heapify (
+    struct heap *heap,		/* array of vals/tag to make into heap */
+    int index,		/* root of subtree to heapify */
+    int nvals,		/* number of values in array */
+    int *map			/* maps from tag values to heap indices */
+)
 {
     double    swap_val;		/* temporary storage for swapping values */
     double    swap_tag;		/* temporary storage for swapping values */
@@ -55,10 +57,12 @@ int      *map;			/* maps from tag values to heap indices */
 }
 
 /* Construct a heap from an unordered set of values. */
-void      heap_build(heap, nvals, map)
-struct heap *heap;		/* array of vals/tag to make into heap */
-int       nvals;		/* number of values in array */
-int      *map;			/* maps from tag values to heap indices */
+void 
+heap_build (
+    struct heap *heap,		/* array of vals/tag to make into heap */
+    int nvals,		/* number of values in array */
+    int *map			/* maps from tag values to heap indices */
+)
 {
     int       i;		/* loop counter */
 
@@ -74,11 +78,13 @@ int      *map;			/* maps from tag values to heap indices */
 
 
 
-double    heap_extract_max(heap, nvals, ptag, map)
-struct heap *heap;		/* array of vals/tag in a heap */
-int       nvals;		/* number of values in array */
-int      *ptag;			/* tag associated with return value */
-int      *map;			/* maps from tag values to heap indices */
+double 
+heap_extract_max (
+    struct heap *heap,		/* array of vals/tag in a heap */
+    int nvals,		/* number of values in array */
+    int *ptag,			/* tag associated with return value */
+    int *map			/* maps from tag values to heap indices */
+)
 {
     double    maxval;		/* return value */
 
@@ -107,11 +113,13 @@ int      *map;			/* maps from tag values to heap indices */
 }
 
 
-void      heap_update_val(heap, index, newval, map)
-struct heap *heap;		/* array of vals/tag in a heap */
-int       index;		/* index of value to update */
-double    newval;		/* new value to insert */
-int      *map;			/* maps from tag values to heap indices */
+void 
+heap_update_val (
+    struct heap *heap,		/* array of vals/tag in a heap */
+    int index,		/* index of value to update */
+    double newval,		/* new value to insert */
+    int *map			/* maps from tag values to heap indices */
+)
 {
     int       tag;		/* tag value associated with updated val */
     int       dad;		/* parent of a tree node */

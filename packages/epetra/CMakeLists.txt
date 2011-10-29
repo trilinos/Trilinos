@@ -8,6 +8,8 @@ SET(${PACKAGE_NAME}_VERSION "3.7d")
 # 
 #   Exception added to deal with fixed form Fortran code on XL
 #
+PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 if("${CMAKE_Fortran_COMPILER_ID}" MATCHES "XL|VisualAge")
      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qfixed=72 -qxlines")
    endif()

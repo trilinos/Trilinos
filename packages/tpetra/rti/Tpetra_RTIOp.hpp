@@ -58,17 +58,17 @@ namespace Tpetra {
         {
           std::string tfecfFuncName("KernelOp(kernel,domainMap,rangeMap,importer,exporter)");
           if (_rangeMap == null) _rangeMap = _domainMap;
-          TEST_FOR_EXCEPTION_CLASS_FUNC( _domainMap == null || _rangeMap == null, std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( _domainMap == null || _rangeMap == null, std::runtime_error,
               ":KernelOp(): neither domainMap nor rangeMap may be specified null:\ndomainMap: " << _domainMap << "\nrangeMap: " << _rangeMap << "\n");
 #ifdef HAVE_TPETRA_DEBUG
-          TEST_FOR_EXCEPTION_CLASS_FUNC( _rangeMap->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( _rangeMap->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
           if (_importer != null) {
-            TEST_FOR_EXCEPTION_CLASS_FUNC( !_importer->getSourceMap()->isSameAs(*_domainMap), std::runtime_error, ": domain map is not consistent with importer.");
-            TEST_FOR_EXCEPTION_CLASS_FUNC( _importer->getSourceMap()->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !_importer->getSourceMap()->isSameAs(*_domainMap), std::runtime_error, ": domain map is not consistent with importer.");
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( _importer->getSourceMap()->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
           }
           if (_exporter != null) {
-            TEST_FOR_EXCEPTION_CLASS_FUNC( !_exporter->getTargetMap()->isSameAs(*_rangeMap), std::runtime_error, ": range map is not consistent with importer.");
-            TEST_FOR_EXCEPTION_CLASS_FUNC( _exporter->getTargetMap()->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !_exporter->getTargetMap()->isSameAs(*_rangeMap), std::runtime_error, ": range map is not consistent with importer.");
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( _exporter->getTargetMap()->getNode() != _domainMap->getNode(), std::runtime_error, ": all specified maps must have the same node.");
           }
 #endif
         }

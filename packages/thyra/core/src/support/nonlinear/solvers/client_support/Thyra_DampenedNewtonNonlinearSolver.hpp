@@ -210,10 +210,10 @@ void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
   )
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
   paramList_ = paramList;
-  TEST_FOR_EXCEPT("ToDo: Implement!");
+  TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement!");
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 #ifdef TEUCHOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
@@ -252,7 +252,7 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
-    TEST_FOR_EXCEPT("ToDo: Implement!");
+    TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement!");
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -266,7 +266,7 @@ void DampenedNewtonNonlinearSolver<Scalar>::setModel(
   const RCP<const ModelEvaluator<Scalar> > &model
   )
 {
-  TEST_FOR_EXCEPT(model.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
   J_ = Teuchos::null;
   current_x_ = Teuchos::null;
@@ -294,7 +294,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
 
   // Validate input
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==x_inout);
+  TEUCHOS_TEST_FOR_EXCEPT(0==x_inout);
   THYRA_ASSERT_VEC_SPACES(
     "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",
     *x_inout->space(), *model_->get_x_space() );
@@ -327,7 +327,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   ScalarMag tol = this->defaultTol();
   int maxIters = this->defaultMaxNewtonIterations();
   if(solveCriteria && !solveCriteria->solveMeasureType.useDefault()) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS), CatastrophicSolveFailure
       ,"DampenedNewtonNonlinearSolver<Scalar>::solve(...): Error, can only support resudual-based"
       " convergence criteria!");
@@ -503,7 +503,7 @@ RCP<LinearOpWithSolveBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
 {
   if (forceUpToDate) {
-    TEST_FOR_EXCEPT(forceUpToDate);
+    TEUCHOS_TEST_FOR_EXCEPT(forceUpToDate);
   }
   return J_;
 }

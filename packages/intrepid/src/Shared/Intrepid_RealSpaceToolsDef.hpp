@@ -73,11 +73,11 @@ template<class Scalar>
 template<class ArrayAbs, class ArrayIn>
 void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( inArray.rank() != absArray.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != absArray.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::absval): Array arguments must have identical ranks!");
     for (int i=0; i<inArray.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( inArray.dimension(i) != absArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != absArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::absval): Dimensions of array arguments do not agree!");
     }
@@ -123,7 +123,7 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const Scalar* inVec, const int dim, co
       }
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Invalid argument normType.");
   }
@@ -137,7 +137,7 @@ template<class ArrayIn>
 Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm normType) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( inVec.rank() != 1 ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inVec.rank() != 1 ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::vectorNorm): Vector argument must have rank 1!");
 #endif
@@ -165,7 +165,7 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
       }
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Invalid argument normType.");
   }
@@ -181,14 +181,14 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
   int arrayRank = inVecs.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( arrayRank != normArray.rank()+1 ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != normArray.rank()+1 ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::vectorNorm): Ranks of norm and vector array arguments are incompatible!");
-    TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 3) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 3) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
     for (int i=0; i<arrayRank-1; i++) {
-      TEST_FOR_EXCEPTION( ( inVecs.dimension(i) != normArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inVecs.dimension(i) != normArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
     }
@@ -267,7 +267,7 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
     } // case NORM_ONE
 
     default:
-      TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Invalid argument normType.");
   }
@@ -294,18 +294,18 @@ void RealSpaceTools<Scalar>::transpose(ArrayTranspose & transposeMats, const Arr
   int arrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( arrayRank != transposeMats.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != transposeMats.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
-    TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
     for (int i=0; i<arrayRank; i++) {
-      TEST_FOR_EXCEPTION( ( inMats.dimension(i) != transposeMats.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != transposeMats.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
     }
-    TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::transpose): Matrices are not square!");
 #endif
@@ -366,7 +366,7 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
         }
       }
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
@@ -392,7 +392,7 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
       }
       Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
@@ -422,11 +422,11 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
 
       Scalar determinant    = inMat[0]*inMat[3]-inMat[1]*inMat[2];;
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( (inMat[0]==(Scalar)0) && (inMat[1]==(Scalar)0) &&
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (inMat[0]==(Scalar)0) && (inMat[1]==(Scalar)0) &&
                             (inMat[2]==(Scalar)0) && (inMat[3]==(Scalar)0) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-      TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
@@ -440,7 +440,7 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
 
     case 1: {
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( inMat[0] == (Scalar)0 ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMat[0] == (Scalar)0 ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
@@ -460,21 +460,21 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
   int arrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( arrayRank != inverseMats.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != inverseMats.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-    TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
     for (int i=0; i<arrayRank; i++) {
-      TEST_FOR_EXCEPTION( ( inMats.dimension(i) != inverseMats.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != inverseMats.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
     }
-    TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
-    TEST_FOR_EXCEPTION( ( (inMats.dimension(arrayRank-2) < 1) || (inMats.dimension(arrayRank-2) > 3) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats.dimension(arrayRank-2) < 1) || (inMats.dimension(arrayRank-2) > 3) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
 #endif
@@ -518,7 +518,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           }
 #ifdef HAVE_INTREPID_DEBUG
 #ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
@@ -546,7 +546,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
 #ifdef HAVE_INTREPID_DEBUG
 #ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
@@ -587,11 +587,11 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           Scalar determinant    = inMats[offset]*inMats[offset+3]-inMats[offset+1]*inMats[offset+2];;
 #ifdef HAVE_INTREPID_DEBUG
 #ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEST_FOR_EXCEPTION( ( (inMats[offset]==(Scalar)0)   && (inMats[offset+1]==(Scalar)0) &&
+          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats[offset]==(Scalar)0)   && (inMats[offset+1]==(Scalar)0) &&
                                 (inMats[offset+2]==(Scalar)0) && (inMats[offset+3]==(Scalar)0) ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-          TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
+          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
@@ -615,7 +615,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           offset  = offset_i0 + i1;;
 #ifdef HAVE_INTREPID_DEBUG
 #ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEST_FOR_EXCEPTION( ( inMats[offset] == (Scalar)0 ),
+          TEUCHOS_TEST_FOR_EXCEPTION( ( inMats[offset] == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
@@ -688,7 +688,7 @@ Scalar RealSpaceTools<Scalar>::det(const Scalar* inMat, const int dim) {
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (dim != 1) && (dim != 2) && (dim != 3) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (dim != 1) && (dim != 2) && (dim != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   } // switch (dim)
@@ -703,13 +703,13 @@ template<class ArrayIn>
 Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( (inMat.rank() != 2),
+    TEUCHOS_TEST_FOR_EXCEPTION( (inMat.rank() != 2),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
-    TEST_FOR_EXCEPTION( ( inMat.dimension(0) != inMat.dimension(1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inMat.dimension(0) != inMat.dimension(1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
-    TEST_FOR_EXCEPTION( ( (inMat.dimension(0) < 1) || (inMat.dimension(0) > 3) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inMat.dimension(0) < 1) || (inMat.dimension(0) > 3) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #endif
@@ -770,7 +770,7 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (dim != 1) && (dim != 2) && (dim != 3) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (dim != 1) && (dim != 2) && (dim != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   } // switch (dim)
@@ -788,21 +788,21 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
   int matArrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( matArrayRank != detArray.rank()+2 ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( matArrayRank != detArray.rank()+2 ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
-    TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
     for (int i=0; i<matArrayRank-2; i++) {
-      TEST_FOR_EXCEPTION( ( inMats.dimension(i) != detArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != detArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
     }
-    TEST_FOR_EXCEPTION( ( inMats.dimension(matArrayRank-2) != inMats.dimension(matArrayRank-1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(matArrayRank-2) != inMats.dimension(matArrayRank-1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
-    TEST_FOR_EXCEPTION( ( (inMats.dimension(matArrayRank-2) < 1) || (inMats.dimension(matArrayRank-2) > 3) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats.dimension(matArrayRank-2) < 1) || (inMats.dimension(matArrayRank-2) > 3) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #endif
@@ -933,11 +933,11 @@ template<class Scalar>
 template<class ArraySum, class ArrayIn1, class ArrayIn2>
 void RealSpaceTools<Scalar>::add(ArraySum & sumArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != sumArray.rank()) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != sumArray.rank()) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
     for (int i=0; i<inArray1.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( (inArray1.dimension(i) != inArray2.dimension(i)) || (inArray1.dimension(i) != sumArray.dimension(i)) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.dimension(i) != inArray2.dimension(i)) || (inArray1.dimension(i) != sumArray.dimension(i)) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
@@ -954,11 +954,11 @@ template<class Scalar>
 template<class ArraySum, class ArrayIn>
 void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( inArray.rank() != inoutSumArray.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != inoutSumArray.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
     for (int i=0; i<inArray.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutSumArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutSumArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
@@ -993,11 +993,11 @@ template<class Scalar>
 template<class ArrayDiff, class ArrayIn1, class ArrayIn2>
 void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != diffArray.rank()) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != diffArray.rank()) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
     for (int i=0; i<inArray1.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( (inArray1.dimension(i) != inArray2.dimension(i)) || (inArray1.dimension(i) != diffArray.dimension(i)) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.dimension(i) != inArray2.dimension(i)) || (inArray1.dimension(i) != diffArray.dimension(i)) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
     }
@@ -1014,11 +1014,11 @@ template<class Scalar>
 template<class ArrayDiff, class ArrayIn>
 void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( inArray.rank() != inoutDiffArray.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != inoutDiffArray.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
     for (int i=0; i<inArray.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutDiffArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutDiffArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
     }
@@ -1054,11 +1054,11 @@ template<class Scalar>
 template<class ArrayScaled, class ArrayIn>
 void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & inArray, const Scalar scalar) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( inArray.rank() != scaledArray.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != scaledArray.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::scale): Array arguments must have identical ranks!");
     for (int i=0; i<inArray.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( inArray.dimension(i) != scaledArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != scaledArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::scale): Dimensions of array arguments do not agree!");
     }
@@ -1097,10 +1097,10 @@ template<class Scalar>
 template<class ArrayVec1, class ArrayVec2>
 Scalar RealSpaceTools<Scalar>::dot(const ArrayVec1 & inVec1, const ArrayVec2 & inVec2) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( (inVec1.rank() != 1) || (inVec2.rank() != 1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (inVec1.rank() != 1) || (inVec2.rank() != 1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Vector arguments must have rank 1!");
-    TEST_FOR_EXCEPTION( ( inVec1.dimension(0) != inVec2.dimension(0) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inVec1.dimension(0) != inVec2.dimension(0) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Dimensions of vector arguments must agree!");
 #endif
@@ -1122,22 +1122,22 @@ void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1,
   int arrayRank = inVecs1.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( arrayRank != dotArray.rank()+1 ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != dotArray.rank()+1 ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Ranks of norm and vector array arguments are incompatible!");
-    TEST_FOR_EXCEPTION( ( arrayRank != inVecs2.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != inVecs2.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Ranks of input vector arguments must be identical!");
-    TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 3) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 3) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Rank of input vector arguments must be 2 or 3!");
     for (int i=0; i<arrayRank; i++) {
-      TEST_FOR_EXCEPTION( ( inVecs1.dimension(i) != inVecs2.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inVecs1.dimension(i) != inVecs2.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::dot): Dimensions of input vector arguments do not agree!");
     }
     for (int i=0; i<arrayRank-1; i++) {
-      TEST_FOR_EXCEPTION( ( inVecs1.dimension(i) != dotArray.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inVecs1.dimension(i) != dotArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::dot): Dimensions of dot-product and vector arrays do not agree!");
     }
@@ -1195,26 +1195,26 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
   int matArrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( matArrayRank != inVecs.rank()+1 ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( matArrayRank != inVecs.rank()+1 ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Vector and matrix array arguments do not have compatible ranks!");
-    TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Rank of matrix array must be 3 or 4!");
-    TEST_FOR_EXCEPTION( ( matVecs.rank() != inVecs.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( matVecs.rank() != inVecs.rank() ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Vector arrays must be have the same rank!");
     for (int i=0; i<matArrayRank-1; i++) {
-      TEST_FOR_EXCEPTION( ( inMats.dimension(i) != inVecs.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != inVecs.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
     }
     for (int i=0; i<inVecs.rank(); i++) {
-      TEST_FOR_EXCEPTION( ( matVecs.dimension(i) != inVecs.dimension(i) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( matVecs.dimension(i) != inVecs.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
     }
-    TEST_FOR_EXCEPTION( ( inMats.dimension(matArrayRank-2) != inMats.dimension(matArrayRank-1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(matArrayRank-2) != inMats.dimension(matArrayRank-1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Matrices are not square!");
 #endif
@@ -1268,13 +1268,13 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
   std::string errmsg = ">>> ERROR (RealSpaceTools::vecprod):";
   
   // (1) check rank range on inLeft and then compare the other arrays with inLeft
-  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inLeft,  1,3), std::invalid_argument, errmsg);
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, inRight), std::invalid_argument, errmsg);    
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, vecProd), std::invalid_argument, errmsg);   
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inLeft,  1,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, inRight), std::invalid_argument, errmsg);    
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, vecProd), std::invalid_argument, errmsg);   
   
   // (2) spatial dimension ordinal = array rank - 1. Suffices to check only one array because we just
   //     checked whether or not the arrays have matching dimensions. 
-  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inLeft, inLeft.rank() - 1,  2,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inLeft, inLeft.rank() - 1,  2,3), std::invalid_argument, errmsg);
   
 #endif
 
@@ -1334,7 +1334,7 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
       break;
       
     default:
-      TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
                          ">>> ERROR (RealSpaceTools::vecprod): rank-1,2,3 arrays required");      
   }
   

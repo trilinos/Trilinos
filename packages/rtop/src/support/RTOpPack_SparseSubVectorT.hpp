@@ -200,7 +200,7 @@ public:
           for (int k = 0; k < subNz_in-1; ++k) {
             const Teuchos_Index idx_k = indices_in[k*indicesStride_in];
             const Teuchos_Index idx_kp1 = indices_in[(k+1)*indicesStride_in];
-            TEST_FOR_EXCEPTION( !(idx_k < idx_kp1), std::out_of_range,
+            TEUCHOS_TEST_FOR_EXCEPTION( !(idx_k < idx_kp1), std::out_of_range,
               "Error indices["<<k<<"]="<<idx_k<<" >= indices["<<k+1<<"]="<<idx_kp1
               <<"!" );
           }

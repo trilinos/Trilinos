@@ -14,7 +14,6 @@
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #endif
-using namespace std;
 
 #define ABS(x)((x)>0?(x):-(x))
 

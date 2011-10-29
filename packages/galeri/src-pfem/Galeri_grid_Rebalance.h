@@ -108,7 +108,7 @@ public:
       int ierr;
       ierr = graph.ExtractMyRowCopy(i, length, numIndices, &indices[0]);
 
-      TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
                          "graph.ExtractMyRowCopy() returned a negative value, "
                          << ierr);
       

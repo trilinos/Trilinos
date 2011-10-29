@@ -16,21 +16,21 @@
 #include <cstring>
 #include <time.h>
 
-#include "CodeTypes.h"
-#include "SystemInterface.h"
+#include "EML_CodeTypes.h"
+#include "EML_SystemInterface.h"
 
 #include <Ioss_CodeTypes.h>
-#include <Ionit_Initializer.h>
+#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>
+
+#include "add_to_log.h"
 
 #define OUTPUT std::cerr
 #define FOUTPUT std::cout
 
 // ========================================================================
-extern void add_to_log(const char *name, int elapsed);
-
 namespace {
   int file_info(const std::string& inpfile, const std::string& input_type,
 		SystemInterface& interface);

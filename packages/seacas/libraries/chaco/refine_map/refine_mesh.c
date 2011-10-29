@@ -12,14 +12,15 @@
 /* Use a greedy strategy to swap assignments to reduce hops. */
 /* Note that because of our graph data structure, set assignments in the graph */
 /* begin at 1 instead of at 0. */
-int       refine_mesh(comm_graph, cube_or_mesh, mesh_dims, maxdesire,
-    vtx2node, node2vtx)
-struct vtx_data **comm_graph;	/* graph for communication requirements */
-int       cube_or_mesh;		/* number of dimensions in mesh */
-int       mesh_dims[3];		/* dimensions of mesh */
-double    maxdesire;		/* largest possible desire to flip an edge */
-int    *vtx2node;		/* mapping from comm_graph vtxs to mesh nodes */
-int    *node2vtx;		/* mapping from mesh nodes to comm_graph vtxs */
+int 
+refine_mesh (
+    struct vtx_data **comm_graph,	/* graph for communication requirements */
+    int cube_or_mesh,		/* number of dimensions in mesh */
+    int mesh_dims[3],		/* dimensions of mesh */
+    double maxdesire,		/* largest possible desire to flip an edge */
+    int *vtx2node,		/* mapping from comm_graph vtxs to mesh nodes */
+    int *node2vtx		/* mapping from mesh nodes to comm_graph vtxs */
+)
 {
     struct refine_vdata *vdata = NULL;	/* desire data for all vertices */
     struct refine_vdata *vptr;	/* loops through vdata */

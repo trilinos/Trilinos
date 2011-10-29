@@ -209,6 +209,19 @@ Bucket::~Bucket()
 }
 
 //----------------------------------------------------------------------
+bool Bucket::assert_correct() const {
+  // test equivalent() method
+  const Bucket* bucket = this;
+  const Bucket * first = m_bucketImpl.first_bucket_in_family();
+  if (!first || ! bucket->equivalent(*first) || ! first->equivalent(*bucket) )
+    return false;
+
+  // other tests...
+
+  return true;
+}
+
+//----------------------------------------------------------------------
 
 std::ostream & operator << ( std::ostream & s , const Bucket & k )
 {

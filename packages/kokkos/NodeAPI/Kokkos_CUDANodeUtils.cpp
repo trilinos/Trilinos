@@ -44,7 +44,7 @@ namespace Kokkos {
 
   void CUDANodeDeallocator::free(void *ptr) {
     cudaError_t err = cudaFree(ptr);
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
         "Kokkos::CUDANodeDeallocator::free(): cudaFree() returned error:\n"
         << cudaGetErrorString(err) 
       );

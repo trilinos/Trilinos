@@ -15,9 +15,11 @@ static int save_pnt;		/* place in sequence to save */
 
 static void flush_line();
 
-double    read_val(infile, end_flag)
-FILE     *infile;		/* file to read value from */
-int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
+double 
+read_val (
+    FILE *infile,		/* file to read value from */
+    int *end_flag		/* 0 => OK, 1 => EOL, -1 => EOF */
+)
 {
     double    val;		/* return value */
     char     *ptr;		/* ptr to next string to read */
@@ -108,9 +110,11 @@ int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
 }
 
 
-int       read_int(infile, end_flag)
-FILE     *infile;		/* file to read value from */
-int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
+int 
+read_int (
+    FILE *infile,		/* file to read value from */
+    int *end_flag		/* 0 => OK, 1 => EOL, -1 => EOF */
+)
 {
     int       val;		/* return value */
     char     *ptr;		/* ptr to next string to read */
@@ -201,8 +205,10 @@ int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
 }
 
 
-static void flush_line(infile)
-FILE     *infile;		/* file to read value from */
+static void 
+flush_line (
+    FILE *infile		/* file to read value from */
+)
 {
     char      c;		/* character being read */
 

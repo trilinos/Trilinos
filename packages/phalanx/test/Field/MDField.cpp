@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -182,17 +182,17 @@ int main(int argc, char *argv[])
       cout << "Testing fieldTag() accessor...";
 
       const FieldTag& test_a = a.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_a == nodal_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_a == nodal_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
       const FieldTag& test_b = b.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
       const FieldTag& test_d = d.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
 			  std::logic_error,
 			  "fieldTag() accessor failed!");
       
@@ -233,20 +233,20 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // rank()
       cout << "Testing rank() method...";
-      TEST_FOR_EXCEPTION(a.rank() != 2, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(a.rank() != 2, std::logic_error,
 			 "Rank in a is wrong!");
-      TEST_FOR_EXCEPTION(b.rank() != 3, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(b.rank() != 3, std::logic_error,
 			 "Rank in b is wrong!");
       cout << "passed!" << endl;
       
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // dimension()
       cout << "Testing dimension() method...";
-      TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
 			 "Cell dimesion is wrong!");
-      TEST_FOR_EXCEPTION(b.dimension(1) != 4, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(1) != 4, std::logic_error,
 			 "Quadrature dimesion is wrong!");
-      TEST_FOR_EXCEPTION(b.dimension(2) != 3, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(2) != 3, std::logic_error,
 			 "Dim dimesion is wrong!");
       cout << "passed!" << endl;
       
@@ -255,35 +255,35 @@ int main(int argc, char *argv[])
       cout << "Testing dimensions() method...";
       std::vector<size_type> dims;
       b.dimensions(dims);
-      TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
 			 "Number of dimesions is wrong!");
-      TEST_FOR_EXCEPTION(dims[0] != 100, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dims[0] != 100, std::logic_error,
 			 "Number of dimesions is wrong!");
-      TEST_FOR_EXCEPTION(dims[1] != 4, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dims[1] != 4, std::logic_error,
 			 "Number of dimesions is wrong!");
-      TEST_FOR_EXCEPTION(dims[2] != 3, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(dims[2] != 3, std::logic_error,
 			 "Number of dimesions is wrong!");
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       cout << "Testing size() method...";
-      TEST_FOR_EXCEPTION(a.size() != node_scalar->size(), 
+      TEUCHOS_TEST_FOR_EXCEPTION(a.size() != node_scalar->size(), 
 			 std::logic_error, 
 			 "Size of array a is not equal to requested size.");
-      TEST_FOR_EXCEPTION(b.size() != quad_vector->size(), 
+      TEUCHOS_TEST_FOR_EXCEPTION(b.size() != quad_vector->size(), 
 			 std::logic_error, 
 			 "Size of array b is not equal to requested size.");
-      TEST_FOR_EXCEPTION(c.size() != node_scalar->size(), 
+      TEUCHOS_TEST_FOR_EXCEPTION(c.size() != node_scalar->size(), 
 			 std::logic_error, 
 			 "Size of array c is not equal to requested size.");
-      TEST_FOR_EXCEPTION(d.size() != quad_vector->size(), 
+      TEUCHOS_TEST_FOR_EXCEPTION(d.size() != quad_vector->size(), 
 			 std::logic_error, 
 			 "Size of array d is not equal to requested size.");
-      TEST_FOR_EXCEPTION(e.size() != node_scalar->size(),
+      TEUCHOS_TEST_FOR_EXCEPTION(e.size() != node_scalar->size(),
 			 std::logic_error,
 			 "Size of array e is not equal to requested size.");
-      TEST_FOR_EXCEPTION(f.size() != quad_vector->size(),
+      TEUCHOS_TEST_FOR_EXCEPTION(f.size() != quad_vector->size(),
 			 std::logic_error,
 			 "Size of array f is not equal to requested size.");
       cout << "passed!" << endl;
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
       cout << "Testing operator<<()...";
       ostringstream output;
       output << a;
-      TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: MDA<Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
+      TEUCHOS_TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: MDA<Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
       cout << "passed!" << endl;
       cout << output.str() << endl;
 

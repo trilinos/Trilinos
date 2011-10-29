@@ -67,11 +67,11 @@ public:
   static
   void execute( const size_type work_count , const FunctorType & functor )
   {
-    DeviceHost::set_dispatch_functor();
+    DeviceHost::memory_space::set_dispatch_functor();
 
     const ParallelFor driver( work_count , functor );
 
-    DeviceHost::clear_dispatch_functor();
+    DeviceHost::memory_space::clear_dispatch_functor();
 
     for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
       driver.m_work_functor(iwork);

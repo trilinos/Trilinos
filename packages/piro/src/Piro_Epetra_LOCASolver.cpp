@@ -117,7 +117,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
     iJac = Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(A);
   }
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
                  "Error in Piro::Epetra::NOXSolver " <<
                  "Invalid value for parameter \" Jacobian Operator\"= " <<
                   jacobianSource << std::endl);
@@ -215,7 +215,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_f_map() const
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -226,7 +226,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION( (j>1 || j<0), Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION( (j>1 || j<0), Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error!  Piro::Epetra::NOXSolver::get_g_map() only " <<
                      " supports 2 response vectors.  Supplied index l = " <<
@@ -245,7 +245,7 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_x_init() const
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -374,7 +374,7 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
 	do_sens = true;
 	Teuchos::Array<int> p_indexes = 
 	  outArgs.get_DgDp(i,j).getDerivativeMultiVector().getParamIndexes();
-	TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
+	TEUCHOS_TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
 			   Teuchos::Exceptions::InvalidParameter,
 			   std::endl <<
 			   "Piro::Epetra::LOCASolver::evalModel():  " <<

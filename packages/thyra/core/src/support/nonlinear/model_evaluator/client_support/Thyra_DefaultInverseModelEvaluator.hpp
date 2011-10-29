@@ -584,7 +584,7 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
   using Teuchos::sublist;
 
   // Validate and set the parameter list
-  TEST_FOR_EXCEPT(0==paramList.get());
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList.get());
   paramList->validateParameters(*getValidParameters(),0);
   paramList_ = paramList;
 
@@ -594,7 +594,7 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
   observationPassThrough_ = paramList_->get(
     ObservationPassThrough_name_, ObservationPassThrough_default_ );
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ( obs_idx_ < 0 &&  observationPassThrough_ ), std::logic_error,
       "Error, the observation function index obs_idx = " << obs_idx_ << " is not\n"
       "allowed when the observation is simply passed through!"
@@ -932,7 +932,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
            << endl;
 
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       observationPassThrough_ && no != 1, std::logic_error,
       "Error, the observation function dimension no="<<no<<" > 1 is not allowed"
       " when the observation is passed through as the observation matching term!"

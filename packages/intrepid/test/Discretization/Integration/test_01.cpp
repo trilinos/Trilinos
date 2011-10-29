@@ -114,7 +114,7 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
                             (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key),
                             (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key),
                             (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key),
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
   int errorFlag  = 0;
 
-  int beginThrowNumber = TestForException_getThrowNumber();
+  int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 7;  
 
   try {
@@ -185,15 +185,15 @@ int main(int argc, char *argv[]) {
                            std::string testName    = "INTREPID_CUBATURE_LINE_GAUSS";
                            std::string lineCubName = lineCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << lineCubName << "\n\n";
-                           TEST_FOR_EXCEPTION( (testName != lineCubName), std::logic_error, "Name mismatch!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (testName != lineCubName), std::logic_error, "Name mismatch!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub;
                            std::vector<int> accuracy;
                            lineCub.getAccuracy(accuracy);
-                           TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(55);
-                           TEST_FOR_EXCEPTION( (lineCub.getNumPoints() != 28), std::logic_error, "Check member getNumPoints!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (lineCub.getNumPoints() != 28), std::logic_error, "Check member getNumPoints!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub;
-                           TEST_FOR_EXCEPTION( (lineCub.getDimension() != 1),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (lineCub.getDimension() != 1),
                                                std::logic_error,
                                                "Check member dimension!" ) );
     /* Triangle cubature. */
@@ -203,15 +203,15 @@ int main(int argc, char *argv[]) {
                            std::string testName    = "INTREPID_CUBATURE_TRI_DEFAULT";
                            std::string triCubName = triCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << triCubName << "\n\n";
-                           TEST_FOR_EXCEPTION( (testName != triCubName), std::logic_error, "Name mismatch!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (testName != triCubName), std::logic_error, "Name mismatch!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub;
                            std::vector<int> accuracy;
                            triCub.getAccuracy(accuracy);
-                           TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(17);
-                           TEST_FOR_EXCEPTION( (triCub.getNumPoints() != 61), std::logic_error, "Check member getNumPoints!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (triCub.getNumPoints() != 61), std::logic_error, "Check member getNumPoints!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub;
-                           TEST_FOR_EXCEPTION( (triCub.getDimension() != 2),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (triCub.getDimension() != 2),
                                                std::logic_error,
                                                "Check member dimension!" ) );
     /* Tetrahedron cubature. */
@@ -222,15 +222,15 @@ int main(int argc, char *argv[]) {
                            std::string tetCubName = tetCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << tetCubName << "\n\n";
         std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
-                           TEST_FOR_EXCEPTION( (testName != tetCubName), std::logic_error, "Name mismatch!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (testName != tetCubName), std::logic_error, "Name mismatch!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub;
                            std::vector<int> accuracy;
                            tetCub.getAccuracy(accuracy);
-                           TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(17);
-                           TEST_FOR_EXCEPTION( (tetCub.getNumPoints() != 495), std::logic_error, "Check member getNumPoints!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tetCub.getNumPoints() != 495), std::logic_error, "Check member getNumPoints!" ) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub;
-                           TEST_FOR_EXCEPTION( (tetCub.getDimension() != 3),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tetCub.getDimension() != 3),
                                                std::logic_error,
                                                "Check member getCellTopology!" ) );
     /* Tensor cubature. */
@@ -247,18 +247,18 @@ int main(int argc, char *argv[]) {
                            std::vector<int> a(4); a[0]=3; a[1]=16; a[2]=0; a[3]=19;
                            std::vector<int> atest(4);
                            tensorCub.getAccuracy(atest);
-                           TEST_FOR_EXCEPTION( (a != atest), std::logic_error, "Check member getAccuracy!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (a != atest), std::logic_error, "Check member getAccuracy!" ) );
     INTREPID_TEST_COMMAND( std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
                            lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(15));
                            lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>(11));
                            CubatureTensor<double> tensorCub(lineCubs);
-                           TEST_FOR_EXCEPTION( (tensorCub.getNumPoints() != 48), std::logic_error, "Check member getNumPoints!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getNumPoints() != 48), std::logic_error, "Check member getNumPoints!" ) );
     INTREPID_TEST_COMMAND( std::vector< Teuchos::RCP< Cubature<double> > > miscCubs(3);
                            miscCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>);
                            miscCubs[1] = Teuchos::rcp(new CubatureDirectTriDefault<double>);
                            miscCubs[2] = Teuchos::rcp(new CubatureDirectTetDefault<double>);
                            CubatureTensor<double> tensorCub(miscCubs);
-                           TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 6), std::logic_error, "Check member dimension!" ) );
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 6), std::logic_error, "Check member dimension!" ) );
     INTREPID_TEST_COMMAND( std::vector< Teuchos::RCP< Cubature<double> > > miscCubs(3);
                            miscCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(3));
                            miscCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>(7));
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
                            std::vector<int> a(2); a[0] = 15; a[1] = 12;
                            std::vector<int> atest(2);
                            tensorCub.getAccuracy(atest);
-                           TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 3) || (a != atest),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 3) || (a != atest),
                                                std::logic_error,
                                                "Check constructormembers dimension and getAccuracy!" ) );
     INTREPID_TEST_COMMAND( Teuchos::RCP< CubatureDirect<double> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(15));
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
                            std::vector<int> a(3); a[0] = 12; a[1] = 15; a[2] = 12;
                            std::vector<int> atest(3);
                            tensorCub.getAccuracy(atest);
-                           TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 5) || (a != atest),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 5) || (a != atest),
                                                std::logic_error,
                                                "Check constructor and members dimension and getAccuracy!" ) );
     INTREPID_TEST_COMMAND( Teuchos::RCP< CubatureDirect<double> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<double>(12));
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
                            std::vector<int> a(5); a[0] = 12; a[1] = 12; a[2] = 12; a[3] = 12; a[4] = 12;
                            std::vector<int> atest(5);
                            tensorCub.getAccuracy(atest);
-                           TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 10) || (a != atest),
+                           TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 10) || (a != atest),
                                                std::logic_error,
                                                "Check constructor and members dimension and getAccuracy!" ) );
-    if (TestForException_getThrowNumber() != endThrowNumber) {
+    if (Teuchos::TestForException_getThrowNumber() != endThrowNumber) {
       errorFlag = -1000;
     }
   }

@@ -592,7 +592,7 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List_in)
         CombineMode_ = AbsMax;
       else
       {
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           true,std::logic_error
           ,"Error, The (Epetra) combine mode of \""<<mode<<"\" is not valid!  Only the values"
           " \"Add\", \"Zero\", \"Insert\", \"InsertAdd\", \"Average\", and \"AbsMax\" are accepted!"

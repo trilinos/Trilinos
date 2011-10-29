@@ -74,6 +74,9 @@ public:
   //@{
 
   /** \brief . */
+  bool handlesFailedTimeSteps() const;
+
+  /** \brief . */
   RCP<IntegrationControlStrategyBase<Scalar> >
   cloneIntegrationControlStrategy() const;
 
@@ -88,6 +91,14 @@ public:
     const StepperBase<Scalar> &stepper,
     const StepControlInfo<Scalar> &stepCtrlInfoLast,
     const int timeStepIter
+    );
+
+  /** \brief . */
+  bool resetForFailedTimeStep(
+    const StepperBase<Scalar> &stepper,
+    const StepControlInfo<Scalar> &stepCtrlInfoLast,
+    const int timeStepIter,
+    const StepControlInfo<Scalar> &stepCtrlInfo
     );
 
   //@}

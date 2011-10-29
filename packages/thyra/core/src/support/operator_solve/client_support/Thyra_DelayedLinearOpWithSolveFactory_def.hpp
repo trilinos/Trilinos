@@ -60,7 +60,7 @@ DelayedLinearOpWithSolveFactory<Scalar>::DelayedLinearOpWithSolveFactory(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(lowsf));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_ = lowsf;
 }
@@ -212,8 +212,8 @@ void DelayedLinearOpWithSolveFactory<Scalar>::initializeOp(
 {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
     &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
@@ -227,7 +227,7 @@ void DelayedLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
   LinearOpWithSolveBase<Scalar> *Op
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -244,7 +244,7 @@ void DelayedLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   using Teuchos::dyn_cast;
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
 
   DelayedLinearOpWithSolve<Scalar>
@@ -283,8 +283,8 @@ void DelayedLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
 {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
     &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
@@ -302,8 +302,8 @@ void DelayedLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
 {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
     &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);

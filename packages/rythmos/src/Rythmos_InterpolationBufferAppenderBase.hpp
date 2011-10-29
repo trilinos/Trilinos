@@ -108,7 +108,7 @@ void InterpolationBufferAppenderBase<Scalar>::assertAppendPreconditions(
   if (interpBuffSink.getTimeRange().isValid()) {
     // Allow the appendRange to sit completely outside the sink range (04/22/09 tscoffe)
     // appendRange overlaps at lower end of sink range:
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         ( compareTimeValues(appendRange.lower(),interpBuffSink.getTimeRange().lower()) < 0 &&
           compareTimeValues(appendRange.upper(),interpBuffSink.getTimeRange().lower()) > 0 ),
         std::logic_error,
@@ -117,7 +117,7 @@ void InterpolationBufferAppenderBase<Scalar>::assertAppendPreconditions(
       "interpolation buffer.\n"
       );
     // appendRange overlaps at upper end of sink range:
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         ( compareTimeValues(appendRange.lower(),interpBuffSink.getTimeRange().upper()) < 0 &&
           compareTimeValues(appendRange.upper(),interpBuffSink.getTimeRange().upper()) > 0 ),
         std::logic_error,
@@ -126,14 +126,14 @@ void InterpolationBufferAppenderBase<Scalar>::assertAppendPreconditions(
       "interpolation buffer.\n"
       );
   }
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     compareTimeValues(appendRange.lower(),interpBuffSource.getTimeRange().lower())<0,
     std::logic_error,
     "Error, append range's lower bound = " << appendRange.lower() << " does not sit inside incoming"
     " interpolation buffer's time range = "
     "[" << interpBuffSource.getTimeRange().lower() << "," << interpBuffSource.getTimeRange().upper() << "].\n"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     compareTimeValues(interpBuffSource.getTimeRange().upper(),appendRange.upper())<0,
     std::logic_error,
     "Error, append range's upper bound = " << appendRange.upper() << "does not sit inside incoming"

@@ -86,7 +86,7 @@ template<class TimeType>
 void Rythmos::asssertInTimeRange( const TimeRange<TimeType> &timeRange,
   const TimeType &time )
 {
-  TEST_FOR_EXCEPTION( !timeRange.isInRange(time), std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION( !timeRange.isInRange(time), std::out_of_range,
     "Error, the time = " << time
     << " is out of the range = " << timeRange << "!"
     );

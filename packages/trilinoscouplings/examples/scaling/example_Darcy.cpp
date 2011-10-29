@@ -1678,6 +1678,7 @@ int main(int argc, char *argv[]) {
    ML_Epetra::UpdateList(List_Coarse,List22,true); 
    ML_Epetra::UpdateList(List_Coarse,List11c,true); 
 #ifdef HAVE_ML_ZOLTAN
+   List11c.set("aggregation: type","Uncoupled");
    List11c.set("repartition: enable",1);
    List11c.set("repartition: Zoltan dimensions",3);
    List11c.set("repartition: max min ratio",1.4);
@@ -1685,6 +1686,7 @@ int main(int argc, char *argv[]) {
 #endif
    ML_Epetra::UpdateList(List_Coarse,List22c,true); 
 #ifdef HAVE_ML_ZOLTAN
+   List22c.set("aggregation: type","Uncoupled");
    List22c.set("repartition: enable",1);
    List22c.set("repartition: Zoltan dimensions",3);
    List22c.set("repartition: max min ratio",1.4);
@@ -1713,11 +1715,16 @@ int main(int argc, char *argv[]) {
    ListHgrad.set("coarse: type","Amesos-KLU");
    ListHgrad.set("coarse: max size",200);  
    ListHgrad.set("ML output",10);
+   ListHgrad.set("ML label","Poisson solver");
 #ifdef HAVE_ML_ZOLTAN
+   ListHgrad.set("aggregation: type","Uncoupled");
    ListHgrad.set("repartition: enable",1);
    ListHgrad.set("repartition: Zoltan dimensions",3);
    ListHgrad.set("repartition: max min ratio",1.4);
    ListHgrad.set("repartition: min per proc",1000);
+   ListHgrad.set("x-coordinates",Nx.Values());
+   ListHgrad.set("y-coordinates",Ny.Values());
+   ListHgrad.set("z-coordinates",Nz.Values());
 #endif
 
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));

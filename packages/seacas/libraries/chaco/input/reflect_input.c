@@ -11,183 +11,176 @@
 static void reflect_params();
 
 /* Print out the input options. */
-void      reflect_input(nvtxs, nedges, igeom, graphname, geomname,
-			    inassignname, outassignname, outfilename,
-			    architecture, ndims_tot, mesh_dims,
-		            global_method, local_method, rqi_flag, vmax, ndims,
-		            eigtol, seed, outfile)
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int       igeom;		/* geometric dimension for inertial method */
-char     *graphname;		/* name of graph input file */
-char     *geomname;		/* name of geometry input file */
-char     *inassignname;		/* name of assignment input file */
-char     *outassignname;	/* name of assignment output file */
-char     *outfilename;		/* name of information output file */
-int       architecture;		/* 0=> hypercube, d=> d-dimensional mesh */
-int       ndims_tot;		/* total number of cuts to make */
-int       mesh_dims[3];		/* size of mesh */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* use RQI/Symmlq eigensolver?  */
-int       vmax;			/* smallest acceptable coarsened nvtxs */
-int       ndims;		/* partitioning level */
-double    eigtol;		/* tolerance on eigenvectors */
-long      seed;			/* random number seed */
-FILE     *outfile;		/* file to write output to */
+void reflect_input(int       nvtxs,		/* number of vertices in graph */
+		   int       nedges,		/* number of edges in graph */
+		   int       igeom,		/* geometric dimension for inertial method */
+		   char     *graphname,		/* name of graph input file */
+		   char     *geomname,		/* name of geometry input file */
+		   char     *inassignname,		/* name of assignment input file */
+		   char     *outassignname,	/* name of assignment output file */
+		   char     *outfilename,		/* name of information output file */
+		   int       architecture,		/* 0=> hypercube, d=> d-dimensional mesh */
+		   int       ndims_tot,		/* total number of cuts to make */
+		   int       mesh_dims[3],		/* size of mesh */
+		   int       global_method,	/* global partitioning algorithm */
+		   int       local_method,		/* local partitioning algorithm */
+		   int       rqi_flag,		/* use RQI/Symmlq eigensolver?  */
+		   int       vmax,			/* smallest acceptable coarsened nvtxs */
+		   int       ndims,		/* partitioning level */
+		   double    eigtol,		/* tolerance on eigenvectors */
+		   long      seed,			/* random number seed */
+		   FILE     *outfile)		/* file to write output to */
 {
-    extern int DEBUG_TRACE;	/* trace main execution path? */
-    extern int ECHO;		/* copy input parameters back to screen? */
-    extern int OUT_ASSIGN_INV;	/* assignment output in inverted format? */
-    extern int IN_ASSIGN_INV;	/* assignment input in inverted format? */
-    extern int PRINT_HEADERS;	/* print section headers for output */
-    FILE     *tempfile;		/* file or stdout */
-    int       i;		/* loop counter */
+  extern int DEBUG_TRACE;	/* trace main execution path? */
+  extern int ECHO;		/* copy input parameters back to screen? */
+  extern int OUT_ASSIGN_INV;	/* assignment output in inverted format? */
+  extern int IN_ASSIGN_INV;	/* assignment input in inverted format? */
+  extern int PRINT_HEADERS;	/* print section headers for output */
+  FILE     *tempfile;		/* file or stdout */
+  int       i;		/* loop counter */
 
-    if (DEBUG_TRACE > 0) {
-	printf("<Entering reflect_input>\n");
+  if (DEBUG_TRACE > 0) {
+    printf("<Entering reflect_input>\n");
+  }
+
+  for (i = 0; i < 2; i++) {
+    if (i == 1) {
+      if (ECHO < 0 && outfile != NULL)
+	tempfile = outfile;
+      else
+	break;
+    }
+    else {
+      tempfile = stdout;
+    }
+    fprintf(tempfile, "\n");
+
+    if (PRINT_HEADERS) {
+      fprintf(tempfile, "\n           Input and Parameter Values\n\n");
     }
 
-    for (i = 0; i < 2; i++) {
-	if (i == 1) {
-	    if (ECHO < 0 && outfile != NULL)
-		tempfile = outfile;
-	    else
-		break;
-	}
-	else {
-	    tempfile = stdout;
-	}
-	fprintf(tempfile, "\n");
-
-	if (PRINT_HEADERS) {
-            fprintf(tempfile, "\n           Input and Parameter Values\n\n");
-        }
-
-	if (graphname != NULL) {
-	    fprintf(tempfile, "Graph file: `%s', ", graphname);
-	}
-	fprintf(tempfile, "# vertices = %d, # edges = %d\n", nvtxs, nedges);
-
-	/* Print global partitioning strategy. */
-	fprintf(tempfile, "Global method: ");
-	if (global_method == 1) {
-	    fprintf(tempfile, "Multilevel-KL\n");
-	}
-	else if (global_method == 2) {
-	    fprintf(tempfile, "Spectral\n");
-	}
-	else if (global_method == 3) {
-	    fprintf(tempfile, "Inertial\n");
-	}
-	else if (global_method == 4) {
-	    fprintf(tempfile, "Linear\n");
-	}
-	else if (global_method == 5) {
-	    fprintf(tempfile, "Random\n");
-	}
-	else if (global_method == 6) {
-	    fprintf(tempfile, "Scattered\n");
-	}
-	else if (global_method == 6) {
-	    fprintf(tempfile, "Read-From-File ");
-	    if (IN_ASSIGN_INV) {
-		printf("(inverted format)\n");
-	    }
-	    else {
-		printf("(normal format)\n");
-	    }
-	}
-
-	if (global_method == 1) {
-	    fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
-	    fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
-	}
-
-	else if (global_method == 2) {
-	    if (rqi_flag) {
-		fprintf(tempfile, "Multilevel RQI/Symmlq eigensolver\n");
-		fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
-		fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
-	    }
-	}
-
-	else if (global_method == 3) {
-	    if (geomname != NULL) {
-		fprintf(tempfile, "Geometry input file: `%s', Dimensionality = %d\n", geomname, igeom);
-	    }
-	}
-
-	else if (global_method == 7) {
-	    fprintf(tempfile, "Assignment input file: `%s'\n", inassignname);
-	}
-
-
-	/* Now describe local method. */
-	if (local_method == 1) {
-	    fprintf(tempfile, "Local method: Kernighan-Lin\n");
-	}
-	else if (local_method == 2) {
-	    fprintf(tempfile, "Local method: None\n");
-	}
-
-	/* Now describe target architecture. */
-	if (architecture == 0) {
-	    fprintf(tempfile, "Partitioning target: %d-dimensional hypercube\n", ndims_tot);
-	}
-	else if (architecture > 0) {
-	    fprintf(tempfile, "Partitioning target: %d-dimensional mesh of size ", architecture);
-	    if (architecture == 1)
-		fprintf(tempfile, "%d\n", mesh_dims[0]);
-	    else if (architecture == 2)
-		fprintf(tempfile, "%dx%d\n", mesh_dims[0], mesh_dims[1]);
-	    else if (architecture == 3)
-		fprintf(tempfile, "%dx%dx%d\n", mesh_dims[0], mesh_dims[1], mesh_dims[2]);
-	}
-
-	if (ndims == 1) {
-	    fprintf(tempfile, "Partitioning mode: Bisection\n");
-	}
-	else if (ndims == 2) {
-	    fprintf(tempfile, "Partitioning mode: Quadrisection\n");
-	}
-	else if (ndims == 3) {
-	    fprintf(tempfile, "Partitioning mode: Octasection\n");
-	}
-
-/* Add stuff about communications simulator. */
-
-	fprintf(tempfile, "Random seed: %ld\n", seed);
-
-	if (outassignname != NULL) {
-	    fprintf(tempfile, "Assignment output file: `%s' ", outassignname);
-	    if (OUT_ASSIGN_INV) {
-		printf("(inverted format)\n");
-	    }
-	    else {
-		printf("(normal format)\n");
-	    }
-	}
-	if (outfilename != NULL) {
-	    fprintf(tempfile, "Output file: `%s'\n", outfilename);
-	}
-
-	if (ECHO > 1 || ECHO < -1) {
-	    reflect_params(tempfile, global_method, local_method,
-			   rqi_flag, ndims);
-	}
-	fprintf(tempfile, "\n");
+    if (graphname != NULL) {
+      fprintf(tempfile, "Graph file: `%s', ", graphname);
     }
+    fprintf(tempfile, "# vertices = %d, # edges = %d\n", nvtxs, nedges);
+
+    /* Print global partitioning strategy. */
+    fprintf(tempfile, "Global method: ");
+    if (global_method == 1) {
+      fprintf(tempfile, "Multilevel-KL\n");
+    }
+    else if (global_method == 2) {
+      fprintf(tempfile, "Spectral\n");
+    }
+    else if (global_method == 3) {
+      fprintf(tempfile, "Inertial\n");
+    }
+    else if (global_method == 4) {
+      fprintf(tempfile, "Linear\n");
+    }
+    else if (global_method == 5) {
+      fprintf(tempfile, "Random\n");
+    }
+    else if (global_method == 6) {
+      fprintf(tempfile, "Scattered\n");
+    }
+    else if (global_method == 6) {
+      fprintf(tempfile, "Read-From-File ");
+      if (IN_ASSIGN_INV) {
+	printf("(inverted format)\n");
+      }
+      else {
+	printf("(normal format)\n");
+      }
+    }
+
+    if (global_method == 1) {
+      fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
+      fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
+    }
+
+    else if (global_method == 2) {
+      if (rqi_flag) {
+	fprintf(tempfile, "Multilevel RQI/Symmlq eigensolver\n");
+	fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
+	fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
+      }
+    }
+
+    else if (global_method == 3) {
+      if (geomname != NULL) {
+	fprintf(tempfile, "Geometry input file: `%s', Dimensionality = %d\n", geomname, igeom);
+      }
+    }
+
+    else if (global_method == 7) {
+      fprintf(tempfile, "Assignment input file: `%s'\n", inassignname);
+    }
+
+
+    /* Now describe local method. */
+    if (local_method == 1) {
+      fprintf(tempfile, "Local method: Kernighan-Lin\n");
+    }
+    else if (local_method == 2) {
+      fprintf(tempfile, "Local method: None\n");
+    }
+
+    /* Now describe target architecture. */
+    if (architecture == 0) {
+      fprintf(tempfile, "Partitioning target: %d-dimensional hypercube\n", ndims_tot);
+    }
+    else if (architecture > 0) {
+      fprintf(tempfile, "Partitioning target: %d-dimensional mesh of size ", architecture);
+      if (architecture == 1)
+	fprintf(tempfile, "%d\n", mesh_dims[0]);
+      else if (architecture == 2)
+	fprintf(tempfile, "%dx%d\n", mesh_dims[0], mesh_dims[1]);
+      else if (architecture == 3)
+	fprintf(tempfile, "%dx%dx%d\n", mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+    }
+
+    if (ndims == 1) {
+      fprintf(tempfile, "Partitioning mode: Bisection\n");
+    }
+    else if (ndims == 2) {
+      fprintf(tempfile, "Partitioning mode: Quadrisection\n");
+    }
+    else if (ndims == 3) {
+      fprintf(tempfile, "Partitioning mode: Octasection\n");
+    }
+
+    /* Add stuff about communications simulator. */
+
+    fprintf(tempfile, "Random seed: %ld\n", seed);
+
+    if (outassignname != NULL) {
+      fprintf(tempfile, "Assignment output file: `%s' ", outassignname);
+      if (OUT_ASSIGN_INV) {
+	printf("(inverted format)\n");
+      }
+      else {
+	printf("(normal format)\n");
+      }
+    }
+    if (outfilename != NULL) {
+      fprintf(tempfile, "Output file: `%s'\n", outfilename);
+    }
+
+    if (ECHO > 1 || ECHO < -1) {
+      reflect_params(tempfile, global_method, local_method,
+		     rqi_flag, ndims);
+    }
+    fprintf(tempfile, "\n");
+  }
 }
 
 
-static void reflect_params(tempfile, global_method, local_method,
-			           rqi_flag, ndims)
-FILE     *tempfile;		/* file or stdout */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* use RQI/SYMMLQ eigensolver? */
-int       ndims;		/* number of eigenvectors to generate */
+static void reflect_params(FILE     *tempfile,		/* file or stdout */
+			   int       global_method,	/* global partitioning algorithm */
+			   int       local_method,	/* local partitioning algorithm */
+			   int       rqi_flag,		/* use RQI/SYMMLQ eigensolver? */
+			   int       ndims)		/* number of eigenvectors to generate */
 {
     extern int CHECK_INPUT;	/* check the input for consistency? */
     extern int OUTPUT_METRICS;	/* controls formatting of output */

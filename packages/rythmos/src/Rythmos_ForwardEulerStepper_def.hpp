@@ -369,7 +369,7 @@ template<class Scalar>
 void ForwardEulerStepper<Scalar>::initialize_()
 {
   if (!isInitialized_) {
-    TEST_FOR_EXCEPTION( is_null(model_), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( is_null(model_), std::logic_error,
        "Error!  Please set a model on the stepper.\n" 
        );
     residual_vector_ = Thyra::createMember(model_->get_f_space());
@@ -385,14 +385,14 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> > ForwardEulerStepper<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPTION(!haveInitialCondition_,std::logic_error,"Error, attempting to call get_x_space before setting an initial condition!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(!haveInitialCondition_,std::logic_error,"Error, attempting to call get_x_space before setting an initial condition!\n");
   return(solution_vector_->space());
 }
 
 template<class Scalar>
 Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
-  TEST_FOR_EXCEPTION( !haveInitialCondition_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !haveInitialCondition_, std::logic_error,
      "Error!  Attempting to call takeStep before setting an initial condition!\n" 
      );
   this->initialize_();
@@ -479,7 +479,7 @@ void ForwardEulerStepper<Scalar>::addPoints(
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ForwardEulerStepper.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>
@@ -535,7 +535,7 @@ void ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ForwardEulerStepper.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>
@@ -547,7 +547,7 @@ int ForwardEulerStepper<Scalar>::getOrder() const
 template <class Scalar>
 void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -586,7 +586,7 @@ ForwardEulerStepper<Scalar>::getValidParameters() const
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
-  TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
   model_ = model;
 }
@@ -690,10 +690,10 @@ void ForwardEulerStepper<Scalar>::setMomento( const Ptr<const MomentoBase<Scalar
 { 
   Ptr<const ForwardEulerStepperMomento<Scalar> > feMomentoPtr = 
     Teuchos::ptr_dynamic_cast<const ForwardEulerStepperMomento<Scalar> >(momentoPtr,true);
-  TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_model()), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_model()), std::logic_error,
       "Error!  Rythmos::ForwardEulerStepper::setMomento:  The momento must have a valid model through set_model(...) prior to calling ForwardEulerStepper::setMomento(...)."
       );
-  TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_basePoint()), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_basePoint()), std::logic_error,
       "Error!  Rythmos::ForwardEulerStepper::setMomento:  The momento must have a valid base point through set_basePoint(...) prior to calling ForwardEulerStepper::setMomento(...)."
       );
   model_ = feMomentoPtr->get_model();

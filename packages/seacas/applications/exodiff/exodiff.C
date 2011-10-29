@@ -54,7 +54,8 @@
 #include "parsing.h"
 #include "FileInfo.h"
 
- 
+#include "add_to_log.h"
+
 using namespace std;
 
 string Version() { return "2.48 (2011-09-14)"; }
@@ -330,7 +331,6 @@ void Echo_Help(const std::string &option) {
   //           different blocks.
 
 
-  extern void add_to_log(const char *name);
   extern void Build_Variable_Names(ExoII_Read& file1, ExoII_Read& file2, bool *diff_found);
   extern bool Check_Global( ExoII_Read& file1, ExoII_Read& file2);
 
@@ -912,12 +912,12 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
       file2.Close_File();
 
 #if 1
-    add_to_log(argv[0]);
+    add_to_log(argv[0], 0);
 #else
     // Temporarily differentiate this version from previous version in logs.
     ostringstream code;
     code << "exodiff-" << Version();
-    add_to_log( code.str().c_str() );
+    add_to_log( code.str().c_str(), 0 );
 #endif
   
     if (specs.exit_status_switch && diff_flag)

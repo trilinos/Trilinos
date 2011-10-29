@@ -115,7 +115,7 @@ void NamespaceA::func1( int a, int b, int c,
       aa = 6.0;
       break;
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
     }
 
     if(

@@ -127,7 +127,7 @@ namespace Sacado {
 #ifdef HAVE_SACADO_TEUCHOS
 #include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_apply.hpp"
 
 namespace Teuchos {
@@ -204,7 +204,7 @@ namespace Teuchos {
     }
     static magnitudeType magnitude(const ScalarType& a) {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(a) == false, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(is_pce_real(a) == false, std::runtime_error,
 			 "Complex conjugate is not defined for "
 			 "complex PCE inputs.");
 #endif
@@ -230,7 +230,7 @@ namespace Teuchos {
     // Conjugate is only defined for real derivative components
     static ScalarType conjugate(const ScalarType& x) {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
 			 "Complex conjugate is not defined for "
 			 "complex PCE inputs.");
 #endif
@@ -240,7 +240,7 @@ namespace Teuchos {
     // Real part is only defined for real derivative components
     static ScalarType real(const ScalarType& x) { 
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
 			 "Real component is not defined for "
 			 "complex PCE inputs.");
 #endif
@@ -250,7 +250,7 @@ namespace Teuchos {
     // Imaginary part is only defined for real derivative components
     static ScalarType imag(const ScalarType& x) { 
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(is_pce_real(x) == false, std::runtime_error,
 			 "Imaginary component is not defined for "
 			 "complex PCE inputs.");
 #endif

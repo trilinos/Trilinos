@@ -49,7 +49,7 @@ C   --
 C   --Common Variables:
 C   --   Uses NVARNP, NVAREL of /DBNUMS/
 
-      include 'dbnums.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER TYP
       REAL FROM(*), TO(*)
