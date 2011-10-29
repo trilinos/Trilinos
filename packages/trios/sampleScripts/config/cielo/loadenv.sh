@@ -47,10 +47,19 @@ module unload PrgEnv-intel
 
 module load PrgEnv-${TARGET_COMPILER}
 
-module load xt-papi
 
-# These specific module versions are required (defaults don't work)
-module load fftw/3.2.2.1
+if [ -z $VALGRIND_BUILD ]; then
+  # These specific module versions are required (defaults don't work)
+  echo "Loading fftw"
+  module load fftw/3.2.2.1
+  module load xt-papi
+else
+  echo "Unloading libsci and fftw"
+  # Unload any problematic modules
+  module unload xt-libsci
+  module unload fftw
+  module unload xt-papi
+fi
 
 # If you need to something special for your compiler.  Do it here.
 case ${TARGET_COMPILER} in
@@ -64,3 +73,6 @@ case ${TARGET_COMPILER} in
   intel)
     ;;
 esac
+
+
+module list
