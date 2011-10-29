@@ -51,8 +51,12 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Epetra includes
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
+   #include "mpi.h"
+   #include "Epetra_MpiComm.h"
+#else
+   #include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
@@ -87,7 +91,11 @@ int main(int argc,char * argv[])
    Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("simple_example.xml"); 
 
    // build global communicator
+#ifdef HAVE_MPI
    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+   Epetra_SerialComm Comm;
+#endif
 
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
