@@ -36,6 +36,7 @@ APPEND_SET(SOURCES
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
   Utilities
+
 #  Zoltan.cpp
 )
 
@@ -50,6 +51,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_EpetraExt
   ${PACKAGE_NAME}_ENABLE_Tpetra
+  ${PACKAGE_NAME}_ENABLE_Belos
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -66,6 +68,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+  APPEND_SET(SOURCES BelosAdapters.cpp)
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(

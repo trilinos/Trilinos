@@ -308,7 +308,17 @@ namespace Xpetra {
     //   virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
 
     //@}
-  
+
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    /** \brief Return a simple one-line description of this object. */
+    virtual std::string description() const =0;
+
+    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
+    //@}
 
     // JG: Added:
 

@@ -48,8 +48,10 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_PreDropFunctionConstVal.hpp"
 
-// 
+//
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
@@ -87,7 +89,7 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 4;
 
-  int maxCoarseSize=1; //FIXME clp doesn't like long long int
+  GO maxCoarseSize=1; //FIXME clp doesn't like long long int
   std::string aggOrdering = "natural";
   int minPerAgg=3;
   int maxNbrAlreadySelected=0;
@@ -107,23 +109,23 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
   // Epetra_CrsMatrix -> Xpetra::Operator
-  RCP<Xpetra::CrsMatrix<double, int, int> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<Xpetra::CrsOperator<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsOperator<double, int, int>(exA));
-  RCP<Xpetra::Operator<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Operator<double, int, int> >(crsOp);
+  RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+  RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
+  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
 
   // Epetra_Vector -> Xpetra::Vector
-  RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+  RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
 
-  RCP<Xpetra::MultiVector<double,int,int> > xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+  RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
 
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Xpetra::Map<int, int> > map = Xpetra::toXpetra(emap);
+  const RCP< const Map> map = Xpetra::toXpetra(emap);
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
+  RCP<Hierarchy> H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  H->SetMaxCoarseSize((GO) maxCoarseSize);;
+  H->SetMaxCoarseSize(maxCoarseSize);
 
   // build finest Level
   RCP<MueLu::Level> Finest = H->GetLevel();
@@ -132,6 +134,10 @@ int main(int argc, char *argv[]) {
   Finest->Set("Nullspace",xNS);
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  dropFact->SetVerbLevel(MueLu::Extreme);
+  dropFact->SetFixedBlockSize(2);
+  RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+  dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;

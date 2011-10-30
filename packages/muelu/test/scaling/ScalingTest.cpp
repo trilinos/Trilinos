@@ -37,7 +37,8 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#include "BelosXpetraAdapter.hpp" // this header defines Belos::XpetraOp()
+#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 #endif
 
 //
@@ -294,8 +295,8 @@ int main(int argc, char *argv[]) {
     RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
 
     // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );    // Turns a Xpetra::Operator object into a Belos 'OP'
-    RCP<OP> belosPrec = rcp( new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
+    RCP<OP> belosOp   = rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );   // Turns a Xpetra::Operator object into a Belos 'OP'
+    RCP<OP> belosPrec = rcp( new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );
 
