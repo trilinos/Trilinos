@@ -777,10 +777,11 @@ namespace MueLu {
 
         // We have something which is under minNodesPerAggregate when 
         if (count != 0) {
+#ifdef FIXME
           // Can stick small aggregate with 0th aggregate?
           if (nAggregates > 0) {
             for (my_size_t i = 0; i < nVertices; i++) {
-              if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
+              if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)) {
                 vertex2AggId[i] = 0;
                 aggregates.SetIsRoot(i,false);
               }
@@ -790,6 +791,27 @@ namespace MueLu {
             Nsingle++;
             nAggregates++;
           }
+#else
+          // Can stick small aggregate with 0th aggregate?
+          if (nAggregates > 0) {
+            for (my_size_t i = 0; i < nVertices; i++) {
+              // TW: This is not a real fix. This may produce ugly bad aggregates!
+              // I removed the procWinner[i] == myPid check. it makes no sense to me since
+              // it leaves vertex2AggId[i] == nAggregates -> crash in ComputeAggregateSizes().
+              // Maybe it's better to add the leftovers to the last generated agg on the current proc.
+              // The best solution would be to add them to the "next"/nearest aggregate, that may be
+              // on an other processor
+              if (vertex2AggId[i] == nAggregates) {
+                vertex2AggId[i] = nAggregates-1; //0;
+                aggregates.SetIsRoot(i,false);
+              }
+            }
+          }
+          else {
+            Nsingle++;
+            nAggregates++;
+          }
+#endif
         }
 
         // views on distributed vectors are freed here.
