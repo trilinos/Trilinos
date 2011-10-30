@@ -30,11 +30,6 @@ typedef MueLu::TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMat
 typedef MueLu::RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> RAPFactory;
 #endif
 
-/* highly experimental factory */
-#ifdef MUELU_RAPFACTORYEX_SHORT
-typedef MueLu::RAPFactoryEx<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> RAPFactoryEx;
-#endif
-
 #ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
 typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherPrototype;
 #endif

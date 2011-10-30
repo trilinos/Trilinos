@@ -36,6 +36,12 @@ namespace MueLu {
       fineLevel.DeclareInput("A", AFact_.get());   // AFact per default Teuchos::null -> default factory for this
       coarseLevel.DeclareInput("P",PFact_.get());  // transfer operators (from PRFactory, not from PFactory and RFactory!)
       coarseLevel.DeclareInput("R",RFact_.get()); //TODO: must be request according to (implicitTranspose flag!!!!!
+
+      // call DeclareInput of all user-given transfer factories
+      std::vector<RCP<FactoryBase> >::const_iterator it;
+      for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+        (*it)->CallDeclareInput(coarseLevel);
+      }
     }
 
     //@}
@@ -88,6 +94,13 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
       GetOStream(Statistics0, 0) << "Ac: # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+
+      // call Build of all user-given transfer factories
+      std::vector<RCP<FactoryBase> >::const_iterator it;
+      for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+        GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        (*it)->CallBuild(coarseLevel);
+      }
     }
     //@}
 
@@ -95,6 +108,24 @@ MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
       implicitTranspose_ = implicit;
     }
 
+    //@{ Handling of user-defined transfer factories
+
+    //! add transfer factory in the end of list of transfer factories in RAPFactory
+    //! Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to the next coarser level
+    void AddTransferFactory(const RCP<FactoryBase>& factory) {
+      // check if it's a TwoLevelFactoryBase based transfer factory
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null,Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
+      TransferFacts_.push_back(factory);
+    }
+
+    // TODO add a function to remove a specific transfer factory?
+
+    //! returns number of transfer factories
+    size_t NumTransferFactories() const {
+      return TransferFacts_.size();
+    }
+
+    //@}
 private:
   //! P Factory
   RCP<FactoryBase> PFact_;
@@ -104,6 +135,9 @@ private:
   
   //! A Factory
   RCP<FactoryBase> AFact_;
+
+  //! list of user-defined transfer Factories
+  std::vector<RCP<FactoryBase> > TransferFacts_;
 
   bool implicitTranspose_;
 
