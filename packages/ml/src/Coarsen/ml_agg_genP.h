@@ -28,6 +28,7 @@ struct ML_AGG_Matrix_Context
    double      drop_tol;
    char        *near_bdry;
    int         *aggr_info;
+   double      *Adiag;
 };
 
 #define ML_POLY_ORDER_MAX 10
@@ -84,6 +85,9 @@ extern int  ML_AGG_Decrement_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Increment_Two_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Decrement_Two_Level(ML *, int current_level, void *);
 extern int  ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows,
+               int requested_rows[], int allocated_space, int columns[],
+               double values[], int row_lengths[]);
+extern int  ML_AGG_JacobiMoreAccurate_Getrows(ML_Operator *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[],
                double values[], int row_lengths[]);
 extern int  ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry);
